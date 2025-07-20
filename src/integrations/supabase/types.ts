@@ -19,12 +19,14 @@ export type Database = {
           address: string | null
           avatar_url: string | null
           bio: string | null
+          city: string | null
           created_at: string
           full_name: string | null
           id: string
           is_verified: boolean | null
           neighborhood: string | null
           phone: string | null
+          state: string | null
           updated_at: string
           user_id: string
         }
@@ -32,12 +34,14 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
           is_verified?: boolean | null
           neighborhood?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string
           user_id: string
         }
@@ -45,12 +49,14 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
           is_verified?: boolean | null
           neighborhood?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string
           user_id?: string
         }
