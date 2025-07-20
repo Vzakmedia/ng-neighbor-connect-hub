@@ -53,10 +53,10 @@ export default {
 					foreground: 'hsl(var(--card-foreground))'
 				},
 				community: {
-					blue: 'hsl(var(--community-blue))',
-					green: 'hsl(var(--community-green))', 
-					yellow: 'hsl(var(--community-yellow))',
-					orange: 'hsl(var(--community-orange))'
+					primary: 'hsl(var(--community-primary))',
+					secondary: 'hsl(var(--community-secondary))', 
+					light: 'hsl(var(--community-light))',
+					dark: 'hsl(var(--community-dark))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
