@@ -15,7 +15,7 @@ interface LocationRequest {
 // Comprehensive list of all Nigerian states and FCT
 const NIGERIAN_STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT (Abuja)", 
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Federal Capital Territory",
   "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara",
   "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
   "Sokoto", "Taraba", "Yobe", "Zamfara"
@@ -55,9 +55,7 @@ serve(async (req) => {
             try {
               // Try to get additional info from Google Places for each state
               const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-              // Special handling for FCT
-              const searchTerm = stateName.includes('FCT') ? 'Abuja Federal Capital Territory Nigeria' : `${stateName} state Nigeria`;
-              placesUrl.searchParams.set('query', searchTerm);
+              placesUrl.searchParams.set('query', `${stateName} state Nigeria`);
               placesUrl.searchParams.set('key', apiKey);
               placesUrl.searchParams.set('region', 'ng');
               placesUrl.searchParams.set('type', 'administrative_area_level_1');
