@@ -90,12 +90,33 @@ serve(async (req) => {
       case 'cities':
         searchQuery = `major cities in ${state} state Nigeria`;
         
+        // Special handling for Lagos with all 20 LGAs
+        if (state === 'Lagos') {
+          const lagosLGAs = [
+            'Lagos Island', 'Lagos Mainland', 'Surulere', 'Ikeja', 'Oshodi-Isolo',
+            'Mushin', 'Alimosho', 'Agege', 'Ifako-Ijaiye', 'Kosofe', 'Shomolu',
+            'Ikorodu', 'Epe', 'Badagry', 'Ibeju-Lekki', 'Ojo', 'Amuwo-Odofin',
+            'Apapa', 'Eti-Osa', 'Ajeromi-Ifelodun', 'Lekki', 'Victoria Island',
+            'Yaba', 'Gbagada', 'Ojota', 'Magodo', 'Festac', 'Ajah', 'Ikoyi'
+          ];
+          
+          locations = lagosLGAs.map(lga => ({
+            name: lga,
+            formatted_address: `${lga}, Lagos, Nigeria`,
+            place_id: `lagos_${lga.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_')}`,
+            types: ['locality', 'political']
+          }));
+          break;
+        }
+        
         // Use multiple search strategies for better coverage
         const cityQueries = [
           `cities in ${state} state Nigeria`,
           `${state} state cities Nigeria`,
           `major towns ${state} Nigeria`,
-          `local government areas ${state} Nigeria`
+          `local government areas ${state} Nigeria`,
+          `LGA ${state} Nigeria`,
+          `districts in ${state} Nigeria`
         ];
         
         const allCityResults = await Promise.all(
