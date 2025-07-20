@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Search, Menu, MapPin } from 'lucide-react';
+import { Bell, Search, Menu, MapPin, User, LogOut } from 'lucide-react';
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const [notifications] = useState(3);
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -48,7 +54,23 @@ const Header = () => {
             )}
           </Button>
           
-          <div className="h-8 w-8 rounded-full bg-gradient-primary"></div>
+          {user && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground flex items-center gap-2 hidden sm:flex">
+                <User size={16} />
+                {user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>
