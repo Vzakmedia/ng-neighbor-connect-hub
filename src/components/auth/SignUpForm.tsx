@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
+import { LocationSelector } from "./LocationSelector";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ export const SignUpForm = () => {
     password: "",
     confirmPassword: "",
     phone: "",
+    state: "",
+    city: "",
     neighborhood: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +26,10 @@ export const SignUpForm = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLocationChange = (state: string, city: string, neighborhood: string) => {
+    setFormData(prev => ({ ...prev, state, city, neighborhood }));
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -59,6 +66,8 @@ export const SignUpForm = () => {
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
+            state: formData.state,
+            city: formData.city,
             neighborhood: formData.neighborhood,
           },
         },
@@ -135,13 +144,20 @@ export const SignUpForm = () => {
         />
       </div>
 
+      <LocationSelector 
+        onLocationChange={handleLocationChange}
+        defaultState={formData.state}
+        defaultCity={formData.city}
+        defaultNeighborhood={formData.neighborhood}
+      />
+
       <div className="space-y-2">
-        <Label htmlFor="neighborhood">Neighborhood</Label>
+        <Label htmlFor="neighborhood">Additional Neighborhood Info (Optional)</Label>
         <Input
           id="neighborhood"
           name="neighborhood"
           type="text"
-          placeholder="Enter your neighborhood"
+          placeholder="e.g., Estate name, street name, or landmark"
           value={formData.neighborhood}
           onChange={handleInputChange}
         />

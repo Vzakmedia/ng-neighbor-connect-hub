@@ -1,1 +1,4 @@
 project_id = "cowiviqhrnmhttugozbz"
+
+[functions.nigeria-locations]
+verify_jwt = false
