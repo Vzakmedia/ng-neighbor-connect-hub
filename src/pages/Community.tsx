@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import CommunityBoards from '@/components/CommunityBoards';
+import CommunityDashboard from '@/components/CommunityDashboard';
 import { useAuth } from "@/hooks/useAuth";
 
 const Community = () => {
@@ -33,8 +33,8 @@ const Community = () => {
       <Navigation />
       
       <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="py-6">
-          <CommunityBoards />
+        <div className="py-6 px-6">
+          <CommunityDashboard />
         </div>
       </main>
     </div>
