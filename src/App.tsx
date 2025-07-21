@@ -11,6 +11,8 @@ import MarketplacePage from "./pages/MarketplacePage";
 import Safety from "./pages/Safety";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Services from "./pages/Services";
+import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/safety" element={<Safety />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
