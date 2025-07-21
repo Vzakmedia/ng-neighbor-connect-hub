@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   Users
 } from 'lucide-react';
+import FeedAdCard from './FeedAdCard';
 
 interface Post {
   id: string;
@@ -30,6 +31,30 @@ interface Post {
   image?: string;
   isLiked: boolean;
 }
+
+interface FeedAd {
+  id: string;
+  business: {
+    name: string;
+    location: string;
+    verified: boolean;
+  };
+  title: string;
+  description: string;
+  category: string;
+  cta: string;
+  url: string;
+  promoted: boolean;
+  timePosted: string;
+  likes: number;
+  comments: number;
+  rating: number;
+  price: string;
+  type: 'general' | 'safety' | 'marketplace' | 'event';
+  image?: string;
+}
+
+type FeedItem = Post | (FeedAd & { isAd: true });
 
 interface CommunityFeedProps {
   activeTab?: string;
@@ -91,6 +116,91 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     },
   ]);
 
+  // Feed advertisements data
+  const feedAds: FeedAd[] = [
+    {
+      id: 'ad_1',
+      business: {
+        name: 'SecureHome Lagos',
+        location: 'Victoria Island',
+        verified: true,
+      },
+      title: 'Professional Home Security Installation',
+      description: 'Protect your family with our state-of-the-art security systems. 24/7 monitoring, mobile alerts, and professional installation. Special discount for Victoria Island residents.',
+      category: 'Security',
+      cta: 'Get Free Quote',
+      url: 'https://example.com/security',
+      promoted: true,
+      timePosted: '3 hours ago',
+      likes: 18,
+      comments: 5,
+      rating: 4.8,
+      price: 'From ₦120,000',
+      type: 'safety',
+    },
+    {
+      id: 'ad_2',
+      business: {
+        name: 'FreshMart Delivery',
+        location: 'Ikoyi',
+        verified: true,
+      },
+      title: 'Same-Day Grocery Delivery',
+      description: 'Fresh groceries delivered to your doorstep within 2 hours. Organic produce, household items, and local specialties. Free delivery on orders above ₦10,000.',
+      category: 'Grocery',
+      image: '/placeholder.svg',
+      cta: 'Order Now',
+      url: 'https://example.com/groceries',
+      promoted: true,
+      timePosted: '5 hours ago',
+      likes: 24,
+      comments: 8,
+      rating: 4.9,
+      price: 'Free Delivery',
+      type: 'general',
+    },
+    {
+      id: 'ad_3',
+      business: {
+        name: 'TechHub Electronics',
+        location: 'Lekki Phase 1',
+        verified: true,
+      },
+      title: 'Electronics Sale - Up to 40% Off',
+      description: 'Huge electronics sale! Latest smartphones, laptops, home appliances, and gadgets. All products come with warranty and free technical support.',
+      category: 'Electronics',
+      cta: 'Shop Sale',
+      url: 'https://example.com/electronics',
+      promoted: true,
+      timePosted: '1 day ago',
+      likes: 42,
+      comments: 15,
+      rating: 4.7,
+      price: 'Up to 40% Off',
+      type: 'marketplace',
+    },
+    {
+      id: 'ad_4',
+      business: {
+        name: 'Community Fitness Center',
+        location: 'Victoria Island',
+        verified: true,
+      },
+      title: 'Join Our Community Fitness Classes',
+      description: 'Group fitness classes for all ages and fitness levels. Yoga, Pilates, cardio, and strength training. First month free for new members!',
+      category: 'Health & Fitness',
+      cta: 'Join Now',
+      url: 'https://example.com/fitness',
+      promoted: true,
+      timePosted: '2 days ago',
+      likes: 31,
+      comments: 12,
+      rating: 4.6,
+      price: 'First Month Free',
+      type: 'event',
+    }
+  ];
+
   const getPostTypeIcon = (type: string) => {
     switch (type) {
       case 'safety':
@@ -135,72 +245,116 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     return post.type === activeTab;
   });
 
+  // Filter and insert ads based on active tab
+  const getRelevantAds = () => {
+    let relevantAds = feedAds.filter(ad => {
+      if (activeTab === 'all') return true;
+      if (activeTab === 'events') return ad.type === 'event';
+      if (activeTab === 'safety') return ad.type === 'safety';
+      if (activeTab === 'marketplace') return ad.type === 'marketplace';
+      return ad.type === activeTab || ad.type === 'general';
+    });
+    
+    // Limit ads to 1-2 per feed to avoid overwhelming users
+    return relevantAds.slice(0, activeTab === 'all' ? 2 : 1);
+  };
+
+  // Mix posts and ads naturally
+  const getMixedFeed = (): FeedItem[] => {
+    const relevantAds = getRelevantAds();
+    const mixedFeed: FeedItem[] = [...filteredPosts];
+    
+    // Insert ads at strategic positions (after 2nd and 5th post)
+    relevantAds.forEach((ad, index) => {
+      const insertPosition = (index + 1) * 3 - 1; // Positions: 2, 5, 8, etc.
+      const adItem: FeedItem = { ...ad, isAd: true as const };
+      
+      if (insertPosition < mixedFeed.length) {
+        mixedFeed.splice(insertPosition, 0, adItem);
+      } else {
+        mixedFeed.push(adItem);
+      }
+    });
+    
+    return mixedFeed;
+  };
+
+  const mixedFeed = getMixedFeed();
+
   return (
     <div className="space-y-4">
-      {filteredPosts.length === 0 ? (
+      {mixedFeed.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No posts found for this category.</p>
         </div>
       ) : (
-        filteredPosts.map((post) => {
-        const typeBadge = getPostTypeBadge(post.type);
-        return (
-          <Card key={post.id} className="shadow-card hover:shadow-elevated transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <Avatar>
-                    <AvatarImage src={post.author.avatar} />
-                    <AvatarFallback>{post.author.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium">{post.author.name}</h4>
-                      <Badge variant={typeBadge.variant} className="text-xs">
-                        {getPostTypeIcon(post.type)}
-                        <span className="ml-1">{typeBadge.label}</span>
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span>{post.author.location}</span>
-                      <Clock className="h-3 w-3 ml-2" />
-                      <span>{post.timestamp}</span>
+        mixedFeed.map((item: FeedItem) => {
+          // Render advertisement
+          if ('isAd' in item && item.isAd) {
+            return <FeedAdCard key={item.id} ad={item} />;
+          }
+          
+          // Render regular post
+          const post = item as Post;
+          const typeBadge = getPostTypeBadge(post.type);
+          
+          return (
+            <Card key={post.id} className="shadow-card hover:shadow-elevated transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Avatar>
+                      <AvatarImage src={post.author.avatar} />
+                      <AvatarFallback>{post.author.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium">{post.author.name}</h4>
+                        <Badge variant={typeBadge.variant} className="text-xs">
+                          {getPostTypeIcon(post.type)}
+                          <span className="ml-1">{typeBadge.label}</span>
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{post.author.location}</span>
+                        <Clock className="h-3 w-3 ml-2" />
+                        <span>{post.timestamp}</span>
+                      </div>
                     </div>
                   </div>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="pt-0">
-              <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+              </CardHeader>
               
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => toggleLike(post.id)}
-                    className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
-                  >
-                    <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
-                    {post.likes}
-                  </Button>
+              <CardContent className="pt-0">
+                <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center space-x-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => toggleLike(post.id)}
+                      className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+                    >
+                      <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
+                      {post.likes}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      {post.comments}
+                    </Button>
+                  </div>
                   <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    {post.comments}
+                    <Share2 className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
+              </CardContent>
+            </Card>
+          );
         })
       )}
     </div>
