@@ -90,20 +90,245 @@ serve(async (req) => {
       case 'cities':
         searchQuery = `major cities in ${state} state Nigeria`;
         
-        // Special handling for Lagos with all 20 LGAs
-        if (state === 'Lagos') {
-          const lagosLGAs = [
+        // Comprehensive city/LGA lists for all states
+        const stateCities: { [key: string]: string[] } = {
+          'Lagos': [
             'Lagos Island', 'Lagos Mainland', 'Surulere', 'Ikeja', 'Oshodi-Isolo',
             'Mushin', 'Alimosho', 'Agege', 'Ifako-Ijaiye', 'Kosofe', 'Shomolu',
             'Ikorodu', 'Epe', 'Badagry', 'Ibeju-Lekki', 'Ojo', 'Amuwo-Odofin',
             'Apapa', 'Eti-Osa', 'Ajeromi-Ifelodun', 'Lekki', 'Victoria Island',
             'Yaba', 'Gbagada', 'Ojota', 'Magodo', 'Festac', 'Ajah', 'Ikoyi'
-          ];
-          
-          locations = lagosLGAs.map(lga => ({
-            name: lga,
-            formatted_address: `${lga}, Lagos, Nigeria`,
-            place_id: `lagos_${lga.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_')}`,
+          ],
+          'Federal Capital Territory': [
+            'Abuja Municipal', 'Gwagwalada', 'Kuje', 'Abaji', 'Kwali', 'Bwari',
+            'Garki', 'Wuse', 'Maitama', 'Asokoro', 'Gwarinpa', 'Kubwa', 'Nyanya',
+            'Karu', 'Lugbe', 'Life Camp', 'Utako', 'Jabi', 'Katampe', 'Lokogoma'
+          ],
+          'Kano': [
+            'Kano Municipal', 'Fagge', 'Dala', 'Gwale', 'Tarauni', 'Nassarawa',
+            'Ungogo', 'Kumbotso', 'Warawa', 'Dawakin Kudu', 'Dawakin Tofa',
+            'Doguwa', 'Garko', 'Garun Mallam', 'Gaya', 'Gezawa', 'Gwarzo',
+            'Kabo', 'Karaye', 'Kibiya', 'Kiru', 'Kura', 'Madobi', 'Makoda',
+            'Minjibir', 'Rano', 'Rimin Gado', 'Rogo', 'Shanono', 'Sumaila',
+            'Takali', 'Tanbawal', 'Tsanyawa', 'Tudun Wada', 'Wudil'
+          ],
+          'Kaduna': [
+            'Kaduna North', 'Kaduna South', 'Chikun', 'Igabi', 'Ikara', 'Jaba',
+            'Jema\'a', 'Kachia', 'Kagarko', 'Kajuru', 'Kaura', 'Kauru',
+            'Kubau', 'Kudan', 'Lere', 'Makarfi', 'Sabon Gari', 'Sanga',
+            'Soba', 'Zangon Kataf', 'Zaria', 'Birnin Gwari', 'Giwa'
+          ],
+          'Rivers': [
+            'Port Harcourt', 'Obio-Akpor', 'Okrika', 'Ogu-Bolo', 'Eleme',
+            'Tai', 'Gokana', 'Khana', 'Oyigbo', 'Opobo-Nkoro', 'Andoni',
+            'Bonny', 'Degema', 'Asari-Toru', 'Akuku-Toru', 'Abua-Odual',
+            'Ahoada East', 'Ahoada West', 'Ogba-Egbema-Ndoni', 'Emohua',
+            'Ikwerre', 'Etche', 'Omuma'
+          ],
+          'Oyo': [
+            'Ibadan North', 'Ibadan North-East', 'Ibadan North-West', 'Ibadan South-East',
+            'Ibadan South-West', 'Ibarapa Central', 'Ibarapa East', 'Ibarapa North',
+            'Ido', 'Irepo', 'Iseyin', 'Itesiwaju', 'Iwajowa', 'Kajola',
+            'Lagelu', 'Ogbomoso North', 'Ogbomoso South', 'Ogo Oluwa', 'Olorunsogo',
+            'Oluyole', 'Ona Ara', 'Orelope', 'Ori Ire', 'Oyo East', 'Oyo West',
+            'Saki East', 'Saki West', 'Surulere', 'Akinyele', 'Atiba', 'Atisbo', 'Egbeda'
+          ],
+          'Katsina': [
+            'Katsina', 'Daura', 'Funtua', 'Malumfashi', 'Kafur', 'Kaita',
+            'Jibia', 'Mashi', 'Dutsi', 'Batsari', 'Rimi', 'Charanchi',
+            'Dan Musa', 'Dandume', 'Danja', 'Faskari', 'Ingawa', 'Kankara',
+            'Kankia', 'Kusada', 'Mai\'Adua', 'Matazu', 'Musawa', 'Safana',
+            'Sabuwa', 'Sandamu', 'Zango', 'Baure', 'Bindawa', 'Dutsin Ma',
+            'Kurfi', 'Mani'
+          ],
+          'Jigawa': [
+            'Dutse', 'Hadejia', 'Kazaure', 'Gumel', 'Ringim', 'Birnin Kudu',
+            'Garki', 'Babura', 'Birniwa', 'Buji', 'Gantsa', 'Gagarawa',
+            'Guri', 'Gwaram', 'Jahun', 'Kafin Hausa', 'Kaugama', 'Kiri Kasama',
+            'Kiyawa', 'Maigatari', 'Malam Madori', 'Miga', 'Roni', 'Sule Tankarkar',
+            'Taura', 'Yankwashi', 'Auyo'
+          ],
+          'Borno': [
+            'Maiduguri', 'Jere', 'Konduga', 'Bama', 'Gwoza', 'Dikwa',
+            'Kala/Balge', 'Kukawa', 'Gubio', 'Guzamala', 'Magumeri', 'Ngala',
+            'Kaga', 'Monguno', 'Nganzai', 'Chibok', 'Damboa', 'Biu',
+            'Kwaya Kusar', 'Shani', 'Askira/Uba', 'Hawul', 'Bayo'
+          ],
+          'Yobe': [
+            'Damaturu', 'Potiskum', 'Gashua', 'Nguru', 'Geidam', 'Bade',
+            'Bursari', 'Fika', 'Fune', 'Gujba', 'Gulani', 'Jakusko',
+            'Karasuwa', 'Machina', 'Nangere', 'Tarmuwa', 'Yunusari', 'Yusufari'
+          ],
+          'Bauchi': [
+            'Bauchi', 'Azare', 'Misau', 'Jama\'are', 'Katagum', 'Zaki',
+            'Gamawa', 'Dambam', 'Darazo', 'Ganjuwa', 'Kirfi', 'Alkaleri',
+            'Bogoro', 'Dass', 'Tafawa Balewa', 'Warji', 'Ningi', 'Toro',
+            'Giade', 'Shira'
+          ],
+          'Taraba': [
+            'Jalingo', 'Wukari', 'Bali', 'Gassol', 'Ibi', 'Takum',
+            'Donga', 'Ussa', 'Kurmi', 'Sardauna', 'Zing', 'Karim Lamido',
+            'Lau', 'Yorro', 'Ardo Kola', 'Gashaka'
+          ],
+          'Adamawa': [
+            'Yola North', 'Yola South', 'Fufore', 'Song', 'Girei', 'Gombi',
+            'Hong', 'Jada', 'Lamurde', 'Madagali', 'Maiha', 'Mayo Belwa',
+            'Michika', 'Mubi North', 'Mubi South', 'Numan', 'Shelleng',
+            'Toungo', 'Ganye', 'Demsa', 'Guyuk'
+          ],
+          'Gombe': [
+            'Gombe', 'Akko', 'Balanga', 'Billiri', 'Dukku', 'Funakaye',
+            'Kaltungo', 'Kwami', 'Nafada', 'Shongom', 'Yamaltu/Deba'
+          ],
+          'Plateau': [
+            'Jos North', 'Jos South', 'Jos East', 'Barikin Ladi', 'Riyom',
+            'Bokkos', 'Mangu', 'Pankshin', 'Kanke', 'Kanam', 'Wase',
+            'Langtang North', 'Langtang South', 'Mikang', 'Qua\'an Pan',
+            'Shendam', 'Bassa'
+          ],
+          'Nasarawa': [
+            'Lafia', 'Keffi', 'Akwanga', 'Nasarawa Egon', 'Nasarawa',
+            'Wamba', 'Kokona', 'Awe', 'Doma', 'Keana', 'Karu', 'Obi', 'Toto'
+          ],
+          'Niger': [
+            'Minna', 'Bida', 'Kontagora', 'Suleja', 'New Bussa', 'Agaie',
+            'Agwara', 'Bida', 'Borgu', 'Bosso', 'Chanchaga', 'Edati',
+            'Gbako', 'Gurara', 'Katcha', 'Kontagora', 'Lapai', 'Lavun',
+            'Magama', 'Mariga', 'Mashegu', 'Mokwa', 'Muya', 'Paikoro',
+            'Rafi', 'Rijau', 'Shiroro', 'Tafa', 'Wushishi'
+          ],
+          'Kwara': [
+            'Ilorin East', 'Ilorin South', 'Ilorin West', 'Asa', 'Baruten',
+            'Edu', 'Ekiti', 'Ifelodun', 'Irepodun', 'Isin', 'Kaiama',
+            'Moro', 'Offa', 'Oke Ero', 'Oyun', 'Pategi'
+          ],
+          'Kogi': [
+            'Lokoja', 'Ajaokuta', 'Okene', 'Olamaboro', 'Ogori/Magongo',
+            'Adavi', 'Ankpa', 'Bassa', 'Dekina', 'Ibaji', 'Idah',
+            'Igalamela Odolu', 'Ijumu', 'Kabba/Bunu', 'Koton Karfe',
+            'Mopa Muro', 'Ofu', 'Okene', 'Okehi', 'Okpo', 'Omala', 'Yagba East', 'Yagba West'
+          ],
+          'Benue': [
+            'Makurdi', 'Gboko', 'Katsina-Ala', 'Vandikya', 'Guma', 'Tarka',
+            'Buruku', 'Ukum', 'Logo', 'Oturkpo', 'Ohimini', 'Oju',
+            'Okpokwu', 'Ogbadibo', 'Apa', 'Agatu', 'Ado', 'Obi',
+            'Ushongo', 'Gwer East', 'Gwer West', 'Konshisha', 'Kwande'
+          ],
+          'Sokoto': [
+            'Sokoto North', 'Sokoto South', 'Binji', 'Bodinga', 'Dange Shuni',
+            'Gada', 'Goronyo', 'Gudu', 'Gwadabawa', 'Illela', 'Isa',
+            'Kebbe', 'Kware', 'Rabah', 'Sabon Birni', 'Shagari', 'Silame',
+            'Tambuwal', 'Tangaza', 'Tureta', 'Wamako', 'Wurno', 'Yabo'
+          ],
+          'Kebbi': [
+            'Birnin Kebbi', 'Aleiro', 'Arewa Dandi', 'Argungu', 'Augie',
+            'Bagudo', 'Bunza', 'Dandi', 'Fakai', 'Gwandu', 'Jega',
+            'Kalgo', 'Koko/Besse', 'Maiyama', 'Ngaski', 'Sakaba', 'Shanga',
+            'Suru', 'Wasagu/Danko', 'Yauri', 'Zuru'
+          ],
+          'Zamfara': [
+            'Gusau', 'Tsafe', 'Bungudu', 'Maru', 'Bukkuyum', 'Anka',
+            'Talata Mafara', 'Zurmi', 'Birnin Magaji/Kiyaw', 'Kaura Namoda',
+            'Maradun', 'Bakura', 'Shinkafi', 'Gummi'
+          ],
+          'Cross River': [
+            'Calabar Municipal', 'Calabar South', 'Akpabuyo', 'Bakassi', 'Bekwarra',
+            'Biase', 'Boki', 'Etung', 'Ikom', 'Obanliku', 'Obubra',
+            'Obudu', 'Odukpani', 'Ogoja', 'Yakurr', 'Yala', 'Akamkpa', 'Abi'
+          ],
+          'Akwa Ibom': [
+            'Uyo', 'Ikot Ekpene', 'Eket', 'Oron', 'Abak', 'Eastern Obolo',
+            'Eket', 'Esit Eket', 'Essien Udim', 'Etim Ekpo', 'Etinan',
+            'Ibeno', 'Ibesikpo Asutan', 'Ibiono-Ibom', 'Ika', 'Ikono',
+            'Ikot Abasi', 'Ikot Ekpene', 'Ini', 'Itu', 'Mbo', 'Mkpat-Enin',
+            'Nsit-Atai', 'Nsit-Ibom', 'Nsit-Ubium', 'Obot Akara', 'Okobo',
+            'Onna', 'Oron', 'Oruk Anam', 'Udung-Uko', 'Ukanafun', 'Uruan',
+            'Urue-Offong/Oruko', 'Uyo'
+          ],
+          'Delta': [
+            'Warri North', 'Warri South', 'Warri South West', 'Uvwie', 'Udu',
+            'Okpe', 'Sapele', 'Ethiope East', 'Ethiope West', 'Ughelli North',
+            'Ughelli South', 'Isoko North', 'Isoko South', 'Patani', 'Bomadi',
+            'Burutu', 'Aniocha North', 'Aniocha South', 'Ika North East',
+            'Ika South', 'Ndokwa East', 'Ndokwa West', 'Oshimili North',
+            'Oshimili South', 'Ukwuani'
+          ],
+          'Edo': [
+            'Benin City', 'Ikpoba Okha', 'Egor', 'Uhunmwonde', 'Ovia North-East',
+            'Ovia South-West', 'Orhionmwon', 'Esan Central', 'Esan North-East',
+            'Esan South-East', 'Esan West', 'Igueben', 'Ikpoba-Okha', 'Oredo',
+            'Owan East', 'Owan West', 'Akoko-Edo', 'Etsako Central',
+            'Etsako East', 'Etsako West'
+          ],
+          'Bayelsa': [
+            'Yenagoa', 'Kolokuma/Opokuma', 'Southern Ijaw', 'Sagbama', 'Brass',
+            'Nembe', 'Ogbia', 'Ekeremor'
+          ],
+          'Anambra': [
+            'Awka North', 'Awka South', 'Anambra East', 'Anambra West', 'Anaocha',
+            'Ayamelum', 'Dunukofia', 'Ekwusigo', 'Idemili North', 'Idemili South',
+            'Ihiala', 'Njikoka', 'Nnewi North', 'Nnewi South', 'Ogbaru',
+            'Onitsha North', 'Onitsha South', 'Orumba North', 'Orumba South',
+            'Oyi', 'Aguata'
+          ],
+          'Imo': [
+            'Owerri Municipal', 'Owerri North', 'Owerri West', 'Aboh Mbaise',
+            'Ahiazu Mbaise', 'Ehime Mbano', 'Ezinihitte', 'Ideato North',
+            'Ideato South', 'Ihitte/Uboma', 'Ikeduru', 'Isiala Mbano',
+            'Isu', 'Mbaitoli', 'Ngor Okpala', 'Njaba', 'Nkwerre',
+            'Nwangele', 'Obowo', 'Oguta', 'Ohaji/Egbema', 'Okigwe',
+            'Onuimo', 'Orlu', 'Orsu', 'Oru East', 'Oru West'
+          ],
+          'Abia': [
+            'Aba North', 'Aba South', 'Arochukwu', 'Bende', 'Ikwuano',
+            'Isiala Ngwa North', 'Isiala Ngwa South', 'Isuikwuato', 'Obi Ngwa',
+            'Ohafia', 'Osisioma', 'Ugwunagbo', 'Ukwa East', 'Ukwa West',
+            'Umuahia North', 'Umuahia South', 'Umu Nneochi'
+          ],
+          'Enugu': [
+            'Enugu East', 'Enugu North', 'Enugu South', 'Aninri', 'Awgu',
+            'Ezeagu', 'Igbo Etiti', 'Igbo Eze North', 'Igbo Eze South',
+            'Isi Uzo', 'Nkanu East', 'Nkanu West', 'Nsukka', 'Oji River',
+            'Udenu', 'Udi', 'Uzo Uwani'
+          ],
+          'Ebonyi': [
+            'Abakaliki', 'Afikpo North', 'Afikpo South', 'Ebonyi', 'Ezza North',
+            'Ezza South', 'Ikwo', 'Ishielu', 'Ivo', 'Izzi', 'Ohaozara',
+            'Ohaukwu', 'Onicha'
+          ],
+          'Ekiti': [
+            'Ado Ekiti', 'Efon', 'Ekiti East', 'Ekiti South-West', 'Ekiti West',
+            'Emure', 'Gbonyin', 'Ido Osi', 'Ijero', 'Ikere', 'Ikole',
+            'Ilejemeje', 'Irepodun/Ifelodun', 'Ise/Orun', 'Moba', 'Oye'
+          ],
+          'Ondo': [
+            'Akoko North-East', 'Akoko North-West', 'Akoko South-West', 'Akoko South-East',
+            'Akure North', 'Akure South', 'Ese Odo', 'Idanre', 'Ifedore',
+            'Ilaje', 'Ile Oluji/Okeigbo', 'Irele', 'Odigbo', 'Okitipupa',
+            'Ondo East', 'Ondo West', 'Ose', 'Owo'
+          ],
+          'Osun': [
+            'Aiyedaade', 'Aiyedire', 'Atakumosa East', 'Atakumosa West', 'Boluwaduro',
+            'Boripe', 'Ede North', 'Ede South', 'Egbedore', 'Ejigbo',
+            'Ife Central', 'Ife East', 'Ife North', 'Ife South', 'Ifedayo',
+            'Ifelodun', 'Ila', 'Ilesa East', 'Ilesa West', 'Irepodun',
+            'Irewole', 'Isokan', 'Iwo', 'Obokun', 'Odo Otin', 'Ola Oluwa',
+            'Olorunda', 'Oriade', 'Orolu', 'Osogbo'
+          ],
+          'Ogun': [
+            'Abeokuta North', 'Abeokuta South', 'Ado-Odo/Ota', 'Egbado North',
+            'Egbado South', 'Ewekoro', 'Ifo', 'Ijebu East', 'Ijebu North',
+            'Ijebu North East', 'Ijebu Ode', 'Ikenne', 'Imeko Afon',
+            'Ipokia', 'Obafemi Owode', 'Odeda', 'Odogbolu', 'Ogun Waterside',
+            'Remo North', 'Shagamu'
+          ]
+        };
+        
+        if (stateCities[state]) {
+          locations = stateCities[state].map(city => ({
+            name: city,
+            formatted_address: `${city}, ${state}, Nigeria`,
+            place_id: `${state.toLowerCase().replace(/\s+/g, '_')}_${city.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_').replace(/'/g, '')}`,
             types: ['locality', 'political']
           }));
           break;
