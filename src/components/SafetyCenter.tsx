@@ -166,7 +166,7 @@ const SafetyCenter = () => {
   return (
     <div className="space-y-6">
       {/* Header with Panic Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
@@ -174,13 +174,21 @@ const SafetyCenter = () => {
           </h1>
           <p className="text-muted-foreground">Community safety alerts and emergency reporting</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <PanicButton />
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2 hidden md:flex">
             <Plus className="h-4 w-4" />
             Report Incident
           </Button>
         </div>
+      </div>
+      
+      {/* Mobile Report Button */}
+      <div className="md:hidden">
+        <Button className="w-full flex items-center justify-center gap-2">
+          <Plus className="h-4 w-4" />
+          Report Incident
+        </Button>
       </div>
 
       {/* Quick Stats */}
