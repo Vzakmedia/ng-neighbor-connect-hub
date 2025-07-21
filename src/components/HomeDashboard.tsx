@@ -181,7 +181,8 @@ const HomeDashboard = () => {
 
       {/* Nextdoor-Style Dashboard Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        {/* Desktop Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center">
             <Home className="h-4 w-4 mr-2" />
             Overview
@@ -199,10 +200,38 @@ const HomeDashboard = () => {
             Local Deals
           </TabsTrigger>
         </TabsList>
+        
+        {/* Mobile Tabs - Scrollable */}
+        <div className="md:hidden">
+          <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
+            <TabsTrigger value="overview" className="flex items-center justify-center py-2">
+              <Home className="h-4 w-4 mr-1" />
+              <span className="text-sm">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="automations" className="flex items-center justify-center py-2">
+              <Settings className="h-4 w-4 mr-1" />
+              <span className="text-sm">Auto</span>
+            </TabsTrigger>
+          </TabsList>
+          <div className="flex gap-1 mt-2">
+            <TabsList className="flex-1">
+              <TabsTrigger value="insights" className="w-full flex items-center justify-center py-2">
+                <Activity className="h-4 w-4 mr-1" />
+                <span className="text-sm">Insights</span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsList className="flex-1">
+              <TabsTrigger value="ads" className="w-full flex items-center justify-center py-2">
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span className="text-sm">Deals</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {quickStats.map((stat, index) => {
               const Icon = stat.icon;
               
@@ -228,33 +257,34 @@ const HomeDashboard = () => {
               return (
                 <Card 
                   key={index} 
-                  className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer transform hover:scale-105"
+                  className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105"
                   onClick={handleStatClick}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 md:p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
-                      <Badge variant="secondary" className="text-xs">
-                        <TrendingUp className="h-3 w-3 mr-1" />
+                      <Icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                        <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
                         {stat.trend}
                       </Badge>
                     </div>
-                    <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                    <div className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Main Feed */}
             <div className="lg:col-span-2">
               <Card className="shadow-card">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Community Updates</CardTitle>
-                    <div className="flex space-x-2">
+                <CardHeader className="pb-3">
+                  <div className="space-y-3 md:space-y-0 md:flex md:items-center md:justify-between">
+                    <CardTitle className="text-lg md:text-xl">Community Updates</CardTitle>
+                    {/* Desktop filter buttons */}
+                    <div className="hidden md:flex space-x-2">
                       {['all', 'safety', 'events', 'marketplace'].map((tab) => (
                         <Button
                           key={tab}
@@ -267,18 +297,34 @@ const HomeDashboard = () => {
                         </Button>
                       ))}
                     </div>
+                    {/* Mobile filter buttons - scrollable */}
+                    <div className="md:hidden">
+                      <div className="flex space-x-2 overflow-x-auto pb-1">
+                        {['all', 'safety', 'events', 'marketplace'].map((tab) => (
+                          <Button
+                            key={tab}
+                            variant={activeTab === tab ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveTab(tab)}
+                            className="capitalize whitespace-nowrap flex-shrink-0 text-sm px-3 py-1.5"
+                          >
+                            {tab}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 md:px-6">
                   <CommunityFeed activeTab={activeTab} />
                 </CardContent>
               </Card>
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Sponsored Ads */}
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {advertisements.slice(0, 1).map((ad) => (
                   <AdvertisementCard key={ad.id} ad={ad} />
                 ))}
@@ -286,42 +332,43 @@ const HomeDashboard = () => {
 
               {/* Upcoming Events */}
               <Card className="shadow-card">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center">
-                      <Calendar className="h-5 w-5 mr-2 text-community-yellow" />
-                      Upcoming Events
+                    <CardTitle className="flex items-center text-base md:text-lg">
+                      <Calendar className="h-4 w-4 md:h-5 md:w-5 mr-2 text-community-yellow" />
+                      <span>Upcoming Events</span>
                     </CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => navigate('/events')}
                       title="View all events"
+                      className="h-8 w-8 p-0"
                     >
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="px-3 md:px-6">
+                  <div className="space-y-3 md:space-y-4">
                     {upcomingEvents.slice(0, 2).map((event) => (
                       <div 
                         key={event.id} 
-                        className="border-l-4 border-primary pl-4 pb-4 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors"
+                        className="border-l-4 border-primary pl-3 md:pl-4 pb-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors touch-manipulation active:bg-muted/70"
                         onClick={() => navigate('/events')}
                         title={`View details for ${event.title}`}
                       >
-                        <h4 className="font-medium mb-1">{event.title}</h4>
-                        <div className="flex items-center text-sm text-muted-foreground mb-2">
+                        <h4 className="font-medium mb-1 text-sm md:text-base">{event.title}</h4>
+                        <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
                           <Clock className="h-3 w-3 mr-1" />
                           {event.date} at {event.time}
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground mb-2">
+                        <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-2">
                           <MapPin className="h-3 w-3 mr-1" />
                           {event.location}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs md:text-sm text-muted-foreground">
                             {event.attendees} attending
                           </span>
                           <Badge variant="outline" className="text-xs">
@@ -336,31 +383,31 @@ const HomeDashboard = () => {
 
               {/* Safety Alerts */}
               <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <AlertTriangle className="h-5 w-5 mr-2 text-destructive" />
-                    Safety & Alerts
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base md:text-lg">
+                    <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 mr-2 text-destructive" />
+                    <span>Safety & Alerts</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-3 md:px-6">
+                  <div className="space-y-2 md:space-y-3">
                     {safetyAlerts.map((alert) => (
                       <div 
                         key={alert.id} 
-                        className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                        className="p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors touch-manipulation active:bg-muted/80"
                         onClick={() => navigate('/safety')}
                         title={`View details for ${alert.title}`}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-sm">{alert.title}</h4>
+                        <div className="flex items-start justify-between mb-1.5 md:mb-2">
+                          <h4 className="font-medium text-sm md:text-base">{alert.title}</h4>
                           <Badge 
                             variant={alert.severity === 'high' ? 'destructive' : alert.severity === 'medium' ? 'default' : 'secondary'}
-                            className="text-xs"
+                            className="text-xs px-1.5 py-0.5"
                           >
                             {alert.severity}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">{alert.description}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground mb-1.5 md:mb-2">{alert.description}</p>
                         <span className="text-xs text-muted-foreground">{alert.time}</span>
                       </div>
                     ))}
@@ -450,8 +497,8 @@ const HomeDashboard = () => {
           <NeighborhoodInsights />
         </TabsContent>
 
-        <TabsContent value="ads" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent value="ads" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {advertisements.map((ad) => (
               <AdvertisementCard key={ad.id} ad={ad} />
             ))}

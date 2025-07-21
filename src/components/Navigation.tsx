@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import CreatePostDialog from './CreatePostDialog';
 import { 
   Home, 
@@ -75,31 +76,81 @@ const Navigation = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-50">
-        <div className="grid grid-cols-4 h-16">
-          {navItems.slice(0, 4).map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavigation(item.path)}
-                className={`flex flex-col items-center justify-center space-y-1 ${
-                  location.pathname === item.path
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                <div className="relative">
-                  <Icon className="h-5 w-5" />
-                  {item.count > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
-                      {item.count}
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-xs">{item.label}</span>
-              </button>
-            );
-          })}
+        <div className="flex h-16">
+          {/* Main nav items - 4 columns */}
+          <div className="flex-1 grid grid-cols-4">
+            {navItems.slice(0, 4).map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`flex flex-col items-center justify-center space-y-1 transition-colors touch-manipulation ${
+                    location.pathname === item.path
+                      ? 'text-primary bg-primary/5'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon className="h-5 w-5" />
+                    {item.count > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-3 w-3 rounded-full p-0 flex items-center justify-center text-xs border border-background">
+                        {item.count > 9 ? '9+' : item.count}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          
+          {/* More menu for additional items */}
+          <div className="w-16 flex items-center justify-center border-l">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation h-full w-full">
+                  <div className="h-5 w-5 flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-0.5">
+                      <div className="w-1 h-1 bg-current rounded-full"></div>
+                      <div className="w-1 h-1 bg-current rounded-full"></div>
+                      <div className="w-1 h-1 bg-current rounded-full"></div>
+                      <div className="w-1 h-1 bg-current rounded-full"></div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium">More</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top" className="mb-2">
+                {navItems.slice(4).map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={item.id}
+                      onClick={() => handleNavigation(item.path)}
+                      className="flex items-center py-3"
+                    >
+                      <Icon className="mr-3 h-4 w-4" />
+                      <span>{item.label}</span>
+                      {item.count > 0 && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {item.count}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setCreatePostOpen(true)}
+                  className="flex items-center py-3 text-primary"
+                >
+                  <Plus className="mr-3 h-4 w-4" />
+                  <span>Create Post</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </nav>
 

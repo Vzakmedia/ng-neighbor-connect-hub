@@ -115,3 +115,68 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Additional community-specific styles */
+.community-colors {
+  --community-blue: 217 91% 60%;
+  --community-green: 134 61% 41%;
+  --community-yellow: 48 96% 53%;
+  --community-red: 354 70% 54%;
+}
+
+/* Mobile touch enhancements */
+@media (max-width: 768px) {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Larger touch targets for mobile */
+  button, 
+  [role="button"] {
+    min-height: 44px;
+  }
+  
+  /* Better tap highlights */
+  * {
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.1);
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Mobile-specific card styles */
+  .mobile-card {
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.08);
+  }
+  
+  /* Mobile typography adjustments */
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-compact .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+  
+  .mobile-compact .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+  
+  /* Better mobile form inputs */
+  input[type="text"], 
+  input[type="email"], 
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}

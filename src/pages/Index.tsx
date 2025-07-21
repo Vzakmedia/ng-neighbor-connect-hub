@@ -32,8 +32,8 @@ const Index = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
+      <main className="md:ml-64 pb-20 md:pb-0 pt-2 md:pt-0">
+        <div className="container px-4 md:px-6 py-3 md:py-6">
           <HomeDashboard />
         </div>
       </main>
