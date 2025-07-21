@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import CreatePostDialog from './CreatePostDialog';
 import { 
   Home, 
   MessageSquare, 
@@ -15,6 +16,7 @@ import {
 const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [createPostOpen, setCreatePostOpen] = useState(false);
   
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
@@ -35,7 +37,10 @@ const Navigation = () => {
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 bg-card border-r">
         <div className="flex-1 flex flex-col min-h-0 pt-4">
           <div className="px-4 mb-4">
-            <Button className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
+            <Button 
+              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+              onClick={() => setCreatePostOpen(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Post
             </Button>
@@ -97,6 +102,12 @@ const Navigation = () => {
           })}
         </div>
       </nav>
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen} 
+      />
     </>
   );
 };

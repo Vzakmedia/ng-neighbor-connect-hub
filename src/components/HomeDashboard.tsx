@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +17,12 @@ import {
 } from 'lucide-react';
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
+import CreatePostDialog from './CreatePostDialog';
 
 const HomeDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   const quickStats = [
     { icon: Users, label: 'Active Neighbors', value: '2,400+', color: 'text-community-blue', trend: '+12%' },
@@ -122,7 +126,10 @@ const HomeDashboard = () => {
             <h2 className="text-lg font-semibold mb-1">Good morning! 👋</h2>
             <p className="text-white/90 text-sm">What's happening in your neighborhood today?</p>
           </div>
-          <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+          <Button 
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+            onClick={() => setCreatePostOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Create Post
           </Button>
@@ -133,8 +140,32 @@ const HomeDashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {quickStats.map((stat, index) => {
           const Icon = stat.icon;
+          
+          const handleStatClick = () => {
+            switch (stat.label) {
+              case 'Active Neighbors':
+                navigate('/community');
+                break;
+              case 'Posts Today':
+                setActiveTab('all');
+                break;
+              case 'Upcoming Events':
+                navigate('/events');
+                break;
+              case 'Items for Sale':
+                navigate('/marketplace');
+                break;
+              default:
+                break;
+            }
+          };
+          
           return (
-            <Card key={index} className="bg-gradient-card shadow-card hover:shadow-elevated transition-shadow">
+            <Card 
+              key={index} 
+              className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer transform hover:scale-105"
+              onClick={handleStatClick}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <Icon className={`h-5 w-5 ${stat.color}`} />
@@ -174,7 +205,7 @@ const HomeDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <CommunityFeed />
+              <CommunityFeed activeTab={activeTab} />
             </CardContent>
           </Card>
         </div>
@@ -189,7 +220,12 @@ const HomeDashboard = () => {
                   <Calendar className="h-5 w-5 mr-2 text-community-yellow" />
                   Upcoming Events
                 </CardTitle>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/events')}
+                  title="View all events"
+                >
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -197,7 +233,12 @@ const HomeDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {upcomingEvents.map((event) => (
-                  <div key={event.id} className="border-l-4 border-primary pl-4 pb-4 last:pb-0">
+                  <div 
+                    key={event.id} 
+                    className="border-l-4 border-primary pl-4 pb-4 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors"
+                    onClick={() => navigate('/events')}
+                    title={`View details for ${event.title}`}
+                  >
                     <h4 className="font-medium mb-1">{event.title}</h4>
                     <div className="flex items-center text-sm text-muted-foreground mb-2">
                       <Clock className="h-3 w-3 mr-1" />
@@ -232,7 +273,12 @@ const HomeDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {safetyAlerts.map((alert) => (
-                  <div key={alert.id} className="p-3 rounded-lg bg-muted/50">
+                  <div 
+                    key={alert.id} 
+                    className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => navigate('/safety')}
+                    title={`View details for ${alert.title}`}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-sm">{alert.title}</h4>
                       <Badge 
@@ -258,7 +304,12 @@ const HomeDashboard = () => {
                   <ShoppingBag className="h-5 w-5 mr-2 text-community-green" />
                   Marketplace
                 </CardTitle>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/marketplace')}
+                  title="View marketplace"
+                >
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -266,7 +317,11 @@ const HomeDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {marketplaceHighlights.slice(0, 3).map((item) => (
-                  <div key={item.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div 
+                    key={item.id} 
+                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => navigate('/marketplace')}
+                  >
                     <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
                       <ShoppingBag className="h-5 w-5 text-muted-foreground" />
                     </div>
@@ -292,7 +347,11 @@ const HomeDashboard = () => {
             <CardContent>
               <div className="space-y-2">
                 {trendingTopics.map((topic, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => setActiveTab('all')} // This could filter by hashtag in the future
+                  >
                     <span className="font-medium text-sm text-primary">{topic.tag}</span>
                     <span className="text-xs text-muted-foreground">{topic.posts} posts</span>
                   </div>
@@ -302,6 +361,12 @@ const HomeDashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen} 
+      />
     </div>
   );
 };

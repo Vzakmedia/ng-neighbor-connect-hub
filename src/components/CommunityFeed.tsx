@@ -31,7 +31,11 @@ interface Post {
   isLiked: boolean;
 }
 
-const CommunityFeed = () => {
+interface CommunityFeedProps {
+  activeTab?: string;
+}
+
+const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([
     {
       id: '1',
@@ -122,9 +126,23 @@ const CommunityFeed = () => {
     ));
   };
 
+  // Filter posts based on active tab
+  const filteredPosts = posts.filter(post => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'events') return post.type === 'event';
+    if (activeTab === 'safety') return post.type === 'safety';
+    if (activeTab === 'marketplace') return post.type === 'marketplace';
+    return post.type === activeTab;
+  });
+
   return (
     <div className="space-y-4">
-      {posts.map((post) => {
+      {filteredPosts.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No posts found for this category.</p>
+        </div>
+      ) : (
+        filteredPosts.map((post) => {
         const typeBadge = getPostTypeBadge(post.type);
         return (
           <Card key={post.id} className="shadow-card hover:shadow-elevated transition-shadow">
@@ -183,7 +201,8 @@ const CommunityFeed = () => {
             </CardContent>
           </Card>
         );
-      })}
+        })
+      )}
     </div>
   );
 };
