@@ -15,6 +15,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import CommunityFeed from './CommunityFeed';
+import HeroSection from './HeroSection';
 
 const HomeDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -111,12 +112,15 @@ const HomeDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-primary rounded-lg p-6 text-white">
+      {/* Hero Section */}
+      <HeroSection />
+
+      {/* Welcome Section - now more compact */}
+      <div className="bg-gradient-primary rounded-lg p-4 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Good morning! 👋</h1>
-            <p className="text-white/90">What's happening in your neighborhood today?</p>
+            <h2 className="text-lg font-semibold mb-1">Good morning! 👋</h2>
+            <p className="text-white/90 text-sm">What's happening in your neighborhood today?</p>
           </div>
           <Button className="bg-white/20 hover:bg-white/30 text-white border-white/30">
             <Plus className="h-4 w-4 mr-2" />
