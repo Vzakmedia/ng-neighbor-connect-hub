@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Community from "./pages/Community";
 import MarketplacePage from "./pages/MarketplacePage";
+import Safety from "./pages/Safety";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/landing" element={<Landing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/safety" element={<Safety />} />
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

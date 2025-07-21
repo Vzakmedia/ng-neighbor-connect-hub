@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_notifications: {
+        Row: {
+          alert_id: string | null
+          id: string
+          is_read: boolean | null
+          notification_type: string
+          panic_alert_id: string | null
+          read_at: string | null
+          recipient_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          alert_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_type: string
+          panic_alert_id?: string | null
+          read_at?: string | null
+          recipient_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          alert_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          notification_type?: string
+          panic_alert_id?: string | null
+          read_at?: string | null
+          recipient_id?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_notifications_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "safety_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_notifications_panic_alert_id_fkey"
+            columns: ["panic_alert_id"]
+            isOneToOne: false
+            referencedRelation: "panic_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alert_responses: {
+        Row: {
+          alert_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          response_type: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          response_type: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          response_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_responses_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "safety_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -58,6 +141,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      emergency_contacts: {
+        Row: {
+          contact_name: string
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          phone_number: string
+          relationship: string | null
+          user_id: string
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          phone_number: string
+          relationship?: string | null
+          user_id: string
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          phone_number?: string
+          relationship?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       marketplace_items: {
         Row: {
@@ -138,6 +251,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      panic_alerts: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_resolved: boolean | null
+          latitude: number
+          longitude: number
+          message: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          latitude: number
+          longitude: number
+          message?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          latitude?: number
+          longitude?: number
+          message?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -231,6 +383,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      safety_alerts: {
+        Row: {
+          address: string | null
+          alert_type: Database["public"]["Enums"]["safety_alert_type"]
+          created_at: string
+          description: string
+          id: string
+          images: string[] | null
+          is_verified: boolean | null
+          latitude: number | null
+          longitude: number | null
+          severity: Database["public"]["Enums"]["alert_severity"] | null
+          status: Database["public"]["Enums"]["alert_status"] | null
+          title: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          alert_type: Database["public"]["Enums"]["safety_alert_type"]
+          created_at?: string
+          description: string
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          severity?: Database["public"]["Enums"]["alert_severity"] | null
+          status?: Database["public"]["Enums"]["alert_status"] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          alert_type?: Database["public"]["Enums"]["safety_alert_type"]
+          created_at?: string
+          description?: string
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          severity?: Database["public"]["Enums"]["alert_severity"] | null
+          status?: Database["public"]["Enums"]["alert_status"] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
       }
       service_bookings: {
         Row: {
@@ -359,6 +568,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -368,6 +581,8 @@ export type Database = {
       }
     }
     Enums: {
+      alert_severity: "low" | "medium" | "high" | "critical"
+      alert_status: "active" | "resolved" | "investigating" | "false_alarm"
       app_role: "admin" | "user"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
       item_category:
@@ -382,6 +597,17 @@ export type Database = {
         | "tools"
         | "other"
       listing_status: "active" | "sold" | "pending" | "cancelled"
+      safety_alert_type:
+        | "break_in"
+        | "theft"
+        | "accident"
+        | "suspicious_activity"
+        | "harassment"
+        | "fire"
+        | "flood"
+        | "power_outage"
+        | "road_closure"
+        | "other"
       service_category:
         | "home_repair"
         | "tutoring"
@@ -521,6 +747,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["low", "medium", "high", "critical"],
+      alert_status: ["active", "resolved", "investigating", "false_alarm"],
       app_role: ["admin", "user"],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
       item_category: [
@@ -536,6 +764,18 @@ export const Constants = {
         "other",
       ],
       listing_status: ["active", "sold", "pending", "cancelled"],
+      safety_alert_type: [
+        "break_in",
+        "theft",
+        "accident",
+        "suspicious_activity",
+        "harassment",
+        "fire",
+        "flood",
+        "power_outage",
+        "road_closure",
+        "other",
+      ],
       service_category: [
         "home_repair",
         "tutoring",
