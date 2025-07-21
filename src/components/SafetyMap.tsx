@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { Loader } from '@googlemaps/js-api-loader';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -30,54 +29,62 @@ interface SafetyMapProps {
 
 const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
+  const map = useRef<any>(null);
+  const markers = useRef<any[]>([]);
+  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    // Get Mapbox token from edge function
-    const getMapboxToken = async () => {
+    // Get Google Maps API key from edge function
+    const getGoogleMapsApiKey = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        const { data, error } = await supabase.functions.invoke('get-google-maps-token');
         if (error) throw error;
-        setMapboxToken(data.token);
+        setGoogleMapsApiKey(data.token);
       } catch (error) {
-        console.error('Error getting Mapbox token:', error);
+        console.error('Error getting Google Maps API key:', error);
         // Fallback: Use a placeholder token for development
-        setMapboxToken('pk.placeholder-token');
+        setGoogleMapsApiKey('placeholder-token');
       }
     };
 
-    getMapboxToken();
+    getGoogleMapsApiKey();
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || mapboxToken === 'pk.placeholder-token') return;
+    if (!mapContainer.current || !googleMapsApiKey || googleMapsApiKey === 'placeholder-token') return;
 
-    // Initialize map
-    mapboxgl.accessToken = mapboxToken;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [3.3792, 6.5244], // Lagos, Nigeria coordinates
-      zoom: 11,
+    // Initialize Google Maps
+    const loader = new Loader({
+      apiKey: googleMapsApiKey,
+      version: 'weekly',
+      libraries: ['places']
     });
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    loader.load().then(async () => {
+      if (!mapContainer.current) return;
 
-    // Clean up on unmount
-    return () => {
-      map.current?.remove();
-    };
-  }, [mapboxToken]);
+      map.current = new (window as any).google.maps.Map(mapContainer.current, {
+        center: { lat: 6.5244, lng: 3.3792 }, // Lagos, Nigeria coordinates
+        zoom: 11,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+      });
+
+      setMapLoaded(true);
+    }).catch((error) => {
+      console.error('Error loading Google Maps:', error);
+    });
+  }, [googleMapsApiKey]);
 
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapLoaded) return;
 
     // Clear existing markers
-    const existingMarkers = document.querySelectorAll('.mapbox-marker');
-    existingMarkers.forEach(marker => marker.remove());
+    markers.current.forEach(marker => marker.setMap(null));
+    markers.current = [];
 
     // Add markers for each alert
     alerts.forEach((alert) => {
@@ -90,67 +97,60 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         critical: '#EF4444'  // red
       };
 
-      // Create marker element
-      const markerEl = document.createElement('div');
-      markerEl.className = 'mapbox-marker';
-      markerEl.style.cssText = `
-        width: 30px;
-        height: 30px;
-        background-color: ${severityColors[alert.severity]};
-        border: 3px solid white;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        color: white;
-        font-weight: bold;
-      `;
-
-      // Add severity indicator
-      markerEl.textContent = alert.severity === 'critical' ? '!' : 
-                            alert.severity === 'high' ? '⚠' : 
-                            alert.severity === 'medium' ? '!' : 'i';
-
-      // Create popup
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div class="p-3">
-          <h3 class="font-semibold text-lg mb-2">${alert.title}</h3>
-          <p class="text-sm text-muted-foreground mb-2">${alert.description}</p>
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-xs px-2 py-1 rounded" style="background-color: ${severityColors[alert.severity]}; color: white;">
-              ${alert.severity.toUpperCase()}
-            </span>
-            <span class="text-xs text-muted-foreground">
-              ${alert.alert_type.replace('_', ' ')}
-            </span>
-          </div>
-          <p class="text-xs text-muted-foreground">${alert.address}</p>
-        </div>
-      `);
+      // Create custom marker icon
+      const markerIcon = {
+        path: (window as any).google.maps.SymbolPath.CIRCLE,
+        scale: 12,
+        fillColor: severityColors[alert.severity],
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+      };
 
       // Create marker
-      const marker = new mapboxgl.Marker(markerEl)
-        .setLngLat([alert.longitude, alert.latitude])
-        .setPopup(popup)
-        .addTo(map.current!);
+      const marker = new (window as any).google.maps.Marker({
+        position: { lat: alert.latitude, lng: alert.longitude },
+        map: map.current,
+        icon: markerIcon,
+        title: alert.title,
+      });
 
-      // Add click handler
-      markerEl.addEventListener('click', () => {
+      // Create info window
+      const infoWindow = new (window as any).google.maps.InfoWindow({
+        content: `
+          <div style="padding: 12px; max-width: 300px;">
+            <h3 style="font-weight: 600; font-size: 18px; margin-bottom: 8px;">${alert.title}</h3>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 8px;">${alert.description}</p>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="background-color: ${severityColors[alert.severity]}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                ${alert.severity.toUpperCase()}
+              </span>
+              <span style="color: #6b7280; font-size: 12px;">
+                ${alert.alert_type.replace('_', ' ')}
+              </span>
+            </div>
+            <p style="color: #6b7280; font-size: 12px;">${alert.address}</p>
+          </div>
+        `
+      });
+
+      // Add click listeners
+      marker.addListener('click', () => {
+        infoWindow.open(map.current, marker);
         onAlertClick(alert);
       });
-    });
-  }, [alerts, onAlertClick]);
 
-  if (!mapboxToken || mapboxToken === 'pk.placeholder-token') {
+      markers.current.push(marker);
+    });
+  }, [alerts, onAlertClick, mapLoaded]);
+
+  if (!googleMapsApiKey || googleMapsApiKey === 'placeholder-token') {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center">
           <h3 className="text-lg font-semibold mb-2">Map Not Available</h3>
           <p className="text-muted-foreground">
-            Please configure your Mapbox token in Supabase Edge Function secrets
+            Please configure your Google Maps API key in Supabase Edge Function secrets
           </p>
         </div>
       </div>

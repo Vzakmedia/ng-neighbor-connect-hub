@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
+    const token = Deno.env.get('GOOGLE_MAPS_API_KEY');
     
     if (!token) {
-      throw new Error('MAPBOX_PUBLIC_TOKEN not configured in edge function secrets');
+      throw new Error('GOOGLE_MAPS_API_KEY not configured in edge function secrets');
     }
 
     return new Response(
@@ -26,7 +26,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error getting Mapbox token:', error);
+    console.error('Error getting Google Maps API key:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
