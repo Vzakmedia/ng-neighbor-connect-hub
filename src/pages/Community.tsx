@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import HomeDashboard from '@/components/HomeDashboard';
+import CommunityBoards from '@/components/CommunityBoards';
 import { useAuth } from "@/hooks/useAuth";
 
-const Index = () => {
+const Community = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -33,12 +33,12 @@ const Index = () => {
       <Navigation />
       
       <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
-          <HomeDashboard />
+        <div className="py-6">
+          <CommunityBoards />
         </div>
       </main>
     </div>
   );
 };
 
-export default Index;
+export default Community;

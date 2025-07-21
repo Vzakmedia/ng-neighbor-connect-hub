@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,16 +13,21 @@ import {
 } from 'lucide-react';
 
 const Navigation = () => {
-  const [activeTab, setActiveTab] = useState('home');
-
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const navItems = [
-    { id: 'home', icon: Home, label: 'Home', count: 0 },
-    { id: 'community', icon: MessageSquare, label: 'Community', count: 5 },
-    { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0 },
-    { id: 'safety', icon: Shield, label: 'Safety', count: 2 },
-    { id: 'events', icon: Calendar, label: 'Events', count: 1 },
-    { id: 'services', icon: Users, label: 'Services', count: 0 },
+    { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
+    { id: 'community', icon: MessageSquare, label: 'Community', count: 5, path: '/community' },
+    { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'safety', icon: Shield, label: 'Safety', count: 2, path: '/safety' },
+    { id: 'events', icon: Calendar, label: 'Events', count: 1, path: '/events' },
+    { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
   ];
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
   return (
     <>
@@ -41,9 +47,9 @@ const Navigation = () => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleNavigation(item.path)}
                   className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                    activeTab === item.id
+                    location.pathname === item.path
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-foreground hover:bg-muted'
                   }`}
@@ -70,9 +76,9 @@ const Navigation = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleNavigation(item.path)}
                 className={`flex flex-col items-center justify-center space-y-1 ${
-                  activeTab === item.id
+                  location.pathname === item.path
                     ? 'text-primary'
                     : 'text-muted-foreground'
                 }`}
