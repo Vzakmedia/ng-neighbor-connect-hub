@@ -26,6 +26,8 @@ interface WebhookPayload {
 }
 
 serve(async (req) => {
+  console.log("Emergency contact invitation function triggered");
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

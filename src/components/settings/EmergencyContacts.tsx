@@ -225,6 +225,7 @@ const EmergencyContacts = () => {
     
     setLoading(true);
     try {
+      // Insert the contact in the emergency_contacts table
       const { data, error } = await supabase
         .from('emergency_contacts')
         .insert({
@@ -241,6 +242,48 @@ const EmergencyContacts = () => {
         .single();
         
       if (error) throw error;
+      
+      // Create a contact request if the contact is not pre-confirmed
+      try {
+        const { data: request, error: requestError } = await supabase
+          .from('emergency_contact_requests')
+          .insert({
+            sender_id: user.id,
+            recipient_phone: formData.phone_number,
+            status: 'pending'
+          })
+          .select()
+          .single();
+        
+        if (requestError) {
+          console.error('Error creating contact request:', requestError);
+        } else {
+          console.log('Contact request created:', request);
+          
+          // Manually trigger the edge function
+          try {
+            await fetch('https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/emergency-contact-invitation', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              },
+              body: JSON.stringify({
+                type: 'INSERT',
+                table: 'emergency_contact_requests',
+                record: request,
+                schema: 'public',
+                old_record: null
+              })
+            });
+            console.log('Edge function triggered manually');
+          } catch (edgeFuncError) {
+            console.error('Error triggering edge function:', edgeFuncError);
+          }
+        }
+      } catch (e) {
+        console.error('Error in contact request creation:', e);
+      }
       
       toast({
         title: "Emergency Contact Added",
