@@ -80,7 +80,7 @@ All colors MUST be HSL.
   animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-  .dark {
+.dark {
     --background: 140 20% 5%;
     --foreground: 0 0% 98%;
 
@@ -118,7 +118,6 @@ All colors MUST be HSL.
     --sidebar-border: 140 15% 15%;
     --sidebar-ring: 138 62% 47%;
   }
-}
 
 @layer base {
   * {
