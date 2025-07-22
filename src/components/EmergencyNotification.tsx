@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, X, Bell, PhoneCall, UserPlus, Check, Mails } from 'lucide-react';
+import { playNotification } from '@/utils/audioUtils';
 
 interface EmergencyNotificationProps {
   position?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left';
@@ -124,11 +125,11 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
           if (payload.new) {
             loadNotifications();
             if (payload.new.notification_type === 'panic_alert') {
-              const alertSound = new Audio('/alert.mp3');
-              alertSound.play().catch(err => console.error('Error playing alert sound:', err));
+              // Play emergency alert sound automatically
+              playNotification('emergency', 0.8);
               
               toast({
-                title: "Emergency Alert",
+                title: "🚨 EMERGENCY ALERT",
                 description: "Someone needs your help! Check your emergency notifications.",
                 variant: "destructive",
               });
@@ -158,8 +159,8 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         (payload) => {
           if (payload.new && payload.new.notification_sent) {
             loadNotifications();
-            const messageSound = new Audio('/notification.mp3');
-            messageSound.play().catch(err => console.error('Error playing notification sound:', err));
+            // Play normal notification sound for contact requests
+            playNotification('normal', 0.5);
             
             toast({
               title: "Emergency Contact Request",
