@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { 
   AlertTriangle, 
   Phone, 
@@ -12,7 +14,8 @@ import {
   Shield,
   Zap,
   CheckCircle,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +28,44 @@ const PanicButton = () => {
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'other'>('other');
+  const [preferences, setPreferences] = useState<any>(null);
+
+  const situationTypes = [
+    { value: 'medical_emergency', label: 'Medical Emergency', icon: '🏥' },
+    { value: 'fire', label: 'Fire', icon: '🔥' },
+    { value: 'break_in', label: 'Break In', icon: '🔓' },
+    { value: 'assault', label: 'Assault', icon: '⚠️' },
+    { value: 'accident', label: 'Accident', icon: '🚗' },
+    { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌪️' },
+    { value: 'suspicious_activity', label: 'Suspicious Activity', icon: '👁️' },
+    { value: 'domestic_violence', label: 'Domestic Violence', icon: '🏠' },
+    { value: 'other', label: 'Other', icon: '❓' }
+  ];
+
+  useEffect(() => {
+    loadPreferences();
+  }, [user]);
+
+  const loadPreferences = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('emergency_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (data) {
+        setPreferences(data);
+        setSelectedSituation(data.default_situation_type);
+        setCountdown(data.countdown_duration);
+      }
+    } catch (error) {
+      console.error('Error loading emergency preferences:', error);
+    }
+  };
 
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
@@ -79,26 +120,56 @@ const PanicButton = () => {
       const location = await getCurrentLocation();
       const address = await reverseGeocode(location.latitude, location.longitude);
 
+      // Get user profile for name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
+      const userName = profile?.full_name || 'Someone';
+
       // Create panic alert in database
-      const { error: panicError } = await supabase
+      const { data: panicData, error: panicError } = await supabase
         .from('panic_alerts')
         .insert({
           user_id: user.id,
           latitude: location.latitude,
           longitude: location.longitude,
           address,
-          message: 'Emergency assistance requested'
-        });
+          message: `Emergency assistance requested - ${selectedSituation}`,
+          situation_type: selectedSituation
+        })
+        .select()
+        .single();
 
       if (panicError) throw panicError;
 
-      // Create a safety alert as well for community visibility
+      // Call emergency alert function to notify contacts
+      const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
+        body: {
+          panic_alert_id: panicData.id,
+          situation_type: selectedSituation,
+          location: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            address
+          },
+          user_name: userName
+        }
+      });
+
+      if (alertFunctionError) {
+        console.error('Error calling emergency alert function:', alertFunctionError);
+      }
+
+      // Create a safety alert for community visibility
       const { error: alertError } = await supabase
         .from('safety_alerts')
         .insert({
           user_id: user.id,
           title: 'Emergency Alert',
-          description: 'Someone in your area has requested emergency assistance',
+          description: `Emergency situation reported: ${situationTypes.find(s => s.value === selectedSituation)?.label}`,
           alert_type: 'other',
           severity: 'critical',
           latitude: location.latitude,
@@ -112,7 +183,7 @@ const PanicButton = () => {
       
       toast({
         title: "Emergency Alert Sent",
-        description: "Your emergency contacts and local authorities have been notified",
+        description: "Your emergency contacts and authorities have been notified",
         variant: "default"
       });
 
@@ -143,7 +214,14 @@ const PanicButton = () => {
   const handlePanicButtonPress = () => {
     setIsPressed(true);
     setIsConfirming(true);
-    setCountdown(3);
+    const duration = preferences?.countdown_duration || 3;
+    setCountdown(duration);
+
+    if (duration === 0) {
+      // No countdown, trigger immediately
+      triggerPanicAlert();
+      return;
+    }
 
     // Countdown timer
     const timer = setInterval(() => {
@@ -163,7 +241,7 @@ const PanicButton = () => {
   const cancelPanic = () => {
     setIsPressed(false);
     setIsConfirming(false);
-    setCountdown(3);
+    setCountdown(preferences?.countdown_duration || 3);
   };
 
   if (isActivated) {
@@ -214,27 +292,56 @@ const PanicButton = () => {
           </DialogHeader>
           
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="situation-select">Emergency Situation</Label>
+              <Select value={selectedSituation} onValueChange={(value) => setSelectedSituation(value as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {situationTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
-                <strong>Emergency alert will be sent in {countdown} seconds</strong>
-                <br />
-                This will notify your emergency contacts and local authorities with your location.
+                {countdown > 0 ? (
+                  <>
+                    <strong>Emergency alert will be sent in {countdown} seconds</strong>
+                    <br />
+                    This will notify your emergency contacts and authorities with your location.
+                  </>
+                ) : (
+                  <>
+                    <strong>Sending emergency alert now...</strong>
+                    <br />
+                    Please wait while we notify your contacts.
+                  </>
+                )}
               </AlertDescription>
             </Alert>
 
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Emergency contacts will be called
+                <Users className="h-4 w-4" />
+                Emergency contacts will be alerted via their preferred methods
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Your location will be shared
+                Your real-time location will be shared
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                Local authorities will be notified
+                Community members nearby will be notified
               </div>
             </div>
 

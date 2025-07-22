@@ -18,10 +18,14 @@ import {
   Download,
   Upload,
   Volume2,
-  Play
+  Play,
+  AlertTriangle,
+  Users
 } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
+import EmergencySettings from './EmergencySettings';
+import EmergencyContacts from './EmergencyContacts';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,8 +142,10 @@ const SettingsContent = () => {
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="emergency">Emergency</TabsTrigger>
+          <TabsTrigger value="contacts">Contacts</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="data">Data</TabsTrigger>
@@ -353,6 +359,26 @@ const SettingsContent = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Emergency Tab */}
+        <TabsContent value="emergency">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Emergency Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EmergencySettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Contacts Tab */}
+        <TabsContent value="contacts">
+          <EmergencyContacts />
         </TabsContent>
 
         {/* Privacy Tab */}

@@ -144,30 +144,93 @@ export type Database = {
       }
       emergency_contacts: {
         Row: {
+          can_alert_public: boolean | null
+          can_receive_location: boolean | null
           contact_name: string
           created_at: string
           id: string
           is_primary: boolean | null
+          is_primary_contact: boolean | null
           phone_number: string
+          preferred_methods:
+            | Database["public"]["Enums"]["contact_method"][]
+            | null
           relationship: string | null
           user_id: string
         }
         Insert: {
+          can_alert_public?: boolean | null
+          can_receive_location?: boolean | null
           contact_name: string
           created_at?: string
           id?: string
           is_primary?: boolean | null
+          is_primary_contact?: boolean | null
           phone_number: string
+          preferred_methods?:
+            | Database["public"]["Enums"]["contact_method"][]
+            | null
           relationship?: string | null
           user_id: string
         }
         Update: {
+          can_alert_public?: boolean | null
+          can_receive_location?: boolean | null
           contact_name?: string
           created_at?: string
           id?: string
           is_primary?: boolean | null
+          is_primary_contact?: boolean | null
           phone_number?: string
+          preferred_methods?:
+            | Database["public"]["Enums"]["contact_method"][]
+            | null
           relationship?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emergency_preferences: {
+        Row: {
+          auto_alert_contacts: boolean | null
+          auto_alert_public: boolean | null
+          countdown_duration: number | null
+          created_at: string
+          default_situation_type:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
+          id: string
+          share_location_with_contacts: boolean | null
+          share_location_with_public: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_alert_contacts?: boolean | null
+          auto_alert_public?: boolean | null
+          countdown_duration?: number | null
+          created_at?: string
+          default_situation_type?:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
+          id?: string
+          share_location_with_contacts?: boolean | null
+          share_location_with_public?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_alert_contacts?: boolean | null
+          auto_alert_public?: boolean | null
+          countdown_duration?: number | null
+          created_at?: string
+          default_situation_type?:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
+          id?: string
+          share_location_with_contacts?: boolean | null
+          share_location_with_public?: boolean | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -263,6 +326,9 @@ export type Database = {
           message: string | null
           resolved_at: string | null
           resolved_by: string | null
+          situation_type:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
           user_id: string
         }
         Insert: {
@@ -275,6 +341,9 @@ export type Database = {
           message?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          situation_type?:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
           user_id: string
         }
         Update: {
@@ -287,6 +356,9 @@ export type Database = {
           message?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          situation_type?:
+            | Database["public"]["Enums"]["emergency_situation_type"]
+            | null
           user_id?: string
         }
         Relationships: []
@@ -334,6 +406,51 @@ export type Database = {
           neighborhood?: string | null
           phone?: string | null
           state?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      public_emergency_alerts: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          panic_alert_id: string
+          radius_km: number | null
+          resolved_at: string | null
+          situation_type: Database["public"]["Enums"]["emergency_situation_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          panic_alert_id: string
+          radius_km?: number | null
+          resolved_at?: string | null
+          situation_type: Database["public"]["Enums"]["emergency_situation_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          panic_alert_id?: string
+          radius_km?: number | null
+          resolved_at?: string | null
+          situation_type?: Database["public"]["Enums"]["emergency_situation_type"]
           updated_at?: string
           user_id?: string
         }
@@ -585,6 +702,17 @@ export type Database = {
       alert_status: "active" | "resolved" | "investigating" | "false_alarm"
       app_role: "admin" | "user"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
+      contact_method: "in_app" | "sms" | "whatsapp" | "phone_call"
+      emergency_situation_type:
+        | "medical_emergency"
+        | "fire"
+        | "break_in"
+        | "assault"
+        | "accident"
+        | "natural_disaster"
+        | "suspicious_activity"
+        | "domestic_violence"
+        | "other"
       item_category:
         | "electronics"
         | "furniture"
@@ -751,6 +879,18 @@ export const Constants = {
       alert_status: ["active", "resolved", "investigating", "false_alarm"],
       app_role: ["admin", "user"],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
+      contact_method: ["in_app", "sms", "whatsapp", "phone_call"],
+      emergency_situation_type: [
+        "medical_emergency",
+        "fire",
+        "break_in",
+        "assault",
+        "accident",
+        "natural_disaster",
+        "suspicious_activity",
+        "domestic_violence",
+        "other",
+      ],
       item_category: [
         "electronics",
         "furniture",
