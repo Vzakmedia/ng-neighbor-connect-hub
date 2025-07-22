@@ -321,8 +321,19 @@ const EmergencyContacts = () => {
 
         if (error) throw error;
       } else {
+        // First check if this phone number belongs to a user on the app
+        const { data: matchingProfiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .eq('phone', formData.phone_number)
+          .limit(1);
+          
+        if (profileError) throw profileError;
+        
+        const isAppUser = matchingProfiles && matchingProfiles.length > 0;
+        
         // Create new contact
-        const { error } = await supabase
+        const { data: newContact, error } = await supabase
           .from('emergency_contacts')
           .insert({
             user_id: user.id,
@@ -333,27 +344,46 @@ const EmergencyContacts = () => {
             can_receive_location: formData.can_receive_location,
             can_alert_public: formData.can_alert_public,
             preferred_methods: formData.preferred_methods,
-            is_confirmed: false // New contacts start as unconfirmed
-          });
+            is_confirmed: isAppUser // Auto-confirm if they're an app user
+          })
+          .select()
+          .single();
 
         if (error) throw error;
         
-        toast({
-          title: "Contact saved",
-          description: "Remember to get their confirmation code to verify this contact.",
-        });
+        // If the contact is an app user, send them a notification
+        if (isAppUser) {
+          const appUser = matchingProfiles![0];
+          
+          // Create a contact request for quick connecting
+          const { error: requestError } = await supabase
+            .from('emergency_contact_requests')
+            .insert({
+              sender_id: user.id,
+              recipient_phone: formData.phone_number,
+              recipient_id: appUser.user_id,
+              status: 'pending',
+              notification_sent: true
+            });
+            
+          if (requestError) throw requestError;
+          
+          toast({
+            title: "Contact saved and notified",
+            description: `${formData.contact_name} is on the app and has been notified of your request.`,
+          });
+        } else {
+          toast({
+            title: "Contact saved",
+            description: "Remember to get their confirmation code to verify this contact.",
+          });
+        }
       }
 
       await loadContacts();
       resetForm();
       
-      if (!editingContact) {
-        // Only show this toast for new contacts, not updates
-        toast({
-          title: "Contact saved",
-          description: "Remember to get their confirmation code to verify this contact.",
-        });
-      } else {
+      if (editingContact) {
         toast({
           title: "Contact updated",
           description: "Emergency contact has been successfully updated.",

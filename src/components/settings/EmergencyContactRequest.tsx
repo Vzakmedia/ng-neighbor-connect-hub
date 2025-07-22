@@ -72,6 +72,7 @@ const EmergencyContactRequest = () => {
           recipient_phone,
           status,
           created_at,
+          notification_sent,
           profiles:sender_id (
             full_name,
             avatar_url
@@ -89,6 +90,7 @@ const EmergencyContactRequest = () => {
         sender_id: request.sender_id,
         recipient_phone: request.recipient_phone,
         status: request.status,
+        notification_sent: request.notification_sent,
         created_at: request.created_at,
         sender: request.profiles
       }));
