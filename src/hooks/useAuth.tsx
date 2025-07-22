@@ -12,28 +12,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log("AuthProvider component rendering");
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    console.log("AuthProvider useEffect starting");
+    try {
+      // Set up auth state listener FIRST
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          console.log("Auth state changed:", event, session);
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      );
+      console.log("Auth listener set up successfully");
+
+      // THEN check for existing session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        console.log("Got existing session:", session);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-      }
-    );
+      }).catch((error) => {
+        console.error("Error getting session:", error);
+        setLoading(false);
+      });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      return () => {
+        console.log("Cleaning up auth subscription");
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error("Error in AuthProvider useEffect:", error);
       setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signOut = async () => {
@@ -55,8 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
+  console.log("useAuth hook called");
   const context = useContext(AuthContext);
+  console.log("useAuth context:", context);
   if (context === undefined) {
+    console.error('useAuth called outside of AuthProvider!');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
