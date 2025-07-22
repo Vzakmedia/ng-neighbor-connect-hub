@@ -20,7 +20,7 @@ import {
   Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import SafetyMap from './SafetyMap';
 import PanicButton from './PanicButton';
 import ReportIncidentDialog from './ReportIncidentDialog';

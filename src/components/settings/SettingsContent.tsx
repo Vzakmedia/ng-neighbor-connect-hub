@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Settings, 
   Bell, 

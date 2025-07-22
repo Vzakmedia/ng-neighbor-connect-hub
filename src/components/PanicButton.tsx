@@ -18,7 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 const PanicButton = () => {
