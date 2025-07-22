@@ -343,7 +343,15 @@ const EmergencyContacts = () => {
   };
 
   const searchUserByPhone = async (phoneNumber: string) => {
-    if (!phoneNumber.trim()) {
+    if (!phoneNumber.trim() || phoneNumber.length < 10) {
+      setFoundUser(null);
+      setIsUserFound(false);
+      return;
+    }
+
+    // Only search if it looks like a phone number (contains mostly digits)
+    const digitCount = phoneNumber.replace(/[^\d]/g, '').length;
+    if (digitCount < 10) {
       setFoundUser(null);
       setIsUserFound(false);
       return;
@@ -868,8 +876,9 @@ const EmergencyContacts = () => {
                           const value = e.target.value;
                           setFormData(prev => ({ ...prev, phone_number: value }));
                           
-                          // Search for user as they type
-                          if (value.length > 7) { // Start searching after reasonable phone number length
+                          // Only search if it looks like a phone number with at least 10 digits
+                          const digitCount = value.replace(/[^\d]/g, '').length;
+                          if (digitCount >= 10) {
                             searchUserByPhone(value);
                           } else {
                             setFoundUser(null);
