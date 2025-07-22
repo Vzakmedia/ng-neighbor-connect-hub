@@ -660,6 +660,56 @@ const EmergencyContacts = () => {
     }));
   };
 
+  const clearPendingInvitations = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Get all pending invitations from this user
+      const { data, error: fetchError } = await supabase
+        .from('emergency_contact_requests')
+        .select('id')
+        .eq('sender_id', user.id)
+        .eq('status', 'pending');
+      
+      if (fetchError) throw fetchError;
+      
+      if (!data || data.length === 0) {
+        toast({
+          title: "No pending invitations",
+          description: "You don't have any pending invitations to clear."
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Delete all pending invitations
+      const { error: deleteError } = await supabase
+        .from('emergency_contact_requests')
+        .delete()
+        .in('id', data.map(item => item.id));
+      
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "Invitations cleared",
+        description: `Successfully cleared ${data.length} pending invitation${data.length !== 1 ? 's' : ''}.`
+      });
+      
+      // Refresh the sent requests list
+      await loadSentRequests();
+    } catch (error) {
+      console.error('Error clearing invitations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear pending invitations.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const selectSearchResult = (result: SearchResult) => {
     let searchValue = '';
     if (inviteData.search_type === 'phone') {
@@ -1145,22 +1195,35 @@ const EmergencyContacts = () => {
           {/* Sent Invitations Section */}
           {sentRequests.filter(req => req.status === 'pending').length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Pending Invitations
-              </h3>
-              <div className="space-y-2">
-                {sentRequests
-                  .filter(req => req.status === 'pending')
-                  .map(request => (
-                    <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{request.recipient_phone}</span>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Pending Invitations
+                  </h3>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-xs"
+                    onClick={clearPendingInvitations}
+                    disabled={loading}
+                  >
+                    Clear All Invitations
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {sentRequests
+                    .filter(req => req.status === 'pending')
+                    .map(request => (
+                      <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{request.recipient_phone}</span>
+                        </div>
+                        <Badge variant="outline">Awaiting Response</Badge>
                       </div>
-                      <Badge variant="outline">Awaiting Response</Badge>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
           )}
