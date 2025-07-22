@@ -485,26 +485,38 @@ const EmergencyContacts = () => {
           console.log('Contact created successfully:', newContact);
           
           // If the contact is an app user, send them a notification
-          if (isAppUser) {
-            const appUser = matchingProfiles![0];
+          if (isAppUser && matchingProfiles && matchingProfiles.length > 0) {
+            const appUser = matchingProfiles[0];
             
-            // Create a contact request for quick connecting
-            const { error: requestError } = await supabase
-              .from('emergency_contact_requests')
-              .insert({
-                sender_id: user.id,
-                recipient_phone: formData.phone_number,
-                recipient_id: appUser.user_id,
-                status: 'pending',
-                notification_sent: true
+            try {
+              // Create a contact request for quick connecting
+              const { error: requestError } = await supabase
+                .from('emergency_contact_requests')
+                .insert({
+                  sender_id: user.id,
+                  recipient_phone: formData.phone_number,
+                  recipient_id: appUser.user_id,
+                  status: 'pending',
+                  notification_sent: true
+                });
+                
+              if (requestError) {
+                console.error('Request error:', requestError);
+                // Don't throw here, we want to show success even if notification fails
+              } else {
+                toast({
+                  title: "Contact saved and notified",
+                  description: `${formData.contact_name} is on the app and has been notified of your request.`,
+                });
+              }
+            } catch (notifyError) {
+              console.error('Error sending notification:', notifyError);
+              // Still show success even if notification fails
+              toast({
+                title: "Contact saved",
+                description: `${formData.contact_name} has been added successfully, but we couldn't notify them.`,
               });
-              
-            if (requestError) throw requestError;
-            
-            toast({
-              title: "Contact saved and notified",
-              description: `${formData.contact_name} is on the app and has been notified of your request.`,
-            });
+            }
           } else {
             toast({
               title: "Contact saved",
@@ -1308,34 +1320,34 @@ const EmergencyContacts = () => {
                   onClick={async () => {
                     if (!user) return;
                     
-                    try {
-                      const { data, error } = await supabase
-                        .from('emergency_contacts')
-                        .select('id, contact_name, confirm_code')
-                        .not('confirm_code', 'is', null)
-                        .eq('phone_number', profile?.phone)
-                        .limit(1);
-                        
-                      if (error) throw error;
-                      
-                      if (data && data.length > 0) {
-                        setSelectedContact(data[0] as any);
-                        setContactCode(data[0].confirm_code);
-                        setIsViewingCode(true);
-                      } else {
-                        toast({
-                          title: "No Confirmation Code",
-                          description: "No one has added you as their emergency contact yet.",
-                        });
-                      }
-                    } catch (error) {
-                      console.error('Error fetching confirmation code:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to retrieve confirmation code.",
-                        variant: "destructive"
-                      });
-                    }
+        try {
+          const { data, error } = await supabase
+            .from('emergency_contacts')
+            .select('id, contact_name, confirm_code')
+            .not('confirm_code', 'is', null)
+            .eq('phone_number', profile?.phone)
+            .limit(1);
+            
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            setSelectedContact(data[0] as any);
+            setContactCode(data[0].confirm_code);
+            setIsViewingCode(true);
+          } else {
+            toast({
+              title: "No Confirmation Code",
+              description: "No one has added you as their emergency contact yet.",
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching confirmation code:', error);
+          toast({
+            title: "Error",
+            description: "Failed to retrieve confirmation code.",
+            variant: "destructive"
+          });
+        }
                   }}
                 >
                   <Key className="h-4 w-4 mr-2" />
