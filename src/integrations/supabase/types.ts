@@ -182,6 +182,7 @@ export type Database = {
           confirm_code: string | null
           contact_name: string
           created_at: string
+          email: string | null
           id: string
           is_confirmed: boolean | null
           is_primary: boolean | null
@@ -190,7 +191,10 @@ export type Database = {
           preferred_methods:
             | Database["public"]["Enums"]["contact_method"][]
             | null
+          profile_name: string | null
           relationship: string | null
+          search_query: string | null
+          search_type: string | null
           user_id: string
         }
         Insert: {
@@ -199,6 +203,7 @@ export type Database = {
           confirm_code?: string | null
           contact_name: string
           created_at?: string
+          email?: string | null
           id?: string
           is_confirmed?: boolean | null
           is_primary?: boolean | null
@@ -207,7 +212,10 @@ export type Database = {
           preferred_methods?:
             | Database["public"]["Enums"]["contact_method"][]
             | null
+          profile_name?: string | null
           relationship?: string | null
+          search_query?: string | null
+          search_type?: string | null
           user_id: string
         }
         Update: {
@@ -216,6 +224,7 @@ export type Database = {
           confirm_code?: string | null
           contact_name?: string
           created_at?: string
+          email?: string | null
           id?: string
           is_confirmed?: boolean | null
           is_primary?: boolean | null
@@ -224,7 +233,10 @@ export type Database = {
           preferred_methods?:
             | Database["public"]["Enums"]["contact_method"][]
             | null
+          profile_name?: string | null
           relationship?: string | null
+          search_query?: string | null
+          search_type?: string | null
           user_id?: string
         }
         Relationships: []

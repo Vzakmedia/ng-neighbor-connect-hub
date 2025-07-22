@@ -48,6 +48,13 @@ interface EmergencyContact {
   is_confirmed: boolean;
 }
 
+interface SearchResult {
+  user_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+}
+
 const EmergencyContacts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,27 +73,27 @@ const EmergencyContacts = () => {
   const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
 
-  const [formData, setFormData] = useState<{
-    contact_name: string;
-    phone_number: string;
-    relationship: string;
-    is_primary_contact: boolean;
-    can_receive_location: boolean;
-    can_alert_public: boolean;
-    preferred_methods: ContactMethod[];
-  }>({
+  const [formData, setFormData] = useState({
     contact_name: '',
     phone_number: '',
+    email: '',
+    profile_name: '',
+    search_query: '',
+    search_type: 'phone' as 'phone' | 'email' | 'profile',
     relationship: '',
     is_primary_contact: false,
     can_receive_location: true,
     can_alert_public: false,
-    preferred_methods: ['in_app']
+    preferred_methods: ['in_app'] as ContactMethod[]
   });
 
   const [inviteData, setInviteData] = useState({
-    phone_number: ''
+    search_query: '',
+    search_type: 'phone' as 'phone' | 'email' | 'profile'
   });
+
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const contactMethods: { value: ContactMethod; label: string; icon: JSX.Element }[] = [
     { value: 'in_app', label: 'In-App Notification', icon: <Smartphone className="h-4 w-4" /> },
@@ -239,18 +246,55 @@ const EmergencyContacts = () => {
     }
   };
 
+  const searchContacts = async (query: string, searchType: 'phone' | 'email' | 'profile') => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      if (searchType === 'phone') {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, phone')
+          .eq('phone', query)
+          .limit(5);
+        
+        if (error) throw error;
+        setSearchResults((data || []).map(item => ({ ...item, email: '' })));
+      } else if (searchType === 'profile') {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, phone')
+          .ilike('full_name', `%${query}%`)
+          .limit(5);
+        
+        if (error) throw error;
+        setSearchResults((data || []).map(item => ({ ...item, email: '' })));
+      } else {
+        // Email search not supported yet
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const sendInvitation = async () => {
-    if (!user || !inviteData.phone_number || !profile?.phone) return;
+    if (!user || !inviteData.search_query || !profile?.phone) return;
     
     setLoading(true);
     try {
-        
-      // Check if this phone number is already invited
+      // Check if this search query is already invited
       const { data: existingRequests, error: checkError } = await supabase
         .from('emergency_contact_requests')
         .select('id, status')
         .eq('sender_id', user.id)
-        .eq('recipient_phone', inviteData.phone_number)
+        .eq('recipient_phone', inviteData.search_query)
         .order('created_at', { ascending: false })
         .limit(1);
         
@@ -274,7 +318,7 @@ const EmergencyContacts = () => {
         .from('emergency_contact_requests')
         .insert({
           sender_id: user.id,
-          recipient_phone: inviteData.phone_number
+          recipient_phone: inviteData.search_query
         });
         
       if (error) throw error;
@@ -284,7 +328,7 @@ const EmergencyContacts = () => {
         description: "Emergency contact invitation has been sent.",
       });
       
-      setInviteData({ phone_number: '' });
+      setInviteData({ search_query: '', search_type: 'phone' });
       setIsInvitingContact(false);
       loadSentRequests();
     } catch (error) {
@@ -311,6 +355,10 @@ const EmergencyContacts = () => {
           .update({
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
+            email: formData.email,
+            profile_name: formData.profile_name,
+            search_query: formData.search_query,
+            search_type: formData.search_type,
             relationship: formData.relationship,
             is_primary_contact: formData.is_primary_contact,
             can_receive_location: formData.can_receive_location,
@@ -339,6 +387,10 @@ const EmergencyContacts = () => {
             user_id: user.id,
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
+            email: formData.email,
+            profile_name: formData.profile_name,
+            search_query: formData.search_query,
+            search_type: formData.search_type,
             relationship: formData.relationship,
             is_primary_contact: formData.is_primary_contact,
             can_receive_location: formData.can_receive_location,
@@ -432,6 +484,10 @@ const EmergencyContacts = () => {
     setFormData({
       contact_name: '',
       phone_number: '',
+      email: '',
+      profile_name: '',
+      search_query: '',
+      search_type: 'phone',
       relationship: '',
       is_primary_contact: false,
       can_receive_location: true,
@@ -443,12 +499,17 @@ const EmergencyContacts = () => {
     setConfirmationCode('');
     setContactToConfirm(null);
     setIsConfirmingContact(false);
+    setSearchResults([]);
   };
 
   const startEditContact = (contact: EmergencyContact) => {
     setFormData({
       contact_name: contact.contact_name,
       phone_number: contact.phone_number,
+      email: '',
+      profile_name: '',
+      search_query: '',
+      search_type: 'phone',
       relationship: contact.relationship || '',
       is_primary_contact: contact.is_primary_contact,
       can_receive_location: contact.can_receive_location,
@@ -530,6 +591,20 @@ const EmergencyContacts = () => {
     }));
   };
 
+  const selectSearchResult = (result: SearchResult) => {
+    let searchValue = '';
+    if (inviteData.search_type === 'phone') {
+      searchValue = result.phone;
+    } else if (inviteData.search_type === 'email') {
+      searchValue = result.email;
+    } else {
+      searchValue = result.full_name;
+    }
+    
+    setInviteData(prev => ({ ...prev, search_query: searchValue || '' }));
+    setSearchResults([]);
+  };
+
   return (
     <div className="space-y-6">
       {/* Emergency Contact Requests */}
@@ -547,69 +622,134 @@ const EmergencyContacts = () => {
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Contact
+                  Find & Invite Contact
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Invite Emergency Contact</DialogTitle>
+                  <DialogTitle>Find & Invite Emergency Contact</DialogTitle>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-3">
-                  <p className="text-sm text-muted-foreground">
-                    Invite someone to be your emergency contact. They will receive a notification and need to accept your invitation.
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="invite-phone">Contact's Phone Number</Label>
-                    <Input
-                      id="invite-phone"
-                      type="tel"
-                      placeholder="+234 XXX XXX XXXX"
-                      value={inviteData.phone_number}
-                      onChange={(e) => setInviteData({ phone_number: e.target.value })}
-                    />
-                  </div>
-                  
-                  {sentRequests.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Your Pending Invitations</h4>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {sentRequests
-                          .filter(req => req.status === 'pending')
-                          .map(request => (
-                            <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-3 w-3" />
-                                <span className="text-xs">{request.recipient_phone}</span>
-                              </div>
-                              <Badge variant="outline" className="text-xs">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Pending
-                              </Badge>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsInvitingContact(false)} 
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={sendInvitation} 
-                      disabled={loading || !inviteData.phone_number} 
-                      className="flex-1"
-                    >
-                      {loading ? 'Sending...' : 'Send Invitation'}
-                    </Button>
-                  </div>
-                </div>
+                   <p className="text-sm text-muted-foreground">
+                     Find and invite someone to be your emergency contact by their phone number, email, or profile name.
+                   </p>
+                   
+                   <div className="space-y-2">
+                     <Label htmlFor="search-type">Search by</Label>
+                     <Select
+                       value={inviteData.search_type}
+                       onValueChange={(value) => setInviteData(prev => ({ ...prev, search_type: value as 'phone' | 'email' | 'profile' }))}
+                     >
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="phone">Phone Number</SelectItem>
+                         <SelectItem value="email">Email Address</SelectItem>
+                         <SelectItem value="profile">Profile Name</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   
+                   <div className="space-y-2">
+                     <Label htmlFor="search-query">
+                       {inviteData.search_type === 'phone' && 'Phone Number'}
+                       {inviteData.search_type === 'email' && 'Email Address'}
+                       {inviteData.search_type === 'profile' && 'Profile Name'}
+                     </Label>
+                     <Input
+                       id="search-query"
+                       type={inviteData.search_type === 'email' ? 'email' : inviteData.search_type === 'phone' ? 'tel' : 'text'}
+                       placeholder={
+                         inviteData.search_type === 'phone' ? '+234 XXX XXX XXXX' :
+                         inviteData.search_type === 'email' ? 'user@example.com' :
+                         'Enter name to search'
+                       }
+                       value={inviteData.search_query}
+                       onChange={(e) => {
+                         const value = e.target.value;
+                         setInviteData(prev => ({ ...prev, search_query: value }));
+                         if (value.length > 2) {
+                           searchContacts(value, inviteData.search_type);
+                         } else {
+                           setSearchResults([]);
+                         }
+                       }}
+                     />
+                   </div>
+                   
+                   {/* Search Results */}
+                   {searchResults.length > 0 && (
+                     <div className="mt-3">
+                       <Label className="text-sm font-medium">Found Users</Label>
+                       <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
+                         {searchResults.map((result) => (
+                           <div 
+                             key={result.user_id} 
+                             className="flex items-center justify-between p-2 bg-muted rounded-md cursor-pointer hover:bg-muted/80"
+                             onClick={() => selectSearchResult(result)}
+                           >
+                             <div className="flex flex-col">
+                               <span className="text-sm font-medium">{result.full_name}</span>
+                               <span className="text-xs text-muted-foreground">
+                                 {inviteData.search_type === 'phone' ? result.phone : 
+                                  inviteData.search_type === 'email' ? result.email : 
+                                  result.phone}
+                               </span>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                   
+                   {isSearching && (
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                       <RefreshCw className="h-4 w-4 animate-spin" />
+                       Searching...
+                     </div>
+                   )}
+                   
+                   {sentRequests.length > 0 && (
+                     <div className="mt-4">
+                       <h4 className="text-sm font-medium mb-2">Your Pending Invitations</h4>
+                       <div className="space-y-2 max-h-40 overflow-y-auto">
+                         {sentRequests
+                           .filter(req => req.status === 'pending')
+                           .map(request => (
+                             <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                               <div className="flex items-center gap-2">
+                                 <Phone className="h-3 w-3" />
+                                 <span className="text-xs">{request.recipient_phone}</span>
+                               </div>
+                               <Badge variant="outline" className="text-xs">
+                                 <Clock className="h-3 w-3 mr-1" />
+                                 Pending
+                               </Badge>
+                             </div>
+                           ))}
+                       </div>
+                     </div>
+                   )}
+                   
+                   <div className="flex gap-2 pt-4">
+                     <Button 
+                       variant="outline" 
+                       onClick={() => setIsInvitingContact(false)} 
+                       className="flex-1"
+                     >
+                       Cancel
+                     </Button>
+                     <Button 
+                       onClick={sendInvitation} 
+                       disabled={loading || !inviteData.search_query} 
+                       className="flex-1"
+                     >
+                       {loading ? 'Sending...' : 'Send Invitation'}
+                     </Button>
+                   </div>
+                 </div>
               </DialogContent>
             </Dialog>
             
