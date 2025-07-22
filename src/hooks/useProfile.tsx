@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useMinimalAuth as useAuth } from './useAuth-minimal';
 
 export interface UserProfile {
   id: string;
