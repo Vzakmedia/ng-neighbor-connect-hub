@@ -709,6 +709,57 @@ const EmergencyContacts = () => {
       setLoading(false);
     }
   };
+  
+  const removeSpecificInvitation = async (phoneNumber: string) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Find the invitation with this phone number
+      const { data, error: fetchError } = await supabase
+        .from('emergency_contact_requests')
+        .select('id')
+        .eq('sender_id', user.id)
+        .eq('recipient_phone', phoneNumber)
+        .eq('status', 'pending');
+      
+      if (fetchError) throw fetchError;
+      
+      if (!data || data.length === 0) {
+        toast({
+          title: "Invitation not found",
+          description: `No pending invitation found for ${phoneNumber}.`
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Delete the specific invitation
+      const { error: deleteError } = await supabase
+        .from('emergency_contact_requests')
+        .delete()
+        .eq('id', data[0].id);
+      
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "Invitation removed",
+        description: `Successfully removed invitation for ${phoneNumber}.`
+      });
+      
+      // Refresh the sent requests list
+      await loadSentRequests();
+    } catch (error) {
+      console.error('Error removing invitation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove invitation.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const selectSearchResult = (result: SearchResult) => {
     let searchValue = '';
@@ -1220,7 +1271,17 @@ const EmergencyContacts = () => {
                           <Phone className="h-4 w-4 text-muted-foreground" />
                           <span>{request.recipient_phone}</span>
                         </div>
-                        <Badge variant="outline">Awaiting Response</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">Awaiting Response</Badge>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-7 w-7 p-0"
+                            onClick={() => removeSpecificInvitation(request.recipient_phone)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
