@@ -41,6 +41,7 @@ interface EmergencyContact {
   can_receive_location: boolean;
   can_alert_public: boolean;
   preferred_methods: ContactMethod[];
+  is_confirmed: boolean;
 }
 
 const EmergencyContacts = () => {
