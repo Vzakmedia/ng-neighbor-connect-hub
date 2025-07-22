@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Settings, 
@@ -15,8 +16,11 @@ import {
   LogOut,
   Trash2,
   Download,
-  Upload
+  Upload,
+  Volume2,
+  Play
 } from 'lucide-react';
+import { playNotification } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -43,6 +47,13 @@ const SettingsContent = () => {
     emergencyAlerts: true,
     emailNotifications: true,
     pushNotifications: true
+  });
+
+  // Audio Settings
+  const [audioSettings, setAudioSettings] = useState({
+    notificationVolume: [0.5],
+    emergencyVolume: [0.8],
+    soundEnabled: true
   });
 
   // Privacy Settings
@@ -100,6 +111,23 @@ const SettingsContent = () => {
       title: "Data export initiated",
       description: "You will receive an email with your data shortly.",
     });
+  };
+
+  const handleVolumeChange = (type: 'notification' | 'emergency', value: number[]) => {
+    setAudioSettings(prev => ({
+      ...prev,
+      [`${type}Volume`]: value
+    }));
+  };
+
+  const testSound = (type: 'normal' | 'emergency') => {
+    const volume = type === 'emergency' 
+      ? audioSettings.emergencyVolume[0] 
+      : audioSettings.notificationVolume[0];
+    
+    if (audioSettings.soundEnabled) {
+      playNotification(type, volume);
+    }
   };
 
   return (
@@ -241,6 +269,86 @@ const SettingsContent = () => {
                       onCheckedChange={(checked) => handleNotificationChange('pushNotifications', checked)}
                     />
                   </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  Sound Settings
+                </h3>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="sound-enabled">Enable Notification Sounds</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Play sounds for notifications and alerts
+                      </p>
+                    </div>
+                    <Switch
+                      id="sound-enabled"
+                      checked={audioSettings.soundEnabled}
+                      onCheckedChange={(checked) => setAudioSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                    />
+                  </div>
+
+                  {audioSettings.soundEnabled && (
+                    <>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="notification-volume">Notification Volume</Label>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => testSound('normal')}
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            Test
+                          </Button>
+                        </div>
+                        <Slider
+                          id="notification-volume"
+                          value={audioSettings.notificationVolume}
+                          onValueChange={(value) => handleVolumeChange('notification', value)}
+                          max={1}
+                          min={0}
+                          step={0.1}
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Volume: {Math.round(audioSettings.notificationVolume[0] * 100)}%
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="emergency-volume">Emergency Alert Volume</Label>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => testSound('emergency')}
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            Test
+                          </Button>
+                        </div>
+                        <Slider
+                          id="emergency-volume"
+                          value={audioSettings.emergencyVolume}
+                          onValueChange={(value) => handleVolumeChange('emergency', value)}
+                          max={1}
+                          min={0}
+                          step={0.1}
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Volume: {Math.round(audioSettings.emergencyVolume[0] * 100)}%
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
