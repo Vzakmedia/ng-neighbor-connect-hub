@@ -81,7 +81,7 @@ const MessagingContent = () => {
     const fetchConversations = async () => {
       setLoading(true);
       const { data: conversations, error } = await supabase
-        .from('conversations')
+        .from('direct_conversations')
         .select('*')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
@@ -178,7 +178,7 @@ const MessagingContent = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'conversations'
+          table: 'direct_conversations'
         },
         () => {
           fetchConversations();
@@ -216,7 +216,7 @@ const MessagingContent = () => {
       
       // Mark any unread messages as read
       if (activeConversation) {
-        await supabase.rpc('mark_messages_as_read', {
+        await supabase.rpc('mark_direct_messages_as_read', {
           conversation_id: activeConversation.id,
           current_user_id: user.id
         });
@@ -270,7 +270,7 @@ const MessagingContent = () => {
     
     // Check if recipient allows messages
     const { data: allowsMessagesData } = await supabase
-      .rpc('user_allows_messages', { user_id: recipientId });
+      .rpc('user_allows_direct_messages', { user_id: recipientId });
     
     const allowsMessages = allowsMessagesData;
     
@@ -287,7 +287,7 @@ const MessagingContent = () => {
       sender_id: user.id,
       recipient_id: recipientId,
       content: content.trim(),
-      status: 'sent'
+      status: 'sent' as const
     };
     
     const { error } = await supabase
@@ -323,7 +323,7 @@ const MessagingContent = () => {
     
     // Check if conversation already exists
     const { data: existingConversation } = await supabase
-      .from('conversations')
+      .from('direct_conversations')
       .select('*')
       .or(`user1_id.eq.${user.id}.and.user2_id.eq.${selectedUser.user_id},user1_id.eq.${selectedUser.user_id}.and.user2_id.eq.${user.id}`)
       .single();
@@ -341,7 +341,7 @@ const MessagingContent = () => {
     } else {
       // Create new conversation
       const { data: newConversation, error } = await supabase
-        .from('conversations')
+        .from('direct_conversations')
         .insert({
           user1_id: user.id,
           user2_id: selectedUser.user_id,

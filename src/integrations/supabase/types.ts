@@ -142,6 +142,72 @@ export type Database = {
           },
         ]
       }
+      direct_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          updated_at: string
+          user1_has_unread: boolean | null
+          user1_id: string
+          user2_has_unread: boolean | null
+          user2_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          updated_at?: string
+          user1_has_unread?: boolean | null
+          user1_id: string
+          user2_has_unread?: boolean | null
+          user2_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          updated_at?: string
+          user1_has_unread?: boolean | null
+          user1_id?: string
+          user2_has_unread?: boolean | null
+          user2_id?: string
+        }
+        Relationships: []
+      }
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_deleted: boolean | null
+          recipient_id: string
+          sender_id: string
+          status: Database["public"]["Enums"]["direct_message_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          recipient_id: string
+          sender_id: string
+          status?: Database["public"]["Enums"]["direct_message_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          recipient_id?: string
+          sender_id?: string
+          status?: Database["public"]["Enums"]["direct_message_status"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       emergency_contact_requests: {
         Row: {
           created_at: string
@@ -365,6 +431,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      messaging_preferences: {
+        Row: {
+          allow_messages: boolean | null
+          created_at: string
+          show_online_status: boolean | null
+          show_read_receipts: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_messages?: boolean | null
+          created_at?: string
+          show_online_status?: boolean | null
+          show_read_receipts?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_messages?: boolean | null
+          created_at?: string
+          show_online_status?: boolean | null
+          show_read_receipts?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       panic_alerts: {
         Row: {
@@ -751,6 +844,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_direct_messages_as_read: {
+        Args: { conversation_id: string; current_user_id: string }
+        Returns: undefined
+      }
+      user_allows_direct_messages: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       alert_severity: "low" | "medium" | "high" | "critical"
@@ -758,6 +859,7 @@ export type Database = {
       app_role: "admin" | "user"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
       contact_method: "in_app" | "sms" | "whatsapp" | "phone_call"
+      direct_message_status: "sent" | "delivered" | "read"
       emergency_situation_type:
         | "medical_emergency"
         | "fire"
@@ -936,6 +1038,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
       contact_method: ["in_app", "sms", "whatsapp", "phone_call"],
+      direct_message_status: ["sent", "delivered", "read"],
       emergency_situation_type: [
         "medical_emergency",
         "fire",

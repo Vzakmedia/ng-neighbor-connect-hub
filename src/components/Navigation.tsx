@@ -7,6 +7,7 @@ import CreatePostDialog from './CreatePostDialog';
 import { 
   Home, 
   MessageSquare, 
+  MessageCircle,
   ShoppingBag, 
   Shield, 
   Calendar,
@@ -22,6 +23,7 @@ const Navigation = () => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
     { id: 'community', icon: MessageSquare, label: 'Community', count: 5, path: '/community' },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: 0, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 2, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 1, path: '/events' },

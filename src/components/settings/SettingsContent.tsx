@@ -65,8 +65,14 @@ const SettingsContent = () => {
     profileVisibility: 'public',
     showPhone: false,
     showAddress: false,
-    allowMessages: true,
     shareLocation: true
+  });
+
+  // Messaging preferences
+  const [messagingPreferences, setMessagingPreferences] = useState({
+    allow_messages: true,
+    show_read_receipts: true,
+    show_online_status: true
   });
 
   const handleNotificationChange = (key: string, value: boolean) => {
@@ -456,8 +462,8 @@ const SettingsContent = () => {
                     </div>
                     <Switch
                       id="allow-messages"
-                      checked={privacySettings.allowMessages}
-                      onCheckedChange={(checked) => handlePrivacyChange('allowMessages', checked)}
+                      checked={messagingPreferences.allow_messages}
+                      onCheckedChange={(checked) => setMessagingPreferences(prev => ({ ...prev, allow_messages: checked }))}
                     />
                   </div>
                 </div>

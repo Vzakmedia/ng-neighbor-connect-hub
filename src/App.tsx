@@ -11,6 +11,7 @@ import EmergencyNotification from "@/components/EmergencyNotification";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Community from "./pages/Community";
+import Messages from "./pages/Messages";
 import MarketplacePage from "./pages/MarketplacePage";
 import Safety from "./pages/Safety";
 import Profile from "./pages/Profile";
@@ -42,6 +43,7 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/profile" element={<Profile />} />
