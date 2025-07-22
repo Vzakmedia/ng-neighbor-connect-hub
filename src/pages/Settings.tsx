@@ -10,7 +10,10 @@ const Settings = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
+    // In development mode, we allow mock user to access settings
+    const isMockUser = user && user.id === 'mock-user-id';
+    
+    if (!loading && !user && !isMockUser) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
@@ -23,7 +26,9 @@ const Settings = () => {
     );
   }
 
-  if (!user) {
+  // For development mode, we continue even with mock user
+  const isMockUser = user && user.id === 'mock-user-id';
+  if (!user && !isMockUser) {
     return null;
   }
 

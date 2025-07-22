@@ -823,56 +823,58 @@ const EmergencyContacts = () => {
           </Dialog>
           
           {/* Your Confirmation Codes Section */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-              <Key className="h-4 w-4" />
-              Your Confirmation Codes
-            </h3>
-            <div className="p-4 border rounded-lg bg-muted/30">
-              <p className="text-sm mb-3">
-                If someone has added you as an emergency contact, they will need your confirmation code to verify the relationship.
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  if (!user) return;
-                  
-                  try {
-                    const { data, error } = await supabase
-                      .from('emergency_contacts')
-                      .select('id, contact_name, confirm_code')
-                      .not('confirm_code', 'is', null)
-                      .eq('phone_number', profile?.phone)
-                      .limit(1);
-                      
-                    if (error) throw error;
+          {profile?.phone && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Your Confirmation Codes
+              </h3>
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <p className="text-sm mb-3">
+                  If someone has added you as an emergency contact, they will need your confirmation code to verify the relationship.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    if (!user) return;
                     
-                    if (data && data.length > 0) {
-                      setSelectedContact(data[0] as any);
-                      setContactCode(data[0].confirm_code);
-                      setIsViewingCode(true);
-                    } else {
+                    try {
+                      const { data, error } = await supabase
+                        .from('emergency_contacts')
+                        .select('id, contact_name, confirm_code')
+                        .not('confirm_code', 'is', null)
+                        .eq('phone_number', profile?.phone)
+                        .limit(1);
+                        
+                      if (error) throw error;
+                      
+                      if (data && data.length > 0) {
+                        setSelectedContact(data[0] as any);
+                        setContactCode(data[0].confirm_code);
+                        setIsViewingCode(true);
+                      } else {
+                        toast({
+                          title: "No Confirmation Code",
+                          description: "No one has added you as their emergency contact yet.",
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error fetching confirmation code:', error);
                       toast({
-                        title: "No Confirmation Code",
-                        description: "No one has added you as their emergency contact yet.",
+                        title: "Error",
+                        description: "Failed to retrieve confirmation code.",
+                        variant: "destructive"
                       });
                     }
-                  } catch (error) {
-                    console.error('Error fetching confirmation code:', error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to retrieve confirmation code.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-              >
-                <Key className="h-4 w-4 mr-2" />
-                View My Confirmation Code
-              </Button>
+                  }}
+                >
+                  <Key className="h-4 w-4 mr-2" />
+                  View My Confirmation Code
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Sent Invitations Section */}
           {sentRequests.filter(req => req.status === 'pending').length > 0 && (
