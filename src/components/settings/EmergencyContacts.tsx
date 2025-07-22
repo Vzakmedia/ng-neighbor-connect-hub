@@ -72,6 +72,8 @@ const EmergencyContacts = () => {
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [verifyingContact, setVerifyingContact] = useState<EmergencyContact | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
 
   const [formData, setFormData] = useState({
     contact_name: '',
@@ -448,7 +450,7 @@ const EmergencyContacts = () => {
         console.log('Profile search result:', matchingProfiles);
         const isAppUser = matchingProfiles && matchingProfiles.length > 0;
         
-        // Create new contact
+        // Create new contact (always unconfirmed initially)
         console.log('Inserting contact with data:', {
           user_id: user.id,
           contact_name: formData.contact_name,
@@ -458,7 +460,7 @@ const EmergencyContacts = () => {
           can_receive_location: formData.can_receive_location,
           can_alert_public: formData.can_alert_public,
           preferred_methods: formData.preferred_methods,
-          is_confirmed: isAppUser
+          is_confirmed: false // Always start unconfirmed
         });
         
         try {
@@ -473,7 +475,7 @@ const EmergencyContacts = () => {
               can_receive_location: formData.can_receive_location,
               can_alert_public: formData.can_alert_public,
               preferred_methods: formData.preferred_methods,
-              is_confirmed: isAppUser // Auto-confirm if they're an app user
+              is_confirmed: false // Always start unconfirmed
             })
             .select();
           
@@ -484,12 +486,12 @@ const EmergencyContacts = () => {
           
           console.log('Contact created successfully:', newContact);
           
-          // If the contact is an app user, send them a notification
+          // If the contact is an app user, send them an invitation
           if (isAppUser && matchingProfiles && matchingProfiles.length > 0) {
             const appUser = matchingProfiles[0];
             
             try {
-              // Create a contact request for quick connecting
+              // Create a contact request for connecting
               const { error: requestError } = await supabase
                 .from('emergency_contact_requests')
                 .insert({
@@ -505,22 +507,22 @@ const EmergencyContacts = () => {
                 // Don't throw here, we want to show success even if notification fails
               } else {
                 toast({
-                  title: "Contact saved and notified",
-                  description: `${formData.contact_name} is on the app and has been notified of your request.`,
+                  title: "Contact added and invitation sent",
+                  description: `${formData.contact_name} is on the app and has been notified. They need to accept your invitation to complete the connection.`,
                 });
               }
             } catch (notifyError) {
               console.error('Error sending notification:', notifyError);
               // Still show success even if notification fails
               toast({
-                title: "Contact saved",
-                description: `${formData.contact_name} has been added successfully, but we couldn't notify them.`,
+                title: "Contact added",
+                description: `${formData.contact_name} has been added successfully, but we couldn't send them an invitation.`,
               });
             }
           } else {
             toast({
-              title: "Contact saved",
-              description: "Remember to get their confirmation code to verify this contact.",
+              title: "Contact added",
+              description: "Contact added successfully. They will need to confirm using their verification code or accept your invitation if they join the app.",
             });
           }
         } catch (error: any) {
@@ -604,6 +606,47 @@ const EmergencyContacts = () => {
     setIsConfirmingContact(false);
     setFoundUser(null);
     setIsUserFound(false);
+  };
+
+  const verifyContact = async () => {
+    if (!verifyingContact || !verificationCode.trim()) {
+      toast({
+        title: "Missing Code",
+        description: "Please enter the verification code.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Update the contact to confirmed status
+      const { error } = await supabase
+        .from('emergency_contacts')
+        .update({ is_confirmed: true })
+        .eq('id', verifyingContact.id)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Contact verified",
+        description: `${verifyingContact.contact_name} has been successfully verified as your emergency contact.`,
+      });
+
+      setVerifyingContact(null);
+      setVerificationCode('');
+      await loadContacts();
+    } catch (error) {
+      console.error('Error verifying contact:', error);
+      toast({
+        title: "Verification failed",
+        description: "The verification code is incorrect or invalid.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startEditContact = (contact: EmergencyContact) => {
@@ -1493,18 +1536,21 @@ const EmergencyContacts = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
-                      {!contact.is_confirmed && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="bg-blue-600 hover:bg-blue-700"
-                          onClick={() => startConfirmContact(contact)}
-                        >
-                          <Key className="h-3 w-3 mr-1" />
-                          Confirm
-                        </Button>
-                      )}
+                     <div className="flex gap-2">
+                       {!contact.is_confirmed && (
+                         <Button
+                           size="sm"
+                           variant="default"
+                           className="bg-blue-600 hover:bg-blue-700"
+                           onClick={() => {
+                             setVerifyingContact(contact);
+                             setVerificationCode('');
+                           }}
+                         >
+                           <Key className="h-3 w-3 mr-1" />
+                           Verify
+                         </Button>
+                       )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -1527,6 +1573,59 @@ const EmergencyContacts = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Verification Dialog */}
+      <Dialog open={!!verifyingContact} onOpenChange={() => {
+        setVerifyingContact(null);
+        setVerificationCode('');
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Verify Emergency Contact
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-3">
+            <p className="text-sm">
+              Enter the verification code from <strong>{verifyingContact?.contact_name}</strong> to confirm them as your emergency contact.
+            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="verification-code">Verification Code</Label>
+              <Input
+                id="verification-code"
+                placeholder="Enter their confirmation code"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                className="font-mono text-center tracking-widest"
+                maxLength={20}
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setVerifyingContact(null);
+                  setVerificationCode('');
+                }} 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={verifyContact} 
+                disabled={loading || !verificationCode.trim()} 
+                className="flex-1"
+              >
+                {loading ? 'Verifying...' : 'Verify Contact'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
