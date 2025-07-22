@@ -400,6 +400,11 @@ const EmergencyContacts = () => {
         hasContactName: !!formData.contact_name,
         hasPhoneNumber: !!formData.phone_number
       });
+      toast({
+        title: "Missing Information",
+        description: "Please provide both a name and phone number for the contact.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -456,55 +461,69 @@ const EmergencyContacts = () => {
           is_confirmed: isAppUser
         });
         
-        const { data: newContact, error } = await supabase
-          .from('emergency_contacts')
-          .insert({
-            user_id: user.id,
-            contact_name: formData.contact_name,
-            phone_number: formData.phone_number,
-            relationship: formData.relationship,
-            is_primary_contact: formData.is_primary_contact,
-            can_receive_location: formData.can_receive_location,
-            can_alert_public: formData.can_alert_public,
-            preferred_methods: formData.preferred_methods,
-            is_confirmed: isAppUser // Auto-confirm if they're an app user
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Insert error:', error);
-          throw error;
-        }
-        
-        console.log('Contact created successfully:', newContact);
-        
-        // If the contact is an app user, send them a notification
-        if (isAppUser) {
-          const appUser = matchingProfiles![0];
-          
-          // Create a contact request for quick connecting
-          const { error: requestError } = await supabase
-            .from('emergency_contact_requests')
+        try {
+          const { data: newContact, error } = await supabase
+            .from('emergency_contacts')
             .insert({
-              sender_id: user.id,
-              recipient_phone: formData.phone_number,
-              recipient_id: appUser.user_id,
-              status: 'pending',
-              notification_sent: true
-            });
-            
-          if (requestError) throw requestError;
+              user_id: user.id,
+              contact_name: formData.contact_name,
+              phone_number: formData.phone_number,
+              relationship: formData.relationship,
+              is_primary_contact: formData.is_primary_contact,
+              can_receive_location: formData.can_receive_location,
+              can_alert_public: formData.can_alert_public,
+              preferred_methods: formData.preferred_methods,
+              is_confirmed: isAppUser // Auto-confirm if they're an app user
+            })
+            .select();
           
-          toast({
-            title: "Contact saved and notified",
-            description: `${formData.contact_name} is on the app and has been notified of your request.`,
-          });
-        } else {
-          toast({
-            title: "Contact saved",
-            description: "Remember to get their confirmation code to verify this contact.",
-          });
+          if (error) {
+            console.error('Insert error:', error);
+            throw error;
+          }
+          
+          console.log('Contact created successfully:', newContact);
+          
+          // If the contact is an app user, send them a notification
+          if (isAppUser) {
+            const appUser = matchingProfiles![0];
+            
+            // Create a contact request for quick connecting
+            const { error: requestError } = await supabase
+              .from('emergency_contact_requests')
+              .insert({
+                sender_id: user.id,
+                recipient_phone: formData.phone_number,
+                recipient_id: appUser.user_id,
+                status: 'pending',
+                notification_sent: true
+              });
+              
+            if (requestError) throw requestError;
+            
+            toast({
+              title: "Contact saved and notified",
+              description: `${formData.contact_name} is on the app and has been notified of your request.`,
+            });
+          } else {
+            toast({
+              title: "Contact saved",
+              description: "Remember to get their confirmation code to verify this contact.",
+            });
+          }
+        } catch (error: any) {
+          console.error('Insert error details:', error);
+          
+          if (error.code === '23505') {
+            // This is a duplicate key error
+            toast({
+              title: "Contact already exists",
+              description: "This phone number is already in your contacts list.",
+              variant: "destructive"
+            });
+          } else {
+            throw error;
+          }
         }
       }
 
@@ -517,11 +536,11 @@ const EmergencyContacts = () => {
           description: "Emergency contact has been successfully updated.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving emergency contact:', error);
       toast({
         title: "Error",
-        description: "Failed to save emergency contact.",
+        description: error.message || "Failed to save emergency contact.",
         variant: "destructive"
       });
     } finally {
