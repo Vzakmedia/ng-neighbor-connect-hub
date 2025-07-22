@@ -1279,7 +1279,7 @@ const EmergencyContacts = () => {
               
               <div className="space-y-4 py-3">
                 <p className="text-sm">
-                  Share this code with your emergency contact so they can verify and confirm you.
+                  Share this code with anyone who wants to add you as their emergency contact.
                 </p>
                 
                 <div className="p-4 bg-muted rounded-lg text-center">
@@ -1287,7 +1287,7 @@ const EmergencyContacts = () => {
                 </div>
                 
                 <div className="mt-2 text-sm text-muted-foreground">
-                  <p>This is your unique confirmation code for the selected contact.</p>
+                  <p>This is your personal confirmation code. Anyone adding you as their emergency contact will need this code to verify the relationship.</p>
                   <p className="mt-2">Ask them to enter this code in their emergency contacts section.</p>
                 </div>
                 
@@ -1311,8 +1311,12 @@ const EmergencyContacts = () => {
                 Your Confirmation Codes
               </h3>
               <div className="p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-medium">Your Personal Code</span>
+                </div>
                 <p className="text-sm mb-3">
-                  If someone has added you as an emergency contact, they will need your confirmation code to verify the relationship.
+                  Give this code to anyone who wants to add you as their emergency contact.
                 </p>
                 <Button 
                   variant="outline" 
@@ -1321,23 +1325,31 @@ const EmergencyContacts = () => {
                     if (!user) return;
                     
         try {
-          const { data, error } = await supabase
-            .from('emergency_contacts')
-            .select('id, contact_name, confirm_code')
-            .not('confirm_code', 'is', null)
-            .eq('phone_number', profile?.phone)
-            .limit(1);
+          // Get the user's own confirmation code from their profile or generate one
+          const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, full_name, phone')
+            .eq('user_id', user.id)
+            .single();
             
-          if (error) throw error;
+          if (profileError) throw profileError;
           
-          if (data && data.length > 0) {
-            setSelectedContact(data[0] as any);
-            setContactCode(data[0].confirm_code);
+          if (userProfile) {
+            // Generate a simple confirmation code based on user info
+            const confirmationCode = `${userProfile.phone?.slice(-4) || '0000'}-${userProfile.id.slice(0, 4)}`.toUpperCase();
+            
+            setSelectedContact({
+              id: userProfile.id,
+              contact_name: userProfile.full_name || 'You',
+              confirm_code: confirmationCode
+            } as any);
+            setContactCode(confirmationCode);
             setIsViewingCode(true);
           } else {
             toast({
-              title: "No Confirmation Code",
-              description: "No one has added you as their emergency contact yet.",
+              title: "Error",
+              description: "Could not retrieve your profile information.",
+              variant: "destructive"
             });
           }
         } catch (error) {
