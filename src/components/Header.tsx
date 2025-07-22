@@ -62,18 +62,14 @@ const Header = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    {profile?.avatar_url ? (
-                      <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8">
+                      {profile?.avatar_url && (
                         <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
-                        <AvatarFallback>
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center text-white font-semibold text-sm">
+                      )}
+                      <AvatarFallback>
                         {getInitials()}
-                      </div>
-                    )}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -134,18 +130,14 @@ const Header = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-7 w-7 rounded-full">
-                    {profile?.avatar_url ? (
-                      <Avatar className="h-7 w-7">
+                    <Avatar className="h-7 w-7">
+                      {profile?.avatar_url && (
                         <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center text-white font-semibold text-xs">
+                      )}
+                      <AvatarFallback className="text-xs">
                         {getInitials()}
-                      </div>
-                    )}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
