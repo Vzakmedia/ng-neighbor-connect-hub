@@ -28,7 +28,7 @@ import {
   LockKeyhole,
   Check
 } from 'lucide-react';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EmergencyContactRequest from './EmergencyContactRequest';
@@ -118,14 +118,10 @@ const EmergencyContacts = () => {
     if (!user) return;
     
     try {
-      // For development - handle mock user ID
-      const userId = user.id === 'mock-user-id' ? 
-        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
-        
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .single();
         
       if (error) throw error;
@@ -139,9 +135,6 @@ const EmergencyContacts = () => {
     if (!user) return;
     
     try {
-      // For development - handle mock user ID
-      const userId = user.id === 'mock-user-id' ? 
-        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
         
       const { data, error } = await supabase
         .from('emergency_contact_requests')
@@ -151,7 +144,7 @@ const EmergencyContacts = () => {
           status,
           created_at
         `)
-        .eq('sender_id', userId)
+        .eq('sender_id', user.id)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
@@ -220,14 +213,10 @@ const EmergencyContacts = () => {
     if (!user) return;
 
     try {
-      // For development - handle mock user ID
-      const userId = user.id === 'mock-user-id' ? 
-        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
-        
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .order('is_primary_contact', { ascending: false })
         .order('contact_name');
 
@@ -255,15 +244,12 @@ const EmergencyContacts = () => {
     
     setLoading(true);
     try {
-      // For development - handle mock user ID
-      const userId = user.id === 'mock-user-id' ? 
-        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
         
       // Check if this phone number is already invited
       const { data: existingRequests, error: checkError } = await supabase
         .from('emergency_contact_requests')
         .select('id, status')
-        .eq('sender_id', userId)
+        .eq('sender_id', user.id)
         .eq('recipient_phone', inviteData.phone_number)
         .order('created_at', { ascending: false })
         .limit(1);
@@ -287,8 +273,7 @@ const EmergencyContacts = () => {
       const { error } = await supabase
         .from('emergency_contact_requests')
         .insert({
-          sender_id: user.id === 'mock-user-id' ? 
-            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
+          sender_id: user.id,
           recipient_phone: inviteData.phone_number
         });
         
@@ -340,8 +325,7 @@ const EmergencyContacts = () => {
         const { error } = await supabase
           .from('emergency_contacts')
           .insert({
-            user_id: user.id === 'mock-user-id' ? 
-              'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
+            user_id: user.id,
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
             relationship: formData.relationship,

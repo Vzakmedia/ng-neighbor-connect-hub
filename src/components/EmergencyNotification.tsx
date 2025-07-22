@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, X, Bell, PhoneCall } from 'lucide-react';
 

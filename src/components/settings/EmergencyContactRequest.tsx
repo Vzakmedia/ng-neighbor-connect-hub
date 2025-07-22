@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, UserCheck, UserPlus, Shield, AlertTriangle, Phone, X } from 'lucide-react';
 
@@ -47,8 +47,7 @@ const EmergencyContactRequest = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id === 'mock-user-id' ? 
-          'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id)
+        .eq('user_id', user.id)
         .single();
         
       if (error) throw error;
@@ -63,10 +62,6 @@ const EmergencyContactRequest = () => {
     
     try {
       setLoading(true);
-      
-      // For development - handle mock user ID
-      const userId = user.id === 'mock-user-id' ? 
-        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
       
       // Get all incoming requests for this user's phone number
       const { data, error } = await supabase
@@ -152,8 +147,7 @@ const EmergencyContactRequest = () => {
         .from('emergency_contact_requests')
         .update({
           status: 'accepted',
-          recipient_id: user.id === 'mock-user-id' ? 
-            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id
+          recipient_id: user.id
         })
         .eq('id', requestId);
         
@@ -185,8 +179,7 @@ const EmergencyContactRequest = () => {
       const { error: myContactError } = await supabase
         .from('emergency_contacts')
         .insert({
-          user_id: user.id === 'mock-user-id' ? 
-            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
+          user_id: user.id,
           contact_name: senderData.full_name || 'Emergency Contact',
           phone_number: senderData.phone,
           is_primary_contact: false,
