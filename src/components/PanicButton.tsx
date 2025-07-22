@@ -295,27 +295,29 @@ const PanicButton = () => {
           <div className="space-y-4">
             <div className="space-y-3">
               <Label>Select Emergency Situation</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {situationTypes.map((type) => (
-                  <Card 
-                    key={type.value} 
-                    className={`cursor-pointer transition-all hover:bg-red-50 border-2 ${
-                      selectedSituation === type.value 
-                        ? 'border-red-500 bg-red-50' 
-                        : 'border-muted hover:border-red-200'
-                    }`}
-                    onClick={() => {
-                      setSelectedSituation(type.value as any);
-                      // Auto-trigger alert when card is clicked
-                      triggerPanicAlert();
-                    }}
-                  >
-                    <CardContent className="p-3 text-center">
-                      <div className="text-2xl mb-1">{type.icon}</div>
-                      <div className="text-xs font-medium">{type.label}</div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 pr-2">
+                  {situationTypes.map((type) => (
+                    <Card 
+                      key={type.value} 
+                      className={`cursor-pointer transition-all hover:bg-red-50 border-2 ${
+                        selectedSituation === type.value 
+                          ? 'border-red-500 bg-red-50' 
+                          : 'border-muted hover:border-red-200'
+                      }`}
+                      onClick={() => {
+                        setSelectedSituation(type.value as any);
+                        // Auto-trigger alert when card is clicked
+                        triggerPanicAlert();
+                      }}
+                    >
+                      <CardContent className="p-3 text-center">
+                        <div className="text-2xl mb-1">{type.icon}</div>
+                        <div className="text-xs font-medium">{type.label}</div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </div>
 
