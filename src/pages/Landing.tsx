@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import LandingPage from "@/components/LandingPage";
-import { useAuth } from "@/hooks/useAuth";
+import { useMinimalAuth as useAuth } from "@/hooks/useAuth-minimal";
 
 const Landing = () => {
   const { user, loading } = useAuth();

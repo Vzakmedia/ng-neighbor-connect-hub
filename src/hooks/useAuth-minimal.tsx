@@ -1,8 +1,25 @@
 import { createContext, useContext, ReactNode } from 'react';
 
+// Mock user object for minimal auth
+const mockUser = {
+  id: 'mock-user-id',
+  email: 'user@example.com',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  aud: 'authenticated',
+  role: 'authenticated',
+  email_confirmed_at: new Date().toISOString(),
+  phone: '',
+  confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  app_metadata: {},
+  user_metadata: {},
+  identities: []
+};
+
 interface AuthContextType {
-  user: null;
-  session: null;
+  user: typeof mockUser | null;
+  session: any;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -13,8 +30,8 @@ export function MinimalAuthProvider({ children }: { children: ReactNode }) {
   console.log("MinimalAuthProvider rendering");
   
   const value = {
-    user: null,
-    session: null,
+    user: mockUser,
+    session: { user: mockUser },
     loading: false,
     signOut: async () => {},
   };

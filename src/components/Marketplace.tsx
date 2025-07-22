@@ -26,7 +26,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 
 interface Service {
   id: string;

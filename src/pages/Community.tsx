@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CommunityBoards from '@/components/CommunityBoards';
-import { useAuth } from "@/hooks/useAuth";
+import { useMinimalAuth as useAuth } from "@/hooks/useAuth-minimal";
 
 const Community = () => {
   const { user, loading } = useAuth();

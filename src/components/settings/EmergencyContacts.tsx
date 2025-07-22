@@ -20,7 +20,7 @@ import {
   MapPin,
   Shield
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 

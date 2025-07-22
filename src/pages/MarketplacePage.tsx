@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Marketplace from '@/components/Marketplace';
-import { useAuth } from "@/hooks/useAuth";
+import { useMinimalAuth as useAuth } from "@/hooks/useAuth-minimal";
 
 const MarketplacePage = () => {
   const { user, loading } = useAuth();

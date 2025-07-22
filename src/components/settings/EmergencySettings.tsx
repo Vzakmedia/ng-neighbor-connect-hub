@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle, Shield, Timer, Users, MapPin, MessageCircle, Phone, Smartphone } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
