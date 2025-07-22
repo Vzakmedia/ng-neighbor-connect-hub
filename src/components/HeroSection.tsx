@@ -10,8 +10,21 @@ import {
   MessageSquare
 } from 'lucide-react';
 import communityHero from '@/assets/community-hero.jpg';
+import { useProfile } from '@/hooks/useProfile';
 
 const HeroSection = () => {
+  const { profile, getLocation } = useProfile();
+  
+  const getCommunityWelcome = () => {
+    if (profile?.neighborhood) {
+      return `Welcome to ${profile.neighborhood} Community`;
+    }
+    if (profile?.city) {
+      return `Welcome to ${profile.city} Community`;
+    }
+    return 'Welcome to Your Community';
+  };
+
   const stats = [
     { icon: Users, label: 'Neighbors', value: '2,400+', color: 'text-community-blue' },
     { icon: Shield, label: 'Safety Alerts', value: '15', color: 'text-destructive' },
@@ -36,7 +49,7 @@ const HeroSection = () => {
             <div className="max-w-2xl text-white">
               <Badge className="mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30">
                 <Users className="w-3 h-3 mr-1" />
-                Welcome to Victoria Island Community
+                {getCommunityWelcome()}
               </Badge>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
                 Connect with your neighbors, build stronger communities
