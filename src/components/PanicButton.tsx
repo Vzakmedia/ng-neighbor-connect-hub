@@ -322,19 +322,7 @@ const PanicButton = () => {
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
-                {countdown > 0 ? (
-                  <>
-                    <strong>Emergency alert will be sent in {countdown} seconds</strong>
-                    <br />
-                    This will notify your emergency contacts and authorities with your location.
-                  </>
-                ) : (
-                  <>
-                    <strong>Sending emergency alert now...</strong>
-                    <br />
-                    Please wait while we notify your contacts.
-                  </>
-                )}
+                Select the type of emergency to send an immediate alert to your emergency contacts and authorities.
               </AlertDescription>
             </Alert>
 
@@ -361,23 +349,6 @@ const PanicButton = () => {
                 disabled={loading}
               >
                 Cancel
-              </Button>
-              <Button
-                onClick={triggerPanicAlert}
-                className="flex-1 bg-red-600 hover:bg-red-700"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Zap className="h-4 w-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Send Now
-                  </>
-                )}
               </Button>
             </div>
           </div>
