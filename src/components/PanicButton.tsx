@@ -146,6 +146,45 @@ const PanicButton = () => {
 
       if (panicError) throw panicError;
 
+      // Get user's emergency contacts
+      const { data: contacts, error: contactsError } = await supabase
+        .from('emergency_contacts')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (contactsError) throw contactsError;
+      
+      // Create notification for each emergency contact
+      if (contacts && contacts.length > 0) {
+        // Filter contacts that have app notification enabled
+        const appNotificationContacts = contacts.filter(
+          contact => contact.preferred_methods && contact.preferred_methods.includes('in_app')
+        );
+        
+        // Get user IDs for emergency contacts with app accounts
+        const { data: contactProfiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, phone')
+          .in('phone', appNotificationContacts.map(c => c.phone_number));
+          
+        if (profilesError) throw profilesError;
+        
+        // Create notifications for each contact with an app account
+        if (contactProfiles && contactProfiles.length > 0) {
+          const notifications = contactProfiles.map(profile => ({
+            recipient_id: profile.user_id,
+            panic_alert_id: panicData.id,
+            notification_type: 'panic_alert'
+          }));
+          
+          const { error: notificationError } = await supabase
+            .from('alert_notifications')
+            .insert(notifications);
+            
+          if (notificationError) console.error('Error creating notifications:', notificationError);
+        }
+      }
+
       // Call emergency alert function to notify contacts
       const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
         body: {

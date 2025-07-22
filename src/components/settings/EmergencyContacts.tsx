@@ -18,11 +18,16 @@ import {
   Trash2,
   Users,
   MapPin,
-  Shield
+  Shield,
+  UserPlus,
+  RefreshCw,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EmergencyContactRequest from './EmergencyContactRequest';
 
 type ContactMethod = 'in_app' | 'sms' | 'whatsapp' | 'phone_call';
 
@@ -45,7 +50,10 @@ const EmergencyContacts = () => {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
+  const [isInvitingContact, setIsInvitingContact] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
 
   const [formData, setFormData] = useState<{
     contact_name: string;
@@ -65,6 +73,10 @@ const EmergencyContacts = () => {
     preferred_methods: ['in_app']
   });
 
+  const [inviteData, setInviteData] = useState({
+    phone_number: ''
+  });
+
   const contactMethods: { value: ContactMethod; label: string; icon: JSX.Element }[] = [
     { value: 'in_app', label: 'In-App Notification', icon: <Smartphone className="h-4 w-4" /> },
     { value: 'sms', label: 'SMS', icon: <MessageCircle className="h-4 w-4" /> },
@@ -78,8 +90,112 @@ const EmergencyContacts = () => {
   ];
 
   useEffect(() => {
-    loadContacts();
+    if (user) {
+      loadContacts();
+      loadProfile();
+      loadSentRequests();
+      subscribeToContacts();
+    }
+    
+    return () => {
+      const subscription = supabase.channel('emergency-contacts');
+      supabase.removeChannel(subscription);
+    };
   }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const loadSentRequests = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('emergency_contact_requests')
+        .select(`
+          id,
+          recipient_phone,
+          status,
+          created_at
+        `)
+        .eq('sender_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setSentRequests(data || []);
+    } catch (error) {
+      console.error('Error loading sent requests:', error);
+    }
+  };
+
+  const subscribeToContacts = () => {
+    const subscription = supabase.channel('emergency-contacts')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'emergency_contacts'
+        },
+        (payload) => {
+          if (payload.new && payload.new.user_id === user?.id) {
+            loadContacts();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'emergency_contacts'
+        },
+        (payload) => {
+          if (payload.new && payload.new.user_id === user?.id) {
+            loadContacts();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'emergency_contacts'
+        },
+        () => {
+          loadContacts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_contact_requests'
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new === 'object' && 'sender_id' in payload.new && payload.new.sender_id === user?.id) {
+            loadSentRequests();
+          }
+        }
+      )
+      .subscribe();
+  };
 
   const loadContacts = async () => {
     if (!user) return;
@@ -101,6 +217,65 @@ const EmergencyContacts = () => {
         description: "Failed to load emergency contacts.",
         variant: "destructive"
       });
+    }
+  };
+
+  const sendInvitation = async () => {
+    if (!user || !inviteData.phone_number || !profile?.phone) return;
+    
+    setLoading(true);
+    try {
+      // Check if this phone number is already invited
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('emergency_contact_requests')
+        .select('id, status')
+        .eq('sender_id', user.id)
+        .eq('recipient_phone', inviteData.phone_number)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (checkError) throw checkError;
+      
+      if (existingRequests && existingRequests.length > 0) {
+        const latestRequest = existingRequests[0];
+        if (latestRequest.status === 'pending') {
+          toast({
+            title: "Invitation Already Sent",
+            description: "You have already invited this contact. They need to accept your invitation.",
+          });
+          setIsInvitingContact(false);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Send the invitation
+      const { error } = await supabase
+        .from('emergency_contact_requests')
+        .insert({
+          sender_id: user.id,
+          recipient_phone: inviteData.phone_number
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Invitation Sent",
+        description: "Emergency contact invitation has been sent.",
+      });
+      
+      setInviteData({ phone_number: '' });
+      setIsInvitingContact(false);
+      loadSentRequests();
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send emergency contact invitation.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -227,142 +402,242 @@ const EmergencyContacts = () => {
 
   return (
     <div className="space-y-6">
+      {/* Emergency Contact Requests */}
+      <EmergencyContactRequest />
+      
+      {/* Main Emergency Contacts Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             Emergency Contacts
           </CardTitle>
-          <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
-            <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Contact
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingContact ? 'Edit Contact' : 'Add Emergency Contact'}
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact-name">Full Name</Label>
-                  <Input
-                    id="contact-name"
-                    value={formData.contact_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                    placeholder="Enter contact name"
-                  />
+          <div className="flex gap-2">
+            <Dialog open={isInvitingContact} onOpenChange={setIsInvitingContact}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Invite Contact
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Invite Emergency Contact</DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Invite someone to be your emergency contact. They will receive a notification and need to accept your invitation.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="invite-phone">Contact's Phone Number</Label>
+                    <Input
+                      id="invite-phone"
+                      type="tel"
+                      placeholder="+234 XXX XXX XXXX"
+                      value={inviteData.phone_number}
+                      onChange={(e) => setInviteData({ phone_number: e.target.value })}
+                    />
+                  </div>
+                  
+                  {sentRequests.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Your Pending Invitations</h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {sentRequests
+                          .filter(req => req.status === 'pending')
+                          .map(request => (
+                            <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3 w-3" />
+                                <span className="text-xs">{request.recipient_phone}</span>
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Pending
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsInvitingContact(false)} 
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={sendInvitation} 
+                      disabled={loading || !inviteData.phone_number} 
+                      className="flex-1"
+                    >
+                      {loading ? 'Sending...' : 'Send Invitation'}
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone-number">Phone Number</Label>
-                  <Input
-                    id="phone-number"
-                    value={formData.phone_number}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                    placeholder="+234 XXX XXX XXXX"
-                    type="tel"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="relationship">Relationship</Label>
-                  <Select
-                    value={formData.relationship}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, relationship: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select relationship" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relationshipTypes.map((type) => (
-                        <SelectItem key={type} value={type.toLowerCase()}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
+              <DialogTrigger asChild>
+                <Button onClick={() => resetForm()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Contact
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingContact ? 'Edit Contact' : 'Add Emergency Contact'}
+                  </DialogTitle>
+                </DialogHeader>
+                
                 <div className="space-y-4">
-                  <Label>Preferred Contact Methods</Label>
-                  {contactMethods.map((method) => (
-                    <div key={method.value} className="flex items-center space-x-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-name">Full Name</Label>
+                    <Input
+                      id="contact-name"
+                      value={formData.contact_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+                      placeholder="Enter contact name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone-number">Phone Number</Label>
+                    <Input
+                      id="phone-number"
+                      value={formData.phone_number}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                      placeholder="+234 XXX XXX XXXX"
+                      type="tel"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="relationship">Relationship</Label>
+                    <Select
+                      value={formData.relationship}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, relationship: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {relationshipTypes.map((type) => (
+                          <SelectItem key={type} value={type.toLowerCase()}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <Label>Preferred Contact Methods</Label>
+                    {contactMethods.map((method) => (
+                      <div key={method.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`method-${method.value}`}
+                          checked={formData.preferred_methods.includes(method.value)}
+                          onCheckedChange={(checked) => handleMethodChange(method.value, !!checked)}
+                        />
+                        <Label 
+                          htmlFor={`method-${method.value}`} 
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          {method.icon}
+                          {method.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`method-${method.value}`}
-                        checked={formData.preferred_methods.includes(method.value)}
-                        onCheckedChange={(checked) => handleMethodChange(method.value, !!checked)}
+                        id="primary-contact"
+                        checked={formData.is_primary_contact}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_primary_contact: !!checked }))}
                       />
-                      <Label 
-                        htmlFor={`method-${method.value}`} 
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        {method.icon}
-                        {method.label}
+                      <Label htmlFor="primary-contact" className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        Primary Contact
                       </Label>
                     </div>
-                  ))}
-                </div>
 
-                <Separator />
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="share-location"
+                        checked={formData.can_receive_location}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_receive_location: !!checked }))}
+                      />
+                      <Label htmlFor="share-location" className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Can receive location updates
+                      </Label>
+                    </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="primary-contact"
-                      checked={formData.is_primary_contact}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_primary_contact: !!checked }))}
-                    />
-                    <Label htmlFor="primary-contact" className="flex items-center gap-2">
-                      <Star className="h-4 w-4" />
-                      Primary Contact
-                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="alert-public"
+                        checked={formData.can_alert_public}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_alert_public: !!checked }))}
+                      />
+                      <Label htmlFor="alert-public" className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Can alert public on my behalf
+                      </Label>
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="share-location"
-                      checked={formData.can_receive_location}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_receive_location: !!checked }))}
-                    />
-                    <Label htmlFor="share-location" className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      Can receive location updates
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="alert-public"
-                      checked={formData.can_alert_public}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_alert_public: !!checked }))}
-                    />
-                    <Label htmlFor="alert-public" className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Can alert public on my behalf
-                    </Label>
+                  <div className="flex gap-2 pt-4">
+                    <Button variant="outline" onClick={resetForm} className="flex-1">
+                      Cancel
+                    </Button>
+                    <Button onClick={saveContact} disabled={loading} className="flex-1">
+                      {loading ? 'Saving...' : (editingContact ? 'Update' : 'Add')} Contact
+                    </Button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button variant="outline" onClick={resetForm} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button onClick={saveContact} disabled={loading} className="flex-1">
-                    {loading ? 'Saving...' : (editingContact ? 'Update' : 'Add')} Contact
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
+          {/* Sent Invitations Section */}
+          {sentRequests.filter(req => req.status === 'pending').length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Pending Invitations
+              </h3>
+              <div className="space-y-2">
+                {sentRequests
+                  .filter(req => req.status === 'pending')
+                  .map(request => (
+                    <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{request.recipient_phone}</span>
+                      </div>
+                      <Badge variant="outline">Awaiting Response</Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        
+          {/* Contacts List */}
           {contacts.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
