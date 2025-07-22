@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 import SafetyMap from './SafetyMap';
 import PanicButton from './PanicButton';
+import ReportIncidentDialog from './ReportIncidentDialog';
 
 interface SafetyAlert {
   id: string;
@@ -176,19 +177,27 @@ const SafetyCenter = () => {
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           <PanicButton />
-          <Button className="flex items-center gap-2 hidden md:flex">
-            <Plus className="h-4 w-4" />
-            Report Incident
-          </Button>
+          <ReportIncidentDialog
+            trigger={
+              <Button className="flex items-center gap-2 hidden md:flex">
+                <Plus className="h-4 w-4" />
+                Report Incident
+              </Button>
+            }
+          />
         </div>
       </div>
       
       {/* Mobile Report Button */}
       <div className="md:hidden">
-        <Button className="w-full flex items-center justify-center gap-2">
-          <Plus className="h-4 w-4" />
-          Report Incident
-        </Button>
+        <ReportIncidentDialog
+          trigger={
+            <Button className="w-full flex items-center justify-center gap-2">
+              <Plus className="h-4 w-4" />
+              Report Incident
+            </Button>
+          }
+        />
       </div>
 
       {/* Quick Stats */}
