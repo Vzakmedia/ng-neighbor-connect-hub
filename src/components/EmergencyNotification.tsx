@@ -34,8 +34,8 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
     if (!user) return;
     
     try {
-      // Load panic alerts only
-      const { data: panicAlerts, error } = await supabase
+      // Attempt to retrieve all notification data including new columns
+      const { data, error } = await supabase
         .from('alert_notifications')
         .select(`
           id,
@@ -43,6 +43,10 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
           is_read,
           sent_at,
           panic_alert_id,
+          sender_name,
+          sender_phone,
+          content,
+          request_id,
           panic_alerts:panic_alert_id (
             user_id,
             latitude,
@@ -63,16 +67,10 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         
       if (error) throw error;
       
-      // Set only panic alerts
-      const allNotifications = panicAlerts || [];
-      
-      if (allNotifications.length > 0) {
-        setNotifications(allNotifications);
-        // Auto-open panel if there are unread emergency notifications
-        const hasEmergencyNotifications = allNotifications.some(
-          n => n.notification_type === 'panic_alert'
-        );
-        if (hasEmergencyNotifications) setPanelOpen(true);
+      if (data && data.length > 0) {
+        setNotifications(data);
+        // Auto-open panel if there are unread notifications
+        setPanelOpen(true);
       }
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -92,6 +90,8 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         (payload) => {
           if (payload.new) {
             loadNotifications();
+            
+            // Handle different notification types
             if (payload.new.notification_type === 'panic_alert') {
               // Play emergency alert sound automatically
               playNotification('emergency', 0.8);
@@ -100,6 +100,14 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
                 title: "🚨 EMERGENCY ALERT",
                 description: "Someone needs your help! Check your emergency notifications.",
                 variant: "destructive",
+              });
+            } else if (payload.new.notification_type === 'contact_request') {
+              // Play a different sound for contact requests
+              playNotification('notification', 0.5);
+              
+              toast({
+                title: "New Contact Request",
+                description: `${payload.new.sender_name || 'Someone'} wants to add you as an emergency contact.`,
               });
             }
           }
@@ -143,6 +151,35 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
   
   const callEmergencyContact = (phone: string) => {
     window.location.href = `tel:${phone}`;
+  };
+  
+  const confirmContactRequest = async (requestId: string) => {
+    if (!user || !requestId) return;
+    
+    try {
+      // Update the request status to 'accepted'
+      const { error } = await supabase
+        .from('emergency_contact_requests')
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Contact Request Accepted",
+        description: "You have been added as an emergency contact.",
+      });
+      
+      // Refresh notifications
+      loadNotifications();
+    } catch (error) {
+      console.error('Error accepting contact request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept contact request.",
+        variant: "destructive"
+      });
+    }
   };
   
   if (!user || notifications.length === 0) return null;
@@ -218,6 +255,51 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
                               Call
                             </Button>
                           )}
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(notification.sent_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              } else if (notification.notification_type === 'contact_request') {
+                // Display contact request notification
+                return (
+                  <div 
+                    key={notification.id} 
+                    className="border border-blue-200 rounded-md p-3 bg-blue-50"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">Contact Request</h4>
+                        <p className="text-sm mt-1">
+                          {notification.sender_name || 'Someone'} wants to add you as an emergency contact
+                        </p>
+                        
+                        {notification.sender_phone && (
+                          <p className="text-xs mt-2 flex items-center gap-1">
+                            <PhoneCall className="h-3 w-3" /> 
+                            {notification.sender_phone}
+                          </p>
+                        )}
+                        
+                        <div className="mt-3 flex gap-2">
+                          <Button 
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => confirmContactRequest(notification.request_id)}
+                          >
+                            <Check className="h-3 w-3 mr-1" />
+                            Accept
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline"

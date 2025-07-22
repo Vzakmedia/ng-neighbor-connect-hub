@@ -86,7 +86,7 @@ export const generateEmergencySound = (volume: number = 0.7): void => {
 };
 
 // Play notification with specified type and volume
-export const playNotification = (type: 'normal' | 'emergency', volume: number): void => {
+export const playNotification = (type: 'normal' | 'emergency' | 'notification', volume: number): void => {
   try {
     if (type === 'emergency') {
       generateEmergencySound(volume);
