@@ -6,18 +6,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Bell, Search, Menu, MapPin, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 const Header = () => {
   const [notifications] = useState(3);
   const { user, signOut } = useAuth();
+  const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const getInitials = (email: string) => {
-    return email.split('@')[0].substring(0, 2).toUpperCase();
   };
 
   return (
@@ -48,7 +46,7 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>Victoria Island</span>
+              <span>{getLocation()}</span>
             </div>
             
             <Button variant="ghost" size="icon" className="relative">
@@ -65,8 +63,11 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
+                      {profile?.avatar_url && (
+                        <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
+                      )}
                       <AvatarFallback>
-                        {getInitials(user.email || 'U')}
+                        {getInitials()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -74,9 +75,9 @@ const Header = () => {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.email}</p>
+                      <p className="font-medium">{getDisplayName()}</p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {user.email}
+                        {user?.email}
                       </p>
                     </div>
                   </div>
@@ -130,18 +131,21 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-7 w-7 rounded-full">
                     <Avatar className="h-7 w-7">
+                      {profile?.avatar_url && (
+                        <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
+                      )}
                       <AvatarFallback className="text-xs">
-                        {getInitials(user.email || 'U')}
+                        {getInitials()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium text-sm">{user.email}</p>
+                      <p className="font-medium text-sm">{getDisplayName()}</p>
                       <p className="w-[200px] truncate text-xs text-muted-foreground">
-                        {user.email}
+                        {user?.email}
                       </p>
                     </div>
                   </div>
