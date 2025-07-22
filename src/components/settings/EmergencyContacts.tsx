@@ -22,7 +22,11 @@ import {
   UserPlus,
   RefreshCw,
   CheckCircle,
-  Clock
+  Clock,
+  Key,
+  Lock,
+  LockKeyhole,
+  Check
 } from 'lucide-react';
 import { useMinimalAuth as useAuth } from '@/hooks/useAuth-minimal';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +56,12 @@ const EmergencyContacts = () => {
   const [loading, setLoading] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [isInvitingContact, setIsInvitingContact] = useState(false);
+  const [isConfirmingContact, setIsConfirmingContact] = useState(false);
+  const [isViewingCode, setIsViewingCode] = useState(false);
+  const [confirmationCode, setConfirmationCode] = useState('');
+  const [contactToConfirm, setContactToConfirm] = useState<EmergencyContact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<EmergencyContact | null>(null);
+  const [contactCode, setContactCode] = useState<string>('');
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -222,7 +232,14 @@ const EmergencyContacts = () => {
         .order('contact_name');
 
       if (error) throw error;
-      setContacts(data || []);
+      
+      // Map the data to ensure it matches our interface
+      const mappedContacts = data.map(contact => ({
+        ...contact,
+        is_confirmed: !!contact.is_confirmed // Ensure boolean type
+      }));
+      
+      setContacts(mappedContacts);
     } catch (error) {
       console.error('Error loading emergency contacts:', error);
       toast({
@@ -331,18 +348,33 @@ const EmergencyContacts = () => {
             is_primary_contact: formData.is_primary_contact,
             can_receive_location: formData.can_receive_location,
             can_alert_public: formData.can_alert_public,
-            preferred_methods: formData.preferred_methods
+            preferred_methods: formData.preferred_methods,
+            is_confirmed: false // New contacts start as unconfirmed
           });
 
         if (error) throw error;
+        
+        toast({
+          title: "Contact saved",
+          description: "Remember to get their confirmation code to verify this contact.",
+        });
       }
 
       await loadContacts();
       resetForm();
-      toast({
-        title: "Contact saved",
-        description: `Emergency contact ${editingContact ? 'updated' : 'added'} successfully.`,
-      });
+      
+      if (!editingContact) {
+        // Only show this toast for new contacts, not updates
+        toast({
+          title: "Contact saved",
+          description: "Remember to get their confirmation code to verify this contact.",
+        });
+      } else {
+        toast({
+          title: "Contact updated",
+          description: "Emergency contact has been successfully updated.",
+        });
+      }
     } catch (error) {
       console.error('Error saving emergency contact:', error);
       toast({
@@ -394,6 +426,9 @@ const EmergencyContacts = () => {
     });
     setIsAddingContact(false);
     setEditingContact(null);
+    setConfirmationCode('');
+    setContactToConfirm(null);
+    setIsConfirmingContact(false);
   };
 
   const startEditContact = (contact: EmergencyContact) => {
@@ -408,6 +443,68 @@ const EmergencyContacts = () => {
     });
     setEditingContact(contact);
     setIsAddingContact(true);
+  };
+  
+  const startConfirmContact = (contact: EmergencyContact) => {
+    setContactToConfirm(contact);
+    setConfirmationCode('');
+    setIsConfirmingContact(true);
+  };
+  
+  const confirmContact = async () => {
+    if (!contactToConfirm || !confirmationCode) return;
+    
+    setLoading(true);
+    try {
+      // Verify the confirmation code and update the contact
+      const { data, error } = await supabase
+        .from('emergency_contacts')
+        .select('confirm_code')
+        .eq('id', contactToConfirm.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data.confirm_code !== confirmationCode) {
+        toast({
+          title: "Invalid Code",
+          description: "The confirmation code you entered is incorrect.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Update the contact to be confirmed
+      const { error: updateError } = await supabase
+        .from('emergency_contacts')
+        .update({ is_confirmed: true })
+        .eq('id', contactToConfirm.id);
+        
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Contact Confirmed",
+        description: "Emergency contact has been successfully confirmed.",
+      });
+      
+      // Refresh the contacts list
+      await loadContacts();
+      
+      // Close the confirmation dialog
+      setIsConfirmingContact(false);
+      setContactToConfirm(null);
+      setConfirmationCode('');
+    } catch (error) {
+      console.error('Error confirming contact:', error);
+      toast({
+        title: "Error",
+        description: "Failed to confirm emergency contact.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMethodChange = (method: ContactMethod, checked: boolean) => {
@@ -498,6 +595,62 @@ const EmergencyContacts = () => {
                       {loading ? 'Sending...' : 'Send Invitation'}
                     </Button>
                   </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Confirmation Dialog */}
+            <Dialog open={isConfirmingContact} onOpenChange={setIsConfirmingContact}>
+              <DialogContent className="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <LockKeyhole className="h-5 w-5" />
+                    Confirm Emergency Contact
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-3">
+                  {contactToConfirm && (
+                    <>
+                      <p className="text-sm">
+                        To confirm <strong>{contactToConfirm.contact_name}</strong> as your emergency contact, 
+                        please enter the confirmation code they provided to you.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmation-code">Confirmation Code</Label>
+                        <Input
+                          id="confirmation-code"
+                          value={confirmationCode}
+                          onChange={(e) => setConfirmationCode(e.target.value)}
+                          placeholder="Enter 6-digit code"
+                          className="text-center text-lg tracking-widest"
+                          maxLength={6}
+                        />
+                      </div>
+                      
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        <p>Ask your emergency contact to go to their settings and share their unique code with you.</p>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsConfirmingContact(false)} 
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={confirmContact} 
+                          disabled={loading || !confirmationCode || confirmationCode.length < 6} 
+                          className="flex-1"
+                        >
+                          {loading ? 'Confirming...' : 'Confirm Contact'}
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
@@ -633,6 +786,94 @@ const EmergencyContacts = () => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* View Confirmation Code Dialog */}
+          <Dialog open={isViewingCode} onOpenChange={setIsViewingCode}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  Your Confirmation Code
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-3">
+                <p className="text-sm">
+                  Share this code with your emergency contact so they can verify and confirm you.
+                </p>
+                
+                <div className="p-4 bg-muted rounded-lg text-center">
+                  <p className="text-2xl font-mono tracking-widest font-semibold">{contactCode}</p>
+                </div>
+                
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <p>This is your unique confirmation code for the selected contact.</p>
+                  <p className="mt-2">Ask them to enter this code in their emergency contacts section.</p>
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    onClick={() => setIsViewingCode(false)} 
+                    className="w-full"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Your Confirmation Codes Section */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Your Confirmation Codes
+            </h3>
+            <div className="p-4 border rounded-lg bg-muted/30">
+              <p className="text-sm mb-3">
+                If someone has added you as an emergency contact, they will need your confirmation code to verify the relationship.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  if (!user) return;
+                  
+                  try {
+                    const { data, error } = await supabase
+                      .from('emergency_contacts')
+                      .select('id, contact_name, confirm_code')
+                      .not('confirm_code', 'is', null)
+                      .eq('phone_number', profile?.phone)
+                      .limit(1);
+                      
+                    if (error) throw error;
+                    
+                    if (data && data.length > 0) {
+                      setSelectedContact(data[0] as any);
+                      setContactCode(data[0].confirm_code);
+                      setIsViewingCode(true);
+                    } else {
+                      toast({
+                        title: "No Confirmation Code",
+                        description: "No one has added you as their emergency contact yet.",
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Error fetching confirmation code:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to retrieve confirmation code.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                View My Confirmation Code
+              </Button>
+            </div>
+          </div>
+          
           {/* Sent Invitations Section */}
           {sentRequests.filter(req => req.status === 'pending').length > 0 && (
             <div className="mb-6">
@@ -679,6 +920,17 @@ const EmergencyContacts = () => {
                             Primary
                           </Badge>
                         )}
+                        {contact.is_confirmed ? (
+                          <Badge variant="secondary" className="bg-green-600 text-white text-xs">
+                            <Check className="h-3 w-3 mr-1" />
+                            Confirmed
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            <Lock className="h-3 w-3 mr-1" />
+                            Unconfirmed
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {contact.phone_number} • {contact.relationship}
@@ -713,6 +965,17 @@ const EmergencyContacts = () => {
                     </div>
                     
                     <div className="flex gap-2">
+                      {!contact.is_confirmed && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="bg-blue-600 hover:bg-blue-700"
+                          onClick={() => startConfirmContact(contact)}
+                        >
+                          <Key className="h-3 w-3 mr-1" />
+                          Confirm
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"

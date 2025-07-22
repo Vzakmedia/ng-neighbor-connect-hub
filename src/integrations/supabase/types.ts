@@ -179,9 +179,11 @@ export type Database = {
         Row: {
           can_alert_public: boolean | null
           can_receive_location: boolean | null
+          confirm_code: string | null
           contact_name: string
           created_at: string
           id: string
+          is_confirmed: boolean | null
           is_primary: boolean | null
           is_primary_contact: boolean | null
           phone_number: string
@@ -194,9 +196,11 @@ export type Database = {
         Insert: {
           can_alert_public?: boolean | null
           can_receive_location?: boolean | null
+          confirm_code?: string | null
           contact_name: string
           created_at?: string
           id?: string
+          is_confirmed?: boolean | null
           is_primary?: boolean | null
           is_primary_contact?: boolean | null
           phone_number: string
@@ -209,9 +213,11 @@ export type Database = {
         Update: {
           can_alert_public?: boolean | null
           can_receive_location?: boolean | null
+          confirm_code?: string | null
           contact_name?: string
           created_at?: string
           id?: string
+          is_confirmed?: boolean | null
           is_primary?: boolean | null
           is_primary_contact?: boolean | null
           phone_number?: string
@@ -721,6 +727,10 @@ export type Database = {
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
+      }
+      generate_confirmation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       has_role: {
         Args: {

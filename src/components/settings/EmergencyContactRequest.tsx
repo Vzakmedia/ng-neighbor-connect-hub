@@ -168,6 +168,7 @@ const EmergencyContactRequest = () => {
           phone_number: profile.phone,
           is_primary_contact: false,
           preferred_methods: ['in_app', 'phone_call'],
+          is_confirmed: true, // Auto-confirm when accepting an invitation
         });
         
       if (insertError) throw insertError;
@@ -190,6 +191,7 @@ const EmergencyContactRequest = () => {
           phone_number: senderData.phone,
           is_primary_contact: false,
           preferred_methods: ['in_app', 'phone_call'],
+          // This contact isn't auto-confirmed - they'll need to enter your code
         });
         
       if (myContactError) throw myContactError;
