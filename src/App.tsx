@@ -51,6 +51,7 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <EmergencyNotification position="bottom-right" />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
