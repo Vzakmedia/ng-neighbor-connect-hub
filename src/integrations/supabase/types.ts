@@ -17,32 +17,44 @@ export type Database = {
       alert_notifications: {
         Row: {
           alert_id: string | null
+          content: string | null
           id: string
           is_read: boolean | null
           notification_type: string
           panic_alert_id: string | null
           read_at: string | null
           recipient_id: string
+          request_id: string | null
+          sender_name: string | null
+          sender_phone: string | null
           sent_at: string | null
         }
         Insert: {
           alert_id?: string | null
+          content?: string | null
           id?: string
           is_read?: boolean | null
           notification_type: string
           panic_alert_id?: string | null
           read_at?: string | null
           recipient_id: string
+          request_id?: string | null
+          sender_name?: string | null
+          sender_phone?: string | null
           sent_at?: string | null
         }
         Update: {
           alert_id?: string | null
+          content?: string | null
           id?: string
           is_read?: boolean | null
           notification_type?: string
           panic_alert_id?: string | null
           read_at?: string | null
           recipient_id?: string
+          request_id?: string | null
+          sender_name?: string | null
+          sender_phone?: string | null
           sent_at?: string | null
         }
         Relationships: [
