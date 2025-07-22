@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit, MapPin, Phone, Mail, User, Star } from 'lucide-react';
+import { Edit, MapPin, Phone, Mail, User, Star, Camera, Save, X, Upload, Calendar, Shield, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
@@ -30,9 +29,11 @@ interface Profile {
 const ProfileOverview = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -104,58 +105,249 @@ const ProfileOverview = () => {
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+
+      fetchProfile();
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile picture. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      handleAvatarUpload(file);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const cancelEditing = () => {
+    setEditing(false);
+    // Reset form data to current profile values
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        address: profile.address || '',
+        neighborhood: profile.neighborhood || '',
+        state: profile.state || '',
+        city: profile.city || '',
+        bio: profile.bio || ''
+      });
+    }
+  };
+
   if (loading) {
     return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="rounded-full bg-muted h-24 w-24"></div>
+                <div className="space-y-2">
+                  <div className="h-6 bg-muted rounded w-32"></div>
+                  <div className="h-4 bg-muted rounded w-24"></div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Profile Header Card */}
       <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="rounded-full bg-muted h-20 w-20"></div>
-              <div className="space-y-2">
-                <div className="h-6 bg-muted rounded w-32"></div>
-                <div className="h-4 bg-muted rounded w-24"></div>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              My Profile
+            </CardTitle>
+            {!editing ? (
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={cancelEditing}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmit}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Profile Picture Section */}
+          <div className="flex items-start space-x-6">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="text-xl bg-gradient-primary text-white">
+                  {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {editing && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+            
+            <div className="flex-1 space-y-4">
+              {/* Name Section */}
+              <div>
+                {editing ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                      placeholder="Enter your full name"
+                      className="text-lg font-semibold"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-semibold">
+                      {profile?.full_name || 'No name set'}
+                    </h2>
+                    {profile?.is_verified && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Bio Section */}
+              <div>
+                {editing ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {profile?.bio || 'No bio available'}
+                  </p>
+                )}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-    );
-  }
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      {/* Contact Information */}
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile Overview
+            <Phone className="h-5 w-5" />
+            Contact Information
           </CardTitle>
-          <Dialog open={editing} onOpenChange={setEditing}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              {editing ? (
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
@@ -165,28 +357,72 @@ const ProfileOverview = () => {
                     placeholder="Enter your phone number"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      placeholder="State"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="City"
-                    />
-                  </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{profile?.phone || 'No phone number'}</span>
                 </div>
+              )}
+            </div>
 
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>{user?.email || 'No email'}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Location Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Location Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              {editing ? (
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    value={formData.state}
+                    onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                    placeholder="Enter your state"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-sm text-muted-foreground">State</Label>
+                  <p className="font-medium">{profile?.state || 'Not specified'}</p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              {editing ? (
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                    placeholder="Enter your city"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-sm text-muted-foreground">City</Label>
+                  <p className="font-medium">{profile?.city || 'Not specified'}</p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              {editing ? (
                 <div className="space-y-2">
                   <Label htmlFor="neighborhood">Neighborhood</Label>
                   <Input
@@ -196,120 +432,73 @@ const ProfileOverview = () => {
                     placeholder="Enter your neighborhood"
                   />
                 </div>
+              ) : (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Neighborhood</Label>
+                  <p className="font-medium">{profile?.neighborhood || 'Not specified'}</p>
+                </div>
+              )}
+            </div>
 
+            <div className="md:col-span-2">
+              {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">Full Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Enter your address"
+                    placeholder="Enter your full address"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                    placeholder="Tell us about yourself..."
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="flex gap-2 pt-4">
-                  <Button type="submit" className="flex-1">
-                    Save Changes
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setEditing(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* Profile Header */}
-        <div className="flex items-start space-x-6">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback className="text-lg">
-              {profile?.full_name ? getInitials(profile.full_name) : 'U'}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">
-                {profile?.full_name || 'No name set'}
-              </h2>
-              {profile?.is_verified && (
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  <Star className="h-3 w-3 mr-1" />
-                  Verified
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              {profile?.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  {profile.phone}
-                </div>
-              )}
-              
-              {user?.email && (
-                <div className="flex items-center gap-1">
-                  <Mail className="h-4 w-4" />
-                  {user.email}
-                </div>
-              )}
-              
-              {(profile?.city || profile?.state) && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {[profile?.city, profile?.state].filter(Boolean).join(', ')}
+              ) : (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Full Address</Label>
+                  <p className="font-medium">{profile?.address || 'Not specified'}</p>
                 </div>
               )}
             </div>
-            
-            {profile?.bio && (
-              <p className="text-foreground mt-3">
-                {profile.bio}
-              </p>
-            )}
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Additional Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Location Details</h3>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              {profile?.neighborhood && (
-                <p>Neighborhood: {profile.neighborhood}</p>
-              )}
-              {profile?.address && (
-                <p>Address: {profile.address}</p>
-              )}
+      {/* Account Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Account Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-muted-foreground">Member Since</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">
+                  {new Date(profile?.created_at || '').toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm text-muted-foreground">Account Status</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`h-2 w-2 rounded-full ${profile?.is_verified ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <span className="font-medium">
+                  {profile?.is_verified ? 'Verified Account' : 'Unverified Account'}
+                </span>
+              </div>
             </div>
           </div>
-          
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Account Info</h3>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>Member since: {new Date(profile?.created_at || '').toLocaleDateString()}</p>
-              <p>Status: {profile?.is_verified ? 'Verified' : 'Unverified'}</p>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
