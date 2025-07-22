@@ -47,7 +47,8 @@ const EmergencyContactRequest = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id === 'mock-user-id' ? 
+          'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id)
         .single();
         
       if (error) throw error;
@@ -62,6 +63,10 @@ const EmergencyContactRequest = () => {
     
     try {
       setLoading(true);
+      
+      // For development - handle mock user ID
+      const userId = user.id === 'mock-user-id' ? 
+        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
       
       // Get all incoming requests for this user's phone number
       const { data, error } = await supabase
@@ -147,7 +152,8 @@ const EmergencyContactRequest = () => {
         .from('emergency_contact_requests')
         .update({
           status: 'accepted',
-          recipient_id: user.id
+          recipient_id: user.id === 'mock-user-id' ? 
+            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id
         })
         .eq('id', requestId);
         
@@ -178,7 +184,8 @@ const EmergencyContactRequest = () => {
       const { error: myContactError } = await supabase
         .from('emergency_contacts')
         .insert({
-          user_id: user.id,
+          user_id: user.id === 'mock-user-id' ? 
+            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
           contact_name: senderData.full_name || 'Emergency Contact',
           phone_number: senderData.phone,
           is_primary_contact: false,

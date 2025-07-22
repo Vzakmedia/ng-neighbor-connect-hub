@@ -107,10 +107,14 @@ const EmergencyContacts = () => {
     if (!user) return;
     
     try {
+      // For development - handle mock user ID
+      const userId = user.id === 'mock-user-id' ? 
+        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
+        
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single();
         
       if (error) throw error;
@@ -124,6 +128,10 @@ const EmergencyContacts = () => {
     if (!user) return;
     
     try {
+      // For development - handle mock user ID
+      const userId = user.id === 'mock-user-id' ? 
+        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
+        
       const { data, error } = await supabase
         .from('emergency_contact_requests')
         .select(`
@@ -132,7 +140,7 @@ const EmergencyContacts = () => {
           status,
           created_at
         `)
-        .eq('sender_id', user.id)
+        .eq('sender_id', userId)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
@@ -201,10 +209,14 @@ const EmergencyContacts = () => {
     if (!user) return;
 
     try {
+      // For development - handle mock user ID
+      const userId = user.id === 'mock-user-id' ? 
+        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
+        
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('is_primary_contact', { ascending: false })
         .order('contact_name');
 
@@ -225,11 +237,15 @@ const EmergencyContacts = () => {
     
     setLoading(true);
     try {
+      // For development - handle mock user ID
+      const userId = user.id === 'mock-user-id' ? 
+        'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id;
+        
       // Check if this phone number is already invited
       const { data: existingRequests, error: checkError } = await supabase
         .from('emergency_contact_requests')
         .select('id, status')
-        .eq('sender_id', user.id)
+        .eq('sender_id', userId)
         .eq('recipient_phone', inviteData.phone_number)
         .order('created_at', { ascending: false })
         .limit(1);
@@ -253,7 +269,8 @@ const EmergencyContacts = () => {
       const { error } = await supabase
         .from('emergency_contact_requests')
         .insert({
-          sender_id: user.id,
+          sender_id: user.id === 'mock-user-id' ? 
+            'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
           recipient_phone: inviteData.phone_number
         });
         
@@ -305,7 +322,8 @@ const EmergencyContacts = () => {
         const { error } = await supabase
           .from('emergency_contacts')
           .insert({
-            user_id: user.id,
+            user_id: user.id === 'mock-user-id' ? 
+              'b5ea53ea-bb6e-4d12-84f4-ceddd6430c48' : user.id,
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
             relationship: formData.relationship,
