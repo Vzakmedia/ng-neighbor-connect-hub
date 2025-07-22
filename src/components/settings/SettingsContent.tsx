@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth'; // Make sure to use the real auth hook
 import { 
   Settings, 
   Bell, 
@@ -451,7 +451,7 @@ const SettingsContent = () => {
                     <div>
                       <Label htmlFor="allow-messages">Allow Direct Messages</Label>
                       <p className="text-sm text-muted-foreground">
-                        Let other users send you direct messages
+                        Let other users message you directly
                       </p>
                     </div>
                     <Switch
@@ -460,12 +460,19 @@ const SettingsContent = () => {
                       onCheckedChange={(checked) => handlePrivacyChange('allowMessages', checked)}
                     />
                   </div>
-                  
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Location Services</h3>
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label htmlFor="share-location">Share Location</Label>
                       <p className="text-sm text-muted-foreground">
-                        Allow location sharing for safety and marketplace features
+                        Allow the app to access your location for neighborhood features
                       </p>
                     </div>
                     <Switch
@@ -486,58 +493,50 @@ const SettingsContent = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Account Management
+                Account Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <h3 className="font-medium">Account Actions</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Sign Out</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Sign out of your account on this device
-                      </p>
-                    </div>
-                    <Button variant="outline" onClick={handleSignOut}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
+                <h3 className="font-medium">Sign Out</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sign out of your account on this device.
+                </p>
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium text-destructive">Delete Account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all your data. This action cannot be undone.
+                </p>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Account
                     </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
-                    <div>
-                      <h4 className="font-medium text-destructive">Delete Account</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Permanently delete your account and all associated data
-                      </p>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Account
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your
-                            account and remove all your data from our servers.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteAccount}>
-                            Delete Account
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your account
+                        and remove your data from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteAccount}>Delete Account</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
@@ -549,59 +548,32 @@ const SettingsContent = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5" />
-                Data Management
+                Data & Privacy
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <h3 className="font-medium">Your Data</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Export Data</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Download a copy of all your data including posts, messages, and profile information
-                      </p>
-                    </div>
-                    <Button variant="outline" onClick={handleExportData}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Data
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h4 className="font-medium">Import Data</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Import data from another platform or previous export
-                      </p>
-                    </div>
-                    <Button variant="outline">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import Data
-                    </Button>
-                  </div>
-                </div>
+                <h3 className="font-medium">Export Your Data</h3>
+                <p className="text-sm text-muted-foreground">
+                  Download a copy of your personal data, including your profile, posts, and activity.
+                </p>
+                <Button variant="outline" onClick={handleExportData}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Request Data Export
+                </Button>
               </div>
 
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="font-medium">Data Usage Information</h3>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>
-                    We collect and process your data to provide our community safety platform services. 
-                    This includes your profile information, posts, safety alerts, and location data when shared.
-                  </p>
-                  <p>
-                    Your data is used to connect you with your neighbors, facilitate marketplace transactions, 
-                    coordinate safety efforts, and improve our services.
-                  </p>
-                  <p>
-                    You can request access to, correction of, or deletion of your personal data at any time 
-                    by contacting our support team.
-                  </p>
-                </div>
+                <h3 className="font-medium">Import Data</h3>
+                <p className="text-sm text-muted-foreground">
+                  Import data from a file or another service.
+                </p>
+                <Button variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Data
+                </Button>
               </div>
             </CardContent>
           </Card>
