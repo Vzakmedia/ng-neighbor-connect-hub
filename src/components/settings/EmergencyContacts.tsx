@@ -391,11 +391,22 @@ const EmergencyContacts = () => {
   };
 
   const saveContact = async () => {
-    if (!user || !formData.contact_name || !formData.phone_number) return;
+    console.log('saveContact called with formData:', formData);
+    console.log('User:', user);
+    
+    if (!user || !formData.contact_name || !formData.phone_number) {
+      console.log('Validation failed - missing required fields:', {
+        hasUser: !!user,
+        hasContactName: !!formData.contact_name,
+        hasPhoneNumber: !!formData.phone_number
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       if (editingContact) {
+        console.log('Updating existing contact:', editingContact.id);
         // Update existing contact
         const { error } = await supabase
           .from('emergency_contacts')
@@ -410,8 +421,13 @@ const EmergencyContacts = () => {
           })
           .eq('id', editingContact.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Contact updated successfully');
       } else {
+        console.log('Creating new contact');
         // First check if this phone number belongs to a user on the app
         const { data: matchingProfiles, error: profileError } = await supabase
           .from('profiles')
@@ -419,11 +435,27 @@ const EmergencyContacts = () => {
           .eq('phone', formData.phone_number)
           .limit(1);
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile search error:', profileError);
+          throw profileError;
+        }
         
+        console.log('Profile search result:', matchingProfiles);
         const isAppUser = matchingProfiles && matchingProfiles.length > 0;
         
         // Create new contact
+        console.log('Inserting contact with data:', {
+          user_id: user.id,
+          contact_name: formData.contact_name,
+          phone_number: formData.phone_number,
+          relationship: formData.relationship,
+          is_primary_contact: formData.is_primary_contact,
+          can_receive_location: formData.can_receive_location,
+          can_alert_public: formData.can_alert_public,
+          preferred_methods: formData.preferred_methods,
+          is_confirmed: isAppUser
+        });
+        
         const { data: newContact, error } = await supabase
           .from('emergency_contacts')
           .insert({
@@ -440,7 +472,12 @@ const EmergencyContacts = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        
+        console.log('Contact created successfully:', newContact);
         
         // If the contact is an app user, send them a notification
         if (isAppUser) {
