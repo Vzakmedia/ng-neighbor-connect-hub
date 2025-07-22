@@ -142,6 +142,39 @@ export type Database = {
           },
         ]
       }
+      emergency_contact_requests: {
+        Row: {
+          created_at: string
+          id: string
+          notification_sent: boolean | null
+          recipient_id: string | null
+          recipient_phone: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_sent?: boolean | null
+          recipient_id?: string | null
+          recipient_phone: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_sent?: boolean | null
+          recipient_id?: string | null
+          recipient_phone?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       emergency_contacts: {
         Row: {
           can_alert_public: boolean | null
