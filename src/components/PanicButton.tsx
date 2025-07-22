@@ -28,7 +28,7 @@ const PanicButton = () => {
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'other'>('other');
+  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'other'>('other');
   const [preferences, setPreferences] = useState<any>(null);
 
   const situationTypes = [
@@ -36,6 +36,7 @@ const PanicButton = () => {
     { value: 'fire', label: 'Fire', icon: '🔥' },
     { value: 'break_in', label: 'Break In', icon: '🔓' },
     { value: 'assault', label: 'Assault', icon: '⚠️' },
+    { value: 'kidnapping', label: 'Kidnapping', icon: '🚨' },
     { value: 'accident', label: 'Accident', icon: '🚗' },
     { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌪️' },
     { value: 'suspicious_activity', label: 'Suspicious Activity', icon: '👁️' },
@@ -292,23 +293,30 @@ const PanicButton = () => {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="situation-select">Emergency Situation</Label>
-              <Select value={selectedSituation} onValueChange={(value) => setSelectedSituation(value as any)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {situationTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{type.icon}</span>
-                        <span>{type.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <Label>Select Emergency Situation</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {situationTypes.map((type) => (
+                  <Card 
+                    key={type.value} 
+                    className={`cursor-pointer transition-all hover:bg-red-50 border-2 ${
+                      selectedSituation === type.value 
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-muted hover:border-red-200'
+                    }`}
+                    onClick={() => {
+                      setSelectedSituation(type.value as any);
+                      // Auto-trigger alert when card is clicked
+                      triggerPanicAlert();
+                    }}
+                  >
+                    <CardContent className="p-3 text-center">
+                      <div className="text-2xl mb-1">{type.icon}</div>
+                      <div className="text-xs font-medium">{type.label}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <Alert className="border-red-200 bg-red-50">
