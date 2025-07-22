@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface WebhookPayload {
+interface RequestPayload {
   type: string;
   table: string;
   record: {
@@ -40,8 +40,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the request body
-    const body: WebhookPayload = await req.json();
-    console.log("Webhook payload:", JSON.stringify(body));
+    const body: RequestPayload = await req.json();
+    console.log("Request payload:", JSON.stringify(body));
 
     // Only process inserts to emergency_contact_requests
     if (body.type !== 'INSERT' || body.table !== 'emergency_contact_requests') {
@@ -63,22 +63,11 @@ serve(async (req) => {
 
     // Check if we have a recipient_id
     if (!record.recipient_id) {
-      // Try once more to see if the recipient has been identified by now
-      const { data: updatedRequest, error } = await supabase
-        .from('emergency_contact_requests')
-        .select('recipient_id')
-        .eq('id', record.id)
-        .single();
-
-      if (error || !updatedRequest.recipient_id) {
-        console.log('No recipient found for contact request:', record.id);
-        return new Response(JSON.stringify({ message: 'No recipient found' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        });
-      }
-
-      record.recipient_id = updatedRequest.recipient_id;
+      console.log('No recipient found for contact request:', record.id);
+      return new Response(JSON.stringify({ message: 'No recipient found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     }
 
     // Get sender info

@@ -72,6 +72,13 @@ export type Database = {
             referencedRelation: "panic_alerts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "alert_notifications_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_contact_requests"
+            referencedColumns: ["id"]
+          },
         ]
       }
       alert_responses: {
@@ -105,6 +112,41 @@ export type Database = {
             columns: ["alert_id"]
             isOneToOne: false
             referencedRelation: "safety_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_invitation_codes: {
+        Row: {
+          code: string
+          contact_request_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          used: boolean | null
+        }
+        Insert: {
+          code: string
+          contact_request_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used?: boolean | null
+        }
+        Update: {
+          code?: string
+          contact_request_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_invitation_codes_contact_request_id_fkey"
+            columns: ["contact_request_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_contact_requests"
             referencedColumns: ["id"]
           },
         ]
