@@ -34,7 +34,7 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
     if (!user) return;
     
     try {
-      // Attempt to retrieve all notification data including new columns
+      // Load notifications with proper foreign key handling
       const { data, error } = await supabase
         .from('alert_notifications')
         .select(`
@@ -46,20 +46,7 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
           sender_name,
           sender_phone,
           content,
-          request_id,
-          panic_alerts:panic_alert_id (
-            user_id,
-            latitude,
-            longitude,
-            address,
-            message,
-            situation_type,
-            created_at,
-            profiles:user_id (
-              full_name,
-              phone
-            )
-          )
+          request_id
         `)
         .eq('recipient_id', user.id)
         .eq('is_read', false)
@@ -88,6 +75,7 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
           filter: `recipient_id=eq.${user?.id}`
         },
         (payload) => {
+          console.log('New notification received:', payload);
           if (payload.new) {
             loadNotifications();
             
@@ -124,7 +112,25 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
           loadNotifications();
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'emergency_contact_requests',
+          filter: `recipient_id=eq.${user?.id}`
+        },
+        (payload) => {
+          console.log('New contact request received:', payload);
+          toast({
+            title: "Emergency Contact Request",
+            description: "Someone wants to add you as an emergency contact.",
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
   };
   
   const markAsRead = async (notificationId: string) => {

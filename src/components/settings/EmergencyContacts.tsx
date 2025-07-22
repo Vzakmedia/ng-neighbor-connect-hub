@@ -243,7 +243,7 @@ const EmergencyContacts = () => {
         
       if (error) throw error;
       
-      // Create a contact request if the contact is not pre-confirmed
+      // Create a contact request and notification system
       try {
         const { data: request, error: requestError } = await supabase
           .from('emergency_contact_requests')
@@ -260,25 +260,24 @@ const EmergencyContacts = () => {
         } else {
           console.log('Contact request created:', request);
           
-          // Manually trigger the edge function
-          try {
-            await fetch('https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/emergency-contact-invitation', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-              },
-              body: JSON.stringify({
+          // Trigger the edge function to handle notifications
+          const { data: response, error: funcError } = await supabase.functions.invoke(
+            'emergency-contact-invitation',
+            {
+              body: {
                 type: 'INSERT',
                 table: 'emergency_contact_requests',
                 record: request,
                 schema: 'public',
                 old_record: null
-              })
-            });
-            console.log('Edge function triggered manually');
-          } catch (edgeFuncError) {
-            console.error('Error triggering edge function:', edgeFuncError);
+              }
+            }
+          );
+          
+          if (funcError) {
+            console.error('Error triggering edge function:', funcError);
+          } else {
+            console.log('Edge function response:', response);
           }
         }
       } catch (e) {
