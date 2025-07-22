@@ -823,30 +823,34 @@ const EmergencyContacts = () => {
     setSearchResults([]);
   };
   
-  const clearAllForDebug = async () => {
+  const deleteInvitationById = async (invitationId: string) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      // Direct query to clear ALL emergency contact requests from this user
+      // Delete by direct ID
       const { error } = await supabase
         .from('emergency_contact_requests')
         .delete()
-        .eq('sender_id', user.id);
+        .eq('id', invitationId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting invitation:', error);
+        throw error;
+      }
       
       toast({
-        title: "All invitations removed",
-        description: "Successfully removed all invitations including any that might have been stuck."
+        title: "Invitation removed",
+        description: "Successfully removed the invitation."
       });
       
+      // Refresh the sent requests list
       await loadSentRequests();
     } catch (error) {
-      console.error('Error removing all invitations:', error);
+      console.error('Error removing invitation:', error);
       toast({
         title: "Error",
-        description: "Failed to remove invitations.",
+        description: "Failed to remove invitation.",
         variant: "destructive"
       });
     } finally {
@@ -1336,10 +1340,10 @@ const EmergencyContacts = () => {
                       size="sm" 
                       variant="destructive" 
                       className="text-xs"
-                      onClick={clearAllForDebug}
+                      onClick={() => deleteInvitationById('9ac978ed-c176-4a2a-8a9e-7487a1c7dd99')}
                       disabled={loading}
                     >
-                      Force Remove All
+                      Remove 07065662956
                     </Button>
                     <Button 
                       size="sm" 
