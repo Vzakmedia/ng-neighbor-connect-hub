@@ -514,6 +514,7 @@ export type Database = {
           bio: string | null
           city: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           is_verified: boolean | null
@@ -529,6 +530,7 @@ export type Database = {
           bio?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_verified?: boolean | null
@@ -544,6 +546,7 @@ export type Database = {
           bio?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_verified?: boolean | null

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import EmergencyNotification from "@/components/EmergencyNotification";
+import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -54,6 +55,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
             <EmergencyNotification position="bottom-right" />
+            <NeighborhoodEmergencyAlert position="top-center" />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
