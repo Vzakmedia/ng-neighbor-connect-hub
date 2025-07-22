@@ -26,7 +26,10 @@ import {
   Lock,
   CheckCircle,
   Copy,
-  LockKeyhole
+  LockKeyhole,
+  Search,
+  UserCheck,
+  Loader2
 } from 'lucide-react';
 
 type ContactMethod = 'in_app' | 'sms' | 'whatsapp' | 'phone_call';
@@ -43,6 +46,18 @@ interface EmergencyContact {
   is_confirmed: boolean;
   confirm_code?: string;
   created_at: string;
+}
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone: string;
+  email?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  avatar_url?: string;
 }
 
 const EmergencyContacts = () => {
@@ -62,6 +77,9 @@ const EmergencyContacts = () => {
   const [profile, setProfile] = useState<any>(null);
   const [verifyingContact, setVerifyingContact] = useState<EmergencyContact | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const [formData, setFormData] = useState({
     contact_name: '',
@@ -91,6 +109,58 @@ const EmergencyContacts = () => {
       supabase.removeChannel(subscription);
     };
   }, [user]);
+
+  const searchUsersByPhone = async (query: string) => {
+    if (!query || query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, full_name, phone, email, neighborhood, city, state, avatar_url')
+        .or(`phone.ilike.%${query}%,email.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .limit(5);
+      
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to search for users. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone_number: value }));
+    
+    // Clear any existing timeout
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    // Set a new timeout to avoid making too many requests while typing
+    const timeout = setTimeout(() => {
+      searchUsersByPhone(value);
+    }, 500);
+    
+    setSearchTimeout(timeout);
+  };
+
+  const selectUserFromSearch = (profile: UserProfile) => {
+    setFormData(prev => ({
+      ...prev,
+      contact_name: profile.full_name || '',
+      phone_number: profile.phone || '',
+    }));
+    setSearchResults([]);
+  };
 
   const loadProfile = async () => {
     if (!user) return;
@@ -430,6 +500,13 @@ const EmergencyContacts = () => {
                 </DialogHeader>
                 
                 <div className="space-y-4 py-3">
+                  <Alert className="mb-4">
+                    <Search className="h-4 w-4" />
+                    <AlertDescription>
+                      Search for existing users on the app by typing their name, phone, or email. This helps connect with verified users in the SafeNeighbor network.
+                    </AlertDescription>
+                  </Alert>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="contact-name">Contact Name *</Label>
@@ -443,13 +520,60 @@ const EmergencyContacts = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="phone-number">Phone Number *</Label>
-                      <Input
-                        id="phone-number"
-                        type="tel"
-                        placeholder="+234 XXX XXX XXXX"
-                        value={formData.phone_number}
-                        onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="phone-number"
+                          type="tel"
+                          placeholder="Search by phone, email or name"
+                          value={formData.phone_number}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                        />
+                        {isSearching && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Search Results */}
+                      {searchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full bg-background rounded-md border shadow-lg">
+                          <div className="p-2 text-xs text-muted-foreground flex items-center">
+                            <Search className="h-3 w-3 mr-1" />
+                            Users found in app
+                          </div>
+                          <div className="max-h-60 overflow-auto">
+                            {searchResults.map((profile) => (
+                              <button
+                                key={profile.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
+                                onClick={() => selectUserFromSearch(profile)}
+                              >
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                  {profile.avatar_url ? (
+                                    <img 
+                                      src={profile.avatar_url} 
+                                      alt={profile.full_name} 
+                                      className="h-8 w-8 rounded-full object-cover" 
+                                    />
+                                  ) : (
+                                    profile.full_name?.charAt(0) || '?'
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{profile.full_name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {profile.phone || profile.email}
+                                    {profile.neighborhood && ` • ${profile.neighborhood}`}
+                                  </p>
+                                </div>
+                                <UserCheck className="h-4 w-4 ml-auto text-green-500" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
