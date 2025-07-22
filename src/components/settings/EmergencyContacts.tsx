@@ -76,16 +76,15 @@ const EmergencyContacts = () => {
   const [formData, setFormData] = useState({
     contact_name: '',
     phone_number: '',
-    email: '',
-    profile_name: '',
-    search_query: '',
-    search_type: 'phone' as 'phone' | 'email' | 'profile',
     relationship: '',
     is_primary_contact: false,
     can_receive_location: true,
     can_alert_public: false,
     preferred_methods: ['in_app'] as ContactMethod[]
   });
+
+  const [foundUser, setFoundUser] = useState<SearchResult | null>(null);
+  const [isUserFound, setIsUserFound] = useState(false);
 
   const [inviteData, setInviteData] = useState({
     search_query: '',
@@ -343,6 +342,46 @@ const EmergencyContacts = () => {
     }
   };
 
+  const searchUserByPhone = async (phoneNumber: string) => {
+    if (!phoneNumber.trim()) {
+      setFoundUser(null);
+      setIsUserFound(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .eq('phone', phoneNumber)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const user = { ...data[0], email: '' };
+        setFoundUser(user);
+        setIsUserFound(true);
+        
+        // Auto-fill the form with found user data
+        setFormData(prev => ({
+          ...prev,
+          contact_name: user.full_name || ''
+        }));
+      } else {
+        setFoundUser(null);
+        setIsUserFound(false);
+      }
+    } catch (error) {
+      console.error('Error searching user:', error);
+      setFoundUser(null);
+      setIsUserFound(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const saveContact = async () => {
     if (!user || !formData.contact_name || !formData.phone_number) return;
 
@@ -355,10 +394,6 @@ const EmergencyContacts = () => {
           .update({
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
-            email: formData.email,
-            profile_name: formData.profile_name,
-            search_query: formData.search_query,
-            search_type: formData.search_type,
             relationship: formData.relationship,
             is_primary_contact: formData.is_primary_contact,
             can_receive_location: formData.can_receive_location,
@@ -387,10 +422,6 @@ const EmergencyContacts = () => {
             user_id: user.id,
             contact_name: formData.contact_name,
             phone_number: formData.phone_number,
-            email: formData.email,
-            profile_name: formData.profile_name,
-            search_query: formData.search_query,
-            search_type: formData.search_type,
             relationship: formData.relationship,
             is_primary_contact: formData.is_primary_contact,
             can_receive_location: formData.can_receive_location,
@@ -484,10 +515,6 @@ const EmergencyContacts = () => {
     setFormData({
       contact_name: '',
       phone_number: '',
-      email: '',
-      profile_name: '',
-      search_query: '',
-      search_type: 'phone',
       relationship: '',
       is_primary_contact: false,
       can_receive_location: true,
@@ -499,17 +526,14 @@ const EmergencyContacts = () => {
     setConfirmationCode('');
     setContactToConfirm(null);
     setIsConfirmingContact(false);
-    setSearchResults([]);
+    setFoundUser(null);
+    setIsUserFound(false);
   };
 
   const startEditContact = (contact: EmergencyContact) => {
     setFormData({
       contact_name: contact.contact_name,
       phone_number: contact.phone_number,
-      email: '',
-      profile_name: '',
-      search_query: '',
-      search_type: 'phone',
       relationship: contact.relationship || '',
       is_primary_contact: contact.is_primary_contact,
       can_receive_location: contact.can_receive_location,
@@ -836,13 +860,55 @@ const EmergencyContacts = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="phone-number">Phone Number</Label>
-                    <Input
-                      id="phone-number"
-                      value={formData.phone_number}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                      placeholder="+234 XXX XXX XXXX"
-                      type="tel"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="phone-number"
+                        value={formData.phone_number}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, phone_number: value }));
+                          
+                          // Search for user as they type
+                          if (value.length > 7) { // Start searching after reasonable phone number length
+                            searchUserByPhone(value);
+                          } else {
+                            setFoundUser(null);
+                            setIsUserFound(false);
+                          }
+                        }}
+                        placeholder="+234 XXX XXX XXXX"
+                        type="tel"
+                        className={isUserFound ? 'border-green-500' : ''}
+                      />
+                      
+                      {/* Loading indicator */}
+                      {isSearching && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                      
+                      {/* User found indicator */}
+                      {isUserFound && foundUser && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* User found message */}
+                    {isUserFound && foundUser && (
+                      <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <div className="text-sm">
+                          <span className="font-medium text-green-800">User found: </span>
+                          <span className="text-green-700">{foundUser.full_name}</span>
+                          <span className="text-green-600 text-xs block">
+                            This user is on the app and will be auto-confirmed
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
