@@ -34,7 +34,7 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
     if (!user) return;
     
     try {
-      // Load panic alerts
+      // Load panic alerts only
       const { data: panicAlerts, error } = await supabase
         .from('alert_notifications')
         .select(`
@@ -63,46 +63,14 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         
       if (error) throw error;
       
-      // Load emergency contact requests with notification_sent = true
-      const { data: contactRequests, error: requestsError } = await supabase
-        .from('emergency_contact_requests')
-        .select(`
-          id,
-          sender_id,
-          status,
-          created_at,
-          notification_sent,
-          profiles:sender_id (
-            full_name,
-            phone,
-            avatar_url
-          )
-        `)
-        .eq('recipient_id', user.id)
-        .eq('status', 'pending')
-        .eq('notification_sent', true)
-        .order('created_at', { ascending: false });
-      
-      if (requestsError) throw requestsError;
-      
-      // Format contact requests to match notification format
-      const formattedRequests = (contactRequests || []).map(request => ({
-        id: `request-${request.id}`,
-        notification_type: 'contact_request',
-        is_read: false,
-        sent_at: request.created_at,
-        contact_request: request,
-        contact_request_id: request.id
-      }));
-      
-      // Combine all notifications
-      const allNotifications = [...(panicAlerts || []), ...formattedRequests];
+      // Set only panic alerts
+      const allNotifications = panicAlerts || [];
       
       if (allNotifications.length > 0) {
         setNotifications(allNotifications);
         // Auto-open panel if there are unread emergency notifications
         const hasEmergencyNotifications = allNotifications.some(
-          n => n.notification_type === 'panic_alert' || n.notification_type === 'contact_request'
+          n => n.notification_type === 'panic_alert'
         );
         if (hasEmergencyNotifications) setPanelOpen(true);
       }
@@ -146,41 +114,6 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         },
         () => {
           loadNotifications();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'emergency_contact_requests',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        (payload) => {
-          if (payload.new && payload.new.notification_sent) {
-            loadNotifications();
-            // Play normal notification sound for contact requests
-            playNotification('normal', 0.5);
-            
-            toast({
-              title: "Emergency Contact Request",
-              description: "Someone has added you as their emergency contact.",
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'emergency_contact_requests',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        (payload) => {
-          if (payload.new && payload.new.notification_sent) {
-            loadNotifications();
-          }
         }
       )
       .subscribe();
@@ -289,87 +222,6 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
                             size="sm" 
                             variant="outline"
                             onClick={() => markAsRead(notification.id)}
-                          >
-                            Dismiss
-                          </Button>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(notification.sent_at).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </div>
-                );
-              } 
-              // Handle emergency contact requests
-              else if (notification.notification_type === 'contact_request') {
-                const request = notification.contact_request;
-                const sender = request?.profiles;
-                
-                return (
-                  <div 
-                    key={notification.id} 
-                    className="border border-blue-200 rounded-md p-3 bg-blue-50"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium flex items-center gap-1">
-                          <UserPlus className="h-4 w-4 text-blue-600" />
-                          Emergency Contact Request
-                        </h4>
-                        <p className="text-sm mt-1">
-                          {sender?.full_name || 'Someone'} added you as an emergency contact
-                        </p>
-                        
-                        <div className="mt-3 flex gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              // Mark as read in our UI
-                              setNotifications(prev => 
-                                prev.filter(n => n.id !== notification.id)
-                              );
-                              
-                              // Navigate to settings page to handle requests
-                              window.location.href = '/settings';
-                              
-                              // Update the request to acknowledge we've seen it
-                              if (request.id) {
-                                try {
-                                  supabase
-                                    .from('emergency_contact_requests')
-                                    .update({ notification_sent: false })
-                                    .eq('id', request.id);
-                                } catch (err) {
-                                  console.error('Error updating request:', err);
-                                }
-                              }
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            View Request
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              // Just dismiss the notification
-                              setNotifications(prev => 
-                                prev.filter(n => n.id !== notification.id)
-                              );
-                              
-                              if (request.id) {
-                                try {
-                                  supabase
-                                    .from('emergency_contact_requests')
-                                    .update({ notification_sent: false })
-                                    .eq('id', request.id);
-                                } catch (err) {
-                                  console.error('Error updating request:', err);
-                                }
-                              }
-                            }}
                           >
                             Dismiss
                           </Button>

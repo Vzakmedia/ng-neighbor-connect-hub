@@ -1,37 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Plus, 
-  Phone, 
-  MessageCircle, 
-  Smartphone, 
-  Star, 
-  Edit, 
-  Trash2,
-  Users,
-  MapPin,
-  Shield,
-  UserPlus,
-  RefreshCw,
-  CheckCircle,
-  Clock,
-  Key,
-  Lock,
-  LockKeyhole,
-  Check
-} from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import EmergencyContactRequest from './EmergencyContactRequest';
+import { 
+  Users, 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Phone, 
+  MessageSquare, 
+  Smartphone, 
+  AlertTriangle,
+  Shield,
+  Eye,
+  EyeOff,
+  Lock,
+  CheckCircle,
+  Copy,
+  LockKeyhole
+} from 'lucide-react';
 
 type ContactMethod = 'in_app' | 'sms' | 'whatsapp' | 'phone_call';
 
@@ -39,20 +35,14 @@ interface EmergencyContact {
   id: string;
   contact_name: string;
   phone_number: string;
-  relationship: string;
-  is_primary: boolean;
+  relationship?: string;
+  preferred_methods: ContactMethod[];
   is_primary_contact: boolean;
   can_receive_location: boolean;
   can_alert_public: boolean;
-  preferred_methods: ContactMethod[];
   is_confirmed: boolean;
-}
-
-interface SearchResult {
-  user_id: string;
-  full_name: string;
-  phone: string;
-  email: string;
+  confirm_code?: string;
+  created_at: string;
 }
 
 const EmergencyContacts = () => {
@@ -62,7 +52,6 @@ const EmergencyContacts = () => {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isInvitingContact, setIsInvitingContact] = useState(false);
   const [isConfirmingContact, setIsConfirmingContact] = useState(false);
   const [isViewingCode, setIsViewingCode] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState('');
@@ -70,7 +59,6 @@ const EmergencyContacts = () => {
   const [selectedContact, setSelectedContact] = useState<EmergencyContact | null>(null);
   const [contactCode, setContactCode] = useState<string>('');
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
-  const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [verifyingContact, setVerifyingContact] = useState<EmergencyContact | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
@@ -85,34 +73,16 @@ const EmergencyContacts = () => {
     preferred_methods: ['in_app'] as ContactMethod[]
   });
 
-  const [foundUser, setFoundUser] = useState<SearchResult | null>(null);
-  const [isUserFound, setIsUserFound] = useState(false);
-
-  const [inviteData, setInviteData] = useState({
-    search_query: '',
-    search_type: 'phone' as 'phone' | 'email' | 'profile'
-  });
-
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-
   const contactMethods: { value: ContactMethod; label: string; icon: JSX.Element }[] = [
     { value: 'in_app', label: 'In-App Notification', icon: <Smartphone className="h-4 w-4" /> },
-    { value: 'sms', label: 'SMS', icon: <MessageCircle className="h-4 w-4" /> },
-    { value: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle className="h-4 w-4" /> },
-    { value: 'phone_call', label: 'Phone Call', icon: <Phone className="h-4 w-4" /> }
-  ];
-
-  const relationshipTypes = [
-    'Family', 'Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 
-    'Neighbor', 'Colleague', 'Doctor', 'Other'
+    { value: 'sms', label: 'SMS', icon: <MessageSquare className="h-4 w-4" /> },
+    { value: 'phone_call', label: 'Phone Call', icon: <Phone className="h-4 w-4" /> },
   ];
 
   useEffect(() => {
     if (user) {
-      loadContacts();
       loadProfile();
-      loadSentRequests();
+      loadContacts();
       subscribeToContacts();
     }
     
@@ -139,61 +109,12 @@ const EmergencyContacts = () => {
     }
   };
 
-  const loadSentRequests = async () => {
-    if (!user) return;
-    
-    try {
-        
-      const { data, error } = await supabase
-        .from('emergency_contact_requests')
-        .select(`
-          id,
-          recipient_phone,
-          status,
-          created_at
-        `)
-        .eq('sender_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      setSentRequests(data || []);
-    } catch (error) {
-      console.error('Error loading sent requests:', error);
-    }
-  };
-
   const subscribeToContacts = () => {
     const subscription = supabase.channel('emergency-contacts')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'emergency_contacts'
-        },
-        (payload) => {
-          if (payload.new && payload.new.user_id === user?.id) {
-            loadContacts();
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'emergency_contacts'
-        },
-        (payload) => {
-          if (payload.new && payload.new.user_id === user?.id) {
-            loadContacts();
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
+          event: '*',
           schema: 'public',
           table: 'emergency_contacts'
         },
@@ -201,42 +122,22 @@ const EmergencyContacts = () => {
           loadContacts();
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'emergency_contact_requests'
-        },
-        (payload) => {
-          if (payload.new && typeof payload.new === 'object' && 'sender_id' in payload.new && payload.new.sender_id === user?.id) {
-            loadSentRequests();
-          }
-        }
-      )
       .subscribe();
   };
 
   const loadContacts = async () => {
     if (!user) return;
-
+    
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
         .eq('user_id', user.id)
-        .order('is_primary_contact', { ascending: false })
-        .order('contact_name');
-
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
-      
-      // Map the data to ensure it matches our interface
-      const mappedContacts = data.map(contact => ({
-        ...contact,
-        is_confirmed: !!contact.is_confirmed // Ensure boolean type
-      }));
-      
-      setContacts(mappedContacts);
+      setContacts(data || []);
     } catch (error) {
       console.error('Error loading emergency contacts:', error);
       toast({
@@ -244,317 +145,56 @@ const EmergencyContacts = () => {
         description: "Failed to load emergency contacts.",
         variant: "destructive"
       });
-    }
-  };
-
-  const searchContacts = async (query: string, searchType: 'phone' | 'email' | 'profile') => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      if (searchType === 'phone') {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .eq('phone', query)
-          .limit(5);
-        
-        if (error) throw error;
-        setSearchResults((data || []).map(item => ({ ...item, email: '' })));
-      } else if (searchType === 'profile') {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone')
-          .ilike('full_name', `%${query}%`)
-          .limit(5);
-        
-        if (error) throw error;
-        setSearchResults((data || []).map(item => ({ ...item, email: '' })));
-      } else {
-        // Email search not supported yet
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error('Error searching contacts:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const sendInvitation = async () => {
-    if (!user || !inviteData.search_query || !profile?.phone) return;
-    
-    setLoading(true);
-    try {
-      // Check if this search query is already invited
-      const { data: existingRequests, error: checkError } = await supabase
-        .from('emergency_contact_requests')
-        .select('id, status')
-        .eq('sender_id', user.id)
-        .eq('recipient_phone', inviteData.search_query)
-        .order('created_at', { ascending: false })
-        .limit(1);
-        
-      if (checkError) throw checkError;
-      
-      if (existingRequests && existingRequests.length > 0) {
-        const latestRequest = existingRequests[0];
-        if (latestRequest.status === 'pending') {
-          toast({
-            title: "Invitation Already Sent",
-            description: "You have already invited this contact. They need to accept your invitation.",
-          });
-          setIsInvitingContact(false);
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // Send the invitation
-      const { error } = await supabase
-        .from('emergency_contact_requests')
-        .insert({
-          sender_id: user.id,
-          recipient_phone: inviteData.search_query
-        });
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Invitation Sent",
-        description: "Emergency contact invitation has been sent.",
-      });
-      
-      setInviteData({ search_query: '', search_type: 'phone' });
-      setIsInvitingContact(false);
-      loadSentRequests();
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send emergency contact invitation.",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const searchUserByPhone = async (phoneNumber: string) => {
-    if (!phoneNumber.trim() || phoneNumber.length < 10) {
-      setFoundUser(null);
-      setIsUserFound(false);
-      return;
-    }
-
-    // Only search if it looks like a phone number (contains mostly digits)
-    const digitCount = phoneNumber.replace(/[^\d]/g, '').length;
-    if (digitCount < 10) {
-      setFoundUser(null);
-      setIsUserFound(false);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, phone')
-        .eq('phone', phoneNumber)
-        .limit(1);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const user = { ...data[0], email: '' };
-        setFoundUser(user);
-        setIsUserFound(true);
-        
-        // Auto-fill the form with found user data
-        setFormData(prev => ({
-          ...prev,
-          contact_name: user.full_name || ''
-        }));
-      } else {
-        setFoundUser(null);
-        setIsUserFound(false);
-      }
-    } catch (error) {
-      console.error('Error searching user:', error);
-      setFoundUser(null);
-      setIsUserFound(false);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const saveContact = async () => {
-    console.log('saveContact called with formData:', formData);
-    console.log('User:', user);
+  const handleAddContact = async () => {
+    if (!user) return;
     
-    if (!user || !formData.contact_name || !formData.phone_number) {
-      console.log('Validation failed - missing required fields:', {
-        hasUser: !!user,
-        hasContactName: !!formData.contact_name,
-        hasPhoneNumber: !!formData.phone_number
-      });
-      toast({
-        title: "Missing Information",
-        description: "Please provide both a name and phone number for the contact.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setLoading(true);
     try {
-      if (editingContact) {
-        console.log('Updating existing contact:', editingContact.id);
-        // Update existing contact
-        const { error } = await supabase
-          .from('emergency_contacts')
-          .update({
-            contact_name: formData.contact_name,
-            phone_number: formData.phone_number,
-            relationship: formData.relationship,
-            is_primary_contact: formData.is_primary_contact,
-            can_receive_location: formData.can_receive_location,
-            can_alert_public: formData.can_alert_public,
-            preferred_methods: formData.preferred_methods
-          })
-          .eq('id', editingContact.id);
-
-        if (error) {
-          console.error('Update error:', error);
-          throw error;
-        }
-        console.log('Contact updated successfully');
-      } else {
-        console.log('Creating new contact');
-        // First check if this phone number belongs to a user on the app
-        const { data: matchingProfiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_id, full_name')
-          .eq('phone', formData.phone_number)
-          .limit(1);
-          
-        if (profileError) {
-          console.error('Profile search error:', profileError);
-          throw profileError;
-        }
-        
-        console.log('Profile search result:', matchingProfiles);
-        const isAppUser = matchingProfiles && matchingProfiles.length > 0;
-        
-        // Create new contact (always unconfirmed initially)
-        console.log('Inserting contact with data:', {
+      const { data, error } = await supabase
+        .from('emergency_contacts')
+        .insert({
           user_id: user.id,
           contact_name: formData.contact_name,
           phone_number: formData.phone_number,
           relationship: formData.relationship,
+          preferred_methods: formData.preferred_methods,
           is_primary_contact: formData.is_primary_contact,
           can_receive_location: formData.can_receive_location,
-          can_alert_public: formData.can_alert_public,
-          preferred_methods: formData.preferred_methods,
-          is_confirmed: false // Always start unconfirmed
-        });
+          can_alert_public: formData.can_alert_public
+        })
+        .select()
+        .single();
         
-        try {
-          const { data: newContact, error } = await supabase
-            .from('emergency_contacts')
-            .insert({
-              user_id: user.id,
-              contact_name: formData.contact_name,
-              phone_number: formData.phone_number,
-              relationship: formData.relationship,
-              is_primary_contact: formData.is_primary_contact,
-              can_receive_location: formData.can_receive_location,
-              can_alert_public: formData.can_alert_public,
-              preferred_methods: formData.preferred_methods,
-              is_confirmed: false // Always start unconfirmed
-            })
-            .select();
-          
-          if (error) {
-            console.error('Insert error:', error);
-            throw error;
-          }
-          
-          console.log('Contact created successfully:', newContact);
-          
-          // If the contact is an app user, send them an invitation
-          if (isAppUser && matchingProfiles && matchingProfiles.length > 0) {
-            const appUser = matchingProfiles[0];
-            
-            try {
-              // Create a contact request for connecting
-              const { error: requestError } = await supabase
-                .from('emergency_contact_requests')
-                .insert({
-                  sender_id: user.id,
-                  recipient_phone: formData.phone_number,
-                  recipient_id: appUser.user_id,
-                  status: 'pending',
-                  notification_sent: true
-                });
-                
-              if (requestError) {
-                console.error('Request error:', requestError);
-                // Don't throw here, we want to show success even if notification fails
-              } else {
-                toast({
-                  title: "Contact added and invitation sent",
-                  description: `${formData.contact_name} is on the app and has been notified. They need to accept your invitation to complete the connection.`,
-                });
-              }
-            } catch (notifyError) {
-              console.error('Error sending notification:', notifyError);
-              // Still show success even if notification fails
-              toast({
-                title: "Contact added",
-                description: `${formData.contact_name} has been added successfully, but we couldn't send them an invitation.`,
-              });
-            }
-          } else {
-            toast({
-              title: "Contact added",
-              description: "Contact added successfully. They will need to confirm using their verification code or accept your invitation if they join the app.",
-            });
-          }
-        } catch (error: any) {
-          console.error('Insert error details:', error);
-          
-          if (error.code === '23505') {
-            // This is a duplicate key error
-            toast({
-              title: "Contact already exists",
-              description: "This phone number is already in your contacts list.",
-              variant: "destructive"
-            });
-          } else {
-            throw error;
-          }
-        }
-      }
-
-      await loadContacts();
-      resetForm();
+      if (error) throw error;
       
-      if (editingContact) {
-        toast({
-          title: "Contact updated",
-          description: "Emergency contact has been successfully updated.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Error saving emergency contact:', error);
+      toast({
+        title: "Emergency Contact Added",
+        description: `${formData.contact_name} has been added as an emergency contact.`,
+      });
+      
+      // Reset form
+      setFormData({
+        contact_name: '',
+        phone_number: '',
+        relationship: '',
+        is_primary_contact: false,
+        can_receive_location: true,
+        can_alert_public: false,
+        preferred_methods: ['in_app']
+      });
+      
+      setIsAddingContact(false);
+      loadContacts();
+    } catch (error) {
+      console.error('Error adding emergency contact:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save emergency contact.",
+        description: "Failed to add emergency contact.",
         variant: "destructive"
       });
     } finally {
@@ -562,26 +202,71 @@ const EmergencyContacts = () => {
     }
   };
 
-  const deleteContact = async (contactId: string) => {
+  const handleEditContact = async () => {
+    if (!editingContact) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('emergency_contacts')
+        .update({
+          contact_name: formData.contact_name,
+          phone_number: formData.phone_number,
+          relationship: formData.relationship,
+          preferred_methods: formData.preferred_methods,
+          is_primary_contact: formData.is_primary_contact,
+          can_receive_location: formData.can_receive_location,
+          can_alert_public: formData.can_alert_public
+        })
+        .eq('id', editingContact.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Contact Updated",
+        description: "Emergency contact has been updated successfully.",
+      });
+      
+      setEditingContact(null);
+      setIsAddingContact(false);
+      loadContacts();
+    } catch (error) {
+      console.error('Error updating emergency contact:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update emergency contact.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteContact = async (contactId: string, contactName: string) => {
+    if (!confirm(`Are you sure you want to remove ${contactName} from your emergency contacts?`)) {
+      return;
+    }
+    
     setLoading(true);
     try {
       const { error } = await supabase
         .from('emergency_contacts')
         .delete()
         .eq('id', contactId);
-
+        
       if (error) throw error;
-
-      await loadContacts();
+      
       toast({
-        title: "Contact deleted",
-        description: "Emergency contact removed successfully.",
+        title: "Contact Removed",
+        description: `${contactName} has been removed from your emergency contacts.`,
       });
+      
+      loadContacts();
     } catch (error) {
       console.error('Error deleting emergency contact:', error);
       toast({
         title: "Error",
-        description: "Failed to delete emergency contact.",
+        description: "Failed to remove emergency contact.",
         variant: "destructive"
       });
     } finally {
@@ -589,130 +274,38 @@ const EmergencyContacts = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      contact_name: '',
-      phone_number: '',
-      relationship: '',
-      is_primary_contact: false,
-      can_receive_location: true,
-      can_alert_public: false,
-      preferred_methods: ['in_app']
-    });
-    setIsAddingContact(false);
-    setEditingContact(null);
-    setConfirmationCode('');
-    setContactToConfirm(null);
-    setIsConfirmingContact(false);
-    setFoundUser(null);
-    setIsUserFound(false);
-  };
-
-  const verifyContact = async () => {
-    if (!verifyingContact || !verificationCode.trim()) {
-      toast({
-        title: "Missing Code",
-        description: "Please enter the verification code.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Update the contact to confirmed status
-      const { error } = await supabase
-        .from('emergency_contacts')
-        .update({ is_confirmed: true })
-        .eq('id', verifyingContact.id)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Contact verified",
-        description: `${verifyingContact.contact_name} has been successfully verified as your emergency contact.`,
-      });
-
-      setVerifyingContact(null);
-      setVerificationCode('');
-      await loadContacts();
-    } catch (error) {
-      console.error('Error verifying contact:', error);
-      toast({
-        title: "Verification failed",
-        description: "The verification code is incorrect or invalid.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startEditContact = (contact: EmergencyContact) => {
-    setFormData({
-      contact_name: contact.contact_name,
-      phone_number: contact.phone_number,
-      relationship: contact.relationship || '',
-      is_primary_contact: contact.is_primary_contact,
-      can_receive_location: contact.can_receive_location,
-      can_alert_public: contact.can_alert_public,
-      preferred_methods: contact.preferred_methods || ['in_app']
-    });
-    setEditingContact(contact);
-    setIsAddingContact(true);
-  };
-  
-  const startConfirmContact = (contact: EmergencyContact) => {
-    setContactToConfirm(contact);
-    setConfirmationCode('');
-    setIsConfirmingContact(true);
-  };
-  
   const confirmContact = async () => {
     if (!contactToConfirm || !confirmationCode) return;
     
     setLoading(true);
     try {
-      // Verify the confirmation code and update the contact
-      const { data, error } = await supabase
-        .from('emergency_contacts')
-        .select('confirm_code')
-        .eq('id', contactToConfirm.id)
-        .single();
-        
-      if (error) throw error;
-      
-      if (data.confirm_code !== confirmationCode) {
+      // Verify the confirmation code
+      if (contactToConfirm.confirm_code !== confirmationCode) {
         toast({
           title: "Invalid Code",
-          description: "The confirmation code you entered is incorrect.",
+          description: "The confirmation code is incorrect. Please try again.",
           variant: "destructive"
         });
-        setLoading(false);
         return;
       }
       
-      // Update the contact to be confirmed
-      const { error: updateError } = await supabase
+      // Update the contact as confirmed
+      const { error } = await supabase
         .from('emergency_contacts')
         .update({ is_confirmed: true })
         .eq('id', contactToConfirm.id);
         
-      if (updateError) throw updateError;
+      if (error) throw error;
       
       toast({
         title: "Contact Confirmed",
-        description: "Emergency contact has been successfully confirmed.",
+        description: `${contactToConfirm.contact_name} has been confirmed as your emergency contact.`,
       });
       
-      // Refresh the contacts list
-      await loadContacts();
-      
-      // Close the confirmation dialog
       setIsConfirmingContact(false);
       setContactToConfirm(null);
       setConfirmationCode('');
+      loadContacts();
     } catch (error) {
       console.error('Error confirming contact:', error);
       toast({
@@ -725,218 +318,30 @@ const EmergencyContacts = () => {
     }
   };
 
-  const handleMethodChange = (method: ContactMethod, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      preferred_methods: checked
-        ? [...prev.preferred_methods, method]
-        : prev.preferred_methods.filter(m => m !== method)
-    }));
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Code Copied",
+      description: "Confirmation code copied to clipboard.",
+    });
   };
 
-  const clearPendingInvitations = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      // Get all pending invitations from this user
-      const { data, error: fetchError } = await supabase
-        .from('emergency_contact_requests')
-        .select('id')
-        .eq('sender_id', user.id)
-        .eq('status', 'pending');
-      
-      if (fetchError) throw fetchError;
-      
-      if (!data || data.length === 0) {
-        toast({
-          title: "No pending invitations",
-          description: "You don't have any pending invitations to clear."
-        });
-        setLoading(false);
-        return;
-      }
-      
-      // Delete all pending invitations
-      const { error: deleteError } = await supabase
-        .from('emergency_contact_requests')
-        .delete()
-        .in('id', data.map(item => item.id));
-      
-      if (deleteError) throw deleteError;
-      
-      toast({
-        title: "Invitations cleared",
-        description: `Successfully cleared ${data.length} pending invitation${data.length !== 1 ? 's' : ''}.`
-      });
-      
-      // Refresh the sent requests list
-      await loadSentRequests();
-    } catch (error) {
-      console.error('Error clearing invitations:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clear pending invitations.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const removeSpecificInvitation = async (phoneNumber: string) => {
-    if (!user) return;
-    
-    console.log('Removing invitation for phone number:', phoneNumber);
-    setLoading(true);
-    try {
-      // Log all pending invitations to debug
-      const { data: allRequests, error: allError } = await supabase
-        .from('emergency_contact_requests')
-        .select('id, recipient_phone, status')
-        .eq('sender_id', user.id)
-        .eq('status', 'pending');
-      
-      console.log('All pending invitations:', allRequests);
-      
-      // Try a direct match first
-      const { data, error: fetchError } = await supabase
-        .from('emergency_contact_requests')
-        .select('id, recipient_phone')
-        .eq('sender_id', user.id)
-        .eq('recipient_phone', phoneNumber)
-        .eq('status', 'pending');
-      
-      console.log('Query for phone number:', phoneNumber);
-      console.log('Query result:', data);
-      
-      if (fetchError) {
-        console.error('Fetch error:', fetchError);
-        throw fetchError;
-      }
-      
-      // If no exact match, try a more flexible approach
-      if (!data || data.length === 0) {
-        console.log('No exact match found, trying more flexible approach');
-        
-        // Force removal with hardcoded ID for this specific number
-        if (phoneNumber === '07065662956' && allRequests && allRequests.length > 0) {
-          console.log('Attempting forced removal for 07065662956');
-          
-          // Delete all pending invitations since we can't find the specific one
-          for (const request of allRequests) {
-            console.log('Deleting request:', request);
-            const { error: deleteError } = await supabase
-              .from('emergency_contact_requests')
-              .delete()
-              .eq('id', request.id);
-              
-            if (deleteError) {
-              console.error('Delete error for request:', deleteError);
-            }
-          }
-          
-          toast({
-            title: "Invitations removed",
-            description: "Cleared all pending invitations."
-          });
-          
-          await loadSentRequests();
-          return;
-        }
-        
-        toast({
-          title: "Invitation not found",
-          description: `No pending invitation found for ${phoneNumber}.`
-        });
-        setLoading(false);
-        return;
-      }
-      
-      // Delete the specific invitation
-      const { error: deleteError } = await supabase
-        .from('emergency_contact_requests')
-        .delete()
-        .eq('id', data[0].id);
-      
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        throw deleteError;
-      }
-      
-      toast({
-        title: "Invitation removed",
-        description: `Successfully removed invitation for ${phoneNumber}.`
-      });
-      
-      // Refresh the sent requests list
-      await loadSentRequests();
-    } catch (error) {
-      console.error('Error removing invitation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove invitation.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectSearchResult = (result: SearchResult) => {
-    let searchValue = '';
-    if (inviteData.search_type === 'phone') {
-      searchValue = result.phone;
-    } else if (inviteData.search_type === 'email') {
-      searchValue = result.email;
-    } else {
-      searchValue = result.full_name;
-    }
-    
-    setInviteData(prev => ({ ...prev, search_query: searchValue || '' }));
-    setSearchResults([]);
-  };
-  
-  const deleteInvitationById = async (invitationId: string) => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      // Delete by direct ID
-      const { error } = await supabase
-        .from('emergency_contact_requests')
-        .delete()
-        .eq('id', invitationId);
-      
-      if (error) {
-        console.error('Error deleting invitation:', error);
-        throw error;
-      }
-      
-      toast({
-        title: "Invitation removed",
-        description: "Successfully removed the invitation."
-      });
-      
-      // Refresh the sent requests list
-      await loadSentRequests();
-    } catch (error) {
-      console.error('Error removing invitation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove invitation.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const openEditDialog = (contact: EmergencyContact) => {
+    setEditingContact(contact);
+    setFormData({
+      contact_name: contact.contact_name,
+      phone_number: contact.phone_number,
+      relationship: contact.relationship || '',
+      is_primary_contact: contact.is_primary_contact,
+      can_receive_location: contact.can_receive_location,
+      can_alert_public: contact.can_alert_public,
+      preferred_methods: contact.preferred_methods
+    });
+    setIsAddingContact(true);
   };
 
   return (
     <div className="space-y-6">
-      {/* Emergency Contact Requests */}
-      <EmergencyContactRequest />
-      
       {/* Main Emergency Contacts Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -945,140 +350,6 @@ const EmergencyContacts = () => {
             Emergency Contacts
           </CardTitle>
           <div className="flex gap-2">
-            <Dialog open={isInvitingContact} onOpenChange={setIsInvitingContact}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Find & Invite Contact
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Find & Invite Emergency Contact</DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-4 py-3">
-                   <p className="text-sm text-muted-foreground">
-                     Find and invite someone to be your emergency contact by their phone number, email, or profile name.
-                   </p>
-                   
-                   <div className="space-y-2">
-                     <Label htmlFor="search-type">Search by</Label>
-                     <Select
-                       value={inviteData.search_type}
-                       onValueChange={(value) => setInviteData(prev => ({ ...prev, search_type: value as 'phone' | 'email' | 'profile' }))}
-                     >
-                       <SelectTrigger>
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="phone">Phone Number</SelectItem>
-                         <SelectItem value="email">Email Address</SelectItem>
-                         <SelectItem value="profile">Profile Name</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <Label htmlFor="search-query">
-                       {inviteData.search_type === 'phone' && 'Phone Number'}
-                       {inviteData.search_type === 'email' && 'Email Address'}
-                       {inviteData.search_type === 'profile' && 'Profile Name'}
-                     </Label>
-                     <Input
-                       id="search-query"
-                       type={inviteData.search_type === 'email' ? 'email' : inviteData.search_type === 'phone' ? 'tel' : 'text'}
-                       placeholder={
-                         inviteData.search_type === 'phone' ? '+234 XXX XXX XXXX' :
-                         inviteData.search_type === 'email' ? 'user@example.com' :
-                         'Enter name to search'
-                       }
-                       value={inviteData.search_query}
-                       onChange={(e) => {
-                         const value = e.target.value;
-                         setInviteData(prev => ({ ...prev, search_query: value }));
-                         if (value.length > 2) {
-                           searchContacts(value, inviteData.search_type);
-                         } else {
-                           setSearchResults([]);
-                         }
-                       }}
-                     />
-                   </div>
-                   
-                   {/* Search Results */}
-                   {searchResults.length > 0 && (
-                     <div className="mt-3">
-                       <Label className="text-sm font-medium">Found Users</Label>
-                       <div className="space-y-2 mt-2 max-h-40 overflow-y-auto">
-                         {searchResults.map((result) => (
-                           <div 
-                             key={result.user_id} 
-                             className="flex items-center justify-between p-2 bg-muted rounded-md cursor-pointer hover:bg-muted/80"
-                             onClick={() => selectSearchResult(result)}
-                           >
-                             <div className="flex flex-col">
-                               <span className="text-sm font-medium">{result.full_name}</span>
-                               <span className="text-xs text-muted-foreground">
-                                 {inviteData.search_type === 'phone' ? result.phone : 
-                                  inviteData.search_type === 'email' ? result.email : 
-                                  result.phone}
-                               </span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   )}
-                   
-                   {isSearching && (
-                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                       <RefreshCw className="h-4 w-4 animate-spin" />
-                       Searching...
-                     </div>
-                   )}
-                   
-                   {sentRequests.length > 0 && (
-                     <div className="mt-4">
-                       <h4 className="text-sm font-medium mb-2">Your Pending Invitations</h4>
-                       <div className="space-y-2 max-h-40 overflow-y-auto">
-                         {sentRequests
-                           .filter(req => req.status === 'pending')
-                           .map(request => (
-                             <div key={request.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                               <div className="flex items-center gap-2">
-                                 <Phone className="h-3 w-3" />
-                                 <span className="text-xs">{request.recipient_phone}</span>
-                               </div>
-                               <Badge variant="outline" className="text-xs">
-                                 <Clock className="h-3 w-3 mr-1" />
-                                 Pending
-                               </Badge>
-                             </div>
-                           ))}
-                       </div>
-                     </div>
-                   )}
-                   
-                   <div className="flex gap-2 pt-4">
-                     <Button 
-                       variant="outline" 
-                       onClick={() => setIsInvitingContact(false)} 
-                       className="flex-1"
-                     >
-                       Cancel
-                     </Button>
-                     <Button 
-                       onClick={sendInvitation} 
-                       disabled={loading || !inviteData.search_query} 
-                       className="flex-1"
-                     >
-                       {loading ? 'Sending...' : 'Send Invitation'}
-                     </Button>
-                   </div>
-                 </div>
-              </DialogContent>
-            </Dialog>
             
             {/* Confirmation Dialog */}
             <Dialog open={isConfirmingContact} onOpenChange={setIsConfirmingContact}>
@@ -1102,16 +373,12 @@ const EmergencyContacts = () => {
                         <Label htmlFor="confirmation-code">Confirmation Code</Label>
                         <Input
                           id="confirmation-code"
+                          type="text"
+                          placeholder="Enter 6-digit code"
                           value={confirmationCode}
                           onChange={(e) => setConfirmationCode(e.target.value)}
-                          placeholder="Enter 6-digit code"
-                          className="text-center text-lg tracking-widest"
                           maxLength={6}
                         />
-                      </div>
-                      
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        <p>Ask your emergency contact to go to their settings and share their unique code with you.</p>
                       </div>
                       
                       <div className="flex gap-2 pt-4">
@@ -1124,7 +391,7 @@ const EmergencyContacts = () => {
                         </Button>
                         <Button 
                           onClick={confirmContact} 
-                          disabled={loading || !confirmationCode || confirmationCode.length < 6} 
+                          disabled={loading || confirmationCode.length !== 6} 
                           className="flex-1"
                         >
                           {loading ? 'Confirming...' : 'Confirm Contact'}
@@ -1136,9 +403,21 @@ const EmergencyContacts = () => {
               </DialogContent>
             </Dialog>
             
+            {/* Add Contact Dialog */}
             <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
               <DialogTrigger asChild>
-                <Button onClick={() => resetForm()}>
+                <Button onClick={() => {
+                  setEditingContact(null);
+                  setFormData({
+                    contact_name: '',
+                    phone_number: '',
+                    relationship: '',
+                    is_primary_contact: false,
+                    can_receive_location: true,
+                    can_alert_public: false,
+                    preferred_methods: ['in_app']
+                  });
+                }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Contact
                 </Button>
@@ -1146,75 +425,34 @@ const EmergencyContacts = () => {
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>
-                    {editingContact ? 'Edit Contact' : 'Add Emergency Contact'}
+                    {editingContact ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
                   </DialogTitle>
                 </DialogHeader>
                 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-name">Full Name</Label>
-                    <Input
-                      id="contact-name"
-                      value={formData.contact_name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-                      placeholder="Enter contact name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone-number">Phone Number</Label>
-                    <div className="relative">
+                <div className="space-y-4 py-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-name">Contact Name *</Label>
                       <Input
-                        id="phone-number"
-                        value={formData.phone_number}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData(prev => ({ ...prev, phone_number: value }));
-                          
-                          // Only search if it looks like a phone number with at least 10 digits
-                          const digitCount = value.replace(/[^\d]/g, '').length;
-                          if (digitCount >= 10) {
-                            searchUserByPhone(value);
-                          } else {
-                            setFoundUser(null);
-                            setIsUserFound(false);
-                          }
-                        }}
-                        placeholder="+234 XXX XXX XXXX"
-                        type="tel"
-                        className={isUserFound ? 'border-green-500' : ''}
+                        id="contact-name"
+                        placeholder="Full name"
+                        value={formData.contact_name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
                       />
-                      
-                      {/* Loading indicator */}
-                      {isSearching && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
-                        </div>
-                      )}
-                      
-                      {/* User found indicator */}
-                      {isUserFound && foundUser && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </div>
-                      )}
                     </div>
                     
-                    {/* User found message */}
-                    {isUserFound && foundUser && (
-                      <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <div className="text-sm">
-                          <span className="font-medium text-green-800">User found: </span>
-                          <span className="text-green-700">{foundUser.full_name}</span>
-                          <span className="text-green-600 text-xs block">
-                            This user is on the app and will be auto-confirmed
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="phone-number">Phone Number *</Label>
+                      <Input
+                        id="phone-number"
+                        type="tel"
+                        placeholder="+234 XXX XXX XXXX"
+                        value={formData.phone_number}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                      />
+                    </div>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <Label htmlFor="relationship">Relationship</Label>
                     <Select
@@ -1225,347 +463,282 @@ const EmergencyContacts = () => {
                         <SelectValue placeholder="Select relationship" />
                       </SelectTrigger>
                       <SelectContent>
-                        {relationshipTypes.map((type) => (
-                          <SelectItem key={type} value={type.toLowerCase()}>
-                            {type}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="spouse">Spouse</SelectItem>
+                        <SelectItem value="parent">Parent</SelectItem>
+                        <SelectItem value="child">Child</SelectItem>
+                        <SelectItem value="sibling">Sibling</SelectItem>
+                        <SelectItem value="friend">Friend</SelectItem>
+                        <SelectItem value="neighbor">Neighbor</SelectItem>
+                        <SelectItem value="colleague">Colleague</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <Label>Preferred Contact Methods</Label>
-                    {contactMethods.map((method) => (
-                      <div key={method.value} className="flex items-center space-x-2">
+                  
+                  <div className="space-y-3">
+                    <Label>Notification Methods</Label>
+                    <div className="space-y-2">
+                      {contactMethods.map((method) => (
+                        <div key={method.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={method.value}
+                            checked={formData.preferred_methods.includes(method.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  preferred_methods: [...prev.preferred_methods, method.value]
+                                }));
+                              } else {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  preferred_methods: prev.preferred_methods.filter(m => m !== method.value)
+                                }));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={method.value} className="flex items-center gap-2 cursor-pointer">
+                            {method.icon}
+                            {method.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label>Permissions</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
                         <Checkbox
-                          id={`method-${method.value}`}
-                          checked={formData.preferred_methods.includes(method.value)}
-                          onCheckedChange={(checked) => handleMethodChange(method.value, !!checked)}
+                          id="is-primary"
+                          checked={formData.is_primary_contact}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({ ...prev, is_primary_contact: checked as boolean }))
+                          }
                         />
-                        <Label 
-                          htmlFor={`method-${method.value}`} 
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          {method.icon}
-                          {method.label}
+                        <Label htmlFor="is-primary" className="cursor-pointer">
+                          Primary Emergency Contact
                         </Label>
                       </div>
-                    ))}
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="primary-contact"
-                        checked={formData.is_primary_contact}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_primary_contact: !!checked }))}
-                      />
-                      <Label htmlFor="primary-contact" className="flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        Primary Contact
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="share-location"
-                        checked={formData.can_receive_location}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_receive_location: !!checked }))}
-                      />
-                      <Label htmlFor="share-location" className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Can receive location updates
-                      </Label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="alert-public"
-                        checked={formData.can_alert_public}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_alert_public: !!checked }))}
-                      />
-                      <Label htmlFor="alert-public" className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Can alert public on my behalf
-                      </Label>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="can-receive-location"
+                          checked={formData.can_receive_location}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({ ...prev, can_receive_location: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="can-receive-location" className="cursor-pointer">
+                          Can receive my location during emergencies
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="can-alert-public"
+                          checked={formData.can_alert_public}
+                          onCheckedChange={(checked) => 
+                            setFormData(prev => ({ ...prev, can_alert_public: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="can-alert-public" className="cursor-pointer">
+                          Can share public emergency alerts in my area
+                        </Label>
+                      </div>
                     </div>
                   </div>
-
+                  
                   <div className="flex gap-2 pt-4">
-                    <Button variant="outline" onClick={resetForm} className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddingContact(false)} 
+                      className="flex-1"
+                    >
                       Cancel
                     </Button>
-                    <Button onClick={saveContact} disabled={loading} className="flex-1">
-                      {loading ? 'Saving...' : (editingContact ? 'Update' : 'Add')} Contact
+                    <Button 
+                      onClick={editingContact ? handleEditContact : handleAddContact} 
+                      disabled={loading || !formData.contact_name || !formData.phone_number} 
+                      className="flex-1"
+                    >
+                      {loading ? 'Saving...' : editingContact ? 'Update Contact' : 'Add Contact'}
                     </Button>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
+            
+            {/* View Code Dialog */}
+            <Dialog open={isViewingCode} onOpenChange={setIsViewingCode}>
+              <DialogContent className="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Eye className="h-5 w-5" />
+                    Confirmation Code
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-3">
+                  {selectedContact && (
+                    <>
+                      <p className="text-sm">
+                        Share this code with <strong>{selectedContact.contact_name}</strong> so they can confirm 
+                        the emergency contact relationship:
+                      </p>
+                      
+                      <div className="bg-muted p-4 rounded-lg text-center">
+                        <div className="text-2xl font-mono font-bold tracking-widest mb-2">
+                          {contactCode}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => copyCode(contactCode)}
+                          className="mt-2"
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy Code
+                        </Button>
+                      </div>
+                      
+                      <Alert>
+                        <Shield className="h-4 w-4" />
+                        <AlertDescription>
+                          This code is unique to this contact. Keep it secure and only share it with the intended person.
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-          {/* View Confirmation Code Dialog */}
-          <Dialog open={isViewingCode} onOpenChange={setIsViewingCode}>
-            <DialogContent className="sm:max-w-[400px]">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
-                  Your Confirmation Code
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-3">
-                <p className="text-sm">
-                  Share this code with anyone who wants to add you as their emergency contact.
-                </p>
-                
-                <div className="p-4 bg-muted rounded-lg text-center">
-                  <p className="text-2xl font-mono tracking-widest font-semibold">{contactCode}</p>
-                </div>
-                
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>This is your personal confirmation code. Anyone adding you as their emergency contact will need this code to verify the relationship.</p>
-                  <p className="mt-2">Ask them to enter this code in their emergency contacts section.</p>
-                </div>
-                
-                <div className="flex gap-2 pt-4">
-                  <Button 
-                    onClick={() => setIsViewingCode(false)} 
-                    className="w-full"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Your Confirmation Codes Section */}
-          {profile?.phone && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Your Confirmation Codes
-              </h3>
-              <div className="p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium">Your Personal Code</span>
-                </div>
-                <p className="text-sm mb-3">
-                  Give this code to anyone who wants to add you as their emergency contact.
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    if (!user) return;
-                    
-        try {
-          // Get the user's own confirmation code from their profile or generate one
-          const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, full_name, phone')
-            .eq('user_id', user.id)
-            .single();
-            
-          if (profileError) throw profileError;
-          
-          if (userProfile) {
-            // Generate a simple confirmation code based on user info
-            const confirmationCode = `${userProfile.phone?.slice(-4) || '0000'}-${userProfile.id.slice(0, 4)}`.toUpperCase();
-            
-            setSelectedContact({
-              id: userProfile.id,
-              contact_name: userProfile.full_name || 'You',
-              confirm_code: confirmationCode
-            } as any);
-            setContactCode(confirmationCode);
-            setIsViewingCode(true);
-          } else {
-            toast({
-              title: "Error",
-              description: "Could not retrieve your profile information.",
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching confirmation code:', error);
-          toast({
-            title: "Error",
-            description: "Failed to retrieve confirmation code.",
-            variant: "destructive"
-          });
-        }
-                  }}
-                >
-                  <Key className="h-4 w-4 mr-2" />
-                  View My Confirmation Code
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {/* Sent Invitations Section */}
-          {sentRequests.filter(req => req.status === 'pending').length > 0 && (
-            <div className="mb-6">
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Pending Invitations
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="destructive" 
-                      className="text-xs"
-                      onClick={() => deleteInvitationById('9ac978ed-c176-4a2a-8a9e-7487a1c7dd99')}
-                      disabled={loading}
-                    >
-                      Remove 07065662956
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="text-xs"
-                      onClick={clearPendingInvitations}
-                      disabled={loading}
-                    >
-                      Clear All Invitations
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {sentRequests
-                    .filter(req => req.status === 'pending')
-                    .map(request => (
-                      <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md border">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{request.recipient_phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Awaiting Response</Badge>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-7 w-7 p-0"
-                            onClick={() => removeSpecificInvitation(request.recipient_phone)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
         
-          {/* Contacts List */}
+        <CardContent>
           {contacts.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No emergency contacts added yet.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add contacts who should be notified in case of emergencies.
+              <h3 className="text-lg font-medium mb-2">No Emergency Contacts</h3>
+              <p className="text-muted-foreground mb-4">
+                Add trusted contacts who will be notified during emergencies
               </p>
+              <Button onClick={() => setIsAddingContact(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Contact
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
               {contacts.map((contact) => (
                 <div key={contact.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-medium">{contact.contact_name}</h3>
                         {contact.is_primary_contact && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Star className="h-3 w-3 mr-1" />
-                            Primary
-                          </Badge>
+                          <Badge variant="outline" className="text-xs">Primary</Badge>
                         )}
                         {contact.is_confirmed ? (
-                          <Badge variant="secondary" className="bg-green-600 text-white text-xs">
-                            <Check className="h-3 w-3 mr-1" />
+                          <Badge className="bg-green-600 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
                             Confirmed
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs">
                             <Lock className="h-3 w-3 mr-1" />
-                            Unconfirmed
+                            Pending Confirmation
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {contact.phone_number} • {contact.relationship}
-                      </p>
                       
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {contact.preferred_methods?.map((method) => {
-                          const methodInfo = contactMethods.find(m => m.value === method);
-                          return methodInfo ? (
-                            <Badge key={method} variant="outline" className="text-xs">
-                              {methodInfo.icon}
-                              <span className="ml-1">{methodInfo.label}</span>
-                            </Badge>
-                          ) : null;
-                        })}
-                      </div>
-
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        {contact.can_receive_location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            Location sharing
-                          </span>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {contact.phone_number}
+                        </p>
+                        {contact.relationship && (
+                          <p>{contact.relationship}</p>
                         )}
-                        {contact.can_alert_public && (
-                          <span className="flex items-center gap-1">
-                            <Shield className="h-3 w-3" />
-                            Public alerts
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {contact.preferred_methods.map((method) => {
+                            const methodInfo = contactMethods.find(m => m.value === method);
+                            return methodInfo ? (
+                              <Badge key={method} variant="secondary" className="text-xs">
+                                {React.cloneElement(methodInfo.icon, { className: "h-3 w-3 mr-1" })}
+                                {methodInfo.label}
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
                       </div>
                     </div>
                     
-                     <div className="flex gap-2">
-                       {!contact.is_confirmed && (
-                         <Button
-                           size="sm"
-                           variant="default"
-                           className="bg-blue-600 hover:bg-blue-700"
-                           onClick={() => {
-                             setVerifyingContact(contact);
-                             setVerificationCode('');
-                           }}
-                         >
-                           <Key className="h-3 w-3 mr-1" />
-                           Verify
-                         </Button>
-                       )}
+                    <div className="flex gap-1">
+                      {!contact.is_confirmed && contact.confirm_code && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedContact(contact);
+                            setContactCode(contact.confirm_code || '');
+                            setIsViewingCode(true);
+                          }}
+                          title="View confirmation code"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {!contact.is_confirmed && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setContactToConfirm(contact);
+                            setIsConfirmingContact(true);
+                          }}
+                          title="Confirm this contact"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
                       <Button
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        onClick={() => startEditContact(contact)}
+                        onClick={() => openEditDialog(contact)}
+                        title="Edit contact"
                       >
-                        <Edit className="h-3 w-3" />
+                        <Edit2 className="h-4 w-4" />
                       </Button>
+                      
                       <Button
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        onClick={() => deleteContact(contact.id)}
+                        onClick={() => handleDeleteContact(contact.id, contact.contact_name)}
+                        title="Remove contact"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
+                  </div>
+                  
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    {contact.can_receive_location && (
+                      <div className="flex items-center gap-1 text-blue-600">
+                        <Shield className="h-3 w-3" />
+                        Can receive location
+                      </div>
+                    )}
+                    {contact.can_alert_public && (
+                      <div className="flex items-center gap-1 text-orange-600">
+                        <AlertTriangle className="h-3 w-3" />
+                        Can share public alerts
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1573,59 +746,23 @@ const EmergencyContacts = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Verification Dialog */}
-      <Dialog open={!!verifyingContact} onOpenChange={() => {
-        setVerifyingContact(null);
-        setVerificationCode('');
-      }}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              Verify Emergency Contact
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-3">
-            <p className="text-sm">
-              Enter the verification code from <strong>{verifyingContact?.contact_name}</strong> to confirm them as your emergency contact.
-            </p>
-            
-            <div className="space-y-2">
-              <Label htmlFor="verification-code">Verification Code</Label>
-              <Input
-                id="verification-code"
-                placeholder="Enter their confirmation code"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                className="font-mono text-center tracking-widest"
-                maxLength={20}
-              />
-            </div>
-            
-            <div className="flex gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setVerifyingContact(null);
-                  setVerificationCode('');
-                }} 
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={verifyContact} 
-                disabled={loading || !verificationCode.trim()} 
-                className="flex-1"
-              >
-                {loading ? 'Verifying...' : 'Verify Contact'}
-              </Button>
-            </div>
+      
+      {/* Security Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Security & Privacy
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm space-y-2">
+            <p><strong>Confirmation Required:</strong> Emergency contacts must confirm their relationship with you using a secure code before they can receive alerts.</p>
+            <p><strong>Location Sharing:</strong> Your exact location will only be shared with contacts who have permission during active emergencies.</p>
+            <p><strong>Data Protection:</strong> All emergency contact information is encrypted and secured.</p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </CardContent>
+      </Card>
     </div>
   );
 };
