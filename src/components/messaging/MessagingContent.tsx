@@ -270,7 +270,7 @@ const MessagingContent = () => {
     
     // Check if recipient allows messages
     const { data: allowsMessagesData } = await supabase
-      .rpc('user_allows_direct_messages', { user_id: recipientId });
+      .rpc('user_allows_direct_messages', { target_user_id: recipientId });
     
     const allowsMessages = allowsMessagesData;
     

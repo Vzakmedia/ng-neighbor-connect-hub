@@ -906,7 +906,7 @@ export type Database = {
         Returns: undefined
       }
       user_allows_direct_messages: {
-        Args: { user_id: string }
+        Args: { target_user_id: string }
         Returns: boolean
       }
     }
