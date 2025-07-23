@@ -230,9 +230,7 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
             {notifications.map((notification) => {
               // Handle different notification types
               if (notification.notification_type === 'panic_alert') {
-                const alert = notification.panic_alerts;
-                const sender = alert?.profiles;
-                
+                // Display panic alert notification (simplified)
                 return (
                   <div 
                     key={notification.id} 
@@ -240,27 +238,10 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium">{sender?.full_name || 'Someone'} needs help!</h4>
-                        <Badge className="mt-1 bg-red-600">{alert?.situation_type?.replace('_', ' ')}</Badge>
-                        
-                        {alert?.address && (
-                          <p className="text-xs mt-2 flex items-center gap-1">
-                            <MapPin className="h-3 w-3" /> 
-                            {alert.address}
-                          </p>
-                        )}
+                        <h4 className="font-medium">Emergency Alert</h4>
+                        <Badge className="mt-1 bg-red-600">Emergency</Badge>
                         
                         <div className="mt-3 flex gap-2">
-                          {sender?.phone && (
-                            <Button 
-                              size="sm" 
-                              onClick={() => callEmergencyContact(sender.phone)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <PhoneCall className="h-3 w-3 mr-1" />
-                              Call
-                            </Button>
-                          )}
                           <Button 
                             size="sm" 
                             variant="outline"
