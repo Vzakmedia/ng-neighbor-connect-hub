@@ -35,7 +35,7 @@ const HeroSection = () => {
   return (
     <div className="relative overflow-hidden">
       {/* Hero Background */}
-      <div className="relative h-64 md:h-80 lg:h-96">
+      <div className="relative h-56 sm:h-64 md:h-80 lg:h-96">
         <img 
           src={communityHero} 
           alt="Community Connection" 
@@ -45,25 +45,25 @@ const HeroSection = () => {
         
         {/* Hero Content */}
         <div className="absolute inset-0 flex items-center">
-          <div className="container">
+          <div className="container px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl text-white">
-              <Badge className="mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30">
+              <Badge className="mb-3 md:mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
                 <Users className="w-3 h-3 mr-1" />
                 {getCommunityWelcome()}
               </Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 leading-tight">
                 Connect with your neighbors, build stronger communities
               </h1>
-              <p className="text-lg md:text-xl mb-6 text-white/90">
+              <p className="text-base sm:text-lg md:text-xl mb-4 md:mb-6 text-white/90 leading-relaxed">
                 Join thousands of neighbors sharing resources, staying safe, and building lasting connections in your community.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+                <Button size="lg" className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Join Your Neighborhood
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 w-full sm:w-auto">
                   Learn More
                 </Button>
               </div>
@@ -73,16 +73,16 @@ const HeroSection = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="container -mt-8 relative z-10 pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="container px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-10 pb-6 sm:pb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card key={index} className="bg-gradient-card shadow-card hover:shadow-elevated transition-shadow">
-                <CardContent className="p-4 text-center">
-                  <Icon className={`h-6 w-6 mx-auto mb-2 ${stat.color}`} />
-                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <CardContent className="p-3 sm:p-4 text-center">
+                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-2 ${stat.color}`} />
+                  <div className="text-lg sm:text-2xl font-bold text-foreground">{stat.value}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
                 </CardContent>
               </Card>
             );
