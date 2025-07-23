@@ -76,8 +76,8 @@ const Header = () => {
   };
 
   const handleNotificationClick = () => {
-    // You can add navigation to notifications page or toggle a notification panel
-    console.log('Notification bell clicked');
+    // Navigate to notifications or toggle notification panel
+    console.log('Notification bell clicked - count:', notificationCount);
   };
 
   const handleSignOut = async () => {
