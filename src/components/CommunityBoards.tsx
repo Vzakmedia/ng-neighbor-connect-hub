@@ -18,8 +18,13 @@ import {
   Search,
   Filter,
   Clock,
-  MapPin
+  MapPin,
+  Globe
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessage {
   id: string;
@@ -54,123 +59,192 @@ const CommunityBoards = () => {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
+  const [loading, setLoading] = useState(true);
+  
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { toast } = useToast();
 
-  const chatGroups: ChatGroup[] = [
-    {
-      id: 'general',
-      name: 'General Discussion',
-      description: 'General neighborhood chat for Victoria Island',
-      members: 1247,
-      category: 'general',
-      isPrivate: false,
-      lastActivity: '2 minutes ago',
-      unreadCount: 3
-    },
-    {
-      id: 'safety',
-      name: 'Safety & Security',
-      description: 'Report incidents and safety concerns',
-      members: 892,
-      category: 'safety',
-      isPrivate: false,
-      lastActivity: '15 minutes ago',
-      unreadCount: 1
-    },
-    {
-      id: 'marketplace',
-      name: 'Buy & Sell',
-      description: 'Local marketplace for neighbors',
-      members: 634,
-      category: 'marketplace',
-      isPrivate: false,
-      lastActivity: '1 hour ago',
+  // Dynamic chat groups based on user's location
+  const getChatGroups = (): ChatGroup[] => {
+    const baseGroups = [
+      {
+        id: 'general',
+        name: 'General Discussion',
+        description: `General chat for ${viewScope === 'neighborhood' ? profile?.neighborhood || 'your neighborhood' : profile?.state || 'your state'}`,
+        category: 'general',
+        isPrivate: false,
+      },
+      {
+        id: 'safety',
+        name: 'Safety & Security',
+        description: 'Report incidents and safety concerns',
+        category: 'safety',
+        isPrivate: false,
+      },
+      {
+        id: 'marketplace',
+        name: 'Buy & Sell',
+        description: 'Local marketplace for neighbors',
+        category: 'marketplace',
+        isPrivate: false,
+      },
+      {
+        id: 'events',
+        name: 'Events & Gatherings',
+        description: 'Organize and discover community events',
+        category: 'events',
+        isPrivate: false,
+      }
+    ];
+
+    return baseGroups.map(group => ({
+      ...group,
+      members: 0, // We'll implement member counting later
+      lastActivity: '...',
       unreadCount: 0
-    },
-    {
-      id: 'events',
-      name: 'Events & Gatherings',
-      description: 'Organize and discover community events',
-      members: 445,
-      category: 'events',
-      isPrivate: false,
-      lastActivity: '3 hours ago',
-      unreadCount: 5
-    },
-    {
-      id: 'parents',
-      name: 'Parents Group',
-      description: 'For parents in the neighborhood',
-      members: 178,
-      category: 'lifestyle',
-      isPrivate: true,
-      lastActivity: '30 minutes ago',
-      unreadCount: 2
-    }
-  ];
+    }));
+  };
 
-  const sampleMessages: ChatMessage[] = [
-    {
-      id: '1',
-      author: {
-        name: 'Kemi Adebayo',
-        role: 'admin',
-        location: 'Victoria Island'
-      },
-      content: 'Welcome everyone to our community board! Please keep discussions respectful and helpful. 📢',
-      timestamp: '2 hours ago',
-      type: 'announcement',
-      isPinned: true,
-      likes: 24,
-      replies: 8,
-      isLiked: false
-    },
-    {
-      id: '2',
-      author: {
-        name: 'Chukwuma Obi',
-        role: 'member',
-        location: 'Lekki Phase 1'
-      },
-      content: 'Has anyone noticed the new pothole on Adeola Odeku Street? We should report this to the authorities.',
-      timestamp: '45 minutes ago',
-      type: 'message',
-      likes: 12,
-      replies: 15,
-      isLiked: true
-    },
-    {
-      id: '3',
-      author: {
-        name: 'Fatima Ibrahim',
-        role: 'moderator',
-        location: 'Victoria Island'
-      },
-      content: 'Don\'t forget about the community cleanup this Saturday! Still looking for 20 more volunteers. 🧹',
-      timestamp: '30 minutes ago',
-      type: 'message',
-      likes: 18,
-      replies: 6,
-      isLiked: false
-    },
-    {
-      id: '4',
-      author: {
-        name: 'Adaora Okafor',
-        role: 'member',
-        location: 'Ikoyi'
-      },
-      content: 'Thank you to everyone who helped with the lost cat situation yesterday! Mr. Whiskers is home safe. ❤️',
-      timestamp: '15 minutes ago',
-      type: 'message',
-      likes: 35,
-      replies: 12,
-      isLiked: true
+  const fetchMessages = async () => {
+    if (!user || !profile) return;
+    
+    setLoading(true);
+    try {
+      // Fetch community posts as "messages" for the chat view
+      let query = supabase
+        .from('community_posts')
+        .select(`
+          id,
+          user_id,
+          post_type,
+          title,
+          content,
+          created_at,
+          profiles!community_posts_user_id_fkey (
+            full_name,
+            avatar_url,
+            neighborhood,
+            city,
+            state
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      // Filter by selected group type
+      if (selectedGroup !== 'general') {
+        query = query.eq('post_type', selectedGroup);
+      }
+
+      const { data: postsData, error: postsError } = await query;
+      
+      if (postsError) {
+        console.error('Error fetching messages:', postsError);
+        return;
+      }
+
+      // Get all unique user IDs from posts
+      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+
+      // Fetch profiles for all users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, neighborhood, city, state')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Create a map of user_id to profile for easy lookup
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
+      );
+
+      // Transform posts to chat messages and apply location filtering
+      const transformedMessages = (postsData || [])
+        .map(post => {
+          const userProfile = profilesMap.get(post.user_id);
+          return {
+            ...post,
+            profiles: userProfile || null
+          };
+        })
+        .filter(post => {
+          // Apply location filtering
+          if (viewScope === 'neighborhood' && profile.neighborhood) {
+            return post.profiles?.neighborhood === profile.neighborhood;
+          } else if (viewScope === 'state' && profile.state) {
+            return post.profiles?.state === profile.state;
+          }
+          return true;
+        })
+        .map(post => ({
+          id: post.id,
+          author: {
+            name: post.profiles?.full_name || 'Anonymous User',
+            avatar: post.profiles?.avatar_url || undefined,
+            role: 'member' as const,
+            location: post.profiles?.neighborhood || post.profiles?.city || 'Unknown Location'
+          },
+          content: post.title ? `${post.title}\n\n${post.content}` : post.content,
+          timestamp: formatTimeAgo(post.created_at),
+          type: 'message' as const,
+          isPinned: false,
+          likes: 0,
+          replies: 0,
+          isLiked: false
+        }));
+
+      setMessages(transformedMessages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
 
   useEffect(() => {
-    setMessages(sampleMessages);
-  }, [selectedGroup]);
+    fetchMessages();
+  }, [user, profile, selectedGroup, viewScope]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('community_board_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts'
+        },
+        () => {
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, profile, selectedGroup, viewScope]);
+
+  const chatGroups = getChatGroups();
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -194,26 +268,36 @@ const CommunityBoards = () => {
     }
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !user || !profile) return;
 
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      author: {
-        name: 'You',
-        role: 'member',
-        location: 'Victoria Island'
-      },
-      content: newMessage,
-      timestamp: 'Just now',
-      type: 'message',
-      likes: 0,
-      replies: 0,
-      isLiked: false
-    };
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .insert({
+          user_id: user.id,
+          post_type: selectedGroup === 'general' ? 'general' : selectedGroup,
+          content: newMessage,
+          title: null,
+          location: null,
+          image_urls: []
+        });
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+      if (error) {
+        console.error('Error sending message:', error);
+        toast({
+          title: "Error sending message",
+          description: "Failed to send your message.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setNewMessage('');
+      // The real-time subscription will automatically update the messages
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   const toggleLike = (messageId: string) => {
@@ -233,9 +317,27 @@ const CommunityBoards = () => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Community Boards</h2>
-            <Button size="sm" className="h-8">
-              <Plus className="h-4 w-4 mr-1" />
-              Create
+          </div>
+          
+          {/* View Scope Toggle */}
+          <div className="flex items-center space-x-2 mb-4">
+            <Button
+              variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewScope('neighborhood')}
+              className="text-xs flex-1"
+            >
+              <MapPin className="h-3 w-3 mr-1" />
+              Neighborhood
+            </Button>
+            <Button
+              variant={viewScope === 'state' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewScope('state')}
+              className="text-xs flex-1"
+            >
+              <Globe className="h-3 w-3 mr-1" />
+              State
             </Button>
           </div>
           
@@ -300,9 +402,9 @@ const CommunityBoards = () => {
               <h2 className="text-lg font-semibold">{currentGroup?.name}</h2>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Users className="h-4 w-4 mr-1" />
-                {currentGroup?.members} members
+                {currentGroup?.members || 0} members
                 <MapPin className="h-4 w-4 ml-3 mr-1" />
-                Victoria Island Community
+                {viewScope === 'neighborhood' ? profile?.neighborhood || 'Your Neighborhood' : profile?.state || 'Your State'}
               </div>
             </div>
             
@@ -324,7 +426,22 @@ const CommunityBoards = () => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                No messages in this board yet.
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Be the first to start a conversation!
+              </p>
+            </div>
+          ) : (
+            messages.map((message) => (
             <div key={message.id} className={`relative ${message.isPinned ? 'bg-primary/5 rounded-lg p-3' : ''}`}>
               {message.isPinned && (
                 <div className="flex items-center text-xs text-primary mb-2">
@@ -381,7 +498,8 @@ const CommunityBoards = () => {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Message Input */}

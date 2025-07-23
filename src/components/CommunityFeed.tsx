@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,33 @@ import {
   Clock,
   AlertTriangle,
   ShoppingCart,
-  Users
+  Users,
+  Filter,
+  Globe
 } from 'lucide-react';
-import FeedAdCard from './FeedAdCard';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { useToast } from '@/hooks/use-toast';
+
+
+interface DatabasePost {
+  id: string;
+  user_id: string;
+  post_type: string;
+  title: string | null;
+  content: string;
+  location: string | null;
+  image_urls: string[];
+  created_at: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    state: string | null;
+  } | null;
+}
 
 interface Post {
   id: string;
@@ -24,182 +48,157 @@ interface Post {
     location: string;
   };
   content: string;
+  title?: string;
   type: 'general' | 'safety' | 'marketplace' | 'help' | 'event';
   timestamp: string;
   likes: number;
   comments: number;
-  image?: string;
+  images?: string[];
   isLiked: boolean;
 }
 
-interface FeedAd {
-  id: string;
-  business: {
-    name: string;
-    location: string;
-    verified: boolean;
-  };
-  title: string;
-  description: string;
-  category: string;
-  cta: string;
-  url: string;
-  promoted: boolean;
-  timePosted: string;
-  likes: number;
-  comments: number;
-  rating: number;
-  price: string;
-  type: 'general' | 'safety' | 'marketplace' | 'event';
-  image?: string;
-}
-
-type FeedItem = Post | (FeedAd & { isAd: true });
+type FeedItem = Post;
 
 interface CommunityFeedProps {
   activeTab?: string;
 }
 
-const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: '1',
-      author: {
-        name: 'Adaora Okafor',
-        location: 'Victoria Island',
-      },
-      content: 'Lost my cat Mr. Whiskers around Adeola Odeku Street. He\'s a grey tabby with white paws. Please help me find him! 🐱',
-      type: 'help',
-      timestamp: '2 hours ago',
-      likes: 12,
-      comments: 8,
-      isLiked: false,
-    },
-    {
-      id: '2',
-      author: {
-        name: 'Kemi Adebayo',
-        location: 'Ikoyi',
-      },
-      content: 'SAFETY ALERT: Suspicious activity reported near the shopping complex on Awolowo Road around 8 PM. Please be cautious if walking alone.',
-      type: 'safety',
-      timestamp: '4 hours ago',
-      likes: 28,
-      comments: 15,
-      isLiked: true,
-    },
-    {
-      id: '3',
-      author: {
-        name: 'Chukwuma Obi',
-        location: 'Lekki Phase 1',
-      },
-      content: 'Selling a barely used Samsung 65" Smart TV. Perfect condition, still under warranty. ₦250,000 or best offer. Pickup only.',
-      type: 'marketplace',
-      timestamp: '1 day ago',
-      likes: 5,
-      comments: 12,
-      isLiked: false,
-    },
-    {
-      id: '4',
-      author: {
-        name: 'Fatima Ibrahim',
-        location: 'Victoria Island',
-      },
-      content: 'Community cleanup this Saturday at 9 AM! Let\'s keep our neighborhood beautiful. Bring gloves and water. Free breakfast for all volunteers! 🌱',
-      type: 'event',
-      timestamp: '2 days ago',
-      likes: 45,
-      comments: 23,
-      isLiked: true,
-    },
-  ]);
+type ViewScope = 'neighborhood' | 'state';
 
-  // Feed advertisements data
-  const feedAds: FeedAd[] = [
-    {
-      id: 'ad_1',
-      business: {
-        name: 'SecureHome Lagos',
-        location: 'Victoria Island',
-        verified: true,
-      },
-      title: 'Professional Home Security Installation',
-      description: 'Protect your family with our state-of-the-art security systems. 24/7 monitoring, mobile alerts, and professional installation. Special discount for Victoria Island residents.',
-      category: 'Security',
-      cta: 'Get Free Quote',
-      url: 'https://example.com/security',
-      promoted: true,
-      timePosted: '3 hours ago',
-      likes: 18,
-      comments: 5,
-      rating: 4.8,
-      price: 'From ₦120,000',
-      type: 'safety',
+const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewScope, setViewScope] = useState<ViewScope>('neighborhood');
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { toast } = useToast();
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
+  const transformDatabasePost = (dbPost: DatabasePost): Post => ({
+    id: dbPost.id,
+    author: {
+      name: dbPost.profiles?.full_name || 'Anonymous User',
+      avatar: dbPost.profiles?.avatar_url || undefined,
+      location: dbPost.profiles?.neighborhood || dbPost.profiles?.city || 'Unknown Location'
     },
-    {
-      id: 'ad_2',
-      business: {
-        name: 'FreshMart Delivery',
-        location: 'Ikoyi',
-        verified: true,
-      },
-      title: 'Same-Day Grocery Delivery',
-      description: 'Fresh groceries delivered to your doorstep within 2 hours. Organic produce, household items, and local specialties. Free delivery on orders above ₦10,000.',
-      category: 'Grocery',
-      image: '/placeholder.svg',
-      cta: 'Order Now',
-      url: 'https://example.com/groceries',
-      promoted: true,
-      timePosted: '5 hours ago',
-      likes: 24,
-      comments: 8,
-      rating: 4.9,
-      price: 'Free Delivery',
-      type: 'general',
-    },
-    {
-      id: 'ad_3',
-      business: {
-        name: 'TechHub Electronics',
-        location: 'Lekki Phase 1',
-        verified: true,
-      },
-      title: 'Electronics Sale - Up to 40% Off',
-      description: 'Huge electronics sale! Latest smartphones, laptops, home appliances, and gadgets. All products come with warranty and free technical support.',
-      category: 'Electronics',
-      cta: 'Shop Sale',
-      url: 'https://example.com/electronics',
-      promoted: true,
-      timePosted: '1 day ago',
-      likes: 42,
-      comments: 15,
-      rating: 4.7,
-      price: 'Up to 40% Off',
-      type: 'marketplace',
-    },
-    {
-      id: 'ad_4',
-      business: {
-        name: 'Community Fitness Center',
-        location: 'Victoria Island',
-        verified: true,
-      },
-      title: 'Join Our Community Fitness Classes',
-      description: 'Group fitness classes for all ages and fitness levels. Yoga, Pilates, cardio, and strength training. First month free for new members!',
-      category: 'Health & Fitness',
-      cta: 'Join Now',
-      url: 'https://example.com/fitness',
-      promoted: true,
-      timePosted: '2 days ago',
-      likes: 31,
-      comments: 12,
-      rating: 4.6,
-      price: 'First Month Free',
-      type: 'event',
+    content: dbPost.content,
+    title: dbPost.title || undefined,
+    type: dbPost.post_type as Post['type'],
+    timestamp: formatTimeAgo(dbPost.created_at),
+    likes: 0, // We'll implement likes later
+    comments: 0, // We'll implement comments later
+    images: dbPost.image_urls || [],
+    isLiked: false
+  });
+
+  const fetchPosts = async () => {
+    if (!user || !profile) return;
+    
+    setLoading(true);
+    try {
+      // First, get all posts
+      let postsQuery = supabase
+        .from('community_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const { data: postsData, error: postsError } = await postsQuery;
+
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        toast({
+          title: "Error loading posts",
+          description: "Failed to load community posts.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get all unique user IDs from posts
+      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+
+      // Fetch profiles for all users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, neighborhood, city, state')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Create a map of user_id to profile for easy lookup
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
+      );
+
+      // Filter posts based on location and transform them
+      const filteredAndTransformed = (postsData || [])
+        .map(post => {
+          const userProfile = profilesMap.get(post.user_id);
+          return {
+            ...post,
+            profiles: userProfile || null
+          };
+        })
+        .filter(post => {
+          // Apply location filtering
+          if (viewScope === 'neighborhood' && profile.neighborhood) {
+            return post.profiles?.neighborhood === profile.neighborhood;
+          } else if (viewScope === 'state' && profile.state) {
+            return post.profiles?.state === profile.state;
+          }
+          return true; // If no filtering criteria, show all posts
+        })
+        .map(transformDatabasePost);
+
+      setPosts(filteredAndTransformed);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, [user, profile, viewScope]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('community_posts_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts'
+        },
+        () => {
+          // Refetch posts when there are changes
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, profile, viewScope]);
+
 
   const getPostTypeIcon = (type: string) => {
     switch (type) {
@@ -245,57 +244,52 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     return post.type === activeTab;
   });
 
-  // Filter and insert ads based on active tab
-  const getRelevantAds = () => {
-    let relevantAds = feedAds.filter(ad => {
-      if (activeTab === 'all') return true;
-      if (activeTab === 'events') return ad.type === 'event';
-      if (activeTab === 'safety') return ad.type === 'safety';
-      if (activeTab === 'marketplace') return ad.type === 'marketplace';
-      return ad.type === activeTab || ad.type === 'general';
-    });
-    
-    // Limit ads to 1-2 per feed to avoid overwhelming users
-    return relevantAds.slice(0, activeTab === 'all' ? 2 : 1);
-  };
-
-  // Mix posts and ads naturally
-  const getMixedFeed = (): FeedItem[] => {
-    const relevantAds = getRelevantAds();
-    const mixedFeed: FeedItem[] = [...filteredPosts];
-    
-    // Insert ads at strategic positions (after 2nd and 5th post)
-    relevantAds.forEach((ad, index) => {
-      const insertPosition = (index + 1) * 3 - 1; // Positions: 2, 5, 8, etc.
-      const adItem: FeedItem = { ...ad, isAd: true as const };
-      
-      if (insertPosition < mixedFeed.length) {
-        mixedFeed.splice(insertPosition, 0, adItem);
-      } else {
-        mixedFeed.push(adItem);
-      }
-    });
-    
-    return mixedFeed;
-  };
-
-  const mixedFeed = getMixedFeed();
-
   return (
     <div className="space-y-4">
-      {mixedFeed.length === 0 ? (
+      {/* View Scope Toggle */}
+      <div className="flex items-center justify-between bg-card p-4 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Viewing posts from:</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewScope('neighborhood')}
+            className="text-xs"
+          >
+            <MapPin className="h-3 w-3 mr-1" />
+            My Neighborhood
+          </Button>
+          <Button
+            variant={viewScope === 'state' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewScope('state')}
+            className="text-xs"
+          >
+            <Globe className="h-3 w-3 mr-1" />
+            Entire State
+          </Button>
+        </div>
+      </div>
+
+      {loading ? (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No posts found for this category.</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Loading posts...</p>
+        </div>
+      ) : filteredPosts.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            No posts found for this {viewScope === 'neighborhood' ? 'neighborhood' : 'state'} and category.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Be the first to start a conversation!
+          </p>
         </div>
       ) : (
-        mixedFeed.map((item: FeedItem) => {
-          // Render advertisement
-          if ('isAd' in item && item.isAd) {
-            return <FeedAdCard key={item.id} ad={item} />;
-          }
-          
-          // Render regular post
-          const post = item as Post;
+        filteredPosts.map((post: Post) => {
           const typeBadge = getPostTypeBadge(post.type);
           
           return (
@@ -330,7 +324,24 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
               </CardHeader>
               
               <CardContent className="pt-0">
+                {post.title && (
+                  <h3 className="font-semibold text-base mb-2">{post.title}</h3>
+                )}
                 <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+                
+                {/* Display images if any */}
+                {post.images && post.images.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {post.images.slice(0, 4).map((imageUrl, index) => (
+                      <img
+                        key={index}
+                        src={imageUrl}
+                        alt="Post image"
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                    ))}
+                  </div>
+                )}
                 
                 <div className="flex items-center justify-between pt-2 border-t">
                   <div className="flex items-center space-x-4">
