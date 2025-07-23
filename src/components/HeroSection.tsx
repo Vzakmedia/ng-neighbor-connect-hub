@@ -33,7 +33,7 @@ const HeroSection = () => {
   ];
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden hidden md:block">
       {/* Hero Background */}
       <div className="relative h-56 sm:h-64 md:h-80 lg:h-96">
         <img 
