@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,12 +7,78 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Bell, Search, Menu, MapPin, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
-  const [notifications] = useState(3);
+  const [notificationCount, setNotificationCount] = useState(0);
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      loadNotificationCount();
+      subscribeToNotifications();
+    }
+    
+    return () => {
+      const subscription = supabase.channel('header-notifications');
+      supabase.removeChannel(subscription);
+    };
+  }, [user]);
+
+  const loadNotificationCount = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('alert_notifications')
+        .select('id', { count: 'exact' })
+        .eq('recipient_id', user.id)
+        .eq('is_read', false);
+        
+      if (error) throw error;
+      setNotificationCount(data?.length || 0);
+    } catch (error) {
+      console.error('Error loading notification count:', error);
+    }
+  };
+
+  const subscribeToNotifications = () => {
+    const subscription = supabase.channel('header-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'alert_notifications',
+          filter: `recipient_id=eq.${user?.id}`
+        },
+        () => {
+          loadNotificationCount();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'alert_notifications',
+          filter: `recipient_id=eq.${user?.id}`
+        },
+        () => {
+          loadNotificationCount();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Header notification subscription status:', status);
+      });
+  };
+
+  const handleNotificationClick = () => {
+    // You can add navigation to notifications page or toggle a notification panel
+    console.log('Notification bell clicked');
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,11 +115,11 @@ const Header = () => {
               <span>{getLocation()}</span>
             </div>
             
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationClick}>
               <Bell className="h-5 w-5" />
-              {notifications > 0 && (
+              {notificationCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {notifications}
+                  {notificationCount}
                 </Badge>
               )}
             </Button>
@@ -117,11 +183,11 @@ const Header = () => {
               <Search className="h-4 w-4" />
             </Button>
             
-            <Button variant="ghost" size="icon" className="relative h-8 w-8">
+            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleNotificationClick}>
               <Bell className="h-4 w-4" />
-              {notifications > 0 && (
+              {notificationCount > 0 && (
                 <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
-                  {notifications}
+                  {notificationCount}
                 </Badge>
               )}
             </Button>
