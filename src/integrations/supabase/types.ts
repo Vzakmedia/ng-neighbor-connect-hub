@@ -116,6 +116,42 @@ export type Database = {
           },
         ]
       }
+      community_posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_urls: string[] | null
+          location: string | null
+          post_type: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          location?: string | null
+          post_type: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          location?: string | null
+          post_type?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_invitation_codes: {
         Row: {
           code: string

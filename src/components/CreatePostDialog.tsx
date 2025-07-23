@@ -29,6 +29,9 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -43,6 +46,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { profile } = useProfile();
 
   const postTypes = [
     { value: 'general', label: 'General Update', icon: Users, color: 'text-muted-foreground' },
@@ -67,12 +72,54 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !user) return;
 
     setIsSubmitting(true);
     try {
-      // Here you would normally submit to your backend/database
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Upload images first if any
+      const imageUrls: string[] = [];
+      if (images.length > 0) {
+        for (const image of images) {
+          const fileExt = image.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${user.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, image);
+
+          if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+          } else {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            imageUrls.push(publicUrl);
+          }
+        }
+      }
+
+      // Insert the post into the database
+      const { error } = await supabase
+        .from('community_posts')
+        .insert({
+          user_id: user.id,
+          post_type: postType,
+          title: title || null,
+          content,
+          location: location || null,
+          image_urls: imageUrls
+        });
+
+      if (error) {
+        console.error('Error creating post:', error);
+        toast({
+          title: "Error creating post",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
         title: "Post created successfully!",
@@ -87,6 +134,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       setPostType('general');
       onOpenChange(false);
     } catch (error) {
+      console.error('Error creating post:', error);
       toast({
         title: "Error creating post",
         description: "Please try again later.",
@@ -108,12 +156,16 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           {/* User Info */}
           <div className="flex items-center space-x-3">
             <Avatar>
-              <AvatarImage src="" />
-              <AvatarFallback>YN</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url || ""} />
+              <AvatarFallback>
+                {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">Your Name</p>
-              <p className="text-sm text-muted-foreground">Victoria Island</p>
+              <p className="font-medium">{profile?.full_name || "Anonymous"}</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.neighborhood || profile?.city || "Your neighborhood"}
+              </p>
             </div>
           </div>
 
