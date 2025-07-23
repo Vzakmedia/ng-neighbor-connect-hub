@@ -114,7 +114,7 @@ const MessagingContent = () => {
           const { data: lastMessageData } = await supabase
             .from('direct_messages')
             .select('content')
-            .or(`sender_id.eq.${user.id}.and.recipient_id.eq.${otherUserId},sender_id.eq.${otherUserId}.and.recipient_id.eq.${user.id}`)
+            .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
             .order('created_at', { ascending: false })
             .limit(1);
           
@@ -204,7 +204,7 @@ const MessagingContent = () => {
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
-        .or(`sender_id.eq.${user.id}.and.recipient_id.eq.${otherUserId},sender_id.eq.${otherUserId}.and.recipient_id.eq.${user.id}`)
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -325,7 +325,7 @@ const MessagingContent = () => {
     const { data: existingConversation } = await supabase
       .from('direct_conversations')
       .select('*')
-      .or(`user1_id.eq.${user.id}.and.user2_id.eq.${selectedUser.user_id},user1_id.eq.${selectedUser.user_id}.and.user2_id.eq.${user.id}`)
+      .or(`and(user1_id.eq.${user.id},user2_id.eq.${selectedUser.user_id}),and(user1_id.eq.${selectedUser.user_id},user2_id.eq.${user.id})`)
       .single();
     
     if (existingConversation) {
