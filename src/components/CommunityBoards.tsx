@@ -95,6 +95,8 @@ const CommunityBoards = () => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [currentInviteCode, setCurrentInviteCode] = useState<any>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -609,12 +611,91 @@ const CommunityBoards = () => {
   };
 
   // Generate invite link for the board
-  const generateInviteLink = () => {
-    if (!selectedBoard) return;
+  const generateInviteLink = async () => {
+    if (!selectedBoard || !user) return;
     
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/community?join=${selectedBoard}`;
-    setInviteLink(link);
+    setGeneratingLink(true);
+    try {
+      // Check for existing active invite code
+      const { data: existingCode, error: fetchError } = await supabase
+        .from('board_invite_codes')
+        .select('*')
+        .eq('board_id', selectedBoard)
+        .eq('is_active', true)
+        .gte('expires_at', new Date().toISOString())
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      let inviteCode = existingCode;
+
+      // If no active code exists, create a new one
+      if (!inviteCode) {
+        const { data: newCode, error: createError } = await supabase
+          .rpc('generate_board_invite_code')
+          .single();
+
+        if (createError) throw createError;
+
+        const { data: insertedCode, error: insertError } = await supabase
+          .from('board_invite_codes')
+          .insert({
+            board_id: selectedBoard,
+            code: newCode,
+            created_by: user.id
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        inviteCode = insertedCode;
+      }
+
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/community?invite=${inviteCode.code}`;
+      setInviteLink(link);
+      setCurrentInviteCode(inviteCode);
+    } catch (error) {
+      console.error('Error generating invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate invite link.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  // Revoke current invite link
+  const revokeInviteLink = async () => {
+    if (!currentInviteCode || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_invite_codes')
+        .update({ is_active: false })
+        .eq('id', currentInviteCode.id);
+
+      if (error) throw error;
+
+      setInviteLink('');
+      setCurrentInviteCode(null);
+      
+      toast({
+        title: "Link revoked",
+        description: "The invite link has been deactivated.",
+      });
+    } catch (error) {
+      console.error('Error revoking invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke invite link.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Copy invite link to clipboard
@@ -633,6 +714,59 @@ const CommunityBoards = () => {
         description: "Failed to copy link to clipboard.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Generate new invite link (revokes old one and creates new)
+  const generateNewInviteLink = async () => {
+    if (!selectedBoard || !user) return;
+
+    setGeneratingLink(true);
+    try {
+      // First revoke all existing active codes
+      await supabase
+        .from('board_invite_codes')
+        .update({ is_active: false })
+        .eq('board_id', selectedBoard)
+        .eq('is_active', true);
+
+      // Generate new code
+      const { data: newCode, error: createError } = await supabase
+        .rpc('generate_board_invite_code')
+        .single();
+
+      if (createError) throw createError;
+
+      const { data: insertedCode, error: insertError } = await supabase
+        .from('board_invite_codes')
+        .insert({
+          board_id: selectedBoard,
+          code: newCode,
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/community?invite=${insertedCode.code}`;
+      setInviteLink(link);
+      setCurrentInviteCode(insertedCode);
+      
+      toast({
+        title: "New link generated",
+        description: "A new invite link has been created.",
+      });
+    } catch (error) {
+      console.error('Error generating new invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate new invite link.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingLink(false);
     }
   };
 
@@ -1018,31 +1152,71 @@ const CommunityBoards = () => {
                                         Anyone with this link can join your board
                                       </p>
                                     </div>
-                                    <div className="flex space-x-2">
-                                      <Input
-                                        value={inviteLink}
-                                        readOnly
-                                        className="text-xs"
-                                        placeholder="Generating link..."
-                                      />
-                                      <Button
+                                    
+                                    {!inviteLink ? (
+                                      <Button 
+                                        onClick={generateInviteLink}
+                                        disabled={generatingLink}
+                                        className="w-full"
                                         size="sm"
-                                        onClick={copyInviteLink}
-                                        className="px-3"
                                       >
-                                        {linkCopied ? (
-                                          <>
-                                            <span className="text-xs mr-1">✓</span>
-                                            Copied
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Copy className="h-3 w-3 mr-1" />
-                                            Copy
-                                          </>
-                                        )}
+                                        {generatingLink ? "Generating..." : "Generate Invite Link"}
                                       </Button>
-                                    </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="flex space-x-2">
+                                          <Input
+                                            value={inviteLink}
+                                            readOnly
+                                            className="text-xs"
+                                            placeholder="Generating link..."
+                                          />
+                                          <Button
+                                            size="sm"
+                                            onClick={copyInviteLink}
+                                            className="px-3"
+                                          >
+                                            {linkCopied ? (
+                                              <>
+                                                <span className="text-xs mr-1">✓</span>
+                                                Copied
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Copy className="h-3 w-3 mr-1" />
+                                                Copy
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
+                                        
+                                        <div className="flex space-x-2">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={generateNewInviteLink}
+                                            disabled={generatingLink}
+                                            className="flex-1"
+                                          >
+                                            {generatingLink ? "Generating..." : "Generate New"}
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={revokeInviteLink}
+                                            className="flex-1"
+                                          >
+                                            Revoke Link
+                                          </Button>
+                                        </div>
+                                        
+                                        {currentInviteCode && (
+                                          <p className="text-xs text-muted-foreground">
+                                            Expires: {new Date(currentInviteCode.expires_at).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -1118,31 +1292,71 @@ const CommunityBoards = () => {
                                           Anyone with this link can join your board
                                         </p>
                                       </div>
-                                      <div className="flex space-x-2">
-                                        <Input
-                                          value={inviteLink}
-                                          readOnly
-                                          className="text-xs"
-                                          placeholder="Generating link..."
-                                        />
-                                        <Button
+                                      
+                                      {!inviteLink ? (
+                                        <Button 
+                                          onClick={generateInviteLink}
+                                          disabled={generatingLink}
+                                          className="w-full"
                                           size="sm"
-                                          onClick={copyInviteLink}
-                                          className="px-3"
                                         >
-                                          {linkCopied ? (
-                                            <>
-                                              <span className="text-xs mr-1">✓</span>
-                                              Copied
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Copy className="h-3 w-3 mr-1" />
-                                              Copy
-                                            </>
-                                          )}
+                                          {generatingLink ? "Generating..." : "Generate Invite Link"}
                                         </Button>
-                                      </div>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          <div className="flex space-x-2">
+                                            <Input
+                                              value={inviteLink}
+                                              readOnly
+                                              className="text-xs"
+                                              placeholder="Generating link..."
+                                            />
+                                            <Button
+                                              size="sm"
+                                              onClick={copyInviteLink}
+                                              className="px-3"
+                                            >
+                                              {linkCopied ? (
+                                                <>
+                                                  <span className="text-xs mr-1">✓</span>
+                                                  Copied
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Copy className="h-3 w-3 mr-1" />
+                                                  Copy
+                                                </>
+                                              )}
+                                            </Button>
+                                          </div>
+                                          
+                                          <div className="flex space-x-2">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={generateNewInviteLink}
+                                              disabled={generatingLink}
+                                              className="flex-1"
+                                            >
+                                              {generatingLink ? "Generating..." : "Generate New"}
+                                            </Button>
+                                            <Button
+                                              variant="destructive"
+                                              size="sm"
+                                              onClick={revokeInviteLink}
+                                              className="flex-1"
+                                            >
+                                              Revoke Link
+                                            </Button>
+                                          </div>
+                                          
+                                          {currentInviteCode && (
+                                            <p className="text-xs text-muted-foreground">
+                                              Expires: {new Date(currentInviteCode.expires_at).toLocaleDateString()}
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
