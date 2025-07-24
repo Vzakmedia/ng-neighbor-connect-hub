@@ -53,11 +53,11 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         });
       }
 
-      // Get user's current position
+      // Get user's current position with high accuracy
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 0
         });
       });
@@ -65,26 +65,51 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
 
-      // Initialize map
+      // Initialize map with higher zoom for better accuracy
       const map = new google.maps.Map(mapRef.current, {
         center: initialLocation,
-        zoom: 16,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
+        zoom: 18,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        mapTypeId: google.maps.MapTypeId.HYBRID, // Show satellite + roads for better accuracy
       });
 
       // Initialize geocoder
       const geocoder = new google.maps.Geocoder();
       geocoderRef.current = geocoder;
 
-      // Create marker
+      // Create marker with better visibility
       const marker = new google.maps.Marker({
         position: initialLocation,
         map: map,
         draggable: true,
-        title: 'Drag to select location'
+        title: 'Drag to select exact location',
+        animation: google.maps.Animation.DROP,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#EA4335"/>
+            </svg>
+          `),
+          scaledSize: new google.maps.Size(32, 32),
+          anchor: new google.maps.Point(16, 32)
+        }
       });
+
+      // Add accuracy circle if available
+      if (position.coords.accuracy) {
+        new google.maps.Circle({
+          map: map,
+          center: initialLocation,
+          radius: position.coords.accuracy,
+          fillColor: '#4285F4',
+          fillOpacity: 0.1,
+          strokeColor: '#4285F4',
+          strokeOpacity: 0.3,
+          strokeWeight: 1
+        });
+      }
 
       mapInstanceRef.current = map;
       markerRef.current = marker;
@@ -219,8 +244,10 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             </div>
           )}
 
-          <div className="text-sm text-muted-foreground">
-            💡 Click anywhere on the map or drag the marker to select your exact location
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>💡 Click anywhere on the map or drag the red marker to select your exact location</p>
+            <p>🔍 Use the map controls to switch between satellite and street view for better accuracy</p>
+            <p>📍 The blue circle shows your location accuracy range</p>
           </div>
         </div>
 
