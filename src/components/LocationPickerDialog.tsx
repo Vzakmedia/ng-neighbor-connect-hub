@@ -28,10 +28,14 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const { toast } = useToast();
 
   const initializeMap = async () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current) {
+      console.log('Map container not available');
+      return;
+    }
 
     try {
       setIsLoading(true);
+      console.log('Starting map initialization...');
 
       // Get Google Maps API key
       const { data: tokenData } = await supabase.functions.invoke('get-google-maps-token');
@@ -40,30 +44,72 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         throw new Error('Unable to get Maps API token');
       }
 
-      // Load Google Maps API
-      if (!window.google) {
+      console.log('Got Google Maps token, loading script...');
+
+      // Load Google Maps API if not already loaded
+      if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${tokenData.token}&libraries=geometry`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${tokenData.token}&libraries=places&loading=async`;
         script.async = true;
+        script.defer = true;
         document.head.appendChild(script);
         
         await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
+          script.onload = () => {
+            console.log('Google Maps script loaded successfully');
+            resolve(undefined);
+          };
+          script.onerror = (error) => {
+            console.error('Failed to load Google Maps script:', error);
+            reject(error);
+          };
         });
       }
 
+      console.log('Getting user location...');
+
       // Get user's current position with high accuracy
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        });
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported by this browser'));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('Got user location:', pos.coords.latitude, pos.coords.longitude);
+            resolve(pos);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
+
+      console.log('Initializing map with location:', initialLocation);
+
+      // Wait for Google Maps to be fully loaded
+      await new Promise((resolve) => {
+        if (window.google?.maps?.Map) {
+          resolve(undefined);
+        } else {
+          const checkInterval = setInterval(() => {
+            if (window.google?.maps?.Map) {
+              clearInterval(checkInterval);
+              resolve(undefined);
+            }
+          }, 100);
+        }
+      });
 
       // Initialize map with higher zoom for better accuracy
       const map = new google.maps.Map(mapRef.current, {
@@ -72,8 +118,14 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
-        mapTypeId: google.maps.MapTypeId.HYBRID, // Show satellite + roads for better accuracy
+        mapTypeId: google.maps.MapTypeId.HYBRID,
+        gestureHandling: 'cooperative',
+        zoomControl: true,
+        scaleControl: true,
+        rotateControl: true,
       });
+
+      console.log('Map created successfully');
 
       // Initialize geocoder
       const geocoder = new google.maps.Geocoder();
@@ -114,6 +166,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       mapInstanceRef.current = map;
       markerRef.current = marker;
 
+      console.log('Getting initial address...');
       // Get initial address
       await reverseGeocode(initialLocation);
 
@@ -141,11 +194,13 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         }
       });
 
+      console.log('Map initialization completed successfully');
+
     } catch (error) {
       console.error('Error initializing map:', error);
       toast({
         title: "Map error",
-        description: "Unable to load the map. Please try again.",
+        description: error instanceof Error ? error.message : "Unable to load the map. Please try again.",
         variant: "destructive",
       });
     } finally {
