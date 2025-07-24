@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
   MessageSquare,
   Send,
@@ -87,6 +88,7 @@ const CommunityBoards = () => {
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
+  const [newBoardIsPublic, setNewBoardIsPublic] = useState(true); // Default to public
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -374,7 +376,7 @@ const CommunityBoards = () => {
           name: newBoardName.trim(),
           description: newBoardDescription.trim() || null,
           creator_id: user.id,
-          is_public: true,
+          is_public: newBoardIsPublic,
           location: profile?.neighborhood || profile?.city || null
         })
         .select()
@@ -395,6 +397,7 @@ const CommunityBoards = () => {
 
       setNewBoardName('');
       setNewBoardDescription('');
+      setNewBoardIsPublic(true); // Reset to default
       setShowCreateBoard(false);
       fetchBoards();
       
@@ -772,6 +775,51 @@ const CommunityBoards = () => {
     }
   };
 
+  // Update board privacy setting
+  const updateBoardPrivacy = async (isPublic: boolean) => {
+    if (!selectedBoard || !currentBoard || !user) return;
+
+    // Check if user has permission
+    if (currentBoard.user_role !== 'admin' && currentBoard.creator_id !== user.id) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to change board settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('discussion_boards')
+        .update({ is_public: isPublic })
+        .eq('id', selectedBoard);
+
+      if (error) throw error;
+
+      // Update local state
+      setBoards(prev => 
+        prev.map(board => 
+          board.id === selectedBoard 
+            ? { ...board, is_public: isPublic }
+            : board
+        )
+      );
+
+      toast({
+        title: "Settings updated",
+        description: `Board is now ${isPublic ? 'public' : 'private'}.`,
+      });
+    } catch (error) {
+      console.error('Error updating board privacy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update board settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Fetch board members
   const fetchBoardMembers = async () => {
     if (!selectedBoard) return;
@@ -986,8 +1034,25 @@ const CommunityBoards = () => {
                       placeholder="Describe what this board is for..."
                     />
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-medium">Public Board</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Allow anyone to discover and join this board
+                      </p>
+                    </div>
+                    <Switch
+                      checked={newBoardIsPublic}
+                      onCheckedChange={setNewBoardIsPublic}
+                    />
+                  </div>
                   <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setShowCreateBoard(false)}>
+                    <Button variant="outline" onClick={() => {
+                      setShowCreateBoard(false);
+                      setNewBoardName('');
+                      setNewBoardDescription('');
+                      setNewBoardIsPublic(true);
+                    }}>
                       Cancel
                     </Button>
                     <Button onClick={createBoard} disabled={!newBoardName.trim()}>
@@ -1416,13 +1481,19 @@ const CommunityBoards = () => {
                               <h3 className="font-medium text-sm">Privacy & Access</h3>
                               <div className="grid gap-4">
                                 <div className="flex items-center justify-between">
-                                  <div>
+                                  <div className="space-y-1">
                                     <p className="text-sm font-medium">Public Board</p>
-                                    <p className="text-xs text-muted-foreground">Anyone can join this board</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {currentBoard?.is_public 
+                                        ? "Anyone can discover and join this board" 
+                                        : "Only invited users can join this board"}
+                                    </p>
                                   </div>
-                                  <Badge variant={currentBoard?.is_public ? "default" : "secondary"}>
-                                    {currentBoard?.is_public ? "Public" : "Private"}
-                                  </Badge>
+                                  <Switch
+                                    checked={currentBoard?.is_public || false}
+                                    onCheckedChange={updateBoardPrivacy}
+                                    disabled={currentBoard?.user_role !== 'admin' && currentBoard?.creator_id !== user?.id}
+                                  />
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <div>
