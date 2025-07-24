@@ -29,7 +29,6 @@ import {
   X,
   Settings,
   Shield,
-  UserCheck,
   Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -1006,7 +1005,7 @@ const CommunityBoards = () => {
                               <DropdownMenu open={showAddMember} onOpenChange={setShowAddMember}>
                                 <DropdownMenuTrigger asChild>
                                   <Button className="w-full">
-                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    <Plus className="h-4 w-4 mr-2" />
                                     Add New Member
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -1105,7 +1104,7 @@ const CommunityBoards = () => {
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full">
-                                      <UserCheck className="h-4 w-4 mr-2" />
+                                      <Plus className="h-4 w-4 mr-2" />
                                       Invite More Members
                                     </Button>
                                   </DropdownMenuTrigger>
