@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import CommentDialog from '@/components/CommentDialog';
+import CommentDropdown from '@/components/CommentDropdown';
 import ShareDialog from '@/components/ShareDialog';
 
 
@@ -71,7 +71,6 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewScope, setViewScope] = useState<ViewScope>('neighborhood');
-  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const { user } = useAuth();
@@ -249,14 +248,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     }
   };
 
-  const handleComment = (post: Post) => {
-    setSelectedPost(post);
-    setCommentDialogOpen(true);
-  };
-
   const handleShare = (post: Post) => {
     setSelectedPost(post);
     setShareDialogOpen(true);
+  };
+
+  const handleCommentCountChange = (postId: string, newCount: number) => {
+    setPosts(posts.map(post => 
+      post.id === postId 
+        ? { ...post, comments: newCount }
+        : post
+    ));
   };
 
   // Filter posts based on active tab
@@ -378,15 +380,11 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
                       {post.likes}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleComment(post)}
-                      className="text-muted-foreground hover:text-primary"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      {post.comments}
-                    </Button>
+                    <CommentDropdown 
+                      postId={post.id}
+                      commentCount={post.comments}
+                      onCommentCountChange={(newCount) => handleCommentCountChange(post.id, newCount)}
+                    />
                   </div>
                   <Button 
                     variant="ghost" 
@@ -403,16 +401,6 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         })
       )}
 
-      {/* Comment Dialog */}
-      {selectedPost && (
-        <CommentDialog
-          open={commentDialogOpen}
-          onOpenChange={setCommentDialogOpen}
-          postId={selectedPost.id}
-          postAuthor={selectedPost.author.name}
-          postContent={selectedPost.content}
-        />
-      )}
 
       {/* Share Dialog */}
       {selectedPost && (
