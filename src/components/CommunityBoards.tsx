@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import { 
   MessageSquare,
   Send,
@@ -26,7 +28,9 @@ import {
   AtSign,
   X,
   Settings,
-  Shield
+  Shield,
+  UserPlus,
+  Copy
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,6 +93,9 @@ const CommunityBoards = () => {
   const [showMembers, setShowMembers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [boardMembers, setBoardMembers] = useState<any[]>([]);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -602,6 +609,34 @@ const CommunityBoards = () => {
     return null;
   };
 
+  // Generate invite link for the board
+  const generateInviteLink = () => {
+    if (!selectedBoard) return;
+    
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/community?join=${selectedBoard}`;
+    setInviteLink(link);
+  };
+
+  // Copy invite link to clipboard
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setLinkCopied(true);
+      toast({
+        title: "Link copied",
+        description: "Invite link has been copied to clipboard.",
+      });
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Fetch board members
   const fetchBoardMembers = async () => {
     if (!selectedBoard) return;
@@ -626,6 +661,7 @@ const CommunityBoards = () => {
 
       if (error) throw error;
       setBoardMembers(data || []);
+      generateInviteLink();
     } catch (error) {
       console.error('Error fetching board members:', error);
       toast({
@@ -932,55 +968,187 @@ const CommunityBoards = () => {
                         <DialogTitle>Board Members</DialogTitle>
                       </DialogHeader>
                       <ScrollArea className="h-96">
-                        <div className="space-y-2">
-                          {boardMembers.map((member) => (
-                            <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg border">
+                        {boardMembers.length === 1 && boardMembers[0]?.user_id === currentBoard?.creator_id ? (
+                          <div className="space-y-4">
+                            {/* Show admin is only member */}
+                            <div className="text-center py-6">
+                              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                              <h3 className="text-lg font-medium mb-2">You're the only member</h3>
+                              <p className="text-muted-foreground mb-4">
+                                Invite others to join your board and start the conversation
+                              </p>
+                            </div>
+                            
+                            {/* Admin member card */}
+                            <div className="p-3 rounded-lg border bg-muted/20">
                               <div className="flex items-center space-x-3">
                                 <Avatar className="h-10 w-10">
-                                  <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                                  <AvatarImage src={boardMembers[0]?.profiles?.avatar_url || undefined} />
                                   <AvatarFallback>
-                                    {member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                    {boardMembers[0]?.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
                                   <div className="flex items-center space-x-2">
-                                    <p className="font-medium text-sm">{member.profiles?.full_name || 'Anonymous User'}</p>
-                                    {currentBoard?.creator_id === member.user_id && <Crown className="h-3 w-3 text-yellow-500" />}
-                                    {member.role === 'admin' && <Shield className="h-3 w-3 text-blue-500" />}
+                                    <p className="font-medium text-sm">{boardMembers[0]?.profiles?.full_name || 'Anonymous User'}</p>
+                                    <Crown className="h-3 w-3 text-yellow-500" />
                                   </div>
                                   <p className="text-xs text-muted-foreground">
-                                    {member.profiles?.neighborhood || member.profiles?.city || 'Unknown Location'}
+                                    {boardMembers[0]?.profiles?.neighborhood || boardMembers[0]?.profiles?.city || 'Unknown Location'}
                                   </p>
-                                  <Badge variant="outline" className="text-xs mt-1">
-                                    {currentBoard?.creator_id === member.user_id ? 'Creator' : member.role}
-                                  </Badge>
+                                  <Badge variant="default" className="text-xs mt-1">Creator</Badge>
                                 </div>
                               </div>
-                              {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && 
-                               currentBoard?.creator_id !== member.user_id && (
-                                <div className="flex items-center space-x-1">
-                                  <select
-                                    value={member.role}
-                                    onChange={(e) => updateMemberRole(member.user_id, e.target.value)}
-                                    className="text-xs border rounded px-2 py-1 bg-background"
-                                  >
-                                    <option value="member">Member</option>
-                                    <option value="moderator">Moderator</option>
-                                    <option value="admin">Admin</option>
-                                  </select>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeMember(member.user_id)}
-                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              )}
                             </div>
-                          ))}
-                        </div>
+                            
+                            {/* Add new member section */}
+                            <div className="space-y-3">
+                              <DropdownMenu open={showAddMember} onOpenChange={setShowAddMember}>
+                                <DropdownMenuTrigger asChild>
+                                  <Button className="w-full">
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Add New Member
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-80">
+                                  <div className="p-3 space-y-3">
+                                    <div>
+                                      <Label className="text-sm font-medium">Share Invite Link</Label>
+                                      <p className="text-xs text-muted-foreground mb-2">
+                                        Anyone with this link can join your board
+                                      </p>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <Input
+                                        value={inviteLink}
+                                        readOnly
+                                        className="text-xs"
+                                        placeholder="Generating link..."
+                                      />
+                                      <Button
+                                        size="sm"
+                                        onClick={copyInviteLink}
+                                        className="px-3"
+                                      >
+                                        {linkCopied ? (
+                                          <>
+                                            <span className="text-xs mr-1">✓</span>
+                                            Copied
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="h-3 w-3 mr-1" />
+                                            Copy
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {/* Regular members list */}
+                            {boardMembers.map((member) => (
+                              <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg border">
+                                <div className="flex items-center space-x-3">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                                    <AvatarFallback>
+                                      {member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="flex items-center space-x-2">
+                                      <p className="font-medium text-sm">{member.profiles?.full_name || 'Anonymous User'}</p>
+                                      {currentBoard?.creator_id === member.user_id && <Crown className="h-3 w-3 text-yellow-500" />}
+                                      {member.role === 'admin' && <Shield className="h-3 w-3 text-blue-500" />}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {member.profiles?.neighborhood || member.profiles?.city || 'Unknown Location'}
+                                    </p>
+                                    <Badge variant="outline" className="text-xs mt-1">
+                                      {currentBoard?.creator_id === member.user_id ? 'Creator' : member.role}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && 
+                                 currentBoard?.creator_id !== member.user_id && (
+                                  <div className="flex items-center space-x-1">
+                                    <select
+                                      value={member.role}
+                                      onChange={(e) => updateMemberRole(member.user_id, e.target.value)}
+                                      className="text-xs border rounded px-2 py-1 bg-background"
+                                    >
+                                      <option value="member">Member</option>
+                                      <option value="moderator">Moderator</option>
+                                      <option value="admin">Admin</option>
+                                    </select>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeMember(member.user_id)}
+                                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            
+                            {/* Add member button for boards with existing members */}
+                            {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && (
+                              <div className="pt-3 border-t">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="w-full">
+                                      <UserPlus className="h-4 w-4 mr-2" />
+                                      Invite More Members
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent className="w-80">
+                                    <div className="p-3 space-y-3">
+                                      <div>
+                                        <Label className="text-sm font-medium">Share Invite Link</Label>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                          Anyone with this link can join your board
+                                        </p>
+                                      </div>
+                                      <div className="flex space-x-2">
+                                        <Input
+                                          value={inviteLink}
+                                          readOnly
+                                          className="text-xs"
+                                          placeholder="Generating link..."
+                                        />
+                                        <Button
+                                          size="sm"
+                                          onClick={copyInviteLink}
+                                          className="px-3"
+                                        >
+                                          {linkCopied ? (
+                                            <>
+                                              <span className="text-xs mr-1">✓</span>
+                                              Copied
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Copy className="h-3 w-3 mr-1" />
+                                              Copy
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </ScrollArea>
                     </DialogContent>
                   </Dialog>
