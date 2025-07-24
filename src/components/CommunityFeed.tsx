@@ -16,12 +16,15 @@ import {
   Users,
   Filter,
   Globe,
-  Bookmark
+  Bookmark,
+  Search,
+  Calendar
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 
@@ -79,6 +82,8 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPostType, setSelectedPostType] = useState<string>('all');
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -442,17 +447,71 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     });
   };
 
-  // Filter posts based on active tab
+  // Filter posts based on search and post type
   const filteredPosts = posts.filter(post => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'events') return post.type === 'event';
-    if (activeTab === 'safety') return post.type === 'safety';
-    if (activeTab === 'marketplace') return post.type === 'marketplace';
-    return post.type === activeTab;
+    // Filter by search query
+    const matchesSearch = searchQuery === '' || 
+      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Filter by post type
+    const matchesType = selectedPostType === 'all' || post.type === selectedPostType;
+
+    // Filter by active tab (for backward compatibility)
+    let matchesTab = true;
+    if (activeTab !== 'all') {
+      if (activeTab === 'events') matchesTab = post.type === 'event';
+      else if (activeTab === 'safety') matchesTab = post.type === 'safety';
+      else if (activeTab === 'marketplace') matchesTab = post.type === 'marketplace';
+      else matchesTab = post.type === activeTab;
+    }
+
+    return matchesSearch && matchesType && matchesTab;
   });
+
+  const postTypeFilters = [
+    { key: 'all', label: 'All Posts', icon: Users },
+    { key: 'general', label: 'General', icon: MessageCircle },
+    { key: 'safety', label: 'Safety', icon: AlertTriangle },
+    { key: 'marketplace', label: 'Marketplace', icon: ShoppingCart },
+    { key: 'help', label: 'Help', icon: Users },
+    { key: 'event', label: 'Events', icon: Calendar },
+  ];
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search posts, users, or tags..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Post Type Filter Buttons */}
+      <div className="flex flex-wrap gap-2">
+        {postTypeFilters.map((filter) => {
+          const Icon = filter.icon;
+          return (
+            <Button
+              key={filter.key}
+              variant={selectedPostType === filter.key ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPostType(filter.key)}
+              className="text-xs"
+            >
+              <Icon className="h-3 w-3 mr-1" />
+              {filter.label}
+            </Button>
+          );
+        })}
+      </div>
+
       {/* View Scope Toggle */}
       <div className="flex items-center justify-between bg-card p-4 rounded-lg">
         <div className="flex items-center space-x-2">
