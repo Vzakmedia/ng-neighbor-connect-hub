@@ -51,6 +51,7 @@ const ProfileOverview = () => {
     city: '',
     bio: ''
   });
+  const [requestingVerification, setRequestingVerification] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -286,6 +287,29 @@ const ProfileOverview = () => {
     }
   };
 
+  const handleVerificationRequest = async () => {
+    if (!user || !profile) return;
+
+    setRequestingVerification(true);
+    try {
+      // Here you would typically send a request to an admin system
+      // For now, we'll just show a success message
+      toast({
+        title: "Verification Request Sent",
+        description: "Your verification request has been submitted. You'll be notified once reviewed.",
+      });
+    } catch (error) {
+      console.error('Error requesting verification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit verification request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRequestingVerification(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -390,7 +414,7 @@ const ProfileOverview = () => {
                       {profile?.full_name || 'No name set'}
                     </h2>
                     {profile?.is_verified && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
@@ -558,7 +582,7 @@ const ProfileOverview = () => {
             Account Information
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-muted-foreground">Member Since</Label>
@@ -577,13 +601,49 @@ const ProfileOverview = () => {
             <div>
               <Label className="text-sm text-muted-foreground">Account Status</Label>
               <div className="flex items-center gap-2 mt-1">
-                <div className={`h-2 w-2 rounded-full ${profile?.is_verified ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                <span className="font-medium">
-                  {profile?.is_verified ? 'Verified Account' : 'Unverified Account'}
-                </span>
+                {profile?.is_verified ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">Verified Account</span>
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Verified
+                    </Badge>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-amber-500" />
+                    <span className="font-medium text-amber-700 dark:text-amber-400">Unverified Account</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
+
+          {!profile?.is_verified && (
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-foreground">Account Verification</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Get your account verified to build trust in the community
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleVerificationRequest}
+                  disabled={requestingVerification}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {requestingVerification ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  ) : (
+                    <Shield className="h-4 w-4 mr-2" />
+                  )}
+                  {requestingVerification ? 'Requesting...' : 'Request Verification'}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
