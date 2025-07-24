@@ -204,39 +204,64 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Select Your Location
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col h-full space-y-4">
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
+          {/* Enhanced Location Controls */}
+          <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => initializeMap()}
+              disabled={isLoading}
+            >
+              <Navigation className="h-4 w-4 mr-2" />
+              Refresh GPS
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                if (mapInstanceRef.current && selectedCoords) {
+                  mapInstanceRef.current.setZoom(20);
+                  mapInstanceRef.current.setCenter(selectedCoords);
+                }
+              }}
+            >
+              🔍 Zoom In
+            </Button>
+          </div>
+
           {/* Map Container */}
-          <div className="flex-1 relative border rounded-lg overflow-hidden">
+          <div className="flex-1 relative border rounded-lg overflow-hidden min-h-[400px]">
             {isLoading && (
               <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                 <div className="flex items-center gap-2">
                   <Navigation className="h-4 w-4 animate-spin" />
-                  <span>Loading map...</span>
+                  <span>Getting precise location...</span>
                 </div>
               </div>
             )}
-            <div ref={mapRef} className="w-full h-full min-h-[400px]" />
+            <div ref={mapRef} className="w-full h-full" />
           </div>
 
           {/* Selected Location Display */}
           {selectedAddress && (
-            <div className="p-3 bg-muted rounded-lg">
+            <div className="p-3 bg-muted rounded-lg flex-shrink-0">
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium">Selected Location:</p>
                   <p className="text-sm text-muted-foreground">{selectedAddress}</p>
                   {selectedCoords && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Coordinates: {selectedCoords.lat.toFixed(6)}, {selectedCoords.lng.toFixed(6)}
+                      Coordinates: {selectedCoords.lat.toFixed(7)}, {selectedCoords.lng.toFixed(7)}
                     </p>
                   )}
                 </div>
@@ -244,14 +269,15 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             </div>
           )}
 
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="text-xs text-muted-foreground space-y-1 flex-shrink-0">
             <p>💡 Click anywhere on the map or drag the red marker to select your exact location</p>
-            <p>🔍 Use the map controls to switch between satellite and street view for better accuracy</p>
-            <p>📍 The blue circle shows your location accuracy range</p>
+            <p>🔍 Use satellite view and zoom in for maximum precision</p>
+            <p>📍 The blue circle shows your GPS accuracy range</p>
+            <p>🎯 For best results, go outside and ensure GPS is enabled</p>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4">
           <Button
             type="button"
             variant="outline"
