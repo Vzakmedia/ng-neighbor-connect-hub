@@ -21,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import CommentDropdown from '@/components/CommentDropdown';
+import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 
 
@@ -74,6 +74,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [viewScope, setViewScope] = useState<ViewScope>('neighborhood');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [openComments, setOpenComments] = useState<Set<string>>(new Set());
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -343,6 +344,18 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     setShareDialogOpen(true);
   };
 
+  const toggleComments = (postId: string) => {
+    setOpenComments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
   // Filter posts based on active tab
   const filteredPosts = posts.filter(post => {
     if (activeTab === 'all') return true;
@@ -470,10 +483,15 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
                       {post.likes}
                     </Button>
-                    <CommentDropdown 
-                      postId={post.id}
-                      commentCount={post.comments}
-                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => toggleComments(post.id)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      {post.comments}
+                    </Button>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -484,6 +502,14 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                {/* Comment Section */}
+                <CommentSection 
+                  postId={post.id}
+                  commentCount={post.comments}
+                  isOpen={openComments.has(post.id)}
+                  onToggle={() => toggleComments(post.id)}
+                />
               </CardContent>
             </Card>
           );
