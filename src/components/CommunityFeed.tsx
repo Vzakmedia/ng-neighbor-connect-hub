@@ -394,18 +394,26 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         filteredPosts.map((post: Post) => {
           const typeBadge = getPostTypeBadge(post.type);
           
+          // Add safety check for post.author
+          if (!post || !post.author) {
+            console.warn('Post or post.author is undefined:', post);
+            return null;
+          }
+          
           return (
             <Card key={post.id} className="shadow-card hover:shadow-elevated transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar>
-                      <AvatarImage src={post.author.avatar} />
-                      <AvatarFallback>{post.author.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarImage src={post.author?.avatar || undefined} />
+                      <AvatarFallback>
+                        {post.author?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">{post.author.name}</h4>
+                        <h4 className="font-medium">{post.author?.name || 'Anonymous User'}</h4>
                         <Badge variant={typeBadge.variant} className="text-xs">
                           {getPostTypeIcon(post.type)}
                           <span className="ml-1">{typeBadge.label}</span>
@@ -413,7 +421,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />
-                        <span>{post.author.location}</span>
+                        <span>{post.author?.location || 'Unknown Location'}</span>
                         <Clock className="h-3 w-3 ml-2" />
                         <span>{post.timestamp}</span>
                       </div>
@@ -485,7 +493,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           postId={selectedPost.id}
           postTitle={selectedPost.title}
           postContent={selectedPost.content}
-          postAuthor={selectedPost.author.name}
+          postAuthor={selectedPost.author?.name || 'Anonymous User'}
         />
       )}
     </div>
