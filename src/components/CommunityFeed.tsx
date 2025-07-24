@@ -483,15 +483,6 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
                       {post.likes}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => toggleComments(post.id)}
-                      className="text-muted-foreground hover:text-primary"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      {post.comments}
-                    </Button>
                   </div>
                   <Button 
                     variant="ghost" 
