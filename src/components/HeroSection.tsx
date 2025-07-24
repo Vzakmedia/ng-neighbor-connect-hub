@@ -25,12 +25,6 @@ const HeroSection = () => {
     return 'Welcome to Your Community';
   };
 
-  const stats = [
-    { icon: Users, label: 'Neighbors', value: '2,400+', color: 'text-community-blue' },
-    { icon: Shield, label: 'Safety Alerts', value: '15', color: 'text-destructive' },
-    { icon: ShoppingBag, label: 'Items Listed', value: '89', color: 'text-community-green' },
-    { icon: Calendar, label: 'Upcoming Events', value: '7', color: 'text-community-yellow' },
-  ];
 
   return (
     <div className="relative overflow-hidden hidden md:block">
@@ -72,23 +66,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="container px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-10 pb-6 sm:pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="bg-gradient-card shadow-card hover:shadow-elevated transition-shadow">
-                <CardContent className="p-3 sm:p-4 text-center">
-                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-2 ${stat.color}`} />
-                  <div className="text-lg sm:text-2xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 };
