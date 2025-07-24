@@ -215,13 +215,23 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   };
 
   const reverseGeocode = async (coords: { lat: number; lng: number }) => {
-    if (!geocoderRef.current) return;
+    console.log('Starting reverse geocoding for:', coords);
+    
+    if (!geocoderRef.current) {
+      console.log('Geocoder not available');
+      setSelectedAddress(`${coords.lat.toFixed(7)}, ${coords.lng.toFixed(7)}`);
+      setSelectedCoords(coords);
+      return;
+    }
 
     try {
       const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
         geocoderRef.current!.geocode(
           { location: coords },
           (results, status) => {
+            console.log('Geocoding status:', status);
+            console.log('Geocoding results:', results);
+            
             if (status === 'OK') {
               resolve(results || []);
             } else {
@@ -233,13 +243,29 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       if (results && results.length > 0) {
         const address = results[0].formatted_address;
+        console.log('Found address:', address);
         setSelectedAddress(address);
+        setSelectedCoords(coords);
+        
+        toast({
+          title: "Location updated",
+          description: "Location has been selected successfully",
+        });
+      } else {
+        console.log('No results found, using coordinates');
+        setSelectedAddress(`${coords.lat.toFixed(7)}, ${coords.lng.toFixed(7)}`);
         setSelectedCoords(coords);
       }
     } catch (error) {
       console.error('Error getting address:', error);
-      setSelectedAddress(`${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+      setSelectedAddress(`${coords.lat.toFixed(7)}, ${coords.lng.toFixed(7)}`);
       setSelectedCoords(coords);
+      
+      toast({
+        title: "Address lookup failed",
+        description: "Using coordinates instead of address",
+        variant: "destructive",
+      });
     }
   };
 
