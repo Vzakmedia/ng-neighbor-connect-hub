@@ -1275,6 +1275,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_board_admin: {
+        Args: { board_id: string; user_id: string }
+        Returns: boolean
+      }
+      is_board_creator: {
+        Args: { board_id: string; user_id: string }
+        Returns: boolean
+      }
+      is_board_member: {
+        Args: { board_id: string; user_id: string }
+        Returns: boolean
+      }
       mark_direct_messages_as_read: {
         Args: { conversation_id: string; current_user_id: string }
         Returns: undefined

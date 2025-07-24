@@ -225,16 +225,30 @@ const CommunityBoards = () => {
     if (!user) return;
     
     try {
-      const { data: boardsData, error } = await supabase
+      // First get boards where user is a member
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('board_members')
+        .select('board_id, role')
+        .eq('user_id', user.id);
+
+      if (membershipError) throw membershipError;
+
+      if (!membershipData || membershipData.length === 0) {
+        setBoards([]);
+        return;
+      }
+
+      // Get board IDs
+      const boardIds = membershipData.map(m => m.board_id);
+
+      // Get board details
+      const { data: boardsData, error: boardsError } = await supabase
         .from('discussion_boards')
-        .select(`
-          *,
-          board_members!inner(user_id, role)
-        `)
-        .eq('board_members.user_id', user.id)
+        .select('*')
+        .in('id', boardIds)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (boardsError) throw boardsError;
 
       // Get member counts for each board
       const boardsWithCounts = await Promise.all(
@@ -244,10 +258,13 @@ const CommunityBoards = () => {
             .select('*', { count: 'exact' })
             .eq('board_id', board.id);
 
+          // Find user's role in this board
+          const userMembership = membershipData.find(m => m.board_id === board.id);
+
           return {
             ...board,
             member_count: count || 0,
-            user_role: board.board_members[0]?.role || null
+            user_role: userMembership?.role || null
           };
         })
       );
