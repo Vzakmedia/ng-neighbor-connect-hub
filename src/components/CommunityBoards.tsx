@@ -29,7 +29,9 @@ import {
   X,
   Settings,
   Shield,
-  Copy
+  Copy,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -1198,6 +1200,7 @@ const CommunityBoards = () => {
                                             disabled={generatingLink}
                                             className="flex-1"
                                           >
+                                            <RefreshCw className="h-3 w-3 mr-1" />
                                             {generatingLink ? "Generating..." : "Generate New"}
                                           </Button>
                                           <Button
@@ -1206,6 +1209,7 @@ const CommunityBoards = () => {
                                             onClick={revokeInviteLink}
                                             className="flex-1"
                                           >
+                                            <Trash2 className="h-3 w-3 mr-1" />
                                             Revoke Link
                                           </Button>
                                         </div>
@@ -1338,6 +1342,7 @@ const CommunityBoards = () => {
                                               disabled={generatingLink}
                                               className="flex-1"
                                             >
+                                              <RefreshCw className="h-3 w-3 mr-1" />
                                               {generatingLink ? "Generating..." : "Generate New"}
                                             </Button>
                                             <Button
@@ -1346,6 +1351,7 @@ const CommunityBoards = () => {
                                               onClick={revokeInviteLink}
                                               className="flex-1"
                                             >
+                                              <Trash2 className="h-3 w-3 mr-1" />
                                               Revoke Link
                                             </Button>
                                           </div>
