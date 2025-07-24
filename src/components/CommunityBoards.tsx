@@ -1005,6 +1005,7 @@ const CommunityBoards = () => {
                               <DropdownMenu open={showAddMember} onOpenChange={setShowAddMember}>
                                 <DropdownMenuTrigger asChild>
                                   <Button className="w-full">
+                                    {/* Add new member icon */}
                                     <Plus className="h-4 w-4 mr-2" />
                                     Add New Member
                                   </Button>
@@ -1104,6 +1105,7 @@ const CommunityBoards = () => {
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full">
+                                      {/* Invite more members icon */}
                                       <Plus className="h-4 w-4 mr-2" />
                                       Invite More Members
                                     </Button>
