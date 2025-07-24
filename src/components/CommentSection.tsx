@@ -14,24 +14,26 @@ interface Comment {
   user_id: string;
   content: string;
   created_at: string;
+  parent_comment_id: string | null;
   profiles: {
     full_name: string | null;
     avatar_url: string | null;
   } | null;
   likes_count: number;
   is_liked_by_user: boolean;
+  replies?: Comment[];
 }
 
 interface CommentSectionProps {
   postId: string;
   commentCount: number;
-  isOpen: boolean;
-  onToggle: () => void;
 }
 
-const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSectionProps) => {
+const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -49,14 +51,14 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
   };
 
   const fetchComments = async () => {
-    if (!isOpen || !user) return;
+    if (!user) return;
     
     setLoading(true);
     try {
       // First fetch comments
       const { data: commentsData, error: commentsError } = await supabase
         .from('post_comments')
-        .select('id, user_id, content, created_at')
+        .select('id, user_id, content, created_at, parent_comment_id')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -103,7 +105,9 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
         is_liked_by_user: likesData?.some(like => like.comment_id === comment.id && like.user_id === user.id) || false
       })) || [];
 
-      setComments(processedComments);
+      // Organize comments with replies
+      const organizedComments = organizeCommentsWithReplies(processedComments);
+      setComments(organizedComments);
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
@@ -111,8 +115,34 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
     }
   };
 
-  const handleSubmitComment = async () => {
-    if (!newComment.trim() || !user || !profile) return;
+  const organizeCommentsWithReplies = (comments: Comment[]): Comment[] => {
+    const commentMap = new Map<string, Comment>();
+    const rootComments: Comment[] = [];
+
+    // First pass: create map of all comments
+    comments.forEach(comment => {
+      commentMap.set(comment.id, { ...comment, replies: [] });
+    });
+
+    // Second pass: organize into tree structure
+    comments.forEach(comment => {
+      const commentWithReplies = commentMap.get(comment.id)!;
+      if (comment.parent_comment_id) {
+        const parent = commentMap.get(comment.parent_comment_id);
+        if (parent) {
+          parent.replies!.push(commentWithReplies);
+        }
+      } else {
+        rootComments.push(commentWithReplies);
+      }
+    });
+
+    return rootComments;
+  };
+
+  const handleSubmitComment = async (parentCommentId?: string) => {
+    const content = parentCommentId ? replyText : newComment;
+    if (!content.trim() || !user || !profile) return;
 
     try {
       const { data, error } = await supabase
@@ -120,9 +150,10 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
         .insert({
           post_id: postId,
           user_id: user.id,
-          content: newComment.trim()
+          content: content.trim(),
+          parent_comment_id: parentCommentId || null
         })
-        .select('id, user_id, content, created_at')
+        .select('id, user_id, content, created_at, parent_comment_id')
         .single();
 
       if (error) {
@@ -135,23 +166,19 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
         return;
       }
 
-      // Add the new comment to the list with current user's profile
-      const newCommentWithLikes = {
-        ...data,
-        profiles: {
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url
-        },
-        likes_count: 0,
-        is_liked_by_user: false
-      };
-
-      setComments(prev => [...prev, newCommentWithLikes]);
-      setNewComment('');
+      // Refresh comments to get the updated structure
+      fetchComments();
+      
+      if (parentCommentId) {
+        setReplyText('');
+        setReplyingTo(null);
+      } else {
+        setNewComment('');
+      }
 
       toast({
-        title: "Comment posted",
-        description: "Your comment has been added successfully.",
+        title: parentCommentId ? "Reply posted" : "Comment posted",
+        description: parentCommentId ? "Your reply has been added successfully." : "Your comment has been added successfully.",
       });
     } catch (error) {
       console.error('Error submitting comment:', error);
@@ -216,7 +243,7 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
 
   // Set up real-time subscription for comments
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!user) return;
 
     const channel = supabase
       .channel(`post_comments_${postId}`)
@@ -248,85 +275,61 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isOpen, postId, user]);
+  }, [postId, user]);
 
-  // Fetch comments when section opens
+  // Fetch comments when component mounts
   useEffect(() => {
-    if (isOpen) {
-      fetchComments();
-    }
-  }, [isOpen]);
+    fetchComments();
+  }, [postId]);
 
-  return (
-    <>
-      {/* Comment Toggle Button */}
-      <Button 
-        variant="ghost" 
-        size="sm"
-        onClick={onToggle}
-        className="text-muted-foreground hover:text-primary"
-      >
-        <MessageCircle className="h-4 w-4 mr-1" />
-        {commentCount}
-      </Button>
-
-      {/* Comment Section */}
-      {isOpen && (
-        <div className="border-t bg-muted/20 mt-4">
-          {/* Comments List */}
-          <ScrollArea className="max-h-80 px-4 py-2">
-            <div className="space-y-3">
-              {loading ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                </div>
-              ) : comments.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No comments yet. Be the first to comment!
-                </p>
-              ) : (
-                comments.map((comment) => (
-                  <div key={comment.id} className="flex space-x-3">
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="bg-background rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium truncate">
-                            {comment.profiles?.full_name || 'Anonymous User'}
-                          </span>
-                          <span className="text-xs text-muted-foreground shrink-0">
-                            {formatTimeAgo(comment.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-sm break-words">{comment.content}</p>
-                      </div>
-                      <div className="flex items-center mt-1 ml-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => toggleCommentLike(comment.id)}
-                          className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
-                        >
-                          <Heart className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
-                          {comment.likes_count > 0 && comment.likes_count}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Comment Input */}
-          <div className="border-t bg-background/50 p-4">
-            <div className="flex space-x-3">
-              <Avatar className="h-8 w-8 shrink-0">
+  const renderComment = (comment: Comment, isReply = false) => (
+    <div key={comment.id} className={`flex space-x-3 ${isReply ? 'ml-8 mt-2' : ''}`}>
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+        <AvatarFallback className="text-xs">
+          {comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <div className="bg-background rounded-lg p-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-medium truncate">
+              {comment.profiles?.full_name || 'Anonymous User'}
+            </span>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {formatTimeAgo(comment.created_at)}
+            </span>
+          </div>
+          <p className="text-sm break-words">{comment.content}</p>
+        </div>
+        <div className="flex items-center mt-1 ml-2 space-x-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => toggleCommentLike(comment.id)}
+            className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+          >
+            <Heart className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
+            {comment.likes_count > 0 && comment.likes_count}
+          </Button>
+          {!isReply && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+            >
+              <MessageCircle className="h-3 w-3 mr-1" />
+              Reply
+            </Button>
+          )}
+        </div>
+        
+        {/* Reply input */}
+        {replyingTo === comment.id && (
+          <div className="mt-3 ml-2">
+            <div className="flex space-x-2">
+              <Avatar className="h-6 w-6 shrink-0">
                 <AvatarImage src={profile?.avatar_url || undefined} />
                 <AvatarFallback className="text-xs">
                   {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -334,34 +337,110 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
               </Avatar>
               <div className="flex-1 space-y-2">
                 <Textarea
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder={`Reply to ${comment.profiles?.full_name || 'this comment'}...`}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
                   className="min-h-[60px] resize-none text-sm"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      handleSubmitComment();
+                      handleSubmitComment(comment.id);
                     }
                   }}
                 />
-                <div className="flex justify-end">
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="ghost"
+                    size="sm" 
+                    onClick={() => {
+                      setReplyingTo(null);
+                      setReplyText('');
+                    }}
+                    className="text-xs"
+                  >
+                    Cancel
+                  </Button>
                   <Button 
                     size="sm" 
-                    onClick={handleSubmitComment}
-                    disabled={!newComment.trim()}
+                    onClick={() => handleSubmitComment(comment.id)}
+                    disabled={!replyText.trim()}
                     className="text-xs"
                   >
                     <Send className="h-3 w-3 mr-1" />
-                    Post
+                    Reply
                   </Button>
                 </div>
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Render replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-2">
+            {comment.replies.map(reply => renderComment(reply, true))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="border-t bg-muted/20 mt-4">
+      {/* Comments List */}
+      <ScrollArea className="max-h-80 px-4 py-2">
+        <div className="space-y-3">
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No comments yet. Be the first to comment!
+            </p>
+          ) : (
+            comments.map(comment => renderComment(comment))
+          )}
         </div>
-      )}
-    </>
+      </ScrollArea>
+
+      {/* Comment Input */}
+      <div className="border-t bg-background/50 p-4">
+        <div className="flex space-x-3">
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className="text-xs">
+              {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-2">
+            <Textarea
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="min-h-[60px] resize-none text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
+            />
+            <div className="flex justify-end">
+              <Button 
+                size="sm" 
+                onClick={() => handleSubmitComment()}
+                disabled={!newComment.trim()}
+                className="text-xs"
+              >
+                <Send className="h-3 w-3 mr-1" />
+                Post
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
