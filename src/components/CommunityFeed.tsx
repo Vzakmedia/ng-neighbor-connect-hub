@@ -33,6 +33,7 @@ interface DatabasePost {
   content: string;
   location: string | null;
   image_urls: string[];
+  tags: string[];
   created_at: string;
   profiles: {
     full_name: string | null;
@@ -57,6 +58,7 @@ interface Post {
   likes: number;
   comments: number;
   images?: string[];
+  tags?: string[];
   isLiked: boolean;
 }
 
@@ -126,6 +128,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       likes: likesCount,
       comments: commentsCount,
       images: dbPost.image_urls || [],
+      tags: dbPost.tags || [],
       isLiked: isLikedByUser
     };
   };
@@ -457,6 +460,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                   <h3 className="font-semibold text-base mb-2">{post.title}</h3>
                 )}
                 <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+                
+                {/* Display tags if any */}
+                {post.tags && post.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {post.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 
                 {/* Display images if any */}
                 {post.images && post.images.length > 0 && (

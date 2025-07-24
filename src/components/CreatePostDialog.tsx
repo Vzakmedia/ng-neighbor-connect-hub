@@ -44,6 +44,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [images, setImages] = useState<File[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -68,6 +70,24 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addTag = () => {
+    if (currentTag.trim() && !tags.includes(currentTag.trim()) && tags.length < 5) {
+      setTags(prev => [...prev, currentTag.trim()]);
+      setCurrentTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +128,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           title: title || null,
           content,
           location: location || null,
-          image_urls: imageUrls
+          image_urls: imageUrls,
+          tags: tags
         });
 
       if (error) {
@@ -131,6 +152,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       setTitle('');
       setLocation('');
       setImages([]);
+      setTags([]);
+      setCurrentTag('');
       setPostType('general');
       onOpenChange(false);
     } catch (error) {
@@ -229,6 +252,55 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 placeholder="Add specific location..."
                 className="pl-10"
               />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label>Tags (Optional)</Label>
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <Input
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyDown={handleTagKeyPress}
+                  placeholder="Add tags (press Enter or comma to add)..."
+                  disabled={tags.length >= 5}
+                  className="flex-1"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={addTag}
+                  disabled={!currentTag.trim() || tags.length >= 5}
+                >
+                  Add
+                </Button>
+              </div>
+              
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      #{tag}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-1 h-auto p-0 text-xs"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              <span className="text-xs text-muted-foreground">
+                {tags.length}/5 tags
+              </span>
             </div>
           </div>
 

@@ -153,6 +153,7 @@ export type Database = {
           image_urls: string[] | null
           location: string | null
           post_type: string
+          tags: string[] | null
           title: string | null
           updated_at: string
           user_id: string
@@ -164,6 +165,7 @@ export type Database = {
           image_urls?: string[] | null
           location?: string | null
           post_type: string
+          tags?: string[] | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -175,6 +177,7 @@ export type Database = {
           image_urls?: string[] | null
           location?: string | null
           post_type?: string
+          tags?: string[] | null
           title?: string | null
           updated_at?: string
           user_id?: string

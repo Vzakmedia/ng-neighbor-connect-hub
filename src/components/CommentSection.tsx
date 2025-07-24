@@ -388,8 +388,22 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
   return (
     <div className="border-t bg-muted/20 mt-4">
       {/* Comments List */}
-      <ScrollArea className="max-h-80 px-4 py-2">
-        <div className="space-y-3">
+      <ScrollArea className="max-h-80 px-4 py-2 [&>[data-radix-scroll-area-viewport]]:!block">
+        <style>
+          {`
+            .comment-scroll-area [data-radix-scroll-area-scrollbar] {
+              width: 8px !important;
+            }
+            .comment-scroll-area [data-radix-scroll-area-thumb] {
+              background-color: hsl(var(--border)) !important;
+              border-radius: 4px !important;
+            }
+            .comment-scroll-area [data-radix-scroll-area-thumb]:hover {
+              background-color: hsl(var(--border) / 0.8) !important;
+            }
+          `}
+        </style>
+        <div className="comment-scroll-area space-y-3">
           {loading ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
