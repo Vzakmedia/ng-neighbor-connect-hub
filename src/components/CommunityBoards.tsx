@@ -21,7 +21,9 @@ import {
   Clock,
   MapPin,
   Globe,
-  Hash
+  Hash,
+  AtSign,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -69,6 +71,10 @@ const CommunityBoards = () => {
   const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+  const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [textareaRef, setTextareaRef] = useState<HTMLTextAreaElement | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -140,6 +146,115 @@ const CommunityBoards = () => {
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
+  // Fetch users for @mentions
+  const fetchUsers = async (query: string) => {
+    if (!query.trim()) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, neighborhood, city')
+        .ilike('full_name', `%${query}%`)
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  };
+
+  // Handle @mention input
+  const handleMentionInput = async (text: string, cursorPos: number) => {
+    const beforeCursor = text.substring(0, cursorPos);
+    const mentionMatch = beforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      setShowUserSuggestions(true);
+      
+      if (query.length > 0) {
+        const users = await fetchUsers(query);
+        setUserSuggestions(users);
+      } else {
+        // Show recent chatters when no query
+        const recentUsers = messages
+          .slice(-10)
+          .map(m => m.profiles)
+          .filter((profile, index, arr) => 
+            profile && arr.findIndex(p => p?.full_name === profile.full_name) === index
+          )
+          .slice(0, 5);
+        setUserSuggestions(recentUsers as any[]);
+      }
+    } else {
+      setShowUserSuggestions(false);
+      setUserSuggestions([]);
+      setMentionQuery('');
+    }
+  };
+
+  // Insert mention into text
+  const insertMention = (user: any, isReply = false) => {
+    const currentText = isReply ? replyText : newMessage;
+    const textarea = textareaRef;
+    
+    if (!textarea) return;
+    
+    const cursorPos = textarea.selectionStart;
+    const beforeCursor = currentText.substring(0, cursorPos);
+    const afterCursor = currentText.substring(cursorPos);
+    
+    const mentionMatch = beforeCursor.match(/@(\w*)$/);
+    if (!mentionMatch) return;
+    
+    const beforeMention = beforeCursor.substring(0, mentionMatch.index);
+    const mention = `@${user.full_name} `;
+    const newText = beforeMention + mention + afterCursor;
+    
+    if (isReply) {
+      setReplyText(newText);
+    } else {
+      setNewMessage(newText);
+    }
+    
+    setShowUserSuggestions(false);
+    setUserSuggestions([]);
+    setMentionQuery('');
+    
+    // Focus back to textarea
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = beforeMention.length + mention.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // Format message content with mentions
+  const formatMessageContent = (content: string) => {
+    const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // This is a mention
+        return (
+          <span key={index} className="bg-primary/20 text-primary px-1 rounded font-medium">
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Get the original message being replied to
+  const getReplyMessage = (replyId: string) => {
+    return messages.find(m => m.id === replyId);
   };
 
   const fetchMessages = async () => {
@@ -677,7 +792,22 @@ const CommunityBoards = () => {
                         </div>
                       </div>
                       
-                      <p className="text-sm mb-3 leading-relaxed break-words">{message.content}</p>
+                      {/* Show reply preview if this is a reply */}
+                      {message.reply_to_id && (
+                        <div className="mb-2 p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r">
+                          <div className="text-xs text-muted-foreground mb-1">
+                            <Reply className="h-3 w-3 inline mr-1" />
+                            Replying to {getReplyMessage(message.reply_to_id)?.profiles?.full_name || 'Unknown User'}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {getReplyMessage(message.reply_to_id)?.content || 'Message not found'}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="text-sm mb-3 leading-relaxed break-words">
+                        {formatMessageContent(message.content)}
+                      </div>
                       
                       <div className="flex items-center space-x-4">
                         <Button
@@ -777,19 +907,94 @@ const CommunityBoards = () => {
                 {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-2 relative">
+              {/* Reply preview when replying */}
+              {replyingTo && (
+                <div className="p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r mb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      <Reply className="h-3 w-3 inline mr-1" />
+                      Replying to {getReplyMessage(replyingTo)?.profiles?.full_name || 'Unknown User'}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setReplyText('');
+                      }}
+                      className="h-5 w-5 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {getReplyMessage(replyingTo)?.content || 'Message not found'}
+                  </p>
+                </div>
+              )}
+
               <Textarea
-                placeholder={`Message #${currentGroup?.name.toLowerCase()}...`}
+                ref={setTextareaRef}
+                placeholder={`Message #${currentGroup?.name.toLowerCase()}... (Type @ to mention someone)`}
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  handleMentionInput(e.target.value, e.target.selectionStart);
+                }}
+                onFocus={(e) => {
+                  handleMentionInput(e.target.value, e.target.selectionStart);
+                }}
+                onKeyUp={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  handleMentionInput(target.value, target.selectionStart);
+                }}
+                onClick={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  handleMentionInput(target.value, target.selectionStart);
+                }}
                 className="min-h-[80px] resize-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                   }
+                  if (e.key === 'Escape') {
+                    setShowUserSuggestions(false);
+                  }
                 }}
               />
+
+              {/* User suggestions dropdown */}
+              {showUserSuggestions && userSuggestions.length > 0 && (
+                <div className="absolute bottom-full mb-2 left-0 right-0 bg-card border rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                  <div className="p-2 text-xs text-muted-foreground border-b flex items-center">
+                    <AtSign className="h-3 w-3 mr-1" />
+                    Select a user to mention
+                  </div>
+                  {userSuggestions.map((user) => (
+                    <div
+                      key={user.user_id}
+                      onClick={() => insertMention(user)}
+                      className="flex items-center space-x-2 p-3 hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{user.full_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.neighborhood || user.city || 'Unknown location'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex justify-end">
                 <Button 
                   onClick={() => sendMessage()}
