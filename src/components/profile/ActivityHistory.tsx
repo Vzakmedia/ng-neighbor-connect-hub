@@ -12,7 +12,9 @@ import {
   Shield, 
   Star, 
   Clock,
-  Eye
+  Eye,
+  Bookmark,
+  Heart
 } from 'lucide-react';
 
 interface MarketplaceItem {
@@ -50,12 +52,28 @@ interface Review {
   created_at: string;
 }
 
+interface SavedPost {
+  id: string;
+  post_id: string;
+  created_at: string;
+  community_posts: {
+    id: string;
+    title: string | null;
+    content: string;
+    post_type: string;
+    created_at: string;
+    location: string | null;
+    tags: string[] | null;
+  } | null;
+}
+
 const ActivityHistory = () => {
   const { user } = useAuth();
   const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceItem[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [safetyAlerts, setSafetyAlerts] = useState<SafetyAlert[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,7 +84,7 @@ const ActivityHistory = () => {
 
   const fetchUserActivity = async () => {
     try {
-      const [marketplaceRes, servicesRes, alertsRes, reviewsRes] = await Promise.all([
+      const [marketplaceRes, servicesRes, alertsRes, reviewsRes, savedPostsRes] = await Promise.all([
         supabase
           .from('marketplace_items')
           .select('id, title, category, price, status, created_at')
@@ -93,13 +111,46 @@ const ActivityHistory = () => {
           .select('id, rating, comment, created_at')
           .eq('reviewer_id', user?.id)
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(10),
+        
+        // Fetch saved posts with manual join
+        (async () => {
+          const { data: savedPostsData, error: savedPostsError } = await supabase
+            .from('saved_posts')
+            .select('id, post_id, created_at')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+          if (savedPostsError) throw savedPostsError;
+
+          if (savedPostsData && savedPostsData.length > 0) {
+            const postIds = savedPostsData.map(sp => sp.post_id);
+            const { data: communityPostsData, error: communityPostsError } = await supabase
+              .from('community_posts')
+              .select('id, title, content, post_type, created_at, location, tags')
+              .in('id', postIds);
+
+            if (communityPostsError) throw communityPostsError;
+
+            // Combine the data
+            const combinedSavedPosts = savedPostsData.map(savedPost => ({
+              ...savedPost,
+              community_posts: communityPostsData?.find(cp => cp.id === savedPost.post_id) || null
+            }));
+
+            return { data: combinedSavedPosts };
+          }
+
+          return { data: [] };
+        })()
       ]);
 
       if (marketplaceRes.data) setMarketplaceItems(marketplaceRes.data);
       if (servicesRes.data) setServices(servicesRes.data);
       if (alertsRes.data) setSafetyAlerts(alertsRes.data);
       if (reviewsRes.data) setReviews(reviewsRes.data);
+      if (savedPostsRes.data) setSavedPosts(savedPostsRes.data);
     } catch (error) {
       console.error('Error fetching user activity:', error);
     } finally {
@@ -161,7 +212,7 @@ const ActivityHistory = () => {
       
       <CardContent>
         <Tabs defaultValue="marketplace" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="marketplace" className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4" />
               Marketplace ({marketplaceItems.length})
@@ -177,6 +228,10 @@ const ActivityHistory = () => {
             <TabsTrigger value="reviews" className="flex items-center gap-2">
               <Star className="h-4 w-4" />
               Reviews ({reviews.length})
+            </TabsTrigger>
+            <TabsTrigger value="saved" className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4" />
+              Saved ({savedPosts.length})
             </TabsTrigger>
           </TabsList>
 
@@ -326,6 +381,90 @@ const ActivityHistory = () => {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="saved" className="space-y-4">
+            {savedPosts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bookmark className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No saved posts yet</p>
+                <p className="text-sm mt-2">Start saving posts you want to revisit later</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedPosts.map((savedPost) => {
+                  const post = savedPost.community_posts;
+                  if (!post) {
+                    return (
+                      <div key={savedPost.id} className="p-4 border rounded-lg bg-muted/20">
+                        <div className="flex items-center gap-2">
+                          <Bookmark className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Post no longer available</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                          <Clock className="h-3 w-3" />
+                          Saved {getTimeSince(savedPost.created_at)}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={savedPost.id} className="flex items-start justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Bookmark className="h-4 w-4 text-primary" />
+                          {post.title ? (
+                            <h4 className="font-medium">{post.title}</h4>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Untitled Post</span>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {post.post_type}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                          {post.content.substring(0, 120)}
+                          {post.content.length > 120 ? '...' : ''}
+                        </p>
+                        
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {post.location && (
+                            <span>{post.location}</span>
+                          )}
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {post.tags.slice(0, 2).map((tag, idx) => (
+                                <span key={idx} className="bg-muted px-1 py-0.5 rounded text-xs">
+                                  #{tag}
+                                </span>
+                              ))}
+                              {post.tags.length > 2 && (
+                                <span>+{post.tags.length - 2}</span>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Saved {getTimeSince(savedPost.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Heart className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
