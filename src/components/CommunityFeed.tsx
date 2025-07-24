@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,12 +106,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     const commentsCount = commentsData?.length || 0;
     const isLikedByUser = user ? likesData?.some(like => like.user_id === user.id) || false : false;
 
+    // Ensure author object is always properly formed
+    const authorName = dbPost.profiles?.full_name || 'Anonymous User';
+    const authorAvatar = dbPost.profiles?.avatar_url || undefined;
+    const authorLocation = dbPost.profiles?.neighborhood || dbPost.profiles?.city || dbPost.profiles?.state || 'Unknown Location';
+
     return {
       id: dbPost.id,
       author: {
-        name: dbPost.profiles?.full_name || 'Anonymous User',
-        avatar: dbPost.profiles?.avatar_url || undefined,
-        location: dbPost.profiles?.neighborhood || dbPost.profiles?.city || 'Unknown Location'
+        name: authorName,
+        avatar: authorAvatar,
+        location: authorLocation
       },
       content: dbPost.content,
       title: dbPost.title || undefined,
@@ -394,7 +400,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         filteredPosts.map((post: Post) => {
           const typeBadge = getPostTypeBadge(post.type);
           
-          // Add safety check for post.author
+          // Extra safety check - this should now never be needed due to proper transformDatabasePost
           if (!post || !post.author) {
             console.warn('Post or post.author is undefined:', post);
             return null;
@@ -406,14 +412,14 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar>
-                      <AvatarImage src={post.author?.avatar || undefined} />
+                      <AvatarImage src={post.author.avatar} />
                       <AvatarFallback>
-                        {post.author?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                        {post.author.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">{post.author?.name || 'Anonymous User'}</h4>
+                        <h4 className="font-medium">{post.author.name}</h4>
                         <Badge variant={typeBadge.variant} className="text-xs">
                           {getPostTypeIcon(post.type)}
                           <span className="ml-1">{typeBadge.label}</span>
@@ -421,7 +427,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />
-                        <span>{post.author?.location || 'Unknown Location'}</span>
+                        <span>{post.author.location}</span>
                         <Clock className="h-3 w-3 ml-2" />
                         <span>{post.timestamp}</span>
                       </div>
@@ -493,7 +499,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           postId={selectedPost.id}
           postTitle={selectedPost.title}
           postContent={selectedPost.content}
-          postAuthor={selectedPost.author?.name || 'Anonymous User'}
+          postAuthor={selectedPost.author.name}
         />
       )}
     </div>
