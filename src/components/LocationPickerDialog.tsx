@@ -126,6 +126,12 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       });
 
       console.log('Map created successfully');
+      
+      // Force map to resize - important for dialogs
+      setTimeout(() => {
+        google.maps.event.trigger(map, 'resize');
+        map.setCenter(initialLocation);
+      }, 100);
 
       // Initialize geocoder
       const geocoder = new google.maps.Geocoder();
@@ -249,11 +255,20 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   };
 
   useEffect(() => {
-    if (open) {
+    if (open && !mapInstanceRef.current) {
       // Slight delay to ensure dialog is fully rendered
       setTimeout(() => {
         initializeMap();
-      }, 100);
+      }, 300);
+    }
+    
+    // Cleanup when dialog closes
+    if (!open && mapInstanceRef.current) {
+      mapInstanceRef.current = null;
+      markerRef.current = null;
+      geocoderRef.current = null;
+      setSelectedAddress('');
+      setSelectedCoords(null);
     }
   }, [open]);
 
@@ -303,7 +318,15 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                 </div>
               </div>
             )}
-            <div ref={mapRef} className="w-full h-full" />
+            <div 
+              ref={mapRef} 
+              className="w-full h-full"
+              style={{ 
+                minHeight: '400px',
+                height: '100%',
+                width: '100%'
+              }}
+            />
           </div>
 
           {/* Selected Location Display */}
