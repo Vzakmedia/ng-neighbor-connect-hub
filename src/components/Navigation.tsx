@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import CreatePostDialog from './CreatePostDialog';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { 
   Home, 
   MessageSquare, 
@@ -19,11 +20,12 @@ const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const unreadMessagesCount = useUnreadMessages();
   
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
     { id: 'community', icon: MessageSquare, label: 'Community', count: 5, path: '/community' },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: 0, path: '/messages' },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadMessagesCount, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 2, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 1, path: '/events' },
