@@ -287,6 +287,39 @@ const CommunityBoards = () => {
     const content = isReply ? replyText : newMessage;
     if (!content.trim() || !user || !profile) return;
 
+    // Create optimistic message for immediate UI update
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      user_id: user.id,
+      group_id: selectedGroup,
+      content: content.trim(),
+      message_type: 'message',
+      is_pinned: false,
+      reply_to_id: isReply ? replyingTo : null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      profiles: {
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        neighborhood: profile.neighborhood,
+        city: profile.city,
+        state: profile.state,
+      },
+      likes_count: 0,
+      is_liked_by_user: false
+    };
+
+    // Add optimistic message immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // Clear input immediately
+    if (isReply) {
+      setReplyText('');
+      setReplyingTo(null);
+    } else {
+      setNewMessage('');
+    }
+
     try {
       console.log('Sending message:', {
         content,
@@ -310,6 +343,18 @@ const CommunityBoards = () => {
 
       if (error) {
         console.error('Error sending message:', error);
+        
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        
+        // Restore input text
+        if (isReply) {
+          setReplyText(content);
+          setReplyingTo(replyingTo);
+        } else {
+          setNewMessage(content);
+        }
+        
         toast({
           title: "Error sending message",
           description: "Failed to send your message.",
@@ -320,12 +365,12 @@ const CommunityBoards = () => {
 
       console.log('Message sent successfully:', data);
 
-      if (isReply) {
-        setReplyText('');
-        setReplyingTo(null);
-      } else {
-        setNewMessage('');
-      }
+      // Replace optimistic message with real one when successful
+      setMessages(prev => prev.map(m => 
+        m.id === optimisticMessage.id 
+          ? { ...optimisticMessage, id: data.id, created_at: data.created_at, updated_at: data.updated_at }
+          : m
+      ));
 
       toast({
         title: "Message sent",
@@ -333,6 +378,18 @@ const CommunityBoards = () => {
       });
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      
+      // Restore input text
+      if (isReply) {
+        setReplyText(content);
+        setReplyingTo(replyingTo);
+      } else {
+        setNewMessage(content);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
