@@ -15,7 +15,8 @@ import {
   ShoppingCart,
   Users,
   Filter,
-  Globe
+  Globe,
+  Bookmark
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,6 +61,7 @@ interface Post {
   images?: string[];
   tags?: string[];
   isLiked: boolean;
+  isSaved: boolean;
 }
 
 type FeedItem = Post;
@@ -105,9 +107,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       .select('id')
       .eq('post_id', dbPost.id);
 
+    // Get saved status for this post
+    const { data: savedData } = await supabase
+      .from('saved_posts')
+      .select('id')
+      .eq('post_id', dbPost.id)
+      .eq('user_id', user?.id || '');
+
     const likesCount = likesData?.length || 0;
     const commentsCount = commentsData?.length || 0;
     const isLikedByUser = user ? likesData?.some(like => like.user_id === user.id) || false : false;
+    const isSavedByUser = user ? (savedData?.length || 0) > 0 : false;
 
     // Ensure author object is always properly formed
     const authorName = dbPost.profiles?.full_name || 'Anonymous User';
@@ -129,7 +139,8 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       comments: commentsCount,
       images: dbPost.image_urls || [],
       tags: dbPost.tags || [],
-      isLiked: isLikedByUser
+      isLiked: isLikedByUser,
+      isSaved: isSavedByUser
     };
   };
 
@@ -246,6 +257,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           fetchPosts();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'saved_posts'
+        },
+        () => {
+          fetchPosts();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -337,6 +359,67 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleSave = async (postId: string) => {
+    if (!user) return;
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    try {
+      if (post.isSaved) {
+        // Unsave the post
+        const { error } = await supabase
+          .from('saved_posts')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Update local state
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, isSaved: false }
+            : p
+        ));
+
+        toast({
+          title: "Post unsaved",
+          description: "Removed from your saved posts",
+        });
+      } else {
+        // Save the post
+        const { error } = await supabase
+          .from('saved_posts')
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+
+        if (error) throw error;
+
+        // Update local state
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, isSaved: true }
+            : p
+        ));
+
+        toast({
+          title: "Post saved",
+          description: "Added to your saved posts",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save post. Please try again.",
         variant: "destructive",
       });
     }
@@ -507,14 +590,24 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       {post.comments}
                     </Button>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleShare(post)}
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => toggleSave(post.id)}
+                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary`}
+                    >
+                      <Bookmark className={`h-4 w-4 ${post.isSaved ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleShare(post)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 {/* Comment Section */}
