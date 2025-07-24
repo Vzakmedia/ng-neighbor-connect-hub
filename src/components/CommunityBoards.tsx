@@ -86,6 +86,9 @@ const CommunityBoards = () => {
   const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
   const [mentionQuery, setMentionQuery] = useState('');
   const [textareaRef, setTextareaRef] = useState<HTMLTextAreaElement | null>(null);
+  const [showMembers, setShowMembers] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [boardMembers, setBoardMembers] = useState<any[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -599,6 +602,135 @@ const CommunityBoards = () => {
     return null;
   };
 
+  // Fetch board members
+  const fetchBoardMembers = async () => {
+    if (!selectedBoard) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('board_members')
+        .select(`
+          user_id,
+          role,
+          joined_at,
+          profiles:user_id (
+            full_name,
+            avatar_url,
+            neighborhood,
+            city,
+            state
+          )
+        `)
+        .eq('board_id', selectedBoard)
+        .order('joined_at', { ascending: true });
+
+      if (error) throw error;
+      setBoardMembers(data || []);
+    } catch (error) {
+      console.error('Error fetching board members:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load board members.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update member role
+  const updateMemberRole = async (userId: string, newRole: string) => {
+    if (!selectedBoard || !currentBoard) return;
+
+    // Check if user has permission
+    if (currentBoard.user_role !== 'admin' && currentBoard.creator_id !== user?.id) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to change member roles.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .update({ role: newRole })
+        .eq('board_id', selectedBoard)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setBoardMembers(prev => 
+        prev.map(member => 
+          member.user_id === userId 
+            ? { ...member, role: newRole }
+            : member
+        )
+      );
+
+      toast({
+        title: "Role updated",
+        description: "Member role has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member role.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Remove member
+  const removeMember = async (userId: string) => {
+    if (!selectedBoard || !currentBoard) return;
+
+    // Check if user has permission
+    if (currentBoard.user_role !== 'admin' && currentBoard.creator_id !== user?.id) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to remove members.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Don't allow removing the creator
+    if (currentBoard.creator_id === userId) {
+      toast({
+        title: "Cannot remove creator",
+        description: "The board creator cannot be removed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .delete()
+        .eq('board_id', selectedBoard)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setBoardMembers(prev => prev.filter(member => member.user_id !== userId));
+      fetchBoards(); // Refresh board list to update member count
+
+      toast({
+        title: "Member removed",
+        description: "Member has been removed from the board.",
+      });
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove member.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchBoards();
   }, [user]);
@@ -606,6 +738,7 @@ const CommunityBoards = () => {
   useEffect(() => {
     if (selectedBoard) {
       fetchPosts();
+      fetchBoardMembers();
     }
   }, [selectedBoard, user]);
 
@@ -787,15 +920,179 @@ const CommunityBoards = () => {
                     <Pin className="h-4 w-4 mr-1" />
                     Pinned
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Users className="h-4 w-4 mr-1" />
-                    Members
-                  </Button>
+                  <Dialog open={showMembers} onOpenChange={setShowMembers}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Users className="h-4 w-4 mr-1" />
+                        Members
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Board Members</DialogTitle>
+                      </DialogHeader>
+                      <ScrollArea className="h-96">
+                        <div className="space-y-2">
+                          {boardMembers.map((member) => (
+                            <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg border">
+                              <div className="flex items-center space-x-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                                  <AvatarFallback>
+                                    {member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                    <p className="font-medium text-sm">{member.profiles?.full_name || 'Anonymous User'}</p>
+                                    {currentBoard?.creator_id === member.user_id && <Crown className="h-3 w-3 text-yellow-500" />}
+                                    {member.role === 'admin' && <Shield className="h-3 w-3 text-blue-500" />}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {member.profiles?.neighborhood || member.profiles?.city || 'Unknown Location'}
+                                  </p>
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    {currentBoard?.creator_id === member.user_id ? 'Creator' : member.role}
+                                  </Badge>
+                                </div>
+                              </div>
+                              {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && 
+                               currentBoard?.creator_id !== member.user_id && (
+                                <div className="flex items-center space-x-1">
+                                  <select
+                                    value={member.role}
+                                    onChange={(e) => updateMemberRole(member.user_id, e.target.value)}
+                                    className="text-xs border rounded px-2 py-1 bg-background"
+                                  >
+                                    <option value="member">Member</option>
+                                    <option value="moderator">Moderator</option>
+                                    <option value="admin">Admin</option>
+                                  </select>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeMember(member.user_id)}
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                   {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && (
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-1" />
-                      Settings
-                    </Button>
+                    <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4 mr-1" />
+                          Settings
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Board Settings</DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-6">
+                            {/* Basic Settings */}
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-sm">Basic Information</h3>
+                              <div className="grid gap-4">
+                                <div>
+                                  <label className="text-sm font-medium">Board Name</label>
+                                  <Input value={currentBoard?.name || ''} readOnly className="bg-muted" />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium">Description</label>
+                                  <Textarea 
+                                    value={currentBoard?.description || ''} 
+                                    readOnly 
+                                    className="bg-muted resize-none" 
+                                    rows={3}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium">Location</label>
+                                  <Input value={currentBoard?.location || 'Global'} readOnly className="bg-muted" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Privacy Settings */}
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-sm">Privacy & Access</h3>
+                              <div className="grid gap-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium">Public Board</p>
+                                    <p className="text-xs text-muted-foreground">Anyone can join this board</p>
+                                  </div>
+                                  <Badge variant={currentBoard?.is_public ? "default" : "secondary"}>
+                                    {currentBoard?.is_public ? "Public" : "Private"}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium">Member Limit</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Current: {currentBoard?.member_count || 0} members
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline">
+                                    {currentBoard?.member_limit || 'Unlimited'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Board Statistics */}
+                            <div className="space-y-4">
+                              <h3 className="font-medium text-sm">Statistics</h3>
+                              <div className="grid gap-3">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Total Messages</span>
+                                  <Badge variant="outline">{posts.length}</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Total Members</span>
+                                  <Badge variant="outline">{currentBoard?.member_count || 0}</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Created</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {currentBoard?.created_at ? new Date(currentBoard.created_at).toLocaleDateString() : 'Unknown'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Danger Zone */}
+                            {currentBoard?.creator_id === user?.id && (
+                              <div className="space-y-4 pt-4 border-t">
+                                <h3 className="font-medium text-sm text-destructive">Danger Zone</h3>
+                                <div className="p-3 border border-destructive/20 rounded-lg bg-destructive/5">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-destructive">Delete Board</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        This action cannot be undone
+                                      </p>
+                                    </div>
+                                    <Button variant="destructive" size="sm">
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
               </div>
