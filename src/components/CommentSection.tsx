@@ -258,22 +258,36 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
   }, [isOpen]);
 
   return (
-    <div className="border-t bg-muted/20 mt-4">
-      {/* Comments List */}
-      <ScrollArea className="max-h-80 px-4 py-2">
-        <div className="space-y-3">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-            </div>
-          ) : comments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No comments yet. Be the first to comment!
-            </p>
-          ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex space-x-3">
-                <Avatar className="h-8 w-8 shrink-0">
+    <>
+      {/* Comment Toggle Button */}
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={onToggle}
+        className="text-muted-foreground hover:text-primary"
+      >
+        <MessageCircle className="h-4 w-4 mr-1" />
+        {commentCount}
+      </Button>
+
+      {/* Comment Section */}
+      {isOpen && (
+        <div className="border-t bg-muted/20 mt-4">
+          {/* Comments List */}
+          <ScrollArea className="max-h-80 px-4 py-2">
+            <div className="space-y-3">
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No comments yet. Be the first to comment!
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex space-x-3">
+                    <Avatar className="h-8 w-8 shrink-0">
                       <AvatarImage src={comment.profiles?.avatar_url || undefined} />
                       <AvatarFallback className="text-xs">
                         {comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -306,46 +320,48 @@ const CommentSection = ({ postId, commentCount, isOpen, onToggle }: CommentSecti
                   </div>
                 ))
               )}
-        </div>
-      </ScrollArea>
+            </div>
+          </ScrollArea>
 
-      {/* Comment Input */}
-      <div className="border-t bg-background/50 p-4">
-        <div className="flex space-x-3">
-          <Avatar className="h-8 w-8 shrink-0">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="text-xs">
-              {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[60px] resize-none text-sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmitComment();
-                }
-              }}
-            />
-            <div className="flex justify-end">
-              <Button 
-                size="sm" 
-                onClick={handleSubmitComment}
-                disabled={!newComment.trim()}
-                className="text-xs"
-              >
-                <Send className="h-3 w-3 mr-1" />
-                Post
-              </Button>
+          {/* Comment Input */}
+          <div className="border-t bg-background/50 p-4">
+            <div className="flex space-x-3">
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarFallback className="text-xs">
+                  {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <Textarea
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="min-h-[60px] resize-none text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitComment();
+                    }
+                  }}
+                />
+                <div className="flex justify-end">
+                  <Button 
+                    size="sm" 
+                    onClick={handleSubmitComment}
+                    disabled={!newComment.trim()}
+                    className="text-xs"
+                  >
+                    <Send className="h-3 w-3 mr-1" />
+                    Post
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
