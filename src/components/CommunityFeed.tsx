@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import CommentDialog from '@/components/CommentDialog';
+import ShareDialog from '@/components/ShareDialog';
 
 
 interface DatabasePost {
@@ -69,6 +71,9 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewScope, setViewScope] = useState<ViewScope>('neighborhood');
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -233,6 +238,25 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
         : post
     ));
+    
+    // Show feedback toast
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      toast({
+        title: post.isLiked ? "Removed like" : "Liked post",
+        description: post.isLiked ? "You unliked this post" : "You liked this post",
+      });
+    }
+  };
+
+  const handleComment = (post: Post) => {
+    setSelectedPost(post);
+    setCommentDialogOpen(true);
+  };
+
+  const handleShare = (post: Post) => {
+    setSelectedPost(post);
+    setShareDialogOpen(true);
   };
 
   // Filter posts based on active tab
@@ -354,12 +378,22 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                       <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
                       {post.likes}
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleComment(post)}
+                      className="text-muted-foreground hover:text-primary"
+                    >
                       <MessageCircle className="h-4 w-4 mr-1" />
                       {post.comments}
                     </Button>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleShare(post)}
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -367,6 +401,29 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
             </Card>
           );
         })
+      )}
+
+      {/* Comment Dialog */}
+      {selectedPost && (
+        <CommentDialog
+          open={commentDialogOpen}
+          onOpenChange={setCommentDialogOpen}
+          postId={selectedPost.id}
+          postAuthor={selectedPost.author.name}
+          postContent={selectedPost.content}
+        />
+      )}
+
+      {/* Share Dialog */}
+      {selectedPost && (
+        <ShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          postId={selectedPost.id}
+          postTitle={selectedPost.title}
+          postContent={selectedPost.content}
+          postAuthor={selectedPost.author.name}
+        />
       )}
     </div>
   );
