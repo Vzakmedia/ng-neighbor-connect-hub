@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Send, Heart, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +37,14 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+  const [currentMentionQuery, setCurrentMentionQuery] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [mentionPosition, setMentionPosition] = useState({ start: 0, end: 0 });
+  const [activeTextarea, setActiveTextarea] = useState<'main' | 'reply'>('main');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -277,9 +287,115 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
     };
   }, [postId, user]);
 
+  // Fetch available users for tagging
+  const fetchAvailableUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url')
+        .not('full_name', 'is', null)
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        return;
+      }
+
+      setAvailableUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  // Handle @ mention detection
+  const handleTextChange = (text: string, textarea: 'main' | 'reply') => {
+    if (textarea === 'main') {
+      setNewComment(text);
+    } else {
+      setReplyText(text);
+    }
+
+    const currentRef = textarea === 'main' ? textareaRef : replyTextareaRef;
+    const cursorPosition = currentRef.current?.selectionStart || 0;
+    
+    // Find the last @ symbol before cursor
+    const textBeforeCursor = text.substring(0, cursorPosition);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (atIndex !== -1) {
+      const afterAt = textBeforeCursor.substring(atIndex + 1);
+      
+      // Check if we're still in a mention (no spaces after @)
+      if (!afterAt.includes(' ') && afterAt.length > 0) {
+        setCurrentMentionQuery(afterAt);
+        setMentionPosition({ start: atIndex, end: cursorPosition });
+        setActiveTextarea(textarea);
+        setShowUserSuggestions(true);
+        
+        // Filter users based on query
+        const filtered = availableUsers.filter(user =>
+          user.full_name?.toLowerCase().includes(afterAt.toLowerCase())
+        );
+        setFilteredUsers(filtered);
+      } else if (afterAt.length === 0) {
+        // Just typed @, show all users
+        setCurrentMentionQuery('');
+        setMentionPosition({ start: atIndex, end: cursorPosition });
+        setActiveTextarea(textarea);
+        setShowUserSuggestions(true);
+        setFilteredUsers(availableUsers);
+      } else {
+        setShowUserSuggestions(false);
+      }
+    } else {
+      setShowUserSuggestions(false);
+    }
+  };
+
+  // Handle user selection for mention
+  const handleUserSelect = (user: any) => {
+    const currentText = activeTextarea === 'main' ? newComment : replyText;
+    const beforeMention = currentText.substring(0, mentionPosition.start);
+    const afterMention = currentText.substring(mentionPosition.end);
+    const newText = `${beforeMention}@${user.full_name} ${afterMention}`;
+    
+    if (activeTextarea === 'main') {
+      setNewComment(newText);
+    } else {
+      setReplyText(newText);
+    }
+    
+    setShowUserSuggestions(false);
+    
+    // Focus back to textarea
+    setTimeout(() => {
+      const ref = activeTextarea === 'main' ? textareaRef : replyTextareaRef;
+      ref.current?.focus();
+    }, 100);
+  };
+
+  // Render comment content with highlighted mentions
+  const renderCommentContent = (content: string) => {
+    const mentionRegex = /@([^@\s]+(?:\s+[^@\s]+)*)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // This is a mention
+        return (
+          <span key={index} className="text-primary font-medium bg-primary/10 px-1 rounded">
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   // Fetch comments when component mounts
   useEffect(() => {
     fetchComments();
+    fetchAvailableUsers();
   }, [postId]);
 
   const renderComment = (comment: Comment, isReply = false) => (
@@ -300,7 +416,7 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
               {formatTimeAgo(comment.created_at)}
             </span>
           </div>
-          <p className="text-sm break-words">{comment.content}</p>
+          <p className="text-sm break-words">{renderCommentContent(comment.content)}</p>
         </div>
         <div className="flex items-center mt-1 ml-2 space-x-2">
           <Button 
@@ -336,18 +452,50 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-2">
-                <Textarea
-                  placeholder={`Reply to ${comment.profiles?.full_name || 'this comment'}...`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="min-h-[60px] resize-none text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmitComment(comment.id);
-                    }
-                  }}
-                />
+                <div className="relative">
+                  <Textarea
+                    ref={replyTextareaRef}
+                    placeholder={`Reply to ${comment.profiles?.full_name || 'this comment'}...`}
+                    value={replyText}
+                    onChange={(e) => handleTextChange(e.target.value, 'reply')}
+                    className="min-h-[60px] resize-none text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmitComment(comment.id);
+                      }
+                    }}
+                  />
+                  {showUserSuggestions && activeTextarea === 'reply' && (
+                    <div className="absolute bottom-full left-0 w-full max-w-xs mb-1 bg-background border rounded-md shadow-lg z-50">
+                      <Command>
+                        <CommandList className="max-h-32">
+                          {filteredUsers.length === 0 ? (
+                            <CommandEmpty>No users found.</CommandEmpty>
+                          ) : (
+                            <CommandGroup>
+                              {filteredUsers.slice(0, 5).map((user) => (
+                                <CommandItem
+                                  key={user.user_id}
+                                  onSelect={() => handleUserSelect(user)}
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={user.avatar_url || undefined} />
+                                    <AvatarFallback className="text-xs">
+                                      {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm">{user.full_name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </CommandList>
+                      </Command>
+                    </div>
+                  )}
+                </div>
                 <div className="flex justify-end space-x-2">
                   <Button 
                     variant="ghost"
@@ -388,22 +536,28 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
   return (
     <div className="border-t bg-muted/20 mt-4">
       {/* Comments List */}
-      <ScrollArea className="max-h-80 px-4 py-2 [&>[data-radix-scroll-area-viewport]]:!block">
+      <div className="max-h-80 px-4 py-2 overflow-y-auto" style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'hsl(var(--border)) transparent'
+      }}>
         <style>
           {`
-            .comment-scroll-area [data-radix-scroll-area-scrollbar] {
-              width: 8px !important;
+            .comments-container::-webkit-scrollbar {
+              width: 8px;
             }
-            .comment-scroll-area [data-radix-scroll-area-thumb] {
-              background-color: hsl(var(--border)) !important;
-              border-radius: 4px !important;
+            .comments-container::-webkit-scrollbar-track {
+              background: transparent;
             }
-            .comment-scroll-area [data-radix-scroll-area-thumb]:hover {
-              background-color: hsl(var(--border) / 0.8) !important;
+            .comments-container::-webkit-scrollbar-thumb {
+              background-color: hsl(var(--border));
+              border-radius: 4px;
+            }
+            .comments-container::-webkit-scrollbar-thumb:hover {
+              background-color: hsl(var(--muted-foreground));
             }
           `}
         </style>
-        <div className="comment-scroll-area space-y-3">
+        <div className="comments-container space-y-3">
           {loading ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
@@ -416,7 +570,7 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
             comments.map(comment => renderComment(comment))
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Comment Input */}
       <div className="border-t bg-background/50 p-4">
@@ -427,19 +581,51 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
               {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[60px] resize-none text-sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmitComment();
-                }
-              }}
-            />
+          <div className="flex-1 space-y-2 relative">
+            <div className="relative">
+              <Textarea
+                ref={textareaRef}
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => handleTextChange(e.target.value, 'main')}
+                className="min-h-[60px] resize-none text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmitComment();
+                  }
+                }}
+              />
+              {showUserSuggestions && activeTextarea === 'main' && (
+                <div className="absolute bottom-full left-0 w-full max-w-xs mb-1 bg-background border rounded-md shadow-lg z-50">
+                  <Command>
+                    <CommandList className="max-h-32">
+                      {filteredUsers.length === 0 ? (
+                        <CommandEmpty>No users found.</CommandEmpty>
+                      ) : (
+                        <CommandGroup>
+                          {filteredUsers.slice(0, 5).map((user) => (
+                            <CommandItem
+                              key={user.user_id}
+                              onSelect={() => handleUserSelect(user)}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={user.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs">
+                                  {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">{user.full_name}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </div>
+              )}
+            </div>
             <div className="flex justify-end">
               <Button 
                 size="sm" 
