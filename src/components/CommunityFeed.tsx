@@ -88,22 +88,40 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  const transformDatabasePost = (dbPost: DatabasePost): Post => ({
-    id: dbPost.id,
-    author: {
-      name: dbPost.profiles?.full_name || 'Anonymous User',
-      avatar: dbPost.profiles?.avatar_url || undefined,
-      location: dbPost.profiles?.neighborhood || dbPost.profiles?.city || 'Unknown Location'
-    },
-    content: dbPost.content,
-    title: dbPost.title || undefined,
-    type: dbPost.post_type as Post['type'],
-    timestamp: formatTimeAgo(dbPost.created_at),
-    likes: 0, // We'll implement likes later
-    comments: 0, // We'll implement comments later
-    images: dbPost.image_urls || [],
-    isLiked: false
-  });
+  const transformDatabasePost = async (dbPost: DatabasePost): Promise<Post> => {
+    // Get like count and user's like status for this post
+    const { data: likesData } = await supabase
+      .from('post_likes')
+      .select('user_id')
+      .eq('post_id', dbPost.id);
+
+    // Get comment count for this post
+    const { data: commentsData } = await supabase
+      .from('post_comments')
+      .select('id')
+      .eq('post_id', dbPost.id);
+
+    const likesCount = likesData?.length || 0;
+    const commentsCount = commentsData?.length || 0;
+    const isLikedByUser = user ? likesData?.some(like => like.user_id === user.id) || false : false;
+
+    return {
+      id: dbPost.id,
+      author: {
+        name: dbPost.profiles?.full_name || 'Anonymous User',
+        avatar: dbPost.profiles?.avatar_url || undefined,
+        location: dbPost.profiles?.neighborhood || dbPost.profiles?.city || 'Unknown Location'
+      },
+      content: dbPost.content,
+      title: dbPost.title || undefined,
+      type: dbPost.post_type as Post['type'],
+      timestamp: formatTimeAgo(dbPost.created_at),
+      likes: likesCount,
+      comments: commentsCount,
+      images: dbPost.image_urls || [],
+      isLiked: isLikedByUser
+    };
+  };
 
   const fetchPosts = async () => {
     if (!user || !profile) return;
@@ -163,10 +181,11 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
             return post.profiles?.state === profile.state;
           }
           return true; // If no filtering criteria, show all posts
-        })
-        .map(transformDatabasePost);
+        });
 
-      setPosts(filteredAndTransformed);
+      // Process all posts with their like/comment counts
+      const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
+      setPosts(processedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -178,12 +197,12 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     fetchPosts();
   }, [user, profile, viewScope]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription for posts and interactions
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel('community_posts_changes')
+      .channel('community_feed_changes')
       .on(
         'postgres_changes',
         {
@@ -192,7 +211,28 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           table: 'community_posts'
         },
         () => {
-          // Refetch posts when there are changes
+          fetchPosts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_comments'
+        },
+        () => {
           fetchPosts();
         }
       )
@@ -231,19 +271,63 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     return badges[type as keyof typeof badges] || badges.general;
   };
 
-  const toggleLike = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
-    
-    // Show feedback toast
+  const toggleLike = async (postId: string) => {
+    if (!user) return;
+
     const post = posts.find(p => p.id === postId);
-    if (post) {
+    if (!post) return;
+
+    try {
+      if (post.isLiked) {
+        // Unlike the post
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        // Update local state
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, isLiked: false, likes: p.likes - 1 }
+            : p
+        ));
+
+        toast({
+          title: "Removed like",
+          description: "You unliked this post",
+        });
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from('post_likes')
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+
+        if (error) throw error;
+
+        // Update local state
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, isLiked: true, likes: p.likes + 1 }
+            : p
+        ));
+
+        toast({
+          title: "Liked post",
+          description: "You liked this post",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
       toast({
-        title: post.isLiked ? "Removed like" : "Liked post",
-        description: post.isLiked ? "You unliked this post" : "You liked this post",
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -251,14 +335,6 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const handleShare = (post: Post) => {
     setSelectedPost(post);
     setShareDialogOpen(true);
-  };
-
-  const handleCommentCountChange = (postId: string, newCount: number) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, comments: newCount }
-        : post
-    ));
   };
 
   // Filter posts based on active tab
@@ -383,7 +459,6 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                     <CommentDropdown 
                       postId={post.id}
                       commentCount={post.comments}
-                      onCommentCountChange={(newCount) => handleCommentCountChange(post.id, newCount)}
                     />
                   </div>
                   <Button 
