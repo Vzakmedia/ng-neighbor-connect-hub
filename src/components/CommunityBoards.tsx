@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   MessageSquare,
   Send,
@@ -23,21 +24,39 @@ import {
   Globe,
   Hash,
   AtSign,
-  X
+  X,
+  Settings,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 
-interface ChatMessage {
+interface DiscussionBoard {
   id: string;
+  name: string;
+  description: string | null;
+  creator_id: string;
+  is_public: boolean;
+  member_limit: number | null;
+  created_at: string;
+  updated_at: string;
+  avatar_url: string | null;
+  location: string | null;
+  member_count: number;
+  user_role: string | null;
+}
+
+interface BoardPost {
+  id: string;
+  board_id: string;
   user_id: string;
-  group_id: string;
   content: string;
-  message_type: string;
-  is_pinned: boolean;
+  post_type: string;
+  image_urls: string[];
   reply_to_id: string | null;
+  is_pinned: boolean;
   created_at: string;
   updated_at: string;
   profiles: {
@@ -51,26 +70,18 @@ interface ChatMessage {
   is_liked_by_user: boolean;
 }
 
-interface ChatGroup {
-  id: string;
-  name: string;
-  description: string;
-  members: number;
-  category: string;
-  isPrivate: boolean;
-  lastActivity: string;
-  unreadCount: number;
-}
-
 const CommunityBoards = () => {
-  const [selectedGroup, setSelectedGroup] = useState('general');
+  const [boards, setBoards] = useState<DiscussionBoard[]>([]);
+  const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
+  const [posts, setPosts] = useState<BoardPost[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
   const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [newBoardName, setNewBoardName] = useState('');
+  const [newBoardDescription, setNewBoardDescription] = useState('');
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -87,55 +98,7 @@ const CommunityBoards = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  // Dynamic chat groups based on user's location
-  const getChatGroups = (): ChatGroup[] => {
-    const baseGroups = [
-      {
-        id: 'general',
-        name: 'General Discussion',
-        description: `General chat for ${viewScope === 'neighborhood' ? profile?.neighborhood || 'your neighborhood' : profile?.state || 'your state'}`,
-        category: 'general',
-        isPrivate: false,
-      },
-      {
-        id: 'safety',
-        name: 'Safety & Security',
-        description: 'Report incidents and safety concerns',
-        category: 'safety',
-        isPrivate: false,
-      },
-      {
-        id: 'marketplace',
-        name: 'Buy & Sell',
-        description: 'Local marketplace for neighbors',
-        category: 'marketplace',
-        isPrivate: false,
-      },
-      {
-        id: 'events',
-        name: 'Events & Gatherings',
-        description: 'Organize and discover community events',
-        category: 'events',
-        isPrivate: false,
-      },
-      {
-        id: 'help',
-        name: 'Help & Support',
-        description: 'Ask for help from your neighbors',
-        category: 'help',
-        isPrivate: false,
-      }
-    ];
-
-    return baseGroups.map(group => ({
-      ...group,
-      members: 0, // We'll implement member counting later
-      lastActivity: '...',
-      unreadCount: 0
-    }));
-  };
+  }, [posts]);
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -182,9 +145,9 @@ const CommunityBoards = () => {
         setUserSuggestions(users);
       } else {
         // Show recent chatters when no query
-        const recentUsers = messages
+        const recentUsers = posts
           .slice(-10)
-          .map(m => m.profiles)
+          .map(p => p.profiles)
           .filter((profile, index, arr) => 
             profile && arr.findIndex(p => p?.full_name === profile.full_name) === index
           )
@@ -254,43 +217,79 @@ const CommunityBoards = () => {
 
   // Get the original message being replied to
   const getReplyMessage = (replyId: string) => {
-    return messages.find(m => m.id === replyId);
+    return posts.find(p => p.id === replyId);
   };
 
-  const fetchMessages = async () => {
-    if (!user || !profile) return;
+  // Fetch discussion boards
+  const fetchBoards = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: boardsData, error } = await supabase
+        .from('discussion_boards')
+        .select(`
+          *,
+          board_members!inner(user_id, role)
+        `)
+        .eq('board_members.user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Get member counts for each board
+      const boardsWithCounts = await Promise.all(
+        (boardsData || []).map(async (board) => {
+          const { count } = await supabase
+            .from('board_members')
+            .select('*', { count: 'exact' })
+            .eq('board_id', board.id);
+
+          return {
+            ...board,
+            member_count: count || 0,
+            user_role: board.board_members[0]?.role || null
+          };
+        })
+      );
+
+      setBoards(boardsWithCounts as DiscussionBoard[]);
+      
+      // Select first board if none selected
+      if (!selectedBoard && boardsWithCounts.length > 0) {
+        setSelectedBoard(boardsWithCounts[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching boards:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load discussion boards.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fetch posts for selected board
+  const fetchPosts = async () => {
+    if (!selectedBoard || !user) return;
     
     setLoading(true);
     try {
-      console.log('Fetching messages for group:', selectedGroup);
-      
-      // First fetch messages
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('chat_messages')
-        .select('id, user_id, group_id, content, message_type, is_pinned, reply_to_id, created_at, updated_at')
-        .eq('group_id', selectedGroup)
+      // Fetch posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('board_posts')
+        .select('*')
+        .eq('board_id', selectedBoard)
         .order('created_at', { ascending: true });
 
-      if (messagesError) {
-        console.error('Error fetching messages:', messagesError);
-        toast({
-          title: "Error loading messages",
-          description: "Failed to load chat messages.",
-          variant: "destructive",
-        });
+      if (postsError) throw postsError;
+
+      if (!postsData || postsData.length === 0) {
+        setPosts([]);
         return;
       }
 
-      console.log('Fetched messages:', messagesData);
-
-      if (!messagesData || messagesData.length === 0) {
-        setMessages([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get user IDs and fetch profiles separately
-      const userIds = [...new Set(messagesData.map(message => message.user_id))];
+      // Get user IDs and fetch profiles
+      const userIds = [...new Set(postsData.map(post => post.user_id))];
       
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -301,17 +300,15 @@ const CommunityBoards = () => {
         console.error('Error fetching profiles:', profilesError);
       }
 
-      // Get message IDs for like counting
-      const messageIds = messagesData.map(message => message.id);
-      
-      // Fetch like counts for each message
+      // Get likes
+      const postIds = postsData.map(post => post.id);
       const { data: likesData, error: likesError } = await supabase
-        .from('chat_message_likes')
-        .select('message_id, user_id')
-        .in('message_id', messageIds);
+        .from('board_post_likes')
+        .select('post_id, user_id')
+        .in('post_id', postIds);
 
       if (likesError) {
-        console.error('Error fetching message likes:', likesError);
+        console.error('Error fetching likes:', likesError);
       }
 
       // Create profiles map
@@ -319,115 +316,104 @@ const CommunityBoards = () => {
         (profilesData || []).map(profile => [profile.user_id, profile])
       );
 
-      // Process messages with like information and profiles
-      const processedMessages = messagesData
-        .map(message => {
-          const userProfile = profilesMap.get(message.user_id);
-          
-          // Apply location filtering
-          if (viewScope === 'neighborhood' && profile.neighborhood) {
-            if (userProfile?.neighborhood !== profile.neighborhood) {
-              return null;
-            }
-          } else if (viewScope === 'state' && profile.state) {
-            if (userProfile?.state !== profile.state) {
-              return null;
-            }
-          }
+      // Process posts
+      const processedPosts = postsData.map(post => ({
+        ...post,
+        profiles: profilesMap.get(post.user_id) || null,
+        likes_count: likesData?.filter(like => like.post_id === post.id).length || 0,
+        is_liked_by_user: likesData?.some(like => like.post_id === post.id && like.user_id === user.id) || false
+      }));
 
-          return {
-            ...message,
-            profiles: userProfile || null,
-            likes_count: likesData?.filter(like => like.message_id === message.id).length || 0,
-            is_liked_by_user: likesData?.some(like => like.message_id === message.id && like.user_id === user.id) || false
-          };
-        })
-        .filter(Boolean) as ChatMessage[];
-
-      console.log('Processed messages:', processedMessages);
-      setMessages(processedMessages);
+      setPosts(processedPosts as BoardPost[]);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchMessages();
-  }, [user, profile, selectedGroup, viewScope]);
+  // Create new board
+  const createBoard = async () => {
+    if (!newBoardName.trim() || !user) return;
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!user) return;
+    try {
+      // Create board
+      const { data: boardData, error: boardError } = await supabase
+        .from('discussion_boards')
+        .insert({
+          name: newBoardName.trim(),
+          description: newBoardDescription.trim() || null,
+          creator_id: user.id,
+          is_public: true,
+          location: profile?.neighborhood || profile?.city || null
+        })
+        .select()
+        .single();
 
-    console.log('Setting up real-time subscription for group:', selectedGroup);
+      if (boardError) throw boardError;
 
-    const channel = supabase
-      .channel(`chat_messages_${selectedGroup}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `group_id=eq.${selectedGroup}`
-        },
-        (payload) => {
-          console.log('Chat message change:', payload);
-          fetchMessages();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_message_likes'
-        },
-        (payload) => {
-          console.log('Chat message like change:', payload);
-          fetchMessages();
-        }
-      )
-      .subscribe();
+      // Add creator as admin member
+      const { error: memberError } = await supabase
+        .from('board_members')
+        .insert({
+          board_id: boardData.id,
+          user_id: user.id,
+          role: 'admin'
+        });
 
-    return () => {
-      console.log('Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [user, selectedGroup, viewScope]);
+      if (memberError) throw memberError;
 
-  const sendMessage = async (isReply = false) => {
+      setNewBoardName('');
+      setNewBoardDescription('');
+      setShowCreateBoard(false);
+      fetchBoards();
+      
+      toast({
+        title: "Board created",
+        description: "Your discussion board has been created successfully.",
+      });
+    } catch (error) {
+      console.error('Error creating board:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create board. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Send message/post
+  const sendPost = async (isReply = false) => {
     const content = isReply ? replyText : newMessage;
-    if (!content.trim() || !user || !profile) return;
+    if (!content.trim() || !user || !selectedBoard) return;
 
-    // Create optimistic message for immediate UI update
-    const optimisticMessage: ChatMessage = {
-      id: `temp-${Date.now()}`, // Temporary ID
+    // Create optimistic post
+    const optimisticPost: BoardPost = {
+      id: `temp-${Date.now()}`,
+      board_id: selectedBoard,
       user_id: user.id,
-      group_id: selectedGroup,
       content: content.trim(),
-      message_type: 'message',
-      is_pinned: false,
+      post_type: 'message',
+      image_urls: [],
       reply_to_id: isReply ? replyingTo : null,
+      is_pinned: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profiles: {
-        full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
-        neighborhood: profile.neighborhood,
-        city: profile.city,
-        state: profile.state,
+        full_name: profile?.full_name || null,
+        avatar_url: profile?.avatar_url || null,
+        neighborhood: profile?.neighborhood || null,
+        city: profile?.city || null,
+        state: profile?.state || null,
       },
       likes_count: 0,
       is_liked_by_user: false
     };
 
-    // Add optimistic message immediately
-    setMessages(prev => [...prev, optimisticMessage]);
+    // Add optimistic post
+    setPosts(prev => [...prev, optimisticPost]);
 
-    // Clear input immediately
+    // Clear input
     if (isReply) {
       setReplyText('');
       setReplyingTo(null);
@@ -436,68 +422,33 @@ const CommunityBoards = () => {
     }
 
     try {
-      console.log('Sending message:', {
-        content,
-        group_id: selectedGroup,
-        user_id: user.id,
-        reply_to_id: isReply ? replyingTo : null
-      });
-
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('board_posts')
         .insert({
+          board_id: selectedBoard,
           user_id: user.id,
-          group_id: selectedGroup,
           content: content.trim(),
-          message_type: 'message',
-          is_pinned: false,
+          post_type: 'message',
           reply_to_id: isReply ? replyingTo : null
         })
         .select()
         .single();
 
-      if (error) {
-        console.error('Error sending message:', error);
-        
-        // Remove optimistic message on error
-        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
-        
-        // Restore input text
-        if (isReply) {
-          setReplyText(content);
-          setReplyingTo(replyingTo);
-        } else {
-          setNewMessage(content);
-        }
-        
-        toast({
-          title: "Error sending message",
-          description: "Failed to send your message.",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
-      console.log('Message sent successfully:', data);
-
-      // Replace optimistic message with real one when successful
-      setMessages(prev => prev.map(m => 
-        m.id === optimisticMessage.id 
-          ? { ...optimisticMessage, id: data.id, created_at: data.created_at, updated_at: data.updated_at }
-          : m
+      // Replace optimistic post with real one
+      setPosts(prev => prev.map(p => 
+        p.id === optimisticPost.id 
+          ? { ...optimisticPost, id: data.id, created_at: data.created_at, updated_at: data.updated_at }
+          : p
       ));
-
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully.",
-      });
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending post:', error);
       
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      // Remove optimistic post on error
+      setPosts(prev => prev.filter(p => p.id !== optimisticPost.id));
       
-      // Restore input text
+      // Restore input
       if (isReply) {
         setReplyText(content);
         setReplyingTo(replyingTo);
@@ -513,45 +464,42 @@ const CommunityBoards = () => {
     }
   };
 
-  const toggleLike = async (messageId: string) => {
+  // Toggle like
+  const toggleLike = async (postId: string) => {
     if (!user) return;
 
-    const message = messages.find(m => m.id === messageId);
-    if (!message) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
 
     try {
-      if (message.is_liked_by_user) {
-        // Unlike the message
+      if (post.is_liked_by_user) {
         const { error } = await supabase
-          .from('chat_message_likes')
+          .from('board_post_likes')
           .delete()
-          .eq('message_id', messageId)
+          .eq('post_id', postId)
           .eq('user_id', user.id);
 
         if (error) throw error;
 
-        // Update local state
-        setMessages(messages.map(m => 
-          m.id === messageId 
-            ? { ...m, is_liked_by_user: false, likes_count: m.likes_count - 1 }
-            : m
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_liked_by_user: false, likes_count: p.likes_count - 1 }
+            : p
         ));
       } else {
-        // Like the message
         const { error } = await supabase
-          .from('chat_message_likes')
+          .from('board_post_likes')
           .insert({
-            message_id: messageId,
+            post_id: postId,
             user_id: user.id
           });
 
         if (error) throw error;
 
-        // Update local state
-        setMessages(messages.map(m => 
-          m.id === messageId 
-            ? { ...m, is_liked_by_user: true, likes_count: m.likes_count + 1 }
-            : m
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_liked_by_user: true, likes_count: p.likes_count + 1 }
+            : p
         ));
       }
     } catch (error) {
@@ -564,31 +512,35 @@ const CommunityBoards = () => {
     }
   };
 
-  const togglePin = async (messageId: string) => {
+  // Toggle pin (only for admins/moderators)
+  const togglePin = async (postId: string) => {
     if (!user) return;
 
-    const message = messages.find(m => m.id === messageId);
-    if (!message) return;
+    const post = posts.find(p => p.id === postId);
+    const currentBoard = boards.find(b => b.id === selectedBoard);
+    
+    if (!post || !currentBoard || 
+        (currentBoard.user_role !== 'admin' && currentBoard.user_role !== 'moderator' && post.user_id !== user.id)) {
+      return;
+    }
 
     try {
       const { error } = await supabase
-        .from('chat_messages')
-        .update({ is_pinned: !message.is_pinned })
-        .eq('id', messageId)
-        .eq('user_id', user.id);
+        .from('board_posts')
+        .update({ is_pinned: !post.is_pinned })
+        .eq('id', postId);
 
       if (error) throw error;
 
-      // Update local state
-      setMessages(messages.map(m => 
-        m.id === messageId 
-          ? { ...m, is_pinned: !m.is_pinned }
-          : m
+      setPosts(posts.map(p => 
+        p.id === postId 
+          ? { ...p, is_pinned: !p.is_pinned }
+          : p
       ));
 
       toast({
-        title: message.is_pinned ? "Message unpinned" : "Message pinned",
-        description: message.is_pinned ? "Message has been unpinned." : "Message has been pinned.",
+        title: post.is_pinned ? "Message unpinned" : "Message pinned",
+        description: post.is_pinned ? "Message has been unpinned." : "Message has been pinned.",
       });
     } catch (error) {
       console.error('Error toggling pin:', error);
@@ -601,59 +553,135 @@ const CommunityBoards = () => {
   };
 
   const getRoleIcon = (userId: string) => {
-    // For now, treat the first user as admin - you can enhance this later
-    if (userId === messages[0]?.user_id) {
+    const currentBoard = boards.find(b => b.id === selectedBoard);
+    if (!currentBoard) return null;
+    
+    if (currentBoard.creator_id === userId) {
       return <Crown className="h-3 w-3 text-yellow-500" />;
     }
+    
+    if (currentBoard.user_role === 'admin') {
+      return <Shield className="h-3 w-3 text-blue-500" />;
+    }
+    
     return null;
   };
 
   const getRoleBadge = (userId: string) => {
-    // For now, treat the first user as admin - you can enhance this later
-    if (userId === messages[0]?.user_id) {
-      return <Badge variant="default" className="text-xs">Admin</Badge>;
+    const currentBoard = boards.find(b => b.id === selectedBoard);
+    if (!currentBoard) return null;
+    
+    if (currentBoard.creator_id === userId) {
+      return <Badge variant="default" className="text-xs">Creator</Badge>;
     }
+    
+    if (currentBoard.user_role === 'admin') {
+      return <Badge variant="secondary" className="text-xs">Admin</Badge>;
+    }
+    
     return null;
   };
 
-  const chatGroups = getChatGroups();
-  const currentGroup = chatGroups.find(group => group.id === selectedGroup);
+  useEffect(() => {
+    fetchBoards();
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedBoard) {
+      fetchPosts();
+    }
+  }, [selectedBoard, user]);
+
+  // Set up real-time subscription for posts
+  useEffect(() => {
+    if (!selectedBoard || !user) return;
+
+    const channel = supabase
+      .channel(`board_posts_${selectedBoard}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'board_posts',
+          filter: `board_id=eq.${selectedBoard}`
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'board_post_likes'
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedBoard, user]);
+
+  const currentBoard = boards.find(b => b.id === selectedBoard);
 
   return (
     <div className="flex h-[calc(100vh-12rem)] bg-background">
-      {/* Groups Sidebar */}
+      {/* Boards Sidebar */}
       <div className="w-80 border-r bg-card">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Community Boards</h2>
-          </div>
-          
-          {/* View Scope Toggle */}
-          <div className="flex items-center space-x-2 mb-4">
-            <Button
-              variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('neighborhood')}
-              className="text-xs flex-1"
-            >
-              <MapPin className="h-3 w-3 mr-1" />
-              Neighborhood
-            </Button>
-            <Button
-              variant={viewScope === 'state' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('state')}
-              className="text-xs flex-1"
-            >
-              <Globe className="h-3 w-3 mr-1" />
-              State
-            </Button>
+            <h2 className="text-lg font-semibold">Discussion Boards</h2>
+            <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Create
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Discussion Board</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Board Name</label>
+                    <Input
+                      value={newBoardName}
+                      onChange={(e) => setNewBoardName(e.target.value)}
+                      placeholder="Enter board name..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Description</label>
+                    <Textarea
+                      value={newBoardDescription}
+                      onChange={(e) => setNewBoardDescription(e.target.value)}
+                      placeholder="Describe what this board is for..."
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowCreateBoard(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={createBoard} disabled={!newBoardName.trim()}>
+                      Create Board
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input 
-              placeholder="Search groups..." 
+              placeholder="Search boards..." 
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -662,43 +690,47 @@ const CommunityBoards = () => {
         </div>
 
         <ScrollArea className="h-[calc(100%-120px)]">
-          {chatGroups
-            .filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()))
-            .map((group) => (
+          {boards
+            .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .map((board) => (
             <div
-              key={group.id}
-              onClick={() => setSelectedGroup(group.id)}
+              key={board.id}
+              onClick={() => setSelectedBoard(board.id)}
               className={`p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
-                selectedGroup === group.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <Hash className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium text-sm">{group.name}</h3>
+                  <h3 className="font-medium text-sm">{board.name}</h3>
+                  {board.user_role === 'admin' && <Crown className="h-3 w-3 text-yellow-500" />}
+                  {board.creator_id === user?.id && <Badge variant="outline" className="text-xs">Owner</Badge>}
                 </div>
-                {group.unreadCount > 0 && (
-                  <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    {group.unreadCount}
-                  </Badge>
-                )}
               </div>
               
-              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{group.description}</p>
+              {board.description && (
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{board.description}</p>
+              )}
               
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center">
                   <Users className="h-3 w-3 mr-1" />
-                  {group.members} members
+                  {board.member_count} members
                 </div>
-                <span>{group.lastActivity}</span>
+                <div className="flex items-center">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {board.location || 'Global'}
+                </div>
               </div>
               
               <div className="flex items-center mt-2 space-x-2">
-                <Badge variant="outline" className="text-xs">{group.category}</Badge>
-                {group.isPrivate && (
+                {board.is_public ? (
+                  <Badge variant="outline" className="text-xs">Public</Badge>
+                ) : (
                   <Badge variant="secondary" className="text-xs">Private</Badge>
                 )}
+                <Badge variant="outline" className="text-xs">{board.user_role}</Badge>
               </div>
             </div>
           ))}
@@ -707,307 +739,346 @@ const CommunityBoards = () => {
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="p-4 border-b bg-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-2">
-                <Hash className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-semibold">{currentGroup?.name}</h2>
-              </div>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Users className="h-4 w-4 mr-1" />
-                {currentGroup?.members || 0} members
-                <MapPin className="h-4 w-4 ml-3 mr-1" />
-                {viewScope === 'neighborhood' ? profile?.neighborhood || 'Your Neighborhood' : profile?.state || 'Your State'}
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <Pin className="h-4 w-4 mr-1" />
-                Pinned
-              </Button>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-1" />
-                Filter
-              </Button>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading messages...</p>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="flex flex-col items-center space-y-2">
-                  <Hash className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    No messages in #{currentGroup?.name} yet.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Be the first to start a conversation!
-                  </p>
+        {selectedBoard ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b bg-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <Hash className="h-5 w-5 text-muted-foreground" />
+                    <h2 className="text-lg font-semibold">{currentBoard?.name}</h2>
+                    {currentBoard?.creator_id === user?.id && <Crown className="h-4 w-4 text-yellow-500" />}
+                  </div>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1" />
+                    {currentBoard?.member_count || 0} members
+                    {currentBoard?.location && (
+                      <>
+                        <MapPin className="h-4 w-4 ml-3 mr-1" />
+                        {currentBoard.location}
+                      </>
+                    )}
+                  </div>
+                  {currentBoard?.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{currentBoard.description}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Pin className="h-4 w-4 mr-1" />
+                    Pinned
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Users className="h-4 w-4 mr-1" />
+                    Members
+                  </Button>
+                  {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && (
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-1" />
+                      Settings
+                    </Button>
+                  )}
                 </div>
               </div>
-            ) : (
-              messages.map((message) => (
-                <div key={message.id} className={`relative ${message.is_pinned ? 'bg-primary/5 rounded-lg p-3 border border-primary/20' : ''}`}>
-                  {message.is_pinned && (
-                    <div className="flex items-center text-xs text-primary mb-2">
-                      <Pin className="h-3 w-3 mr-1" />
-                      Pinned message
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading messages...</p>
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Hash className="h-12 w-12 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        No messages in {currentBoard?.name} yet.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Be the first to start a conversation!
+                      </p>
                     </div>
-                  )}
-                  
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarImage src={message.profiles?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {message.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-sm">{message.profiles?.full_name || 'Anonymous User'}</span>
-                        {getRoleIcon(message.user_id)}
-                        {getRoleBadge(message.user_id)}
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {message.profiles?.neighborhood || message.profiles?.city || 'Unknown Location'}
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {formatTimeAgo(message.created_at)}
-                        </div>
-                      </div>
-                      
-                      {/* Show reply preview if this is a reply */}
-                      {message.reply_to_id && (
-                        <div className="mb-2 p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r">
-                          <div className="text-xs text-muted-foreground mb-1">
-                            <Reply className="h-3 w-3 inline mr-1" />
-                            Replying to {getReplyMessage(message.reply_to_id)?.profiles?.full_name || 'Unknown User'}
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {getReplyMessage(message.reply_to_id)?.content || 'Message not found'}
-                          </p>
+                  </div>
+                ) : (
+                  posts.map((post) => (
+                    <div key={post.id} className={`relative ${post.is_pinned ? 'bg-primary/5 rounded-lg p-3 border border-primary/20' : ''}`}>
+                      {post.is_pinned && (
+                        <div className="flex items-center text-xs text-primary mb-2">
+                          <Pin className="h-3 w-3 mr-1" />
+                          Pinned message
                         </div>
                       )}
                       
-                      <div className="text-sm mb-3 leading-relaxed break-words">
-                        {formatMessageContent(message.content)}
+                      <div className="flex items-start space-x-3">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarImage src={post.profiles?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {post.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-medium text-sm">{post.profiles?.full_name || 'Anonymous User'}</span>
+                            {getRoleIcon(post.user_id)}
+                            {getRoleBadge(post.user_id)}
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {post.profiles?.neighborhood || post.profiles?.city || 'Unknown Location'}
+                            </div>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {formatTimeAgo(post.created_at)}
+                            </div>
+                          </div>
+                          
+                          {/* Show reply preview if this is a reply */}
+                          {post.reply_to_id && (
+                            <div className="mb-2 p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r">
+                              <div className="text-xs text-muted-foreground mb-1">
+                                <Reply className="h-3 w-3 inline mr-1" />
+                                Replying to {getReplyMessage(post.reply_to_id)?.profiles?.full_name || 'Unknown User'}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {getReplyMessage(post.reply_to_id)?.content || 'Message not found'}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="text-sm mb-3 leading-relaxed break-words">
+                            {formatMessageContent(post.content)}
+                          </div>
+                          
+                          <div className="flex items-center space-x-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleLike(post.id)}
+                              className={`h-7 px-2 ${post.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+                            >
+                              <Heart className={`h-3 w-3 mr-1 ${post.is_liked_by_user ? 'fill-current' : ''}`} />
+                              {post.likes_count > 0 && post.likes_count}
+                            </Button>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+                              className="h-7 px-2 text-muted-foreground hover:text-primary"
+                            >
+                              <Reply className="h-3 w-3 mr-1" />
+                              Reply
+                            </Button>
+                            
+                            {(currentBoard?.user_role === 'admin' || 
+                              currentBoard?.user_role === 'moderator' || 
+                              post.user_id === user?.id) && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => togglePin(post.id)}
+                                className="h-7 px-2 text-muted-foreground hover:text-primary"
+                              >
+                                <Pin className="h-3 w-3" />
+                              </Button>
+                            )}
+                            
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground">
+                              <MoreHorizontal className="h-3 w-3" />
+                            </Button>
+                          </div>
+
+                          {/* Reply input */}
+                          {replyingTo === post.id && (
+                            <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Replying to {post.profiles?.full_name || 'Anonymous User'}
+                              </p>
+                              <div className="flex space-x-2">
+                                <Textarea
+                                  ref={setTextareaRef}
+                                  placeholder="Type your reply..."
+                                  value={replyText}
+                                  onChange={(e) => {
+                                    setReplyText(e.target.value);
+                                    handleMentionInput(e.target.value, e.target.selectionStart);
+                                  }}
+                                  className="min-h-[60px] resize-none"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault();
+                                      sendPost(true);
+                                    }
+                                  }}
+                                />
+                                <div className="flex flex-col space-y-2">
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => sendPost(true)}
+                                    disabled={!replyText.trim()}
+                                    className="px-3"
+                                  >
+                                    <Send className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost"
+                                    size="sm" 
+                                    onClick={() => {
+                                      setReplyingTo(null);
+                                      setReplyText('');
+                                    }}
+                                    className="px-3"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              {/* User suggestions for mentions */}
+                              {showUserSuggestions && userSuggestions.length > 0 && (
+                                <div className="absolute z-10 mt-1 w-full bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                  {userSuggestions.map((suggestedUser, index) => (
+                                    <div
+                                      key={index}
+                                      onClick={() => insertMention(suggestedUser, true)}
+                                      className="p-2 hover:bg-muted cursor-pointer flex items-center space-x-2"
+                                    >
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={suggestedUser.avatar_url || undefined} />
+                                        <AvatarFallback className="text-xs">
+                                          {suggestedUser.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <p className="text-sm font-medium">{suggestedUser.full_name}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {suggestedUser.neighborhood || suggestedUser.city || 'Unknown Location'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-4">
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="p-4 border-t bg-card">
+              <div className="flex space-x-3">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-2 relative">
+                  {/* Reply preview when replying */}
+                  {replyingTo && (
+                    <div className="p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r mb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">
+                          <Reply className="h-3 w-3 inline mr-1" />
+                          Replying to {getReplyMessage(replyingTo)?.profiles?.full_name || 'Unknown User'}
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleLike(message.id)}
-                          className={`h-7 px-2 ${message.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyText('');
+                          }}
+                          className="h-5 w-5 p-0"
                         >
-                          <Heart className={`h-3 w-3 mr-1 ${message.is_liked_by_user ? 'fill-current' : ''}`} />
-                          {message.likes_count > 0 && message.likes_count}
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setReplyingTo(replyingTo === message.id ? null : message.id)}
-                          className="h-7 px-2 text-muted-foreground hover:text-primary"
-                        >
-                          <Reply className="h-3 w-3 mr-1" />
-                          Reply
-                        </Button>
-                        
-                        {message.user_id === user?.id && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => togglePin(message.id)}
-                            className="h-7 px-2 text-muted-foreground hover:text-primary"
-                          >
-                            <Pin className="h-3 w-3" />
-                          </Button>
-                        )}
-                        
-                        <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground">
-                          <MoreHorizontal className="h-3 w-3" />
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
-
-                      {/* Reply input */}
-                      {replyingTo === message.id && (
-                        <div className="mt-3 p-3 bg-muted/30 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Replying to {message.profiles?.full_name || 'Anonymous User'}
-                          </p>
-                          <div className="flex space-x-2">
-                            <Textarea
-                              placeholder="Type your reply..."
-                              value={replyText}
-                              onChange={(e) => setReplyText(e.target.value)}
-                              className="min-h-[60px] resize-none"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  sendMessage(true);
-                                }
-                              }}
-                            />
-                            <div className="flex flex-col space-y-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => sendMessage(true)}
-                                disabled={!replyText.trim()}
-                                className="px-3"
-                              >
-                                <Send className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="ghost"
-                                size="sm" 
-                                onClick={() => {
-                                  setReplyingTo(null);
-                                  setReplyText('');
-                                }}
-                                className="px-3"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {getReplyMessage(replyingTo)?.content || 'Message not found'}
+                      </p>
                     </div>
-                  </div>
-                </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Message Input */}
-        <div className="p-4 border-t bg-card">
-          <div className="flex space-x-3">
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarImage src={profile?.avatar_url || undefined} />
-              <AvatarFallback className="text-xs">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-2 relative">
-              {/* Reply preview when replying */}
-              {replyingTo && (
-                <div className="p-2 bg-muted/20 border-l-2 border-primary/30 rounded-r mb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      <Reply className="h-3 w-3 inline mr-1" />
-                      Replying to {getReplyMessage(replyingTo)?.profiles?.full_name || 'Unknown User'}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyText('');
+                  )}
+                  
+                  <div className="flex space-x-2">
+                    <Textarea
+                      ref={setTextareaRef}
+                      placeholder={`Message ${currentBoard?.name}...`}
+                      value={newMessage}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value);
+                        handleMentionInput(e.target.value, e.target.selectionStart);
                       }}
-                      className="h-5 w-5 p-0"
+                      className="min-h-[60px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendPost();
+                        }
+                      }}
+                    />
+                    <Button 
+                      onClick={() => sendPost()}
+                      disabled={!newMessage.trim()}
+                      className="px-4"
                     >
-                      <X className="h-3 w-3" />
+                      <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {getReplyMessage(replyingTo)?.content || 'Message not found'}
-                  </p>
-                </div>
-              )}
-
-              <Textarea
-                ref={setTextareaRef}
-                placeholder={`Message #${currentGroup?.name.toLowerCase()}... (Type @ to mention someone)`}
-                value={newMessage}
-                onChange={(e) => {
-                  setNewMessage(e.target.value);
-                  handleMentionInput(e.target.value, e.target.selectionStart);
-                }}
-                onFocus={(e) => {
-                  handleMentionInput(e.target.value, e.target.selectionStart);
-                }}
-                onKeyUp={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  handleMentionInput(target.value, target.selectionStart);
-                }}
-                onClick={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  handleMentionInput(target.value, target.selectionStart);
-                }}
-                className="min-h-[80px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                  if (e.key === 'Escape') {
-                    setShowUserSuggestions(false);
-                  }
-                }}
-              />
-
-              {/* User suggestions dropdown */}
-              {showUserSuggestions && userSuggestions.length > 0 && (
-                <div className="absolute bottom-full mb-2 left-0 right-0 bg-card border rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
-                  <div className="p-2 text-xs text-muted-foreground border-b flex items-center">
-                    <AtSign className="h-3 w-3 mr-1" />
-                    Select a user to mention
-                  </div>
-                  {userSuggestions.map((user) => (
-                    <div
-                      key={user.user_id}
-                      onClick={() => insertMention(user)}
-                      className="flex items-center space-x-2 p-3 hover:bg-muted/50 cursor-pointer"
-                    >
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{user.full_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {user.neighborhood || user.city || 'Unknown location'}
-                        </p>
-                      </div>
+                  
+                  {/* User suggestions for mentions */}
+                  {showUserSuggestions && userSuggestions.length > 0 && (
+                    <div className="absolute z-10 bottom-full mb-2 w-full bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {userSuggestions.map((suggestedUser, index) => (
+                        <div
+                          key={index}
+                          onClick={() => insertMention(suggestedUser)}
+                          className="p-2 hover:bg-muted cursor-pointer flex items-center space-x-2"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={suggestedUser.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {suggestedUser.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{suggestedUser.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {suggestedUser.neighborhood || suggestedUser.city || 'Unknown Location'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button 
-                  onClick={() => sendMessage()}
-                  disabled={!newMessage.trim()}
-                  size="sm"
-                >
-                  <Send className="h-3 w-3 mr-1" />
-                  Send
-                </Button>
               </div>
             </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <Hash className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Select a Discussion Board</h3>
+              <p className="text-muted-foreground mb-4">Choose a board from the sidebar to start chatting</p>
+              <Button onClick={() => setShowCreateBoard(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Board
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

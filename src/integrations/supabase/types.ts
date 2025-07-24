@@ -116,6 +116,121 @@ export type Database = {
           },
         ]
       }
+      board_members: {
+        Row: {
+          board_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_members_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "board_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      board_posts: {
+        Row: {
+          board_id: string
+          content: string
+          created_at: string
+          id: string
+          image_urls: string[] | null
+          is_pinned: boolean | null
+          post_type: string | null
+          reply_to_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          content: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          is_pinned?: boolean | null
+          post_type?: string | null
+          reply_to_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          is_pinned?: boolean | null
+          post_type?: string | null
+          reply_to_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_posts_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_posts_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "board_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_message_likes: {
         Row: {
           created_at: string
@@ -383,6 +498,45 @@ export type Database = {
           recipient_id?: string
           sender_id?: string
           status?: Database["public"]["Enums"]["direct_message_status"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discussion_boards: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          location: string | null
+          member_limit: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          location?: string | null
+          member_limit?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          location?: string | null
+          member_limit?: number | null
+          name?: string
           updated_at?: string
         }
         Relationships: []
