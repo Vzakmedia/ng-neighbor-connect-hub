@@ -63,7 +63,7 @@ const HeroSection = () => {
                   Join Your Neighborhood
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-green-400 hover:bg-white/10 hover:text-white w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="border-white text-primary hover:bg-white/10 hover:text-white w-full sm:w-auto">
                   Learn More
                 </Button>
               </div>
