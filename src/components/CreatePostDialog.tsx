@@ -26,7 +26,8 @@ import {
   Calendar,
   MapPin,
   ImagePlus,
-  X
+  X,
+  Navigation
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -87,6 +89,56 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag();
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    setLocationLoading(true);
+    try {
+      // Get user's current position
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Get Google Maps API key from edge function
+      const { data: tokenData } = await supabase.functions.invoke('get-google-maps-token');
+      
+      if (!tokenData?.token) {
+        throw new Error('Unable to get Maps API token');
+      }
+
+      // Reverse geocode the coordinates to get address
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${tokenData.token}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results?.length > 0) {
+        const address = data.results[0].formatted_address;
+        setLocation(address);
+        toast({
+          title: "Location found!",
+          description: "Your current location has been added.",
+        });
+      } else {
+        throw new Error('Unable to get address for your location');
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+      toast({
+        title: "Location error",
+        description: "Unable to get your current location. Please enter manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setLocationLoading(false);
     }
   };
 
@@ -244,14 +296,27 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           {/* Location */}
           <div className="space-y-2">
             <Label>Location (Optional)</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Add specific location..."
-                className="pl-10"
-              />
+            <div className="space-y-2">
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Add specific location..."
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={getCurrentLocation}
+                disabled={locationLoading}
+                className="flex items-center gap-2"
+              >
+                <Navigation className={`h-4 w-4 ${locationLoading ? 'animate-spin' : ''}`} />
+                {locationLoading ? 'Getting location...' : 'Use my location'}
+              </Button>
             </div>
           </div>
 
