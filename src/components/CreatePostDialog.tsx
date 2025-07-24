@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import LocationPickerDialog from './LocationPickerDialog';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -48,7 +49,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -92,54 +93,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     }
   };
 
-  const getCurrentLocation = async () => {
-    setLocationLoading(true);
-    try {
-      // Get user's current position
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        });
-      });
+  const handleLocationConfirm = (selectedLocation: string, coords: { lat: number; lng: number }) => {
+    setLocation(selectedLocation);
+  };
 
-      const { latitude, longitude } = position.coords;
-
-      // Get Google Maps API key from edge function
-      const { data: tokenData } = await supabase.functions.invoke('get-google-maps-token');
-      
-      if (!tokenData?.token) {
-        throw new Error('Unable to get Maps API token');
-      }
-
-      // Reverse geocode the coordinates to get address
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${tokenData.token}`
-      );
-      
-      const data = await response.json();
-      
-      if (data.status === 'OK' && data.results?.length > 0) {
-        const address = data.results[0].formatted_address;
-        setLocation(address);
-        toast({
-          title: "Location found!",
-          description: "Your current location has been added.",
-        });
-      } else {
-        throw new Error('Unable to get address for your location');
-      }
-    } catch (error) {
-      console.error('Error getting location:', error);
-      toast({
-        title: "Location error",
-        description: "Unable to get your current location. Please enter manually.",
-        variant: "destructive",
-      });
-    } finally {
-      setLocationLoading(false);
-    }
+  const openLocationPicker = () => {
+    setLocationPickerOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -310,12 +269,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={getCurrentLocation}
-                disabled={locationLoading}
+                onClick={openLocationPicker}
                 className="flex items-center gap-2"
               >
-                <Navigation className={`h-4 w-4 ${locationLoading ? 'animate-spin' : ''}`} />
-                {locationLoading ? 'Getting location...' : 'Use my location'}
+                <Navigation className="h-4 w-4" />
+                Use my location
               </Button>
             </div>
           </div>
@@ -453,6 +411,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <LocationPickerDialog
+        open={locationPickerOpen}
+        onOpenChange={setLocationPickerOpen}
+        onLocationConfirm={handleLocationConfirm}
+      />
     </Dialog>
   );
 };
