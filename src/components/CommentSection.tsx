@@ -200,10 +200,38 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
     }
   };
 
+  // Helper function to find a comment at any nesting level
+  const findComment = (comments: Comment[], commentId: string): Comment | null => {
+    for (const comment of comments) {
+      if (comment.id === commentId) return comment;
+      if (comment.replies) {
+        const found = findComment(comment.replies, commentId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Helper function to update comment state at any nesting level
+  const updateCommentState = (comments: Comment[], commentId: string, updates: Partial<Comment>): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === commentId) {
+        return { ...comment, ...updates };
+      }
+      if (comment.replies) {
+        return {
+          ...comment,
+          replies: updateCommentState(comment.replies, commentId, updates)
+        };
+      }
+      return comment;
+    });
+  };
+
   const toggleCommentLike = async (commentId: string) => {
     if (!user) return;
 
-    const comment = comments.find(c => c.id === commentId);
+    const comment = findComment(comments, commentId);
     if (!comment) return;
 
     try {
@@ -218,11 +246,10 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
         if (error) throw error;
 
         // Update local state
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_liked_by_user: false, likes_count: c.likes_count - 1 }
-            : c
-        ));
+        setComments(prev => updateCommentState(prev, commentId, {
+          is_liked_by_user: false,
+          likes_count: comment.likes_count - 1
+        }));
       } else {
         // Like the comment
         const { error } = await supabase
@@ -235,11 +262,10 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
         if (error) throw error;
 
         // Update local state
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_liked_by_user: true, likes_count: c.likes_count + 1 }
-            : c
-        ));
+        setComments(prev => updateCommentState(prev, commentId, {
+          is_liked_by_user: true,
+          likes_count: comment.likes_count + 1
+        }));
       }
     } catch (error) {
       console.error('Error toggling comment like:', error);
