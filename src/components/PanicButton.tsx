@@ -29,7 +29,7 @@ const PanicButton = () => {
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'other'>('other');
+  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'violence' | 'other'>('other');
   const [preferences, setPreferences] = useState<any>(null);
 
   const situationTypes = [
@@ -37,6 +37,7 @@ const PanicButton = () => {
     { value: 'fire', label: 'Fire', icon: '🔥' },
     { value: 'break_in', label: 'Break In', icon: '🔓' },
     { value: 'assault', label: 'Assault', icon: '⚠️' },
+    { value: 'violence', label: 'Violence', icon: '👊' },
     { value: 'kidnapping', label: 'Kidnapping', icon: '🚨' },
     { value: 'accident', label: 'Accident', icon: '🚗' },
     { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌪️' },
@@ -93,14 +94,30 @@ const PanicButton = () => {
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      // Using a simple reverse geocoding service
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+        { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
       );
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Geocoding failed: ${response.status}`);
+      }
+      
       const data = await response.json();
-      return data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      return data.display_name || data.locality || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
+      // Always return coordinates as fallback
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
   };
