@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Shield, 
+  Shield,
   AlertTriangle, 
   MapPin, 
   Clock, 
@@ -216,10 +217,10 @@ const SafetyCenter = () => {
     if (!user) return;
     
     try {
-      // Fetch user's own panic alerts and panic alerts where user is an emergency contact
+      // Get current user's profile to filter by location
       const { data: userProfile } = await supabase
         .from('profiles')
-        .select('phone')
+        .select('phone, state, city')
         .eq('user_id', user.id)
         .single();
 
@@ -233,6 +234,7 @@ const SafetyCenter = () => {
       if (userError) throw userError;
 
       let contactPanicAlerts: any[] = [];
+      let areaPanicAlerts: any[] = [];
       
       // Get panic alerts where user is an emergency contact
       if (userProfile?.phone) {
@@ -254,8 +256,28 @@ const SafetyCenter = () => {
         }
       }
 
+      // Get panic alerts in user's area (same state)
+      if (userProfile?.state) {
+        const { data: areaAlerts, error: areaError } = await supabase
+          .from('panic_alerts')
+          .select(`
+            *,
+            profiles!panic_alerts_user_id_fkey (state, city)
+          `)
+          .neq('user_id', user.id) // Exclude user's own alerts
+          .order('created_at', { ascending: false });
+
+        if (areaError) throw areaError;
+        
+        // Filter by state/city in the application
+        areaPanicAlerts = (areaAlerts || []).filter((alert: any) => 
+          alert.profiles?.state === userProfile.state ||
+          alert.profiles?.city === userProfile.city
+        );
+      }
+
       // Combine and deduplicate alerts
-      const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts];
+      const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts, ...areaPanicAlerts];
       const uniqueAlerts = allPanicAlerts.filter((alert, index, self) => 
         index === self.findIndex(a => a.id === alert.id)
       );
@@ -543,92 +565,168 @@ const SafetyCenter = () => {
           </div>
         </div>
       ) : (
-        /* Alert List */
-        <div className="space-y-4">
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-2/3"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : alerts.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Safety Alerts</h3>
-                <p className="text-muted-foreground">
-                  {filterSeverity !== 'all' || filterType !== 'all'
-                    ? 'No alerts match your current filters'
-                    : 'Your neighborhood is all clear! No safety alerts at this time.'}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            alerts.map((alert) => {
-              const AlertIcon = alertTypeIcons[alert.alert_type as keyof typeof alertTypeIcons] || AlertTriangle;
-              return (
-                <Card key={alert.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedAlert(alert)}>
+        /* Tabbed Alert Views */
+        <Tabs defaultValue="safety-alerts" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="safety-alerts" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Safety Alerts ({alerts.length})
+            </TabsTrigger>
+            <TabsTrigger value="panic-alerts" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Panic Alerts ({panicAlerts.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="safety-alerts" className="space-y-4 mt-6">
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-3 bg-muted rounded w-2/3"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : alerts.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">No Safety Alerts</h3>
+                  <p className="text-muted-foreground">
+                    {filterSeverity !== 'all' || filterType !== 'all'
+                      ? 'No alerts match your current filters'
+                      : 'Your community is all clear! No safety alerts at this time.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              alerts.map((alert) => {
+                const AlertIcon = alertTypeIcons[alert.alert_type as keyof typeof alertTypeIcons] || AlertTriangle;
+                return (
+                  <Card key={alert.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedAlert(alert)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className={`p-2 rounded-lg ${severityColors[alert.severity]}`}>
+                            <AlertIcon className="h-5 w-5" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-lg">{alert.title}</h3>
+                              <Badge 
+                                variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                                className={severityColors[alert.severity]}
+                              >
+                                {alert.severity}
+                              </Badge>
+                              {alert.is_verified && (
+                                <Badge variant="outline" className="text-green-600 border-green-200">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Verified
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <p className="text-muted-foreground mb-3 line-clamp-2">{alert.description}</p>
+                            
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {alert.address || 'Location not specified'}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {getTimeSince(alert.created_at)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {alert.profiles?.full_name || 'Anonymous'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end gap-2">
+                          {getSeverityIcon(alert.severity)}
+                          <Badge variant="outline" className="text-xs">
+                            {alert.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+          
+          <TabsContent value="panic-alerts" className="space-y-4 mt-6">
+            {panicAlerts.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">No Panic Alerts</h3>
+                  <p className="text-muted-foreground">
+                    No panic alerts in your area at this time.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              panicAlerts.map((panicAlert) => (
+                <Card key={panicAlert.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedPanicAlert(panicAlert)}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className={`p-2 rounded-lg ${severityColors[alert.severity]}`}>
-                          <AlertIcon className="h-5 w-5" />
+                        <div className="p-2 rounded-lg bg-red-100 text-red-800 border-red-200">
+                          <AlertTriangle className="h-5 w-5" />
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-lg">{alert.title}</h3>
-                            <Badge 
-                              variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
-                              className={severityColors[alert.severity]}
-                            >
-                              {alert.severity}
+                            <h3 className="font-semibold text-lg">
+                              {panicAlert.situation_type.replace('_', ' ').toUpperCase()} Emergency
+                            </h3>
+                            <Badge variant={panicAlert.is_resolved ? "secondary" : "destructive"}>
+                              {panicAlert.is_resolved ? 'Resolved' : 'Active'}
                             </Badge>
-                            {alert.is_verified && (
-                              <Badge variant="outline" className="text-green-600 border-green-200">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
-                              </Badge>
-                            )}
                           </div>
                           
-                          <p className="text-muted-foreground mb-3 line-clamp-2">{alert.description}</p>
+                          {panicAlert.message && (
+                            <p className="text-muted-foreground mb-3 line-clamp-2">{panicAlert.message}</p>
+                          )}
                           
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {alert.address || 'Location not specified'}
+                              {panicAlert.address || 'Location not specified'}
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {getTimeSince(alert.created_at)}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {alert.profiles?.full_name || 'Anonymous'}
+                              {getTimeSince(panicAlert.created_at)}
                             </div>
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex flex-col items-end gap-2">
-                        {getSeverityIcon(alert.severity)}
-                        <Badge variant="outline" className="text-xs">
-                          {alert.status.replace('_', ' ')}
-                        </Badge>
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        {panicAlert.is_resolved && panicAlert.resolved_at && (
+                          <div className="text-xs text-muted-foreground">
+                            Resolved {getTimeSince(panicAlert.resolved_at)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
-        </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       )}
 
       {/* Alert Detail Modal/Sidebar would go here */}
