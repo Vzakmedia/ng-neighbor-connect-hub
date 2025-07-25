@@ -516,9 +516,22 @@ const CommunityBoards = () => {
 
   // Create new board
   const createBoard = async () => {
-    if (!newBoardName.trim() || !user) return;
+    console.log('createBoard called', { newBoardName, user: user?.id });
+    
+    if (!newBoardName.trim() || !user) {
+      console.log('Validation failed:', { boardName: newBoardName.trim(), userId: user?.id });
+      return;
+    }
 
     try {
+      console.log('Creating board with data:', {
+        name: newBoardName.trim(),
+        description: newBoardDescription.trim() || null,
+        creator_id: user.id,
+        is_public: newBoardIsPublic,
+        location: profile?.neighborhood || profile?.city || null
+      });
+
       // Create board
       const { data: boardData, error: boardError } = await supabase
         .from('discussion_boards')
@@ -532,7 +545,12 @@ const CommunityBoards = () => {
         .select()
         .single();
 
-      if (boardError) throw boardError;
+      if (boardError) {
+        console.error('Board creation error:', boardError);
+        throw boardError;
+      }
+
+      console.log('Board created successfully:', boardData);
 
       // Add creator as admin member
       const { error: memberError } = await supabase
@@ -543,7 +561,12 @@ const CommunityBoards = () => {
           role: 'admin'
         });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Member creation error:', memberError);
+        throw memberError;
+      }
+
+      console.log('Member added successfully');
 
       setNewBoardName('');
       setNewBoardDescription('');
@@ -1451,7 +1474,11 @@ const CommunityBoards = () => {
         <div className="p-4 border-t">
           <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
             <DialogTrigger asChild>
-              <Button size="sm" className="w-full">
+              <Button 
+                size="sm" 
+                className="w-full"
+                onClick={() => console.log('Create Board button clicked')}
+              >
                 <Plus className="h-4 w-4 mr-1" />
                 Create Board
               </Button>
