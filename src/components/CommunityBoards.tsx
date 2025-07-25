@@ -920,25 +920,42 @@ const CommunityBoards = () => {
     if (!selectedBoard) return;
 
     try {
-      const { data, error } = await supabase
+      // First get board members
+      const { data: membersData, error: membersError } = await supabase
         .from('board_members')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles:user_id (
-            full_name,
-            avatar_url,
-            neighborhood,
-            city,
-            state
-          )
-        `)
+        .select('user_id, role, joined_at')
         .eq('board_id', selectedBoard)
         .order('joined_at', { ascending: true });
 
-      if (error) throw error;
-      setBoardMembers(data || []);
+      if (membersError) throw membersError;
+
+      if (!membersData || membersData.length === 0) {
+        setBoardMembers([]);
+        return;
+      }
+
+      // Get user profiles for all members
+      const userIds = membersData.map(member => member.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, neighborhood, city, state')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching member profiles:', profilesError);
+      }
+
+      // Combine member data with profiles
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
+      );
+
+      const membersWithProfiles = membersData.map(member => ({
+        ...member,
+        profiles: profilesMap.get(member.user_id) || null
+      }));
+
+      setBoardMembers(membersWithProfiles);
       generateInviteLink();
     } catch (error) {
       console.error('Error fetching board members:', error);
@@ -1263,141 +1280,189 @@ const CommunityBoards = () => {
                         <DialogTitle>Board Members</DialogTitle>
                       </DialogHeader>
                       <ScrollArea className="h-96">
-                        {boardMembers.length === 1 && boardMembers[0]?.user_id === currentBoard?.creator_id ? (
-                          <div className="space-y-4">
-                            {/* Show admin is only member */}
-                            <div className="text-center py-6">
-                              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                              <h3 className="text-lg font-medium mb-2">You're the only member</h3>
-                              <p className="text-muted-foreground mb-4">
-                                Invite others to join your board and start the conversation
-                              </p>
-                            </div>
-                            
-                            {/* Admin member card */}
-                            <div className="p-3 rounded-lg border bg-muted/20">
-                              <div className="flex items-center space-x-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage src={boardMembers[0]?.profiles?.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {boardMembers[0]?.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="flex items-center space-x-2">
-                                    <p className="font-medium text-sm">{boardMembers[0]?.profiles?.full_name || 'Anonymous User'}</p>
-                                    <Crown className="h-3 w-3 text-yellow-500" />
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {boardMembers[0]?.profiles?.neighborhood || boardMembers[0]?.profiles?.city || 'Unknown Location'}
-                                  </p>
-                                  <Badge variant="default" className="text-xs mt-1">Creator</Badge>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Add new member section */}
-                            <div className="space-y-3">
-                              <DropdownMenu open={showAddMember} onOpenChange={setShowAddMember}>
-                                <DropdownMenuTrigger asChild>
-                                  <Button className="w-full">
-                                    {/* Add new member icon */}
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add New Member
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-80">
-                                  <div className="p-3 space-y-3">
-                                    <div>
-                                      <Label className="text-sm font-medium">Share Invite Link</Label>
-                                      <p className="text-xs text-muted-foreground mb-2">
-                                        Anyone with this link can join your board
-                                      </p>
-                                    </div>
-                                    
-                                    {!inviteLink ? (
-                                      <Button 
-                                        onClick={generateInviteLink}
-                                        disabled={generatingLink}
-                                        className="w-full"
-                                        size="sm"
-                                      >
-                                        {generatingLink ? "Generating..." : "Generate Invite Link"}
-                                      </Button>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        <div className="flex space-x-2">
-                                          <Input
-                                            value={inviteLink}
-                                            readOnly
-                                            className="text-xs"
-                                            placeholder="Generating link..."
-                                          />
-                                          <Button
-                                            size="sm"
-                                            onClick={copyInviteLink}
-                                            className="px-3"
-                                          >
-                                            {linkCopied ? (
-                                              <>
-                                                <span className="text-xs mr-1">✓</span>
-                                                Copied
-                                              </>
-                                            ) : (
-                                              <>
-                                                <Copy className="h-3 w-3 mr-1" />
-                                                Copy
-                                              </>
-                                            )}
-                                          </Button>
-                                        </div>
-                                        
-                                        <div className="flex space-x-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={generateNewInviteLink}
-                                            disabled={generatingLink}
-                                            className="flex-1"
-                                          >
-                                            <RefreshCw className="h-3 w-3 mr-1" />
-                                            {generatingLink ? "Generating..." : "Generate New"}
-                                          </Button>
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={revokeInviteLink}
-                                            className="flex-1"
-                                          >
-                                            <Trash2 className="h-3 w-3 mr-1" />
-                                            Revoke Link
-                                          </Button>
-                                        </div>
-                                        
-                                        {currentInviteCode && (
-                                          <p className="text-xs text-muted-foreground">
-                                            Expires: {new Date(currentInviteCode.expires_at).toLocaleDateString()}
-                                          </p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
+                        {boardMembers.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground mb-4">No members found</p>
+                            <Button onClick={fetchBoardMembers} variant="outline" size="sm">
+                              Retry Loading
+                            </Button>
                           </div>
                         ) : (
-                          <div className="space-y-2">
-                            {/* Regular members list */}
-                            {boardMembers.map((member) => (
-                              <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg border">
-                                <div className="flex items-center space-x-3">
-                                  <Avatar className="h-10 w-10">
-                                    <AvatarImage src={member.profiles?.avatar_url || undefined} />
-                                    <AvatarFallback>
-                                      {member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                                    </AvatarFallback>
-                                  </Avatar>
+                          <div className="space-y-3">
+                            {/* All members list */}
+                            {boardMembers.map((member) => {
+                              const isCreator = member.user_id === currentBoard?.creator_id;
+                              const isAdmin = member.role === 'admin';
+                              const isModerator = member.role === 'moderator';
+                              
+                              return (
+                                <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                                  <div className="flex items-center space-x-3">
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                                      <AvatarFallback>
+                                        {member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="flex items-center space-x-2">
+                                        <p className="font-medium text-sm">{member.profiles?.full_name || 'Anonymous User'}</p>
+                                        {isCreator && <Crown className="h-3 w-3 text-yellow-500" />}
+                                        {(isAdmin && !isCreator) && <Shield className="h-3 w-3 text-blue-500" />}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">
+                                        {[member.profiles?.neighborhood, member.profiles?.city, member.profiles?.state]
+                                          .filter(Boolean).join(', ') || 'Unknown Location'}
+                                      </p>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        {isCreator ? (
+                                          <Badge variant="default" className="text-xs">Creator</Badge>
+                                        ) : isAdmin ? (
+                                          <Badge variant="secondary" className="text-xs">Admin</Badge>
+                                        ) : isModerator ? (
+                                          <Badge variant="outline" className="text-xs">Moderator</Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-xs">Member</Badge>
+                                        )}
+                                        <span className="text-xs text-muted-foreground">
+                                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Member actions */}
+                                  {(currentBoard?.creator_id === user?.id || currentBoard?.user_role === 'admin') && member.user_id !== user?.id && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        {!isCreator && currentBoard?.creator_id === user?.id && (
+                                          <>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="w-full justify-start text-xs"
+                                              onClick={() => {/* TODO: Promote to admin */}}
+                                            >
+                                              {isAdmin ? 'Remove Admin' : 'Make Admin'}
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="w-full justify-start text-xs text-destructive"
+                                              onClick={() => {/* TODO: Remove member */}}
+                                            >
+                                              Remove Member
+                                            </Button>
+                                          </>
+                                        )}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Add new member section */}
+                            {(currentBoard?.creator_id === user?.id || currentBoard?.user_role === 'admin') && (
+                              <div className="space-y-3 pt-4 border-t">
+                                <DropdownMenu open={showAddMember} onOpenChange={setShowAddMember}>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button className="w-full">
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Add New Member
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent className="w-80">
+                                    <div className="p-3 space-y-3">
+                                      <div>
+                                        <Label className="text-sm font-medium">Share Invite Link</Label>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                          Anyone with this link can join your board
+                                        </p>
+                                      </div>
+                                      
+                                      {!inviteLink ? (
+                                        <Button 
+                                          onClick={generateInviteLink}
+                                          disabled={generatingLink}
+                                          className="w-full"
+                                          size="sm"
+                                        >
+                                          {generatingLink ? "Generating..." : "Generate Invite Link"}
+                                        </Button>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          <div className="flex space-x-2">
+                                            <Input
+                                              value={inviteLink}
+                                              readOnly
+                                              className="text-xs"
+                                              placeholder="Generating link..."
+                                            />
+                                            <Button
+                                              size="sm"
+                                              onClick={copyInviteLink}
+                                              className="px-3"
+                                            >
+                                              {linkCopied ? (
+                                                <>
+                                                  <span className="text-xs mr-1">✓</span>
+                                                  Copied
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Copy className="h-3 w-3 mr-1" />
+                                                  Copy
+                                                </>
+                                              )}
+                                            </Button>
+                                          </div>
+                                          
+                                          <div className="flex space-x-2">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={generateNewInviteLink}
+                                              disabled={generatingLink}
+                                              className="flex-1"
+                                            >
+                                              <RefreshCw className="h-3 w-3 mr-1" />
+                                              {generatingLink ? "Generating..." : "Generate New"}
+                                            </Button>
+                                            <Button
+                                              variant="destructive"
+                                              size="sm"
+                                              onClick={revokeInviteLink}
+                                              className="flex-1"
+                                            >
+                                              <Trash2 className="h-3 w-3 mr-1" />
+                                              Revoke Link
+                                            </Button>
+                                          </div>
+                                          
+                                          {currentInviteCode && (
+                                            <p className="text-xs text-muted-foreground">
+                                              Expires: {new Date(currentInviteCode.expires_at).toLocaleDateString()}
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                                   <div>
                                     <div className="flex items-center space-x-2">
                                       <p className="font-medium text-sm">{member.profiles?.full_name || 'Anonymous User'}</p>
