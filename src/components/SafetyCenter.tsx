@@ -29,6 +29,7 @@ import PanicButton from './PanicButton';
 import ReportIncidentDialog from './ReportIncidentDialog';
 import AlertStatusManager from './AlertStatusManager';
 import RealTimeAlertFeed from './RealTimeAlertFeed';
+import PanicAlertStatusManager from './PanicAlertStatusManager';
 import { useToast } from '@/hooks/use-toast';
 
 interface SafetyAlert {
@@ -54,12 +55,29 @@ interface SafetyAlert {
   } | null;
 }
 
+interface PanicAlert {
+  id: string;
+  user_id: string;
+  situation_type: string;
+  message?: string;
+  is_resolved: boolean;
+  resolved_at?: string;
+  resolved_by?: string;
+  created_at: string;
+  updated_at: string;
+  address?: string;
+  latitude: number;
+  longitude: number;
+}
+
 const SafetyCenter = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
+  const [panicAlerts, setPanicAlerts] = useState<PanicAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState<SafetyAlert | null>(null);
+  const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'feed'>('list');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -102,6 +120,7 @@ const SafetyCenter = () => {
 
   useEffect(() => {
     fetchAlerts();
+    fetchPanicAlerts();
     
     // Set up comprehensive real-time subscriptions
     const alertsSubscription = supabase
@@ -149,6 +168,7 @@ const SafetyCenter = () => {
     if (autoRefresh) {
       refreshInterval = setInterval(() => {
         fetchAlerts();
+        fetchPanicAlerts();
       }, 30000);
     }
 
@@ -190,6 +210,87 @@ const SafetyCenter = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPanicAlerts = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch user's own panic alerts and panic alerts where user is an emergency contact
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get panic alerts created by user
+      let query = supabase
+        .from('panic_alerts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      const { data: userPanicAlerts, error: userError } = await query;
+      if (userError) throw userError;
+
+      let contactPanicAlerts: any[] = [];
+      
+      // Get panic alerts where user is an emergency contact
+      if (userProfile?.phone) {
+        const { data: emergencyContacts } = await supabase
+          .from('emergency_contacts')
+          .select('user_id')
+          .eq('phone_number', userProfile.phone);
+
+        if (emergencyContacts && emergencyContacts.length > 0) {
+          const contactUserIds = emergencyContacts.map(ec => ec.user_id);
+          
+          const { data: contactAlerts, error: contactError } = await supabase
+            .from('panic_alerts')
+            .select('*')
+            .in('user_id', contactUserIds);
+
+          if (contactError) throw contactError;
+          contactPanicAlerts = contactAlerts || [];
+        }
+      }
+
+      // Combine and deduplicate alerts
+      const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts];
+      const uniqueAlerts = allPanicAlerts.filter((alert, index, self) => 
+        index === self.findIndex(a => a.id === alert.id)
+      );
+
+      setPanicAlerts(uniqueAlerts);
+    } catch (error) {
+      console.error('Error fetching panic alerts:', error);
+    }
+  };
+
+  const handlePanicAlertStatusUpdate = (alertId: string, newStatus: string) => {
+    setPanicAlerts(prev => 
+      prev.map(alert => 
+        alert.id === alertId 
+          ? { 
+              ...alert, 
+              is_resolved: newStatus === 'resolved',
+              resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null,
+              updated_at: new Date().toISOString() 
+            }
+          : alert
+      )
+    );
+    
+    if (selectedPanicAlert?.id === alertId) {
+      setSelectedPanicAlert(prev => prev ? { 
+        ...prev, 
+        is_resolved: newStatus === 'resolved',
+        resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString() 
+      } : null);
+    }
+
+    // Also refresh safety alerts as they should be updated by the trigger
+    setTimeout(() => fetchAlerts(), 1000);
   };
 
   const getTimeSince = (dateString: string) => {
@@ -274,12 +375,13 @@ const SafetyCenter = () => {
         />
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: 'Active Alerts', value: alerts.filter(a => a.status === 'active').length, color: 'text-red-600', icon: AlertTriangle },
           { label: 'Resolved Today', value: alerts.filter(a => a.status === 'resolved' && new Date(a.created_at).toDateString() === new Date().toDateString()).length, color: 'text-green-600', icon: CheckCircle },
           { label: 'Under Investigation', value: alerts.filter(a => a.status === 'investigating').length, color: 'text-yellow-600', icon: Search },
+          { label: 'My Panic Alerts', value: panicAlerts.filter(a => a.user_id === user?.id).length, color: 'text-purple-600', icon: AlertTriangle },
           { label: 'Total Reports', value: alerts.length, color: 'text-blue-600', icon: Shield }
         ].map((stat, index) => (
           <Card key={index}>
@@ -406,6 +508,47 @@ const SafetyCenter = () => {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Panic Alerts Section */}
+            {panicAlerts.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    Your Panic Alerts ({panicAlerts.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {panicAlerts.slice(0, 3).map((panicAlert) => (
+                    <div 
+                      key={panicAlert.id}
+                      className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setSelectedPanicAlert(panicAlert)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <span className="text-sm font-medium">
+                            {panicAlert.situation_type.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <Badge variant={panicAlert.is_resolved ? "secondary" : "destructive"} className="text-xs">
+                          {panicAlert.is_resolved ? 'Resolved' : 'Active'}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {getTimeSince(panicAlert.created_at)}
+                      </div>
+                    </div>
+                  ))}
+                  {panicAlerts.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center pt-2">
+                      +{panicAlerts.length - 3} more panic alerts
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       ) : (
@@ -565,6 +708,31 @@ const SafetyCenter = () => {
                 onStatusUpdate={handleStatusUpdate}
                 isOwner={user?.id === selectedAlert.user_id}
                 canModerate={false} // You can add role checking here
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Panic Alert Detail Modal */}
+      {selectedPanicAlert && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  Panic Alert - {selectedPanicAlert.situation_type.replace('_', ' ')}
+                </CardTitle>
+                <Button variant="ghost" onClick={() => setSelectedPanicAlert(null)}>
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PanicAlertStatusManager
+                panicAlert={selectedPanicAlert}
+                onStatusUpdate={handlePanicAlertStatusUpdate}
               />
             </CardContent>
           </Card>
