@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import EventFeed from '@/components/EventFeed';
 
 const Events = () => {
   const { user, loading } = useAuth();
@@ -44,21 +44,7 @@ const Events = () => {
             </Button>
           </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Upcoming Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="mb-4">No events scheduled yet</p>
-                <Button variant="outline">Create First Event</Button>
-              </div>
-            </CardContent>
-          </Card>
+          <EventFeed />
         </div>
       </main>
     </div>
