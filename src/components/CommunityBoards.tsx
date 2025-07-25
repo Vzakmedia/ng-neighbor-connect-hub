@@ -78,6 +78,7 @@ interface BoardPost {
 
 const CommunityBoards = () => {
   const [boards, setBoards] = useState<DiscussionBoard[]>([]);
+  const [publicBoards, setPublicBoards] = useState<DiscussionBoard[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -86,6 +87,7 @@ const CommunityBoards = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [showDiscoverBoards, setShowDiscoverBoards] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
   const [newBoardIsPublic, setNewBoardIsPublic] = useState(true); // Default to public
@@ -96,6 +98,7 @@ const CommunityBoards = () => {
   const [showMembers, setShowMembers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [boardMembers, setBoardMembers] = useState<any[]>([]);
+  const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -302,6 +305,146 @@ const CommunityBoards = () => {
       toast({
         title: "Error",
         description: "Failed to load discussion boards.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fetch public boards in user's location
+  const fetchPublicBoards = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get user's location
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('city, state, neighborhood')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      // Get all board IDs user is already a member of or has created
+      const { data: memberData } = await supabase
+        .from('board_members')
+        .select('board_id')
+        .eq('user_id', user.id);
+
+      const { data: creatorData } = await supabase
+        .from('discussion_boards')
+        .select('id')
+        .eq('creator_id', user.id);
+
+      const userBoardIds = [
+        ...(memberData?.map(m => m.board_id) || []),
+        ...(creatorData?.map(b => b.id) || [])
+      ];
+
+      // Fetch public boards in the same location
+      let query = supabase
+        .from('discussion_boards')
+        .select(`
+          *,
+          creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)
+        `)
+        .eq('is_public', true);
+
+      // Filter by location
+      if (profileData.city) {
+        query = query.or(`location.ilike.%${profileData.city}%,location.ilike.%${profileData.state}%`);
+      } else if (profileData.state) {
+        query = query.ilike('location', `%${profileData.state}%`);
+      }
+
+      // Exclude boards user is already in
+      if (userBoardIds.length > 0) {
+        query = query.not('id', 'in', `(${userBoardIds.join(',')})`);
+      }
+
+      const { data: publicBoardsData, error: publicBoardsError } = await query
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (publicBoardsError) throw publicBoardsError;
+
+      // Transform data to match DiscussionBoard interface
+      const transformedBoards = (publicBoardsData || []).map(board => ({
+        ...board,
+        member_count: 0, // Will be fetched separately if needed
+        user_role: null
+      }));
+
+      setPublicBoards(transformedBoards as DiscussionBoard[]);
+    } catch (error) {
+      console.error('Error fetching public boards:', error);
+    }
+  };
+
+  // Request to join a board
+  const requestToJoinBoard = async (boardId: string, message?: string) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_join_requests')
+        .insert({
+          board_id: boardId,
+          user_id: user.id,
+          message: message || null
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Request sent",
+        description: "Your join request has been sent to the board admins.",
+      });
+
+      // Refresh public boards to update request status
+      fetchPublicBoards();
+    } catch (error) {
+      console.error('Error requesting to join board:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send join request.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle join request (approve/reject)
+  const handleJoinRequest = async (requestId: string, action: 'approved' | 'rejected') => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_join_requests')
+        .update({
+          status: action,
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Refresh join requests and board members
+      fetchBoardMembers();
+
+      toast({
+        title: action === 'approved' ? "Request approved" : "Request rejected",
+        description: action === 'approved' 
+          ? "User has been added to the board." 
+          : "Join request has been rejected.",
+      });
+    } catch (error) {
+      console.error('Error handling join request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process join request.",
         variant: "destructive",
       });
     }
@@ -915,7 +1058,7 @@ const CommunityBoards = () => {
     }
   };
 
-  // Fetch board members
+  // Fetch board members and join requests
   const fetchBoardMembers = async () => {
     if (!selectedBoard) return;
 
@@ -938,6 +1081,23 @@ const CommunityBoards = () => {
 
       if (boardError) {
         console.error('Error fetching board info:', boardError);
+      }
+
+      // Get pending join requests (only for admins/creators)
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('board_join_requests')
+        .select(`
+          *,
+          profiles!board_join_requests_user_id_fkey(full_name, avatar_url, city, state, neighborhood)
+        `)
+        .eq('board_id', selectedBoard)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) {
+        console.error('Error fetching join requests:', requestsError);
+      } else {
+        setJoinRequests(requestsData || []);
       }
 
       // Collect all unique user IDs (board members + creator)
@@ -1111,7 +1271,10 @@ const CommunityBoards = () => {
   };
 
   useEffect(() => {
-    fetchBoards();
+    if (user) {
+      fetchBoards();
+      fetchPublicBoards();
+    }
   }, [user]);
 
   useEffect(() => {
@@ -1166,13 +1329,130 @@ const CommunityBoards = () => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Discussion Boards</h2>
-            <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Create
-                </Button>
-              </DialogTrigger>
+            <div className="flex space-x-2">
+              <Dialog open={showDiscoverBoards} onOpenChange={setShowDiscoverBoards}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Globe className="h-4 w-4 mr-1" />
+                    Discover
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Discover Public Boards</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-96">
+                    <div className="space-y-3">
+                      {publicBoards.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p className="text-sm">No public boards found in your area</p>
+                        </div>
+                      ) : (
+                        publicBoards.map((board) => (
+                          <Card key={board.id} className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Hash className="h-4 w-4 text-muted-foreground" />
+                                  <h3 className="font-medium">{board.name}</h3>
+                                  <Badge variant="outline" className="text-xs">Public</Badge>
+                                </div>
+                                {board.description && (
+                                  <p className="text-sm text-muted-foreground mb-2">{board.description}</p>
+                                )}
+                                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                                  <div className="flex items-center">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {board.location || 'Global'}
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    Created {new Date(board.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                onClick={() => requestToJoinBoard(board.id)}
+                                className="ml-4"
+                              >
+                                Request to Join
+                              </Button>
+                            </div>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input 
+              placeholder="Search boards..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <ScrollArea className="h-[calc(100%-120px)]">
+          {boards
+            .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
+            .map((board) => (
+            <div
+              key={board.id}
+              onClick={() => setSelectedBoard(board.id)}
+              className={`p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
+                selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-medium text-sm">{board.name}</h3>
+                  {board.user_role === 'admin' && <Crown className="h-3 w-3 text-yellow-500" />}
+                  {board.creator_id === user?.id && <Badge variant="outline" className="text-xs">Owner</Badge>}
+                </div>
+              </div>
+              
+              {board.description && (
+                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{board.description}</p>
+              )}
+              
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center">
+                  <Users className="h-3 w-3 mr-1" />
+                  {board.member_count} members
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {board.location || 'Global'}
+                </div>
+              </div>
+              
+              <div className="flex items-center mt-2 space-x-2">
+                {board.is_public ? (
+                  <Badge variant="outline" className="text-xs">Public</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs">Private</Badge>
+                )}
+                <Badge variant="outline" className="text-xs">{board.user_role}</Badge>
+              </div>
+            </div>
+          ))}
+        </ScrollArea>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create Discussion Board</DialogTitle>
@@ -1222,7 +1502,6 @@ const CommunityBoards = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
           
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
