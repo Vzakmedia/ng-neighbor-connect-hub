@@ -17,13 +17,19 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  Zap
+  Zap,
+  Settings,
+  Bell,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import SafetyMap from './SafetyMap';
 import PanicButton from './PanicButton';
 import ReportIncidentDialog from './ReportIncidentDialog';
+import AlertStatusManager from './AlertStatusManager';
+import RealTimeAlertFeed from './RealTimeAlertFeed';
+import { useToast } from '@/hooks/use-toast';
 
 interface SafetyAlert {
   id: string;
@@ -38,6 +44,10 @@ interface SafetyAlert {
   images: string[];
   is_verified: boolean;
   created_at: string;
+  updated_at: string;
+  user_id: string;
+  verified_at?: string;
+  verified_by?: string;
   profiles: {
     full_name: string;
     avatar_url?: string;
@@ -46,12 +56,15 @@ interface SafetyAlert {
 
 const SafetyCenter = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState<SafetyAlert | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'feed'>('list');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const severityColors = {
     low: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -90,22 +103,60 @@ const SafetyCenter = () => {
   useEffect(() => {
     fetchAlerts();
     
-    // Set up real-time subscription for new alerts
-    const subscription = supabase
-      .channel('safety_alerts')
+    // Set up comprehensive real-time subscriptions
+    const alertsSubscription = supabase
+      .channel('safety_alerts_updates')
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'safety_alerts' },
-        (payload) => {
+        async (payload) => {
           console.log('New safety alert:', payload);
-          fetchAlerts(); // Refresh alerts when new one is added
+          // Fetch the complete alert with profile data
+          const { data } = await supabase
+            .from('safety_alerts')
+            .select(`
+              *,
+              profiles:user_id (full_name, avatar_url)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+          
+          if (data) {
+            setAlerts(prev => [data as any, ...prev]);
+            toast({
+              title: "New Safety Alert",
+              description: `${data.title} - ${data.severity} severity`,
+            });
+          }
+        }
+      )
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'safety_alerts' },
+        (payload) => {
+          console.log('Alert updated:', payload);
+          setAlerts(prev => 
+            prev.map(alert => 
+              alert.id === payload.new.id 
+                ? { ...alert, ...payload.new }
+                : alert
+            )
+          );
         }
       )
       .subscribe();
 
+    // Auto-refresh every 30 seconds if enabled
+    let refreshInterval: NodeJS.Timeout;
+    if (autoRefresh) {
+      refreshInterval = setInterval(() => {
+        fetchAlerts();
+      }, 30000);
+    }
+
     return () => {
-      subscription.unsubscribe();
+      alertsSubscription.unsubscribe();
+      if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [filterSeverity, filterType]);
+  }, [filterSeverity, filterType, filterStatus, autoRefresh, toast]);
 
   const fetchAlerts = async () => {
     setLoading(true);
@@ -124,6 +175,10 @@ const SafetyCenter = () => {
 
       if (filterType !== 'all') {
         query = query.eq('alert_type', filterType as any);
+      }
+
+      if (filterStatus !== 'all') {
+        query = query.eq('status', filterStatus as any);
       }
 
       const { data, error } = await query;
@@ -162,6 +217,25 @@ const SafetyCenter = () => {
       default:
         return <Shield className="h-4 w-4 text-blue-600" />;
     }
+  };
+
+  const handleStatusUpdate = (alertId: string, newStatus: string, note?: string) => {
+    setAlerts(prev => 
+      prev.map(alert => 
+        alert.id === alertId 
+          ? { ...alert, status: newStatus as any, updated_at: new Date().toISOString() }
+          : alert
+      )
+    );
+    
+    if (selectedAlert?.id === alertId) {
+      setSelectedAlert(prev => prev ? { ...prev, status: newStatus as any } : null);
+    }
+
+    toast({
+      title: "Status Updated",
+      description: `Alert status changed to ${newStatus.replace('_', ' ')}`,
+    });
   };
 
   return (
@@ -236,9 +310,17 @@ const SafetyCenter = () => {
             <MapPin className="h-4 w-4 mr-1" />
             Map View
           </Button>
+          <Button
+            variant={viewMode === 'feed' ? 'default' : 'outline'}
+            onClick={() => setViewMode('feed')}
+            size="sm"
+          >
+            <Activity className="h-4 w-4 mr-1" />
+            Live Feed
+          </Button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value)}
@@ -260,6 +342,28 @@ const SafetyCenter = () => {
               <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="investigating">Investigating</option>
+            <option value="resolved">Resolved</option>
+            <option value="false_alarm">False Alarm</option>
+          </select>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto-refresh
+          </Button>
         </div>
       </div>
 
@@ -267,9 +371,43 @@ const SafetyCenter = () => {
       {viewMode === 'map' ? (
         <Card className="h-[600px]">
           <CardContent className="p-0 h-full">
-            <SafetyMap alerts={alerts} onAlertClick={(alert) => setSelectedAlert(alert)} />
+            <SafetyMap alerts={alerts} onAlertClick={(alert) => setSelectedAlert(alert as any)} />
           </CardContent>
         </Card>
+      ) : viewMode === 'feed' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RealTimeAlertFeed 
+              onAlertClick={(alert) => setSelectedAlert(alert as any)} 
+              className="h-[600px]"
+            />
+          </div>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button onClick={fetchAlerts} variant="outline" size="sm" className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Alerts
+                </Button>
+                <Button 
+                  onClick={() => setAutoRefresh(!autoRefresh)} 
+                  variant={autoRefresh ? "default" : "outline"} 
+                  size="sm" 
+                  className="w-full"
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  {autoRefresh ? 'Disable' : 'Enable'} Auto-refresh
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       ) : (
         /* Alert List */
         <div className="space-y-4">
@@ -374,23 +512,60 @@ const SafetyCenter = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="space-y-4">
                 <p>{selectedAlert.description}</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={severityColors[selectedAlert.severity]}>
                     {selectedAlert.severity}
                   </Badge>
                   <Badge variant="outline">
                     {selectedAlert.alert_type.replace('_', ' ')}
                   </Badge>
+                  <Badge variant="outline" className={
+                    selectedAlert.status === 'active' ? 'text-red-600' :
+                    selectedAlert.status === 'investigating' ? 'text-yellow-600' :
+                    selectedAlert.status === 'resolved' ? 'text-green-600' :
+                    'text-gray-600'
+                  }>
+                    {selectedAlert.status.replace('_', ' ')}
+                  </Badge>
+                  {selectedAlert.is_verified && (
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <p>📍 {selectedAlert.address}</p>
-                  <p>🕒 {getTimeSince(selectedAlert.created_at)}</p>
-                  <p>👤 Reported by {selectedAlert.profiles?.full_name || 'Anonymous'}</p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {selectedAlert.address || 'Location not specified'}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Reported {getTimeSince(selectedAlert.created_at)}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {selectedAlert.profiles?.full_name || 'Anonymous'}
+                  </p>
+                  {selectedAlert.updated_at !== selectedAlert.created_at && (
+                    <p className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Updated {getTimeSince(selectedAlert.updated_at)}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Status Management */}
+              <AlertStatusManager
+                alert={selectedAlert}
+                onStatusUpdate={handleStatusUpdate}
+                isOwner={user?.id === selectedAlert.user_id}
+                canModerate={false} // You can add role checking here
+              />
             </CardContent>
           </Card>
         </div>
