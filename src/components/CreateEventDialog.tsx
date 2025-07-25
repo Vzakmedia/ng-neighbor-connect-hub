@@ -1,0 +1,224 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, MapPin, Plus, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+interface CreateEventDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEventCreated?: () => void;
+}
+
+const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDialogProps) => {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [location, setLocation] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [currentTag, setCurrentTag] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleAddTag = () => {
+    if (currentTag.trim() && !tags.includes(currentTag.trim())) {
+      setTags([...tags, currentTag.trim()]);
+      setCurrentTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setLocation('');
+    setTags([]);
+    setCurrentTag('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create an event",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please fill in the title and description",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .insert({
+          user_id: user.id,
+          post_type: 'event',
+          title: title.trim(),
+          content: content.trim(),
+          location: location.trim() || null,
+          tags: tags,
+          image_urls: []
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success!",
+        description: "Your event has been created successfully",
+      });
+
+      resetForm();
+      onOpenChange(false);
+      onEventCreated?.();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Create New Event
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Event Title *</Label>
+            <Input
+              id="title"
+              placeholder="Enter event title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="content">Event Description *</Label>
+            <Textarea
+              id="content"
+              placeholder="Describe your event... Include date, time, and any important details."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="min-h-[100px]"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="location"
+                placeholder="Event location (optional)"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags</Label>
+            <div className="flex gap-2">
+              <Input
+                id="tags"
+                placeholder="Add a tag..."
+                value={currentTag}
+                onChange={(e) => setCurrentTag(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddTag}
+                disabled={!currentTag.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    #{tag}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 ml-1"
+                      onClick={() => handleRemoveTag(tag)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create Event"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CreateEventDialog;
