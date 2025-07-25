@@ -1422,6 +1422,7 @@ export type Database = {
         | "domestic_violence"
         | "other"
         | "kidnapping"
+        | "violence"
       item_category:
         | "electronics"
         | "furniture"
@@ -1601,6 +1602,7 @@ export const Constants = {
         "domestic_violence",
         "other",
         "kidnapping",
+        "violence",
       ],
       item_category: [
         "electronics",
