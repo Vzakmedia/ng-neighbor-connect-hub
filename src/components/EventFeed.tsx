@@ -474,9 +474,9 @@ const EventFeed = () => {
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         postId={selectedEvent?.id || ''}
-        postTitle={selectedEvent?.title}
+        postTitle={selectedEvent?.title || ''}
         postContent={selectedEvent?.content || ''}
-        postAuthor={selectedEvent?.author.name || ''}
+        postAuthor={selectedEvent?.author?.name || ''}
       />
     </div>
   );

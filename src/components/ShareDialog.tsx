@@ -34,7 +34,7 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
   // Generate share URL (in a real app, this would be the actual post URL)
   const shareUrl = `${window.location.origin}/community/post/${postId}`;
   const shareText = postTitle ? `${postTitle} - by ${postAuthor}` : `Post by ${postAuthor}`;
-  const fullShareText = `${shareText}\n\n${postContent.substring(0, 100)}${postContent.length > 100 ? '...' : ''}`;
+  const fullShareText = `${shareText}\n\n${(postContent || '').substring(0, 100)}${(postContent || '').length > 100 ? '...' : ''}`;
 
   const copyToClipboard = async () => {
     try {
