@@ -102,6 +102,13 @@ const CommunityBoards = () => {
   const [currentInviteCode, setCurrentInviteCode] = useState<any>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   
+  // Board editing states
+  const [editingBoard, setEditingBoard] = useState(false);
+  const [editBoardName, setEditBoardName] = useState('');
+  const [editBoardDescription, setEditBoardDescription] = useState('');
+  const [editBoardLocation, setEditBoardLocation] = useState('');
+  const [savingBoardChanges, setSavingBoardChanges] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -820,6 +827,94 @@ const CommunityBoards = () => {
     }
   };
 
+  // Start editing board details
+  const startEditingBoard = () => {
+    if (!currentBoard) return;
+    setEditBoardName(currentBoard.name);
+    setEditBoardDescription(currentBoard.description || '');
+    setEditBoardLocation(currentBoard.location || '');
+    setEditingBoard(true);
+  };
+
+  // Cancel editing board details
+  const cancelEditingBoard = () => {
+    setEditingBoard(false);
+    setEditBoardName('');
+    setEditBoardDescription('');
+    setEditBoardLocation('');
+  };
+
+  // Save board details
+  const saveBoardDetails = async () => {
+    if (!selectedBoard || !currentBoard || !user) return;
+
+    // Check if user has permission
+    if (currentBoard.user_role !== 'admin' && currentBoard.creator_id !== user.id) {
+      toast({
+        title: "Permission denied",
+        description: "You don't have permission to edit board details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate input
+    if (!editBoardName.trim()) {
+      toast({
+        title: "Validation error",
+        description: "Board name cannot be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingBoardChanges(true);
+
+    try {
+      const { error } = await supabase
+        .from('discussion_boards')
+        .update({
+          name: editBoardName.trim(),
+          description: editBoardDescription.trim() || null,
+          location: editBoardLocation.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedBoard);
+
+      if (error) throw error;
+
+      // Update local state
+      setBoards(prev => 
+        prev.map(board => 
+          board.id === selectedBoard 
+            ? { 
+                ...board, 
+                name: editBoardName.trim(),
+                description: editBoardDescription.trim() || null,
+                location: editBoardLocation.trim() || null,
+                updated_at: new Date().toISOString()
+              }
+            : board
+        )
+      );
+
+      setEditingBoard(false);
+      toast({
+        title: "Board updated",
+        description: "Board details have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating board details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update board details.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingBoardChanges(false);
+    }
+  };
+
   // Fetch board members
   const fetchBoardMembers = async () => {
     if (!selectedBoard) return;
@@ -1454,24 +1549,86 @@ const CommunityBoards = () => {
                           <div className="space-y-6">
                             {/* Basic Settings */}
                             <div className="space-y-4">
-                              <h3 className="font-medium text-sm">Basic Information</h3>
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-sm">Basic Information</h3>
+                                {(currentBoard?.user_role === 'admin' || currentBoard?.creator_id === user?.id) && (
+                                  <div className="flex space-x-2">
+                                    {editingBoard ? (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={cancelEditingBoard}
+                                          disabled={savingBoardChanges}
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={saveBoardDetails}
+                                          disabled={savingBoardChanges}
+                                        >
+                                          {savingBoardChanges ? "Saving..." : "Save"}
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={startEditingBoard}
+                                      >
+                                        Edit
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                               <div className="grid gap-4">
                                 <div>
                                   <label className="text-sm font-medium">Board Name</label>
-                                  <Input value={currentBoard?.name || ''} readOnly className="bg-muted" />
+                                  {editingBoard ? (
+                                    <Input 
+                                      value={editBoardName}
+                                      onChange={(e) => setEditBoardName(e.target.value)}
+                                      placeholder="Enter board name..."
+                                      disabled={savingBoardChanges}
+                                    />
+                                  ) : (
+                                    <Input value={currentBoard?.name || ''} readOnly className="bg-muted" />
+                                  )}
                                 </div>
                                 <div>
                                   <label className="text-sm font-medium">Description</label>
-                                  <Textarea 
-                                    value={currentBoard?.description || ''} 
-                                    readOnly 
-                                    className="bg-muted resize-none" 
-                                    rows={3}
-                                  />
+                                  {editingBoard ? (
+                                    <Textarea 
+                                      value={editBoardDescription}
+                                      onChange={(e) => setEditBoardDescription(e.target.value)}
+                                      placeholder="Describe what this board is for..."
+                                      className="resize-none" 
+                                      rows={3}
+                                      disabled={savingBoardChanges}
+                                    />
+                                  ) : (
+                                    <Textarea 
+                                      value={currentBoard?.description || ''} 
+                                      readOnly 
+                                      className="bg-muted resize-none" 
+                                      rows={3}
+                                    />
+                                  )}
                                 </div>
                                 <div>
                                   <label className="text-sm font-medium">Location</label>
-                                  <Input value={currentBoard?.location || 'Global'} readOnly className="bg-muted" />
+                                  {editingBoard ? (
+                                    <Input 
+                                      value={editBoardLocation}
+                                      onChange={(e) => setEditBoardLocation(e.target.value)}
+                                      placeholder="Enter location (optional)"
+                                      disabled={savingBoardChanges}
+                                    />
+                                  ) : (
+                                    <Input value={currentBoard?.location || 'Global'} readOnly className="bg-muted" />
+                                  )}
                                 </div>
                               </div>
                             </div>
