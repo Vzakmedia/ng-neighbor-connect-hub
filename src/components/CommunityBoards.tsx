@@ -1447,119 +1447,65 @@ const CommunityBoards = () => {
             </div>
           ))}
         </ScrollArea>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Create
+        
+        <div className="p-4 border-t">
+          <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-1" />
+                Create Board
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Discussion Board</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Board Name</label>
+                  <Input
+                    value={newBoardName}
+                    onChange={(e) => setNewBoardName(e.target.value)}
+                    placeholder="Enter board name..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    value={newBoardDescription}
+                    onChange={(e) => setNewBoardDescription(e.target.value)}
+                    placeholder="Describe what this board is for..."
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">Public Board</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Allow anyone to discover and join this board
+                    </p>
+                  </div>
+                  <Switch
+                    checked={newBoardIsPublic}
+                    onCheckedChange={setNewBoardIsPublic}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => {
+                    setShowCreateBoard(false);
+                    setNewBoardName('');
+                    setNewBoardDescription('');
+                    setNewBoardIsPublic(true);
+                  }}>
+                    Cancel
                   </Button>
-                </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Discussion Board</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Board Name</label>
-                    <Input
-                      value={newBoardName}
-                      onChange={(e) => setNewBoardName(e.target.value)}
-                      placeholder="Enter board name..."
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Description</label>
-                    <Textarea
-                      value={newBoardDescription}
-                      onChange={(e) => setNewBoardDescription(e.target.value)}
-                      placeholder="Describe what this board is for..."
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label className="text-sm font-medium">Public Board</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Allow anyone to discover and join this board
-                      </p>
-                    </div>
-                    <Switch
-                      checked={newBoardIsPublic}
-                      onCheckedChange={setNewBoardIsPublic}
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => {
-                      setShowCreateBoard(false);
-                      setNewBoardName('');
-                      setNewBoardDescription('');
-                      setNewBoardIsPublic(true);
-                    }}>
-                      Cancel
-                    </Button>
-                    <Button onClick={createBoard} disabled={!newBoardName.trim()}>
-                      Create Board
-                    </Button>
-                  </div>
+                  <Button onClick={createBoard} disabled={!newBoardName.trim()}>
+                    Create Board
+                  </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="Search boards..." 
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-
-        <ScrollArea className="h-[calc(100%-120px)]">
-          {boards
-            .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
-            .map((board) => (
-            <div
-              key={board.id}
-              onClick={() => setSelectedBoard(board.id)}
-              className={`p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
-                selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium text-sm">{board.name}</h3>
-                  {board.user_role === 'admin' && <Crown className="h-3 w-3 text-yellow-500" />}
-                  {board.creator_id === user?.id && <Badge variant="outline" className="text-xs">Owner</Badge>}
-                </div>
-              </div>
-              
-              {board.description && (
-                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{board.description}</p>
-              )}
-              
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center">
-                  <Users className="h-3 w-3 mr-1" />
-                  {board.member_count} members
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  {board.location || 'Global'}
-                </div>
-              </div>
-              
-              <div className="flex items-center mt-2 space-x-2">
-                {board.is_public ? (
-                  <Badge variant="outline" className="text-xs">Public</Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">Private</Badge>
-                )}
-                <Badge variant="outline" className="text-xs">{board.user_role}</Badge>
-              </div>
-            </div>
-          ))}
-        </ScrollArea>
       </div>
 
       {/* Chat Area */}
