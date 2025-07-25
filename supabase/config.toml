@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.emergency-contact-invitation]
 verify_jwt = false
+
+[functions.update-panic-alert-status]
+verify_jwt = true
