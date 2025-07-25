@@ -115,7 +115,7 @@ const SafetyCenter = () => {
             .from('safety_alerts')
             .select(`
               *,
-              profiles:user_id (full_name, avatar_url)
+              profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single();
@@ -165,7 +165,7 @@ const SafetyCenter = () => {
         .from('safety_alerts')
         .select(`
           *,
-          profiles:user_id (full_name, avatar_url)
+          profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
         `)
         .order('created_at', { ascending: false });
 

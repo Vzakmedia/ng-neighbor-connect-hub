@@ -80,7 +80,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
         .from('safety_alerts')
         .select(`
           *,
-          profiles:user_id (full_name, avatar_url)
+          profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
         `)
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
@@ -93,7 +93,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
         .from('alert_responses')
         .select(`
           *,
-          profiles:user_id (full_name, avatar_url)
+          profiles!alert_responses_user_id_fkey (full_name, avatar_url)
         `)
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
@@ -122,7 +122,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
             .from('safety_alerts')
             .select(`
               *,
-              profiles:user_id (full_name, avatar_url)
+              profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single();
@@ -170,7 +170,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
             .from('alert_responses')
             .select(`
               *,
-              profiles:user_id (full_name, avatar_url)
+              profiles!alert_responses_user_id_fkey (full_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single();
