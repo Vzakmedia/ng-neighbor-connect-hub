@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import { LocationSelector } from "./LocationSelector";
+import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({

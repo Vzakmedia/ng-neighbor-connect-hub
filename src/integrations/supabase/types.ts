@@ -920,6 +920,30 @@ export type Database = {
         }
         Relationships: []
       }
+      panic_button_rate_limit: {
+        Row: {
+          created_at: string
+          id: string
+          last_panic_at: string
+          panic_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_panic_at?: string
+          panic_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_panic_at?: string
+          panic_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           content: string

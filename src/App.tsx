@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import EmergencyNotification from "@/components/EmergencyNotification";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
+import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -36,6 +37,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <SecurityHeaders />
         <TooltipProvider>
           <Toaster />
           <Sonner />

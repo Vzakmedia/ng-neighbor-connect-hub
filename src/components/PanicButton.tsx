@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { checkPanicButtonRateLimit, updatePanicButtonRateLimit, validateEmergencyLocation, sanitizeText } from '@/utils/security';
 
 const PanicButton = () => {
   const { user } = useAuth();
@@ -114,12 +115,33 @@ const PanicButton = () => {
       return;
     }
 
+    // Check rate limiting
+    const canTrigger = await checkPanicButtonRateLimit(user.id);
+    if (!canTrigger) {
+      toast({
+        title: "Rate Limit Exceeded",
+        description: "You can only trigger 3 panic alerts per hour. Please wait before trying again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
       // Get current location
       const location = await getCurrentLocation();
+      
+      // Validate location data
+      validateEmergencyLocation({
+        lat: location.latitude,
+        lng: location.longitude
+      });
+      
       const address = await reverseGeocode(location.latitude, location.longitude);
+      
+      // Update rate limiting
+      await updatePanicButtonRateLimit(user.id);
 
       // Get user profile for name
       const { data: profile } = await supabase
@@ -128,21 +150,25 @@ const PanicButton = () => {
         .eq('user_id', user.id)
         .single();
 
-      const userName = profile?.full_name || 'Someone';
+       const userName = profile?.full_name || 'Someone';
 
-      // Create panic alert in database
-      const { data: panicData, error: panicError } = await supabase
-        .from('panic_alerts')
-        .insert({
-          user_id: user.id,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          address,
-          message: `Emergency assistance requested - ${selectedSituation}`,
-          situation_type: selectedSituation
-        })
-        .select()
-        .single();
+       // Sanitize inputs
+       const sanitizedMessage = sanitizeText(`Emergency assistance requested - ${selectedSituation}`);
+       const sanitizedAddress = sanitizeText(address);
+
+       // Create panic alert in database
+       const { data: panicData, error: panicError } = await supabase
+         .from('panic_alerts')
+         .insert({
+           user_id: user.id,
+           latitude: location.latitude,
+           longitude: location.longitude,
+           address: sanitizedAddress,
+           message: sanitizedMessage,
+           situation_type: selectedSituation
+         })
+         .select()
+         .single();
 
       if (panicError) throw panicError;
 
