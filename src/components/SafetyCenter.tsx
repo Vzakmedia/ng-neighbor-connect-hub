@@ -457,15 +457,6 @@ const SafetyCenter = () => {
             <option value="false_alarm">False Alarm</option>
           </select>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={autoRefresh ? 'bg-green-50 border-green-200' : ''}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} />
-            Auto-refresh
-          </Button>
         </div>
       </div>
 
