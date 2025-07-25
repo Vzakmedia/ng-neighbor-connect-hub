@@ -920,7 +920,7 @@ const CommunityBoards = () => {
     if (!selectedBoard) return;
 
     try {
-      // First get board members
+      // First get board members from board_members table
       const { data: membersData, error: membersError } = await supabase
         .from('board_members')
         .select('user_id, role, joined_at')
@@ -929,33 +929,81 @@ const CommunityBoards = () => {
 
       if (membersError) throw membersError;
 
-      if (!membersData || membersData.length === 0) {
+      // Get board creator info
+      const { data: boardData, error: boardError } = await supabase
+        .from('discussion_boards')
+        .select('creator_id, created_at')
+        .eq('id', selectedBoard)
+        .single();
+
+      if (boardError) {
+        console.error('Error fetching board info:', boardError);
+      }
+
+      // Collect all unique user IDs (board members + creator)
+      const memberUserIds = membersData?.map(member => member.user_id) || [];
+      const allUserIds = new Set(memberUserIds);
+      
+      // Add creator if not already in members list
+      if (boardData?.creator_id) {
+        allUserIds.add(boardData.creator_id);
+      }
+
+      if (allUserIds.size === 0) {
         setBoardMembers([]);
         return;
       }
 
-      // Get user profiles for all members
-      const userIds = membersData.map(member => member.user_id);
+      // Get user profiles for all unique users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, avatar_url, neighborhood, city, state')
-        .in('user_id', userIds);
+        .in('user_id', Array.from(allUserIds));
 
       if (profilesError) {
         console.error('Error fetching member profiles:', profilesError);
       }
 
-      // Combine member data with profiles
+      // Create profiles map for easy lookup
       const profilesMap = new Map(
         (profilesData || []).map(profile => [profile.user_id, profile])
       );
 
-      const membersWithProfiles = membersData.map(member => ({
-        ...member,
-        profiles: profilesMap.get(member.user_id) || null
-      }));
+      // Build complete members list
+      const allMembers = [];
 
-      setBoardMembers(membersWithProfiles);
+      // Add board creator first (if not already in members table)
+      if (boardData?.creator_id) {
+        const creatorInMembers = membersData?.find(m => m.user_id === boardData.creator_id);
+        if (!creatorInMembers) {
+          allMembers.push({
+            user_id: boardData.creator_id,
+            role: 'creator',
+            joined_at: boardData.created_at,
+            profiles: profilesMap.get(boardData.creator_id) || null
+          });
+        }
+      }
+
+      // Add all other board members
+      if (membersData) {
+        const membersWithProfiles = membersData.map(member => ({
+          ...member,
+          // If this member is the creator, mark them as creator role
+          role: member.user_id === boardData?.creator_id ? 'creator' : member.role,
+          profiles: profilesMap.get(member.user_id) || null
+        }));
+        allMembers.push(...membersWithProfiles);
+      }
+
+      // Sort by join date (creator first, then by joined_at)
+      allMembers.sort((a, b) => {
+        if (a.role === 'creator' && b.role !== 'creator') return -1;
+        if (b.role === 'creator' && a.role !== 'creator') return 1;
+        return new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime();
+      });
+
+      setBoardMembers(allMembers);
       generateInviteLink();
     } catch (error) {
       console.error('Error fetching board members:', error);
@@ -1292,7 +1340,7 @@ const CommunityBoards = () => {
                           <div className="space-y-3">
                             {/* All members list */}
                             {boardMembers.map((member) => {
-                              const isCreator = member.user_id === currentBoard?.creator_id;
+                              const isCreator = member.role === 'creator' || member.user_id === currentBoard?.creator_id;
                               const isAdmin = member.role === 'admin';
                               const isModerator = member.role === 'moderator';
                               
@@ -1326,7 +1374,7 @@ const CommunityBoards = () => {
                                           <Badge variant="outline" className="text-xs">Member</Badge>
                                         )}
                                         <span className="text-xs text-muted-foreground">
-                                          Joined {new Date(member.joined_at).toLocaleDateString()}
+                                          {isCreator ? 'Created' : 'Joined'} {new Date(member.joined_at).toLocaleDateString()}
                                         </span>
                                       </div>
                                     </div>
