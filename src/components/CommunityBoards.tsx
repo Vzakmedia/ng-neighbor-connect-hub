@@ -312,6 +312,7 @@ const CommunityBoards = () => {
 
   // Fetch public boards in user's location
   const fetchPublicBoards = async () => {
+    console.log('fetchPublicBoards called', { userId: user?.id });
     if (!user?.id) return;
 
     try {
@@ -378,6 +379,7 @@ const CommunityBoards = () => {
       }));
 
       setPublicBoards(transformedBoards as DiscussionBoard[]);
+      console.log('Public boards loaded:', transformedBoards.length, transformedBoards);
     } catch (error) {
       console.error('Error fetching public boards:', error);
     }
@@ -1355,7 +1357,14 @@ const CommunityBoards = () => {
             <div className="flex space-x-2">
               <Dialog open={showDiscoverBoards} onOpenChange={setShowDiscoverBoards}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      console.log('Discover button clicked');
+                      fetchPublicBoards();
+                    }}
+                  >
                     <Globe className="h-4 w-4 mr-1" />
                     Discover
                   </Button>
