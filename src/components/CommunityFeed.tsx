@@ -683,74 +683,83 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                 </div>
               </CardHeader>
               
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 px-3 md:px-6">
                 {post.title && (
-                  <h3 className="font-semibold text-base mb-2">{post.title}</h3>
+                  <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
                 )}
-                <p className="text-sm leading-relaxed mb-4">{post.content}</p>
+                <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
                 
                 {/* Display tags if any */}
                 {post.tags && post.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {post.tags.map((tag, index) => (
+                  <div className="flex flex-wrap gap-1 md:gap-2 mb-3">
+                    {post.tags.slice(0, 3).map((tag, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         #{tag}
                       </Badge>
                     ))}
+                    {post.tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{post.tags.length - 3} more
+                      </Badge>
+                    )}
                   </div>
                 )}
                 
                 {/* Display images if any */}
                 {post.images && post.images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className={`grid gap-1 md:gap-2 mb-3 md:mb-4 ${
+                    post.images.length === 1 ? 'grid-cols-1' : 
+                    post.images.length === 2 ? 'grid-cols-2' : 
+                    'grid-cols-2'
+                  }`}>
                     {post.images.slice(0, 4).map((imageUrl, index) => (
                       <img
                         key={index}
                         src={imageUrl}
                         alt="Post image"
-                        className="w-full h-32 object-cover rounded-md"
+                        className="w-full h-24 md:h-32 object-cover rounded-md"
                       />
                     ))}
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-between pt-2 md:pt-3 border-t">
+                  <div className="flex items-center gap-2 md:gap-4">
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleLike(post.id)}
-                      className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+                      className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive px-2 md:px-3 h-8 md:h-9`}
                     >
-                      <Heart className={`h-4 w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
-                      {post.likes}
+                      <Heart className={`h-3 w-3 md:h-4 md:w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
+                      <span className="text-xs md:text-sm">{post.likes}</span>
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleComments(post.id)}
-                      className="text-muted-foreground hover:text-primary"
+                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
                     >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      {post.comments}
+                      <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                      <span className="text-xs md:text-sm">{post.comments}</span>
                     </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-1 md:gap-2">
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleSave(post.id)}
-                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary`}
+                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
                     >
-                      <Bookmark className={`h-4 w-4 ${post.isSaved ? 'fill-current' : ''}`} />
+                      <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
                     </Button>
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       onClick={() => handleShare(post)}
-                      className="text-muted-foreground hover:text-primary"
+                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
                     >
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </div>
                 </div>

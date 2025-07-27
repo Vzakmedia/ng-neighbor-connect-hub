@@ -2195,9 +2195,9 @@ const CommunityBoards = () => {
             </ScrollArea>
 
             {/* Message Input */}
-            <div className="p-4 border-t bg-card">
-              <div className="flex space-x-3">
-                <Avatar className="h-8 w-8 shrink-0">
+            <div className="p-3 md:p-4 border-t bg-card">
+              <div className="flex gap-2 md:gap-3">
+                <Avatar className="h-6 w-6 md:h-8 md:w-8 shrink-0">
                   <AvatarImage src={profile?.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
                     {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -2230,7 +2230,7 @@ const CommunityBoards = () => {
                     </div>
                   )}
                   
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <Textarea
                       ref={setTextareaRef}
                       placeholder={`Message ${currentBoard?.name}...`}
@@ -2239,7 +2239,7 @@ const CommunityBoards = () => {
                         setNewMessage(e.target.value);
                         handleMentionInput(e.target.value, e.target.selectionStart);
                       }}
-                      className="min-h-[60px] resize-none"
+                      className="min-h-[50px] md:min-h-[60px] resize-none text-sm"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -2247,12 +2247,12 @@ const CommunityBoards = () => {
                         }
                       }}
                     />
-                    <Button 
+                    <Button
                       onClick={() => sendPost()}
                       disabled={!newMessage.trim()}
-                      className="px-4"
+                      className="px-3 md:px-4 h-12 md:h-auto"
                     >
-                      <Send className="h-4 w-4" />
+                      <Send className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </div>
                   
