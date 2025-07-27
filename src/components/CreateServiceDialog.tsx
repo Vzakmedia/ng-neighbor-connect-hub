@@ -35,6 +35,7 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
     category: '',
     price_min: '',
     price_max: '',
+    price_type: 'hourly',
     location: '',
     is_active: true
   });
@@ -146,6 +147,7 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
           category: formData.category as any,
           price_min: formData.price_min ? parseInt(formData.price_min) : null,
           price_max: formData.price_max ? parseInt(formData.price_max) : null,
+          price_type: formData.price_type,
           location: formData.location,
           is_active: formData.is_active,
           images: galleryImages
@@ -189,6 +191,7 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
         category: '',
         price_min: '',
         price_max: '',
+        price_type: 'hourly',
         location: '',
         is_active: true
       });
@@ -285,6 +288,25 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
                 onChange={(e) => setFormData(prev => ({ ...prev, price_max: e.target.value }))}
                 placeholder="0"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price_type">Pricing Type</Label>
+              <Select
+                value={formData.price_type}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, price_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pricing type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hourly">Per Hour</SelectItem>
+                  <SelectItem value="daily">Per Day</SelectItem>
+                  <SelectItem value="weekly">Per Week</SelectItem>
+                  <SelectItem value="monthly">Per Month</SelectItem>
+                  <SelectItem value="project">Per Project</SelectItem>
+                  <SelectItem value="fixed">Fixed Rate</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

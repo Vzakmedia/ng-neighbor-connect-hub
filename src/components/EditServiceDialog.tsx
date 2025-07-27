@@ -19,6 +19,7 @@ interface Service {
   category: string;
   price_min: number | null;
   price_max: number | null;
+  price_type: string | null;
   location: string | null;
   is_active: boolean;
   images: string[];
@@ -42,6 +43,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
     category: service.category,
     price_min: service.price_min?.toString() || '',
     price_max: service.price_max?.toString() || '',
+    price_type: service.price_type || 'hourly',
     location: service.location || '',
     is_active: service.is_active
   });
@@ -61,6 +63,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
         category: service.category,
         price_min: service.price_min?.toString() || '',
         price_max: service.price_max?.toString() || '',
+        price_type: service.price_type || 'hourly',
         location: service.location || '',
         is_active: service.is_active
       });
@@ -154,6 +157,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
           category: formData.category as any,
           price_min: formData.price_min ? parseInt(formData.price_min) : null,
           price_max: formData.price_max ? parseInt(formData.price_max) : null,
+          price_type: formData.price_type,
           location: formData.location || null,
           is_active: formData.is_active,
           images: galleryImages,
@@ -260,14 +264,34 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Service area"
-              />
+              <Label htmlFor="price_type">Pricing Type</Label>
+              <Select
+                value={formData.price_type}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, price_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pricing type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hourly">Per Hour</SelectItem>
+                  <SelectItem value="daily">Per Day</SelectItem>
+                  <SelectItem value="weekly">Per Week</SelectItem>
+                  <SelectItem value="monthly">Per Month</SelectItem>
+                  <SelectItem value="project">Per Project</SelectItem>
+                  <SelectItem value="fixed">Fixed Rate</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              placeholder="Service area"
+            />
           </div>
 
           {/* Gallery Section */}

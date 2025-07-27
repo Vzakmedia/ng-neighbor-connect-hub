@@ -20,6 +20,7 @@ interface Service {
   category: string;
   price_min: number | null;
   price_max: number | null;
+  price_type: string | null;
   location: string | null;
   is_active: boolean;
   rating: number | null;
@@ -429,6 +430,9 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                   {(service.price_min || service.price_max) && (
                     <div className="text-lg font-semibold mb-2">
                       ₦{service.price_min || 0} - ₦{service.price_max || 0}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{service.price_type || 'hourly'}
+                      </span>
                     </div>
                   )}
 
