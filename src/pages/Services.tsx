@@ -1,21 +1,25 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Users, Calendar, Plus } from 'lucide-react';
+import CreateServiceDialog from '@/components/CreateServiceDialog';
+import ServicesList from '@/components/ServicesList';
 
 const Services = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  const handleServiceCreated = () => {
+    setRefreshTrigger(prev => !prev);
+  };
 
   if (loading) {
     return (
@@ -38,27 +42,10 @@ const Services = () => {
         <div className="container py-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">Services</h1>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Offer Service
-            </Button>
+            <CreateServiceDialog onServiceCreated={handleServiceCreated} />
           </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Local Services
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="mb-4">No services available yet</p>
-                <Button variant="outline">Browse Marketplace for Services</Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ServicesList onRefresh={refreshTrigger} />
         </div>
       </main>
     </div>
