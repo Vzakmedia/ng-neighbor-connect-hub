@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Camera, X } from 'lucide-react';
 
@@ -23,11 +24,11 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [availabilitySlots, setAvailabilitySlots] = useState<Array<{
-    date: string;
-    startTime: string;
-    endTime: string;
-    maxBookings: number;
+  const [weeklyAvailability, setWeeklyAvailability] = useState<Array<{
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    max_bookings: number;
   }>>([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -39,6 +40,16 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
     location: '',
     is_active: true
   });
+
+  const DAYS_OF_WEEK = [
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+    { value: 0, label: 'Sunday' },
+  ];
 
   const categories = [
     'home_repair', 'tutoring', 'pet_sitting', 'cleaning', 'gardening', 
@@ -112,24 +123,30 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
     }
   };
 
-  const addAvailabilitySlot = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setAvailabilitySlots(prev => [...prev, {
-      date: today,
-      startTime: '09:00',
-      endTime: '17:00',
-      maxBookings: 1
-    }]);
+  const handleDayToggle = (dayOfWeek: number, checked: boolean) => {
+    if (checked) {
+      // Add default availability for this day
+      const newAvailability = {
+        day_of_week: dayOfWeek,
+        start_time: '09:00',
+        end_time: '17:00',
+        max_bookings: 1,
+      };
+      setWeeklyAvailability(prev => [...prev, newAvailability]);
+    } else {
+      // Remove availability for this day
+      setWeeklyAvailability(prev => prev.filter(item => item.day_of_week !== dayOfWeek));
+    }
   };
 
-  const removeAvailabilitySlot = (index: number) => {
-    setAvailabilitySlots(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updateAvailabilitySlot = (index: number, field: string, value: string | number) => {
-    setAvailabilitySlots(prev => prev.map((slot, i) => 
-      i === index ? { ...slot, [field]: value } : slot
-    ));
+  const updateAvailability = (dayOfWeek: number, field: string, value: any) => {
+    setWeeklyAvailability(prev => 
+      prev.map(item => 
+        item.day_of_week === dayOfWeek 
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -157,24 +174,24 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
 
       if (serviceError) throw serviceError;
 
-      // Create availability slots if any
-      if (availabilitySlots.length > 0 && serviceData) {
-        const availabilityData = availabilitySlots.map(slot => ({
+      // Create weekly availability if any
+      if (weeklyAvailability.length > 0 && serviceData) {
+        const availabilityData = weeklyAvailability.map(slot => ({
           service_id: serviceData.id,
           user_id: user.id,
-          date: slot.date,
-          start_time: slot.startTime,
-          end_time: slot.endTime,
-          max_bookings: slot.maxBookings,
+          day_of_week: slot.day_of_week,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          max_bookings: slot.max_bookings,
           is_available: true
         }));
 
         const { error: availabilityError } = await supabase
-          .from('service_availability')
+          .from('service_weekly_availability')
           .insert(availabilityData);
 
         if (availabilityError) {
-          console.error('Error creating availability:', availabilityError);
+          console.error('Error creating weekly availability:', availabilityError);
           // Don't fail the whole operation if availability fails
         }
       }
@@ -196,7 +213,7 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
         is_active: true
       });
       setGalleryImages([]);
-      setAvailabilitySlots([]);
+      setWeeklyAvailability([]);
       setOpen(false);
       onServiceCreated();
     } catch (error) {
@@ -403,79 +420,73 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
             </p>
           </div>
 
-          {/* Availability Section */}
+          {/* Weekly Availability Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Service Availability</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addAvailabilitySlot}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Time Slot
-              </Button>
+              <Label className="text-base font-semibold">Weekly Availability</Label>
+              <p className="text-sm text-muted-foreground">
+                Set your weekly schedule
+              </p>
             </div>
 
-            {availabilitySlots.map((slot, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div className="space-y-2">
-                      <Label>Date</Label>
-                      <Input
-                        type="date"
-                        value={slot.date}
-                        onChange={(e) => updateAvailabilitySlot(index, 'date', e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
+            <div className="space-y-3">
+              {DAYS_OF_WEEK.map((day) => {
+                const dayAvailability = weeklyAvailability.find(item => item.day_of_week === day.value);
+                const isSelected = !!dayAvailability;
+                
+                return (
+                  <div key={day.value} className="space-y-2 p-3 border rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${day.value}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleDayToggle(day.value, checked as boolean)}
                       />
+                      <Label htmlFor={`day-${day.value}`} className="font-medium">
+                        {day.label}
+                      </Label>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Start Time</Label>
-                      <Input
-                        type="time"
-                        value={slot.startTime}
-                        onChange={(e) => updateAvailabilitySlot(index, 'startTime', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>End Time</Label>
-                      <Input
-                        type="time"
-                        value={slot.endTime}
-                        onChange={(e) => updateAvailabilitySlot(index, 'endTime', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Bookings</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={slot.maxBookings}
-                          onChange={(e) => updateAvailabilitySlot(index, 'maxBookings', parseInt(e.target.value) || 1)}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeAvailabilitySlot(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                    
+                    {isSelected && dayAvailability && (
+                      <div className="ml-6 grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Start Time</Label>
+                          <Input
+                            type="time"
+                            value={dayAvailability.start_time}
+                            onChange={(e) => updateAvailability(day.value, 'start_time', e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">End Time</Label>
+                          <Input
+                            type="time"
+                            value={dayAvailability.end_time}
+                            onChange={(e) => updateAvailability(day.value, 'end_time', e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Max Bookings</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={dayAvailability.max_bookings}
+                            onChange={(e) => updateAvailability(day.value, 'max_bookings', parseInt(e.target.value))}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                );
+              })}
+            </div>
 
-            {availabilitySlots.length === 0 && (
+            {weeklyAvailability.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No availability set. Add time slots to let customers know when your service is available.
+                No availability set. Select days to let customers know when your service is available.
               </p>
             )}
           </div>
