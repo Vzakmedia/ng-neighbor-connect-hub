@@ -244,6 +244,7 @@ const Marketplace = () => {
   };
 
   const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
+  const currentItems = activeTab === 'services' ? services : items;
 
   const handleMessageUser = async (sellerId: string) => {
     if (!user) {
@@ -534,7 +535,7 @@ const Marketplace = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(activeTab === 'services' ? services : items).map((item) => (
+          {currentItems.map((item) => (
             <Card key={item.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
                <CardContent className="p-0">
                   {/* Image Carousel */}
@@ -715,7 +716,7 @@ const Marketplace = () => {
       )}
 
       {/* Empty State */}
-      {!loading && (activeTab === 'services' ? services : items).length === 0 && (
+      {!loading && currentItems.length === 0 && (
         <div className="text-center py-12">
           <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             {activeTab === 'services' ? (
