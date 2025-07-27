@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search,
@@ -305,35 +306,72 @@ const Marketplace = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentItems.map((item) => (
             <Card key={item.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-0">
-                {/* Image */}
-                <div className="relative h-48 bg-muted rounded-t-lg overflow-hidden">
-                  {item.images && item.images.length > 0 ? (
-                    <img
-                      src={item.images[0]}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      {activeTab === 'services' ? (
-                        <Users className="h-12 w-12 text-muted-foreground" />
-                      ) : (
-                        <ShoppingBag className="h-12 w-12 text-muted-foreground" />
-                      )}
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="secondary" className="bg-white/90">
-                      {getCategoryIcon(item.category, activeTab) && (
-                        React.createElement(getCategoryIcon(item.category, activeTab), {
-                          className: "h-3 w-3 mr-1"
-                        })
-                      )}
-                      {item.category.replace('_', ' ')}
-                    </Badge>
-                  </div>
-                </div>
+               <CardContent className="p-0">
+                 {/* Image Carousel */}
+                 <div className="relative h-48 bg-muted rounded-t-lg overflow-hidden">
+                   {item.images && item.images.length > 0 ? (
+                     <Carousel className="w-full h-full">
+                       <CarouselContent className="h-full">
+                         {item.images.map((imageUrl, index) => (
+                           <CarouselItem key={index} className="h-full">
+                             <img
+                               src={imageUrl}
+                               alt={`${item.title} ${index + 1}`}
+                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                             />
+                           </CarouselItem>
+                         ))}
+                       </CarouselContent>
+                       {item.images.length > 1 && (
+                         <>
+                           <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white border-0 shadow-md" />
+                           <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white border-0 shadow-md" />
+                         </>
+                       )}
+                       {/* Image indicator dots */}
+                       {item.images.length > 1 && (
+                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                           {item.images.map((_, index) => (
+                             <div
+                               key={index}
+                               className="w-2 h-2 rounded-full bg-white/60"
+                             />
+                           ))}
+                         </div>
+                       )}
+                     </Carousel>
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center bg-muted">
+                       {activeTab === 'services' ? (
+                         <Users className="h-12 w-12 text-muted-foreground" />
+                       ) : (
+                         <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                       )}
+                     </div>
+                   )}
+                   
+                   {/* Category badge */}
+                   <div className="absolute top-2 right-2">
+                     <Badge variant="secondary" className="bg-white/90">
+                       {getCategoryIcon(item.category, activeTab) && (
+                         React.createElement(getCategoryIcon(item.category, activeTab), {
+                           className: "h-3 w-3 mr-1"
+                         })
+                       )}
+                       {item.category.replace('_', ' ')}
+                     </Badge>
+                   </div>
+                   
+                   {/* Image count badge */}
+                   {item.images && item.images.length > 1 && (
+                     <div className="absolute top-2 left-2">
+                       <Badge variant="secondary" className="bg-black/60 text-white text-xs">
+                         <Camera className="h-3 w-3 mr-1" />
+                         {item.images.length}
+                       </Badge>
+                     </div>
+                   )}
+                 </div>
 
                 {/* Content */}
                 <div className="p-4">
