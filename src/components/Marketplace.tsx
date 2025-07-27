@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import BookServiceDialog from './BookServiceDialog';
 
 interface Service {
   id: string;
@@ -41,6 +42,9 @@ interface Service {
   rating: number;
   total_reviews: number;
   user_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
   profiles: {
     full_name: string;
     avatar_url?: string;
@@ -74,6 +78,11 @@ const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
 
+  const handleServiceBooked = () => {
+    // Refresh services after booking
+    fetchServices();
+  };
+
   const serviceCategories = [
     { value: 'all', label: 'All Services', icon: Users },
     { value: 'home_repair', label: 'Home Repair', icon: Wrench },
@@ -106,10 +115,7 @@ const Marketplace = () => {
     try {
       let query = supabase
         .from('services')
-        .select(`
-          *,
-          profiles:user_id (full_name, avatar_url)
-        `)
+        .select('*')
         .eq('is_active', true);
 
       if (selectedCategory !== 'all') {
@@ -123,7 +129,24 @@ const Marketplace = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      setServices((data as any) || []);
+
+      // Fetch profiles separately for each service
+      const servicesWithProfiles = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', service.user_id)
+            .single();
+
+          return {
+            ...service,
+            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+          };
+        })
+      );
+
+      setServices(servicesWithProfiles as any || []);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -371,10 +394,21 @@ const Marketplace = () => {
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-4">
                     {activeTab === 'services' ? (
-                      <Button className="flex-1 h-8 text-xs">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        Book Now
-                      </Button>
+                      user?.id !== item.user_id ? (
+                        <BookServiceDialog 
+                          service={item as Service} 
+                          onBookingCreated={handleServiceBooked}
+                        >
+                          <Button className="flex-1 h-8 text-xs">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Book Now
+                          </Button>
+                        </BookServiceDialog>
+                      ) : (
+                        <Button variant="outline" className="flex-1 h-8 text-xs" disabled>
+                          Your Service
+                        </Button>
+                      )
                     ) : (
                       <Button className="flex-1 h-8 text-xs">
                         <MessageSquare className="h-3 w-3 mr-1" />
