@@ -58,10 +58,10 @@ interface Event {
   likes: number;
   comments: number;
   images?: string[];
-  tags?: string[];
+  tags: string[];
   isLiked: boolean;
   isSaved: boolean;
-  rsvp_enabled?: boolean;
+  rsvp_enabled: boolean;
   // Additional properties for ViewEventDialog compatibility
   location: string;
   created_at: string;
