@@ -53,10 +53,10 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [enableCalendarSync, setEnableCalendarSync] = useState(false);
 
-  // Fetch available dates when dialog opens
+  // Fetch weekly availability when dialog opens
   useEffect(() => {
     if (open) {
-      fetchAvailableDates();
+      fetchWeeklyAvailability();
     }
   }, [open, service.id]);
 
@@ -70,21 +70,35 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
     }
   }, [bookingDate, service.id]);
 
-  const fetchAvailableDates = async () => {
+  const fetchWeeklyAvailability = async () => {
     try {
       const { data, error } = await supabase
-        .from('service_availability')
-        .select('date')
+        .from('service_weekly_availability')
+        .select('*')
         .eq('service_id', service.id)
-        .eq('is_available', true)
-        .gte('date', new Date().toISOString().split('T')[0]);
+        .eq('is_available', true);
 
       if (error) throw error;
 
-      const dates = (data || []).map(item => new Date(item.date));
+      // Calculate available dates for the next 30 days based on weekly patterns
+      const today = new Date();
+      const availableDatesSet = new Set();
+      
+      for (let i = 0; i < 30; i++) {
+        const currentDate = new Date(today);
+        currentDate.setDate(today.getDate() + i);
+        const dayOfWeek = currentDate.getDay();
+        
+        const hasAvailability = (data || []).some(slot => slot.day_of_week === dayOfWeek);
+        if (hasAvailability) {
+          availableDatesSet.add(currentDate.toDateString());
+        }
+      }
+
+      const dates = Array.from(availableDatesSet).map(dateStr => new Date(dateStr as string));
       setAvailableDates(dates);
     } catch (error) {
-      console.error('Error fetching available dates:', error);
+      console.error('Error fetching weekly availability:', error);
     }
   };
 
@@ -92,18 +106,51 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
     if (!bookingDate) return;
 
     try {
-      const dateStr = bookingDate.toISOString().split('T')[0];
+      const dayOfWeek = bookingDate.getDay();
       const { data, error } = await supabase
-        .from('service_availability')
+        .from('service_weekly_availability')
         .select('*')
         .eq('service_id', service.id)
-        .eq('date', dateStr)
+        .eq('day_of_week', dayOfWeek)
         .eq('is_available', true);
 
       if (error) throw error;
       
+      // Convert weekly availability to available slots for this specific date
+      const slots = (data || []).map(slot => ({
+        id: `${slot.id}-${bookingDate.toISOString().split('T')[0]}`,
+        date: bookingDate.toISOString().split('T')[0],
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        max_bookings: slot.max_bookings,
+        current_bookings: 0, // We'll need to check existing bookings
+      }));
+
+      // Check existing bookings for this date and update current_bookings
+      if (slots.length > 0) {
+        const dateStr = bookingDate.toISOString().split('T')[0];
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('service_bookings')
+          .select('booking_date')
+          .eq('service_id', service.id)
+          .gte('booking_date', `${dateStr}T00:00:00`)
+          .lt('booking_date', `${dateStr}T23:59:59`)
+          .neq('status', 'cancelled');
+
+        if (!bookingsError && bookingsData) {
+          // Count bookings for each time slot
+          slots.forEach(slot => {
+            const bookingCount = bookingsData.filter(booking => {
+              const bookingTime = new Date(booking.booking_date).toTimeString().slice(0, 5);
+              return bookingTime === slot.start_time;
+            }).length;
+            slot.current_bookings = bookingCount;
+          });
+        }
+      }
+
       // Filter slots where current_bookings < max_bookings
-      const availableSlots = (data || []).filter(slot => slot.current_bookings < slot.max_bookings);
+      const availableSlots = slots.filter(slot => slot.current_bookings < slot.max_bookings);
       setAvailableSlots(availableSlots);
     } catch (error) {
       console.error('Error fetching available slots:', error);
@@ -139,15 +186,8 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
 
       if (bookingError) throw bookingError;
 
-      // Update the availability slot booking count
-      const { error: updateError } = await supabase
-        .from('service_availability')
-        .update({ 
-          current_bookings: slot.current_bookings + 1 
-        })
-        .eq('id', selectedSlot);
-
-      if (updateError) throw updateError;
+      // Note: We don't need to update booking count in weekly availability table
+      // since current_bookings is calculated dynamically from service_bookings table
 
       // Sync to Google Calendar if enabled
       if (enableCalendarSync) {
