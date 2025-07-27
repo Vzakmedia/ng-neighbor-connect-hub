@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Bell, Search, Menu, MapPin, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -115,6 +116,8 @@ const Header = () => {
               <span>{getLocation()}</span>
             </div>
             
+            <ThemeToggle />
+            
             <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationClick}>
               <Bell className="h-5 w-5" />
               {notificationCount > 0 && (
@@ -182,6 +185,8 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="relative h-8 w-8">
               <Search className="h-4 w-4" />
             </Button>
+            
+            <ThemeToggle />
             
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleNotificationClick}>
               <Bell className="h-4 w-4" />
