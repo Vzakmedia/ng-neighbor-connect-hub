@@ -35,9 +35,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingLocation, setLoadingLocation] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [watchId, setWatchId] = useState<number | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,156 +69,13 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     }
   };
 
-  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
-        { 
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-          }
-        }
-      );
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Construct a readable address from available data
-      const addressParts = [
-        data.locality || data.city || data.principalSubdivision,
-        data.principalSubdivision || data.countryName
-      ].filter(Boolean);
-      
-      if (addressParts.length > 0) {
-        return addressParts.join(', ');
-      }
-      
-      // If we have display_name, use that
-      if (data.display_name) {
-        return data.display_name;
-      }
-      
-      // Last resort - return a generic location description
-      return "Current Location";
-    } catch (error) {
-      console.error('Reverse geocoding failed:', error);
-      return "Current Location";
-    }
-  };
-
-  const handleUseMyLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Error",
-        description: "Geolocation is not supported by this browser",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoadingLocation(true);
-
-    // Start watching position for real-time updates
-    const id = navigator.geolocation.watchPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const address = await reverseGeocode(latitude, longitude);
-          setLocation(address);
-          
-          toast({
-            title: "Location updated",
-            description: "Your address is being tracked in real-time",
-          });
-          
-          setLoadingLocation(false);
-        } catch (error) {
-          console.error('Error getting location:', error);
-          toast({
-            title: "Error",
-            description: "Failed to get location details",
-            variant: "destructive",
-          });
-          setLoadingLocation(false);
-        }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        let message = "Failed to get your location";
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            message = "Location access denied. Please enable location access.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            message = "Location information unavailable.";
-            break;
-          case error.TIMEOUT:
-            message = "Location request timed out.";
-            break;
-        }
-
-        toast({
-          title: "Error",
-          description: message,
-          variant: "destructive",
-        });
-        setLoadingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000
-      }
-    );
-
-    setWatchId(id);
-  };
-
-  const stopLocationTracking = () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-      toast({
-        title: "Location tracking stopped",
-        description: "Real-time location updates have been disabled",
-      });
-    }
-  };
-
-  const handleLocationConfirm = (confirmedLocation: string) => {
+  const handleLocationConfirm = (confirmedLocation: string, coords: { lat: number; lng: number }) => {
     setLocation(confirmedLocation);
-    // Stop real-time tracking since user has confirmed a specific location
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-    }
   };
 
-  // Cleanup watch position when component unmounts or dialog closes
-  useEffect(() => {
-    return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-    };
-  }, [watchId]);
-
-  useEffect(() => {
-    if (!open && watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-    }
-  }, [open, watchId]);
+  const openLocationPicker = () => {
+    setShowLocationPicker(true);
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -229,11 +84,6 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setTags([]);
     setCurrentTag('');
     setRsvpEnabled(false);
-    // Stop location tracking when resetting form
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,47 +192,16 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleUseMyLocation}
-                disabled={loadingLocation}
-              >
-                <Navigation className="h-4 w-4 mr-2" />
-                {loadingLocation ? "Getting location..." : "Use My Location"}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLocationPicker(true)}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                Pick on Map
-              </Button>
-              
-              {watchId !== null && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={stopLocationTracking}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Stop Tracking
-                </Button>
-              )}
-            </div>
-            
-            {watchId !== null && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                Real-time location tracking enabled
-              </p>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openLocationPicker}
+              className="flex items-center gap-2"
+            >
+              <Navigation className="h-4 w-4" />
+              Use my location
+            </Button>
           </div>
 
           <div className="space-y-2">
