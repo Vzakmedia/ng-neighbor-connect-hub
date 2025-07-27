@@ -257,6 +257,30 @@ export type Database = {
           },
         ]
       }
+      board_post_read_status: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       board_posts: {
         Row: {
           board_id: string
@@ -1063,6 +1087,30 @@ export type Database = {
           },
         ]
       }
+      post_read_status: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1471,6 +1519,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_unread_community_posts_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_unread_messages_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_unread_notifications_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -1489,6 +1549,22 @@ export type Database = {
       is_board_member: {
         Args: { board_id: string; user_id: string }
         Returns: boolean
+      }
+      mark_all_community_posts_as_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      mark_all_notifications_as_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      mark_board_post_as_read: {
+        Args: { target_post_id: string }
+        Returns: undefined
+      }
+      mark_community_post_as_read: {
+        Args: { target_post_id: string }
+        Returns: undefined
       }
       mark_direct_messages_as_read: {
         Args: { conversation_id: string; current_user_id: string }

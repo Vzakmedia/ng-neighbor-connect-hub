@@ -8,12 +8,14 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Bell, Search, Menu, MapPin, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
+  const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -120,9 +122,9 @@ const Header = () => {
             
             <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationClick}>
               <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
+              {unreadCounts.notifications > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {notificationCount}
+                  {unreadCounts.notifications}
                 </Badge>
               )}
             </Button>
@@ -190,9 +192,9 @@ const Header = () => {
             
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleNotificationClick}>
               <Bell className="h-4 w-4" />
-              {notificationCount > 0 && (
+              {unreadCounts.notifications > 0 && (
                 <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
-                  {notificationCount}
+                  {unreadCounts.notifications}
                 </Badge>
               )}
             </Button>

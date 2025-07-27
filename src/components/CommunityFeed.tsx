@@ -18,12 +18,17 @@ import {
   Globe,
   Bookmark,
   Search,
-  Calendar
+  Calendar,
+  Eye,
+  EyeOff,
+  CheckCheck,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useReadStatus } from '@/hooks/useReadStatus';
 import { Input } from '@/components/ui/input';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
@@ -84,9 +89,17 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPostType, setSelectedPostType] = useState<string>('all');
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [readStatuses, setReadStatuses] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { 
+    unreadCounts, 
+    markCommunityPostAsRead, 
+    markAllCommunityPostsAsRead, 
+    checkIfPostIsRead 
+  } = useReadStatus();
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -218,6 +231,24 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       setLoading(false);
     }
   };
+
+  // Check read statuses for posts
+  useEffect(() => {
+    const checkReadStatuses = async () => {
+      if (!user || posts.length === 0) return;
+      
+      const statuses: Record<string, boolean> = {};
+      await Promise.all(
+        posts.map(async (post) => {
+          const isRead = await checkIfPostIsRead(post.id);
+          statuses[post.id] = isRead;
+        })
+      );
+      setReadStatuses(statuses);
+    };
+
+    checkReadStatuses();
+  }, [posts, user, checkIfPostIsRead]);
 
   useEffect(() => {
     fetchPosts();
@@ -447,6 +478,13 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     });
   };
 
+  const handlePostClick = async (postId: string) => {
+    if (!readStatuses[postId]) {
+      await markCommunityPostAsRead(postId);
+      setReadStatuses(prev => ({ ...prev, [postId]: true }));
+    }
+  };
+
   // Filter posts based on search and post type
   const filteredPosts = posts.filter(post => {
     // Filter by search query
@@ -459,6 +497,9 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     // Filter by post type
     const matchesType = selectedPostType === 'all' || post.type === selectedPostType;
 
+    // Filter by read status
+    const matchesReadFilter = !showUnreadOnly || !readStatuses[post.id];
+
     // Filter by active tab (for backward compatibility)
     let matchesTab = true;
     if (activeTab !== 'all') {
@@ -468,7 +509,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       else matchesTab = post.type === activeTab;
     }
 
-    return matchesSearch && matchesType && matchesTab;
+    return matchesSearch && matchesType && matchesTab && matchesReadFilter;
   });
 
   const postTypeFilters = [
@@ -540,6 +581,38 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         </div>
       </div>
 
+      {/* Read Status Controls */}
+      <div className="flex items-center justify-between bg-card p-4 rounded-lg">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={showUnreadOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+              className="text-xs"
+            >
+              {showUnreadOnly ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+              {showUnreadOnly ? 'Show All' : 'Unread Only'}
+            </Button>
+            {unreadCounts.community > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {unreadCounts.community} unread
+              </Badge>
+            )}
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={markAllCommunityPostsAsRead}
+          className="text-xs"
+          disabled={unreadCounts.community === 0}
+        >
+          <CheckCheck className="h-3 w-3 mr-1" />
+          Mark All Read
+        </Button>
+      </div>
+
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -565,7 +638,13 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           }
           
           return (
-            <Card key={post.id} className="shadow-card hover:shadow-elevated transition-shadow">
+            <Card 
+              key={post.id} 
+              className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
+                !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
+              }`}
+              onClick={() => handlePostClick(post.id)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
@@ -582,6 +661,11 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                           {getPostTypeIcon(post.type)}
                           <span className="ml-1">{typeBadge.label}</span>
                         </Badge>
+                        {!readStatuses[post.id] && (
+                          <Badge variant="default" className="text-xs bg-primary">
+                            New
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />

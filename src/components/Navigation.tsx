@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import CreatePostDialog from './CreatePostDialog';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useReadStatus } from '@/hooks/useReadStatus';
 import { 
   Home, 
   MessageSquare, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 const Navigation = () => {
+  const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [createPostOpen, setCreatePostOpen] = useState(false);
@@ -24,11 +26,11 @@ const Navigation = () => {
   
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
-    { id: 'community', icon: MessageSquare, label: 'Community', count: 5, path: '/community' },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadMessagesCount, path: '/messages' },
+    { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
-    { id: 'safety', icon: Shield, label: 'Safety', count: 2, path: '/safety' },
-    { id: 'events', icon: Calendar, label: 'Events', count: 1, path: '/events' },
+    { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
+    { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
     { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
   ];
 

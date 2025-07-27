@@ -10,6 +10,7 @@ import { Search, MessageCircle, Users, Settings, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useReadStatus } from '@/hooks/useReadStatus';
 
 export interface Conversation {
   id: string;
@@ -46,6 +47,7 @@ const MessagingContent = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { markAllNotificationsAsRead } = useReadStatus();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [preferences, setPreferences] = useState<MessagingPreferences>({
@@ -381,13 +383,23 @@ const MessagingContent = () => {
           <MessageCircle className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Messages</h1>
         </div>
-        <Button
-          onClick={startNewConversation}
-          size="sm"
-          className="bg-gradient-primary hover:opacity-90 transition-opacity"
-        >
-          New Message
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={markAllNotificationsAsRead}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            Clear Notifications
+          </Button>
+          <Button
+            onClick={startNewConversation}
+            size="sm"
+            className="bg-gradient-primary hover:opacity-90 transition-opacity"
+          >
+            New Message
+          </Button>
+        </div>
       </div>
       
       <Tabs defaultValue="conversations" className="w-full">
