@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Upload, X, Plus, Camera } from 'lucide-react';
 
@@ -31,6 +32,15 @@ interface EditServiceDialogProps {
   children: React.ReactNode;
 }
 
+interface WeeklyAvailability {
+  id?: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  max_bookings: number;
+  is_available: boolean;
+}
+
 const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,6 +58,17 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
     is_active: service.is_active
   });
   const [galleryImages, setGalleryImages] = useState<string[]>(service.images || []);
+  const [weeklyAvailability, setWeeklyAvailability] = useState<WeeklyAvailability[]>([]);
+
+  const DAYS_OF_WEEK = [
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+    { value: 0, label: 'Sunday' },
+  ];
 
   const categories = [
     'home_repair', 'tutoring', 'pet_sitting', 'cleaning', 'gardening', 
@@ -68,8 +89,55 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
         is_active: service.is_active
       });
       setGalleryImages(service.images || []);
+      fetchWeeklyAvailability();
     }
   }, [open, service]);
+
+  const fetchWeeklyAvailability = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('service_weekly_availability')
+        .select('*')
+        .eq('service_id', service.id)
+        .eq('user_id', user!.id)
+        .order('day_of_week');
+
+      if (error) throw error;
+
+      if (data) {
+        setWeeklyAvailability(data);
+      }
+    } catch (error) {
+      console.error('Error fetching weekly availability:', error);
+    }
+  };
+
+  const handleDayToggle = (dayOfWeek: number, checked: boolean) => {
+    if (checked) {
+      // Add default availability for this day
+      const newAvailability: WeeklyAvailability = {
+        day_of_week: dayOfWeek,
+        start_time: '09:00',
+        end_time: '17:00',
+        max_bookings: 1,
+        is_available: true,
+      };
+      setWeeklyAvailability(prev => [...prev, newAvailability]);
+    } else {
+      // Remove availability for this day
+      setWeeklyAvailability(prev => prev.filter(item => item.day_of_week !== dayOfWeek));
+    }
+  };
+
+  const updateAvailability = (dayOfWeek: number, field: keyof WeeklyAvailability, value: any) => {
+    setWeeklyAvailability(prev => 
+      prev.map(item => 
+        item.day_of_week === dayOfWeek 
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
+  };
 
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || !user) return;
@@ -167,6 +235,35 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
         .eq('user_id', user.id); // Ensure user can only edit their own services
 
       if (error) throw error;
+
+      // Update weekly availability
+      // First, delete existing availability for this service
+      const { error: deleteError } = await supabase
+        .from('service_weekly_availability')
+        .delete()
+        .eq('service_id', service.id)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new availability if any
+      if (weeklyAvailability.length > 0) {
+        const { error: availabilityError } = await supabase
+          .from('service_weekly_availability')
+          .insert(
+            weeklyAvailability.map(item => ({
+              service_id: service.id,
+              user_id: user.id,
+              day_of_week: item.day_of_week,
+              start_time: item.start_time,
+              end_time: item.end_time,
+              max_bookings: item.max_bookings,
+              is_available: item.is_available,
+            }))
+          );
+
+        if (availabilityError) throw availabilityError;
+      }
 
       toast({
         title: "Service updated",
@@ -384,6 +481,77 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
             />
             <Label htmlFor="is_active">Service Available</Label>
+          </div>
+
+          {/* Weekly Availability Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Weekly Availability</Label>
+              <p className="text-sm text-muted-foreground">
+                Set your weekly schedule
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {DAYS_OF_WEEK.map((day) => {
+                const dayAvailability = weeklyAvailability.find(item => item.day_of_week === day.value);
+                const isSelected = !!dayAvailability;
+                
+                return (
+                  <div key={day.value} className="space-y-2 p-3 border rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${day.value}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleDayToggle(day.value, checked as boolean)}
+                      />
+                      <Label htmlFor={`day-${day.value}`} className="font-medium">
+                        {day.label}
+                      </Label>
+                    </div>
+                    
+                    {isSelected && dayAvailability && (
+                      <div className="ml-6 grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Start Time</Label>
+                          <Input
+                            type="time"
+                            value={dayAvailability.start_time}
+                            onChange={(e) => updateAvailability(day.value, 'start_time', e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">End Time</Label>
+                          <Input
+                            type="time"
+                            value={dayAvailability.end_time}
+                            onChange={(e) => updateAvailability(day.value, 'end_time', e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Max Bookings</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={dayAvailability.max_bookings}
+                            onChange={(e) => updateAvailability(day.value, 'max_bookings', parseInt(e.target.value))}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {weeklyAvailability.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No availability set. Select days to let customers know when your service is available.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
