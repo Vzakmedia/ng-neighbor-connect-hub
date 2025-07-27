@@ -448,10 +448,10 @@ const MyEventsPanel = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-6">
+              <div className="grid gap-6">
                 {eventsWithRsvps.map((event) => (
-                  <Card key={event.id}>
-                    <CardHeader>
+                  <Card key={event.id} className="overflow-hidden">
+                    <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle className="text-lg">{event.title}</CardTitle>
@@ -471,75 +471,77 @@ const MyEventsPanel = () => {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-0">
                       {event.rsvps.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-4">No RSVPs for this event yet</p>
+                        <p className="text-muted-foreground text-center py-8 px-6">No RSVPs for this event yet</p>
                       ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Contact</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Message</TableHead>
-                              <TableHead>RSVP Date</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {event.rsvps.map((rsvp) => (
-                              <TableRow key={rsvp.id}>
-                                <TableCell>
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage src={rsvp.profiles.avatar_url || ""} />
-                                      <AvatarFallback>
-                                        {(rsvp.full_name || rsvp.profiles.full_name)?.charAt(0) || "U"}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">
-                                      {rsvp.full_name || rsvp.profiles.full_name}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="space-y-1">
-                                    {rsvp.email_address && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {rsvp.email_address}
-                                      </div>
-                                    )}
-                                    {rsvp.phone_number && (
-                                      <div className="text-xs text-muted-foreground">
-                                        {rsvp.phone_number}
-                                      </div>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge 
-                                    variant={
-                                      rsvp.status === 'going' ? 'default' : 
-                                      rsvp.status === 'interested' ? 'secondary' : 'outline'
-                                    }
-                                  >
-                                    {rsvp.status === 'going' ? 'Going' : 
-                                     rsvp.status === 'interested' ? 'Interested' : 'Not Going'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm">
-                                    {rsvp.message || '-'}
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-sm text-muted-foreground">
-                                    {formatTimeAgo(rsvp.created_at)}
-                                  </span>
-                                </TableCell>
+                        <div className="max-h-96 overflow-y-auto">
+                          <Table>
+                            <TableHeader className="sticky top-0 bg-background z-10">
+                              <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Message</TableHead>
+                                <TableHead>RSVP Date</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {event.rsvps.map((rsvp) => (
+                                <TableRow key={rsvp.id}>
+                                  <TableCell>
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={rsvp.profiles.avatar_url || ""} />
+                                        <AvatarFallback>
+                                          {(rsvp.full_name || rsvp.profiles.full_name)?.charAt(0) || "U"}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="font-medium">
+                                        {rsvp.full_name || rsvp.profiles.full_name}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="space-y-1">
+                                      {rsvp.email_address && (
+                                        <div className="text-xs text-muted-foreground">
+                                          {rsvp.email_address}
+                                        </div>
+                                      )}
+                                      {rsvp.phone_number && (
+                                        <div className="text-xs text-muted-foreground">
+                                          {rsvp.phone_number}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge 
+                                      variant={
+                                        rsvp.status === 'going' ? 'default' : 
+                                        rsvp.status === 'interested' ? 'secondary' : 'outline'
+                                      }
+                                    >
+                                      {rsvp.status === 'going' ? 'Going' : 
+                                       rsvp.status === 'interested' ? 'Interested' : 'Not Going'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="text-sm">
+                                      {rsvp.message || '-'}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="text-sm text-muted-foreground">
+                                      {formatTimeAgo(rsvp.created_at)}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
