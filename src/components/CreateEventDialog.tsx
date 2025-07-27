@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation } from 'lucide-react';
+import { Calendar, MapPin, Plus, X, Navigation, Map } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import LocationPickerDialog from '@/components/LocationPickerDialog';
 
 interface CreateEventDialogProps {
   open: boolean;
@@ -24,6 +25,9 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [currentTag, setCurrentTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [watchId, setWatchId] = useState<number | null>(null);
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -86,16 +90,22 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
     setLoadingLocation(true);
 
-    navigator.geolocation.getCurrentPosition(
+    // Start watching position for real-time updates
+    const id = navigator.geolocation.watchPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
+          setCurrentCoords({ lat: latitude, lng: longitude });
+          
           const address = await reverseGeocode(latitude, longitude);
           setLocation(address);
+          
           toast({
-            title: "Success",
-            description: "Location detected successfully",
+            title: "Location updated",
+            description: "Your location is being tracked in real-time",
           });
+          
+          setLoadingLocation(false);
         } catch (error) {
           console.error('Error getting location:', error);
           toast({
@@ -103,7 +113,6 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             description: "Failed to get location details",
             variant: "destructive",
           });
-        } finally {
           setLoadingLocation(false);
         }
       },
@@ -133,10 +142,49 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 60000
+        maximumAge: 30000 // Cache for 30 seconds
       }
     );
+
+    setWatchId(id);
   };
+
+  const stopLocationTracking = () => {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+      toast({
+        title: "Location tracking stopped",
+        description: "Real-time location updates have been disabled",
+      });
+    }
+  };
+
+  const handleLocationConfirm = (confirmedLocation: string, coords: { lat: number; lng: number }) => {
+    setLocation(confirmedLocation);
+    setCurrentCoords(coords);
+    // Stop real-time tracking since user has confirmed a specific location
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+  };
+
+  // Cleanup watch position when component unmounts or dialog closes
+  useEffect(() => {
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
+
+  useEffect(() => {
+    if (!open && watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+  }, [open, watchId]);
 
   const resetForm = () => {
     setTitle('');
@@ -144,6 +192,12 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     setLocation('');
     setTags([]);
     setCurrentTag('');
+    // Stop location tracking when resetting form
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+    setCurrentCoords(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -252,17 +306,53 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 className="pl-10"
               />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleUseMyLocation}
-              disabled={loadingLocation}
-              className="mt-2"
-            >
-              <Navigation className="h-4 w-4 mr-2" />
-              {loadingLocation ? "Getting location..." : "Use My Location"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleUseMyLocation}
+                disabled={loadingLocation}
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                {loadingLocation ? "Getting location..." : "Use My Location"}
+              </Button>
+              
+              {watchId !== null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={stopLocationTracking}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Stop Tracking
+                </Button>
+              )}
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLocationPicker(true)}
+              >
+                <Map className="h-4 w-4 mr-2" />
+                Pick on Map
+              </Button>
+            </div>
+            
+            {watchId !== null && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Real-time location tracking enabled
+              </p>
+            )}
+            
+            {currentCoords && (
+              <p className="text-xs text-muted-foreground">
+                Coordinates: {currentCoords.lat.toFixed(6)}, {currentCoords.lng.toFixed(6)}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -321,6 +411,12 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             </Button>
           </div>
         </form>
+
+        <LocationPickerDialog
+          open={showLocationPicker}
+          onOpenChange={setShowLocationPicker}
+          onLocationConfirm={handleLocationConfirm}
+        />
       </DialogContent>
     </Dialog>
   );
