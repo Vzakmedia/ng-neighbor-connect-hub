@@ -167,7 +167,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated }: CreateMarketplaceItemDia
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          List Item
+          List Goods
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
