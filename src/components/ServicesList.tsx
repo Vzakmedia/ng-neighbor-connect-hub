@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Star, Edit, Trash2, Calendar } from 'lucide-react';
+import { MapPin, Star, Edit, Trash2, Calendar, Clock } from 'lucide-react';
 import BookServiceDialog from './BookServiceDialog';
+import ManageAvailabilityDialog from './ManageAvailabilityDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Service {
@@ -355,6 +356,12 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <ManageAvailabilityDialog service={{ id: service.id, title: service.title }}>
+                        <Button variant="outline" size="sm">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Availability
+                        </Button>
+                      </ManageAvailabilityDialog>
                       <Button
                         variant="outline"
                         size="sm"

@@ -1282,6 +1282,56 @@ export type Database = {
         }
         Relationships: []
       }
+      service_availability: {
+        Row: {
+          created_at: string
+          current_bookings: number | null
+          date: string
+          end_time: string
+          id: string
+          is_available: boolean
+          max_bookings: number | null
+          service_id: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_bookings?: number | null
+          date: string
+          end_time: string
+          id?: string
+          is_available?: boolean
+          max_bookings?: number | null
+          service_id: string
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_bookings?: number | null
+          date?: string
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          max_bookings?: number | null
+          service_id?: string
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_availability_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_bookings: {
         Row: {
           booking_date: string

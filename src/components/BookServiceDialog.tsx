@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Service {
   id: string;
@@ -19,6 +20,15 @@ interface Service {
   price_min: number | null;
   price_max: number | null;
   user_id: string;
+}
+
+interface AvailabilitySlot {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  max_bookings: number;
+  current_bookings: number;
 }
 
 interface BookServiceDialogProps {
@@ -33,34 +43,116 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
+  const [selectedSlot, setSelectedSlot] = useState<string>('');
+  const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [message, setMessage] = useState('');
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+
+  // Fetch available dates when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchAvailableDates();
+    }
+  }, [open, service.id]);
+
+  // Fetch available slots when date changes
+  useEffect(() => {
+    if (bookingDate) {
+      fetchAvailableSlots();
+    } else {
+      setAvailableSlots([]);
+      setSelectedSlot('');
+    }
+  }, [bookingDate, service.id]);
+
+  const fetchAvailableDates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('service_availability')
+        .select('date')
+        .eq('service_id', service.id)
+        .eq('is_available', true)
+        .gte('date', new Date().toISOString().split('T')[0]);
+
+      if (error) throw error;
+
+      const dates = (data || []).map(item => new Date(item.date));
+      setAvailableDates(dates);
+    } catch (error) {
+      console.error('Error fetching available dates:', error);
+    }
+  };
+
+  const fetchAvailableSlots = async () => {
+    if (!bookingDate) return;
+
+    try {
+      const dateStr = bookingDate.toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('service_availability')
+        .select('*')
+        .eq('service_id', service.id)
+        .eq('date', dateStr)
+        .eq('is_available', true);
+
+      if (error) throw error;
+      
+      // Filter slots where current_bookings < max_bookings
+      const availableSlots = (data || []).filter(slot => slot.current_bookings < slot.max_bookings);
+      setAvailableSlots(availableSlots);
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available time slots",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !bookingDate) return;
+    if (!user || !bookingDate || !selectedSlot) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Find the selected availability slot
+      const slot = availableSlots.find(s => s.id === selectedSlot);
+      if (!slot) throw new Error('Invalid time slot selected');
+
+      // Create the booking
+      const { error: bookingError } = await supabase
         .from('service_bookings')
         .insert({
           client_id: user.id,
           provider_id: service.user_id,
           service_id: service.id,
-          booking_date: bookingDate.toISOString(),
+          booking_date: `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}:00`,
           message: message || null,
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (bookingError) throw bookingError;
+
+      // Update the availability slot booking count
+      const { error: updateError } = await supabase
+        .from('service_availability')
+        .update({ 
+          current_bookings: slot.current_bookings + 1 
+        })
+        .eq('id', selectedSlot);
+
+      if (updateError) throw updateError;
 
       toast({
         title: "Booking request sent",
         description: "Your booking request has been sent to the service provider",
       });
 
+      // Reset form
       setMessage('');
       setBookingDate(undefined);
+      setSelectedSlot('');
       setOpen(false);
       onBookingCreated();
     } catch (error) {
@@ -101,7 +193,10 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !bookingDate && "text-muted-foreground"
+                  )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {bookingDate ? format(bookingDate, "PPP") : "Pick a date"}
@@ -112,12 +207,43 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
                   mode="single"
                   selected={bookingDate}
                   onSelect={setBookingDate}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => {
+                    if (date < new Date()) return true;
+                    return !availableDates.some(availableDate => 
+                      availableDate.toDateString() === date.toDateString()
+                    );
+                  }}
                   initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
           </div>
+
+          {bookingDate && availableSlots.length > 0 && (
+            <div className="space-y-2">
+              <Label>Select Time Slot*</Label>
+              <Select value={selectedSlot} onValueChange={setSelectedSlot}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a time slot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSlots.map((slot) => (
+                    <SelectItem key={slot.id} value={slot.id}>
+                      {slot.start_time} - {slot.end_time} 
+                      ({slot.max_bookings - slot.current_bookings} slots available)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {bookingDate && availableSlots.length === 0 && (
+            <div className="text-center py-4 text-muted-foreground">
+              No available time slots for this date
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="message">Message (Optional)</Label>
@@ -131,7 +257,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading || !bookingDate} className="flex-1">
+            <Button type="submit" disabled={loading || !bookingDate || !selectedSlot} className="flex-1">
               {loading ? 'Booking...' : 'Send Booking Request'}
             </Button>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
