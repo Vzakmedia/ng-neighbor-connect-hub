@@ -1348,13 +1348,13 @@ const CommunityBoards = () => {
   const currentBoard = boards.find(b => b.id === selectedBoard);
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] bg-background">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-12rem)] bg-background overflow-hidden">
       {/* Boards Sidebar */}
-      <div className="w-80 border-r bg-card">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Discussion Boards</h2>
-            <div className="flex space-x-2">
+      <div className="w-full md:w-80 border-b md:border-r md:border-b-0 bg-card flex-shrink-0">
+        <div className="p-3 md:p-4 border-b">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <h2 className="text-base md:text-lg font-semibold">Discussion Boards</h2>
+            <div className="flex gap-1 md:gap-2">
               <Dialog open={showDiscoverBoards} onOpenChange={setShowDiscoverBoards}>
                 <DialogTrigger asChild>
                   <Button 
@@ -1364,9 +1364,10 @@ const CommunityBoards = () => {
                       console.log('Discover button clicked');
                       fetchPublicBoards();
                     }}
+                    className="text-xs md:text-sm px-2 md:px-3"
                   >
-                    <Globe className="h-4 w-4 mr-1" />
-                    Discover
+                    <Globe className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden md:inline">Discover</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl">
@@ -1418,6 +1419,54 @@ const CommunityBoards = () => {
                     </div>
                   </ScrollArea>
                 </DialogContent>
+               </Dialog>
+               <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="text-xs md:text-sm px-2 md:px-3"
+                  >
+                    <Plus className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden md:inline">Create</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create New Board</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="board-name">Board Name</Label>
+                      <Input
+                        id="board-name"
+                        placeholder="Enter board name..."
+                        value={newBoardName}
+                        onChange={(e) => setNewBoardName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="board-description">Description (Optional)</Label>
+                      <Textarea
+                        id="board-description"
+                        placeholder="Describe what this board is about..."
+                        value={newBoardDescription}
+                        onChange={(e) => setNewBoardDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="board-public"
+                        checked={newBoardIsPublic}
+                        onCheckedChange={setNewBoardIsPublic}
+                      />
+                      <Label htmlFor="board-public">Make this board public</Label>
+                    </div>
+                    <Button onClick={createBoard} className="w-full">
+                      Create Board
+                    </Button>
+                  </div>
+                </DialogContent>
               </Dialog>
             </div>
           </div>
@@ -1433,14 +1482,14 @@ const CommunityBoards = () => {
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(100%-120px)]">
+        <ScrollArea className="h-[calc(100%-140px)] md:h-[calc(100%-120px)]">
           {boards
             .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((board) => (
             <div
               key={board.id}
               onClick={() => setSelectedBoard(board.id)}
-              className={`p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
+              className={`p-3 md:p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
                 selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
               }`}
             >

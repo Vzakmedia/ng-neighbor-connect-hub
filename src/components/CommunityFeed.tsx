@@ -535,7 +535,7 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       </div>
 
       {/* Post Type Filter Buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
         {postTypeFilters.map((filter) => {
           const Icon = filter.icon;
           return (
@@ -584,9 +584,9 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       </div>
 
       {/* Read Status Controls */}
-      <div className="flex items-center justify-between bg-card p-4 rounded-lg">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
+          <div className="flex items-center gap-2">
             <Button
               variant={showUnreadOnly ? "default" : "outline"}
               size="sm"
