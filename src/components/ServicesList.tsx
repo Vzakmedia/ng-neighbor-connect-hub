@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Star, Edit, Trash2, Calendar, Clock } from 'lucide-react';
 import BookServiceDialog from './BookServiceDialog';
 import ManageAvailabilityDialog from './ManageAvailabilityDialog';
+import EditServiceDialog from './EditServiceDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Service {
@@ -25,6 +26,7 @@ interface Service {
   total_reviews: number | null;
   created_at: string;
   user_id: string;
+  images: string[];
   profiles: {
     full_name: string;
     avatar_url: string;
@@ -356,6 +358,12 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <EditServiceDialog service={service} onServiceUpdated={fetchMyServices}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </EditServiceDialog>
                       <ManageAvailabilityDialog service={{ id: service.id, title: service.title }}>
                         <Button variant="outline" size="sm">
                           <Clock className="h-4 w-4 mr-1" />
@@ -381,6 +389,25 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                  
+                  {/* Service Gallery */}
+                  {service.images && service.images.length > 0 && (
+                    <div className="flex gap-2 mb-3 overflow-x-auto">
+                      {service.images.slice(0, 3).map((imageUrl, index) => (
+                        <img
+                          key={index}
+                          src={imageUrl}
+                          alt={`${service.title} gallery ${index + 1}`}
+                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                        />
+                      ))}
+                      {service.images.length > 3 && (
+                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                          +{service.images.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   {service.location && (
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
