@@ -27,7 +27,6 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
-  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -90,19 +89,17 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
     setLoadingLocation(true);
 
-    // Start watching position for real-time updates
+    // Start watching position for real-time updates - focus on address only
     const id = navigator.geolocation.watchPosition(
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          setCurrentCoords({ lat: latitude, lng: longitude });
-          
           const address = await reverseGeocode(latitude, longitude);
           setLocation(address);
           
           toast({
             title: "Location updated",
-            description: "Your location is being tracked in real-time",
+            description: "Your address is being tracked in real-time",
           });
           
           setLoadingLocation(false);
@@ -160,9 +157,8 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     }
   };
 
-  const handleLocationConfirm = (confirmedLocation: string, coords: { lat: number; lng: number }) => {
+  const handleLocationConfirm = (confirmedLocation: string) => {
     setLocation(confirmedLocation);
-    setCurrentCoords(coords);
     // Stop real-time tracking since user has confirmed a specific location
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
@@ -197,7 +193,6 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
       navigator.geolocation.clearWatch(watchId);
       setWatchId(null);
     }
-    setCurrentCoords(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -329,28 +324,12 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                   Stop Tracking
                 </Button>
               )}
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLocationPicker(true)}
-              >
-                <Map className="h-4 w-4 mr-2" />
-                Pick on Map
-              </Button>
             </div>
             
             {watchId !== null && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 Real-time location tracking enabled
-              </p>
-            )}
-            
-            {currentCoords && (
-              <p className="text-xs text-muted-foreground">
-                Coordinates: {currentCoords.lat.toFixed(6)}, {currentCoords.lng.toFixed(6)}
               </p>
             )}
           </div>

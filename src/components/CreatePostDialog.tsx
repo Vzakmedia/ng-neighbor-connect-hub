@@ -93,7 +93,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     }
   };
 
-  const handleLocationConfirm = (selectedLocation: string, coords: { lat: number; lng: number }) => {
+  const handleLocationConfirm = (selectedLocation: string) => {
     setLocation(selectedLocation);
   };
 
