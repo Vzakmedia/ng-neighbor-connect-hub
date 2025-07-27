@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, MapPin, Users, Edit, Eye, Clock, Download } from 'lucide-react';
+import { Calendar, MapPin, Users, Edit, Eye, Clock, Download, Trash2 } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 import EditEventDialog from '@/components/EditEventDialog';
 
@@ -243,6 +243,35 @@ const MyEventsPanel = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Event deleted",
+        description: "The event has been successfully deleted",
+      });
+
+      fetchMyEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the event",
+        variant: "destructive",
+      });
+    }
+  };
+
   const exportRSVPs = async (eventId: string, eventTitle: string) => {
     try {
       const { data: rsvpData, error } = await supabase
@@ -394,6 +423,14 @@ const MyEventsPanel = () => {
                       onClick={() => toggleRsvpEnabled(event.id, event.rsvp_enabled)}
                     >
                       {event.rsvp_enabled ? 'Disable RSVP' : 'Enable RSVP'}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteEvent(event.id, event.title)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
                     </Button>
                   </div>
                 </div>
