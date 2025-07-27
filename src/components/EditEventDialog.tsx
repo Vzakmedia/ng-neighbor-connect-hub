@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation } from 'lucide-react';
+import { Calendar, MapPin, Plus, X, Navigation, Upload, FileIcon, ImageIcon, Users } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,7 @@ interface Event {
   location: string;
   tags: string[];
   rsvp_enabled: boolean;
+  file_urls?: any[];
 }
 
 interface EditEventDialogProps {
@@ -37,6 +38,8 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
   const [loading, setLoading] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -48,6 +51,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
       setLocation(event.location || '');
       setTags(event.tags || []);
       setRsvpEnabled(event.rsvp_enabled || false);
+      setUploadedFiles(event.file_urls || []);
     }
   }, [event]);
 
@@ -77,6 +81,56 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setShowLocationPicker(true);
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !user) return;
+
+    setUploading(true);
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('event-files')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('event-files')
+        .getPublicUrl(fileName);
+
+      return {
+        name: file.name,
+        url: urlData.publicUrl,
+        size: file.size,
+        type: file.type
+      };
+    });
+
+    try {
+      const uploadedFilesData = await Promise.all(uploadPromises);
+      setUploadedFiles([...uploadedFiles, ...uploadedFilesData]);
+      toast({
+        title: "Files uploaded successfully",
+        description: `${uploadedFilesData.length} files uploaded`,
+      });
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
+
   const resetForm = () => {
     setTitle('');
     setContent('');
@@ -84,6 +138,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setTags([]);
     setCurrentTag('');
     setRsvpEnabled(false);
+    setUploadedFiles([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,10 +173,12 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
           location: location.trim() || null,
           tags: tags,
           rsvp_enabled: rsvpEnabled,
+          file_urls: uploadedFiles,
+          image_urls: uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
           updated_at: new Date().toISOString()
         })
         .eq('id', event.id)
-        .eq('user_id', user.id); // Ensure user can only update their own events
+        .eq('user_id', user.id);
 
       if (error) {
         throw error;
@@ -241,6 +298,64 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                       <X className="h-3 w-3" />
                     </Button>
                   </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* File Upload Section */}
+          <div className="space-y-2">
+            <Label>Attach Files & Media</Label>
+            <div className="border-2 border-dashed border-muted rounded-lg p-4">
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload-edit"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="file-upload-edit"
+                className="flex flex-col items-center justify-center cursor-pointer space-y-2"
+              >
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {uploading ? "Uploading..." : "Click to upload images, videos, or documents"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Max file size: 10MB per file
+                </p>
+              </label>
+            </div>
+
+            {/* Display uploaded files */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Uploaded Files:</p>
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex items-center gap-2">
+                      {file.type?.startsWith('image/') ? (
+                        <ImageIcon className="h-4 w-4" />
+                      ) : (
+                        <FileIcon className="h-4 w-4" />
+                      )}
+                      <span className="text-sm">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {file.size ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)` : ''}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             )}

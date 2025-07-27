@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation, Map, Users } from 'lucide-react';
+import { Calendar, MapPin, Plus, X, Navigation, Upload, FileIcon, ImageIcon, Users } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +27,8 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [loading, setLoading] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -56,6 +58,56 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     setShowLocationPicker(true);
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !user) return;
+
+    setUploading(true);
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('event-files')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('event-files')
+        .getPublicUrl(fileName);
+
+      return {
+        name: file.name,
+        url: urlData.publicUrl,
+        size: file.size,
+        type: file.type
+      };
+    });
+
+    try {
+      const uploadedFilesData = await Promise.all(uploadPromises);
+      setUploadedFiles([...uploadedFiles, ...uploadedFilesData]);
+      toast({
+        title: "Files uploaded successfully",
+        description: `${uploadedFilesData.length} files uploaded`,
+      });
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
+
   const resetForm = () => {
     setTitle('');
     setContent('');
@@ -63,6 +115,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     setTags([]);
     setCurrentTag('');
     setRsvpEnabled(false);
+    setUploadedFiles([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,7 +151,8 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
           content: content.trim(),
           location: location.trim() || null,
           tags: tags,
-          image_urls: [],
+          image_urls: uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
+          file_urls: uploadedFiles,
           rsvp_enabled: rsvpEnabled
         });
 
@@ -242,6 +296,64 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             <p className="text-xs text-muted-foreground ml-6">
               Allow people to RSVP and track attendance for your event
             </p>
+          </div>
+
+          {/* File Upload Section */}
+          <div className="space-y-2">
+            <Label>Attach Files & Media</Label>
+            <div className="border-2 border-dashed border-muted rounded-lg p-4">
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="file-upload"
+                className="flex flex-col items-center justify-center cursor-pointer space-y-2"
+              >
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {uploading ? "Uploading..." : "Click to upload images, videos, or documents"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Max file size: 10MB per file
+                </p>
+              </label>
+            </div>
+
+            {/* Display uploaded files */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Uploaded Files:</p>
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex items-center gap-2">
+                      {file.type.startsWith('image/') ? (
+                        <ImageIcon className="h-4 w-4" />
+                      ) : (
+                        <FileIcon className="h-4 w-4" />
+                      )}
+                      <span className="text-sm">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

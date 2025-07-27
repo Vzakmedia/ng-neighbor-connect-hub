@@ -14,7 +14,8 @@ import {
   Calendar,
   Search,
   Bookmark,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 import RSVPDialog from '@/components/RSVPDialog';
+import ViewEventDialog from '@/components/ViewEventDialog';
 
 interface DatabasePost {
   id: string;
@@ -51,7 +53,7 @@ interface Event {
     location: string;
   };
   content: string;
-  title?: string;
+  title: string;
   timestamp: string;
   likes: number;
   comments: number;
@@ -60,6 +62,16 @@ interface Event {
   isLiked: boolean;
   isSaved: boolean;
   rsvp_enabled?: boolean;
+  // Additional properties for ViewEventDialog compatibility
+  location: string;
+  created_at: string;
+  user_id: string;
+  file_urls?: any[];
+  image_urls?: string[];
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+  };
 }
 
 const EventFeed = () => {
@@ -68,6 +80,7 @@ const EventFeed = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false);
+  const [viewEventDialogOpen, setViewEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
   const { user } = useAuth();
@@ -183,7 +196,7 @@ const EventFeed = () => {
             ].filter(Boolean).join(', ') || 'Unknown Location'
           },
           content: post.content,
-          title: post.title || undefined,
+          title: post.title || 'Untitled Event',
           timestamp: post.created_at,
           likes: likeCounts[post.id] || 0,
           comments: commentCounts[post.id] || 0,
@@ -191,7 +204,17 @@ const EventFeed = () => {
           tags: post.tags || [],
           isLiked: userLikes.has(post.id),
           isSaved: userSaves.has(post.id),
-          rsvp_enabled: post.rsvp_enabled || false
+          rsvp_enabled: post.rsvp_enabled || false,
+          // Additional properties for ViewEventDialog
+          location: post.location || '',
+          created_at: post.created_at,
+          user_id: post.user_id,
+          file_urls: post.file_urls || [],
+          image_urls: post.image_urls || [],
+          profiles: {
+            full_name: profile?.full_name || 'Anonymous User',
+            avatar_url: profile?.avatar_url || ''
+          }
         };
       });
 
@@ -459,6 +482,19 @@ const EventFeed = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedEvent(event);
+                      setViewEventDialogOpen(true);
+                    }}
+                    className="h-8 px-3 text-xs"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Event
+                  </Button>
+                  
                   {event.rsvp_enabled && (
                     <Button
                       variant="outline"
@@ -512,6 +548,12 @@ const EventFeed = () => {
             eventId={selectedEvent.id}
             eventTitle={selectedEvent.title || 'Community Event'}
             onRSVPSubmitted={() => fetchEvents()}
+          />
+          
+          <ViewEventDialog
+            open={viewEventDialogOpen}
+            onOpenChange={setViewEventDialogOpen}
+            event={selectedEvent}
           />
         </>
       )}

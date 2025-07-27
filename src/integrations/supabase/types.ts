@@ -401,6 +401,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          file_urls: Json | null
           id: string
           image_urls: string[] | null
           location: string | null
@@ -414,6 +415,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          file_urls?: Json | null
           id?: string
           image_urls?: string[] | null
           location?: string | null
@@ -427,6 +429,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          file_urls?: Json | null
           id?: string
           image_urls?: string[] | null
           location?: string | null
