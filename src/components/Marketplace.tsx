@@ -53,6 +53,8 @@ interface Service {
     full_name: string;
     avatar_url?: string;
   } | null;
+  likes_count?: number;
+  is_liked_by_user?: boolean;
 }
 
 interface MarketplaceItem {
@@ -71,6 +73,8 @@ interface MarketplaceItem {
     full_name: string;
     avatar_url?: string;
   } | null;
+  likes_count?: number;
+  is_liked_by_user?: boolean;
 }
 
 const Marketplace = () => {
@@ -139,23 +143,34 @@ const Marketplace = () => {
 
       if (error) throw error;
 
-      // Fetch profiles separately for each service
-      const servicesWithProfiles = await Promise.all(
+      // Fetch profiles and likes data for each service
+      const servicesWithProfilesAndLikes = await Promise.all(
         (data || []).map(async (service) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', service.user_id)
-            .single();
+          const [profileResult, likesResult] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('user_id', service.user_id)
+              .single(),
+            supabase
+              .from('service_likes')
+              .select('user_id')
+              .eq('service_id', service.id)
+          ]);
+
+          const likes = likesResult.data || [];
+          const isLikedByUser = user ? likes.some(like => like.user_id === user.id) : false;
 
           return {
             ...service,
-            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+            profiles: profileResult.data || { full_name: 'Anonymous', avatar_url: '' },
+            likes_count: likes.length,
+            is_liked_by_user: isLikedByUser
           };
         })
       );
 
-      setServices(servicesWithProfiles as any || []);
+      setServices(servicesWithProfilesAndLikes as any || []);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -183,23 +198,34 @@ const Marketplace = () => {
 
       if (error) throw error;
 
-      // Fetch profiles separately for each item
-      const itemsWithProfiles = await Promise.all(
+      // Fetch profiles and likes data for each item
+      const itemsWithProfilesAndLikes = await Promise.all(
         (data || []).map(async (item) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', item.user_id)
-            .single();
+          const [profileResult, likesResult] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('user_id', item.user_id)
+              .single(),
+            supabase
+              .from('marketplace_item_likes')
+              .select('user_id')
+              .eq('item_id', item.id)
+          ]);
+
+          const likes = likesResult.data || [];
+          const isLikedByUser = user ? likes.some(like => like.user_id === user.id) : false;
 
           return {
             ...item,
-            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+            profiles: profileResult.data || { full_name: 'Anonymous', avatar_url: '' },
+            likes_count: likes.length,
+            is_liked_by_user: isLikedByUser
           };
         })
       );
 
-      setItems(itemsWithProfiles as any || []);
+      setItems(itemsWithProfilesAndLikes as any || []);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
@@ -218,7 +244,6 @@ const Marketplace = () => {
   };
 
   const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
-  const currentItems = activeTab === 'services' ? services : items;
 
   const handleMessageUser = async (sellerId: string) => {
     if (!user) {
@@ -289,6 +314,118 @@ const Marketplace = () => {
     setSelectedImages(images);
     setGalleryTitle(title);
     setGalleryOpen(true);
+  };
+
+  const toggleLike = async (itemId: string, isService: boolean) => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to like items.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const table = isService ? 'service_likes' : 'marketplace_item_likes';
+      const column = isService ? 'service_id' : 'item_id';
+      const currentItem = isService 
+        ? services.find(s => s.id === itemId)
+        : items.find(i => i.id === itemId);
+
+      if (!currentItem) return;
+
+      if (currentItem.is_liked_by_user) {
+        // Unlike the item
+        if (isService) {
+          const { error } = await supabase
+            .from('service_likes')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('service_id', itemId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('marketplace_item_likes')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('item_id', itemId);
+          if (error) throw error;
+        }
+
+        // Update local state
+        if (isService) {
+          setServices(prev => prev.map(service => 
+            service.id === itemId 
+              ? { 
+                  ...service, 
+                  is_liked_by_user: false, 
+                  likes_count: Math.max(0, (service.likes_count || 0) - 1) 
+                }
+              : service
+          ));
+        } else {
+          setItems(prev => prev.map(item => 
+            item.id === itemId 
+              ? { 
+                  ...item, 
+                  is_liked_by_user: false, 
+                  likes_count: Math.max(0, (item.likes_count || 0) - 1) 
+                }
+              : item
+          ));
+        }
+      } else {
+        // Like the item
+        if (isService) {
+          const { error } = await supabase
+            .from('service_likes')
+            .insert({
+              user_id: user.id,
+              service_id: itemId
+            });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('marketplace_item_likes')
+            .insert({
+              user_id: user.id,
+              item_id: itemId
+            });
+          if (error) throw error;
+        }
+
+        // Update local state
+        if (isService) {
+          setServices(prev => prev.map(service => 
+            service.id === itemId 
+              ? { 
+                  ...service, 
+                  is_liked_by_user: true, 
+                  likes_count: (service.likes_count || 0) + 1 
+                }
+              : service
+          ));
+        } else {
+          setItems(prev => prev.map(item => 
+            item.id === itemId 
+              ? { 
+                  ...item, 
+                  is_liked_by_user: true, 
+                  likes_count: (item.likes_count || 0) + 1 
+                }
+              : item
+          ));
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -397,7 +534,7 @@ const Marketplace = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentItems.map((item) => (
+          {(activeTab === 'services' ? services : items).map((item) => (
             <Card key={item.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
                <CardContent className="p-0">
                   {/* Image Carousel */}
@@ -558,9 +695,17 @@ const Marketplace = () => {
                          </Button>
                        )
                      )}
-                    <Button variant="outline" size="sm" className="h-8 px-2">
-                      <Heart className="h-3 w-3" />
-                    </Button>
+                     <Button 
+                       variant="outline" 
+                       size="sm" 
+                       className={`h-8 px-2 ${item.is_liked_by_user ? 'text-red-500' : ''}`}
+                       onClick={() => toggleLike(item.id, activeTab === 'services')}
+                     >
+                       <Heart className={`h-3 w-3 ${item.is_liked_by_user ? 'fill-current' : ''}`} />
+                       {(item.likes_count || 0) > 0 && (
+                         <span className="ml-1 text-xs">{item.likes_count}</span>
+                       )}
+                     </Button>
                   </div>
                 </div>
               </CardContent>
@@ -570,7 +715,7 @@ const Marketplace = () => {
       )}
 
       {/* Empty State */}
-      {!loading && currentItems.length === 0 && (
+      {!loading && (activeTab === 'services' ? services : items).length === 0 && (
         <div className="text-center py-12">
           <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             {activeTab === 'services' ? (
