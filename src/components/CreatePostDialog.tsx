@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
@@ -50,6 +51,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -140,7 +142,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           content,
           location: location || null,
           image_urls: imageUrls,
-          tags: tags
+          tags: tags,
+          rsvp_enabled: postType === 'event' ? rsvpEnabled : false
         });
 
       if (error) {
@@ -166,6 +169,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       setTags([]);
       setCurrentTag('');
       setPostType('general');
+      setRsvpEnabled(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -372,6 +376,26 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               )}
             </div>
           </div>
+
+          {/* RSVP Settings for Events */}
+          {postType === 'event' && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rsvp-enabled"
+                  checked={rsvpEnabled}
+                  onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
+                />
+                <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Enable RSVP for this event
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground ml-6">
+                Allow people to RSVP and track attendance for your event
+              </p>
+            </div>
+          )}
 
           {/* Post Type Preview */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">

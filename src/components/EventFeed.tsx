@@ -13,7 +13,8 @@ import {
   Clock,
   Calendar,
   Search,
-  Bookmark
+  Bookmark,
+  Users
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +22,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
+import RSVPDialog from '@/components/RSVPDialog';
 
 interface DatabasePost {
   id: string;
@@ -57,6 +59,7 @@ interface Event {
   tags?: string[];
   isLiked: boolean;
   isSaved: boolean;
+  rsvp_enabled?: boolean;
 }
 
 const EventFeed = () => {
@@ -64,6 +67,7 @@ const EventFeed = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
   const { user } = useAuth();
@@ -96,7 +100,8 @@ const EventFeed = () => {
           location,
           image_urls,
           tags,
-          created_at
+          created_at,
+          rsvp_enabled
         `)
         .eq('post_type', 'event')
         .order('created_at', { ascending: false });
@@ -185,7 +190,8 @@ const EventFeed = () => {
           images: post.image_urls || [],
           tags: post.tags || [],
           isLiked: userLikes.has(post.id),
-          isSaved: userSaves.has(post.id)
+          isSaved: userSaves.has(post.id),
+          rsvp_enabled: post.rsvp_enabled || false
         };
       });
 
@@ -298,6 +304,11 @@ const EventFeed = () => {
   const handleShare = (event: Event) => {
     setSelectedEvent(event);
     setShareDialogOpen(true);
+  };
+
+  const handleRSVP = (event: Event) => {
+    setSelectedEvent(event);
+    setRsvpDialogOpen(true);
   };
 
   const filteredEvents = events.filter(event => {
@@ -447,14 +458,28 @@ const EventFeed = () => {
                   </Button>
                 </div>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSave(event.id)}
-                  className={`text-xs ${event.isSaved ? 'text-primary' : 'text-muted-foreground'}`}
-                >
-                  <Bookmark className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {event.rsvp_enabled && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRSVP(event)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      RSVP
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSave(event.id)}
+                    className={`text-xs ${event.isSaved ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <Bookmark className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
+                  </Button>
+                </div>
               </div>
 
               {openComments.has(event.id) && (
@@ -470,14 +495,26 @@ const EventFeed = () => {
         ))
       )}
 
-      <ShareDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        postId={selectedEvent?.id || ''}
-        postTitle={selectedEvent?.title || ''}
-        postContent={selectedEvent?.content || ''}
-        postAuthor={selectedEvent?.author?.name || ''}
-      />
+      {selectedEvent && (
+        <>
+          <ShareDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            postId={selectedEvent.id}
+            postTitle={selectedEvent.title || ''}
+            postContent={selectedEvent.content}
+            postAuthor={selectedEvent.author.name}
+          />
+          
+          <RSVPDialog
+            open={rsvpDialogOpen}
+            onOpenChange={setRsvpDialogOpen}
+            eventId={selectedEvent.id}
+            eventTitle={selectedEvent.title || 'Community Event'}
+            onRSVPSubmitted={() => fetchEvents()}
+          />
+        </>
+      )}
     </div>
   );
 };

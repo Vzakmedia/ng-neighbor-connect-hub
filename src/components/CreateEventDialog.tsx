@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation, Map } from 'lucide-react';
+import { Calendar, MapPin, Plus, X, Navigation, Map, Users } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -188,6 +190,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     setLocation('');
     setTags([]);
     setCurrentTag('');
+    setRsvpEnabled(false);
     // Stop location tracking when resetting form
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
@@ -228,7 +231,8 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
           content: content.trim(),
           location: location.trim() || null,
           tags: tags,
-          image_urls: []
+          image_urls: [],
+          rsvp_enabled: rsvpEnabled
         });
 
       if (error) {
@@ -374,6 +378,24 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 ))}
               </div>
             )}
+          </div>
+
+          {/* RSVP Settings */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rsvp-enabled"
+                checked={rsvpEnabled}
+                onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
+              />
+              <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Enable RSVP for this event
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground ml-6">
+              Allow people to RSVP and track attendance for your event
+            </p>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

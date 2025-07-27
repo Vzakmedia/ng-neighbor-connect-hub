@@ -405,6 +405,7 @@ export type Database = {
           image_urls: string[] | null
           location: string | null
           post_type: string
+          rsvp_enabled: boolean | null
           tags: string[] | null
           title: string | null
           updated_at: string
@@ -417,6 +418,7 @@ export type Database = {
           image_urls?: string[] | null
           location?: string | null
           post_type: string
+          rsvp_enabled?: boolean | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
@@ -429,6 +431,7 @@ export type Database = {
           image_urls?: string[] | null
           location?: string | null
           post_type?: string
+          rsvp_enabled?: boolean | null
           tags?: string[] | null
           title?: string | null
           updated_at?: string
@@ -760,6 +763,36 @@ export type Database = {
           id?: string
           share_location_with_contacts?: boolean | null
           share_location_with_public?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      event_rsvps: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          message: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          message?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }

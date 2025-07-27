@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import EventFeed from '@/components/EventFeed';
 import CreateEventDialog from '@/components/CreateEventDialog';
+import MyEventsPanel from '@/components/MyEventsPanel';
 
 const Events = () => {
   const { user, loading } = useAuth();
@@ -47,7 +49,20 @@ const Events = () => {
             </Button>
           </div>
           
-          <EventFeed key={refreshKey} />
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="all">All Events</TabsTrigger>
+              <TabsTrigger value="my-events">My Events</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all">
+              <EventFeed key={refreshKey} />
+            </TabsContent>
+            
+            <TabsContent value="my-events">
+              <MyEventsPanel />
+            </TabsContent>
+          </Tabs>
           
           <CreateEventDialog
             open={createDialogOpen}
