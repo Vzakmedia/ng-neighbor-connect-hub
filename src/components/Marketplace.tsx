@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
+import { ImageGalleryDialog } from './ImageGalleryDialog';
 
 interface Service {
   id: string;
@@ -82,6 +83,9 @@ const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState('');
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -281,6 +285,12 @@ const Marketplace = () => {
     }
   };
 
+  const handleImageClick = (images: string[], title: string) => {
+    setSelectedImages(images);
+    setGalleryTitle(title);
+    setGalleryOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -390,8 +400,11 @@ const Marketplace = () => {
           {currentItems.map((item) => (
             <Card key={item.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
                <CardContent className="p-0">
-                 {/* Image Carousel */}
-                 <div className="relative h-48 bg-muted rounded-t-lg overflow-hidden">
+                  {/* Image Carousel */}
+                  <div 
+                    className="relative h-48 bg-muted rounded-t-lg overflow-hidden cursor-pointer"
+                    onClick={() => item.images && item.images.length > 0 && handleImageClick(item.images, item.title)}
+                  >
                    {item.images && item.images.length > 0 ? (
                      <Carousel className="w-full h-full">
                        <CarouselContent className="h-full">
@@ -576,10 +589,18 @@ const Marketplace = () => {
             <Plus className="h-4 w-4 mr-2" />
             Create Listing
           </Button>
-        </div>
-      )}
-    </div>
-  );
+         </div>
+       )}
+
+       {/* Image Gallery Dialog */}
+       <ImageGalleryDialog
+         isOpen={galleryOpen}
+         onClose={() => setGalleryOpen(false)}
+         images={selectedImages}
+         title={galleryTitle}
+       />
+     </div>
+   );
 };
 
 export default Marketplace;
