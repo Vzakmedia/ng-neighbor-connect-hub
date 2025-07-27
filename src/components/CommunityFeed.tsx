@@ -554,30 +554,32 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       </div>
 
       {/* View Scope Toggle */}
-      <div className="flex items-center justify-between bg-card p-4 rounded-lg">
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Viewing posts from:</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewScope('neighborhood')}
-            className="text-xs"
-          >
-            <MapPin className="h-3 w-3 mr-1" />
-            My Neighborhood
-          </Button>
-          <Button
-            variant={viewScope === 'state' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewScope('state')}
-            className="text-xs"
-          >
-            <Globe className="h-3 w-3 mr-1" />
-            Entire State
-          </Button>
+      <div className="bg-card p-3 md:p-4 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Viewing posts from:</span>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <Button
+              variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewScope('neighborhood')}
+              className="text-xs flex-1 sm:flex-none px-2 sm:px-3"
+            >
+              <MapPin className="h-3 w-3 mr-1" />
+              <span className="hidden xs:inline">My </span>Neighborhood
+            </Button>
+            <Button
+              variant={viewScope === 'state' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewScope('state')}
+              className="text-xs flex-1 sm:flex-none px-2 sm:px-3"
+            >
+              <Globe className="h-3 w-3 mr-1" />
+              Entire State
+            </Button>
+          </div>
         </div>
       </div>
 
