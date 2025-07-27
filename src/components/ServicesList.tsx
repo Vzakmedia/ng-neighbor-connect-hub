@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Star, Edit, Trash2, Calendar, Clock } from 'lucide-react';
-import BookServiceDialog from './BookServiceDialog';
 import ManageAvailabilityDialog from './ManageAvailabilityDialog';
 import EditServiceDialog from './EditServiceDialog';
 import { formatTimeAgo } from '@/lib/utils';
@@ -56,48 +55,11 @@ interface ServicesListProps {
 const ServicesList = ({ onRefresh }: ServicesListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [services, setServices] = useState<Service[]>([]);
   const [myServices, setMyServices] = useState<Service[]>([]);
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('browse');
+  const [activeTab, setActiveTab] = useState('my-services');
 
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch profiles separately
-      const servicesWithProfiles = await Promise.all(
-        (data || []).map(async (service) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', service.user_id)
-            .single();
-
-          return {
-            ...service,
-            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
-          };
-        })
-      );
-
-      setServices(servicesWithProfiles as any || []);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load services",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchMyServices = async () => {
     if (!user) return;
@@ -240,7 +202,7 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchServices(), fetchMyServices(), fetchMyBookings()]);
+      await Promise.all([fetchMyServices(), fetchMyBookings()]);
       setLoading(false);
     };
 
@@ -257,81 +219,11 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="browse">Browse Services</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="my-services">My Services</TabsTrigger>
         <TabsTrigger value="my-bookings">My Bookings</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="browse" className="space-y-4">
-        {services.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No services available yet</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
-              <Card key={service.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{service.title}</CardTitle>
-                      <Badge variant="outline" className="mt-1">
-                        {service.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Badge>
-                    </div>
-                    {service.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-current text-yellow-500" />
-                        <span className="text-sm">{service.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {service.description}
-                  </p>
-                  
-                  <div className="flex items-center gap-2 text-sm">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={service.profiles?.avatar_url || ""} />
-                      <AvatarFallback>
-                        {service.profiles?.full_name?.charAt(0) || "S"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{service.profiles?.full_name || "Service Provider"}</span>
-                  </div>
-
-                  {service.location && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      {service.location}
-                    </div>
-                  )}
-
-                  {(service.price_min || service.price_max) && (
-                    <div className="text-lg font-semibold">
-                      ₦{service.price_min || 0} - ₦{service.price_max || 0}
-                    </div>
-                  )}
-
-                  {service.user_id !== user?.id && (
-                    <BookServiceDialog service={service} onBookingCreated={fetchMyBookings}>
-                      <Button className="w-full">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Book Service
-                      </Button>
-                    </BookServiceDialog>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </TabsContent>
 
       <TabsContent value="my-services" className="space-y-4">
         {myServices.length === 0 ? (
