@@ -160,10 +160,7 @@ const Marketplace = () => {
     try {
       let query = supabase
         .from('marketplace_items')
-        .select(`
-          *,
-          profiles:user_id (full_name, avatar_url)
-        `)
+        .select('*')
         .eq('status', 'active');
 
       if (selectedCategory !== 'all') {
@@ -177,7 +174,24 @@ const Marketplace = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItems((data as any) || []);
+
+      // Fetch profiles separately for each item
+      const itemsWithProfiles = await Promise.all(
+        (data || []).map(async (item) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', item.user_id)
+            .single();
+
+          return {
+            ...item,
+            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+          };
+        })
+      );
+
+      setItems(itemsWithProfiles as any || []);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
