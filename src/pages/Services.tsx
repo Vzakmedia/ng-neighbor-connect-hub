@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CreateServiceDialog from '@/components/CreateServiceDialog';
+import CreateMarketplaceItemDialog from '@/components/CreateMarketplaceItemDialog';
 import ServicesList from '@/components/ServicesList';
 
 const Services = () => {
@@ -18,6 +19,10 @@ const Services = () => {
   }, [user, loading, navigate]);
 
   const handleServiceCreated = () => {
+    setRefreshTrigger(prev => !prev);
+  };
+
+  const handleItemCreated = () => {
     setRefreshTrigger(prev => !prev);
   };
 
@@ -41,8 +46,11 @@ const Services = () => {
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container py-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Services</h1>
-            <CreateServiceDialog onServiceCreated={handleServiceCreated} />
+            <h1 className="text-2xl font-bold">Services & Goods</h1>
+            <div className="flex gap-2">
+              <CreateServiceDialog onServiceCreated={handleServiceCreated} />
+              <CreateMarketplaceItemDialog onItemCreated={handleItemCreated} />
+            </div>
           </div>
           
           <ServicesList onRefresh={refreshTrigger} />
