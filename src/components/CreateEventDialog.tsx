@@ -72,10 +72,27 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
       }
       
       const data = await response.json();
-      return data.display_name || data.locality || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      
+      // Construct a readable address from available data
+      const addressParts = [
+        data.locality || data.city || data.principalSubdivision,
+        data.principalSubdivision || data.countryName
+      ].filter(Boolean);
+      
+      if (addressParts.length > 0) {
+        return addressParts.join(', ');
+      }
+      
+      // If we have display_name, use that
+      if (data.display_name) {
+        return data.display_name;
+      }
+      
+      // Last resort - return a generic location description
+      return "Current Location";
     } catch (error) {
       console.error('Reverse geocoding failed:', error);
-      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      return "Current Location";
     }
   };
 
