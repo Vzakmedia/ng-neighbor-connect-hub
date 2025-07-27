@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar, MapPin, Users, Edit, Eye, Clock } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
+import EditEventDialog from '@/components/EditEventDialog';
 
 interface Event {
   id: string;
@@ -42,6 +43,8 @@ const MyEventsPanel = () => {
   const [selectedEventRsvps, setSelectedEventRsvps] = useState<RSVP[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
 
   const fetchMyEvents = async () => {
     if (!user) return;
@@ -166,6 +169,19 @@ const MyEventsPanel = () => {
     }
   };
 
+  const handleEditEvent = (event: Event) => {
+    setEventToEdit(event);
+    setEditDialogOpen(true);
+  };
+
+  const handleEventUpdated = () => {
+    fetchMyEvents();
+    // If we're viewing RSVPs for the updated event, refresh them too
+    if (selectedEventId === eventToEdit?.id) {
+      fetchEventRsvps(selectedEventId);
+    }
+  };
+
   useEffect(() => {
     fetchMyEvents();
   }, [user]);
@@ -226,6 +242,14 @@ const MyEventsPanel = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditEvent(event)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -345,6 +369,13 @@ const MyEventsPanel = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <EditEventDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        event={eventToEdit}
+        onEventUpdated={handleEventUpdated}
+      />
     </div>
   );
 };
