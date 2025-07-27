@@ -448,7 +448,7 @@ const Marketplace = () => {
                    
                    {/* Category badge */}
                    <div className="absolute top-2 right-2">
-                     <Badge variant="secondary" className="bg-white/90 text-green-600">
+                     <Badge variant="secondary" className="bg-white/90 text-green-600 hover:text-white">
                        {getCategoryIcon(item.category, activeTab) && (
                          React.createElement(getCategoryIcon(item.category, activeTab), {
                            className: "h-3 w-3 mr-1"
