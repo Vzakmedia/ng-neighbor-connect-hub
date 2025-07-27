@@ -48,6 +48,7 @@ const MyEventsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const fetchMyEvents = async () => {
     if (!user) return;
@@ -144,6 +145,7 @@ const MyEventsPanel = () => {
 
   const handleViewRsvps = (eventId: string) => {
     setSelectedEventId(eventId);
+    setActiveTab('rsvps'); // Switch to RSVPs tab
     fetchEventRsvps(eventId);
   };
 
@@ -277,7 +279,7 @@ const MyEventsPanel = () => {
         <Badge variant="secondary">{events.length} Events</Badge>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="rsvps">RSVPs</TabsTrigger>
