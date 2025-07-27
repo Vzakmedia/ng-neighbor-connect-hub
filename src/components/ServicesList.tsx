@@ -53,12 +53,15 @@ interface ServicesListProps {
 }
 
 const ServicesList = ({ onRefresh }: ServicesListProps) => {
+  console.log('ServicesList component rendering...');
   const { user } = useAuth();
   const { toast } = useToast();
   const [myServices, setMyServices] = useState<Service[]>([]);
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my-services');
+
+  console.log('ServicesList state:', { myServices: myServices.length, myBookings: myBookings.length, loading, activeTab });
 
 
   const fetchMyServices = async () => {
