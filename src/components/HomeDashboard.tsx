@@ -158,23 +158,24 @@ const HomeDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 overflow-x-hidden">
       {/* Hero Section */}
       <HeroSection />
 
       {/* Welcome Section - now more compact */}
-      <div className="bg-gradient-primary rounded-lg p-4 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold mb-1">Good morning! 👋</h2>
-            <p className="text-white/90 text-sm">What's happening in your neighborhood today?</p>
+      <div className="bg-gradient-primary rounded-lg p-3 md:p-4 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base md:text-lg font-semibold mb-1">Good morning! 👋</h2>
+            <p className="text-white/90 text-xs md:text-sm leading-tight">What's happening in your neighborhood today?</p>
           </div>
           <Button 
-            className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30 flex-shrink-0 text-xs md:text-sm px-3 md:px-4 py-2"
             onClick={() => setCreatePostOpen(true)}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Post
+            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Create Post</span>
+            <span className="sm:hidden">Post</span>
           </Button>
         </div>
       </div>
@@ -201,32 +202,26 @@ const HomeDashboard = () => {
           </TabsTrigger>
         </TabsList>
         
-        {/* Mobile Tabs - Scrollable */}
-        <div className="md:hidden">
-          <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
-            <TabsTrigger value="overview" className="flex items-center justify-center py-2">
-              <Home className="h-4 w-4 mr-1" />
-              <span className="text-sm">Overview</span>
+        {/* Mobile Tabs - Grid Layout */}
+        <div className="md:hidden w-full">
+          <TabsList className="grid w-full grid-cols-4 gap-0.5 h-auto p-1">
+            <TabsTrigger value="overview" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
+              <Home className="h-3 w-3 mb-0.5" />
+              <span>Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="automations" className="flex items-center justify-center py-2">
-              <Settings className="h-4 w-4 mr-1" />
-              <span className="text-sm">Auto</span>
+            <TabsTrigger value="automations" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
+              <Settings className="h-3 w-3 mb-0.5" />
+              <span>Auto</span>
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
+              <Activity className="h-3 w-3 mb-0.5" />
+              <span>Insights</span>
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
+              <TrendingUp className="h-3 w-3 mb-0.5" />
+              <span>Deals</span>
             </TabsTrigger>
           </TabsList>
-          <div className="flex gap-1 mt-2">
-            <TabsList className="flex-1">
-              <TabsTrigger value="insights" className="w-full flex items-center justify-center py-2">
-                <Activity className="h-4 w-4 mr-1" />
-                <span className="text-sm">Insights</span>
-              </TabsTrigger>
-            </TabsList>
-            <TabsList className="flex-1">
-              <TabsTrigger value="ads" className="w-full flex items-center justify-center py-2">
-                <TrendingUp className="h-4 w-4 mr-1" />
-                <span className="text-sm">Deals</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
         </div>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
@@ -302,18 +297,18 @@ const HomeDashboard = () => {
                         </Button>
                       ))}
                     </div>
-                    {/* Mobile filter buttons - scrollable */}
-                    <div className="md:hidden">
-                      <div className="flex space-x-2 overflow-x-auto pb-1">
+                    {/* Mobile filter buttons - contained grid */}
+                    <div className="md:hidden w-full">
+                      <div className="grid grid-cols-2 gap-1 w-full">
                         {['all', 'safety', 'events', 'marketplace'].map((tab) => (
                           <Button
                             key={tab}
                             variant={activeTab === tab ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setActiveTab(tab)}
-                            className="capitalize whitespace-nowrap flex-shrink-0 text-sm px-3 py-1.5"
+                            className="capitalize text-xs px-2 py-1.5 w-full"
                           >
-                            {tab}
+                            {tab === 'marketplace' ? 'market' : tab}
                           </Button>
                         ))}
                       </div>
