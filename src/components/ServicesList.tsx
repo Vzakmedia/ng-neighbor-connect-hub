@@ -63,15 +63,29 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
     try {
       const { data, error } = await supabase
         .from('services')
-        .select(`
-          *,
-          profiles!services_user_id_fkey (full_name, avatar_url)
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setServices(data as any || []);
+
+      // Fetch profiles separately
+      const servicesWithProfiles = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', service.user_id)
+            .single();
+
+          return {
+            ...service,
+            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+          };
+        })
+      );
+
+      setServices(servicesWithProfiles as any || []);
     } catch (error) {
       console.error('Error fetching services:', error);
       toast({
@@ -88,15 +102,29 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
     try {
       const { data, error } = await supabase
         .from('services')
-        .select(`
-          *,
-          profiles!services_user_id_fkey (full_name, avatar_url)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMyServices(data as any || []);
+
+      // Fetch profiles separately
+      const servicesWithProfiles = await Promise.all(
+        (data || []).map(async (service) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', service.user_id)
+            .single();
+
+          return {
+            ...service,
+            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
+          };
+        })
+      );
+
+      setMyServices(servicesWithProfiles as any || []);
     } catch (error) {
       console.error('Error fetching my services:', error);
       toast({
@@ -113,16 +141,37 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
     try {
       const { data, error } = await supabase
         .from('service_bookings')
-        .select(`
-          *,
-          services!service_bookings_service_id_fkey (title, description),
-          profiles!service_bookings_provider_id_fkey (full_name, avatar_url)
-        `)
+        .select('*')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMyBookings(data as any || []);
+
+      // Fetch services and profiles separately
+      const bookingsWithRelations = await Promise.all(
+        (data || []).map(async (booking) => {
+          const [serviceData, profileData] = await Promise.all([
+            supabase
+              .from('services')
+              .select('title, description')
+              .eq('id', booking.service_id)
+              .single(),
+            supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('user_id', booking.provider_id)
+              .single()
+          ]);
+
+          return {
+            ...booking,
+            services: serviceData.data || { title: 'Unknown Service', description: '' },
+            profiles: profileData.data || { full_name: 'Anonymous', avatar_url: '' }
+          };
+        })
+      );
+
+      setMyBookings(bookingsWithRelations as any || []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
