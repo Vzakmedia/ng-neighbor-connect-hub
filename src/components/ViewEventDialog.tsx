@@ -46,6 +46,9 @@ interface RSVP {
   status: 'going' | 'interested' | 'not_going';
   message?: string;
   created_at: string;
+  full_name?: string;
+  phone_number?: string;
+  email_address?: string;
   profiles: {
     full_name: string;
     avatar_url: string;
@@ -81,6 +84,9 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
           status,
           message,
           created_at,
+          full_name,
+          phone_number,
+          email_address,
           profiles (
             full_name,
             avatar_url
@@ -470,12 +476,18 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                                   {rsvp.profiles.full_name?.charAt(0) || "U"}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
-                                <p className="font-medium">{rsvp.profiles.full_name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {formatTimeAgo(rsvp.created_at)}
-                                </p>
-                              </div>
+                            <div>
+                              <p className="font-medium">{rsvp.full_name || rsvp.profiles.full_name}</p>
+                              {rsvp.email_address && (
+                                <p className="text-xs text-muted-foreground">{rsvp.email_address}</p>
+                              )}
+                              {rsvp.phone_number && (
+                                <p className="text-xs text-muted-foreground">{rsvp.phone_number}</p>
+                              )}
+                              <p className="text-sm text-muted-foreground">
+                                {formatTimeAgo(rsvp.created_at)}
+                              </p>
+                            </div>
                             </div>
                             <Badge 
                               variant={

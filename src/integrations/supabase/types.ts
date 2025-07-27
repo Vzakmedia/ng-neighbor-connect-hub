@@ -774,27 +774,36 @@ export type Database = {
       event_rsvps: {
         Row: {
           created_at: string
+          email_address: string | null
           event_id: string
+          full_name: string | null
           id: string
           message: string | null
+          phone_number: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          email_address?: string | null
           event_id: string
+          full_name?: string | null
           id?: string
           message?: string | null
+          phone_number?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          email_address?: string | null
           event_id?: string
+          full_name?: string | null
           id?: string
           message?: string | null
+          phone_number?: string | null
           status?: string
           updated_at?: string
           user_id?: string

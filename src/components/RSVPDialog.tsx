@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface RSVPDialogProps {
   open: boolean;
@@ -37,40 +39,98 @@ const RSVPDialog = ({
 }: RSVPDialogProps) => {
   const [status, setStatus] = useState<'going' | 'interested' | 'not_going'>('going');
   const [message, setMessage] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [emailAddress, setEmailAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { profile } = useProfile();
+
+  // Pre-fill form with user profile data when dialog opens
+  useEffect(() => {
+    if (open && profile) {
+      setFullName(profile.full_name || '');
+      setPhoneNumber(profile.phone || '');
+    }
+    if (open && user?.email) {
+      setEmailAddress(user.email);
+    }
+  }, [open, profile, user]);
+
+  const resetForm = () => {
+    setMessage('');
+    setStatus('going');
+    setFullName('');
+    setPhoneNumber('');
+    setEmailAddress('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
+    if (!fullName.trim() || !emailAddress.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide your name and email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      // Check if user already has an RSVP for this event
+      const { data: existingRSVP, error: fetchError } = await supabase
         .from('event_rsvps')
-        .upsert({
-          event_id: eventId,
-          user_id: user.id,
-          status,
-          message: message.trim() || null
-        }, {
-          onConflict: 'event_id,user_id'
-        });
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
+      const rsvpData = {
+        status,
+        message: message.trim() || null,
+        full_name: fullName.trim(),
+        phone_number: phoneNumber.trim() || null,
+        email_address: emailAddress.trim(),
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingRSVP) {
+        // Update existing RSVP
+        const { error } = await supabase
+          .from('event_rsvps')
+          .update(rsvpData)
+          .eq('id', existingRSVP.id);
+
+        if (error) throw error;
+      } else {
+        // Create new RSVP
+        const { error } = await supabase
+          .from('event_rsvps')
+          .insert({
+            event_id: eventId,
+            user_id: user.id,
+            ...rsvpData
+          });
+
+        if (error) throw error;
+      }
 
       toast({
-        title: "RSVP submitted!",
-        description: `You've marked yourself as "${status}" for this event.`,
+        title: "RSVP Submitted!",
+        description: `Your RSVP for "${eventTitle}" has been recorded.`,
       });
 
-      onRSVPSubmitted?.();
+      // Reset form and close dialog
+      resetForm();
       onOpenChange(false);
-      
-      // Reset form
-      setStatus('going');
-      setMessage('');
+      onRSVPSubmitted?.();
+
     } catch (error) {
       console.error('Error submitting RSVP:', error);
       toast({
@@ -85,7 +145,7 @@ const RSVPDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>RSVP to Event</DialogTitle>
         </DialogHeader>
@@ -96,8 +156,50 @@ const RSVPDialog = ({
             <p className="text-sm text-muted-foreground">{eventTitle}</p>
           </div>
 
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-sm border-t pt-4">Registration Information</h4>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="emailAddress">Email Address *</Label>
+                <Input
+                  id="emailAddress"
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  placeholder="Enter your email address"
+                  type="email"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input
+                  id="phoneNumber"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Enter your phone number"
+                  type="tel"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* RSVP Status */}
           <div className="space-y-2">
-            <Label htmlFor="status">Your Response</Label>
+            <Label htmlFor="status">RSVP Status</Label>
             <Select value={status} onValueChange={(value: any) => setStatus(value)}>
               <SelectTrigger>
                 <SelectValue />
@@ -111,7 +213,7 @@ const RSVPDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Message (Optional)</Label>
+            <Label htmlFor="message">Additional Message (Optional)</Label>
             <Textarea
               id="message"
               value={message}
@@ -122,7 +224,7 @@ const RSVPDialog = ({
             />
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex gap-2 pt-4">
             <Button
               type="button"
               variant="outline"

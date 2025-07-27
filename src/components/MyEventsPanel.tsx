@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, MapPin, Users, Edit, Eye, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Edit, Eye, Clock, Download } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 import EditEventDialog from '@/components/EditEventDialog';
 
@@ -30,6 +30,9 @@ interface RSVP {
   status: 'going' | 'interested' | 'not_going';
   message?: string;
   created_at: string;
+  full_name?: string;
+  phone_number?: string;
+  email_address?: string;
   profiles: {
     full_name: string;
     avatar_url: string;
@@ -103,10 +106,10 @@ const MyEventsPanel = () => {
 
   const fetchEventRsvps = async (eventId: string) => {
     try {
-      // First get RSVPs
+      // First get RSVPs with all the new fields
       const { data: rsvpData, error: rsvpError } = await supabase
         .from('event_rsvps')
-        .select('id, user_id, status, message, created_at')
+        .select('id, user_id, status, message, created_at, full_name, phone_number, email_address')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
 
@@ -179,6 +182,65 @@ const MyEventsPanel = () => {
     // If we're viewing RSVPs for the updated event, refresh them too
     if (selectedEventId === eventToEdit?.id) {
       fetchEventRsvps(selectedEventId);
+    }
+  };
+
+  const exportRSVPs = async (eventId: string, eventTitle: string) => {
+    try {
+      const { data: rsvpData, error } = await supabase
+        .from('event_rsvps')
+        .select('status, message, created_at, full_name, phone_number, email_address')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!rsvpData || rsvpData.length === 0) {
+        toast({
+          title: "No RSVPs to export",
+          description: "This event has no RSVPs yet",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert to CSV format
+      const headers = ['Full Name', 'Email Address', 'Phone Number', 'Status', 'Message', 'RSVP Date'];
+      const csvContent = [
+        headers.join(','),
+        ...rsvpData.map(rsvp => [
+          `"${rsvp.full_name || 'N/A'}"`,
+          `"${rsvp.email_address || 'N/A'}"`,
+          `"${rsvp.phone_number || 'N/A'}"`,
+          `"${rsvp.status}"`,
+          `"${rsvp.message || 'N/A'}"`,
+          `"${new Date(rsvp.created_at).toLocaleDateString()}"`
+        ].join(','))
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${eventTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_rsvps.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Export successful",
+        description: "RSVP data has been downloaded as CSV",
+      });
+
+    } catch (error) {
+      console.error('Error exporting RSVPs:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export RSVP data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -258,6 +320,16 @@ const MyEventsPanel = () => {
                       <Eye className="h-4 w-4 mr-1" />
                       View RSVPs
                     </Button>
+                    {event.rsvp_enabled && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportRSVPs(event.id, event.title)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Export RSVPs
+                      </Button>
+                    )}
                     <Button
                       variant={event.rsvp_enabled ? "destructive" : "default"}
                       size="sm"
@@ -330,7 +402,13 @@ const MyEventsPanel = () => {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{rsvp.profiles.full_name}</p>
+                              <p className="font-medium">{rsvp.full_name || rsvp.profiles.full_name}</p>
+                              {rsvp.email_address && (
+                                <p className="text-xs text-muted-foreground">{rsvp.email_address}</p>
+                              )}
+                              {rsvp.phone_number && (
+                                <p className="text-xs text-muted-foreground">{rsvp.phone_number}</p>
+                              )}
                               <p className="text-sm text-muted-foreground">
                                 {formatTimeAgo(rsvp.created_at)}
                               </p>
