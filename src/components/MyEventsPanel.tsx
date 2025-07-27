@@ -377,9 +377,21 @@ const MyEventsPanel = () => {
         <TabsContent value="rsvps" className="space-y-4">
           {selectedEvent ? (
             <div>
-              <h3 className="text-lg font-semibold mb-4">
-                RSVPs for "{selectedEvent.title}"
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">
+                  RSVPs for "{selectedEvent.title}"
+                </h3>
+                {selectedEvent.rsvp_enabled && selectedEventRsvps.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportRSVPs(selectedEvent.id, selectedEvent.title)}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Export RSVPs
+                  </Button>
+                )}
+              </div>
               
               {selectedEventRsvps.length === 0 ? (
                 <Card>
