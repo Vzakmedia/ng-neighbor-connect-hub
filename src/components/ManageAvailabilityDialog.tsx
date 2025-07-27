@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, Plus, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
+import GoogleCalendarSync from './GoogleCalendarSync';
 
 interface Service {
   id: string;
@@ -25,12 +27,14 @@ interface ManageAvailabilityDialogProps {
 const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { syncBookingToCalendar } = useGoogleCalendar();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [maxBookings, setMaxBookings] = useState('1');
+  const [enableCalendarSync, setEnableCalendarSync] = useState(false);
 
   const handleAddAvailability = async () => {
     if (!user || !selectedDate) return;
@@ -50,6 +54,19 @@ const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialo
         });
 
       if (error) throw error;
+
+      // Sync availability to Google Calendar if enabled
+      if (enableCalendarSync) {
+        const startDateTime = `${selectedDate.toISOString().split('T')[0]}T${startTime}:00`;
+        const endDateTime = `${selectedDate.toISOString().split('T')[0]}T${endTime}:00`;
+        
+        await syncBookingToCalendar({
+          title: `Available: ${service.title}`,
+          description: `Available for ${service.title} service bookings (${maxBookings} slots)`,
+          startDateTime,
+          endDateTime,
+        });
+      }
 
       toast({
         title: "Availability added",
@@ -143,6 +160,8 @@ const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialo
               placeholder="1"
             />
           </div>
+
+          <GoogleCalendarSync onSyncEnabledChange={setEnableCalendarSync} />
 
           <div className="flex gap-2 pt-4">
             <Button 
