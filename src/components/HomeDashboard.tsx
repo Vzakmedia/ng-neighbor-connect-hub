@@ -231,7 +231,7 @@ const HomeDashboard = () => {
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
             {quickStats.map((stat, index) => {
               const Icon = stat.icon;
               
@@ -257,19 +257,24 @@ const HomeDashboard = () => {
               return (
                 <Card 
                   key={index} 
-                  className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105"
+                  className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105 min-h-[100px] sm:min-h-[110px]"
                   onClick={handleStatClick}
                 >
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                        <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                  <CardContent className="p-2 sm:p-3 md:p-4 h-full flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1 sm:mb-2">
+                      <Icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-5 md:w-5 ${stat.color}`} />
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 hidden sm:flex">
+                        <TrendingUp className="h-2 w-2 sm:h-2.5 sm:w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
                         {stat.trend}
                       </Badge>
                     </div>
-                    <div className="text-xl md:text-2xl font-bold text-foreground">{stat.value}</div>
-                    <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">{stat.value}</div>
+                    <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground leading-tight">{stat.label}</div>
+                    {/* Mobile trend badge */}
+                    <Badge variant="secondary" className="text-[9px] px-1 py-0.5 mt-1 self-start sm:hidden">
+                      <TrendingUp className="h-2 w-2 mr-0.5" />
+                      {stat.trend}
+                    </Badge>
                   </CardContent>
                 </Card>
               );
@@ -417,36 +422,37 @@ const HomeDashboard = () => {
 
               {/* Marketplace Highlights */}
               <Card className="shadow-card">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center">
-                      <ShoppingBag className="h-5 w-5 mr-2 text-community-green" />
-                      Marketplace
+                    <CardTitle className="flex items-center text-base md:text-lg">
+                      <ShoppingBag className="h-4 w-4 md:h-5 md:w-5 mr-2 text-community-green" />
+                      <span>Marketplace</span>
                     </CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => navigate('/marketplace')}
                       title="View marketplace"
+                      className="h-8 w-8 p-0"
                     >
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="px-3 md:px-6">
+                  <div className="space-y-2 md:space-y-3">
                     {marketplaceHighlights.slice(0, 2).map((item) => (
                       <div 
                         key={item.id} 
-                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="flex items-center space-x-2 md:space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
                         onClick={() => navigate('/marketplace')}
                       >
-                        <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                          <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+                        <div className="h-10 w-10 md:h-12 md:w-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                          <ShoppingBag className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{item.title}</h4>
-                          <p className="text-sm font-semibold text-primary">{item.price}</p>
+                          <h4 className="font-medium text-sm md:text-sm truncate">{item.title}</h4>
+                          <p className="text-sm md:text-sm font-semibold text-primary">{item.price}</p>
                           <p className="text-xs text-muted-foreground">{item.location}</p>
                         </div>
                       </div>
@@ -464,22 +470,22 @@ const HomeDashboard = () => {
 
               {/* Trending Topics */}
               <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                    Trending
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base md:text-lg">
+                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5 mr-2 text-primary" />
+                    <span>Trending</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+                <CardContent className="px-3 md:px-6">
+                  <div className="space-y-1.5 md:space-y-2">
                     {trendingTopics.map((topic, index) => (
                       <div 
                         key={index} 
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
                         onClick={() => setActiveTab('all')} // This could filter by hashtag in the future
                       >
-                        <span className="font-medium text-sm text-primary">{topic.tag}</span>
-                        <span className="text-xs text-muted-foreground">{topic.posts} posts</span>
+                        <span className="font-medium text-sm text-primary truncate mr-2">{topic.tag}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{topic.posts} posts</span>
                       </div>
                     ))}
                   </div>
