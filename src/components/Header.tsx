@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Bell, Search, Menu, MapPin, User, LogOut, Settings } from 'lucide-react';
+import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
@@ -108,6 +108,11 @@ const Header = () => {
     console.log('Notification bell clicked - count:', notificationCount);
   };
 
+  const handleMessagesClick = () => {
+    navigate('/messages');
+    console.log('Messages icon clicked - count:', unreadCounts.messages);
+  };
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -145,6 +150,15 @@ const Header = () => {
             </div>
             
             <ThemeToggle />
+            
+            <Button variant="ghost" size="icon" className="relative" onClick={handleMessagesClick}>
+              <MessageCircle className="h-5 w-5" />
+              {unreadCounts.messages > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
+                  {unreadCounts.messages}
+                </Badge>
+              )}
+            </Button>
             
             <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationClick}>
               <Bell className="h-5 w-5" />
@@ -215,6 +229,15 @@ const Header = () => {
             </Button>
             
             <ThemeToggle />
+            
+            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick}>
+              <MessageCircle className="h-4 w-4" />
+              {unreadCounts.messages > 0 && (
+                <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
+                  {unreadCounts.messages}
+                </Badge>
+              )}
+            </Button>
             
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleNotificationClick}>
               <Bell className="h-4 w-4" />
