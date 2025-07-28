@@ -476,7 +476,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
               Add Contact
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add App User</DialogTitle>
               <DialogDescription>
