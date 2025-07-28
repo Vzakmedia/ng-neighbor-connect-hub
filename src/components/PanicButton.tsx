@@ -278,14 +278,34 @@ const PanicButton = () => {
 
     } catch (error: any) {
       console.error('Error sending panic alert:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       
-      let errorMessage = 'Failed to send emergency alert';
-      if (error.message.includes('Geolocation')) {
-        errorMessage = 'Location access denied. Please enable location services.';
+      let errorMessage = 'Failed to send emergency alert. Please try again.';
+      let errorTitle = 'Alert Failed';
+      
+      if (error.message?.includes('Geolocation') || error.message?.includes('location')) {
+        errorMessage = 'Location access denied. Please enable location services and try again.';
+        errorTitle = 'Location Required';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+        errorTitle = 'Connection Error';
+      } else if (error.code === 'PGRST116' || error.message?.includes('violates row-level security')) {
+        errorMessage = 'Authentication error. Please log out and log back in.';
+        errorTitle = 'Authentication Error';
+      } else if (error.message?.includes('rate limit')) {
+        errorMessage = 'You are sending alerts too frequently. Please wait a moment and try again.';
+        errorTitle = 'Rate Limit';
+      } else if (error.details) {
+        errorMessage = `Database error: ${error.details}`;
       }
       
       toast({
-        title: "Alert Failed",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive"
       });

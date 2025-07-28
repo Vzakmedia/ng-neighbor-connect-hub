@@ -29,32 +29,55 @@ serve(async (req) => {
   }
 
   try {
+    // Parse request body
     const { panic_alert_id, situation_type, location, user_name }: AlertRequest = await req.json();
 
     console.log(`Processing emergency alert for panic_alert_id: ${panic_alert_id}`);
+
+    // Get the authenticated user from the request
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header provided');
+    }
+
+    // Create an authenticated supabase client
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: {
+        headers: { authorization: authHeader }
+      }
+    });
+
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !userData.user) {
+      console.error('Authentication error:', userError);
+      throw new Error('User not authenticated');
+    }
+
+    const userId = userData.user.id;
+    console.log(`Processing alert for user: ${userId}`);
 
     // Get the user's emergency contacts
     const { data: contacts, error: contactsError } = await supabase
       .from('emergency_contacts')
       .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      .eq('user_id', userId);
 
     if (contactsError) {
       console.error('Error fetching emergency contacts:', contactsError);
       throw contactsError;
     }
 
-    // Get user's emergency preferences
-    const { data: preferences, error: preferencesError } = await supabase
-      .from('emergency_preferences')
-      .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    if (preferencesError) {
-      console.error('Error fetching emergency preferences:', preferencesError);
-      // Use defaults if no preferences found
-    }
+     // Get user's emergency preferences
+     const { data: preferences, error: preferencesError } = await supabase
+       .from('emergency_preferences')
+       .select('*')
+       .eq('user_id', userId)
+       .single();
+ 
+     if (preferencesError) {
+       console.error('Error fetching emergency preferences:', preferencesError);
+       // Use defaults if no preferences found
+     }
 
     const situationLabels: { [key: string]: string } = {
       'medical_emergency': 'Medical Emergency',
@@ -113,7 +136,7 @@ serve(async (req) => {
         .from('public_emergency_alerts')
         .insert({
           panic_alert_id,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
           situation_type,
           latitude: location.latitude,
           longitude: location.longitude,
@@ -123,7 +146,7 @@ serve(async (req) => {
         });
 
       // Send community notifications to nearby users
-      await sendCommunityAlerts(location, situationLabel);
+      await sendCommunityAlerts(location, situationLabel, userId);
     }
 
     return new Response(JSON.stringify({ 
@@ -240,7 +263,7 @@ async function initiateEmergencyCall(phoneNumber: string, userName: string, situ
   */
 }
 
-async function sendCommunityAlerts(location: { latitude: number; longitude: number; address: string }, situationType: string) {
+async function sendCommunityAlerts(location: { latitude: number; longitude: number; address: string }, situationType: string, userId: string) {
   // Find users within 5km radius and send community alert
   console.log(`Sending community alerts for ${situationType} near ${location.address}`);
   
@@ -249,7 +272,7 @@ async function sendCommunityAlerts(location: { latitude: number; longitude: numb
   await supabase
     .from('safety_alerts')
     .insert({
-      user_id: (await supabase.auth.getUser()).data.user?.id,
+      user_id: userId,
       title: `Active Emergency in Area`,
       description: `There is an active ${situationType.toLowerCase()} situation in your neighborhood. Please stay alert and avoid the area if possible.`,
       alert_type: 'other',
