@@ -76,6 +76,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
 
     try {
       setLoading(true);
+      // First get RSVPs without the profiles join
       const { data: rsvpData, error } = await supabase
         .from('event_rsvps')
         .select(`
@@ -86,21 +87,28 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
           created_at,
           full_name,
           phone_number,
-          email_address,
-          profiles (
-            full_name,
-            avatar_url
-          )
+          email_address
         `)
         .eq('event_id', event.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const rsvpsWithProfiles = (rsvpData || []).map(rsvp => ({
-        ...rsvp,
-        profiles: rsvp.profiles || { full_name: 'Anonymous', avatar_url: '' }
-      })) as RSVP[];
+      // Then get profile data for each user separately
+      const rsvpsWithProfiles = await Promise.all(
+        (rsvpData || []).map(async (rsvp) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', rsvp.user_id)
+            .single();
+
+          return {
+            ...rsvp,
+            profiles: profileData || { full_name: 'Anonymous', avatar_url: '' }
+          } as RSVP;
+        })
+      );
 
       setRsvps(rsvpsWithProfiles);
 
