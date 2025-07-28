@@ -375,9 +375,11 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
   // Accept contact request
   const handleAcceptRequest = async (requestId: string) => {
+    alert('Accept button clicked for request: ' + requestId); // Debug alert
     console.log('Accepting request:', requestId);
     const request = contactRequests.find(r => r.id === requestId);
     if (!request || !user) {
+      alert('Request not found or user not available'); // Debug alert
       console.log('Request not found or user not available:', { request, user });
       return;
     }
