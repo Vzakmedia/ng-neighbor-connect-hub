@@ -675,33 +675,25 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
               onClick={(e) => handlePostClick(post.id, e)}
             >
               <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProfileClick(post.author.name, post.author.avatar);
-                        }}
-                      >
-                        <Avatar>
-                          <AvatarImage src={post.author.avatar} />
-                          <AvatarFallback>
-                            {post.author.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 
-                            className="font-medium cursor-pointer hover:text-primary transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleProfileClick(post.author.name, post.author.avatar);
-                            }}
-                          >
-                            {post.author.name}
-                          </h4>
+                <div className="flex items-start justify-between">
+                  <div 
+                    className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileClick(post.author.name, post.author.avatar);
+                    }}
+                  >
+                    <Avatar>
+                      <AvatarImage src={post.author.avatar} />
+                      <AvatarFallback>
+                        {post.author.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium">
+                          {post.author.name}
+                        </h4>
                         <Badge variant={typeBadge.variant} className="text-xs">
                           {getPostTypeIcon(post.type)}
                           <span className="ml-1">{typeBadge.label}</span>
