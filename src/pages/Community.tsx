@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 const Community = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("boards");
+  const [activeTab, setActiveTab] = useState("feed");
 
   useEffect(() => {
     if (!loading && !user) {
