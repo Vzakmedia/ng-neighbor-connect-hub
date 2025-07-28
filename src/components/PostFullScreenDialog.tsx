@@ -121,8 +121,8 @@ export const PostFullScreenDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-4 border-b">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="p-6 pb-4 border-b sticky top-0 bg-background z-10">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
                 <div 
@@ -157,17 +157,10 @@ export const PostFullScreenDialog = ({
                   </div>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={onClose}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="p-6">
             {post.title && (
               <h3 className="font-semibold text-xl mb-4">{post.title}</h3>
             )}
