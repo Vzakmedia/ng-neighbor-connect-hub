@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -180,19 +181,27 @@ const EmergencyContacts = () => {
   };
 
   const subscribeToContacts = () => {
-    const subscription = supabase.channel('emergency-contacts')
-      .on(
-        'postgres_changes',
-        {
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'emergency_contacts'
-        },
-        () => {
+        }, () => {
           loadContacts();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: 'emergency-contacts',
+        onError: loadContacts,
+        pollInterval: 45000,
+        debugName: 'EmergencyContacts'
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+      cleanupSafeSubscription('emergency-contacts', 'EmergencyContacts');
+    };
   };
 
   const loadContacts = async () => {

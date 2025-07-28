@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -214,39 +215,38 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
     }
   };
 
-  // Set up real-time subscription for comments
+  // Set up safe real-time subscription for comments
   useEffect(() => {
     if (!open || !user) return;
 
-    const channel = supabase
-      .channel(`post_comments_${postId}`)
-      .on(
-        'postgres_changes',
-        {
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'post_comments',
           filter: `post_id=eq.${postId}`
-        },
-        () => {
+        }, () => {
           fetchComments();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'comment_likes'
-        },
-        () => {
+        }, () => {
           fetchComments();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: `post_comments_${postId}`,
+        onError: fetchComments,
+        pollInterval: 45000,
+        debugName: 'CommentDropdown'
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      subscription?.unsubscribe();
+      cleanupSafeSubscription(`post_comments_${postId}`, 'CommentDropdown');
     };
   }, [open, postId, user]);
 

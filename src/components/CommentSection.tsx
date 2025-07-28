@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
@@ -277,39 +278,38 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
     }
   };
 
-  // Set up real-time subscription for comments
+  // Set up safe real-time subscription for comments
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel(`post_comments_${postId}`)
-      .on(
-        'postgres_changes',
-        {
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'post_comments',
           filter: `post_id=eq.${postId}`
-        },
-        () => {
+        }, () => {
           fetchComments();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'comment_likes'
-        },
-        () => {
+        }, () => {
           fetchComments();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: `comment_section_${postId}`,
+        onError: fetchComments,
+        pollInterval: 45000,
+        debugName: 'CommentSection'
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      subscription?.unsubscribe();
+      cleanupSafeSubscription(`comment_section_${postId}`, 'CommentSection');
     };
   }, [postId, user]);
 

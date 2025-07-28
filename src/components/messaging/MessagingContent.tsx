@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -135,17 +136,14 @@ const MessagingContent = () => {
     fetchPreferences();
     fetchConversations();
     
-    // Set up real-time subscription for new messages
-    const messageSubscription = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
+    // Set up safe real-time subscriptions for messages and conversations
+    const messageSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'direct_messages'
-        },
-        (payload) => {
+        }, (payload) => {
           const newMessage = payload.new as Message;
           if (
             (newMessage.sender_id === user.id || newMessage.recipient_id === user.id) && 
@@ -168,29 +166,39 @@ const MessagingContent = () => {
           
           // Also update conversation list to reflect the latest activity
           fetchConversations();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: 'schema-db-changes',
+        onError: () => {
+          fetchConversations();
+        },
+        pollInterval: 30000,
+        debugName: 'MessagingContent-messages'
+      }
+    );
     
-    // Set up real-time subscription for conversation updates
-    const conversationSubscription = supabase
-      .channel('conversation-changes')
-      .on(
-        'postgres_changes',
-        {
+    const conversationSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
           table: 'direct_conversations'
-        },
-        () => {
+        }, () => {
           fetchConversations();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: 'conversation-changes',
+        onError: fetchConversations,
+        pollInterval: 30000,
+        debugName: 'MessagingContent-conversations'
+      }
+    );
     
     return () => {
-      supabase.removeChannel(messageSubscription);
-      supabase.removeChannel(conversationSubscription);
+      messageSubscription?.unsubscribe();
+      conversationSubscription?.unsubscribe();
+      cleanupSafeSubscription('schema-db-changes', 'MessagingContent-messages');
+      cleanupSafeSubscription('conversation-changes', 'MessagingContent-conversations');
     };
   }, [user, activeConversation]);
 

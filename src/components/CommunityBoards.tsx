@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1309,39 +1310,38 @@ const CommunityBoards = () => {
     }
   }, [selectedBoard, user]);
 
-  // Set up real-time subscription for posts
+  // Set up safe real-time subscription for posts
   useEffect(() => {
     if (!selectedBoard || !user) return;
 
-    const channel = supabase
-      .channel(`board_posts_${selectedBoard}`)
-      .on(
-        'postgres_changes',
-        {
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'board_posts',
           filter: `board_id=eq.${selectedBoard}`
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'board_post_likes'
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: `board_posts_${selectedBoard}`,
+        onError: fetchPosts,
+        pollInterval: 45000,
+        debugName: 'CommunityBoards'
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      subscription?.unsubscribe();
+      cleanupSafeSubscription(`board_posts_${selectedBoard}`, 'CommunityBoards');
     };
   }, [selectedBoard, user]);
 
