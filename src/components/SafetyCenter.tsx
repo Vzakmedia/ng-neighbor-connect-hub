@@ -217,7 +217,14 @@ const SafetyCenter = () => {
 
       if (error) {
         console.error('Error fetching safety alerts:', error);
-        throw error;
+        toast({
+          title: "Failed to load safety alerts",
+          description: error.message || "Unknown error occurred",
+          variant: "destructive",
+        });
+        setAlerts([]);
+        setLoading(false);
+        return;
       }
       
       console.log('Safety alerts fetched:', data?.length || 0, 'alerts');
@@ -306,6 +313,11 @@ const SafetyCenter = () => {
       setPanicAlerts(uniqueAlerts);
     } catch (error) {
       console.error('Error fetching panic alerts:', error);
+      toast({
+        title: "Failed to load panic alerts", 
+        description: "Unable to fetch panic alerts. Please try refreshing.",
+        variant: "destructive"
+      });
     }
   };
 
