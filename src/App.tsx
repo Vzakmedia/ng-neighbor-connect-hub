@@ -23,7 +23,6 @@ import Services from "./pages/Services";
 import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import Contacts from "./pages/Contacts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,7 +58,6 @@ const App = () => {
               <Route path="/safety" element={<Safety />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/contacts" element={<Contacts />} />
               <Route path="/services" element={<Services />} />
               <Route path="/events" element={<Events />} />
               <Route path="/auth" element={<Auth />} />

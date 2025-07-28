@@ -14,8 +14,7 @@ import {
   Shield, 
   Calendar,
   Users,
-  Plus,
-  UserCheck
+  Plus
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -31,7 +30,6 @@ const Navigation = () => {
     { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
-    { id: 'contacts', icon: UserCheck, label: 'Contacts', count: 0, path: '/contacts' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
     { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
   ];
