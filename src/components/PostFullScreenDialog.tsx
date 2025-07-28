@@ -121,11 +121,19 @@ export const PostFullScreenDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="p-6 pb-4 border-b sticky top-0 bg-background z-10">
-            <div className="flex items-start justify-between pr-8">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-4 pb-3 border-b sticky top-0 bg-background z-10 relative">
+            <div className="flex items-start justify-between">
+              {/* Close button positioned absolutely */}
+              <button
+                onClick={onClose}
+                className="absolute top-2 right-2 z-20 p-2 rounded-full hover:bg-muted/80 transition-colors bg-background/80 backdrop-blur-sm"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
               <div 
-                className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity pr-12"
                 onClick={() => onProfileClick(post.author.name, post.author.avatar)}
               >
                 <Avatar className="h-12 w-12">
@@ -155,7 +163,7 @@ export const PostFullScreenDialog = ({
             </div>
           </DialogHeader>
           
-          <div className="p-6">
+          <div className="p-4 pt-2">
             {post.title && (
               <h3 className="font-semibold text-xl mb-4">{post.title}</h3>
             )}
