@@ -24,12 +24,14 @@ const Header = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('Header: Setting up subscriptions for user:', user.id);
       loadNotificationCount();
       subscribeToNotifications();
       subscribeToMessages(); // Always listen for message notifications
     }
     
     return () => {
+      console.log('Header: Cleaning up subscriptions');
       cleanupSafeSubscription('header-notifications', 'Header');
       cleanupSafeSubscription('header-messages', 'HeaderMessages');
     };
