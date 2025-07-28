@@ -94,6 +94,8 @@ const EmergencySettings = () => {
         .upsert({
           user_id: user.id,
           ...updatedPreferences
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
