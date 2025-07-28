@@ -123,25 +123,20 @@ export const PostFullScreenDialog = ({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="p-6 pb-4 border-b sticky top-0 bg-background z-10">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3">
-                <div 
-                  className="cursor-pointer"
-                  onClick={() => onProfileClick(post.author.name, post.author.avatar)}
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={post.author.avatar} />
-                    <AvatarFallback>
-                      {post.author.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+            <div className="flex items-start justify-between pr-8">
+              <div 
+                className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => onProfileClick(post.author.name, post.author.avatar)}
+              >
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={post.author.avatar} />
+                  <AvatarFallback>
+                    {post.author.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h4 
-                      className="font-medium text-lg cursor-pointer hover:text-primary transition-colors"
-                      onClick={() => onProfileClick(post.author.name, post.author.avatar)}
-                    >
+                    <h4 className="font-medium text-lg">
                       {post.author.name}
                     </h4>
                     <Badge variant={typeBadge.variant}>
