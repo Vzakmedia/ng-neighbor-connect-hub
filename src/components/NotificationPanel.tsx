@@ -38,15 +38,23 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Always subscribe to real-time updates when user is available
   useEffect(() => {
-    if (user && isOpen) {
-      loadNotifications();
+    if (user) {
       subscribeToNotifications();
     }
     
     return () => {
       cleanupSafeSubscription('notification-panel', 'NotificationPanel');
+      cleanupSafeSubscription('message-notifications', 'MessageNotifications');
     };
+  }, [user]);
+
+  // Load notifications only when panel opens
+  useEffect(() => {
+    if (user && isOpen) {
+      loadNotifications();
+    }
   }, [user, isOpen]);
 
   // Handle click outside to close panel
@@ -118,6 +126,12 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
                   title: "New Contact Request",
                   description: `${newNotification.sender_name || 'Someone'} wants to add you as an emergency contact.`,
                 });
+              } else if (newNotification.notification_type === 'message') {
+                playNotification('notification', 0.4);
+                toast({
+                  title: "New Message",
+                  description: `${newNotification.sender_name || 'Someone'} sent you a message.`,
+                });
               } else {
                 playNotification('normal', 0.3);
               }
@@ -141,6 +155,34 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
         onError: loadNotifications,
         pollInterval: 30000,
         debugName: 'NotificationPanel'
+      }
+    );
+
+    // Subscribe to new messages for sound notifications
+    createSafeSubscription(
+      (channel) => channel
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'direct_messages',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          (payload) => {
+            console.log('New message received:', payload);
+            if (payload.new) {
+              // Play message notification sound
+              playNotification('notification', 0.4);
+              // Don't show toast for messages as user has message icon
+            }
+          }
+        ),
+      {
+        channelName: 'message-notifications',
+        onError: () => console.log('Message notification subscription error'),
+        pollInterval: 30000,
+        debugName: 'MessageNotifications'
       }
     );
   };
