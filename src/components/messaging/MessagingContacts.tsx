@@ -50,6 +50,11 @@ interface EmergencyContact {
   is_confirmed: boolean;
   is_primary: boolean;
   created_at: string;
+  user_profile?: {
+    user_id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
 }
 
 interface ContactRequest {
@@ -61,6 +66,7 @@ interface ContactRequest {
   sender_profile?: {
     full_name: string;
     phone: string;
+    avatar_url?: string;
   };
 }
 
@@ -105,9 +111,26 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
     if (error) {
       console.error('Error fetching emergency contacts:', error);
-    } else {
-      setEmergencyContacts(data || []);
+      return;
     }
+
+    // Fetch user profiles for contacts who are app users
+    const contactsWithProfiles = await Promise.all(
+      (data || []).map(async (contact) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .eq('phone', contact.phone_number)
+          .single();
+
+        return {
+          ...contact,
+          user_profile: profile || null
+        };
+      })
+    );
+
+    setEmergencyContacts(contactsWithProfiles);
   };
 
   // Fetch contact requests
@@ -130,13 +153,13 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       (data || []).map(async (request) => {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone')
+          .select('full_name, phone, avatar_url')
           .eq('user_id', request.sender_id)
           .single();
 
         return {
           ...request,
-          sender_profile: profile || { full_name: 'Unknown', phone: '' }
+          sender_profile: profile || { full_name: 'Unknown', phone: '', avatar_url: null }
         };
       })
     );
@@ -413,6 +436,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
               <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Avatar>
+                    <AvatarImage src={request.sender_profile?.avatar_url || undefined} />
                     <AvatarFallback>
                       {request.sender_profile?.full_name?.charAt(0) || '?'}
                     </AvatarFallback>
@@ -496,6 +520,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
               <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Avatar>
+                    <AvatarImage src={contact.user_profile?.avatar_url || undefined} />
                     <AvatarFallback>
                       {contact.contact_name.charAt(0)}
                     </AvatarFallback>
