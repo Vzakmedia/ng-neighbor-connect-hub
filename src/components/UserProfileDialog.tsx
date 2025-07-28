@@ -137,21 +137,50 @@ export const UserProfileDialog = ({
     }
   };
 
-  const handlePostClick = (post: any) => {
-    // Transform the post to match the expected format
-    const transformedPost = {
-      ...post,
-      author: {
-        name: profile?.full_name || 'Anonymous User',
-        avatar: profile?.avatar_url || userAvatar
-      },
-      likes: 0,
-      comments: 0,
-      isLiked: false,
-      isSaved: false
-    };
-    setSelectedPost(transformedPost);
-    setShowPostDialog(true);
+  const handlePostClick = async (post: any) => {
+    try {
+      // Fetch complete post data with engagement metrics
+      const [likesResult, commentsResult, userLikeResult] = await Promise.all([
+        supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', post.id),
+        supabase
+          .from('post_comments')
+          .select('*')
+          .eq('post_id', post.id)
+          .order('created_at', { ascending: true }),
+        user ? supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', post.id)
+          .eq('user_id', user.id)
+          .single() : null
+      ]);
+
+      const transformedPost = {
+        ...post,
+        author: {
+          name: profile?.full_name || 'Anonymous User',
+          avatar: profile?.avatar_url || userAvatar
+        },
+        likes: likesResult.data?.length || 0,
+        comments: commentsResult.data?.length || 0,
+        isLiked: userLikeResult?.data ? true : false,
+        isSaved: false,
+        images: post.image_urls || []
+      };
+      
+      setSelectedPost(transformedPost);
+      setShowPostDialog(true);
+    } catch (error) {
+      console.error('Error fetching post details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load post details.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isOpen) return null;
