@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -123,46 +124,55 @@ const SafetyCenter = () => {
     fetchAlerts();
     fetchPanicAlerts();
     
-    // Set up comprehensive real-time subscriptions
-    const alertsSubscription = supabase
-      .channel('safety_alerts_updates')
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'safety_alerts' },
-        async (payload) => {
-          console.log('New safety alert:', payload);
-          // Fetch the complete alert with profile data
-          const { data } = await supabase
-            .from('safety_alerts')
-            .select(`
-              *,
-              profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
-            `)
-            .eq('id', payload.new.id)
-            .single();
-          
-          if (data) {
-            setAlerts(prev => [data as any, ...prev]);
-            toast({
-              title: "New Safety Alert",
-              description: `${data.title} - ${data.severity} severity`,
-            });
+    // Set up safe real-time subscriptions
+    const alertsSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'safety_alerts' },
+          async (payload) => {
+            console.log('New safety alert:', payload);
+            // Fetch the complete alert with profile data
+            const { data } = await supabase
+              .from('safety_alerts')
+              .select(`
+                *,
+                profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
+              `)
+              .eq('id', payload.new.id)
+              .single();
+            
+            if (data) {
+              setAlerts(prev => [data as any, ...prev]);
+              toast({
+                title: "New Safety Alert",
+                description: `${data.title} - ${data.severity} severity`,
+              });
+            }
           }
-        }
-      )
-      .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'safety_alerts' },
-        (payload) => {
-          console.log('Alert updated:', payload);
-          setAlerts(prev => 
-            prev.map(alert => 
-              alert.id === payload.new.id 
-                ? { ...alert, ...payload.new }
-                : alert
-            )
-          );
-        }
-      )
-      .subscribe();
+        )
+        .on('postgres_changes', 
+          { event: 'UPDATE', schema: 'public', table: 'safety_alerts' },
+          (payload) => {
+            console.log('Alert updated:', payload);
+            setAlerts(prev => 
+              prev.map(alert => 
+                alert.id === payload.new.id 
+                  ? { ...alert, ...payload.new }
+                  : alert
+              )
+            );
+          }
+        ),
+      {
+        channelName: 'safety_alerts_updates',
+        onError: () => {
+          fetchAlerts();
+          fetchPanicAlerts();
+        },
+        pollInterval: 30000,
+        debugName: 'SafetyCenter'
+      }
+    );
 
     // Auto-refresh every 30 seconds if enabled
     let refreshInterval: NodeJS.Timeout;
@@ -174,7 +184,8 @@ const SafetyCenter = () => {
     }
 
     return () => {
-      alertsSubscription.unsubscribe();
+      alertsSubscription?.unsubscribe();
+      cleanupSafeSubscription('safety_alerts_updates', 'SafetyCenter');
       if (refreshInterval) clearInterval(refreshInterval);
     };
   }, [filterSeverity, filterType, filterStatus, autoRefresh, toast]);
