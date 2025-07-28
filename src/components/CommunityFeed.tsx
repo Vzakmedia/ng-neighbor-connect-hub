@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -254,60 +255,51 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     fetchPosts();
   }, [user, profile, viewScope]);
 
-  // Set up real-time subscription for posts and interactions
+  // Set up safe real-time subscription for posts and interactions
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('community_feed_changes')
-      .on(
-        'postgres_changes',
-        {
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'community_posts'
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'post_likes'
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'post_comments'
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
+        })
+        .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'saved_posts'
-        },
-        () => {
+        }, () => {
           fetchPosts();
-        }
-      )
-      .subscribe();
+        }),
+      {
+        channelName: 'community_feed_changes',
+        onError: fetchPosts,
+        pollInterval: 45000,
+        debugName: 'CommunityFeed'
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      subscription?.unsubscribe();
+      cleanupSafeSubscription('community_feed_changes', 'CommunityFeed');
     };
   }, [user, profile, viewScope]);
 
