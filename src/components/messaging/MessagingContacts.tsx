@@ -414,12 +414,16 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       }
 
       console.log('Request accepted successfully');
+      
+      // Immediately remove the request from local state
+      setContactRequests(prev => prev.filter(req => req.id !== requestId));
+      
       toast({
         title: "Request Accepted",
         description: "Contact request has been accepted and added to your contacts.",
       });
       
-      // Refresh all contact data
+      // Refresh all contact data in background
       console.log('Refreshing contact data...');
       await Promise.all([
         fetchContactRequests(),
