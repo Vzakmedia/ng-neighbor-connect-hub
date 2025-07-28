@@ -336,6 +336,9 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       setSuggestedUsers([]);
       setAddContactOpen(false);
       
+      // Immediately refresh contact requests to show the new request
+      await fetchContactRequests();
+      
     } catch (error) {
       console.error('Error sending contact request:', error);
       toast({
