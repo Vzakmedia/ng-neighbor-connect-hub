@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 
 const Header = () => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -25,14 +26,14 @@ const Header = () => {
     }
     
     return () => {
-      const subscription = supabase.channel('header-notifications');
-      supabase.removeChannel(subscription);
+      cleanupSafeSubscription('header-notifications', 'Header');
     };
   }, [user]);
 
   const loadNotificationCount = async () => {
     if (!user) return;
     
+    console.log('Header: Loading notification count...');
     try {
       const { data, error } = await supabase
         .from('alert_notifications')
@@ -48,34 +49,43 @@ const Header = () => {
   };
 
   const subscribeToNotifications = () => {
-    const subscription = supabase.channel('header-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'alert_notifications',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        () => {
-          loadNotificationCount();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'alert_notifications',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        () => {
-          loadNotificationCount();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Header notification subscription status:', status);
-      });
+    console.log('Header: Starting safe subscription to notifications...');
+    
+    createSafeSubscription(
+      (channel) => channel
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'alert_notifications',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          () => {
+            console.log('Header: Received notification INSERT event');
+            loadNotificationCount();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'alert_notifications',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          () => {
+            console.log('Header: Received notification UPDATE event');
+            loadNotificationCount();
+          }
+        ),
+      {
+        channelName: 'header-notifications',
+        onError: loadNotificationCount,
+        pollInterval: 30000,
+        debugName: 'Header'
+      }
+    );
   };
 
   const handleNotificationClick = () => {
