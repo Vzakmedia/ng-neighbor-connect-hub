@@ -45,7 +45,6 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
     
     return () => {
       cleanupSafeSubscription('notification-panel', 'NotificationPanel');
-      cleanupSafeSubscription('message-notifications', 'MessageNotifications');
     };
   }, [user]);
 
@@ -154,34 +153,6 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
         onError: loadNotifications,
         pollInterval: 30000,
         debugName: 'NotificationPanel'
-      }
-    );
-
-    // Subscribe to new messages for sound notifications
-    createSafeSubscription(
-      (channel) => channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: `recipient_id=eq.${user?.id}`
-          },
-          (payload) => {
-            console.log('New message received:', payload);
-            if (payload.new) {
-              // Play message notification sound
-              playNotification('notification', 0.4);
-              // Don't show toast for messages as user has message icon
-            }
-          }
-        ),
-      {
-        channelName: 'message-notifications',
-        onError: () => console.log('Message notification subscription error'),
-        pollInterval: 30000,
-        debugName: 'MessageNotifications'
       }
     );
   };

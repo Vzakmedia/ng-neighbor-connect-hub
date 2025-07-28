@@ -26,10 +26,12 @@ const Header = () => {
     if (user) {
       loadNotificationCount();
       subscribeToNotifications();
+      subscribeToMessages(); // Always listen for message notifications
     }
     
     return () => {
       cleanupSafeSubscription('header-notifications', 'Header');
+      cleanupSafeSubscription('header-messages', 'HeaderMessages');
     };
   }, [user]);
 
@@ -99,6 +101,34 @@ const Header = () => {
         onError: loadNotificationCount,
         pollInterval: 30000,
         debugName: 'Header'
+      }
+    );
+  };
+
+  const subscribeToMessages = () => {
+    console.log('Header: Starting safe subscription to messages...');
+    
+    createSafeSubscription(
+      (channel) => channel
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'direct_messages',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          (payload) => {
+            console.log('Header: Received message INSERT event');
+            // Play message notification sound
+            playNotification('notification', 0.4);
+          }
+        ),
+      {
+        channelName: 'header-messages',
+        onError: () => console.log('Message notification subscription error'),
+        pollInterval: 30000,
+        debugName: 'HeaderMessages'
       }
     );
   };
