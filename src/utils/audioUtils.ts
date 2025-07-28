@@ -2,16 +2,21 @@
 let audioContext: AudioContext | null = null;
 
 // Initialize audio context
-const getAudioContext = (): AudioContext => {
+const getAudioContext = async (): Promise<AudioContext> => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Resume audio context if suspended (required for modern browsers)
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
   }
   return audioContext;
 };
 
 // Generate a pleasant notification sound
-export const generateNotificationSound = (volume: number = 0.5): void => {
-  const ctx = getAudioContext();
+export const generateNotificationSound = async (volume: number = 0.5): Promise<void> => {
+  const ctx = await getAudioContext();
   
   // Create oscillator for main tone
   const oscillator = ctx.createOscillator();
@@ -38,8 +43,8 @@ export const generateNotificationSound = (volume: number = 0.5): void => {
 };
 
 // Generate an emergency alert sound (standard EAS tone)
-export const generateEmergencySound = (volume: number = 0.7): void => {
-  const ctx = getAudioContext();
+export const generateEmergencySound = async (volume: number = 0.7): Promise<void> => {
+  const ctx = await getAudioContext();
   const duration = 2.0;
   
   // Create two oscillators for the distinctive two-tone alert
@@ -86,18 +91,33 @@ export const generateEmergencySound = (volume: number = 0.7): void => {
 };
 
 // Play notification with specified type and volume
-export const playNotification = (type: 'normal' | 'emergency' | 'notification', volume: number): void => {
+export const playNotification = async (type: 'normal' | 'emergency' | 'notification', volume: number): Promise<void> => {
   try {
+    console.log('playNotification called with type:', type, 'volume:', volume);
+    
     if (type === 'emergency') {
-      generateEmergencySound(volume);
+      await generateEmergencySound(volume);
     } else {
-      generateNotificationSound(volume);
+      await generateNotificationSound(volume);
     }
+    
+    console.log('Notification sound played successfully');
   } catch (error) {
     console.error('Error playing notification sound:', error);
-    // Fallback to system notification if available
-    if ('Notification' in window) {
-      new Notification('Test notification', { silent: false });
+    
+    // Try to use the existing notification.mp3 file as fallback
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = volume;
+      await audio.play();
+      console.log('Fallback audio file played');
+    } catch (fallbackError) {
+      console.error('Fallback audio also failed:', fallbackError);
+      
+      // Final fallback to system notification
+      if ('Notification' in window) {
+        new Notification('New message', { silent: false });
+      }
     }
   }
 };

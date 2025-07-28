@@ -68,22 +68,26 @@ const Header = () => {
             table: 'alert_notifications',
             filter: `recipient_id=eq.${user?.id}`
           },
-          (payload) => {
-            console.log('Header: Received notification INSERT event');
-            loadNotificationCount();
-            
-            // Play notification sound
-            if (payload.new) {
-              const notification = payload.new as any;
-              if (notification.notification_type === 'panic_alert') {
-                playNotification('emergency', 0.8);
-              } else if (notification.notification_type === 'contact_request') {
-                playNotification('notification', 0.5);
-              } else {
-                playNotification('normal', 0.3);
-              }
-            }
-          }
+           async (payload) => {
+             console.log('Header: Received notification INSERT event');
+             loadNotificationCount();
+             
+             // Play notification sound
+             if (payload.new) {
+               const notification = payload.new as any;
+               try {
+                 if (notification.notification_type === 'panic_alert') {
+                   await playNotification('emergency', 0.8);
+                 } else if (notification.notification_type === 'contact_request') {
+                   await playNotification('notification', 0.5);
+                 } else {
+                   await playNotification('normal', 0.3);
+                 }
+               } catch (error) {
+                 console.error('Header: Error playing notification sound:', error);
+               }
+             }
+           }
         )
         .on(
           'postgres_changes',
@@ -120,11 +124,11 @@ const Header = () => {
             table: 'direct_messages',
             filter: `recipient_id=eq.${user?.id}`
           },
-          (payload) => {
+          async (payload) => {
             console.log('Header: Received message INSERT event:', payload);
             // Play message notification sound
             try {
-              playNotification('normal', 0.7);
+              await playNotification('normal', 0.7);
               console.log('Header: Played notification sound');
             } catch (error) {
               console.error('Header: Error playing notification sound:', error);
