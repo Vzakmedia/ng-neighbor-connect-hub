@@ -25,8 +25,18 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
     }
     
     return () => {
-      const subscription = supabase.channel('emergency-notifications');
-      supabase.removeChannel(subscription);
+      try {
+        const subscription = supabase.channel('emergency-notifications');
+        supabase.removeChannel(subscription);
+        
+        // Clear polling fallback if it exists
+        if ((window as any).emergencyNotificationPoll) {
+          clearInterval((window as any).emergencyNotificationPoll);
+          delete (window as any).emergencyNotificationPoll;
+        }
+      } catch (error) {
+        console.error('Error cleaning up subscriptions:', error);
+      }
     };
   }, [user]);
   
@@ -65,72 +75,93 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
   };
   
   const subscribeToNotifications = () => {
-    const subscription = supabase.channel('emergency-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'alert_notifications',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        (payload) => {
-          console.log('New notification received:', payload);
-          if (payload.new) {
-            loadNotifications();
-            
-            // Handle different notification types
-            if (payload.new.notification_type === 'panic_alert') {
-              // Play emergency alert sound automatically
-              playNotification('emergency', 0.8);
+    try {
+      const subscription = supabase.channel('emergency-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'alert_notifications',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          (payload) => {
+            console.log('New notification received:', payload);
+            if (payload.new) {
+              loadNotifications();
               
-              toast({
-                title: "🚨 EMERGENCY ALERT",
-                description: "Someone needs your help! Check your emergency notifications.",
-                variant: "destructive",
-              });
-            } else if (payload.new.notification_type === 'contact_request') {
-              // Play a different sound for contact requests
-              playNotification('notification', 0.5);
-              
-              toast({
-                title: "New Contact Request",
-                description: `${payload.new.sender_name || 'Someone'} wants to add you as an emergency contact.`,
-              });
+              // Handle different notification types
+              if (payload.new.notification_type === 'panic_alert') {
+                // Play emergency alert sound automatically
+                playNotification('emergency', 0.8);
+                
+                toast({
+                  title: "🚨 EMERGENCY ALERT",
+                  description: "Someone needs your help! Check your emergency notifications.",
+                  variant: "destructive",
+                });
+              } else if (payload.new.notification_type === 'contact_request') {
+                // Play a different sound for contact requests
+                playNotification('notification', 0.5);
+                
+                toast({
+                  title: "New Contact Request",
+                  description: `${payload.new.sender_name || 'Someone'} wants to add you as an emergency contact.`,
+                });
+              }
             }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'panic_alerts'
-        },
-        () => {
-          loadNotifications();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'emergency_contact_requests',
-          filter: `recipient_id=eq.${user?.id}`
-        },
-        (payload) => {
-          console.log('New contact request received:', payload);
-          toast({
-            title: "Emergency Contact Request",
-            description: "Someone wants to add you as an emergency contact.",
-          });
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'panic_alerts'
+          },
+          () => {
+            loadNotifications();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'emergency_contact_requests',
+            filter: `recipient_id=eq.${user?.id}`
+          },
+          (payload) => {
+            console.log('New contact request received:', payload);
+            toast({
+              title: "Emergency Contact Request",
+              description: "Someone wants to add you as an emergency contact.",
+            });
+          }
+        )
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Failed to subscribe to emergency notifications - falling back to polling');
+            // Fallback to polling every 30 seconds
+            const pollInterval = setInterval(() => {
+              loadNotifications();
+            }, 30000);
+            
+            // Store interval for cleanup
+            (window as any).emergencyNotificationPoll = pollInterval;
+          }
+        });
+    } catch (error) {
+      console.error('Error subscribing to notifications:', error);
+      // Fallback to polling every 30 seconds
+      const pollInterval = setInterval(() => {
+        loadNotifications();
+      }, 30000);
+      
+      // Store interval for cleanup
+      (window as any).emergencyNotificationPoll = pollInterval;
+    }
   };
   
   const markAsRead = async (notificationId: string) => {

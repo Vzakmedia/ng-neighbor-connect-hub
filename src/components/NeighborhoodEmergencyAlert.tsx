@@ -25,8 +25,18 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
     
     return () => {
-      const subscription = supabase.channel('public-emergency-alerts');
-      supabase.removeChannel(subscription);
+      try {
+        const subscription = supabase.channel('public-emergency-alerts');
+        supabase.removeChannel(subscription);
+        
+        // Clear polling fallback if it exists
+        if ((window as any).publicAlertsPoll) {
+          clearInterval((window as any).publicAlertsPoll);
+          delete (window as any).publicAlertsPoll;
+        }
+      } catch (error) {
+        console.error('Error cleaning up public alerts subscriptions:', error);
+      }
     };
   }, [user]);
 
@@ -98,54 +108,77 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
   };
 
   const subscribeToPublicAlerts = () => {
-    const subscription = supabase.channel('public-emergency-alerts')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'public_emergency_alerts'
-        },
-        (payload) => {
-          if (payload.new && payload.new.user_id !== user?.id) {
-            // Check if this alert is nearby
-            if (userLocation) {
-              const distance = calculateDistance(
-                userLocation.latitude,
-                userLocation.longitude,
-                payload.new.latitude,
-                payload.new.longitude
-              );
-              
-              if (distance <= (payload.new.radius_km || 5)) {
-                // Play emergency sound for nearby public alerts
-                playNotification('emergency', 0.6);
+    try {
+      const subscription = supabase.channel('public-emergency-alerts')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'public_emergency_alerts'
+          },
+          (payload) => {
+            if (payload.new && payload.new.user_id !== user?.id) {
+              // Check if this alert is nearby
+              if (userLocation) {
+                const distance = calculateDistance(
+                  userLocation.latitude,
+                  userLocation.longitude,
+                  payload.new.latitude,
+                  payload.new.longitude
+                );
                 
-                toast({
-                  title: "🚨 EMERGENCY ALERT IN YOUR AREA",
-                  description: `${payload.new.situation_type?.replace('_', ' ').toUpperCase()} reported nearby`,
-                  variant: "destructive",
-                });
-                
-                // Reload alerts
-                loadNearbyAlerts();
+                if (distance <= (payload.new.radius_km || 5)) {
+                  // Play emergency sound for nearby public alerts
+                  playNotification('emergency', 0.6);
+                  
+                  toast({
+                    title: "🚨 EMERGENCY ALERT IN YOUR AREA",
+                    description: `${payload.new.situation_type?.replace('_', ' ').toUpperCase()} reported nearby`,
+                    variant: "destructive",
+                  });
+                  
+                  // Reload alerts
+                  loadNearbyAlerts();
+                }
               }
             }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'public_emergency_alerts'
-        },
-        () => {
-          loadNearbyAlerts();
-        }
-      )
-      .subscribe();
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'public_emergency_alerts'
+          },
+          () => {
+            loadNearbyAlerts();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Public alerts subscription status:', status);
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Failed to subscribe to public alerts - falling back to polling');
+            // Fallback to polling every 60 seconds for public alerts
+            const pollInterval = setInterval(() => {
+              loadNearbyAlerts();
+            }, 60000);
+            
+            // Store interval for cleanup
+            (window as any).publicAlertsPoll = pollInterval;
+          }
+        });
+    } catch (error) {
+      console.error('Error subscribing to public alerts:', error);
+      // Fallback to polling every 60 seconds
+      const pollInterval = setInterval(() => {
+        loadNearbyAlerts();
+      }, 60000);
+      
+      // Store interval for cleanup
+      (window as any).publicAlertsPoll = pollInterval;
+    }
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
