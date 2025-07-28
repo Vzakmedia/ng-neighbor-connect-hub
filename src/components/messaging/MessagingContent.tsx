@@ -143,18 +143,27 @@ const MessagingContent = () => {
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
-          table: 'direct_messages'
+          table: 'direct_messages',
+          filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
         }, (payload) => {
+          console.log('MessagingContent: New message received:', payload);
           const newMessage = payload.new as Message;
-          if (
-            (newMessage.sender_id === user.id || newMessage.recipient_id === user.id) && 
-            activeConversation && 
-            (
-              (activeConversation.user1_id === newMessage.sender_id && activeConversation.user2_id === newMessage.recipient_id) ||
-              (activeConversation.user1_id === newMessage.recipient_id && activeConversation.user2_id === newMessage.sender_id)
-            )
-          ) {
-            setMessages(prev => [...prev, newMessage]);
+          
+          // Always add the message to the messages state if it belongs to the active conversation
+          if (activeConversation && 
+              ((activeConversation.user1_id === newMessage.sender_id && activeConversation.user2_id === newMessage.recipient_id) ||
+               (activeConversation.user1_id === newMessage.recipient_id && activeConversation.user2_id === newMessage.sender_id))) {
+            
+            console.log('MessagingContent: Adding message to active conversation');
+            setMessages(prev => {
+              // Check if message already exists to prevent duplicates
+              const messageExists = prev.some(msg => msg.id === newMessage.id);
+              if (messageExists) {
+                console.log('MessagingContent: Message already exists, skipping');
+                return prev;
+              }
+              return [...prev, newMessage];
+            });
             
             // Mark message as read if the current user is the recipient
             if (newMessage.recipient_id === user.id) {
@@ -162,15 +171,37 @@ const MessagingContent = () => {
             }
             
             // Scroll to bottom
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
           }
           
-          // Also update conversation list to reflect the latest activity
+          // Always update conversation list to reflect the latest activity
           fetchConversations();
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
+        }, (payload) => {
+          console.log('MessagingContent: Message updated:', payload);
+          const updatedMessage = payload.new as Message;
+          
+          // Update the message in the current conversation if it exists
+          if (activeConversation && 
+              ((activeConversation.user1_id === updatedMessage.sender_id && activeConversation.user2_id === updatedMessage.recipient_id) ||
+               (activeConversation.user1_id === updatedMessage.recipient_id && activeConversation.user2_id === updatedMessage.sender_id))) {
+            
+            setMessages(prev => 
+              prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+            );
+          }
         }),
       {
-        channelName: 'schema-db-changes',
+        channelName: 'messaging-messages',
         onError: () => {
+          console.error('MessagingContent: Message subscription error');
           fetchConversations();
         },
         pollInterval: 30000,
@@ -183,12 +214,23 @@ const MessagingContent = () => {
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
-          table: 'direct_conversations'
-        }, () => {
+          table: 'direct_conversations',
+          filter: `or(user1_id.eq.${user.id},user2_id.eq.${user.id})`
+        }, (payload) => {
+          console.log('MessagingContent: Conversation updated:', payload);
+          fetchConversations();
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_conversations',
+          filter: `or(user1_id.eq.${user.id},user2_id.eq.${user.id})`
+        }, (payload) => {
+          console.log('MessagingContent: New conversation created:', payload);
           fetchConversations();
         }),
       {
-        channelName: 'conversation-changes',
+        channelName: 'messaging-conversations',
         onError: fetchConversations,
         pollInterval: 30000,
         debugName: 'MessagingContent-conversations'
@@ -196,12 +238,13 @@ const MessagingContent = () => {
     );
     
     return () => {
+      console.log('MessagingContent: Cleaning up subscriptions');
       messageSubscription?.unsubscribe();
       conversationSubscription?.unsubscribe();
-      cleanupSafeSubscription('schema-db-changes', 'MessagingContent-messages');
-      cleanupSafeSubscription('conversation-changes', 'MessagingContent-conversations');
+      cleanupSafeSubscription('messaging-messages', 'MessagingContent-messages');
+      cleanupSafeSubscription('messaging-conversations', 'MessagingContent-conversations');
     };
-  }, [user, activeConversation]);
+  }, [user]); // Only depend on user, not activeConversation
 
   // Fetch messages when active conversation changes
   useEffect(() => {
