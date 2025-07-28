@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -59,6 +60,7 @@ export const UserProfileDialog = ({
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen && userName) {
@@ -124,15 +126,45 @@ export const UserProfileDialog = ({
     return profile.neighborhood || profile.city || profile.state || 'Unknown Location';
   };
 
-  const handleSendMessage = () => {
-    if (!profile) return;
+  const handleSendMessage = async () => {
+    if (!profile || !user) return;
     
-    // Navigate to messages page with this user
-    // This would need to be implemented in your routing system
-    toast({
-      title: "Feature coming soon",
-      description: "Direct messaging feature will be available soon.",
-    });
+    try {
+      // Create or find existing conversation
+      const { data: existingConversation } = await supabase
+        .from('direct_conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${profile.user_id}),and(user1_id.eq.${profile.user_id},user2_id.eq.${user.id})`)
+        .maybeSingle();
+
+      let conversationId = existingConversation?.id;
+
+      if (!conversationId) {
+        // Create new conversation
+        const { data: newConversation, error } = await supabase
+          .from('direct_conversations')
+          .insert({
+            user1_id: user.id,
+            user2_id: profile.user_id
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        conversationId = newConversation.id;
+      }
+
+      // Navigate to messages page with the conversation
+      navigate(`/messages?conversation=${conversationId}`);
+      onClose();
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error",
+        description: "Could not start conversation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAvatarClick = () => {
