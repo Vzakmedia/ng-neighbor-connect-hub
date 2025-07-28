@@ -375,18 +375,27 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
   // Accept contact request
   const handleAcceptRequest = async (requestId: string) => {
+    console.log('Accepting request:', requestId);
     const request = contactRequests.find(r => r.id === requestId);
-    if (!request || !user) return;
+    if (!request || !user) {
+      console.log('Request not found or user not available:', { request, user });
+      return;
+    }
 
     try {
+      console.log('Updating request status to accepted...');
       // First update the request status
       const { error: updateError } = await supabase
         .from('emergency_contact_requests')
         .update({ status: 'accepted' })
         .eq('id', requestId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating request status:', updateError);
+        throw updateError;
+      }
 
+      console.log('Creating emergency contact entry...');
       // Create the emergency contact entry
       const { error: contactError } = await supabase
         .from('emergency_contacts')
@@ -399,25 +408,31 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
           is_primary: false
         });
 
-      if (contactError) throw contactError;
+      if (contactError) {
+        console.error('Error creating emergency contact:', contactError);
+        throw contactError;
+      }
 
+      console.log('Request accepted successfully');
       toast({
         title: "Request Accepted",
         description: "Contact request has been accepted and added to your contacts.",
       });
       
       // Refresh all contact data
+      console.log('Refreshing contact data...');
       await Promise.all([
         fetchContactRequests(),
         fetchEmergencyContacts(),
         fetchUserContacts()
       ]);
+      console.log('Contact data refreshed');
       
     } catch (error) {
       console.error('Error accepting request:', error);
       toast({
         title: "Error",
-        description: "Failed to accept contact request.",
+        description: "Failed to accept contact request. Please try again.",
         variant: "destructive",
       });
     }
