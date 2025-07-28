@@ -215,10 +215,20 @@ const SafetyCenter = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching safety alerts:', error);
+        throw error;
+      }
+      
+      console.log('Safety alerts fetched:', data?.length || 0, 'alerts');
       setAlerts((data as any) || []);
     } catch (error) {
       console.error('Error fetching safety alerts:', error);
+      toast({
+        title: "Failed to load safety alerts",
+        description: "Unable to fetch the latest safety alerts. Please try refreshing.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
