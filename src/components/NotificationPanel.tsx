@@ -38,7 +38,6 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Always subscribe to real-time updates when user is available
   useEffect(() => {
     if (user) {
       subscribeToNotifications();
