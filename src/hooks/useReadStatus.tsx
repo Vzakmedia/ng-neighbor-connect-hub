@@ -15,38 +15,87 @@ export const useReadStatus = () => {
 
     loadUnreadCounts();
     
-    // Set up real-time subscriptions for updates
-    const communitySubscription = supabase
-      .channel('community-posts-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, () => {
-        loadCommunityUnreadCount();
-      })
-      .subscribe();
+    // Set up real-time subscriptions for updates with error handling
+    let communitySubscription: any;
+    let messagesSubscription: any;
+    let notificationsSubscription: any;
+    let pollInterval: NodeJS.Timeout;
 
-    const messagesSubscription = supabase
-      .channel('messages-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, () => {
-        loadMessagesUnreadCount();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_conversations' }, () => {
-        loadMessagesUnreadCount();
-      })
-      .subscribe();
+    const setupPolling = () => {
+      if (pollInterval) return; // Don't setup multiple polling intervals
+      
+      pollInterval = setInterval(() => {
+        loadUnreadCounts();
+      }, 45000); // Poll every 45 seconds for unread counts
+    };
 
-    const notificationsSubscription = supabase
-      .channel('notifications-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alert_notifications' }, () => {
-        loadNotificationsUnreadCount();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alert_notifications' }, () => {
-        loadNotificationsUnreadCount();
-      })
-      .subscribe();
+    try {
+      communitySubscription = supabase
+        .channel('community-posts-changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, () => {
+          loadCommunityUnreadCount();
+        })
+        .subscribe((status) => {
+          console.log('Community subscription status:', status);
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Failed to subscribe to community posts - falling back to polling');
+            setupPolling();
+          }
+        });
+
+      messagesSubscription = supabase
+        .channel('messages-changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, () => {
+          loadMessagesUnreadCount();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_conversations' }, () => {
+          loadMessagesUnreadCount();
+        })
+        .subscribe((status) => {
+          console.log('Messages subscription status:', status);
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Failed to subscribe to messages - falling back to polling');
+            setupPolling();
+          }
+        });
+
+      notificationsSubscription = supabase
+        .channel('notifications-changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alert_notifications' }, () => {
+          loadNotificationsUnreadCount();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alert_notifications' }, () => {
+          loadNotificationsUnreadCount();
+        })
+        .subscribe((status) => {
+          console.log('Notifications subscription status:', status);
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Failed to subscribe to notifications - falling back to polling');
+            setupPolling();
+          }
+        });
+    } catch (error) {
+      console.error('Error setting up realtime subscriptions:', error);
+      setupPolling();
+    }
 
     return () => {
-      supabase.removeChannel(communitySubscription);
-      supabase.removeChannel(messagesSubscription);
-      supabase.removeChannel(notificationsSubscription);
+      try {
+        if (communitySubscription) {
+          supabase.removeChannel(communitySubscription);
+        }
+        if (messagesSubscription) {
+          supabase.removeChannel(messagesSubscription);
+        }
+        if (notificationsSubscription) {
+          supabase.removeChannel(notificationsSubscription);
+        }
+        if (pollInterval) {
+          clearInterval(pollInterval);
+        }
+      } catch (error) {
+        console.error('Error cleaning up subscriptions:', error);
+      }
     };
   }, [user]);
 
