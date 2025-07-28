@@ -136,7 +136,7 @@ const SafetyCenter = () => {
               .from('safety_alerts')
               .select(`
                 *,
-                profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
+                profiles (full_name, avatar_url)
               `)
               .eq('id', payload.new.id)
               .single();
@@ -197,7 +197,7 @@ const SafetyCenter = () => {
         .from('safety_alerts')
         .select(`
           *,
-          profiles!safety_alerts_user_id_fkey (full_name, avatar_url)
+          profiles (full_name, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -283,7 +283,7 @@ const SafetyCenter = () => {
           .from('panic_alerts')
           .select(`
             *,
-            profiles!panic_alerts_user_id_fkey (state, city)
+            profiles (state, city)
           `)
           .neq('user_id', user.id) // Exclude user's own alerts
           .order('created_at', { ascending: false });
