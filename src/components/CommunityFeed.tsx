@@ -33,6 +33,9 @@ import { useReadStatus } from '@/hooks/useReadStatus';
 import { Input } from '@/components/ui/input';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
+import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
+import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
+import { UserProfileDialog } from '@/components/UserProfileDialog';
 
 
 interface DatabasePost {
@@ -92,6 +95,14 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
   const [selectedPostType, setSelectedPostType] = useState<string>('all');
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [readStatuses, setReadStatuses] = useState<Record<string, boolean>>({});
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [postFullScreenOpen, setPostFullScreenOpen] = useState(false);
+  const [selectedFullScreenPost, setSelectedFullScreenPost] = useState<Post | null>(null);
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState('');
+  const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>(undefined);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -470,11 +481,35 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
     });
   };
 
-  const handlePostClick = async (postId: string) => {
+  const handlePostClick = async (postId: string, event?: React.MouseEvent) => {
+    // Don't open full screen if clicking on interactive elements
+    if (event?.target && (event.target as HTMLElement).closest('button, a, [role="button"]')) {
+      return;
+    }
+    
     if (!readStatuses[postId]) {
       await markCommunityPostAsRead(postId);
       setReadStatuses(prev => ({ ...prev, [postId]: true }));
     }
+    
+    const post = posts.find(p => p.id === postId);
+    if (post) {
+      setSelectedFullScreenPost(post);
+      setPostFullScreenOpen(true);
+    }
+  };
+
+  const handleImageClick = (images: string[], index: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedImages(images);
+    setSelectedImageIndex(index);
+    setImageGalleryOpen(true);
+  };
+
+  const handleProfileClick = (userName: string, userAvatar?: string) => {
+    setSelectedUserName(userName);
+    setSelectedUserAvatar(userAvatar);
+    setUserProfileOpen(true);
   };
 
   // Filter posts based on search and post type
@@ -637,20 +672,36 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
               className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
                 !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
               }`}
-              onClick={() => handlePostClick(post.id)}
+              onClick={(e) => handlePostClick(post.id, e)}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={post.author.avatar} />
-                      <AvatarFallback>
-                        {post.author.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">{post.author.name}</h4>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div 
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProfileClick(post.author.name, post.author.avatar);
+                        }}
+                      >
+                        <Avatar>
+                          <AvatarImage src={post.author.avatar} />
+                          <AvatarFallback>
+                            {post.author.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 
+                            className="font-medium cursor-pointer hover:text-primary transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProfileClick(post.author.name, post.author.avatar);
+                            }}
+                          >
+                            {post.author.name}
+                          </h4>
                         <Badge variant={typeBadge.variant} className="text-xs">
                           {getPostTypeIcon(post.type)}
                           <span className="ml-1">{typeBadge.label}</span>
@@ -709,7 +760,8 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                         key={index}
                         src={imageUrl}
                         alt="Post image"
-                        className="w-full h-24 md:h-32 object-cover rounded-md"
+                        className="w-full h-24 md:h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={(e) => handleImageClick(post.images!, index, e)}
                       />
                     ))}
                   </div>
@@ -781,6 +833,34 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           postAuthor={selectedPost.author.name}
         />
       )}
+
+      {/* Image Gallery Dialog */}
+      <ImageGalleryDialog
+        isOpen={imageGalleryOpen}
+        onClose={() => setImageGalleryOpen(false)}
+        images={selectedImages}
+        title="Post Images"
+        initialIndex={selectedImageIndex}
+      />
+
+      {/* Post Full Screen Dialog */}
+      <PostFullScreenDialog
+        isOpen={postFullScreenOpen}
+        onClose={() => setPostFullScreenOpen(false)}
+        post={selectedFullScreenPost}
+        onLike={toggleLike}
+        onSave={toggleSave}
+        onShare={handleShare}
+        onProfileClick={handleProfileClick}
+      />
+
+      {/* User Profile Dialog */}
+      <UserProfileDialog
+        isOpen={userProfileOpen}
+        onClose={() => setUserProfileOpen(false)}
+        userName={selectedUserName}
+        userAvatar={selectedUserAvatar}
+      />
     </div>
   );
 };
