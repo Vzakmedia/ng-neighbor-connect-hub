@@ -202,13 +202,16 @@ const EmergencyNotification = ({ position = 'top-right' }: EmergencyNotification
         
       if (error) throw error;
       
+      // Find and mark the notification as read
+      const notification = notifications.find(n => n.request_id === requestId);
+      if (notification) {
+        await markAsRead(notification.id);
+      }
+      
       toast({
         title: "Contact Request Accepted",
         description: "You have been added as an emergency contact.",
       });
-      
-      // Refresh notifications
-      loadNotifications();
     } catch (error) {
       console.error('Error accepting contact request:', error);
       toast({
