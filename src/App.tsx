@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 
 import { AuthProvider } from "@/hooks/useAuth";
-import EmergencyNotification from "@/components/EmergencyNotification";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
@@ -63,7 +62,6 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <EmergencyNotification position="bottom-right" />
             <NeighborhoodEmergencyAlert position="top-center" />
           </BrowserRouter>
         </TooltipProvider>

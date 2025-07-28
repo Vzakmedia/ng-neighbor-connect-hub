@@ -11,9 +11,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
+import { playNotification } from '@/utils/audioUtils';
+import NotificationPanel from '@/components/NotificationPanel';
 
 const Header = () => {
   const [notificationCount, setNotificationCount] = useState(0);
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
@@ -61,9 +64,21 @@ const Header = () => {
             table: 'alert_notifications',
             filter: `recipient_id=eq.${user?.id}`
           },
-          () => {
+          (payload) => {
             console.log('Header: Received notification INSERT event');
             loadNotificationCount();
+            
+            // Play notification sound
+            if (payload.new) {
+              const notification = payload.new as any;
+              if (notification.notification_type === 'panic_alert') {
+                playNotification('emergency', 0.8);
+              } else if (notification.notification_type === 'contact_request') {
+                playNotification('notification', 0.5);
+              } else {
+                playNotification('normal', 0.3);
+              }
+            }
           }
         )
         .on(
@@ -89,7 +104,7 @@ const Header = () => {
   };
 
   const handleNotificationClick = () => {
-    // Navigate to notifications or toggle notification panel
+    setNotificationPanelOpen(!notificationPanelOpen);
     console.log('Notification bell clicked - count:', notificationCount);
   };
 
@@ -98,7 +113,8 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Desktop Header */}
       <div className="hidden md:block">
         <div className="container flex h-16 items-center">
@@ -265,6 +281,14 @@ const Header = () => {
         </div>
       </div>
     </header>
+    
+    {/* Notification Panel */}
+    <NotificationPanel 
+      isOpen={notificationPanelOpen}
+      onClose={() => setNotificationPanelOpen(false)}
+      position="top-right"
+    />
+  </>
   );
 };
 
