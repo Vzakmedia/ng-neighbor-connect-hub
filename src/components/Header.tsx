@@ -106,7 +106,7 @@ const Header = () => {
   };
 
   const subscribeToMessages = () => {
-    console.log('Header: Starting safe subscription to messages...');
+    console.log('Header: Starting safe subscription to messages for user:', user?.id);
     
     createSafeSubscription(
       (channel) => channel
@@ -119,14 +119,17 @@ const Header = () => {
             filter: `recipient_id=eq.${user?.id}`
           },
           (payload) => {
-            console.log('Header: Received message INSERT event');
+            console.log('Header: Received message INSERT event:', payload);
             // Play message notification sound
             playNotification('notification', 0.4);
+            console.log('Header: Played notification sound');
           }
         ),
       {
         channelName: 'header-messages',
-        onError: () => console.log('Message notification subscription error'),
+        onError: () => {
+          console.error('Header: Message notification subscription error');
+        },
         pollInterval: 30000,
         debugName: 'HeaderMessages'
       }
