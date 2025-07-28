@@ -57,17 +57,20 @@ const EmergencySettings = () => {
     if (!user) return;
 
     try {
+      console.log('Loading emergency preferences for user:', user.id);
       const { data, error } = await supabase
         .from('emergency_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        console.error('Error loading preferences:', error);
         throw error;
       }
 
       if (data) {
+        console.log('Loaded preferences:', data);
         setPreferences({
           auto_alert_contacts: data.auto_alert_contacts,
           auto_alert_public: data.auto_alert_public,
@@ -76,9 +79,16 @@ const EmergencySettings = () => {
           default_situation_type: data.default_situation_type as SituationType,
           countdown_duration: data.countdown_duration
         });
+      } else {
+        console.log('No existing preferences found, using defaults');
       }
     } catch (error) {
       console.error('Error loading emergency preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load emergency preferences.",
+        variant: "destructive"
+      });
     }
   };
 
