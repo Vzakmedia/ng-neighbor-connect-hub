@@ -20,6 +20,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
+import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 
 interface UserProfile {
   id: string;
@@ -52,6 +54,9 @@ export const UserProfileDialog = ({
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [showPostDialog, setShowPostDialog] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -130,6 +135,29 @@ export const UserProfileDialog = ({
     });
   };
 
+  const handleAvatarClick = () => {
+    if (profile?.avatar_url || userAvatar) {
+      setShowImageGallery(true);
+    }
+  };
+
+  const handlePostClick = (post: any) => {
+    // Transform the post to match the expected format
+    const transformedPost = {
+      ...post,
+      author: {
+        name: profile?.full_name || 'Anonymous User',
+        avatar: profile?.avatar_url || userAvatar
+      },
+      likes: 0,
+      comments: 0,
+      isLiked: false,
+      isSaved: false
+    };
+    setSelectedPost(transformedPost);
+    setShowPostDialog(true);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -147,7 +175,10 @@ export const UserProfileDialog = ({
           <div className="space-y-6">
             {/* Profile Header */}
             <div className="flex items-start space-x-4">
-              <Avatar className="h-20 w-20">
+              <Avatar 
+                className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={handleAvatarClick}
+              >
                 <AvatarImage src={profile.avatar_url || userAvatar} />
                 <AvatarFallback className="text-lg">
                   {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -199,7 +230,11 @@ export const UserProfileDialog = ({
               ) : (
                 <div className="space-y-3">
                   {userPosts.map((post) => (
-                    <div key={post.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div 
+                      key={post.id} 
+                      className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => handlePostClick(post)}
+                    >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           {post.title && (
@@ -237,6 +272,28 @@ export const UserProfileDialog = ({
           </div>
         )}
       </DialogContent>
+
+      {/* Image Gallery Dialog */}
+      <ImageGalleryDialog
+        isOpen={showImageGallery}
+        onClose={() => setShowImageGallery(false)}
+        images={[(profile?.avatar_url || userAvatar || '')].filter(Boolean)}
+        title="Profile Picture"
+        initialIndex={0}
+      />
+
+      {/* Post Full Screen Dialog */}
+      {selectedPost && (
+        <PostFullScreenDialog
+          isOpen={showPostDialog}
+          onClose={() => setShowPostDialog(false)}
+          post={selectedPost}
+          onLike={() => {}}
+          onSave={() => {}}
+          onShare={() => {}}
+          onProfileClick={() => {}}
+        />
+      )}
     </Dialog>
   );
 };
