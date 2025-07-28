@@ -56,30 +56,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Attempting to sign out...");
       
-      // Clear local state first
-      setUser(null);
-      setSession(null);
-      
-      // Then attempt to sign out from Supabase
+      // Sign out from Supabase first (this clears the session from storage)
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Sign out error:", error);
-        // Even if there's an error, we've cleared local state
-        // This handles cases where the session is already expired
       } else {
         console.log("Sign out successful");
       }
       
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      
+      // Clear any remaining auth data from localStorage
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
+      
       // Force reload to ensure clean state
-      window.location.href = '/';
+      window.location.href = '/auth';
       
     } catch (error) {
       console.error("Sign out catch error:", error);
-      // Clear local state and redirect anyway
+      // Clear local state and storage anyway
       setUser(null);
       setSession(null);
-      window.location.href = '/';
+      localStorage.clear(); // Clear all localStorage as fallback
+      window.location.href = '/auth';
     }
   };
 
