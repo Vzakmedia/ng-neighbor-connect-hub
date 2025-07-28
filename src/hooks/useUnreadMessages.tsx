@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 
 export const useUnreadMessages = () => {
   const { user } = useAuth();
@@ -45,43 +46,56 @@ export const useUnreadMessages = () => {
     // Initial fetch
     fetchUnreadCount();
 
-    // Set up real-time subscription for conversation updates
-    const conversationChannel = supabase
-      .channel('conversation-updates')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'direct_conversations',
-        filter: `user1_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadCount();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'direct_conversations',
-        filter: `user2_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadCount();
-      })
-      .subscribe();
+    // Set up safe real-time subscriptions
+    const conversationSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'direct_conversations',
+          filter: `user1_id=eq.${user.id}`
+        }, () => {
+          fetchUnreadCount();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'direct_conversations',
+          filter: `user2_id=eq.${user.id}`
+        }, () => {
+          fetchUnreadCount();
+        }),
+      {
+        channelName: 'conversation-updates',
+        onError: fetchUnreadCount,
+        pollInterval: 45000,
+        debugName: 'useUnreadMessages-conversations'
+      }
+    );
 
-    // Set up real-time subscription for new messages
-    const messageChannel = supabase
-      .channel('message-updates')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'direct_messages',
-        filter: `recipient_id=eq.${user.id}`
-      }, () => {
-        fetchUnreadCount();
-      })
-      .subscribe();
+    const messageSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `recipient_id=eq.${user.id}`
+        }, () => {
+          fetchUnreadCount();
+        }),
+      {
+        channelName: 'message-updates',
+        onError: fetchUnreadCount,
+        pollInterval: 45000,
+        debugName: 'useUnreadMessages-messages'
+      }
+    );
 
     return () => {
-      supabase.removeChannel(conversationChannel);
-      supabase.removeChannel(messageChannel);
+      conversationSubscription?.unsubscribe();
+      messageSubscription?.unsubscribe();
+      cleanupSafeSubscription('conversation-updates', 'useUnreadMessages-conversations');
+      cleanupSafeSubscription('message-updates', 'useUnreadMessages-messages');
     };
   }, [user]);
 
