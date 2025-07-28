@@ -93,12 +93,9 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
   const [userContacts, setUserContacts] = useState<UserContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [addContactOpen, setAddContactOpen] = useState(false);
-  const [newContact, setNewContact] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    relationship: ''
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestedUsers, setSuggestedUsers] = useState<UserContact[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
 
   // Fetch emergency contacts
   const fetchEmergencyContacts = async () => {
@@ -261,45 +258,91 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     };
   }, [user]);
 
-  // Add new emergency contact
-  const handleAddContact = async () => {
-    if (!user || !newContact.name || !newContact.phone) {
-      toast({
-        title: "Error",
-        description: "Name and phone number are required.",
-        variant: "destructive",
-      });
+  // Search for app users
+  const searchAppUsers = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSuggestedUsers([]);
       return;
     }
 
-    const { error } = await supabase
-      .from('emergency_contacts')
-      .insert({
-        user_id: user.id,
-        contact_name: newContact.name,
-        phone_number: newContact.phone,
-        email: newContact.email || null,
-        relationship: newContact.relationship || null,
-        is_confirmed: false,
-        is_primary: false
-      });
+    setSearchingUsers(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, avatar_url')
+        .neq('user_id', user?.id)
+        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .limit(10);
 
-    if (error) {
-      console.error('Error adding contact:', error);
+      if (error) throw error;
+
+      // Filter out users who are already contacts
+      const existingContactIds = userContacts.map(contact => contact.user_id);
+      const filteredUsers = (data || []).filter(user => !existingContactIds.includes(user.user_id));
+
+      setSuggestedUsers(filteredUsers.map(user => ({
+        id: user.user_id,
+        user_id: user.user_id,
+        full_name: user.full_name || '',
+        phone: user.phone,
+        avatar_url: user.avatar_url
+      })));
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  // Send contact request to app user
+  const sendContactRequest = async (targetUserId: string) => {
+    if (!user) return;
+
+    try {
+      // Get recipient phone from their profile
+      const { data: recipientProfile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('user_id', targetUserId)
+        .single();
+
+      if (!recipientProfile?.phone) {
+        toast({
+          title: "Error",
+          description: "Could not find recipient's phone number.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('emergency_contact_requests')
+        .insert({
+          sender_id: user.id,
+          recipient_id: targetUserId,
+          recipient_phone: recipientProfile.phone,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Contact Request Sent",
+        description: "Your contact request has been sent successfully.",
+      });
+      
+      setSearchQuery('');
+      setSuggestedUsers([]);
+      setAddContactOpen(false);
+      
+    } catch (error) {
+      console.error('Error sending contact request:', error);
       toast({
         title: "Error",
-        description: "Failed to add contact. Please try again.",
+        description: "Failed to send contact request. Please try again.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Contact Added",
-        description: "Emergency contact has been added successfully.",
-      });
-      setNewContact({ name: '', phone: '', email: '', relationship: '' });
-      setAddContactOpen(false);
-      fetchEmergencyContacts();
-      fetchUserContacts();
     }
   };
 
@@ -435,56 +478,73 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Emergency Contact</DialogTitle>
+              <DialogTitle>Add App User</DialogTitle>
               <DialogDescription>
-                Add a new emergency contact to your list.
+                Search and add other app users to your contact list.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="contact-name">Name *</Label>
+                <Label htmlFor="user-search">Search Users</Label>
                 <Input
-                  id="contact-name"
-                  value={newContact.name}
-                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                  placeholder="Contact name"
+                  id="user-search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchAppUsers(e.target.value);
+                  }}
+                  placeholder="Search by name or phone number..."
+                  className="mb-2"
                 />
-              </div>
-              <div>
-                <Label htmlFor="contact-phone">Phone Number *</Label>
-                <Input
-                  id="contact-phone"
-                  value={newContact.phone}
-                  onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                  placeholder="+234 xxx xxx xxxx"
-                />
-              </div>
-              <div>
-                <Label htmlFor="contact-email">Email</Label>
-                <Input
-                  id="contact-email"
-                  type="email"
-                  value={newContact.email}
-                  onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
-                  placeholder="contact@example.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="contact-relationship">Relationship</Label>
-                <Input
-                  id="contact-relationship"
-                  value={newContact.relationship}
-                  onChange={(e) => setNewContact({ ...newContact, relationship: e.target.value })}
-                  placeholder="Friend, Family, etc."
-                />
+                {searchingUsers && (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  </div>
+                )}
+                {suggestedUsers.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-2 border rounded-md p-2">
+                    {suggestedUsers.map((user) => (
+                      <div key={user.user_id} className="flex items-center justify-between p-2 hover:bg-muted rounded-md">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {user.full_name?.charAt(0) || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{user.full_name}</p>
+                            {user.phone && (
+                              <p className="text-xs text-muted-foreground">{user.phone}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => sendContactRequest(user.user_id)}
+                          className="bg-gradient-primary hover:opacity-90"
+                        >
+                          <UserPlus className="h-3 w-3 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchQuery.length >= 2 && !searchingUsers && suggestedUsers.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    No users found matching your search.
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setAddContactOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddContact}>
-                Add Contact
+              <Button variant="outline" onClick={() => {
+                setAddContactOpen(false);
+                setSearchQuery('');
+                setSuggestedUsers([]);
+              }}>
+                Close
               </Button>
             </div>
           </DialogContent>
