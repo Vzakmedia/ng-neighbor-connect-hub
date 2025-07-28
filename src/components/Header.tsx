@@ -123,8 +123,12 @@ const Header = () => {
           (payload) => {
             console.log('Header: Received message INSERT event:', payload);
             // Play message notification sound
-            playNotification('notification', 0.4);
-            console.log('Header: Played notification sound');
+            try {
+              playNotification('normal', 0.7);
+              console.log('Header: Played notification sound');
+            } catch (error) {
+              console.error('Header: Error playing notification sound:', error);
+            }
           }
         ),
       {

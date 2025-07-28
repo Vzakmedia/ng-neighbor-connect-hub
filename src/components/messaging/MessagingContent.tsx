@@ -149,8 +149,11 @@ const MessagingContent = () => {
           console.log('MessagingContent: New message received:', payload);
           const newMessage = payload.new as Message;
           
+          // Check if message belongs to any conversation (not just active one)
+          const isMessageForUser = newMessage.sender_id === user.id || newMessage.recipient_id === user.id;
+          
           // Always add the message to the messages state if it belongs to the active conversation
-          if (activeConversation && 
+          if (activeConversation && isMessageForUser &&
               ((activeConversation.user1_id === newMessage.sender_id && activeConversation.user2_id === newMessage.recipient_id) ||
                (activeConversation.user1_id === newMessage.recipient_id && activeConversation.user2_id === newMessage.sender_id))) {
             
@@ -164,6 +167,7 @@ const MessagingContent = () => {
               }
               return [...prev, newMessage];
             });
+            
             
             // Mark message as read if the current user is the recipient
             if (newMessage.recipient_id === user.id) {
