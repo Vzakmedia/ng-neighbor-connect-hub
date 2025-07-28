@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -208,6 +209,56 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     };
 
     loadContacts();
+
+    // Set up real-time subscriptions
+    const contactRequestsSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_contact_requests'
+        }, (payload) => {
+          console.log('Contact request change:', payload);
+          // Refetch contact requests when any change occurs
+          fetchContactRequests();
+        }),
+      {
+        channelName: 'contact-requests-changes',
+        onError: fetchContactRequests,
+        pollInterval: 30000,
+        debugName: 'MessagingContacts-contact-requests'
+      }
+    );
+
+    const emergencyContactsSubscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_contacts'
+        }, (payload) => {
+          console.log('Emergency contact change:', payload);
+          // Refetch contacts when any change occurs
+          fetchEmergencyContacts();
+          fetchUserContacts();
+        }),
+      {
+        channelName: 'emergency-contacts-changes',
+        onError: () => {
+          fetchEmergencyContacts();
+          fetchUserContacts();
+        },
+        pollInterval: 30000,
+        debugName: 'MessagingContacts-emergency-contacts'
+      }
+    );
+
+    return () => {
+      contactRequestsSubscription?.unsubscribe();
+      emergencyContactsSubscription?.unsubscribe();
+      cleanupSafeSubscription('contact-requests-changes', 'MessagingContacts-contact-requests');
+      cleanupSafeSubscription('emergency-contacts-changes', 'MessagingContacts-emergency-contacts');
+    };
   }, [user]);
 
   // Add new emergency contact
