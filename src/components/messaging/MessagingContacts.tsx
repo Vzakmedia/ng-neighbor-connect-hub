@@ -329,24 +329,51 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
   // Accept contact request
   const handleAcceptRequest = async (requestId: string) => {
-    const { error } = await supabase
-      .from('emergency_contact_requests')
-      .update({ status: 'accepted' })
-      .eq('id', requestId);
+    const request = contactRequests.find(r => r.id === requestId);
+    if (!request || !user) return;
 
-    if (error) {
+    try {
+      // First update the request status
+      const { error: updateError } = await supabase
+        .from('emergency_contact_requests')
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+
+      if (updateError) throw updateError;
+
+      // Create the emergency contact entry
+      const { error: contactError } = await supabase
+        .from('emergency_contacts')
+        .insert({
+          user_id: user.id,
+          contact_name: request.sender_profile?.full_name || 'Unknown',
+          phone_number: request.sender_profile?.phone || '',
+          relationship: 'contact',
+          is_confirmed: true,
+          is_primary: false
+        });
+
+      if (contactError) throw contactError;
+
+      toast({
+        title: "Request Accepted",
+        description: "Contact request has been accepted and added to your contacts.",
+      });
+      
+      // Refresh all contact data
+      await Promise.all([
+        fetchContactRequests(),
+        fetchEmergencyContacts(),
+        fetchUserContacts()
+      ]);
+      
+    } catch (error) {
       console.error('Error accepting request:', error);
       toast({
         title: "Error",
         description: "Failed to accept contact request.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Request Accepted",
-        description: "Contact request has been accepted.",
-      });
-      fetchContactRequests();
     }
   };
 
