@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ConversationList from './ConversationList';
 import MessageThread from './MessageThread';
 import UserSearch from './UserSearch';
+import MessagingContacts from './MessagingContacts';
 import { Button } from '@/components/ui/button';
 import { Search, MessageCircle, Users, Settings, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -384,6 +385,63 @@ const MessagingContent = () => {
     }
   };
 
+  // Handle starting conversation from contacts
+  const handleStartConversationFromContacts = async (userId: string, contactName: string) => {
+    if (!user) return;
+    
+    // Check if conversation already exists
+    const { data: existingConversation } = await supabase
+      .from('direct_conversations')
+      .select('*')
+      .or(`and(user1_id.eq.${user.id},user2_id.eq.${userId}),and(user1_id.eq.${userId},user2_id.eq.${user.id})`)
+      .single();
+    
+    if (existingConversation) {
+      setActiveConversation({
+        ...existingConversation,
+        otherUser: {
+          id: userId,
+          full_name: contactName,
+          avatar_url: null
+        }
+      });
+    } else {
+      // Create new conversation
+      const { data: newConversation, error } = await supabase
+        .from('direct_conversations')
+        .insert({
+          user1_id: user.id,
+          user2_id: userId,
+          last_message_at: new Date().toISOString(),
+          user1_has_unread: false,
+          user2_has_unread: false
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating conversation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to start conversation. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setActiveConversation({
+        ...newConversation,
+        otherUser: {
+          id: userId,
+          full_name: contactName,
+          avatar_url: null
+        }
+      });
+    }
+    
+    setNewConversation(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -485,27 +543,7 @@ const MessagingContent = () => {
         </TabsContent>
         
         <TabsContent value="contacts" className="space-y-4">
-          <div className="border rounded-md overflow-hidden p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5" />
-              <h2 className="text-xl font-bold">Contacts</h2>
-            </div>
-            
-            <div className="flex items-center border rounded-md px-3 py-2 mb-4">
-              <Search className="h-4 w-4 mr-2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search contacts..."
-                className="bg-transparent flex-grow focus:outline-none"
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-muted-foreground text-center py-8">
-                Contact management features coming soon
-              </p>
-            </div>
-          </div>
+          <MessagingContacts onStartConversation={handleStartConversationFromContacts} />
         </TabsContent>
         
         <TabsContent value="settings" className="space-y-4">
