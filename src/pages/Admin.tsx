@@ -54,6 +54,10 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   
+  // Filter states
+  const [alertTypeFilter, setAlertTypeFilter] = useState('all');
+  const [alertStatusFilter, setAlertStatusFilter] = useState('all');
+  
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -225,6 +229,25 @@ const Admin = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Helper function to format location
+  const formatLocation = (alert: any) => {
+    if (alert.address && alert.address !== `${alert.latitude}, ${alert.longitude}`) {
+      return alert.address;
+    }
+    if (alert.latitude && alert.longitude) {
+      // For now, return a formatted coordinate display until we can implement reverse geocoding
+      return `${parseFloat(alert.latitude).toFixed(4)}, ${parseFloat(alert.longitude).toFixed(4)}`;
+    }
+    return alert.location || 'Unknown location';
+  };
+
+  const handleCreateAlert = () => {
+    toast({
+      title: "Create Alert",
+      description: "Alert creation functionality coming soon",
+    });
   };
 
   const handleResolveAlert = async (alert: any) => {
@@ -1162,7 +1185,7 @@ const Admin = () => {
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="resolved">Resolved</SelectItem>
                         <SelectItem value="false_alarm">False Alarm</SelectItem>
@@ -1197,24 +1220,27 @@ const Admin = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Select>
+                    <Select value={alertTypeFilter} onValueChange={setAlertTypeFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Alert Type" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="all">All Types</SelectItem>
                         <SelectItem value="fire">Fire</SelectItem>
                         <SelectItem value="theft">Theft</SelectItem>
                         <SelectItem value="medical">Medical</SelectItem>
                         <SelectItem value="weather">Weather</SelectItem>
+                        <SelectItem value="accident">Accident</SelectItem>
+                        <SelectItem value="break_in">Break In</SelectItem>
+                        <SelectItem value="harassment">Harassment</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select>
+                    <Select value={alertStatusFilter} onValueChange={setAlertStatusFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="resolved">Resolved</SelectItem>
@@ -1222,7 +1248,7 @@ const Admin = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button>Create Alert</Button>
+                  <Button onClick={handleCreateAlert}>Create Alert</Button>
                 </div>
                 
                 <Table>
@@ -1238,13 +1264,18 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {emergencyAlerts.map((alert) => (
+                    {emergencyAlerts
+                      .filter(alert => 
+                        (alertTypeFilter === 'all' || alert.alert_type === alertTypeFilter) &&
+                        (alertStatusFilter === 'all' || alert.status === alertStatusFilter)
+                      )
+                      .map((alert) => (
                       <TableRow key={alert.id}>
                         <TableCell className="font-medium">{alert.title || alert.description || 'Safety Alert'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{alert.alert_type || 'emergency'}</Badge>
                         </TableCell>
-                        <TableCell>{alert.address || alert.location || 'N/A'}</TableCell>
+                        <TableCell>{formatLocation(alert)}</TableCell>
                         <TableCell>{alert.profiles?.full_name || 'Anonymous'}</TableCell>
                         <TableCell>
                           <Badge variant={alert.status === 'active' ? 'destructive' : 'default'}>
@@ -1257,10 +1288,7 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => {
-                                console.log('View alert clicked:', alert);
-                                handleViewAlert(alert);
-                              }}
+                              onClick={() => handleViewAlert(alert)}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -1268,22 +1296,10 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => {
-                                console.log('Edit alert clicked:', alert);
-                                handleEditAlert(alert);
-                              }}
+                              onClick={() => handleEditAlert(alert)}
                               title="Edit Status"
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleResolveAlert(alert)}
-                              title="Mark as Resolved"
-                              disabled={alert.status === 'resolved'}
-                            >
-                              <Shield className="h-4 w-4" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -1291,7 +1307,7 @@ const Admin = () => {
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                              <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
                                 <DropdownMenuItem onClick={() => handleDeleteAlert(alert)} className="text-destructive">
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Delete Alert
