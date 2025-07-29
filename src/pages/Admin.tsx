@@ -668,9 +668,31 @@ const Admin = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" title="View Profile">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" title="Edit User">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Select defaultValue="user">
+                              <SelectTrigger className="w-24 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="moderator">Moderator</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              variant={user.is_active ? "destructive" : "default"} 
+                              size="sm"
+                              title={user.is_active ? "Suspend User" : "Activate User"}
+                            >
+                              {user.is_active ? "Suspend" : "Activate"}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
