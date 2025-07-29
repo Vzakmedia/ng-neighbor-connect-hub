@@ -219,33 +219,231 @@ const Admin = () => {
 
     fetchDashboardData();
 
-    // Set up real-time subscriptions
-    const channel = supabase
-      .channel('admin-dashboard')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'profiles' }, 
-        () => fetchDashboardData()
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'community_posts' }, 
-        () => fetchDashboardData()
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'panic_alerts' }, 
-        () => fetchDashboardData()
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'promotions' }, 
-        () => fetchDashboardData()
-      )
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'marketplace_items' }, 
-        () => fetchDashboardData()
-      )
-      .subscribe();
+    // Set up comprehensive real-time subscriptions
+    const adminChannel = supabase.channel('admin-realtime-updates');
+
+    // Users/Profiles real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'profiles' }, 
+      (payload) => {
+        console.log('Profiles change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setUsers(prev => [payload.new, ...prev.slice(0, 9)]);
+          setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
+        } else if (payload.eventType === 'UPDATE') {
+          setUsers(prev => prev.map(user => 
+            user.user_id === payload.new.user_id ? payload.new : user
+          ));
+          // Update selected user if it's being viewed
+          setSelectedUser(prev => 
+            prev?.user_id === payload.new.user_id ? payload.new : prev
+          );
+        } else if (payload.eventType === 'DELETE') {
+          setUsers(prev => prev.filter(user => user.user_id !== payload.old.user_id));
+          setStats(prev => ({ ...prev, totalUsers: prev.totalUsers - 1 }));
+        }
+      }
+    );
+
+    // Emergency alerts real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'panic_alerts' }, 
+      (payload) => {
+        console.log('Panic alerts change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setEmergencyAlerts(prev => [payload.new, ...prev.slice(0, 9)]);
+          setStats(prev => ({ ...prev, emergencyAlerts: prev.emergencyAlerts + 1 }));
+        } else if (payload.eventType === 'UPDATE') {
+          setEmergencyAlerts(prev => prev.map(alert => 
+            alert.id === payload.new.id ? payload.new : alert
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setEmergencyAlerts(prev => prev.filter(alert => alert.id !== payload.old.id));
+          setStats(prev => ({ ...prev, emergencyAlerts: prev.emergencyAlerts - 1 }));
+        }
+      }
+    );
+
+    // Promotions real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'promotions' }, 
+      (payload) => {
+        console.log('Promotions change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setPromotions(prev => [payload.new, ...prev]);
+          setStats(prev => ({ ...prev, promotions: prev.promotions + 1 }));
+        } else if (payload.eventType === 'UPDATE') {
+          setPromotions(prev => prev.map(promo => 
+            promo.id === payload.new.id ? payload.new : promo
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setPromotions(prev => prev.filter(promo => promo.id !== payload.old.id));
+          setStats(prev => ({ ...prev, promotions: prev.promotions - 1 }));
+        }
+      }
+    );
+
+    // Marketplace items real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'marketplace_items' }, 
+      (payload) => {
+        console.log('Marketplace items change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setMarketplaceItems(prev => [payload.new, ...prev.slice(0, 19)]);
+          setStats(prev => ({ ...prev, marketplaceItems: prev.marketplaceItems + 1 }));
+        } else if (payload.eventType === 'UPDATE') {
+          setMarketplaceItems(prev => prev.map(item => 
+            item.id === payload.new.id ? payload.new : item
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setMarketplaceItems(prev => prev.filter(item => item.id !== payload.old.id));
+          setStats(prev => ({ ...prev, marketplaceItems: prev.marketplaceItems - 1 }));
+        }
+      }
+    );
+
+    // Content reports real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'content_reports' }, 
+      (payload) => {
+        console.log('Content reports change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setFlaggedReports(prev => [payload.new, ...prev.slice(0, 19)]);
+          if (payload.new.status === 'pending') {
+            setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent + 1 }));
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          setFlaggedReports(prev => prev.map(report => 
+            report.id === payload.new.id ? payload.new : report
+          ));
+          // Update count based on status change
+          if (payload.old.status === 'pending' && payload.new.status !== 'pending') {
+            setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent - 1 }));
+          } else if (payload.old.status !== 'pending' && payload.new.status === 'pending') {
+            setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent + 1 }));
+          }
+        } else if (payload.eventType === 'DELETE') {
+          setFlaggedReports(prev => prev.filter(report => report.id !== payload.old.id));
+          if (payload.old.status === 'pending') {
+            setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent - 1 }));
+          }
+        }
+      }
+    );
+
+    // Sponsored content real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'sponsored_content' }, 
+      (payload) => {
+        console.log('Sponsored content change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setSponsoredContent(prev => [payload.new, ...prev.slice(0, 19)]);
+          if (payload.new.status === 'active') {
+            setStats(prev => ({ ...prev, sponsoredContent: prev.sponsoredContent + 1 }));
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          setSponsoredContent(prev => prev.map(content => 
+            content.id === payload.new.id ? payload.new : content
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setSponsoredContent(prev => prev.filter(content => content.id !== payload.old.id));
+          if (payload.old.status === 'active') {
+            setStats(prev => ({ ...prev, sponsoredContent: prev.sponsoredContent - 1 }));
+          }
+        }
+      }
+    );
+
+    // Automations real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'platform_automations' }, 
+      (payload) => {
+        console.log('Automations change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setAutomations(prev => [payload.new, ...prev]);
+          if (payload.new.is_active) {
+            setStats(prev => ({ ...prev, activeAutomations: prev.activeAutomations + 1 }));
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          setAutomations(prev => prev.map(automation => 
+            automation.id === payload.new.id ? payload.new : automation
+          ));
+          // Update count based on status change
+          if (payload.old.is_active && !payload.new.is_active) {
+            setStats(prev => ({ ...prev, activeAutomations: prev.activeAutomations - 1 }));
+          } else if (!payload.old.is_active && payload.new.is_active) {
+            setStats(prev => ({ ...prev, activeAutomations: prev.activeAutomations + 1 }));
+          }
+        } else if (payload.eventType === 'DELETE') {
+          setAutomations(prev => prev.filter(automation => automation.id !== payload.old.id));
+          if (payload.old.is_active) {
+            setStats(prev => ({ ...prev, activeAutomations: prev.activeAutomations - 1 }));
+          }
+        }
+      }
+    );
+
+    // App configuration real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'app_configuration' }, 
+      (payload) => {
+        console.log('App config change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setAppConfigs(prev => [payload.new, ...prev]);
+          setStats(prev => ({ ...prev, configSettings: prev.configSettings + 1 }));
+        } else if (payload.eventType === 'UPDATE') {
+          setAppConfigs(prev => prev.map(config => 
+            config.id === payload.new.id ? payload.new : config
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setAppConfigs(prev => prev.filter(config => config.id !== payload.old.id));
+          setStats(prev => ({ ...prev, configSettings: prev.configSettings - 1 }));
+        }
+      }
+    );
+
+    // Community posts real-time updates (for stats)
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'community_posts' }, 
+      (payload) => {
+        console.log('Community posts change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setStats(prev => ({ ...prev, activePosts: prev.activePosts + 1 }));
+        } else if (payload.eventType === 'DELETE') {
+          setStats(prev => ({ ...prev, activePosts: prev.activePosts - 1 }));
+        }
+      }
+    );
+
+    // User roles real-time updates
+    adminChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'user_roles' }, 
+      (payload) => {
+        console.log('User roles change:', payload);
+        // This helps ensure role changes are reflected immediately
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
+          // Trigger a re-fetch of user data to get updated roles
+          setTimeout(() => {
+            supabase
+              .from('profiles')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(10)
+              .then(({ data }) => {
+                if (data) setUsers(data);
+              });
+          }, 100);
+        }
+      }
+    );
+
+    adminChannel.subscribe((status) => {
+      console.log('Admin channel subscription status:', status);
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      console.log('Cleaning up admin real-time subscriptions');
+      supabase.removeChannel(adminChannel);
     };
   }, [isAdmin, toast]);
 
@@ -253,6 +451,13 @@ const Admin = () => {
   const handleEmergencyAlert = async (alertId, action) => {
     try {
       if (action === 'resolve') {
+        // Optimistically update the UI
+        setEmergencyAlerts(prev => prev.map(alert => 
+          alert.id === alertId 
+            ? { ...alert, is_resolved: true, resolved_at: new Date().toISOString(), resolved_by: user.id }
+            : alert
+        ));
+
         const { error } = await supabase
           .from('panic_alerts')
           .update({ 
@@ -262,7 +467,15 @@ const Admin = () => {
           })
           .eq('id', alertId);
 
-        if (error) throw error;
+        if (error) {
+          // Revert optimistic update on error
+          setEmergencyAlerts(prev => prev.map(alert => 
+            alert.id === alertId 
+              ? { ...alert, is_resolved: false, resolved_at: null, resolved_by: null }
+              : alert
+          ));
+          throw error;
+        }
 
         toast({
           title: "Success",
@@ -281,12 +494,23 @@ const Admin = () => {
   // Promotion management
   const handlePromotionStatus = async (promotionId, status) => {
     try {
+      // Optimistically update the UI
+      setPromotions(prev => prev.map(promo => 
+        promo.id === promotionId ? { ...promo, status } : promo
+      ));
+
       const { error } = await supabase
         .from('promotions')
         .update({ status })
         .eq('id', promotionId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setPromotions(prev => prev.map(promo => 
+          promo.id === promotionId ? { ...promo, status: promo.status } : promo
+        ));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -304,12 +528,23 @@ const Admin = () => {
   // Marketplace item management
   const handleMarketplaceStatus = async (itemId, status) => {
     try {
+      // Optimistically update the UI
+      setMarketplaceItems(prev => prev.map(item => 
+        item.id === itemId ? { ...item, status } : item
+      ));
+
       const { error } = await supabase
         .from('marketplace_items')
         .update({ status })
         .eq('id', itemId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setMarketplaceItems(prev => prev.map(item => 
+          item.id === itemId ? { ...item, status: item.status } : item
+        ));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -327,6 +562,13 @@ const Admin = () => {
   // Content moderation management
   const handleContentReport = async (reportId, action) => {
     try {
+      // Optimistically update the UI
+      setFlaggedReports(prev => prev.map(report => 
+        report.id === reportId 
+          ? { ...report, status: action, reviewed_by: user.id, reviewed_at: new Date().toISOString() }
+          : report
+      ));
+
       const { error } = await supabase
         .from('content_reports')
         .update({ 
@@ -336,7 +578,15 @@ const Admin = () => {
         })
         .eq('id', reportId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setFlaggedReports(prev => prev.map(report => 
+          report.id === reportId 
+            ? { ...report, status: 'pending', reviewed_by: null, reviewed_at: null }
+            : report
+        ));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -354,12 +604,23 @@ const Admin = () => {
   // Sponsored content management
   const handleSponsoredContent = async (contentId, action) => {
     try {
+      // Optimistically update the UI
+      setSponsoredContent(prev => prev.map(content => 
+        content.id === contentId ? { ...content, status: action } : content
+      ));
+
       const { error } = await supabase
         .from('sponsored_content')
         .update({ status: action })
         .eq('id', contentId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setSponsoredContent(prev => prev.map(content => 
+          content.id === contentId ? { ...content, status: content.status } : content
+        ));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -377,12 +638,23 @@ const Admin = () => {
   // Automation management
   const handleAutomationToggle = async (automationId, isActive) => {
     try {
+      // Optimistically update the UI
+      setAutomations(prev => prev.map(automation => 
+        automation.id === automationId ? { ...automation, is_active: isActive } : automation
+      ));
+
       const { error } = await supabase
         .from('platform_automations')
         .update({ is_active: isActive })
         .eq('id', automationId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setAutomations(prev => prev.map(automation => 
+          automation.id === automationId ? { ...automation, is_active: !isActive } : automation
+        ));
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -448,6 +720,8 @@ const Admin = () => {
         title: "Success",
         description: `User role updated to ${newRole}`
       });
+
+      // The real-time subscription will handle the UI update
     } catch (error) {
       toast({
         title: "Error",
@@ -483,12 +757,31 @@ const Admin = () => {
 
   const handleUserVerification = async (userId, isVerified) => {
     try {
+      // Optimistically update the UI
+      setUsers(prev => prev.map(user => 
+        user.user_id === userId ? { ...user, is_verified: isVerified } : user
+      ));
+      
+      // Update selected user if it's being viewed
+      setSelectedUser(prev => 
+        prev?.user_id === userId ? { ...prev, is_verified: isVerified } : prev
+      );
+
       const { error } = await supabase
         .from('profiles')
         .update({ is_verified: isVerified })
         .eq('user_id', userId);
 
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setUsers(prev => prev.map(user => 
+          user.user_id === userId ? { ...user, is_verified: !isVerified } : user
+        ));
+        setSelectedUser(prev => 
+          prev?.user_id === userId ? { ...prev, is_verified: !isVerified } : prev
+        );
+        throw error;
+      }
 
       toast({
         title: "Success",
