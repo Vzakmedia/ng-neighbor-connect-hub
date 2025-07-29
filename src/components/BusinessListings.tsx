@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import BusinessRegistrationDialog from './BusinessRegistrationDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -54,6 +56,45 @@ const businessCategories = [
   'other'
 ];
 
+const nigerianLocations = {
+  'Lagos State': {
+    'Lagos Island': ['Victoria Island', 'Ikoyi', 'Lagos Island Central', 'Tafawa Balewa Square'],
+    'Lagos Mainland': ['Yaba', 'Surulere', 'Mushin', 'Ikeja', 'Maryland', 'Ogba', 'Palmgrove'],
+    'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Sangotedo', 'Chevron'],
+    'Alimosho': ['Egbeda', 'Idimu', 'Ikotun', 'Akowonjo', 'Igando'],
+    'Kosofe': ['Ketu', 'Mile 12', 'Ojota', 'Anthony Village'],
+    'Other Areas': ['Gbagada', 'Festac', 'Satellite Town', 'Badagry', 'Epe']
+  },
+  'Federal Capital Territory': {
+    'Abuja Municipal': ['Central Business District', 'Garki', 'Wuse', 'Maitama', 'Asokoro'],
+    'Gwagwalada': ['Gwagwalada Central', 'Dobi', 'Paiko'],
+    'Kuje': ['Kuje Central', 'Chibiri', 'Gudun Karya'],
+    'Bwari': ['Bwari Central', 'Kubwa', 'Dutse', 'Sabon Gida'],
+    'Kwali': ['Kwali Central', 'Kilankwa', 'Yangoji'],
+    'Abaji': ['Abaji Central', 'Pandogari', 'Yaba']
+  },
+  'Rivers State': {
+    'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Town', 'Diobu'],
+    'Obio-Akpor': ['Rumuola', 'Rumuokwurushi', 'Choba', 'Alakahia', 'Eliozu'],
+    'Okrika': ['Okrika Town', 'Bolo', 'Ogan'],
+    'Oyigbo': ['Oyigbo Central', 'Komkom', 'Afam'],
+    'Other Areas': ['Bonny', 'Degema', 'Ahoada', 'Omoku']
+  },
+  'Kano State': {
+    'Kano Municipal': ['Sabon Gari', 'Fagge', 'Dala', 'Gwale', 'Nassarawa'],
+    'Nasarawa': ['Nasarawa Central', 'Bompai', 'Hotoro'],
+    'Ungogo': ['Ungogo Central', 'Bachirawa', 'Zango'],
+    'Other Areas': ['Wudil', 'Gwarzo', 'Dawakin Kudu', 'Kiru']
+  },
+  'Oyo State': {
+    'Ibadan North': ['Bodija', 'Agodi', 'Jericho', 'Mokola', 'Sango'],
+    'Ibadan South-West': ['Ring Road', 'Dugbe', 'Adamasingba', 'Oke Ado'],
+    'Ibadan North-East': ['Iwo Road', 'Challenge', 'Felele', 'Bashorun'],
+    'Ibadan South-East': ['Mapo', 'Oja Oba', 'Isale Eko'],
+    'Other Areas': ['Ogbomoso', 'Oyo', 'Iseyin', 'Saki']
+  }
+};
+
 const BusinessListings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -61,7 +102,11 @@ const BusinessListings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedState, setSelectedState] = useState('all');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState('all');
+  const [searchLocation, setSearchLocation] = useState('');
+  const [locationOpen, setLocationOpen] = useState(false);
 
   const fetchBusinesses = async () => {
     try {
@@ -98,9 +143,23 @@ const BusinessListings = () => {
         filteredBusinesses = filteredBusinesses.filter(b => b.category === selectedCategory);
       }
 
-      if (selectedLocation !== 'all') {
+      // Enhanced location filtering
+      if (selectedState !== 'all') {
         filteredBusinesses = filteredBusinesses.filter(b => 
-          b.city?.toLowerCase().includes(selectedLocation.toLowerCase())
+          b.state?.toLowerCase().includes(selectedState.toLowerCase())
+        );
+      }
+
+      if (selectedCity !== 'all') {
+        filteredBusinesses = filteredBusinesses.filter(b => 
+          b.city?.toLowerCase().includes(selectedCity.toLowerCase()) ||
+          b.physical_address?.toLowerCase().includes(selectedCity.toLowerCase())
+        );
+      }
+
+      if (selectedNeighborhood !== 'all') {
+        filteredBusinesses = filteredBusinesses.filter(b => 
+          b.physical_address?.toLowerCase().includes(selectedNeighborhood.toLowerCase())
         );
       }
 
@@ -138,6 +197,47 @@ const BusinessListings = () => {
     return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Get available cities for selected state
+  const getAvailableCities = () => {
+    if (selectedState === 'all') return [];
+    return Object.keys(nigerianLocations[selectedState as keyof typeof nigerianLocations] || {});
+  };
+
+  // Get available neighborhoods for selected city
+  const getAvailableNeighborhoods = () => {
+    if (selectedState === 'all' || selectedCity === 'all') return [];
+    const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
+    return stateData?.[selectedCity as keyof typeof stateData] || [];
+  };
+
+  // Get all locations for search
+  const getAllLocations = () => {
+    const locations: string[] = [];
+    Object.entries(nigerianLocations).forEach(([state, cities]) => {
+      locations.push(state);
+      Object.entries(cities).forEach(([city, neighborhoods]) => {
+        locations.push(city);
+        neighborhoods.forEach(neighborhood => {
+          locations.push(neighborhood);
+        });
+      });
+    });
+    return locations;
+  };
+
+  // Handle state selection
+  const handleStateChange = (state: string) => {
+    setSelectedState(state);
+    setSelectedCity('all');
+    setSelectedNeighborhood('all');
+  };
+
+  // Handle city selection
+  const handleCityChange = (city: string) => {
+    setSelectedCity(city);
+    setSelectedNeighborhood('all');
+  };
+  
   const renderStars = (rating: number | null) => {
     if (!rating) return <span className="text-muted-foreground text-sm">No ratings</span>;
     
@@ -158,7 +258,7 @@ const BusinessListings = () => {
 
   useEffect(() => {
     fetchBusinesses();
-  }, [searchTerm, selectedCategory, selectedLocation]);
+  }, [searchTerm, selectedCategory, selectedState, selectedCity, selectedNeighborhood]);
 
   if (loading) {
     return (
@@ -194,19 +294,158 @@ const BusinessListings = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              <SelectItem value="Lagos">Lagos</SelectItem>
-              <SelectItem value="Abuja">Abuja</SelectItem>
-              <SelectItem value="Port Harcourt">Port Harcourt</SelectItem>
-              <SelectItem value="Kano">Kano</SelectItem>
-              <SelectItem value="Ibadan">Ibadan</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          {/* Enhanced Location Search */}
+          <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={locationOpen}
+                className="w-[250px] justify-between"
+              >
+                {selectedNeighborhood !== 'all' 
+                  ? selectedNeighborhood
+                  : selectedCity !== 'all' 
+                  ? selectedCity
+                  : selectedState !== 'all' 
+                  ? selectedState
+                  : "Select location..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-0">
+              <Command>
+                <CommandInput 
+                  placeholder="Search locations..." 
+                  value={searchLocation}
+                  onValueChange={setSearchLocation}
+                />
+                <CommandEmpty>No location found.</CommandEmpty>
+                
+                <CommandGroup heading="Quick Reset">
+                  <CommandItem
+                    onSelect={() => {
+                      setSelectedState('all');
+                      setSelectedCity('all');
+                      setSelectedNeighborhood('all');
+                      setLocationOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
+                    All Locations
+                  </CommandItem>
+                </CommandGroup>
+
+                {/* States */}
+                <CommandGroup heading="States">
+                  {Object.keys(nigerianLocations)
+                    .filter(state => state.toLowerCase().includes(searchLocation.toLowerCase()))
+                    .map((state) => (
+                    <CommandItem
+                      key={state}
+                      onSelect={() => {
+                        handleStateChange(state);
+                        setLocationOpen(false);
+                      }}
+                    >
+                      <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
+                      {state}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+
+                {/* Cities for selected state */}
+                {selectedState !== 'all' && (
+                  <CommandGroup heading={`Cities in ${selectedState}`}>
+                    {getAvailableCities()
+                      .filter(city => city.toLowerCase().includes(searchLocation.toLowerCase()))
+                      .map((city) => (
+                      <CommandItem
+                        key={city}
+                        onSelect={() => {
+                          handleCityChange(city);
+                          setLocationOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
+                        {city}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+
+                {/* Neighborhoods for selected city */}
+                {selectedCity !== 'all' && (
+                  <CommandGroup heading={`Areas in ${selectedCity}`}>
+                    {getAvailableNeighborhoods()
+                      .filter(neighborhood => neighborhood.toLowerCase().includes(searchLocation.toLowerCase()))
+                      .map((neighborhood) => (
+                      <CommandItem
+                        key={neighborhood}
+                        onSelect={() => {
+                          setSelectedNeighborhood(neighborhood);
+                          setLocationOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
+                        {neighborhood}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+
+                {/* Search all locations */}
+                {searchLocation && (
+                  <CommandGroup heading="Search Results">
+                    {getAllLocations()
+                      .filter(location => 
+                        location.toLowerCase().includes(searchLocation.toLowerCase()) &&
+                        !Object.keys(nigerianLocations).includes(location)
+                      )
+                      .slice(0, 10)
+                      .map((location) => (
+                      <CommandItem
+                        key={location}
+                        onSelect={() => {
+                          // Find which state/city this belongs to
+                          const foundState = Object.entries(nigerianLocations).find(([state, cities]) => {
+                            if (state === location) return true;
+                            return Object.entries(cities).some(([city, neighborhoods]) => {
+                              return city === location || neighborhoods.includes(location);
+                            });
+                          });
+                          
+                          if (foundState) {
+                            const [stateName, cities] = foundState;
+                            const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
+                              return city === location || neighborhoods.includes(location);
+                            });
+                            
+                            if (foundCity) {
+                              const [cityName, neighborhoods] = foundCity;
+                              if (neighborhoods.includes(location)) {
+                                setSelectedState(stateName);
+                                setSelectedCity(cityName);
+                                setSelectedNeighborhood(location);
+                              } else {
+                                setSelectedState(stateName);
+                                setSelectedCity(location);
+                                setSelectedNeighborhood('all');
+                              }
+                            }
+                          }
+                          setLocationOpen(false);
+                        }}
+                      >
+                        {location}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Register Business CTA */}
@@ -234,7 +473,7 @@ const BusinessListings = () => {
           <CardContent className="text-center py-8">
             <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all' 
+              {searchTerm || selectedCategory !== 'all' || selectedState !== 'all' || selectedCity !== 'all' || selectedNeighborhood !== 'all'
                 ? 'No businesses found matching your criteria' 
                 : 'No verified businesses yet'}
             </p>
