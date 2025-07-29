@@ -876,8 +876,7 @@ const Admin = () => {
         </TabsList>
 
         <div className="flex-1">
-
-        {/* Overview Tab */}
+        
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -1645,7 +1644,6 @@ const Admin = () => {
           </div>
         </TabsContent>
 
-        {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
