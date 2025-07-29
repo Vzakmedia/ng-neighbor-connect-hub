@@ -1049,119 +1049,214 @@ const Admin = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Emergency Alert Details Dialog */}
+          {/* Emergency Alert Details Popup */}
           <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-[100]">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Emergency Alert Details</DialogTitle>
+                <DialogTitle className="flex items-center gap-3">
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
+                  Emergency Alert Details
+                </DialogTitle>
                 <DialogDescription>
-                  View detailed information about this emergency alert
+                  Complete information and management options for this emergency alert
                 </DialogDescription>
               </DialogHeader>
               
               {selectedAlert ? (
-                <div className="grid gap-6">
-                  <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-6">
+                  {/* Alert Header */}
+                  <div className="flex items-start justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold">{selectedAlert.title || 'Emergency Alert'}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Alert ID: {selectedAlert.id}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant={selectedAlert.status === 'active' ? 'destructive' : selectedAlert.status === 'resolved' ? 'default' : 'secondary'}>
+                          {selectedAlert.status}
+                        </Badge>
+                        <Badge variant={selectedAlert.severity === 'critical' ? 'destructive' : 'outline'}>
+                          {selectedAlert.severity}
+                        </Badge>
+                        <Badge variant="outline">{selectedAlert.alert_type || 'other'}</Badge>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">Reporter</p>
+                      <p className="text-sm text-muted-foreground">{selectedAlert.profiles?.full_name || 'Anonymous'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(selectedAlert.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Alert Details Grid */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Description */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                          <AlertTriangle className="h-6 w-6 text-destructive" />
-                          <div>
-                            <div className="font-medium">{selectedAlert.title || 'Emergency Alert'}</div>
-                            <div className="text-sm text-muted-foreground">
-                              Alert ID: {selectedAlert.id.substring(0, 8)}...
-                            </div>
-                          </div>
-                        </CardTitle>
+                        <CardTitle className="text-base">Description</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Label>Type</Label>
-                          <Badge variant="outline">{selectedAlert.alert_type || 'other'}</Badge>
-                        </div>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {selectedAlert.description || 'No description provided'}
+                        </p>
                         
-                        <div className="flex items-center justify-between">
-                          <Label>Severity</Label>
-                          <Badge variant={selectedAlert.severity === 'critical' ? 'destructive' : 'default'}>
-                            {selectedAlert.severity}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <Label>Status</Label>
-                          <Badge variant={selectedAlert.status === 'active' ? 'destructive' : 'default'}>
-                            {selectedAlert.status}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <Label>Location</Label>
-                          <span className="text-sm">{selectedAlert.address || 'Location not specified'}</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <Label>Reporter</Label>
-                          <span className="text-sm">{selectedAlert.profiles?.full_name || 'Anonymous'}</span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <Label>Created</Label>
-                          <span className="text-sm">{new Date(selectedAlert.created_at).toLocaleString()}</span>
-                        </div>
-                        
-                        {selectedAlert.verified_at && (
-                          <div className="flex items-center justify-between">
-                            <Label>Verified</Label>
-                            <span className="text-sm">{new Date(selectedAlert.verified_at).toLocaleString()}</span>
+                        {selectedAlert.images && selectedAlert.images.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Attached Images</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {selectedAlert.images.map((img: string, idx: number) => (
+                                <img key={idx} src={img} alt={`Alert evidence ${idx + 1}`} className="w-full h-20 object-cover rounded border" />
+                              ))}
+                            </div>
                           </div>
                         )}
                       </CardContent>
                     </Card>
 
+                    {/* Location & Details */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Description</CardTitle>
+                        <CardTitle className="text-base">Location & Details</CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedAlert.description || 'No description provided'}
-                        </p>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Location:</span>
+                          <span className="text-sm text-muted-foreground">{formatLocation(selectedAlert)}</span>
+                        </div>
                         
                         {selectedAlert.latitude && selectedAlert.longitude && (
-                          <div className="mt-4">
-                            <Label className="text-sm font-medium">Coordinates</Label>
-                            <p className="text-sm text-muted-foreground">
-                              {selectedAlert.latitude}, {selectedAlert.longitude}
-                            </p>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Coordinates:</span>
+                            <span className="text-sm text-muted-foreground font-mono">
+                              {parseFloat(selectedAlert.latitude).toFixed(6)}, {parseFloat(selectedAlert.longitude).toFixed(6)}
+                            </span>
                           </div>
                         )}
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Verified:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {selectedAlert.is_verified ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        
+                        {selectedAlert.verified_at && (
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">Verified At:</span>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(selectedAlert.verified_at).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Last Updated:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(selectedAlert.updated_at).toLocaleString()}
+                          </span>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
 
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleEditAlert(selectedAlert)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Status
-                    </Button>
-                    {selectedAlert.status !== 'resolved' && (
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center pt-4 border-t">
+                    <div className="flex space-x-2">
                       <Button
+                        variant="outline"
                         onClick={() => {
-                          handleResolveAlert(selectedAlert);
-                          setAlertDialogOpen(false);
+                          setEditingAlertStatus(selectedAlert.status);
+                          setEditAlertDialogOpen(true);
                         }}
+                        className="flex items-center gap-2"
                       >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Mark as Resolved
+                        <Edit className="h-4 w-4" />
+                        Edit Status
                       </Button>
-                    )}
+                      
+                      {selectedAlert.status !== 'resolved' && (
+                        <Button
+                          onClick={() => {
+                            handleResolveAlert(selectedAlert);
+                            setAlertDialogOpen(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Shield className="h-4 w-4" />
+                          Mark as Resolved
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (selectedAlert.latitude && selectedAlert.longitude) {
+                            window.open(`https://maps.google.com/?q=${selectedAlert.latitude},${selectedAlert.longitude}`, '_blank');
+                          }
+                        }}
+                        disabled={!selectedAlert.latitude || !selectedAlert.longitude}
+                        className="flex items-center gap-2"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        View on Map
+                      </Button>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button variant="outline" onClick={() => setAlertDialogOpen(false)}>
+                        Close
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="px-3">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedAlert.id);
+                              toast({ title: "Alert ID copied to clipboard" });
+                            }}
+                          >
+                            Copy Alert ID
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              const alertData = JSON.stringify(selectedAlert, null, 2);
+                              const blob = new Blob([alertData], { type: 'application/json' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `alert-${selectedAlert.id.substring(0, 8)}.json`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                          >
+                            Export Data
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setAlertDialogOpen(false);
+                              handleDeleteAlert(selectedAlert);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Alert
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
+                  <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No alert selected</p>
                 </div>
               )}
@@ -1217,13 +1312,6 @@ const Admin = () => {
             </DialogContent>
           </Dialog>
         </TabsContent>
-
-        {/* Debug Info - Remove after testing */}
-        <div className="fixed bottom-4 right-4 bg-background border p-4 rounded shadow-lg text-xs max-w-sm">
-          <div>AlertDialog: {alertDialogOpen ? 'OPEN' : 'CLOSED'}</div>
-          <div>EditDialog: {editAlertDialogOpen ? 'OPEN' : 'CLOSED'}</div>
-          <div>SelectedAlert: {selectedAlert ? selectedAlert.id?.substring(0, 8) : 'None'}</div>
-        </div>
 
         <TabsContent value="emergency">
           <Card>
