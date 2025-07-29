@@ -2858,11 +2858,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_user_staff_role: {
+        Args: { _user_id?: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      has_staff_permission: {
+        Args: { _user_id: string; _permission: string; _access_type?: string }
         Returns: boolean
       }
       is_board_admin: {
@@ -2883,6 +2891,15 @@ export type Database = {
           _user_id?: string
           _user_location?: string
           _impression_type?: string
+        }
+        Returns: undefined
+      }
+      log_staff_activity: {
+        Args: {
+          _action_type: string
+          _resource_type: string
+          _resource_id?: string
+          _details?: Json
         }
         Returns: undefined
       }

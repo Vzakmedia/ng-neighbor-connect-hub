@@ -51,12 +51,13 @@ const Admin = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
 
-  // Simple admin check
-  const isAdmin = user?.email === "vzakfenwa@gmail.com";
+  // Simple super admin check
+  const isSuperAdmin = user?.email === "vzakfenwa@gmail.com";
+  const [userRole, setUserRole] = useState(null);
 
   // Real-time data fetching
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
 
     const fetchDashboardData = async () => {
       try {
@@ -445,7 +446,7 @@ const Admin = () => {
       console.log('Cleaning up admin real-time subscriptions');
       supabase.removeChannel(adminChannel);
     };
-  }, [isAdmin, toast]);
+  }, [isSuperAdmin, toast]);
 
   // Emergency alert management
   const handleEmergencyAlert = async (alertId, action) => {
@@ -800,7 +801,7 @@ const Admin = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>

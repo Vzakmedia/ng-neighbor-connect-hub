@@ -68,8 +68,12 @@ const App = () => {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/events" element={<Events />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/business" element={<Business />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/moderator" element={<ModeratorDashboard />} />
+          <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/support" element={<SupportDashboard />} />
+          <Route path="/staff" element={<StaffDashboard />} />
+          <Route path="/business" element={<Business />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
