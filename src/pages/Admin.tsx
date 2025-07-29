@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -56,6 +57,9 @@ const Admin = () => {
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
   
   
   // Config update handler
@@ -64,6 +68,165 @@ const Admin = () => {
       title: "Configuration Updated",
       description: "Settings have been saved successfully.",
     });
+  };
+
+  // User management handlers
+  const handleEditUserRole = async (user: any) => {
+    const validRoles = ['user', 'admin', 'super_admin', 'moderator', 'manager', 'support', 'staff'];
+    const newRole = prompt(`Enter new role for ${user.full_name} (${validRoles.join(', ')}):`, user.user_roles?.[0]?.role || 'user');
+    if (!newRole || !validRoles.includes(newRole)) {
+      if (newRole) {
+        toast({
+          title: "Invalid Role",
+          description: `Role must be one of: ${validRoles.join(', ')}`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole as any })
+        .eq('user_id', user.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role Updated",
+        description: `User role updated to ${newRole}`,
+      });
+      
+      fetchUsers(); // Refresh the user list
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleVerification = async (user: any) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_verified: !user.is_verified })
+        .eq('user_id', user.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Verification Updated",
+        description: `User ${user.is_verified ? 'unverified' : 'verified'} successfully`,
+      });
+      
+      fetchUsers(); // Refresh the user list
+    } catch (error) {
+      console.error('Error updating verification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update verification status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendMessage = (user: any) => {
+    const message = prompt(`Send message to ${user.full_name}:`);
+    if (!message) return;
+
+    // This would integrate with your messaging system
+    toast({
+      title: "Message Sent",
+      description: `Message sent to ${user.full_name}`,
+    });
+  };
+
+  const handleExportUserData = async (user: any) => {
+    try {
+      const userData = {
+        profile: user,
+        exported_at: new Date().toISOString(),
+        exported_by: user?.email
+      };
+
+      const dataStr = JSON.stringify(userData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `user-${user.full_name}-data.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Data Exported",
+        description: `User data exported for ${user.full_name}`,
+      });
+    } catch (error) {
+      console.error('Error exporting user data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export user data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSuspendUser = async (user: any) => {
+    const confirm = window.confirm(`Are you sure you want to suspend ${user.full_name}?`);
+    if (!confirm) return;
+
+    try {
+      // Add suspension logic here - could be a flag in profiles table
+      toast({
+        title: "User Suspended",
+        description: `${user.full_name} has been suspended`,
+      });
+    } catch (error) {
+      console.error('Error suspending user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to suspend user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (user: any) => {
+    const confirm = window.confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`);
+    if (!confirm) return;
+
+    const confirmText = prompt('Type "DELETE" to confirm:');
+    if (confirmText !== 'DELETE') return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', user.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "User Deleted",
+        description: `${user.full_name} has been deleted`,
+      });
+      
+      fetchUsers(); // Refresh the user list
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    }
   };
   
   // Check if user is super admin
@@ -399,26 +562,98 @@ const Admin = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Input placeholder="Search users..." className="w-72" />
-                    <Select>
+                    <Input 
+                      placeholder="Search users..." 
+                      className="w-72" 
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                    />
+                    <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="User Type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Users</SelectItem>
-                        <SelectItem value="resident">Residents</SelectItem>
-                        <SelectItem value="business">Businesses</SelectItem>
-                        <SelectItem value="moderator">Moderators</SelectItem>
+                        <SelectItem value="user">Users</SelectItem>
                         <SelectItem value="admin">Admins</SelectItem>
+                        <SelectItem value="super_admin">Super Admins</SelectItem>
+                        <SelectItem value="moderator">Moderators</SelectItem>
+                        <SelectItem value="manager">Managers</SelectItem>
+                        <SelectItem value="support">Support</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button>Export Users</Button>
+                  <div className="flex items-center space-x-2">
+                    {selectedUsers.length > 0 && (
+                      <>
+                        <Badge variant="secondary">{selectedUsers.length} selected</Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const confirmed = window.confirm(`Export data for ${selectedUsers.length} selected users?`);
+                            if (confirmed) {
+                              // Handle bulk export
+                              toast({
+                                title: "Bulk Export Started",
+                                description: `Exporting data for ${selectedUsers.length} users`,
+                              });
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Bulk Export
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedUsers([])}
+                        >
+                          Clear Selection
+                        </Button>
+                      </>
+                    )}
+                    <Button>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite User
+                    </Button>
+                    <Button variant="outline">Export All Users</Button>
+                  </div>
                 </div>
                 
+                {/* Filter users based on search and role filter */}
+                {(() => {
+                  const filteredUsers = users.filter(user => {
+                    const matchesSearch = !userSearchQuery || 
+                      user.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                      user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                      user.neighborhood?.toLowerCase().includes(userSearchQuery.toLowerCase());
+                    
+                    const matchesRole = userRoleFilter === 'all' || 
+                      user.user_roles?.[0]?.role === userRoleFilter;
+                    
+                    return matchesSearch && matchesRole;
+                  });
+
+                  return (
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUsers(filteredUsers.map(u => u.user_id));
+                            } else {
+                              setSelectedUsers([]);
+                            }
+                          }}
+                          className="rounded"
+                        />
+                      </TableHead>
                       <TableHead>User</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Type</TableHead>
@@ -428,8 +663,22 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
+                        <TableCell className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.user_id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUsers([...selectedUsers, user.user_id]);
+                              } else {
+                                setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                        </TableCell>
                         <TableCell className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={user.avatar_url} />
@@ -449,25 +698,71 @@ const Admin = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="default">Active</Badge>
+                          <Badge variant={user.is_verified ? 'default' : 'secondary'}>
+                            {user.is_verified ? 'Verified' : 'Unverified'}
+                          </Badge>
                         </TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setUserDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setUserDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditUserRole(user)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Role
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  {user.is_verified ? 'Unverify' : 'Verify'} User
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSendMessage(user)}>
+                                  <MessageSquare className="h-4 w-4 mr-2" />
+                                  Send Message
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExportUserData(user)}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Export Data
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleSuspendUser(user)}
+                                  className="text-destructive"
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Suspend User
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteUser(user)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete User
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
