@@ -116,6 +116,77 @@ export type Database = {
           },
         ]
       }
+      app_configuration: {
+        Row: {
+          config_key: string
+          config_type: string
+          config_value: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          config_key: string
+          config_type: string
+          config_value: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          config_key?: string
+          config_type?: string
+          config_value?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
+      automation_logs: {
+        Row: {
+          automation_id: string
+          executed_at: string
+          execution_details: Json | null
+          execution_status: string
+          id: string
+          processing_time_ms: number | null
+        }
+        Insert: {
+          automation_id: string
+          executed_at?: string
+          execution_details?: Json | null
+          execution_status: string
+          id?: string
+          processing_time_ms?: number | null
+        }
+        Update: {
+          automation_id?: string
+          executed_at?: string
+          execution_details?: Json | null
+          execution_status?: string
+          id?: string
+          processing_time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "platform_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_invite_codes: {
         Row: {
           board_id: string
@@ -1089,6 +1160,54 @@ export type Database = {
           last_panic_at?: string
           panic_count?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      platform_automations: {
+        Row: {
+          actions: Json
+          automation_type: string
+          created_at: string
+          created_by: string
+          description: string | null
+          execution_count: number | null
+          id: string
+          is_active: boolean
+          last_executed_at: string | null
+          name: string
+          trigger_conditions: Json | null
+          trigger_event: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          automation_type: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean
+          last_executed_at?: string | null
+          name: string
+          trigger_conditions?: Json | null
+          trigger_event: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          automation_type?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean
+          last_executed_at?: string | null
+          name?: string
+          trigger_conditions?: Json | null
+          trigger_event?: string
+          updated_at?: string
         }
         Relationships: []
       }

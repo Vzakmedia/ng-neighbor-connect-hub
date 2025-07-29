@@ -28,7 +28,9 @@ const Admin = () => {
     marketplaceItems: 0,
     promotions: 0,
     flaggedContent: 0,
-    sponsoredContent: 0
+    sponsoredContent: 0,
+    activeAutomations: 0,
+    configSettings: 0
   });
   
   const [users, setUsers] = useState([]);
@@ -38,8 +40,10 @@ const Admin = () => {
   const [marketplaceItems, setMarketplaceItems] = useState([]);
   const [flaggedReports, setFlaggedReports] = useState([]);
   const [sponsoredContent, setSponsoredContent] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [automations, setAutomations] = useState([]);
+  const [appConfigs, setAppConfigs] = useState([]);
+  const [automationLogs, setAutomationLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Simple admin check
   const isAdmin = user?.email === "vzakfenwa@gmail.com";
@@ -102,6 +106,17 @@ const Admin = () => {
           .eq('status', 'active')
           .gt('end_date', new Date().toISOString());
 
+        // Fetch active automations count
+        const { count: automationsCount } = await supabase
+          .from('platform_automations')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+
+        // Fetch app configuration count
+        const { count: configCount } = await supabase
+          .from('app_configuration')
+          .select('*', { count: 'exact', head: true });
+
         setStats({
           totalUsers: usersCount || 0,
           activePosts: postsCount || 0,
@@ -111,7 +126,9 @@ const Admin = () => {
           marketplaceItems: marketplaceCount || 0,
           promotions: promotionsCount || 0,
           flaggedContent: flaggedCount || 0,
-          sponsoredContent: sponsoredCount || 0
+          sponsoredContent: sponsoredCount || 0,
+          activeAutomations: automationsCount || 0,
+          configSettings: configCount || 0
         });
 
         // Fetch detailed data for management
@@ -153,12 +170,34 @@ const Admin = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
+        // Fetch automations data
+        const { data: automationsData } = await supabase
+          .from('platform_automations')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // Fetch app configuration data
+        const { data: configData } = await supabase
+          .from('app_configuration')
+          .select('*')
+          .order('updated_at', { ascending: false });
+
+        // Fetch automation logs
+        const { data: logsData } = await supabase
+          .from('automation_logs')
+          .select('*, platform_automations(name)')
+          .order('executed_at', { ascending: false })
+          .limit(20);
+
         setUsers(usersData || []);
         setEmergencyAlerts(emergencyData || []);
         setPromotions(promotionsData || []);
         setMarketplaceItems(marketplaceData || []);
         setFlaggedReports(reportsData || []);
         setSponsoredContent(sponsoredData || []);
+        setAutomations(automationsData || []);
+        setAppConfigs(configData || []);
+        setAutomationLogs(logsData || []);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -329,6 +368,55 @@ const Admin = () => {
     }
   };
 
+  // Automation management
+  const handleAutomationToggle = async (automationId, isActive) => {
+    try {
+      const { error } = await supabase
+        .from('platform_automations')
+        .update({ is_active: isActive })
+        .eq('id', automationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Automation ${isActive ? 'enabled' : 'disabled'}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update automation",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // App configuration management
+  const handleConfigUpdate = async (configKey, configValue) => {
+    try {
+      const { error } = await supabase
+        .from('app_configuration')
+        .update({ 
+          config_value: configValue,
+          updated_by: user.id
+        })
+        .eq('config_key', configKey);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Configuration updated"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update configuration",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
@@ -359,7 +447,7 @@ const Admin = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="emergency">Emergency</TabsTrigger>
@@ -367,6 +455,7 @@ const Admin = () => {
           <TabsTrigger value="promotions">Promotions</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="automations">Automations</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -847,45 +936,168 @@ const Admin = () => {
         </TabsContent>
 
         {/* Automations Tab */}
-        <TabsContent value="automations">
+        <TabsContent value="automations" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Automations</CardTitle>
+                <p className="text-sm text-muted-foreground">Manage platform automation workflows</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium">Active Automations</h3>
+                      <p className="text-sm text-muted-foreground">{loading ? '...' : stats.activeAutomations} workflows running</p>
+                    </div>
+                    <Button>
+                      <Play className="mr-2 h-4 w-4" />
+                      Create Automation
+                    </Button>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {automations.map((automation) => (
+                        <TableRow key={automation.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{automation.name}</div>
+                              <div className="text-sm text-muted-foreground">{automation.description}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{automation.automation_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={automation.is_active ? "default" : "secondary"}>
+                              {automation.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Switch 
+                              checked={automation.is_active}
+                              onCheckedChange={(checked) => handleAutomationToggle(automation.id, checked)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Automation Logs</CardTitle>
+                <p className="text-sm text-muted-foreground">Recent automation executions</p>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Automation</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Executed</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {automationLogs.slice(0, 10).map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>{log.platform_automations?.name || 'Unknown'}</TableCell>
+                        <TableCell>
+                          <Badge variant={log.execution_status === 'success' ? "default" : "destructive"}>
+                            {log.execution_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(log.executed_at).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Platform Automations</CardTitle>
-              <p className="text-sm text-muted-foreground">Configure automated tasks and workflows</p>
+              <CardTitle>App Configuration</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage platform settings and configuration</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Auto-approve verified user posts</h3>
-                    <p className="text-sm text-muted-foreground">Automatically approve posts from verified users</p>
+                {appConfigs.map((config) => (
+                  <div key={config.id} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-medium">{config.config_key.replace(/_/g, ' ').toUpperCase()}</h3>
+                        <p className="text-sm text-muted-foreground">{config.description}</p>
+                      </div>
+                      <Badge variant="outline">{config.config_type}</Badge>
+                    </div>
+                    
+                    {config.config_type === 'theme' && (
+                      <div className="space-y-2">
+                        <Input 
+                          placeholder="Primary Color" 
+                          defaultValue={config.config_value.primary_color}
+                          className="mb-2"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <Switch defaultChecked={config.config_value.dark_mode} />
+                          <span className="text-sm">Dark Mode</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {config.config_type === 'emergency_settings' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm">Alert Radius (km):</span>
+                          <Input 
+                            type="number" 
+                            defaultValue={config.config_value.auto_alert_radius}
+                            className="w-20"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch defaultChecked={config.config_value.auto_resolve_false_alarms} />
+                          <span className="text-sm">Auto-resolve false alarms</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {config.config_type === 'app_settings' && (
+                      <div className="space-y-2">
+                        <Textarea 
+                          placeholder="Configuration JSON"
+                          defaultValue={JSON.stringify(config.config_value, null, 2)}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    )}
+                    
+                    <Button 
+                      size="sm" 
+                      className="mt-3"
+                      onClick={() => handleConfigUpdate(config.config_key, config.config_value)}
+                    >
+                      Save Changes
+                    </Button>
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Emergency alert notifications</h3>
-                    <p className="text-sm text-muted-foreground">Send push notifications for emergency alerts</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Marketplace auto-renewal</h3>
-                    <p className="text-sm text-muted-foreground">Auto-renew expired marketplace listings</p>
-                  </div>
-                  <Switch />
-                </div>
-                
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Content spam filtering</h3>
-                    <p className="text-sm text-muted-foreground">Automatically filter potential spam content</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -893,59 +1105,65 @@ const Admin = () => {
 
         {/* Analytics Tab */}
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Analytics</CardTitle>
-              <p className="text-sm text-muted-foreground">Detailed insights and performance metrics</p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">User Engagement</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Daily Active Users</span>
-                        <span className="text-sm font-medium">847</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Post Interactions</span>
-                        <span className="text-sm font-medium">2,340</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Messages Sent</span>
-                        <span className="text-sm font-medium">1,567</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Revenue Analytics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Promotion Revenue</span>
-                        <span className="text-sm font-medium">₦45,000</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Marketplace Fees</span>
-                        <span className="text-sm font-medium">₦12,500</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Premium Features</span>
-                        <span className="text-sm font-medium">₦8,900</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Metrics</CardTitle>
+                <p className="text-sm text-muted-foreground">Real-time platform statistics</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Total Users</span>
+                    <span className="text-sm font-medium">{stats.totalUsers}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Active Posts</span>
+                    <span className="text-sm font-medium">{stats.activePosts}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Emergency Alerts</span>
+                    <span className="text-sm font-medium">{stats.emergencyAlerts}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Marketplace Items</span>
+                    <span className="text-sm font-medium">{stats.marketplaceItems}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Active Automations</span>
+                    <span className="text-sm font-medium">{stats.activeAutomations}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Config Settings</span>
+                    <span className="text-sm font-medium">{stats.configSettings}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Moderation Stats</CardTitle>
+                <p className="text-sm text-muted-foreground">Content management overview</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Flagged Content</span>
+                    <span className="text-sm font-medium">{stats.flaggedContent}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Sponsored Content</span>
+                    <span className="text-sm font-medium">{stats.sponsoredContent}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Active Promotions</span>
+                    <span className="text-sm font-medium">{stats.promotions}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
