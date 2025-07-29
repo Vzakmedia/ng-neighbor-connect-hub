@@ -71,6 +71,12 @@ const Services = () => {
                   <DropdownMenuItem onClick={() => navigate('/my-services')}>
                     My Services
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
+                    My Goods
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
+                    My Bookings
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
