@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const MyBookings = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   if (loading) {
@@ -28,8 +31,18 @@ const MyBookings = () => {
       
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">My Bookings</h1>
               <p className="text-muted-foreground">Manage your service bookings and orders</p>
             </div>
