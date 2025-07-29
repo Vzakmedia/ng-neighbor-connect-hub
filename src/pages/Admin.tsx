@@ -26,7 +26,9 @@ const Admin = () => {
     safetyReports: 0,
     emergencyAlerts: 0,
     marketplaceItems: 0,
-    promotions: 0
+    promotions: 0,
+    flaggedContent: 0,
+    sponsoredContent: 0
   });
   
   const [users, setUsers] = useState([]);
@@ -34,6 +36,8 @@ const Admin = () => {
   const [emergencyAlerts, setEmergencyAlerts] = useState([]);
   const [promotions, setPromotions] = useState([]);
   const [marketplaceItems, setMarketplaceItems] = useState([]);
+  const [flaggedReports, setFlaggedReports] = useState([]);
+  const [sponsoredContent, setSponsoredContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [automations, setAutomations] = useState([]);
 
@@ -85,6 +89,19 @@ const Admin = () => {
           .from('promotions')
           .select('*', { count: 'exact', head: true });
 
+        // Fetch flagged content count
+        const { count: flaggedCount } = await supabase
+          .from('content_reports')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        // Fetch sponsored content count
+        const { count: sponsoredCount } = await supabase
+          .from('sponsored_content')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .gt('end_date', new Date().toISOString());
+
         setStats({
           totalUsers: usersCount || 0,
           activePosts: postsCount || 0,
@@ -92,7 +109,9 @@ const Admin = () => {
           safetyReports: alertsCount || 0,
           emergencyAlerts: emergencyCount || 0,
           marketplaceItems: marketplaceCount || 0,
-          promotions: promotionsCount || 0
+          promotions: promotionsCount || 0,
+          flaggedContent: flaggedCount || 0,
+          sponsoredContent: sponsoredCount || 0
         });
 
         // Fetch detailed data for management
@@ -119,10 +138,27 @@ const Admin = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
+        // Fetch flagged content for moderation
+        const { data: reportsData } = await supabase
+          .from('content_reports')
+          .select('*, profiles(full_name)')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        // Fetch sponsored content for management
+        const { data: sponsoredData } = await supabase
+          .from('sponsored_content')
+          .select('*, profiles(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
         setUsers(usersData || []);
         setEmergencyAlerts(emergencyData || []);
         setPromotions(promotionsData || []);
         setMarketplaceItems(marketplaceData || []);
+        setFlaggedReports(reportsData || []);
+        setSponsoredContent(sponsoredData || []);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -238,6 +274,56 @@ const Admin = () => {
       toast({
         title: "Error",
         description: "Failed to update marketplace item",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Content moderation management
+  const handleContentReport = async (reportId, action) => {
+    try {
+      const { error } = await supabase
+        .from('content_reports')
+        .update({ 
+          status: action,
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', reportId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Report ${action}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update content report",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Sponsored content management
+  const handleSponsoredContent = async (contentId, action) => {
+    try {
+      const { error } = await supabase
+        .from('sponsored_content')
+        .update({ status: action })
+        .eq('id', contentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Sponsored content ${action}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update sponsored content",
         variant: "destructive"
       });
     }
@@ -630,51 +716,134 @@ const Admin = () => {
         </TabsContent>
 
         {/* Content Moderation Tab */}
-        <TabsContent value="content">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Moderation Tools</CardTitle>
-              <p className="text-sm text-muted-foreground">Review and moderate user-generated content</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Reported Posts</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">5</div>
-                      <p className="text-xs text-muted-foreground">Pending review</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Flagged Comments</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">12</div>
-                      <p className="text-xs text-muted-foreground">Needs attention</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Spam Reports</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">3</div>
-                      <p className="text-xs text-muted-foreground">Auto-filtered</p>
-                    </CardContent>
-                  </Card>
+        <TabsContent value="content" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Reports</CardTitle>
+                <p className="text-sm text-muted-foreground">Review flagged user content</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Pending Reports</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.flaggedContent}</div>
+                        <p className="text-xs text-muted-foreground">Needs review</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Reporter</TableHead>
+                        <TableHead>Content Type</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {flaggedReports.map((report) => (
+                        <TableRow key={report.id}>
+                          <TableCell>{report.profiles?.full_name || 'Anonymous'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{report.content_type}</Badge>
+                          </TableCell>
+                          <TableCell>{report.reason}</TableCell>
+                          <TableCell>{new Date(report.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleContentReport(report.id, 'reviewed')}
+                              >
+                                Review
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleContentReport(report.id, 'resolved')}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                
-                <Button className="w-full">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Review Flagged Content
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sponsored Content Manager</CardTitle>
+                <p className="text-sm text-muted-foreground">Manage boosted posts and promotions</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Active Sponsorships</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.sponsoredContent}</div>
+                        <p className="text-xs text-muted-foreground">Running campaigns</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Boost Level</TableHead>
+                        <TableHead>Budget</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sponsoredContent.slice(0, 5).map((content) => (
+                        <TableRow key={content.id}>
+                          <TableCell>{content.profiles?.full_name || 'Unknown'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{content.content_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={content.boost_level > 3 ? "default" : "secondary"}>
+                              Level {content.boost_level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>₦{content.budget}</TableCell>
+                          <TableCell>
+                            <Select onValueChange={(value) => handleSponsoredContent(content.id, value)}>
+                              <SelectTrigger className="w-20">
+                                <SelectValue placeholder="..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="active">Activate</SelectItem>
+                                <SelectItem value="paused">Pause</SelectItem>
+                                <SelectItem value="cancelled">Cancel</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Automations Tab */}

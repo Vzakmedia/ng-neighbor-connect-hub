@@ -501,6 +501,48 @@ export type Database = {
           },
         ]
       }
+      content_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -1676,6 +1718,71 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsored_content: {
+        Row: {
+          boost_level: number
+          boost_type: string
+          budget: number
+          content_id: string
+          content_type: string
+          created_at: string
+          daily_budget: number | null
+          end_date: string
+          id: string
+          performance_metrics: Json | null
+          promotion_id: string | null
+          start_date: string
+          status: string
+          target_audience: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          boost_level?: number
+          boost_type?: string
+          budget?: number
+          content_id: string
+          content_type: string
+          created_at?: string
+          daily_budget?: number | null
+          end_date: string
+          id?: string
+          performance_metrics?: Json | null
+          promotion_id?: string | null
+          start_date?: string
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          boost_level?: number
+          boost_type?: string
+          budget?: number
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          daily_budget?: number | null
+          end_date?: string
+          id?: string
+          performance_metrics?: Json | null
+          promotion_id?: string | null
+          start_date?: string
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_content_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -1710,6 +1817,14 @@ export type Database = {
       generate_confirmation_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_flagged_content_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_sponsored_content_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_unread_community_posts_count: {
         Args: Record<PropertyKey, never>
