@@ -2853,7 +2853,14 @@ export type Database = {
     Enums: {
       alert_severity: "low" | "medium" | "high" | "critical"
       alert_status: "active" | "resolved" | "investigating" | "false_alarm"
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "super_admin"
+        | "moderator"
+        | "manager"
+        | "support"
+        | "staff"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
       contact_method: "in_app" | "sms" | "whatsapp" | "phone_call"
       direct_message_status: "sent" | "delivered" | "read"
@@ -3033,7 +3040,15 @@ export const Constants = {
     Enums: {
       alert_severity: ["low", "medium", "high", "critical"],
       alert_status: ["active", "resolved", "investigating", "false_alarm"],
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "super_admin",
+        "moderator",
+        "manager",
+        "support",
+        "staff",
+      ],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
       contact_method: ["in_app", "sms", "whatsapp", "phone_call"],
       direct_message_status: ["sent", "delivered", "read"],
