@@ -62,6 +62,8 @@ const Admin = () => {
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [editAlertDialogOpen, setEditAlertDialogOpen] = useState(false);
+  const [editingAlertStatus, setEditingAlertStatus] = useState('');
   
   
   // Config update handler
@@ -182,40 +184,38 @@ const Admin = () => {
 
   // Emergency Alert management handlers
   const handleViewAlert = (alert: any) => {
+    console.log('Opening alert dialog for:', alert);
     setSelectedAlert(alert);
     setAlertDialogOpen(true);
   };
 
-  const handleEditAlert = async (alert: any) => {
-    const newStatus = prompt(`Current status: ${alert.status}\nEnter new status (active, resolved, false_alarm):`, alert.status);
-    if (!newStatus || !['active', 'resolved', 'false_alarm'].includes(newStatus)) {
-      if (newStatus) {
-        toast({
-          title: "Invalid Status",
-          description: "Status must be: active, resolved, or false_alarm",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
+  const handleEditAlert = (alert: any) => {
+    setSelectedAlert(alert);
+    setEditingAlertStatus(alert.status);
+    setEditAlertDialogOpen(true);
+  };
+
+  const handleSaveAlertStatus = async () => {
+    if (!selectedAlert || !editingAlertStatus) return;
 
     try {
       const { error } = await supabase
         .from('safety_alerts')
         .update({ 
-          status: newStatus as any,
-          verified_at: newStatus === 'resolved' ? new Date().toISOString() : null,
-          verified_by: newStatus === 'resolved' ? user?.id : null
+          status: editingAlertStatus as any,
+          verified_at: editingAlertStatus === 'resolved' ? new Date().toISOString() : null,
+          verified_by: editingAlertStatus === 'resolved' ? user?.id : null
         })
-        .eq('id', alert.id);
+        .eq('id', selectedAlert.id);
 
       if (error) throw error;
 
       toast({
         title: "Alert Updated",
-        description: `Alert status updated to ${newStatus}`,
+        description: `Alert status updated to ${editingAlertStatus}`,
       });
       
+      setEditAlertDialogOpen(false);
       fetchEmergencyAlerts(); // Refresh the alerts list
     } catch (error) {
       console.error('Error updating alert:', error);
@@ -1131,6 +1131,55 @@ const Admin = () => {
                         Mark as Resolved
                       </Button>
                     )}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Alert Status Dialog */}
+          <Dialog open={editAlertDialogOpen} onOpenChange={setEditAlertDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Alert Status</DialogTitle>
+                <DialogDescription>
+                  Change the status of this emergency alert
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedAlert && (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Alert</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedAlert.title || selectedAlert.description || 'Emergency Alert'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="alert-status" className="text-sm font-medium">Status</Label>
+                    <Select value={editingAlertStatus} onValueChange={setEditingAlertStatus}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="false_alarm">False Alarm</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setEditAlertDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveAlertStatus}>
+                      Save Changes
+                    </Button>
                   </div>
                 </div>
               )}
