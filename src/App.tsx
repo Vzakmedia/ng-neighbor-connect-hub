@@ -27,6 +27,10 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Business from "./pages/Business";
+import ModeratorDashboard from "./pages/ModeratorDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
+import SupportDashboard from "./pages/SupportDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
