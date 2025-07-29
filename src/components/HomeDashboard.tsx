@@ -188,7 +188,7 @@ const HomeDashboard = () => {
                     </div>
                     {/* Mobile filter buttons - icons only, expand when active */}
                     <div className="md:hidden w-full">
-                      <div className="flex justify-center gap-2 w-full">
+                      <div className="flex justify-center gap-1 w-full">
                         {[
                           { key: 'all', icon: Home },
                           { key: 'safety', icon: AlertTriangle },
@@ -200,15 +200,15 @@ const HomeDashboard = () => {
                             variant={activeTab === key ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setActiveTab(key)}
-                            className={`transition-all duration-200 ${
+                            className={`transition-all duration-300 ease-in-out ${
                               activeTab === key 
-                                ? 'px-3 flex items-center gap-1.5' 
-                                : 'px-2 w-10 h-8'
+                                ? 'px-3 flex items-center gap-2 min-w-fit' 
+                                : 'px-0 w-8 h-8 justify-center'
                             }`}
                           >
-                            <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                            <Icon className="h-4 w-4 flex-shrink-0" />
                             {activeTab === key && (
-                              <span className="text-xs capitalize animate-in fade-in slide-in-from-left-2 duration-200">
+                              <span className="text-xs capitalize whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
                                 {key === 'marketplace' ? 'market' : key}
                               </span>
                             )}
