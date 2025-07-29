@@ -1199,6 +1199,60 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          budget: number
+          created_at: string
+          description: string | null
+          duration_days: number
+          end_date: string | null
+          id: string
+          item_id: string
+          item_type: string
+          promotion_type: string
+          start_date: string | null
+          status: string
+          target_audience: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          end_date?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          promotion_type?: string
+          start_date?: string | null
+          status?: string
+          target_audience?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          end_date?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          promotion_type?: string
+          start_date?: string | null
+          status?: string
+          target_audience?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       public_emergency_alerts: {
         Row: {
           address: string | null
