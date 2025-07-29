@@ -57,6 +57,9 @@ const Admin = () => {
   // Filter states
   const [alertTypeFilter, setAlertTypeFilter] = useState('all');
   const [alertStatusFilter, setAlertStatusFilter] = useState('all');
+  const [marketplaceSearchQuery, setMarketplaceSearchQuery] = useState('');
+  const [marketplaceCategoryFilter, setMarketplaceCategoryFilter] = useState('all');
+  const [marketplaceStatusFilter, setMarketplaceStatusFilter] = useState('all');
   
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -68,6 +71,9 @@ const Admin = () => {
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const [editAlertDialogOpen, setEditAlertDialogOpen] = useState(false);
   const [editingAlertStatus, setEditingAlertStatus] = useState('');
+  const [selectedMarketplaceItem, setSelectedMarketplaceItem] = useState<any>(null);
+  const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
+  const [editMarketplaceDialogOpen, setEditMarketplaceDialogOpen] = useState(false);
   
   
   // Config update handler
@@ -234,7 +240,160 @@ const Admin = () => {
       });
     }
   };
+  
+  // Marketplace management handlers
+  const handleViewMarketplaceItem = (item: any) => {
+    setSelectedMarketplaceItem(item);
+    setMarketplaceDialogOpen(true);
+  };
 
+  const handleEditMarketplaceItem = (item: any) => {
+    setSelectedMarketplaceItem(item);
+    setEditMarketplaceDialogOpen(true);
+  };
+
+  const handleUpdateMarketplaceStatus = async (item: any, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('marketplace_items')
+        .update({ status: newStatus as any })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Item Updated",
+        description: `Item status updated to ${newStatus}`,
+      });
+      
+      fetchMarketplaceItems(); // Refresh the items list
+    } catch (error) {
+      console.error('Error updating item status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update item status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMarketplaceItem = async (item: any) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${item.title}"?\n\nThis action cannot be undone.`);
+    if (!confirmed) return;
+
+    const confirmText = prompt('Type "DELETE" to confirm:');
+    if (confirmText !== 'DELETE') return;
+
+    try {
+      const { error } = await supabase
+        .from('marketplace_items')
+        .delete()
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Item Deleted",
+        description: "Marketplace item has been deleted",
+      });
+      
+      fetchMarketplaceItems(); // Refresh the items list
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFlagMarketplaceItem = async (item: any) => {
+    const reason = prompt('Please provide a reason for flagging this item:');
+    if (!reason) return;
+
+    try {
+      // Create a content report
+      const { error } = await supabase
+        .from('content_reports')
+        .insert({
+          reporter_id: user?.id,
+          content_id: item.id,
+          content_type: 'marketplace_item',
+          reason: 'inappropriate_content',
+          description: reason,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Item Flagged",
+        description: "Item has been flagged for review",
+      });
+    } catch (error) {
+      console.error('Error flagging item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to flag item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportMarketplaceData = async () => {
+    try {
+      const filteredItems = marketplaceItems.filter(item => {
+        const matchesSearch = marketplaceSearchQuery === '' || 
+          item.title.toLowerCase().includes(marketplaceSearchQuery.toLowerCase()) ||
+          item.description?.toLowerCase().includes(marketplaceSearchQuery.toLowerCase());
+        const matchesCategory = marketplaceCategoryFilter === 'all' || item.category === marketplaceCategoryFilter;
+        const matchesStatus = marketplaceStatusFilter === 'all' || item.status === marketplaceStatusFilter;
+        
+        return matchesSearch && matchesCategory && matchesStatus;
+      });
+
+      const exportData = filteredItems.map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        price: item.price,
+        status: item.status,
+        seller: item.profiles?.full_name,
+        seller_email: item.profiles?.email,
+        location: item.location,
+        condition: item.condition,
+        rating: item.rating,
+        total_reviews: item.total_reviews,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `marketplace-data-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Data Exported",
+        description: `${exportData.length} marketplace items exported`,
+      });
+    } catch (error) {
+      console.error('Error exporting marketplace data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export marketplace data",
+        variant: "destructive",
+      });
+    }
+  };
   // Helper function to format location
   const formatLocation = (alert: any) => {
     if (alert.address && alert.address !== `${alert.latitude}, ${alert.longitude}`) {
@@ -1311,6 +1470,328 @@ const Admin = () => {
               )}
             </DialogContent>
           </Dialog>
+
+          {/* Marketplace Item Details Dialog */}
+          <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <ShoppingCart className="h-6 w-6 text-primary" />
+                  Marketplace Item Details
+                </DialogTitle>
+                <DialogDescription>
+                  Complete information and management options for this marketplace item
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedMarketplaceItem ? (
+                <div className="space-y-6">
+                  {/* Item Header */}
+                  <div className="flex items-start justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-start space-x-4">
+                      {selectedMarketplaceItem.images && selectedMarketplaceItem.images.length > 0 && (
+                        <img 
+                          src={selectedMarketplaceItem.images[0]} 
+                          alt={selectedMarketplaceItem.title} 
+                          className="w-24 h-24 object-cover rounded-lg border"
+                        />
+                      )}
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-semibold">{selectedMarketplaceItem.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Item ID: {selectedMarketplaceItem.id}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant={
+                            selectedMarketplaceItem.status === 'active' ? 'default' : 
+                            selectedMarketplaceItem.status === 'sold' ? 'secondary' : 
+                            selectedMarketplaceItem.status === 'flagged' ? 'destructive' : 'outline'
+                          }>
+                            {selectedMarketplaceItem.status}
+                          </Badge>
+                          <Badge variant="outline">{selectedMarketplaceItem.category}</Badge>
+                          {selectedMarketplaceItem.condition && (
+                            <Badge variant="secondary">{selectedMarketplaceItem.condition}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">
+                        {selectedMarketplaceItem.price ? `₦${selectedMarketplaceItem.price.toLocaleString()}` : 'Price not set'}
+                      </p>
+                      {selectedMarketplaceItem.is_negotiable && (
+                        <p className="text-sm text-muted-foreground">Negotiable</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Listed: {new Date(selectedMarketplaceItem.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Item Details Grid */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Description */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Description & Images</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {selectedMarketplaceItem.description || 'No description provided'}
+                        </p>
+                        
+                        {selectedMarketplaceItem.images && selectedMarketplaceItem.images.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Item Images ({selectedMarketplaceItem.images.length})</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {selectedMarketplaceItem.images.slice(0, 6).map((img: string, idx: number) => (
+                                <img key={idx} src={img} alt={`Item image ${idx + 1}`} className="w-full h-20 object-cover rounded border" />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Seller & Details */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Seller & Item Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Seller:</span>
+                          <span className="text-sm text-muted-foreground">{selectedMarketplaceItem.profiles?.full_name || 'Unknown'}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Seller Email:</span>
+                          <span className="text-sm text-muted-foreground">{selectedMarketplaceItem.profiles?.email || 'Not available'}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Location:</span>
+                          <span className="text-sm text-muted-foreground">{selectedMarketplaceItem.location || 'Not specified'}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Rating:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {selectedMarketplaceItem.rating || 0}/5 ({selectedMarketplaceItem.total_reviews || 0} reviews)
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Views:</span>
+                          <span className="text-sm text-muted-foreground">Not tracked</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Last Updated:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(selectedMarketplaceItem.updated_at).toLocaleString()}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-between items-center pt-4 border-t">
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditMarketplaceDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Item
+                      </Button>
+                      
+                      {selectedMarketplaceItem.status === 'active' && (
+                        <Button
+                          onClick={() => {
+                            handleUpdateMarketplaceStatus(selectedMarketplaceItem, 'sold');
+                            setMarketplaceDialogOpen(false);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Mark as Sold
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="outline"
+                        onClick={() => handleFlagMarketplaceItem(selectedMarketplaceItem)}
+                        className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
+                      >
+                        <AlertTriangle className="h-4 w-4" />
+                        Flag Item
+                      </Button>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button variant="outline" onClick={() => setMarketplaceDialogOpen(false)}>
+                        Close
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="px-3">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              navigator.clipboard.writeText(selectedMarketplaceItem.id);
+                              toast({ title: "Item ID copied to clipboard" });
+                            }}
+                          >
+                            Copy Item ID
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              const itemData = JSON.stringify(selectedMarketplaceItem, null, 2);
+                              const blob = new Blob([itemData], { type: 'application/json' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `item-${selectedMarketplaceItem.id.substring(0, 8)}.json`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                          >
+                            Export Data
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setMarketplaceDialogOpen(false);
+                              handleDeleteMarketplaceItem(selectedMarketplaceItem);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Item
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No item selected</p>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Marketplace Item Dialog */}
+          <Dialog open={editMarketplaceDialogOpen} onOpenChange={setEditMarketplaceDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Marketplace Item</DialogTitle>
+                <DialogDescription>
+                  Update item details and status
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedMarketplaceItem && (
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="item-title" className="text-sm font-medium">Title</Label>
+                      <Input 
+                        id="item-title"
+                        defaultValue={selectedMarketplaceItem.title}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="item-price" className="text-sm font-medium">Price (₦)</Label>
+                      <Input 
+                        id="item-price"
+                        type="number"
+                        defaultValue={selectedMarketplaceItem.price}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label htmlFor="item-category" className="text-sm font-medium">Category</Label>
+                      <Select defaultValue={selectedMarketplaceItem.category}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg z-50">
+                          <SelectItem value="electronics">Electronics</SelectItem>
+                          <SelectItem value="furniture">Furniture</SelectItem>
+                          <SelectItem value="clothing">Clothing</SelectItem>
+                          <SelectItem value="books">Books</SelectItem>
+                          <SelectItem value="automotive">Automotive</SelectItem>
+                          <SelectItem value="home_garden">Home & Garden</SelectItem>
+                          <SelectItem value="sports">Sports</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="item-status" className="text-sm font-medium">Status</Label>
+                      <Select defaultValue={selectedMarketplaceItem.status}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border shadow-lg z-50">
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="sold">Sold</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="item-description" className="text-sm font-medium">Description</Label>
+                    <Textarea 
+                      id="item-description"
+                      defaultValue={selectedMarketplaceItem.description}
+                      className="mt-1"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setEditMarketplaceDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        // Handle save - this would need proper form handling
+                        toast({ title: "Item update functionality coming soon" });
+                        setEditMarketplaceDialogOpen(false);
+                      }}
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="emergency">
@@ -1432,28 +1913,51 @@ const Admin = () => {
           <Card>
             <CardHeader>
               <CardTitle>Marketplace Management</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage marketplace listings and transactions</p>
+              <p className="text-sm text-muted-foreground">Comprehensive marketplace listings and transaction management</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Input placeholder="Search items..." className="w-72" />
-                    <Select>
+                    <Input 
+                      placeholder="Search items..." 
+                      className="w-72" 
+                      value={marketplaceSearchQuery}
+                      onChange={(e) => setMarketplaceSearchQuery(e.target.value)}
+                    />
+                    <Select value={marketplaceCategoryFilter} onValueChange={setMarketplaceCategoryFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="all">All Categories</SelectItem>
                         <SelectItem value="electronics">Electronics</SelectItem>
                         <SelectItem value="furniture">Furniture</SelectItem>
                         <SelectItem value="clothing">Clothing</SelectItem>
                         <SelectItem value="books">Books</SelectItem>
+                        <SelectItem value="automotive">Automotive</SelectItem>
+                        <SelectItem value="home_garden">Home & Garden</SelectItem>
+                        <SelectItem value="sports">Sports</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Select value={marketplaceStatusFilter} onValueChange={setMarketplaceStatusFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="sold">Sold</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="flagged">Flagged</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button>Export Data</Button>
+                  <Button onClick={handleExportMarketplaceData}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Data
+                  </Button>
                 </div>
                 
                 <Table>
@@ -1463,40 +1967,138 @@ const Admin = () => {
                       <TableHead>Seller</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Condition</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Rating</TableHead>
                       <TableHead>Listed</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {marketplaceItems.map((item) => (
+                    {marketplaceItems
+                      .filter(item => {
+                        const matchesSearch = marketplaceSearchQuery === '' || 
+                          item.title.toLowerCase().includes(marketplaceSearchQuery.toLowerCase()) ||
+                          item.description?.toLowerCase().includes(marketplaceSearchQuery.toLowerCase());
+                        const matchesCategory = marketplaceCategoryFilter === 'all' || item.category === marketplaceCategoryFilter;
+                        const matchesStatus = marketplaceStatusFilter === 'all' || item.status === marketplaceStatusFilter;
+                        
+                        return matchesSearch && matchesCategory && matchesStatus;
+                      })
+                      .map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.title}</TableCell>
-                        <TableCell>{item.profiles?.full_name || 'Unknown'}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-3">
+                            {item.images && item.images.length > 0 && (
+                              <img 
+                                src={item.images[0]} 
+                                alt={item.title} 
+                                className="w-10 h-10 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium">{item.title}</div>
+                              <div className="text-sm text-muted-foreground">{item.location || 'No location'}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{item.profiles?.full_name || 'Unknown'}</div>
+                            <div className="text-sm text-muted-foreground">{item.profiles?.email}</div>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{item.category}</Badge>
                         </TableCell>
-                        <TableCell>₦{item.price?.toLocaleString() || 'N/A'}</TableCell>
                         <TableCell>
-                          <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
+                          <div className="font-medium">
+                            {item.price ? `₦${item.price.toLocaleString()}` : 'Price not set'}
+                          </div>
+                          {item.is_negotiable && (
+                            <div className="text-xs text-muted-foreground">Negotiable</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{item.condition || 'Not specified'}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            item.status === 'active' ? 'default' : 
+                            item.status === 'sold' ? 'secondary' : 
+                            item.status === 'flagged' ? 'destructive' : 'outline'
+                          }>
                             {item.status}
                           </Badge>
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-sm">{item.rating || 0}</span>
+                            <span className="text-xs text-muted-foreground">({item.total_reviews || 0})</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                          <div className="flex space-x-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewMarketplaceItem(item)}
+                              title="View Details"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditMarketplaceItem(item)}
+                              title="Edit Item"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                                <DropdownMenuItem onClick={() => handleUpdateMarketplaceStatus(item, 'active')}>
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Mark as Active
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateMarketplaceStatus(item, 'sold')}>
+                                  <DollarSign className="h-4 w-4 mr-2" />
+                                  Mark as Sold
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateMarketplaceStatus(item, 'inactive')}>
+                                  <Pause className="h-4 w-4 mr-2" />
+                                  Mark as Inactive
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleFlagMarketplaceItem(item)} className="text-orange-600">
+                                  <AlertTriangle className="h-4 w-4 mr-2" />
+                                  Flag Item
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDeleteMarketplaceItem(item)} className="text-destructive">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Item
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                
+                {marketplaceItems.length === 0 && (
+                  <div className="text-center py-8">
+                    <ShoppingCart className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No marketplace items found</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
