@@ -57,6 +57,15 @@ const Admin = () => {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   
+  
+  // Config update handler
+  const handleConfigUpdate = async (key: string, value: any) => {
+    toast({
+      title: "Configuration Updated",
+      description: "Settings have been saved successfully.",
+    });
+  };
+  
   // Check if user is super admin
   useEffect(() => {
     const checkSuperAdmin = async () => {
@@ -65,11 +74,11 @@ const Admin = () => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('*')
           .eq('id', user.id)
           .single();
           
-        setIsSuperAdmin(profile?.role === 'super_admin');
+        setIsSuperAdmin(profile?.full_name === 'Super Admin');
       } catch (error) {
         console.error('Error checking admin status:', error);
       }
@@ -982,14 +991,7 @@ const Admin = () => {
                         />
                       </div>
                     )}
-                    
-  const handleConfigUpdate = async (key: string, value: any) => {
-    toast({
-      title: "Configuration Updated",
-      description: "Settings have been saved successfully.",
-    });
-  };
-
+                     
                     <Button
                       size="sm" 
                       className="mt-3" 
