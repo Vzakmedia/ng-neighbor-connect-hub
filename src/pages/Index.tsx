@@ -1,13 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import HomeDashboard from '@/components/HomeDashboard';
+import StaffNavigation from '@/components/StaffNavigation';
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -15,7 +19,34 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!user) {
+        setRoleLoading(false);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .in('role', ['super_admin', 'moderator', 'manager', 'support', 'staff'])
+          .single();
+        
+        setUserRole(data?.role || null);
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setUserRole(null);
+      } finally {
+        setRoleLoading(false);
+      }
+    };
+    
+    checkUserRole();
+  }, [user]);
+
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -25,6 +56,11 @@ const Index = () => {
 
   if (!user) {
     return null; // Will redirect to auth
+  }
+
+  // If user has staff role, show staff navigation instead of regular dashboard
+  if (userRole && ['super_admin', 'moderator', 'manager', 'support', 'staff'].includes(userRole)) {
+    return <StaffNavigation />;
   }
 
   return (

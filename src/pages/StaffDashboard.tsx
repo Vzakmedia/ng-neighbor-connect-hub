@@ -115,32 +115,59 @@ const StaffDashboard = () => {
     // Set up real-time subscriptions for monitoring
     const staffChannel = supabase.channel('staff-updates');
 
+    // Enhanced real-time handlers with error handling
     staffChannel.on('postgres_changes', 
       { event: 'INSERT', schema: 'public', table: 'profiles' }, 
       (payload) => {
-        console.log('New user registered:', payload);
-        setRecentUsers(prev => [payload.new, ...prev.slice(0, 9)]);
-        setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
-      }
-    );
-
-    staffChannel.on('postgres_changes', 
-      { event: 'INSERT', schema: 'public', table: 'content_reports' }, 
-      (payload) => {
-        console.log('New content report:', payload);
-        if (payload.new.status === 'pending') {
-          setFlaggedContent(prev => [payload.new, ...prev.slice(0, 9)]);
-          setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent + 1 }));
+        try {
+          console.log('New user registered:', payload);
+          setRecentUsers(prev => [payload.new, ...prev.slice(0, 9)]);
+          setStats(prev => ({ ...prev, totalUsers: prev.totalUsers + 1 }));
+        } catch (error) {
+          console.error('Error handling new user event:', error);
         }
       }
     );
 
     staffChannel.on('postgres_changes', 
-      { event: 'INSERT', schema: 'public', table: 'marketplace_items' }, 
+      { event: '*', schema: 'public', table: 'content_reports' }, 
       (payload) => {
-        console.log('New marketplace item:', payload);
-        setMarketplaceItems(prev => [payload.new, ...prev.slice(0, 9)]);
-        setStats(prev => ({ ...prev, marketplaceItems: prev.marketplaceItems + 1 }));
+        try {
+          console.log('Content report change:', payload);
+          if (payload.eventType === 'INSERT' && payload.new.status === 'pending') {
+            setFlaggedContent(prev => [payload.new, ...prev.slice(0, 9)]);
+            setStats(prev => ({ ...prev, flaggedContent: prev.flaggedContent + 1 }));
+          } else if (payload.eventType === 'UPDATE') {
+            setFlaggedContent(prev => prev.map(item => 
+              item.id === payload.new.id ? payload.new : item
+            ));
+            // Update stats if status changed from pending
+            if (payload.old?.status === 'pending' && payload.new.status !== 'pending') {
+              setStats(prev => ({ ...prev, flaggedContent: Math.max(0, prev.flaggedContent - 1) }));
+            }
+          }
+        } catch (error) {
+          console.error('Error handling content report event:', error);
+        }
+      }
+    );
+
+    staffChannel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'marketplace_items' }, 
+      (payload) => {
+        try {
+          console.log('Marketplace item change:', payload);
+          if (payload.eventType === 'INSERT') {
+            setMarketplaceItems(prev => [payload.new, ...prev.slice(0, 9)]);
+            setStats(prev => ({ ...prev, marketplaceItems: prev.marketplaceItems + 1 }));
+          } else if (payload.eventType === 'UPDATE') {
+            setMarketplaceItems(prev => prev.map(item => 
+              item.id === payload.new.id ? payload.new : item
+            ));
+          }
+        } catch (error) {
+          console.error('Error handling marketplace item event:', error);
+        }
       }
     );
 
