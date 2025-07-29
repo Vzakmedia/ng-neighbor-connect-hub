@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import BusinessRegistrationDialog from './BusinessRegistrationDialog';
@@ -328,7 +328,7 @@ const BusinessListings = () => {
             </SelectContent>
           </Select>
           
-          {/* Enhanced Location Search */}
+          {/* Enhanced Location Search - Simplified Version */}
           <Popover open={locationOpen} onOpenChange={setLocationOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -336,14 +336,6 @@ const BusinessListings = () => {
                 role="combobox"
                 aria-expanded={locationOpen}
                 className="w-[250px] justify-between"
-                onClick={() => {
-                  console.log('Location button clicked, current state:', {
-                    selectedState,
-                    selectedCity,
-                    selectedNeighborhood,
-                    nigerianLocations: typeof nigerianLocations
-                  });
-                }}
               >
                 {selectedNeighborhood !== 'all' 
                   ? selectedNeighborhood
@@ -356,170 +348,204 @@ const BusinessListings = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[250px] p-0">
-              {locationOpen && (
-                <Command key={`command-${selectedState}-${selectedCity}-${searchLocation}`}>
-                <CommandInput 
-                  placeholder="Search locations..." 
+              <div className="p-2">
+                <input
+                  type="text"
+                  placeholder="Search locations..."
                   value={searchLocation || ''}
-                  onValueChange={(value) => setSearchLocation(value || '')}
+                  onChange={(e) => setSearchLocation(e.target.value || '')}
+                  className="w-full px-3 py-2 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
                 />
-                <CommandEmpty>No location found.</CommandEmpty>
-                
-                <CommandGroup heading="Quick Reset">
-                  <CommandItem
-                    onSelect={() => {
-                      setSelectedState('all');
-                      setSelectedCity('all');
-                      setSelectedNeighborhood('all');
-                      setLocationOpen(false);
-                    }}
-                  >
-                    <Check className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
-                    All Locations
-                  </CommandItem>
-                </CommandGroup>
+              </div>
+              
+              <ScrollArea className="h-[300px]">
+                <div className="p-2 space-y-2">
+                  {/* Quick Reset */}
+                  <div className="space-y-1">
+                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Quick Reset</div>
+                    <button
+                      onClick={() => {
+                        setSelectedState('all');
+                        setSelectedCity('all');
+                        setSelectedNeighborhood('all');
+                        setLocationOpen(false);
+                      }}
+                      className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Check className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
+                      All Locations
+                    </button>
+                  </div>
 
-                {/* States */}
-                {(() => {
-                  const states = nigerianLocations && typeof nigerianLocations === 'object' 
-                    ? Object.keys(nigerianLocations).filter(state => 
-                        state && typeof state === 'string' && 
-                        state.toLowerCase().includes((searchLocation || '').toLowerCase())
-                      )
-                    : [];
-                  
-                  return states.length > 0 && (
-                    <CommandGroup heading="States">
-                      {states.map((state) => (
-                        <CommandItem
-                          key={state}
-                          onSelect={() => {
-                            handleStateChange(state);
-                            setLocationOpen(false);
-                          }}
-                        >
-                          <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
-                          {state}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  );
-                })()}
+                  {/* States */}
+                  {(() => {
+                    try {
+                      const states = nigerianLocations && typeof nigerianLocations === 'object' 
+                        ? Object.keys(nigerianLocations).filter(state => 
+                            state && typeof state === 'string' && 
+                            state.toLowerCase().includes((searchLocation || '').toLowerCase())
+                          )
+                        : [];
+                      
+                      return states.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">States</div>
+                          {states.map((state) => (
+                            <button
+                              key={state}
+                              onClick={() => {
+                                handleStateChange(state);
+                                setLocationOpen(false);
+                              }}
+                              className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
+                              {state}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering states:', error);
+                      return null;
+                    }
+                  })()}
 
-                {/* Cities for selected state */}
-                {(() => {
-                  const cities = selectedState !== 'all' ? (getAvailableCities() || []).filter(city => 
-                    city && typeof city === 'string' && 
-                    city.toLowerCase().includes((searchLocation || '').toLowerCase())
-                  ) : [];
-                  
-                  return cities.length > 0 && (
-                    <CommandGroup heading={`Cities in ${selectedState}`}>
-                      {cities.map((city) => (
-                        <CommandItem
-                          key={city}
-                          onSelect={() => {
-                            handleCityChange(city);
-                            setLocationOpen(false);
-                          }}
-                        >
-                          <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
-                          {city}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  );
-                })()}
+                  {/* Cities for selected state */}
+                  {(() => {
+                    try {
+                      const cities = selectedState !== 'all' ? (getAvailableCities() || []).filter(city => 
+                        city && typeof city === 'string' && 
+                        city.toLowerCase().includes((searchLocation || '').toLowerCase())
+                      ) : [];
+                      
+                      return cities.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Cities in {selectedState}</div>
+                          {cities.map((city) => (
+                            <button
+                              key={city}
+                              onClick={() => {
+                                handleCityChange(city);
+                                setLocationOpen(false);
+                              }}
+                              className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
+                              {city}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering cities:', error);
+                      return null;
+                    }
+                  })()}
 
-                {/* Neighborhoods for selected city */}
-                {(() => {
-                  const neighborhoods = selectedCity !== 'all' ? (getAvailableNeighborhoods() || []).filter(neighborhood => 
-                    neighborhood && typeof neighborhood === 'string' && 
-                    neighborhood.toLowerCase().includes((searchLocation || '').toLowerCase())
-                  ) : [];
-                  
-                  return neighborhoods.length > 0 && (
-                    <CommandGroup heading={`Areas in ${selectedCity}`}>
-                      {neighborhoods.map((neighborhood) => (
-                        <CommandItem
-                          key={neighborhood}
-                          onSelect={() => {
-                            setSelectedNeighborhood(neighborhood);
-                            setLocationOpen(false);
-                          }}
-                        >
-                          <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
-                          {neighborhood}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  );
-                })()}
+                  {/* Neighborhoods for selected city */}
+                  {(() => {
+                    try {
+                      const neighborhoods = selectedCity !== 'all' ? (getAvailableNeighborhoods() || []).filter(neighborhood => 
+                        neighborhood && typeof neighborhood === 'string' && 
+                        neighborhood.toLowerCase().includes((searchLocation || '').toLowerCase())
+                      ) : [];
+                      
+                      return neighborhoods.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Areas in {selectedCity}</div>
+                          {neighborhoods.map((neighborhood) => (
+                            <button
+                              key={neighborhood}
+                              onClick={() => {
+                                setSelectedNeighborhood(neighborhood);
+                                setLocationOpen(false);
+                              }}
+                              className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
+                              {neighborhood}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering neighborhoods:', error);
+                      return null;
+                    }
+                  })()}
 
-                {/* Search all locations */}
-                {(() => {
-                  const searchResults = searchLocation ? (getAllLocations() || [])
-                    .filter(location => 
-                      location && 
-                      typeof location === 'string' && 
-                      location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
-                      !Object.keys(nigerianLocations || {}).includes(location)
-                    )
-                    .slice(0, 10) : [];
-                  
-                  return searchResults.length > 0 && (
-                    <CommandGroup heading="Search Results">
-                      {searchResults.map((location) => (
-                        <CommandItem
-                          key={location}
-                          onSelect={() => {
-                            try {
-                              // Find which state/city this belongs to
-                              const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
-                                if (state === location) return true;
-                                if (!cities || typeof cities !== 'object') return false;
-                                return Object.entries(cities).some(([city, neighborhoods]) => {
-                                  if (city === location) return true;
-                                  return Array.isArray(neighborhoods) && neighborhoods.includes(location);
-                                });
-                              });
-                              
-                              if (foundState) {
-                                const [stateName, cities] = foundState;
-                                if (cities && typeof cities === 'object') {
-                                  const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
-                                    if (city === location) return true;
-                                    return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                  {/* Search all locations */}
+                  {(() => {
+                    try {
+                      const searchResults = searchLocation ? (getAllLocations() || [])
+                        .filter(location => 
+                          location && 
+                          typeof location === 'string' && 
+                          location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
+                          !Object.keys(nigerianLocations || {}).includes(location)
+                        )
+                        .slice(0, 10) : [];
+                      
+                      return searchResults.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Search Results</div>
+                          {searchResults.map((location) => (
+                            <button
+                              key={location}
+                              onClick={() => {
+                                try {
+                                  // Find which state/city this belongs to
+                                  const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
+                                    if (state === location) return true;
+                                    if (!cities || typeof cities !== 'object') return false;
+                                    return Object.entries(cities).some(([city, neighborhoods]) => {
+                                      if (city === location) return true;
+                                      return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                                    });
                                   });
                                   
-                                  if (foundCity) {
-                                    const [cityName, neighborhoods] = foundCity;
-                                    if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
-                                      setSelectedState(stateName);
-                                      setSelectedCity(cityName);
-                                      setSelectedNeighborhood(location);
-                                    } else {
-                                      setSelectedState(stateName);
-                                      setSelectedCity(location);
-                                      setSelectedNeighborhood('all');
+                                  if (foundState) {
+                                    const [stateName, cities] = foundState;
+                                    if (cities && typeof cities === 'object') {
+                                      const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
+                                        if (city === location) return true;
+                                        return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                                      });
+                                      
+                                      if (foundCity) {
+                                        const [cityName, neighborhoods] = foundCity;
+                                        if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
+                                          setSelectedState(stateName);
+                                          setSelectedCity(cityName);
+                                          setSelectedNeighborhood(location);
+                                        } else {
+                                          setSelectedState(stateName);
+                                          setSelectedCity(location);
+                                          setSelectedNeighborhood('all');
+                                        }
+                                      }
                                     }
                                   }
+                                } catch (error) {
+                                  console.error('Error selecting location:', error);
                                 }
-                              }
-                            } catch (error) {
-                              console.error('Error selecting location:', error);
-                            }
-                            setLocationOpen(false);
-                          }}
-                        >
-                          {location}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  );
-                })()}
-              </Command>
-              )}
+                                setLocationOpen(false);
+                              }}
+                              className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                            >
+                              {location}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering search results:', error);
+                      return null;
+                    }
+                  })()}
+                </div>
+              </ScrollArea>
             </PopoverContent>
           </Popover>
         </div>
