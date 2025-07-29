@@ -4,8 +4,11 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CommunityBoards from '@/components/CommunityBoards';
 import CommunityFeed from '@/components/CommunityFeed';
+import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useAuth } from "@/hooks/useAuth";
+import { Megaphone, Plus } from 'lucide-react';
 
 const Community = () => {
   const { user, loading } = useAuth();
@@ -37,6 +40,21 @@ const Community = () => {
       
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
+          {/* Header with Create Ad Button */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">Community</h1>
+              <p className="text-muted-foreground">Connect with your neighborhood</p>
+            </div>
+            <CreateCommunityAdDialog>
+              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
+                <Megaphone className="h-4 w-4" />
+                Create Ad
+                <Plus className="h-4 w-4" />
+              </Button>
+            </CreateCommunityAdDialog>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="feed">Community Feed</TabsTrigger>
