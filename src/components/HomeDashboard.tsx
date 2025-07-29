@@ -224,8 +224,8 @@ const HomeDashboard = () => {
               </Card>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-4 md:space-y-6">
+            {/* Sidebar - Hidden on mobile */}
+            <div className="hidden md:block space-y-4 md:space-y-6">
               {/* Real-time Promotional Ads */}
               <div className="space-y-3 md:space-y-4">
                 {adsLoading ? (
