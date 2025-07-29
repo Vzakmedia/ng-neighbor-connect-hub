@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
@@ -58,32 +58,34 @@ const Services = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4 mb-6">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  My Services & Goods
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/my-services')}>
-                  My Services
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/my-goods')}>
-                  My Goods
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
-                  My Bookings
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <Tabs defaultValue="businesses" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-10 px-3 flex items-center gap-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    My Services & Goods
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
+                    My Services
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
+                    My Goods
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
+                    My Bookings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
+            </TabsList>
 
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Local Businesses</h2>
-            <BusinessListings />
-          </div>
+            <TabsContent value="businesses" className="mt-6">
+              <BusinessListings />
+            </TabsContent>
+          </Tabs>
 
         </div>
       </main>
