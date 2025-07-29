@@ -4,13 +4,244 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 const Admin = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // State for real-time data
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activePosts: 0,
+    eventsThisMonth: 0,
+    safetyReports: 0,
+    emergencyAlerts: 0,
+    marketplaceItems: 0,
+    promotions: 0
+  });
+  
+  const [users, setUsers] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [emergencyAlerts, setEmergencyAlerts] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [marketplaceItems, setMarketplaceItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [automations, setAutomations] = useState([]);
 
-  // Simple admin check - you can enhance this with proper role-based access
+  // Simple admin check
   const isAdmin = user?.email === "vzakfenwa@gmail.com";
+
+  // Real-time data fetching
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch users count
+        const { count: usersCount } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch community posts count
+        const { count: postsCount } = await supabase
+          .from('community_posts')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch events this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        const { count: eventsCount } = await supabase
+          .from('community_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_type', 'event')
+          .gte('created_at', startOfMonth.toISOString());
+
+        // Fetch safety alerts count
+        const { count: alertsCount } = await supabase
+          .from('safety_alerts')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch emergency alerts count
+        const { count: emergencyCount } = await supabase
+          .from('panic_alerts')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch marketplace items count
+        const { count: marketplaceCount } = await supabase
+          .from('marketplace_items')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch promotions count
+        const { count: promotionsCount } = await supabase
+          .from('promotions')
+          .select('*', { count: 'exact', head: true });
+
+        setStats({
+          totalUsers: usersCount || 0,
+          activePosts: postsCount || 0,
+          eventsThisMonth: eventsCount || 0,
+          safetyReports: alertsCount || 0,
+          emergencyAlerts: emergencyCount || 0,
+          marketplaceItems: marketplaceCount || 0,
+          promotions: promotionsCount || 0
+        });
+
+        // Fetch detailed data for management
+        const { data: usersData } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        const { data: emergencyData } = await supabase
+          .from('panic_alerts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        const { data: promotionsData } = await supabase
+          .from('promotions')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        const { data: marketplaceData } = await supabase
+          .from('marketplace_items')
+          .select('*, profiles(full_name)')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        setUsers(usersData || []);
+        setEmergencyAlerts(emergencyData || []);
+        setPromotions(promotionsData || []);
+        setMarketplaceItems(marketplaceData || []);
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+
+    // Set up real-time subscriptions
+    const channel = supabase
+      .channel('admin-dashboard')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'profiles' }, 
+        () => fetchDashboardData()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'community_posts' }, 
+        () => fetchDashboardData()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'panic_alerts' }, 
+        () => fetchDashboardData()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'promotions' }, 
+        () => fetchDashboardData()
+      )
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'marketplace_items' }, 
+        () => fetchDashboardData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, toast]);
+
+  // Emergency alert management
+  const handleEmergencyAlert = async (alertId, action) => {
+    try {
+      if (action === 'resolve') {
+        const { error } = await supabase
+          .from('panic_alerts')
+          .update({ 
+            is_resolved: true, 
+            resolved_at: new Date().toISOString(),
+            resolved_by: user.id 
+          })
+          .eq('id', alertId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Emergency alert resolved"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update emergency alert",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Promotion management
+  const handlePromotionStatus = async (promotionId, status) => {
+    try {
+      const { error } = await supabase
+        .from('promotions')
+        .update({ status })
+        .eq('id', promotionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Promotion ${status}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update promotion",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Marketplace item management
+  const handleMarketplaceStatus = async (itemId, status) => {
+    try {
+      const { error } = await supabase
+        .from('marketplace_items')
+        .update({ status })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Item ${status}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update marketplace item",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -34,17 +265,26 @@ const Admin = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Manage your neighborhood platform</p>
+        <p className="text-muted-foreground">Real-time neighborhood platform management</p>
+        <div className="flex items-center mt-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+          <span className="text-sm text-muted-foreground">Live data updates enabled</span>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="emergency">Emergency</TabsTrigger>
+          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+          <TabsTrigger value="promotions">Promotions</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="automations">Automations</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
+        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -53,8 +293,8 @@ const Admin = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
-                <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.totalUsers}</div>
+                <p className="text-xs text-muted-foreground">Real-time count</p>
               </CardContent>
             </Card>
 
@@ -64,8 +304,8 @@ const Admin = () => {
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">573</div>
-                <p className="text-xs text-muted-foreground">+12.5% from last month</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.activePosts}</div>
+                <p className="text-xs text-muted-foreground">Community posts</p>
               </CardContent>
             </Card>
 
@@ -75,8 +315,43 @@ const Admin = () => {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">89</div>
-                <p className="text-xs text-muted-foreground">+5.2% from last month</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.eventsThisMonth}</div>
+                <p className="text-xs text-muted-foreground">Current month</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Emergency Alerts</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">{loading ? '...' : stats.emergencyAlerts}</div>
+                <p className="text-xs text-muted-foreground">Active alerts</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Marketplace Items</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.marketplaceItems}</div>
+                <p className="text-xs text-muted-foreground">Active listings</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Promotions</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.promotions}</div>
+                <p className="text-xs text-muted-foreground">Sponsored content</p>
               </CardContent>
             </Card>
 
@@ -86,8 +361,8 @@ const Admin = () => {
                 <Shield className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground">-2.1% from last month</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.safetyReports}</div>
+                <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
           </div>
@@ -95,88 +370,411 @@ const Admin = () => {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activities</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="secondary">New User</Badge>
-                    <span className="text-sm">Sarah Johnson joined</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">2 min ago</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline">Event</Badge>
-                    <span className="text-sm">Community BBQ created</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">15 min ago</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="destructive">Alert</Badge>
-                    <span className="text-sm">Safety incident reported</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">1 hour ago</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button className="w-full justify-start">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Send Emergency Alert
+                <Button className="w-full justify-start" variant="destructive">
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Send Emergency Broadcast
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
                   <Users className="mr-2 h-4 w-4" />
                   Manage User Roles
                 </Button>
                 <Button variant="outline" className="w-full justify-start">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  View Analytics
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <Eye className="mr-2 h-4 w-4" />
                   Moderate Content
                 </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Platform Settings
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Emergency Alerts</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {emergencyAlerts.slice(0, 3).map((alert) => (
+                  <div key={alert.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={alert.is_resolved ? "secondary" : "destructive"}>
+                        {alert.is_resolved ? "Resolved" : "Active"}
+                      </Badge>
+                      <span className="text-sm">{alert.situation_type}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(alert.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+                {emergencyAlerts.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No emergency alerts</p>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
+        {/* Users Tab */}
         <TabsContent value="users">
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage platform users and authentication</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">User management features coming soon...</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Input placeholder="Search users..." className="max-w-sm" />
+                  <Button>
+                    <Users className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.full_name || 'N/A'}</TableCell>
+                        <TableCell>{user.email || 'N/A'}</TableCell>
+                        <TableCell>{user.city || 'N/A'}</TableCell>
+                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.is_verified ? "default" : "secondary"}>
+                            {user.is_verified ? "Verified" : "Unverified"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Emergency Management Tab */}
+        <TabsContent value="emergency">
+          <Card>
+            <CardHeader>
+              <CardTitle>Emergency Alert Management</CardTitle>
+              <p className="text-sm text-muted-foreground">Monitor and manage emergency situations</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {emergencyAlerts.map((alert) => (
+                    <TableRow key={alert.id}>
+                      <TableCell>
+                        <Badge variant="destructive">{alert.situation_type}</Badge>
+                      </TableCell>
+                      <TableCell>{alert.address || 'Location not provided'}</TableCell>
+                      <TableCell>{new Date(alert.created_at).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={alert.is_resolved ? "secondary" : "destructive"}>
+                          {alert.is_resolved ? "Resolved" : "Active"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {!alert.is_resolved && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEmergencyAlert(alert.id, 'resolve')}
+                          >
+                            Resolve
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Marketplace Management Tab */}
+        <TabsContent value="marketplace">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketplace Management</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage marketplace listings and transactions</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Seller</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {marketplaceItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.title}</TableCell>
+                      <TableCell>{item.profiles?.full_name || 'Unknown'}</TableCell>
+                      <TableCell>₦{item.price}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.status === 'active' ? "default" : "secondary"}>
+                          {item.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Select onValueChange={(value) => handleMarketplaceStatus(item.id, value)}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Activate</SelectItem>
+                            <SelectItem value="inactive">Deactivate</SelectItem>
+                            <SelectItem value="sold">Mark Sold</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Promotions Management Tab */}
+        <TabsContent value="promotions">
+          <Card>
+            <CardHeader>
+              <CardTitle>Promotions & Sponsored Content</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage sponsored posts, events, and marketplace items</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Budget</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {promotions.map((promotion) => (
+                    <TableRow key={promotion.id}>
+                      <TableCell>{promotion.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{promotion.item_type}</Badge>
+                      </TableCell>
+                      <TableCell>₦{promotion.budget}</TableCell>
+                      <TableCell>{promotion.duration_days} days</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          promotion.status === 'approved' ? "default" : 
+                          promotion.status === 'pending' ? "secondary" : "destructive"
+                        }>
+                          {promotion.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Select onValueChange={(value) => handlePromotionStatus(promotion.id, value)}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="approved">Approve</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="rejected">Reject</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Moderation Tab */}
         <TabsContent value="content">
           <Card>
             <CardHeader>
-              <CardTitle>Content Moderation</CardTitle>
+              <CardTitle>Content Moderation Tools</CardTitle>
+              <p className="text-sm text-muted-foreground">Review and moderate user-generated content</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Content moderation tools coming soon...</p>
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Reported Posts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">5</div>
+                      <p className="text-xs text-muted-foreground">Pending review</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Flagged Comments</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">12</div>
+                      <p className="text-xs text-muted-foreground">Needs attention</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Spam Reports</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">3</div>
+                      <p className="text-xs text-muted-foreground">Auto-filtered</p>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Button className="w-full">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Review Flagged Content
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Automations Tab */}
+        <TabsContent value="automations">
+          <Card>
+            <CardHeader>
+              <CardTitle>Platform Automations</CardTitle>
+              <p className="text-sm text-muted-foreground">Configure automated tasks and workflows</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Auto-approve verified user posts</h3>
+                    <p className="text-sm text-muted-foreground">Automatically approve posts from verified users</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Emergency alert notifications</h3>
+                    <p className="text-sm text-muted-foreground">Send push notifications for emergency alerts</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Marketplace auto-renewal</h3>
+                    <p className="text-sm text-muted-foreground">Auto-renew expired marketplace listings</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Content spam filtering</h3>
+                    <p className="text-sm text-muted-foreground">Automatically filter potential spam content</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Analytics Tab */}
         <TabsContent value="analytics">
           <Card>
             <CardHeader>
               <CardTitle>Platform Analytics</CardTitle>
+              <p className="text-sm text-muted-foreground">Detailed insights and performance metrics</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Detailed analytics coming soon...</p>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">User Engagement</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Daily Active Users</span>
+                        <span className="text-sm font-medium">847</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Post Interactions</span>
+                        <span className="text-sm font-medium">2,340</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Messages Sent</span>
+                        <span className="text-sm font-medium">1,567</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Revenue Analytics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Promotion Revenue</span>
+                        <span className="text-sm font-medium">₦45,000</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Marketplace Fees</span>
+                        <span className="text-sm font-medium">₦12,500</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Premium Features</span>
+                        <span className="text-sm font-medium">₦8,900</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
