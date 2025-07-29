@@ -305,7 +305,6 @@ const CommunityServices = () => {
                             description: service.description,
                             price_min: service.price_min,
                             price_max: service.price_max,
-                            price_type: service.price_type,
                             user_id: service.user_id,
                             location: service.location
                           }}
