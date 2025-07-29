@@ -352,7 +352,7 @@ const BusinessListings = () => {
 
                 {/* States */}
                 <CommandGroup heading="States">
-                  {Object.keys(nigerianLocations || {})
+                  {(Object.keys(nigerianLocations || {}) || [])
                     .filter(state => state?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                     .map((state) => (
                     <CommandItem
@@ -369,9 +369,9 @@ const BusinessListings = () => {
                 </CommandGroup>
 
                 {/* Cities for selected state */}
-                {selectedState !== 'all' && getAvailableCities().length > 0 && (
+                {selectedState !== 'all' && (getAvailableCities() || []).length > 0 && (
                   <CommandGroup heading={`Cities in ${selectedState}`}>
-                    {getAvailableCities()
+                    {(getAvailableCities() || [])
                       .filter(city => city?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                       .map((city) => (
                       <CommandItem
@@ -389,9 +389,9 @@ const BusinessListings = () => {
                 )}
 
                 {/* Neighborhoods for selected city */}
-                {selectedCity !== 'all' && getAvailableNeighborhoods().length > 0 && (
+                {selectedCity !== 'all' && (getAvailableNeighborhoods() || []).length > 0 && (
                   <CommandGroup heading={`Areas in ${selectedCity}`}>
-                    {getAvailableNeighborhoods()
+                    {(getAvailableNeighborhoods() || [])
                       .filter(neighborhood => neighborhood?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                       .map((neighborhood) => (
                       <CommandItem
@@ -411,10 +411,10 @@ const BusinessListings = () => {
                 {/* Search all locations */}
                 {searchLocation && (
                   <CommandGroup heading="Search Results">
-                    {getAllLocations()
+                    {(getAllLocations() || [])
                       .filter(location => 
                         location?.toLowerCase()?.includes((searchLocation || '').toLowerCase()) &&
-                        !Object.keys(nigerianLocations || {}).includes(location)
+                        !(Object.keys(nigerianLocations || {}) || []).includes(location)
                       )
                       .slice(0, 10)
                       .map((location) => (
