@@ -134,17 +134,34 @@ const Admin = () => {
     if (!isSuperAdmin) return;
     
     try {
-      const { data: profiles, error } = await supabase
+      // First get basic user data
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles(role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return;
+      }
+
+      // Then get user roles separately to avoid join issues
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+      }
+
+      // Combine the data
+      const usersWithRoles = profiles?.map(profile => ({
+        ...profile,
+        user_roles: userRoles?.filter(role => role.user_id === profile.user_id) || []
+      })) || [];
       
-      setUsers(profiles || []);
+      console.log('Fetched users:', usersWithRoles.length);
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
