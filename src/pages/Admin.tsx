@@ -447,19 +447,51 @@ const Admin = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="emergency">Emergency</TabsTrigger>
-          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-          <TabsTrigger value="promotions">Promotions</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="businesses">Businesses</TabsTrigger>
-          <TabsTrigger value="automations">Automations</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+      <Tabs defaultValue="overview" className="flex gap-6" orientation="vertical">
+        <TabsList className="flex flex-col h-fit w-48 space-y-1">
+          <TabsTrigger value="overview" className="w-full justify-start">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="users" className="w-full justify-start">
+            <Users className="h-4 w-4 mr-2" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="emergency" className="w-full justify-start">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Emergency
+          </TabsTrigger>
+          <TabsTrigger value="marketplace" className="w-full justify-start">
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Marketplace
+          </TabsTrigger>
+          <TabsTrigger value="promotions" className="w-full justify-start">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Promotions
+          </TabsTrigger>
+          <TabsTrigger value="content" className="w-full justify-start">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Content
+          </TabsTrigger>
+          <TabsTrigger value="businesses" className="w-full justify-start">
+            <Building className="h-4 w-4 mr-2" />
+            Businesses
+          </TabsTrigger>
+          <TabsTrigger value="automations" className="w-full justify-start">
+            <Settings className="h-4 w-4 mr-2" />
+            Automations
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="w-full justify-start">
+            <Shield className="h-4 w-4 mr-2" />
+            Settings
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="w-full justify-start">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
+
+        <div className="flex-1">
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
@@ -1252,6 +1284,7 @@ const Admin = () => {
             </div>
           </div>
         </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
