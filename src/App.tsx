@@ -23,6 +23,7 @@ import Events from "./pages/Events";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Business from "./pages/Business";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => {
               <Route path="/events" element={<Events />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/business" element={<Business />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />

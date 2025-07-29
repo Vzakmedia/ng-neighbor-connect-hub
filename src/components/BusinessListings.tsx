@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus } from 'lucide-react';
+import BusinessRegistrationDialog from './BusinessRegistrationDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Business {
@@ -216,10 +217,12 @@ const BusinessListings = () => {
                 <h3 className="font-semibold text-lg">Own a business?</h3>
                 <p className="text-muted-foreground">Register your business and reach more customers in your community</p>
               </div>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Register Business
-              </Button>
+              <BusinessRegistrationDialog onBusinessRegistered={fetchBusinesses}>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Register Business
+                </Button>
+              </BusinessRegistrationDialog>
             </div>
           </CardContent>
         </Card>
