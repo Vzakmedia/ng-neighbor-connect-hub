@@ -1202,11 +1202,13 @@ export type Database = {
       promotions: {
         Row: {
           budget: number
+          contact_info: string | null
           created_at: string
           description: string | null
           duration_days: number
           end_date: string | null
           id: string
+          images: string[] | null
           item_id: string
           item_type: string
           promotion_type: string
@@ -1216,14 +1218,17 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          website_url: string | null
         }
         Insert: {
           budget: number
+          contact_info?: string | null
           created_at?: string
           description?: string | null
           duration_days?: number
           end_date?: string | null
           id?: string
+          images?: string[] | null
           item_id: string
           item_type: string
           promotion_type?: string
@@ -1233,14 +1238,17 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          website_url?: string | null
         }
         Update: {
           budget?: number
+          contact_info?: string | null
           created_at?: string
           description?: string | null
           duration_days?: number
           end_date?: string | null
           id?: string
+          images?: string[] | null
           item_id?: string
           item_type?: string
           promotion_type?: string
@@ -1250,6 +1258,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          website_url?: string | null
         }
         Relationships: []
       }

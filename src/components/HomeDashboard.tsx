@@ -26,12 +26,14 @@ import AdvertisementCard from './AdvertisementCard';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { usePromotionalAds } from '@/hooks/usePromotionalAds';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const dashboardStats = useDashboardStats();
+  const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(3);
 
   // Create dynamic quick stats based on real data
   const quickStats = [
@@ -63,6 +65,22 @@ const HomeDashboard = () => {
       color: 'text-community-green', 
       trend: '+15%' 
     },
+  ];
+
+  // Fallback advertisements (show only if no promotional ads are available)
+  const fallbackAdvertisements = [
+    {
+      id: 'fallback-1',
+      title: 'Fresh Groceries Delivered',
+      description: 'Get fresh groceries delivered to your door. Same-day delivery available in Victoria Island.',
+      image: '/placeholder.svg',
+      location: 'Victoria Island',
+      category: 'Services',
+      price: 'From ₦500',
+      url: 'https://example.com/groceries',
+      sponsored: true,
+      timePosted: '2 hours ago'
+    }
   ];
 
   const upcomingEvents = [
@@ -148,41 +166,8 @@ const HomeDashboard = () => {
     { tag: '#EventPlanning', posts: 19 }
   ];
 
-  const advertisements = [
-    {
-      id: '1',
-      title: 'Fresh Groceries Delivered',
-      description: 'Get fresh groceries delivered to your door. Same-day delivery available in Victoria Island.',
-      image: '/placeholder.svg',
-      location: 'Victoria Island',
-      category: 'Services',
-      price: 'From ₦500',
-      url: 'https://example.com/groceries',
-      sponsored: true,
-      timePosted: '2 hours ago'
-    },
-    {
-      id: '2',
-      title: 'Home Security Systems',
-      description: 'Protect your home with our advanced security systems. Professional installation included.',
-      location: 'Lekki',
-      category: 'Security',
-      price: 'From ₦150,000',
-      url: 'https://example.com/security',
-      sponsored: true,
-      timePosted: '5 hours ago'
-    },
-    {
-      id: '3',
-      title: 'Local Fitness Classes',
-      description: 'Join our community fitness classes. Yoga, Pilates, and cardio available.',
-      location: 'Ikoyi',
-      category: 'Health',
-      price: '₦8,000/month',
-      sponsored: true,
-      timePosted: '1 day ago'
-    }
-  ];
+  // Use promotional ads if available, otherwise fall back to default ads
+  const currentAds = !adsLoading && promotionalAds.length > 0 ? promotionalAds : fallbackAdvertisements;
 
   return (
     <div className="space-y-4 md:space-y-6 overflow-x-hidden">
@@ -352,11 +337,17 @@ const HomeDashboard = () => {
 
             {/* Sidebar */}
             <div className="space-y-4 md:space-y-6">
-              {/* Sponsored Ads */}
+              {/* Real-time Promotional Ads */}
               <div className="space-y-3 md:space-y-4">
-                {advertisements.slice(0, 1).map((ad) => (
-                  <AdvertisementCard key={ad.id} ad={ad} />
-                ))}
+                {adsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-32 bg-muted rounded-lg"></div>
+                  </div>
+                ) : (
+                  currentAds.slice(0, 1).map((ad) => (
+                    <AdvertisementCard key={ad.id} ad={ad} />
+                  ))
+                )}
               </div>
 
               {/* Upcoming Events */}
@@ -485,9 +476,9 @@ const HomeDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Another Ad Slot */}
+              {/* Another Promotional Ad Slot */}
               <div className="space-y-4">
-                {advertisements.slice(1, 2).map((ad) => (
+                {!adsLoading && currentAds.length > 1 && currentAds.slice(1, 2).map((ad) => (
                   <AdvertisementCard key={ad.id} ad={ad} />
                 ))}
               </div>
@@ -529,9 +520,16 @@ const HomeDashboard = () => {
 
         <TabsContent value="ads" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {advertisements.map((ad) => (
+            {!adsLoading && currentAds.map((ad) => (
               <AdvertisementCard key={ad.id} ad={ad} />
             ))}
+            {adsLoading && (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="h-48 bg-muted rounded-lg"></div>
+                </div>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>
