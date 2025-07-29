@@ -12,6 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Star, MessageCircle, Search, Filter } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
+import BookServiceDialog from './BookServiceDialog';
+import RatingDialog from './RatingDialog';
+import MarketplaceInquiryDialog from './MarketplaceInquiryDialog';
+import CommentSection from './CommentSection';
 
 interface CommunityService {
   id: string;
@@ -294,14 +298,21 @@ const CommunityServices = () => {
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Message
                         </Button>
-                        <Button size="sm" onClick={() => {
-                          toast({
-                            title: "Feature Coming Soon",
-                            description: "Service booking will be available soon",
-                          });
-                        }}>
-                          Book Service
-                        </Button>
+                        <BookServiceDialog 
+                          service={{
+                            id: service.id,
+                            title: service.title,
+                            description: service.description,
+                            price_min: service.price_min,
+                            price_max: service.price_max,
+                            price_type: service.price_type,
+                            user_id: service.user_id,
+                            location: service.location
+                          }}
+                          onBookingCreated={fetchCommunityServices}
+                        >
+                          <Button size="sm">Book Service</Button>
+                        </BookServiceDialog>
                       </div>
                     </div>
                   </CardHeader>
@@ -409,14 +420,19 @@ const CommunityServices = () => {
                           <MessageCircle className="h-4 w-4 mr-1" />
                           Message
                         </Button>
-                        <Button size="sm" onClick={() => {
-                          toast({
-                            title: "Feature Coming Soon",
-                            description: "Contact seller functionality will be available soon",
-                          });
-                        }}>
-                          Contact Seller
-                        </Button>
+                        <MarketplaceInquiryDialog
+                          item={{
+                            id: item.id,
+                            title: item.title,
+                            description: item.description,
+                            price: item.price,
+                            is_negotiable: item.is_negotiable,
+                            user_id: item.user_id
+                          }}
+                          onInquiryCreated={fetchCommunityItems}
+                        >
+                          <Button size="sm">Contact Seller</Button>
+                        </MarketplaceInquiryDialog>
                       </div>
                     </div>
                   </CardHeader>
