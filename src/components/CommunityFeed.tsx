@@ -36,6 +36,7 @@ import ShareDialog from '@/components/ShareDialog';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
+import PromotedContent from '@/components/PromotedContent';
 
 
 interface DatabasePost {
@@ -657,22 +658,41 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
           </p>
         </div>
       ) : (
-        filteredPosts.map((post: Post) => {
-          const typeBadge = getPostTypeBadge(post.type);
+        <div className="space-y-6">
+          {/* Banner Promotions - Full Width */}
+          <PromotedContent promotionType="banner" maxItems={1} />
           
-          // Extra safety check - this should now never be needed due to proper transformDatabasePost
-          if (!post || !post.author) {
-            console.warn('Post or post.author is undefined:', post);
-            return null;
-          }
+          {/* Featured Promotions - Large Cards */}
+          <PromotedContent promotionType="featured" maxItems={2} />
           
-          return (
-            <Card 
-              key={post.id} 
-              className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
-                !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
-              }`}
-              onClick={(e) => handlePostClick(post.id, e)}
+          {/* Regular Posts with Boost and Highlight Promotions Interspersed */}
+          {filteredPosts.map((post: Post, index) => {
+            const typeBadge = getPostTypeBadge(post.type);
+            
+            // Extra safety check - this should now never be needed due to proper transformDatabasePost
+            if (!post || !post.author) {
+              console.warn('Post or post.author is undefined:', post);
+              return null;
+            }
+            
+            return (
+              <div key={`post-section-${index}`} className="space-y-4">
+                {/* Insert Boost promotions every 3 posts */}
+                {index % 3 === 0 && index > 0 && (
+                  <PromotedContent promotionType="boost" maxItems={1} />
+                )}
+                
+                 {/* Insert Highlight promotions every 5 posts */}
+                {index % 5 === 0 && index > 0 && (
+                  <PromotedContent promotionType="highlight" maxItems={2} />
+                )}
+                
+                <Card
+                  key={post.id} 
+                  className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
+                    !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
+                  }`}
+                  onClick={(e) => handlePostClick(post.id, e)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -808,9 +828,11 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                   />
                 )}
               </CardContent>
-            </Card>
-          );
-        })
+                </Card>
+              </div>
+            );
+          })}
+        </div>
       )}
 
 
