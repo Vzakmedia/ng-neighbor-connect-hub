@@ -1208,7 +1208,10 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleViewAlert(alert)}
+                              onClick={() => {
+                                console.log('View alert clicked:', alert);
+                                handleViewAlert(alert);
+                              }}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -1216,7 +1219,10 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleEditAlert(alert)}
+                              onClick={() => {
+                                console.log('Edit alert clicked:', alert);
+                                handleEditAlert(alert);
+                              }}
                               title="Edit Status"
                             >
                               <Edit className="h-4 w-4" />
