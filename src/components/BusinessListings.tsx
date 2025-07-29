@@ -199,41 +199,61 @@ const BusinessListings = () => {
 
   // Get available cities for selected state
   const getAvailableCities = () => {
-    if (selectedState === 'all') return [];
-    const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
-    if (!stateData) return [];
-    return Object.keys(stateData);
+    try {
+      if (selectedState === 'all' || !nigerianLocations) return [];
+      const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
+      if (!stateData || typeof stateData !== 'object') return [];
+      const cities = Object.keys(stateData) || [];
+      console.log('Available cities for', selectedState, ':', cities);
+      return cities;
+    } catch (error) {
+      console.error('Error getting cities:', error);
+      return [];
+    }
   };
 
   // Get available neighborhoods for selected city
   const getAvailableNeighborhoods = () => {
-    if (selectedState === 'all' || selectedCity === 'all') return [];
-    const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
-    if (!stateData) return [];
-    const cityData = stateData[selectedCity as keyof typeof stateData];
-    if (!cityData || !Array.isArray(cityData)) return [];
-    return cityData;
+    try {
+      if (selectedState === 'all' || selectedCity === 'all' || !nigerianLocations) return [];
+      const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
+      if (!stateData || typeof stateData !== 'object') return [];
+      const cityData = stateData[selectedCity as keyof typeof stateData];
+      if (!cityData || !Array.isArray(cityData)) return [];
+      console.log('Available neighborhoods for', selectedCity, ':', cityData);
+      return cityData;
+    } catch (error) {
+      console.error('Error getting neighborhoods:', error);
+      return [];
+    }
   };
 
   // Get all locations for search
   const getAllLocations = () => {
     const locations: string[] = [];
     try {
+      if (!nigerianLocations || typeof nigerianLocations !== 'object') {
+        console.log('nigerianLocations is not valid:', nigerianLocations);
+        return [];
+      }
+      
       Object.entries(nigerianLocations).forEach(([state, cities]) => {
-        locations.push(state);
+        if (state) locations.push(state);
         if (cities && typeof cities === 'object') {
           Object.entries(cities).forEach(([city, neighborhoods]) => {
-            locations.push(city);
+            if (city) locations.push(city);
             if (Array.isArray(neighborhoods)) {
               neighborhoods.forEach(neighborhood => {
-                locations.push(neighborhood);
+                if (neighborhood) locations.push(neighborhood);
               });
             }
           });
         }
       });
+      console.log('Generated locations:', locations.length);
     } catch (error) {
       console.error('Error building locations list:', error);
+      return [];
     }
     return locations;
   };
@@ -351,28 +371,30 @@ const BusinessListings = () => {
                 </CommandGroup>
 
                 {/* States */}
-                <CommandGroup heading="States">
-                  {(Object.keys(nigerianLocations || {}) || [])
-                    .filter(state => state?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
-                    .map((state) => (
-                    <CommandItem
-                      key={state}
-                      onSelect={() => {
-                        handleStateChange(state);
-                        setLocationOpen(false);
-                      }}
-                    >
-                      <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
-                      {state}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                {nigerianLocations && typeof nigerianLocations === 'object' && (
+                  <CommandGroup heading="States">
+                    {Object.keys(nigerianLocations)
+                      .filter(state => state && typeof state === 'string' && state.toLowerCase().includes((searchLocation || '').toLowerCase()))
+                      .map((state) => (
+                      <CommandItem
+                        key={state}
+                        onSelect={() => {
+                          handleStateChange(state);
+                          setLocationOpen(false);
+                        }}
+                      >
+                        <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
+                        {state}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
 
                 {/* Cities for selected state */}
-                {selectedState !== 'all' && (getAvailableCities() || []).length > 0 && (
+                {selectedState !== 'all' && getAvailableCities().length > 0 && (
                   <CommandGroup heading={`Cities in ${selectedState}`}>
-                    {(getAvailableCities() || [])
-                      .filter(city => city?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
+                    {getAvailableCities()
+                      .filter(city => city && typeof city === 'string' && city.toLowerCase().includes((searchLocation || '').toLowerCase()))
                       .map((city) => (
                       <CommandItem
                         key={city}
@@ -389,10 +411,10 @@ const BusinessListings = () => {
                 )}
 
                 {/* Neighborhoods for selected city */}
-                {selectedCity !== 'all' && (getAvailableNeighborhoods() || []).length > 0 && (
+                {selectedCity !== 'all' && getAvailableNeighborhoods().length > 0 && (
                   <CommandGroup heading={`Areas in ${selectedCity}`}>
-                    {(getAvailableNeighborhoods() || [])
-                      .filter(neighborhood => neighborhood?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
+                    {getAvailableNeighborhoods()
+                      .filter(neighborhood => neighborhood && typeof neighborhood === 'string' && neighborhood.toLowerCase().includes((searchLocation || '').toLowerCase()))
                       .map((neighborhood) => (
                       <CommandItem
                         key={neighborhood}
@@ -409,12 +431,14 @@ const BusinessListings = () => {
                 )}
 
                 {/* Search all locations */}
-                {searchLocation && (
+                {searchLocation && getAllLocations().length > 0 && (
                   <CommandGroup heading="Search Results">
-                    {(getAllLocations() || [])
+                    {getAllLocations()
                       .filter(location => 
-                        location?.toLowerCase()?.includes((searchLocation || '').toLowerCase()) &&
-                        !(Object.keys(nigerianLocations || {}) || []).includes(location)
+                        location && 
+                        typeof location === 'string' && 
+                        location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
+                        !Object.keys(nigerianLocations || {}).includes(location)
                       )
                       .slice(0, 10)
                       .map((location) => (
