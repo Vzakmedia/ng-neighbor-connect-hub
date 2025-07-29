@@ -93,7 +93,7 @@ const CommunityServices = () => {
         .from('services')
         .select(`
           *,
-          profiles!inner(full_name, avatar_url, city, state, neighborhood)
+          profiles(full_name, avatar_url, city, state, neighborhood)
         `)
         .eq('is_active', true)
         .neq('user_id', user.id);
@@ -134,7 +134,7 @@ const CommunityServices = () => {
         .from('marketplace_items')
         .select(`
           *,
-          profiles!inner(full_name, avatar_url, city, state, neighborhood)
+          profiles(full_name, avatar_url, city, state, neighborhood)
         `)
         .eq('status', 'active')
         .neq('user_id', user.id);
