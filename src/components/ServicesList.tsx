@@ -73,9 +73,11 @@ interface Booking {
 interface ServicesListProps {
   onRefresh: boolean;
   showOnlyServices?: boolean;
+  showOnlyGoods?: boolean;
+  showOnlyBookings?: boolean;
 }
 
-const ServicesList = ({ onRefresh, showOnlyServices = false }: ServicesListProps) => {
+const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = false, showOnlyBookings = false }: ServicesListProps) => {
   console.log('ServicesList component rendering...');
   const { user } = useAuth();
   const { toast } = useToast();
@@ -445,6 +447,180 @@ const ServicesList = ({ onRefresh, showOnlyServices = false }: ServicesListProps
                   <p className="text-xs text-muted-foreground">
                     Created {formatTimeAgo(service.created_at)}
                   </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (showOnlyGoods) {
+    return (
+      <div className="space-y-4">
+        {myItems.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">You haven't listed any items yet</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {myItems.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{item.title}</CardTitle>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">
+                          {item.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                        <Badge variant={item.status === 'active' ? "default" : "secondary"}>
+                          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </Badge>
+                        <Badge variant="outline">
+                          {item.condition.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                        {item.is_negotiable && (
+                          <Badge variant="outline" className="text-xs">
+                            Negotiable
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <CreatePromotionDialog 
+                        itemId={item.id} 
+                        itemType="item" 
+                        itemTitle={item.title}
+                        onPromotionCreated={fetchMyItems}
+                      >
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                          <Megaphone className="h-4 w-4 mr-1" />
+                          Promote
+                        </Button>
+                      </CreatePromotionDialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleItemStatus(item.id, item.status)}
+                      >
+                        {item.status === 'active' ? "Mark as Sold" : "Mark as Active"}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteItem(item.id, item.title)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
+                  
+                  {/* Item Gallery */}
+                  {item.images && item.images.length > 0 && (
+                    <div className="flex gap-2 mb-3 overflow-x-auto">
+                      {item.images.slice(0, 3).map((imageUrl, index) => (
+                        <img
+                          key={index}
+                          src={imageUrl}
+                          alt={`${item.title} gallery ${index + 1}`}
+                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                        />
+                      ))}
+                      {item.images.length > 3 && (
+                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                          +{item.images.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {item.location && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                      <MapPin className="h-4 w-4" />
+                      {item.location}
+                    </div>
+                  )}
+
+                  <div className="text-lg font-semibold mb-2">
+                    ₦{(item.price / 100).toLocaleString()}
+                    {item.is_negotiable && (
+                      <span className="text-sm font-normal text-muted-foreground"> (Negotiable)</span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Listed {formatTimeAgo(item.created_at)}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (showOnlyBookings) {
+    return (
+      <div className="space-y-4">
+        {myBookings.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">No bookings yet</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {myBookings.map((booking) => (
+              <Card key={booking.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{booking.services?.title}</CardTitle>
+                      <Badge variant={
+                        booking.status === 'confirmed' ? "default" :
+                        booking.status === 'pending' ? "secondary" : "destructive"
+                      }>
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {new Date(booking.booking_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Booked {formatTimeAgo(booking.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {booking.services?.description}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 text-sm mb-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={booking.profiles?.avatar_url || ""} />
+                      <AvatarFallback>
+                        {booking.profiles?.full_name?.charAt(0) || "P"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>Provider: {booking.profiles?.full_name || "Service Provider"}</span>
+                  </div>
+
+                  {booking.message && (
+                    <div className="mt-3 p-3 bg-muted rounded-lg">
+                      <p className="text-sm">{booking.message}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

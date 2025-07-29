@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const MyBookings = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   if (loading) {
@@ -29,13 +32,24 @@ const MyBookings = () => {
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container py-6">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">My Bookings</h1>
-              <p className="text-muted-foreground">Manage your service bookings and orders</p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/services')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">My Bookings</h1>
+                <p className="text-muted-foreground">Manage your service bookings and orders</p>
+              </div>
             </div>
           </div>
 
-          <ServicesList onRefresh={refreshTrigger} />
+          <ServicesList onRefresh={refreshTrigger} showOnlyBookings={true} />
         </div>
       </main>
     </div>
