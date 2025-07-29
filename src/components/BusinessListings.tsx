@@ -348,11 +348,11 @@ const BusinessListings = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[250px] p-0">
-              <Command>
+              <Command key={`command-${selectedState}-${selectedCity}-${searchLocation}`}>
                 <CommandInput 
                   placeholder="Search locations..." 
-                  value={searchLocation}
-                  onValueChange={setSearchLocation}
+                  value={searchLocation || ''}
+                  onValueChange={(value) => setSearchLocation(value || '')}
                 />
                 <CommandEmpty>No location found.</CommandEmpty>
                 
