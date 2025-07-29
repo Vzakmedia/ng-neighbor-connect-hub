@@ -37,6 +37,7 @@ import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
 import PromotedContent from '@/components/PromotedContent';
+import { SponsoredContent } from '@/components/SponsoredContent';
 
 
 interface DatabasePost {
@@ -685,6 +686,14 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
                  {/* Insert Highlight promotions every 5 posts */}
                 {index % 5 === 0 && index > 0 && (
                   <PromotedContent promotionType="highlight" maxItems={2} />
+                )}
+                
+                 {/* Insert Sponsored Content every 4 posts */}
+                {index % 4 === 0 && index > 0 && (
+                  <SponsoredContent 
+                    userLocation={profile?.city || profile?.state} 
+                    limit={2}
+                  />
                 )}
                 
                 <Card

@@ -1360,6 +1360,198 @@ export type Database = {
         }
         Relationships: []
       }
+      promoted_posts: {
+        Row: {
+          campaign_id: string
+          cost_per_click: number | null
+          created_at: string
+          daily_budget: number
+          id: string
+          is_active: boolean | null
+          post_content: Json
+          post_id: string | null
+          post_type: string
+          priority: number | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          cost_per_click?: number | null
+          created_at?: string
+          daily_budget: number
+          id?: string
+          is_active?: boolean | null
+          post_content: Json
+          post_id?: string | null
+          post_type: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          cost_per_click?: number | null
+          created_at?: string
+          daily_budget?: number
+          id?: string
+          is_active?: boolean | null
+          post_content?: Json
+          post_id?: string | null
+          post_type?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoted_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_analytics: {
+        Row: {
+          click_through_rate: number | null
+          clicks: number | null
+          conversion_rate: number | null
+          conversions: number | null
+          cost_per_conversion: number | null
+          created_at: string
+          date: string
+          id: string
+          impressions: number | null
+          promoted_post_id: string
+          spend: number | null
+          updated_at: string
+        }
+        Insert: {
+          click_through_rate?: number | null
+          clicks?: number | null
+          conversion_rate?: number | null
+          conversions?: number | null
+          cost_per_conversion?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number | null
+          promoted_post_id: string
+          spend?: number | null
+          updated_at?: string
+        }
+        Update: {
+          click_through_rate?: number | null
+          clicks?: number | null
+          conversion_rate?: number | null
+          conversions?: number | null
+          cost_per_conversion?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number | null
+          promoted_post_id?: string
+          spend?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_analytics_promoted_post_id_fkey"
+            columns: ["promoted_post_id"]
+            isOneToOne: false
+            referencedRelation: "promoted_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotion_campaigns: {
+        Row: {
+          budget: number
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          spent_amount: number | null
+          start_date: string
+          status: string
+          target_audience: Json | null
+          target_demographics: Json | null
+          target_locations: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget: number
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          spent_amount?: number | null
+          start_date: string
+          status?: string
+          target_audience?: Json | null
+          target_demographics?: Json | null
+          target_locations?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          spent_amount?: number | null
+          start_date?: string
+          status?: string
+          target_audience?: Json | null
+          target_demographics?: Json | null
+          target_locations?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      promotion_impressions: {
+        Row: {
+          created_at: string
+          id: string
+          impression_type: string | null
+          promoted_post_id: string
+          user_demographics: Json | null
+          user_id: string | null
+          user_location: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          impression_type?: string | null
+          promoted_post_id: string
+          user_demographics?: Json | null
+          user_id?: string | null
+          user_location?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          impression_type?: string | null
+          promoted_post_id?: string
+          user_demographics?: Json | null
+          user_id?: string | null
+          user_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_impressions_promoted_post_id_fkey"
+            columns: ["promoted_post_id"]
+            isOneToOne: false
+            referencedRelation: "promoted_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotions: {
         Row: {
           budget: number
@@ -1937,6 +2129,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_active_promoted_content: {
+        Args: { user_location?: string; content_limit?: number }
+        Returns: {
+          promoted_post_id: string
+          campaign_id: string
+          post_type: string
+          post_content: Json
+          priority: number
+          cost_per_click: number
+        }[]
+      }
       get_flagged_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1975,6 +2178,15 @@ export type Database = {
       is_board_member: {
         Args: { board_id: string; user_id: string }
         Returns: boolean
+      }
+      log_promotion_impression: {
+        Args: {
+          _promoted_post_id: string
+          _user_id?: string
+          _user_location?: string
+          _impression_type?: string
+        }
+        Returns: undefined
       }
       mark_all_community_posts_as_read: {
         Args: Record<PropertyKey, never>
