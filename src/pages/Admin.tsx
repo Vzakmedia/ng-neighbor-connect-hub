@@ -72,13 +72,10 @@ const Admin = () => {
       if (!user) return;
       
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        const { data: userRole } = await supabase
+          .rpc('get_user_staff_role', { _user_id: user.id });
           
-        setIsSuperAdmin(profile?.full_name === 'Super Admin');
+        setIsSuperAdmin(userRole === 'super_admin');
       } catch (error) {
         console.error('Error checking admin status:', error);
       }
