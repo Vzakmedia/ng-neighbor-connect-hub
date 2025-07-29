@@ -33,7 +33,6 @@ const Navigation = () => {
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
     { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
-    { id: 'business', icon: Building, label: 'My Business', count: 0, path: '/business' },
   ];
 
   const handleNavigation = (path: string) => {
