@@ -160,7 +160,7 @@ const Header = () => {
     await signOut();
   };
 
-  const isAdmin = user?.email === 'admin@nextdoor.ng';
+  const isAdmin = user?.email === 'admin@nextdoor.ng' || user?.email === 'vzakfenwa@gmail.com';
 
   return (
     <>
