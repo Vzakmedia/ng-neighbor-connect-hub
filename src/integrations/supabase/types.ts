@@ -2637,6 +2637,45 @@ export type Database = {
           },
         ]
       }
+      staff_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invitation_code: string
+          invited_by: string
+          invited_role: Database["public"]["Enums"]["app_role"]
+          is_active: boolean
+          updated_at: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_code: string
+          invited_by: string
+          invited_role: Database["public"]["Enums"]["app_role"]
+          is_active?: boolean
+          updated_at?: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string
+          invited_by?: string
+          invited_role?: Database["public"]["Enums"]["app_role"]
+          is_active?: boolean
+          updated_at?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       staff_permissions: {
         Row: {
           can_delete: boolean | null
@@ -2786,15 +2825,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_staff_invitation: {
+        Args: { _invitation_code: string; _user_id: string }
+        Returns: boolean
+      }
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
+      }
+      create_staff_invitation: {
+        Args: {
+          _email: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _invited_by: string
+        }
+        Returns: string
       }
       generate_board_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       generate_confirmation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_invitation_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

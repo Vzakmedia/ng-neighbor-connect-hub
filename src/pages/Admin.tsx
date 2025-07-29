@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
+import StaffInvitationManager from "@/components/StaffInvitationManager";
 
 const Admin = () => {
   const { user } = useAuth();
@@ -856,6 +857,10 @@ const Admin = () => {
             <Building className="h-4 w-4 mr-2" />
             Businesses
           </TabsTrigger>
+          <TabsTrigger value="staff" className="w-full justify-start">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Staff Management
+          </TabsTrigger>
           <TabsTrigger value="automations" className="w-full justify-start">
             <Settings className="h-4 w-4 mr-2" />
             Automations
@@ -1541,7 +1546,12 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Automations Tab */}
+        {/* Staff Management Tab */}
+        <TabsContent value="staff">
+          <StaffInvitationManager />
+        </TabsContent>
+
+        {/* Automations Tab */
         <TabsContent value="automations" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>

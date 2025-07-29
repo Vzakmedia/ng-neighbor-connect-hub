@@ -31,6 +31,7 @@ import ModeratorDashboard from "./pages/ModeratorDashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import SupportDashboard from "./pages/SupportDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
+import StaffLogin from "./pages/StaffLogin";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,7 +79,7 @@ const App = () => {
           <Route path="/support" element={<SupportDashboard />} />
           <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/business" element={<Business />} />
-              <Route path="*" element={<NotFound />} />
+          <Route path="/staff-login" element={<StaffLogin />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
           </BrowserRouter>
