@@ -186,17 +186,21 @@ const Admin = () => {
     }
   };
 
-  // Emergency Alert management handlers
   const handleViewAlert = (alert: any) => {
     console.log('Opening alert dialog for:', alert);
+    console.log('Current alertDialogOpen state:', alertDialogOpen);
     setSelectedAlert(alert);
     setAlertDialogOpen(true);
+    console.log('Set alertDialogOpen to true');
   };
 
   const handleEditAlert = (alert: any) => {
+    console.log('Opening edit alert dialog for:', alert);
+    console.log('Current editAlertDialogOpen state:', editAlertDialogOpen);
     setSelectedAlert(alert);
     setEditingAlertStatus(alert.status);
     setEditAlertDialogOpen(true);
+    console.log('Set editAlertDialogOpen to true');
   };
 
   const handleSaveAlertStatus = async () => {
@@ -1047,7 +1051,7 @@ const Admin = () => {
 
           {/* Emergency Alert Details Dialog */}
           <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto z-[100]">
               <DialogHeader>
                 <DialogTitle>Emergency Alert Details</DialogTitle>
                 <DialogDescription>
@@ -1055,7 +1059,7 @@ const Admin = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              {selectedAlert && (
+              {selectedAlert ? (
                 <div className="grid gap-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Card>
@@ -1156,13 +1160,17 @@ const Admin = () => {
                     )}
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No alert selected</p>
+                </div>
               )}
             </DialogContent>
           </Dialog>
 
           {/* Edit Alert Status Dialog */}
           <Dialog open={editAlertDialogOpen} onOpenChange={setEditAlertDialogOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md z-[100]">
               <DialogHeader>
                 <DialogTitle>Edit Alert Status</DialogTitle>
                 <DialogDescription>
@@ -1209,6 +1217,13 @@ const Admin = () => {
             </DialogContent>
           </Dialog>
         </TabsContent>
+
+        {/* Debug Info - Remove after testing */}
+        <div className="fixed bottom-4 right-4 bg-background border p-4 rounded shadow-lg text-xs max-w-sm">
+          <div>AlertDialog: {alertDialogOpen ? 'OPEN' : 'CLOSED'}</div>
+          <div>EditDialog: {editAlertDialogOpen ? 'OPEN' : 'CLOSED'}</div>
+          <div>SelectedAlert: {selectedAlert ? selectedAlert.id?.substring(0, 8) : 'None'}</div>
+        </div>
 
         <TabsContent value="emergency">
           <Card>
