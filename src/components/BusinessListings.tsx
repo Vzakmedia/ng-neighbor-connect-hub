@@ -371,124 +371,144 @@ const BusinessListings = () => {
                 </CommandGroup>
 
                 {/* States */}
-                {nigerianLocations && typeof nigerianLocations === 'object' && (
-                  <CommandGroup heading="States">
-                    {Object.keys(nigerianLocations)
-                      .filter(state => state && typeof state === 'string' && state.toLowerCase().includes((searchLocation || '').toLowerCase()))
-                      .map((state) => (
-                      <CommandItem
-                        key={state}
-                        onSelect={() => {
-                          handleStateChange(state);
-                          setLocationOpen(false);
-                        }}
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
-                        {state}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                {(() => {
+                  const states = nigerianLocations && typeof nigerianLocations === 'object' 
+                    ? Object.keys(nigerianLocations).filter(state => 
+                        state && typeof state === 'string' && 
+                        state.toLowerCase().includes((searchLocation || '').toLowerCase())
+                      )
+                    : [];
+                  
+                  return states.length > 0 && (
+                    <CommandGroup heading="States">
+                      {states.map((state) => (
+                        <CommandItem
+                          key={state}
+                          onSelect={() => {
+                            handleStateChange(state);
+                            setLocationOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
+                          {state}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })()}
 
                 {/* Cities for selected state */}
-                {selectedState !== 'all' && getAvailableCities().length > 0 && (
-                  <CommandGroup heading={`Cities in ${selectedState}`}>
-                    {getAvailableCities()
-                      .filter(city => city && typeof city === 'string' && city.toLowerCase().includes((searchLocation || '').toLowerCase()))
-                      .map((city) => (
-                      <CommandItem
-                        key={city}
-                        onSelect={() => {
-                          handleCityChange(city);
-                          setLocationOpen(false);
-                        }}
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
-                        {city}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                {(() => {
+                  const cities = selectedState !== 'all' ? (getAvailableCities() || []).filter(city => 
+                    city && typeof city === 'string' && 
+                    city.toLowerCase().includes((searchLocation || '').toLowerCase())
+                  ) : [];
+                  
+                  return cities.length > 0 && (
+                    <CommandGroup heading={`Cities in ${selectedState}`}>
+                      {cities.map((city) => (
+                        <CommandItem
+                          key={city}
+                          onSelect={() => {
+                            handleCityChange(city);
+                            setLocationOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
+                          {city}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })()}
 
                 {/* Neighborhoods for selected city */}
-                {selectedCity !== 'all' && getAvailableNeighborhoods().length > 0 && (
-                  <CommandGroup heading={`Areas in ${selectedCity}`}>
-                    {getAvailableNeighborhoods()
-                      .filter(neighborhood => neighborhood && typeof neighborhood === 'string' && neighborhood.toLowerCase().includes((searchLocation || '').toLowerCase()))
-                      .map((neighborhood) => (
-                      <CommandItem
-                        key={neighborhood}
-                        onSelect={() => {
-                          setSelectedNeighborhood(neighborhood);
-                          setLocationOpen(false);
-                        }}
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
-                        {neighborhood}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                {(() => {
+                  const neighborhoods = selectedCity !== 'all' ? (getAvailableNeighborhoods() || []).filter(neighborhood => 
+                    neighborhood && typeof neighborhood === 'string' && 
+                    neighborhood.toLowerCase().includes((searchLocation || '').toLowerCase())
+                  ) : [];
+                  
+                  return neighborhoods.length > 0 && (
+                    <CommandGroup heading={`Areas in ${selectedCity}`}>
+                      {neighborhoods.map((neighborhood) => (
+                        <CommandItem
+                          key={neighborhood}
+                          onSelect={() => {
+                            setSelectedNeighborhood(neighborhood);
+                            setLocationOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
+                          {neighborhood}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })()}
 
                 {/* Search all locations */}
-                {searchLocation && getAllLocations().length > 0 && (
-                  <CommandGroup heading="Search Results">
-                    {getAllLocations()
-                      .filter(location => 
-                        location && 
-                        typeof location === 'string' && 
-                        location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
-                        !Object.keys(nigerianLocations || {}).includes(location)
-                      )
-                      .slice(0, 10)
-                      .map((location) => (
-                      <CommandItem
-                        key={location}
-                        onSelect={() => {
-                          try {
-                            // Find which state/city this belongs to
-                            const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
-                              if (state === location) return true;
-                              if (!cities || typeof cities !== 'object') return false;
-                              return Object.entries(cities).some(([city, neighborhoods]) => {
-                                if (city === location) return true;
-                                return Array.isArray(neighborhoods) && neighborhoods.includes(location);
-                              });
-                            });
-                            
-                            if (foundState) {
-                              const [stateName, cities] = foundState;
-                              if (cities && typeof cities === 'object') {
-                                const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
+                {(() => {
+                  const searchResults = searchLocation ? (getAllLocations() || [])
+                    .filter(location => 
+                      location && 
+                      typeof location === 'string' && 
+                      location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
+                      !Object.keys(nigerianLocations || {}).includes(location)
+                    )
+                    .slice(0, 10) : [];
+                  
+                  return searchResults.length > 0 && (
+                    <CommandGroup heading="Search Results">
+                      {searchResults.map((location) => (
+                        <CommandItem
+                          key={location}
+                          onSelect={() => {
+                            try {
+                              // Find which state/city this belongs to
+                              const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
+                                if (state === location) return true;
+                                if (!cities || typeof cities !== 'object') return false;
+                                return Object.entries(cities).some(([city, neighborhoods]) => {
                                   if (city === location) return true;
                                   return Array.isArray(neighborhoods) && neighborhoods.includes(location);
                                 });
-                                
-                                if (foundCity) {
-                                  const [cityName, neighborhoods] = foundCity;
-                                  if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
-                                    setSelectedState(stateName);
-                                    setSelectedCity(cityName);
-                                    setSelectedNeighborhood(location);
-                                  } else {
-                                    setSelectedState(stateName);
-                                    setSelectedCity(location);
-                                    setSelectedNeighborhood('all');
+                              });
+                              
+                              if (foundState) {
+                                const [stateName, cities] = foundState;
+                                if (cities && typeof cities === 'object') {
+                                  const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
+                                    if (city === location) return true;
+                                    return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                                  });
+                                  
+                                  if (foundCity) {
+                                    const [cityName, neighborhoods] = foundCity;
+                                    if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
+                                      setSelectedState(stateName);
+                                      setSelectedCity(cityName);
+                                      setSelectedNeighborhood(location);
+                                    } else {
+                                      setSelectedState(stateName);
+                                      setSelectedCity(location);
+                                      setSelectedNeighborhood('all');
+                                    }
                                   }
                                 }
                               }
+                            } catch (error) {
+                              console.error('Error selecting location:', error);
                             }
-                          } catch (error) {
-                            console.error('Error selecting location:', error);
-                          }
-                          setLocationOpen(false);
-                        }}
-                      >
-                        {location}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )}
+                            setLocationOpen(false);
+                          }}
+                        >
+                          {location}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  );
+                })()}
               </Command>
             </PopoverContent>
           </Popover>
