@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       alert_notifications: {
         Row: {
           alert_id: string | null
@@ -2600,6 +2636,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_permissions: {
+        Row: {
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_write: boolean | null
+          created_at: string | null
+          id: string
+          permission_description: string | null
+          permission_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          id?: string
+          permission_description?: string | null
+          permission_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          id?: string
+          permission_description?: string | null
+          permission_name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
       }
       system_performance: {
         Row: {
