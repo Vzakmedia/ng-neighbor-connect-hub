@@ -140,28 +140,6 @@ const HomeDashboard = () => {
             Local Deals
           </TabsTrigger>
         </TabsList>
-        
-        {/* Mobile Tabs - Grid Layout */}
-        <div className="md:hidden w-full">
-          <TabsList className="grid w-full grid-cols-4 gap-0.5 h-auto p-1">
-            <TabsTrigger value="overview" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
-              <Home className="h-3 w-3 mb-0.5" />
-              <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="automations" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
-              <Settings className="h-3 w-3 mb-0.5" />
-              <span>Auto</span>
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
-              <Activity className="h-3 w-3 mb-0.5" />
-              <span>Insights</span>
-            </TabsTrigger>
-            <TabsTrigger value="ads" className="flex flex-col items-center justify-center py-2 px-1 text-xs">
-              <TrendingUp className="h-3 w-3 mb-0.5" />
-              <span>Deals</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
 
