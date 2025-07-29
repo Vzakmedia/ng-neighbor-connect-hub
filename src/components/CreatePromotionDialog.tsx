@@ -44,7 +44,10 @@ const CreatePromotionDialog = ({
     duration_days: '7',
     budget: '',
     target_audience: 'local',
-    promotion_type: 'featured'
+    promotion_type: 'featured',
+    website_url: '',
+    contact_info: '',
+    images: [] as string[]
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,6 +66,9 @@ const CreatePromotionDialog = ({
         budget: parseFloat(formData.budget),
         target_audience: formData.target_audience,
         promotion_type: formData.promotion_type,
+        website_url: formData.website_url,
+        contact_info: formData.contact_info,
+        images: formData.images,
         status: 'pending',
         start_date: new Date().toISOString(),
         end_date: new Date(Date.now() + parseInt(formData.duration_days) * 24 * 60 * 60 * 1000).toISOString()
@@ -86,7 +92,10 @@ const CreatePromotionDialog = ({
         duration_days: '7',
         budget: '',
         target_audience: 'local',
-        promotion_type: 'featured'
+        promotion_type: 'featured',
+        website_url: '',
+        contact_info: '',
+        images: []
       });
       
       onPromotionCreated?.();
@@ -196,6 +205,27 @@ const CreatePromotionDialog = ({
                 <SelectItem value="national">National</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="website_url">Website URL (Optional)</Label>
+            <Input
+              id="website_url"
+              type="url"
+              value={formData.website_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, website_url: e.target.value }))}
+              placeholder="https://your-website.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contact_info">Contact Information (Optional)</Label>
+            <Input
+              id="contact_info"
+              value={formData.contact_info}
+              onChange={(e) => setFormData(prev => ({ ...prev, contact_info: e.target.value }))}
+              placeholder="Phone number, email, or other contact details"
+            />
           </div>
 
           {/* Promotion Preview */}
