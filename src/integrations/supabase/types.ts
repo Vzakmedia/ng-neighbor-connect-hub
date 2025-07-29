@@ -1175,6 +1175,78 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_comments: {
+        Row: {
+          comment_text: string
+          commenter_id: string
+          created_at: string
+          id: string
+          is_flagged: boolean | null
+          item_id: string
+          parent_comment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment_text: string
+          commenter_id: string
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          item_id: string
+          parent_comment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment_text?: string
+          commenter_id?: string
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          item_id?: string
+          parent_comment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketplace_inquiries: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          inquiry_type: string
+          item_id: string
+          message: string
+          offer_amount: number | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          inquiry_type?: string
+          item_id: string
+          message: string
+          offer_amount?: number | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          inquiry_type?: string
+          item_id?: string
+          message?: string
+          offer_amount?: number | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketplace_item_likes: {
         Row: {
           created_at: string
@@ -1215,8 +1287,10 @@ export type Database = {
           is_negotiable: boolean | null
           location: string | null
           price: number | null
+          rating: number | null
           status: Database["public"]["Enums"]["listing_status"] | null
           title: string
+          total_reviews: number | null
           updated_at: string
           user_id: string
         }
@@ -1230,8 +1304,10 @@ export type Database = {
           is_negotiable?: boolean | null
           location?: string | null
           price?: number | null
+          rating?: number | null
           status?: Database["public"]["Enums"]["listing_status"] | null
           title: string
+          total_reviews?: number | null
           updated_at?: string
           user_id: string
         }
@@ -1245,10 +1321,48 @@ export type Database = {
           is_negotiable?: boolean | null
           location?: string | null
           price?: number | null
+          rating?: number | null
           status?: Database["public"]["Enums"]["listing_status"] | null
           title?: string
+          total_reviews?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          is_flagged: boolean | null
+          is_verified: boolean | null
+          item_id: string
+          rating: number
+          review_text: string | null
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          is_verified?: boolean | null
+          item_id: string
+          rating: number
+          review_text?: string | null
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          is_verified?: boolean | null
+          item_id?: string
+          rating?: number
+          review_text?: string | null
+          reviewer_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1950,6 +2064,48 @@ export type Database = {
         }
         Relationships: []
       }
+      review_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string | null
@@ -2181,6 +2337,39 @@ export type Database = {
           },
         ]
       }
+      service_comments: {
+        Row: {
+          comment_text: string
+          commenter_id: string
+          created_at: string
+          id: string
+          is_flagged: boolean | null
+          parent_comment_id: string | null
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment_text: string
+          commenter_id: string
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          parent_comment_id?: string | null
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment_text?: string
+          commenter_id?: string
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          parent_comment_id?: string | null
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_likes: {
         Row: {
           created_at: string
@@ -2209,6 +2398,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          is_flagged: boolean | null
+          is_verified: boolean | null
+          rating: number
+          review_text: string | null
+          reviewer_id: string
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          is_verified?: boolean | null
+          rating: number
+          review_text?: string | null
+          reviewer_id: string
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_flagged?: boolean | null
+          is_verified?: boolean | null
+          rating?: number
+          review_text?: string | null
+          reviewer_id?: string
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       service_weekly_availability: {
         Row: {
