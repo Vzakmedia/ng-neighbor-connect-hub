@@ -200,28 +200,41 @@ const BusinessListings = () => {
   // Get available cities for selected state
   const getAvailableCities = () => {
     if (selectedState === 'all') return [];
-    return Object.keys(nigerianLocations[selectedState as keyof typeof nigerianLocations] || {});
+    const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
+    if (!stateData) return [];
+    return Object.keys(stateData);
   };
 
   // Get available neighborhoods for selected city
   const getAvailableNeighborhoods = () => {
     if (selectedState === 'all' || selectedCity === 'all') return [];
     const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
-    return stateData?.[selectedCity as keyof typeof stateData] || [];
+    if (!stateData) return [];
+    const cityData = stateData[selectedCity as keyof typeof stateData];
+    if (!cityData || !Array.isArray(cityData)) return [];
+    return cityData;
   };
 
   // Get all locations for search
   const getAllLocations = () => {
     const locations: string[] = [];
-    Object.entries(nigerianLocations).forEach(([state, cities]) => {
-      locations.push(state);
-      Object.entries(cities).forEach(([city, neighborhoods]) => {
-        locations.push(city);
-        neighborhoods.forEach(neighborhood => {
-          locations.push(neighborhood);
-        });
+    try {
+      Object.entries(nigerianLocations).forEach(([state, cities]) => {
+        locations.push(state);
+        if (cities && typeof cities === 'object') {
+          Object.entries(cities).forEach(([city, neighborhoods]) => {
+            locations.push(city);
+            if (Array.isArray(neighborhoods)) {
+              neighborhoods.forEach(neighborhood => {
+                locations.push(neighborhood);
+              });
+            }
+          });
+        }
       });
-    });
+    } catch (error) {
+      console.error('Error building locations list:', error);
+    }
     return locations;
   };
 
