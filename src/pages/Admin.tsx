@@ -654,7 +654,8 @@ const Admin = () => {
     if (!isSuperAdmin) return;
     
     try {
-      const { data: items, error } = await supabase
+      // Fetch marketplace items (goods)
+      const { data: items, error: itemsError } = await supabase
         .from('marketplace_items')
         .select(`
           *,
@@ -669,18 +670,34 @@ const Admin = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Enhance items with additional data like likes count and inquiry count
+      // Fetch services
+      const { data: services, error: servicesError } = await supabase
+        .from('services')
+        .select(`
+          *,
+          profiles(
+            full_name,
+            email,
+            avatar_url,
+            phone,
+            neighborhood,
+            user_type
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (itemsError && servicesError) {
+        throw new Error('Failed to fetch marketplace data');
+      }
+
+      // Enhance items with additional data
       const enhancedItems = await Promise.all(
         (items || []).map(async (item) => {
-          // Get likes count
           const { count: likesCount } = await supabase
             .from('marketplace_item_likes')
             .select('*', { count: 'exact', head: true })
             .eq('item_id', item.id);
 
-          // Get inquiries count
           const { count: inquiriesCount } = await supabase
             .from('marketplace_inquiries')
             .select('*', { count: 'exact', head: true })
@@ -688,16 +705,44 @@ const Admin = () => {
 
           return {
             ...item,
+            type: 'goods',
             likes_count: likesCount || 0,
             inquiries_count: inquiriesCount || 0
           };
         })
       );
+
+      // Enhance services with additional data
+      const enhancedServices = await Promise.all(
+        (services || []).map(async (service) => {
+          const { count: likesCount } = await supabase
+            .from('service_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('service_id', service.id);
+
+          const { count: bookingsCount } = await supabase
+            .from('service_bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('service_id', service.id);
+
+          return {
+            ...service,
+            type: 'services',
+            category: 'Service',
+            likes_count: likesCount || 0,
+            inquiries_count: bookingsCount || 0
+          };
+        })
+      );
+
+      // Combine and sort by creation date
+      const combinedData = [...enhancedItems, ...enhancedServices]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-      setMarketplaceItems(enhancedItems);
-      console.log('Fetched marketplace items:', enhancedItems.length);
+      setMarketplaceItems(combinedData);
+      console.log('Fetched marketplace data:', combinedData.length, 'items');
     } catch (error) {
-      console.error('Error fetching marketplace items:', error);
+      console.error('Error fetching marketplace data:', error);
       toast({
         title: "Error",
         description: "Failed to fetch marketplace data",
@@ -773,8 +818,19 @@ const Admin = () => {
           table: 'marketplace_items'
         },
         (payload) => {
-          console.log('Marketplace real-time update:', payload);
-          // Refetch marketplace data when changes occur
+          console.log('Marketplace items real-time update:', payload);
+          fetchMarketplaceItems();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'services'
+        },
+        (payload) => {
+          console.log('Services real-time update:', payload);
           fetchMarketplaceItems();
         }
       )
@@ -2110,9 +2166,14 @@ const Admin = () => {
                             <div className="text-sm text-muted-foreground">{item.profiles?.email}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{item.category}</Badge>
-                        </TableCell>
+                         <TableCell>
+                           <div className="flex gap-1">
+                             <Badge variant="outline">{item.category}</Badge>
+                             <Badge variant="secondary" className="text-xs">
+                               {item.type === 'goods' ? 'Goods' : 'Service'}
+                             </Badge>
+                           </div>
+                         </TableCell>
                         <TableCell>
                           <div className="font-medium">
                             {item.price ? `₦${item.price.toLocaleString()}` : 'Price not set'}
