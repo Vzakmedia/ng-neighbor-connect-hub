@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Star, Edit, Trash2, Calendar, Clock, ShoppingBag } from 'lucide-react';
+import { MapPin, Star, Edit, Trash2, Calendar, Clock, ShoppingBag, Megaphone } from 'lucide-react';
 import ManageAvailabilityDialog from './ManageAvailabilityDialog';
 import EditServiceDialog from './EditServiceDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
+import CreatePromotionDialog from './CreatePromotionDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Service {
@@ -368,7 +369,7 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                         </Badge>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <EditServiceDialog service={service} onServiceUpdated={fetchMyServices}>
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4 mr-1" />
@@ -381,6 +382,17 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                           Availability
                         </Button>
                       </ManageAvailabilityDialog>
+                      <CreatePromotionDialog 
+                        itemId={service.id} 
+                        itemType="service" 
+                        itemTitle={service.title}
+                        onPromotionCreated={fetchMyServices}
+                      >
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                          <Megaphone className="h-4 w-4 mr-1" />
+                          Promote
+                        </Button>
+                      </CreatePromotionDialog>
                       <Button
                         variant="outline"
                         size="sm"
@@ -478,7 +490,18 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <CreatePromotionDialog 
+                        itemId={item.id} 
+                        itemType="item" 
+                        itemTitle={item.title}
+                        onPromotionCreated={fetchMyItems}
+                      >
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                          <Megaphone className="h-4 w-4 mr-1" />
+                          Promote
+                        </Button>
+                      </CreatePromotionDialog>
                       <Button
                         variant="outline"
                         size="sm"
