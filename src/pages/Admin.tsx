@@ -658,7 +658,7 @@ const Admin = () => {
         .from('marketplace_items')
         .select(`
           *,
-          profiles!marketplace_items_user_id_fkey(
+          profiles(
             full_name,
             email,
             avatar_url,
