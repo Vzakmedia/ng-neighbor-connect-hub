@@ -651,12 +651,12 @@ const Admin = () => {
                   <TableBody>
                     {emergencyAlerts.map((alert) => (
                       <TableRow key={alert.id}>
-                        <TableCell className="font-medium">{alert.title}</TableCell>
+                        <TableCell className="font-medium">{alert.title || alert.description || 'Safety Alert'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{alert.alert_type}</Badge>
+                          <Badge variant="outline">{alert.alert_type || 'emergency'}</Badge>
                         </TableCell>
-                        <TableCell>{alert.neighborhood}</TableCell>
-                        <TableCell>{alert.reporter_name}</TableCell>
+                        <TableCell>{alert.address || alert.location || 'N/A'}</TableCell>
+                        <TableCell>{alert.profiles?.full_name || 'Anonymous'}</TableCell>
                         <TableCell>
                           <Badge variant={alert.status === 'active' ? 'destructive' : 'default'}>
                             {alert.status}
@@ -726,13 +726,13 @@ const Admin = () => {
                     {marketplaceItems.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.title}</TableCell>
-                        <TableCell>{item.seller_name}</TableCell>
+                        <TableCell>{item.profiles?.full_name || 'Unknown'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{item.category}</Badge>
                         </TableCell>
-                        <TableCell>₦{item.price?.toLocaleString()}</TableCell>
+                        <TableCell>₦{item.price?.toLocaleString() || 'N/A'}</TableCell>
                         <TableCell>
-                          <Badge variant={item.status === 'available' ? 'default' : 'secondary'}>
+                          <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
                             {item.status}
                           </Badge>
                         </TableCell>
