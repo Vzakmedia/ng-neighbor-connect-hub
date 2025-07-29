@@ -860,6 +860,18 @@ const Admin = () => {
           fetchMarketplaceItems();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'service_bookings'
+        },
+        (payload) => {
+          console.log('Service bookings real-time update:', payload);
+          fetchMarketplaceItems();
+        }
+      )
       .subscribe((status) => {
         console.log('Admin marketplace subscription status:', status);
       });
@@ -2062,15 +2074,20 @@ const Admin = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Marketplace Management</span>
-                <Badge variant="outline" className="text-xs">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Live Sync</span>
-                  </div>
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span>Live Sync</span>
+                    </div>
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Services & Goods
+                  </Badge>
+                </div>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Real-time marketplace listings with live updates • Total Items: {marketplaceItems.length}
+                Real-time marketplace with services and goods • Total Items: {marketplaceItems.length} • Services: {marketplaceItems.filter(i => i.type === 'services').length} • Goods: {marketplaceItems.filter(i => i.type === 'goods').length}
               </p>
             </CardHeader>
             <CardContent>
@@ -2121,15 +2138,16 @@ const Admin = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead>Seller</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Engagement</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Listed</TableHead>
-                        <TableHead>Actions</TableHead>
+                      <TableHead>Item/Service</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Seller/Provider</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Engagement</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Listed</TableHead>
+                      <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                   <TableBody>
@@ -2159,6 +2177,11 @@ const Admin = () => {
                               <div className="text-sm text-muted-foreground">{item.location || 'No location'}</div>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={item.type === 'services' ? 'default' : 'secondary'}>
+                            {item.type === 'services' ? 'Service' : 'Goods'}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div>
