@@ -84,6 +84,165 @@ const Admin = () => {
     checkSuperAdmin();
   }, [user]);
 
+  // Data fetching functions
+  const fetchStats = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch basic stats
+      const [
+        { count: totalUsers },
+        { count: activePosts },
+        { count: eventsThisMonth },
+        { count: emergencyAlerts },
+        { count: marketplaceItems },
+        { count: flaggedContent },
+        { count: promotions }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('community_posts').select('*', { count: 'exact', head: true }),
+        supabase.from('community_posts').select('*', { count: 'exact', head: true }).eq('post_type', 'event').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        supabase.from('safety_alerts').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
+        supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('promotions').select('*', { count: 'exact', head: true }).eq('status', 'active')
+      ]);
+
+      setStats({
+        totalUsers: totalUsers || 0,
+        activePosts: activePosts || 0,
+        eventsThisMonth: eventsThisMonth || 0,
+        emergencyAlerts: emergencyAlerts || 0,
+        marketplaceItems: marketplaceItems || 0,
+        promotions: promotions || 0,
+        flaggedContent: flaggedContent || 0,
+        sponsoredContent: 0,
+        activeAutomations: 0,
+        configSettings: 0,
+        safetyReports: emergencyAlerts || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_roles(role)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setUsers(profiles || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchEmergencyAlerts = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: alerts, error } = await supabase
+        .from('safety_alerts')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      
+      setEmergencyAlerts(alerts || []);
+    } catch (error) {
+      console.error('Error fetching emergency alerts:', error);
+    }
+  };
+
+  const fetchMarketplaceItems = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: items, error } = await supabase
+        .from('marketplace_items')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      
+      setMarketplaceItems(items || []);
+    } catch (error) {
+      console.error('Error fetching marketplace items:', error);
+    }
+  };
+
+  const fetchPromotions = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: promoData, error } = await supabase
+        .from('promotions')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      
+      setPromotions(promoData || []);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+    }
+  };
+
+  const fetchContentReports = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: reports, error } = await supabase
+        .from('content_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      
+      setFlaggedReports(reports || []);
+    } catch (error) {
+      console.error('Error fetching content reports:', error);
+    }
+  };
+
+  // Load all data when admin status is confirmed
+  useEffect(() => {
+    if (isSuperAdmin) {
+      fetchStats();
+      fetchUsers();
+      fetchEmergencyAlerts();
+      fetchMarketplaceItems();
+      fetchPromotions();
+      fetchContentReports();
+    }
+  }, [isSuperAdmin]);
+
   // All functions and effects
 
   if (!user) {
@@ -266,10 +425,10 @@ const Admin = () => {
                             <div className="text-sm text-muted-foreground">{user.neighborhood}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.email || 'No email'}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {user.user_type || 'resident'}
+                            {user.user_roles?.[0]?.role || 'user'}
                           </Badge>
                         </TableCell>
                         <TableCell>
