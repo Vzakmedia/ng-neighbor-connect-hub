@@ -352,8 +352,8 @@ const BusinessListings = () => {
 
                 {/* States */}
                 <CommandGroup heading="States">
-                  {Object.keys(nigerianLocations)
-                    .filter(state => state.toLowerCase().includes(searchLocation.toLowerCase()))
+                  {Object.keys(nigerianLocations || {})
+                    .filter(state => state?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                     .map((state) => (
                     <CommandItem
                       key={state}
@@ -369,10 +369,10 @@ const BusinessListings = () => {
                 </CommandGroup>
 
                 {/* Cities for selected state */}
-                {selectedState !== 'all' && (
+                {selectedState !== 'all' && getAvailableCities().length > 0 && (
                   <CommandGroup heading={`Cities in ${selectedState}`}>
                     {getAvailableCities()
-                      .filter(city => city.toLowerCase().includes(searchLocation.toLowerCase()))
+                      .filter(city => city?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                       .map((city) => (
                       <CommandItem
                         key={city}
@@ -389,10 +389,10 @@ const BusinessListings = () => {
                 )}
 
                 {/* Neighborhoods for selected city */}
-                {selectedCity !== 'all' && (
+                {selectedCity !== 'all' && getAvailableNeighborhoods().length > 0 && (
                   <CommandGroup heading={`Areas in ${selectedCity}`}>
                     {getAvailableNeighborhoods()
-                      .filter(neighborhood => neighborhood.toLowerCase().includes(searchLocation.toLowerCase()))
+                      .filter(neighborhood => neighborhood?.toLowerCase()?.includes((searchLocation || '').toLowerCase()))
                       .map((neighborhood) => (
                       <CommandItem
                         key={neighborhood}
@@ -413,40 +413,49 @@ const BusinessListings = () => {
                   <CommandGroup heading="Search Results">
                     {getAllLocations()
                       .filter(location => 
-                        location.toLowerCase().includes(searchLocation.toLowerCase()) &&
-                        !Object.keys(nigerianLocations).includes(location)
+                        location?.toLowerCase()?.includes((searchLocation || '').toLowerCase()) &&
+                        !Object.keys(nigerianLocations || {}).includes(location)
                       )
                       .slice(0, 10)
                       .map((location) => (
                       <CommandItem
                         key={location}
                         onSelect={() => {
-                          // Find which state/city this belongs to
-                          const foundState = Object.entries(nigerianLocations).find(([state, cities]) => {
-                            if (state === location) return true;
-                            return Object.entries(cities).some(([city, neighborhoods]) => {
-                              return city === location || neighborhoods.includes(location);
-                            });
-                          });
-                          
-                          if (foundState) {
-                            const [stateName, cities] = foundState;
-                            const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
-                              return city === location || neighborhoods.includes(location);
+                          try {
+                            // Find which state/city this belongs to
+                            const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
+                              if (state === location) return true;
+                              if (!cities || typeof cities !== 'object') return false;
+                              return Object.entries(cities).some(([city, neighborhoods]) => {
+                                if (city === location) return true;
+                                return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                              });
                             });
                             
-                            if (foundCity) {
-                              const [cityName, neighborhoods] = foundCity;
-                              if (neighborhoods.includes(location)) {
-                                setSelectedState(stateName);
-                                setSelectedCity(cityName);
-                                setSelectedNeighborhood(location);
-                              } else {
-                                setSelectedState(stateName);
-                                setSelectedCity(location);
-                                setSelectedNeighborhood('all');
+                            if (foundState) {
+                              const [stateName, cities] = foundState;
+                              if (cities && typeof cities === 'object') {
+                                const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
+                                  if (city === location) return true;
+                                  return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                                });
+                                
+                                if (foundCity) {
+                                  const [cityName, neighborhoods] = foundCity;
+                                  if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
+                                    setSelectedState(stateName);
+                                    setSelectedCity(cityName);
+                                    setSelectedNeighborhood(location);
+                                  } else {
+                                    setSelectedState(stateName);
+                                    setSelectedCity(location);
+                                    setSelectedNeighborhood('all');
+                                  }
+                                }
                               }
                             }
+                          } catch (error) {
+                            console.error('Error selecting location:', error);
                           }
                           setLocationOpen(false);
                         }}
