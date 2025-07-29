@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CommunityBoards from '@/components/CommunityBoards';
 import CommunityFeed from '@/components/CommunityFeed';
+import PaymentStatusHandler from '@/components/PaymentStatusHandler';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,8 @@ const Community = () => {
               </Button>
             </CreateCommunityAdDialog>
           </div>
+
+          <PaymentStatusHandler />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">

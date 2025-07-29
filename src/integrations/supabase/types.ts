@@ -1623,6 +1623,10 @@ export type Database = {
           description: string | null
           end_date: string
           id: string
+          payment_amount: number | null
+          payment_completed_at: string | null
+          payment_session_id: string | null
+          payment_status: string | null
           spent_amount: number | null
           start_date: string
           status: string
@@ -1639,6 +1643,10 @@ export type Database = {
           description?: string | null
           end_date: string
           id?: string
+          payment_amount?: number | null
+          payment_completed_at?: string | null
+          payment_session_id?: string | null
+          payment_status?: string | null
           spent_amount?: number | null
           start_date: string
           status?: string
@@ -1655,6 +1663,10 @@ export type Database = {
           description?: string | null
           end_date?: string
           id?: string
+          payment_amount?: number | null
+          payment_completed_at?: string | null
+          payment_session_id?: string | null
+          payment_status?: string | null
           spent_amount?: number | null
           start_date?: string
           status?: string
