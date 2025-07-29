@@ -63,7 +63,7 @@ const MyServices = () => {
             </div>
           </div>
 
-          <ServicesList onRefresh={refreshTrigger} />
+          <ServicesList onRefresh={refreshTrigger} showOnlyServices={true} />
         </div>
       </main>
     </div>

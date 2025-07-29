@@ -72,9 +72,10 @@ interface Booking {
 
 interface ServicesListProps {
   onRefresh: boolean;
+  showOnlyServices?: boolean;
 }
 
-const ServicesList = ({ onRefresh }: ServicesListProps) => {
+const ServicesList = ({ onRefresh, showOnlyServices = false }: ServicesListProps) => {
   console.log('ServicesList component rendering...');
   const { user } = useAuth();
   const { toast } = useToast();
@@ -332,6 +333,123 @@ const ServicesList = ({ onRefresh }: ServicesListProps) => {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (showOnlyServices) {
+    return (
+      <div className="space-y-4">
+        {myServices.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">You haven't created any services yet</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {myServices.map((service) => (
+              <Card key={service.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{service.title}</CardTitle>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline">
+                          {service.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                        <Badge variant={service.is_active ? "default" : "destructive"}>
+                          {service.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <EditServiceDialog service={service} onServiceUpdated={fetchMyServices}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </EditServiceDialog>
+                      <ManageAvailabilityDialog service={{ id: service.id, title: service.title }}>
+                        <Button variant="outline" size="sm">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Availability
+                        </Button>
+                      </ManageAvailabilityDialog>
+                      <CreatePromotionDialog 
+                        itemId={service.id} 
+                        itemType="service" 
+                        itemTitle={service.title}
+                        onPromotionCreated={fetchMyServices}
+                      >
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                          <Megaphone className="h-4 w-4 mr-1" />
+                          Promote
+                        </Button>
+                      </CreatePromotionDialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleServiceStatus(service.id, service.is_active)}
+                      >
+                        {service.is_active ? "Deactivate" : "Activate"}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteService(service.id, service.title)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                  
+                  {/* Service Gallery */}
+                  {service.images && service.images.length > 0 && (
+                    <div className="flex gap-2 mb-3 overflow-x-auto">
+                      {service.images.slice(0, 3).map((imageUrl, index) => (
+                        <img
+                          key={index}
+                          src={imageUrl}
+                          alt={`${service.title} gallery ${index + 1}`}
+                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                        />
+                      ))}
+                      {service.images.length > 3 && (
+                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                          +{service.images.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {service.location && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                      <MapPin className="h-4 w-4" />
+                      {service.location}
+                    </div>
+                  )}
+
+                  {(service.price_min || service.price_max) && (
+                    <div className="text-lg font-semibold mb-2">
+                      ₦{service.price_min || 0} - ₦{service.price_max || 0}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{service.price_type || 'hourly'}
+                      </span>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    Created {formatTimeAgo(service.created_at)}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
