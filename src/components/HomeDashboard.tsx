@@ -27,6 +27,12 @@ import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { usePromotionalAds } from '@/hooks/usePromotionalAds';
+import { 
+  useUpcomingEvents, 
+  useSafetyAlerts, 
+  useMarketplaceHighlights, 
+  useTrendingTopics 
+} from '@/hooks/useDashboardSections';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +40,10 @@ const HomeDashboard = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const dashboardStats = useDashboardStats();
   const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(3);
+  const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
+  const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
+  const { items: marketplaceHighlights, loading: marketplaceLoading } = useMarketplaceHighlights(3);
+  const { topics: trendingTopics, loading: topicsLoading } = useTrendingTopics(4);
 
   // Create dynamic quick stats based on real data
   const quickStats = [
@@ -81,89 +91,6 @@ const HomeDashboard = () => {
       sponsored: true,
       timePosted: '2 hours ago'
     }
-  ];
-
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: 'Community Cleanup',
-      date: 'Saturday, Nov 25',
-      time: '9:00 AM',
-      location: 'Victoria Island Park',
-      attendees: 45,
-      type: 'community'
-    },
-    {
-      id: 2,
-      title: 'Neighborhood Watch Meeting',
-      date: 'Sunday, Nov 26',
-      time: '6:00 PM',
-      location: 'Community Center',
-      attendees: 28,
-      type: 'safety'
-    },
-    {
-      id: 3,
-      title: 'Kids Soccer Tournament',
-      date: 'Saturday, Dec 2',
-      time: '10:00 AM',
-      location: 'Sports Complex',
-      attendees: 67,
-      type: 'sports'
-    }
-  ];
-
-  const safetyAlerts = [
-    {
-      id: 1,
-      type: 'warning',
-      title: 'Road Construction',
-      description: 'Adeola Odeku Street partially closed until Dec 1st',
-      time: '2 hours ago',
-      severity: 'medium'
-    },
-    {
-      id: 2,
-      type: 'info',
-      title: 'Power Outage Scheduled',
-      description: 'Planned maintenance on Sunday 2-4 PM',
-      time: '4 hours ago',
-      severity: 'low'
-    }
-  ];
-
-  const marketplaceHighlights = [
-    {
-      id: 1,
-      title: 'Samsung Smart TV',
-      price: '₦250,000',
-      location: 'Lekki Phase 1',
-      image: '/placeholder.svg',
-      category: 'Electronics'
-    },
-    {
-      id: 2,
-      title: 'Toyota Camry 2018',
-      price: '₦8,500,000',
-      location: 'Victoria Island',
-      image: '/placeholder.svg',
-      category: 'Vehicles'
-    },
-    {
-      id: 3,
-      title: 'Apartment for Rent',
-      price: '₦1,200,000/year',
-      location: 'Ikoyi',
-      image: '/placeholder.svg',
-      category: 'Real Estate'
-    }
-  ];
-
-  const trendingTopics = [
-    { tag: '#CommunityCleanup', posts: 45 },
-    { tag: '#LocalBusiness', posts: 32 },
-    { tag: '#NeighborhoodWatch', posts: 28 },
-    { tag: '#EventPlanning', posts: 19 }
   ];
 
   // Use promotional ads if available, otherwise fall back to default ads
@@ -350,7 +277,6 @@ const HomeDashboard = () => {
                 )}
               </div>
 
-              {/* Upcoming Events */}
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -370,38 +296,54 @@ const HomeDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6">
-                  <div className="space-y-3 md:space-y-4">
-                    {upcomingEvents.slice(0, 2).map((event) => (
-                      <div 
-                        key={event.id} 
-                        className="border-l-4 border-primary pl-3 md:pl-4 pb-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors touch-manipulation active:bg-muted/70"
-                        onClick={() => navigate('/events')}
-                        title={`View details for ${event.title}`}
-                      >
-                        <h4 className="font-medium mb-1 text-sm md:text-base">{event.title}</h4>
-                        <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {event.date} at {event.time}
+                  {eventsLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 2 }).map((_, index) => (
+                        <div key={index} className="animate-pulse">
+                          <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-1/2 mb-1"></div>
+                          <div className="h-3 bg-muted rounded w-2/3"></div>
                         </div>
-                        <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-2">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {event.location}
+                      ))}
+                    </div>
+                  ) : upcomingEvents.length > 0 ? (
+                    <div className="space-y-3 md:space-y-4">
+                      {upcomingEvents.slice(0, 2).map((event) => (
+                        <div 
+                          key={event.id} 
+                          className="border-l-4 border-primary pl-3 md:pl-4 pb-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors touch-manipulation active:bg-muted/70"
+                          onClick={() => navigate('/events')}
+                          title={`View details for ${event.title}`}
+                        >
+                          <h4 className="font-medium mb-1 text-sm md:text-base">{event.title}</h4>
+                          <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {event.date} at {event.time}
+                          </div>
+                          <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-2">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {event.location}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs md:text-sm text-muted-foreground">
+                              {event.attendees} interested
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {event.type}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs md:text-sm text-muted-foreground">
-                            {event.attendees} attending
-                          </span>
-                          <Badge variant="outline" className="text-xs">
-                            {event.type}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No upcoming events. Be the first to create one!
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Safety Alerts */}
+              {/* Safety & Alerts */}
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-base md:text-lg">
@@ -410,28 +352,44 @@ const HomeDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6">
-                  <div className="space-y-2 md:space-y-3">
-                    {safetyAlerts.map((alert) => (
-                      <div 
-                        key={alert.id} 
-                        className="p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors touch-manipulation active:bg-muted/80"
-                        onClick={() => navigate('/safety')}
-                        title={`View details for ${alert.title}`}
-                      >
-                        <div className="flex items-start justify-between mb-1.5 md:mb-2">
-                          <h4 className="font-medium text-sm md:text-base">{alert.title}</h4>
-                          <Badge 
-                            variant={alert.severity === 'high' ? 'destructive' : alert.severity === 'medium' ? 'default' : 'secondary'}
-                            className="text-xs px-1.5 py-0.5"
-                          >
-                            {alert.severity}
-                          </Badge>
+                  {alertsLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 2 }).map((_, index) => (
+                        <div key={index} className="animate-pulse p-3 rounded-lg bg-muted/50">
+                          <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                          <div className="h-3 bg-muted rounded w-1/3"></div>
                         </div>
-                        <p className="text-xs md:text-sm text-muted-foreground mb-1.5 md:mb-2">{alert.description}</p>
-                        <span className="text-xs text-muted-foreground">{alert.time}</span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : safetyAlerts.length > 0 ? (
+                    <div className="space-y-2 md:space-y-3">
+                      {safetyAlerts.map((alert) => (
+                        <div 
+                          key={alert.id} 
+                          className="p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors touch-manipulation active:bg-muted/80"
+                          onClick={() => navigate('/safety')}
+                          title={`View details for ${alert.title}`}
+                        >
+                          <div className="flex items-start justify-between mb-1.5 md:mb-2">
+                            <h4 className="font-medium text-sm md:text-base">{alert.title}</h4>
+                            <Badge 
+                              variant={alert.severity === 'critical' || alert.severity === 'high' ? 'destructive' : alert.severity === 'medium' ? 'default' : 'secondary'}
+                              className="text-xs px-1.5 py-0.5"
+                            >
+                              {alert.severity}
+                            </Badge>
+                          </div>
+                          <p className="text-xs md:text-sm text-muted-foreground mb-1.5 md:mb-2">{alert.description}</p>
+                          <span className="text-xs text-muted-foreground">{alert.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No active safety alerts. Your area is secure!
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -455,24 +413,52 @@ const HomeDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6">
-                  <div className="space-y-2 md:space-y-3">
-                    {marketplaceHighlights.slice(0, 2).map((item) => (
-                      <div 
-                        key={item.id} 
-                        className="flex items-center space-x-2 md:space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
-                        onClick={() => navigate('/marketplace')}
-                      >
-                        <div className="h-10 w-10 md:h-12 md:w-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                          <ShoppingBag className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                  {marketplaceLoading ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 2 }).map((_, index) => (
+                        <div key={index} className="animate-pulse flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-muted rounded"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-muted rounded w-3/4 mb-1"></div>
+                            <div className="h-3 bg-muted rounded w-1/2 mb-1"></div>
+                            <div className="h-3 bg-muted rounded w-2/3"></div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm md:text-sm truncate">{item.title}</h4>
-                          <p className="text-sm md:text-sm font-semibold text-primary">{item.price}</p>
-                          <p className="text-xs text-muted-foreground">{item.location}</p>
+                      ))}
+                    </div>
+                  ) : marketplaceHighlights.length > 0 ? (
+                    <div className="space-y-3 md:space-y-4">
+                      {marketplaceHighlights.slice(0, 2).map((item) => (
+                        <div 
+                          key={item.id} 
+                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors touch-manipulation active:bg-muted/70"
+                          onClick={() => navigate('/marketplace')}
+                          title={`View ${item.title}`}
+                        >
+                          <img 
+                            src={item.image} 
+                            alt={item.title}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm md:text-base truncate">{item.title}</h4>
+                            <p className="text-sm md:text-base font-semibold text-community-green">{item.price}</p>
+                            <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span className="truncate">{item.location}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {item.category}
+                          </Badge>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No items for sale. List something to get started!
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -492,30 +478,87 @@ const HomeDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6">
-                  <div className="space-y-1.5 md:space-y-2">
-                    {trendingTopics.map((topic, index) => (
-                      <div 
-                        key={index} 
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
-                        onClick={() => setActiveTab('all')} // This could filter by hashtag in the future
-                      >
-                        <span className="font-medium text-sm text-primary truncate mr-2">{topic.tag}</span>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{topic.posts} posts</span>
-                      </div>
-                    ))}
-                  </div>
+                  {topicsLoading ? (
+                    <div className="space-y-2">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="animate-pulse">
+                          <div className="h-6 bg-muted rounded"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : trendingTopics.length > 0 ? (
+                    <div className="space-y-1.5 md:space-y-2">
+                      {trendingTopics.map((topic, index) => (
+                        <div 
+                          key={index} 
+                          className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
+                          onClick={() => setActiveTab('all')} // This could filter by hashtag in the future
+                        >
+                          <span className="font-medium text-sm text-primary truncate mr-2">{topic.tag}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{topic.posts} posts</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No trending topics yet. Start a conversation!
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="automations">
+        <TabsContent value="automations" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           <HomeAutomations />
         </TabsContent>
 
-        <TabsContent value="insights">
+        <TabsContent value="insights" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           <NeighborhoodInsights />
+          
+          {/* Trending Topics */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg">
+                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+                Trending Topics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topicsLoading ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="animate-pulse">
+                      <div className="h-8 bg-muted rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : trendingTopics.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {trendingTopics.map((topic, index) => (
+                    <div 
+                      key={topic.tag} 
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                      onClick={() => {
+                        // Navigate to community with search filter
+                        navigate('/community');
+                      }}
+                    >
+                      <span className="font-medium text-sm">{topic.tag}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {topic.posts}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No trending topics yet. Start a conversation!
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="ads" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
