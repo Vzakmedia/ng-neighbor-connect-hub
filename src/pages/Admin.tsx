@@ -1010,7 +1010,6 @@ const Admin = () => {
           </div>
         </TabsContent>
 
-        {/* Users Tab */}
         <TabsContent value="users">
           <Card>
             <CardHeader>
@@ -1239,7 +1238,6 @@ const Admin = () => {
           </Dialog>
         </TabsContent>
 
-        {/* Emergency Management Tab */}
         <TabsContent value="emergency">
           <Card>
             <CardHeader>
@@ -1289,7 +1287,6 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Marketplace Management Tab */}
         <TabsContent value="marketplace">
           <Card>
             <CardHeader>
@@ -1340,7 +1337,6 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Promotions Management Tab */}
         <TabsContent value="promotions">
           <Card>
             <CardHeader>
@@ -1396,7 +1392,6 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Content Moderation Tab */}
         <TabsContent value="content" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
@@ -1527,7 +1522,6 @@ const Admin = () => {
           </div>
         </TabsContent>
 
-        {/* Business Verification Tab */}
         <TabsContent value="businesses">
           <Card>
             <CardHeader>
@@ -1545,7 +1539,6 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Staff Management Tab */}
         <TabsContent value="staff">
           <StaffInvitationManager />
         </TabsContent>
