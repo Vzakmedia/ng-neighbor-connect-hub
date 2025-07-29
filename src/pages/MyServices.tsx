@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
 import CreateServiceDialog from '@/components/CreateServiceDialog';
-import CreateMarketplaceItemDialog from '@/components/CreateMarketplaceItemDialog';
+
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft } from 'lucide-react';
 
@@ -30,9 +30,6 @@ const MyServices = () => {
     setRefreshTrigger(prev => !prev);
   };
 
-  const handleItemCreated = () => {
-    setRefreshTrigger(prev => !prev);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,10 +54,7 @@ const MyServices = () => {
               <p className="text-muted-foreground">Manage your service offerings</p>
             </div>
             
-            <div className="flex gap-2">
-              <CreateServiceDialog onServiceCreated={handleServiceCreated} />
-              <CreateMarketplaceItemDialog onItemCreated={handleItemCreated} />
-            </div>
+            <CreateServiceDialog onServiceCreated={handleServiceCreated} />
           </div>
 
           <ServicesList onRefresh={refreshTrigger} showOnlyServices={true} />
