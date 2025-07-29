@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -1104,65 +1104,132 @@ const Admin = () => {
         </TabsContent>
 
         {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <div className="grid gap-6 md:grid-cols-2">
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Platform Metrics</CardTitle>
-                <p className="text-sm text-muted-foreground">Real-time platform statistics</p>
+                <CardTitle>Advanced Analytics Dashboard</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Comprehensive analytics and reporting for platform insights
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Total Users</span>
-                    <span className="text-sm font-medium">{stats.totalUsers}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Active Posts</span>
-                    <span className="text-sm font-medium">{stats.activePosts}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Emergency Alerts</span>
-                    <span className="text-sm font-medium">{stats.emergencyAlerts}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Marketplace Items</span>
-                    <span className="text-sm font-medium">{stats.marketplaceItems}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Active Automations</span>
-                    <span className="text-sm font-medium">{stats.activeAutomations}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Config Settings</span>
-                    <span className="text-sm font-medium">{stats.configSettings}</span>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+                      <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">0</div>
+                      <p className="text-xs text-muted-foreground">
+                        Analytics events tracked
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">0%</div>
+                      <p className="text-xs text-muted-foreground">
+                        User engagement
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Session Time</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">0min</div>
+                      <p className="text-xs text-muted-foreground">
+                        Average session
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Reports Generated</CardTitle>
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">0</div>
+                      <p className="text-xs text-muted-foreground">
+                        This month
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
+                <Button>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Open Advanced Analytics
+                </Button>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Moderation Stats</CardTitle>
-                <p className="text-sm text-muted-foreground">Content management overview</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Flagged Content</span>
-                    <span className="text-sm font-medium">{stats.flaggedContent}</span>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform Metrics</CardTitle>
+                  <p className="text-sm text-muted-foreground">Real-time platform statistics</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total Users</span>
+                      <span className="text-sm font-medium">{stats.totalUsers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Active Posts</span>
+                      <span className="text-sm font-medium">{stats.activePosts}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Emergency Alerts</span>
+                      <span className="text-sm font-medium">{stats.emergencyAlerts}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Marketplace Items</span>
+                      <span className="text-sm font-medium">{stats.marketplaceItems}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Active Automations</span>
+                      <span className="text-sm font-medium">{stats.activeAutomations}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Config Settings</span>
+                      <span className="text-sm font-medium">{stats.configSettings}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Sponsored Content</span>
-                    <span className="text-sm font-medium">{stats.sponsoredContent}</span>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Content Moderation Stats</CardTitle>
+                  <p className="text-sm text-muted-foreground">Content management overview</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Flagged Content</span>
+                      <span className="text-sm font-medium">{stats.flaggedContent}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Sponsored Content</span>
+                      <span className="text-sm font-medium">{stats.sponsoredContent}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Active Promotions</span>
+                      <span className="text-sm font-medium">{stats.promotions}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Active Promotions</span>
-                    <span className="text-sm font-medium">{stats.promotions}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

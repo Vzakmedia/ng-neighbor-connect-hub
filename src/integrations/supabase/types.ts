@@ -116,6 +116,108 @@ export type Database = {
           },
         ]
       }
+      analytics_events: {
+        Row: {
+          browser: string | null
+          created_at: string
+          device_type: string | null
+          event_action: string
+          event_category: string
+          event_data: Json | null
+          event_label: string | null
+          event_type: string
+          id: string
+          location: string | null
+          os: string | null
+          page_url: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_action: string
+          event_category: string
+          event_data?: Json | null
+          event_label?: string | null
+          event_type: string
+          id?: string
+          location?: string | null
+          os?: string | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_action?: string
+          event_category?: string
+          event_data?: Json | null
+          event_label?: string | null
+          event_type?: string
+          id?: string
+          location?: string | null
+          os?: string | null
+          page_url?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      analytics_reports: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          date_range_end: string
+          date_range_start: string
+          download_count: number | null
+          file_url: string | null
+          generated_by: string
+          id: string
+          report_config: Json
+          report_name: string
+          report_type: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          date_range_end: string
+          date_range_start: string
+          download_count?: number | null
+          file_url?: string | null
+          generated_by: string
+          id?: string
+          report_config?: Json
+          report_name: string
+          report_type: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          date_range_end?: string
+          date_range_start?: string
+          download_count?: number | null
+          file_url?: string | null
+          generated_by?: string
+          id?: string
+          report_config?: Json
+          report_name?: string
+          report_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       app_configuration: {
         Row: {
           config_key: string
@@ -571,6 +673,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_analytics: {
+        Row: {
+          clicks: number | null
+          comments: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          date: string
+          engagement_rate: number | null
+          id: string
+          impressions: number | null
+          likes: number | null
+          reach: number | null
+          shares: number | null
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          clicks?: number | null
+          comments?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          date?: string
+          engagement_rate?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          reach?: number | null
+          shares?: number | null
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          clicks?: number | null
+          comments?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          date?: string
+          engagement_rate?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          reach?: number | null
+          shares?: number | null
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: []
       }
       content_reports: {
         Row: {
@@ -1668,6 +1821,48 @@ export type Database = {
           },
         ]
       }
+      revenue_analytics: {
+        Row: {
+          amount: number
+          average_transaction: number | null
+          created_at: string
+          date: string
+          id: string
+          net_revenue: number | null
+          recurring_revenue: number | null
+          refunds: number | null
+          revenue_source: string
+          transaction_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          average_transaction?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          net_revenue?: number | null
+          recurring_revenue?: number | null
+          refunds?: number | null
+          revenue_source: string
+          transaction_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          average_transaction?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          net_revenue?: number | null
+          recurring_revenue?: number | null
+          refunds?: number | null
+          revenue_source?: string
+          transaction_count?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string | null
@@ -2094,6 +2289,99 @@ export type Database = {
           },
         ]
       }
+      system_performance: {
+        Row: {
+          additional_data: Json | null
+          created_at: string
+          id: string
+          metric_type: string
+          metric_unit: string | null
+          metric_value: number
+          timestamp: string
+        }
+        Insert: {
+          additional_data?: Json | null
+          created_at?: string
+          id?: string
+          metric_type: string
+          metric_unit?: string | null
+          metric_value: number
+          timestamp?: string
+        }
+        Update: {
+          additional_data?: Json | null
+          created_at?: string
+          id?: string
+          metric_type?: string
+          metric_unit?: string | null
+          metric_value?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      user_analytics: {
+        Row: {
+          comments_made: number | null
+          created_at: string
+          date: string
+          emergency_alerts: number | null
+          events_attended: number | null
+          id: string
+          marketplace_purchases: number | null
+          marketplace_views: number | null
+          messages_sent: number | null
+          page_views: number | null
+          posts_created: number | null
+          posts_liked: number | null
+          posts_shared: number | null
+          services_booked: number | null
+          sessions_count: number | null
+          time_spent_minutes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_made?: number | null
+          created_at?: string
+          date?: string
+          emergency_alerts?: number | null
+          events_attended?: number | null
+          id?: string
+          marketplace_purchases?: number | null
+          marketplace_views?: number | null
+          messages_sent?: number | null
+          page_views?: number | null
+          posts_created?: number | null
+          posts_liked?: number | null
+          posts_shared?: number | null
+          services_booked?: number | null
+          sessions_count?: number | null
+          time_spent_minutes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_made?: number | null
+          created_at?: string
+          date?: string
+          emergency_alerts?: number | null
+          events_attended?: number | null
+          id?: string
+          marketplace_purchases?: number | null
+          marketplace_views?: number | null
+          messages_sent?: number | null
+          page_views?: number | null
+          posts_created?: number | null
+          posts_liked?: number | null
+          posts_shared?: number | null
+          services_booked?: number | null
+          sessions_count?: number | null
+          time_spent_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -2140,6 +2428,18 @@ export type Database = {
           cost_per_click: number
         }[]
       }
+      get_analytics_summary: {
+        Args: { start_date?: string; end_date?: string }
+        Returns: {
+          total_users: number
+          new_users: number
+          active_users: number
+          total_posts: number
+          total_engagement: number
+          total_revenue: number
+          avg_session_time: number
+        }[]
+      }
       get_flagged_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2147,6 +2447,23 @@ export type Database = {
       get_sponsored_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_top_content_by_engagement: {
+        Args: {
+          content_type_filter?: string
+          start_date?: string
+          end_date?: string
+          limit_count?: number
+        }
+        Returns: {
+          content_id: string
+          content_type: string
+          total_views: number
+          total_likes: number
+          total_shares: number
+          total_comments: number
+          engagement_score: number
+        }[]
       }
       get_unread_community_posts_count: {
         Args: Record<PropertyKey, never>
@@ -2206,6 +2523,14 @@ export type Database = {
       }
       mark_direct_messages_as_read: {
         Args: { conversation_id: string; current_user_id: string }
+        Returns: undefined
+      }
+      track_user_activity: {
+        Args: {
+          _user_id: string
+          _activity_type: string
+          _activity_data?: Json
+        }
         Returns: undefined
       }
       user_allows_direct_messages: {
