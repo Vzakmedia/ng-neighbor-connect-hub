@@ -60,6 +60,8 @@ const Admin = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   
   
   // Config update handler
@@ -177,6 +179,117 @@ const Admin = () => {
       });
     }
   };
+
+  // Emergency Alert management handlers
+  const handleViewAlert = (alert: any) => {
+    setSelectedAlert(alert);
+    setAlertDialogOpen(true);
+  };
+
+  const handleEditAlert = async (alert: any) => {
+    const newStatus = prompt(`Current status: ${alert.status}\nEnter new status (active, resolved, false_alarm):`, alert.status);
+    if (!newStatus || !['active', 'resolved', 'false_alarm'].includes(newStatus)) {
+      if (newStatus) {
+        toast({
+          title: "Invalid Status",
+          description: "Status must be: active, resolved, or false_alarm",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('safety_alerts')
+        .update({ 
+          status: newStatus as any,
+          verified_at: newStatus === 'resolved' ? new Date().toISOString() : null,
+          verified_by: newStatus === 'resolved' ? user?.id : null
+        })
+        .eq('id', alert.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Alert Updated",
+        description: `Alert status updated to ${newStatus}`,
+      });
+      
+      fetchEmergencyAlerts(); // Refresh the alerts list
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update alert status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResolveAlert = async (alert: any) => {
+    const confirmed = window.confirm(`Mark this alert as resolved?\n\nAlert: ${alert.title || alert.description}`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('safety_alerts')
+        .update({ 
+          status: 'resolved',
+          verified_at: new Date().toISOString(),
+          verified_by: user?.id
+        })
+        .eq('id', alert.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Alert Resolved",
+        description: "Emergency alert has been marked as resolved",
+      });
+      
+      fetchEmergencyAlerts(); // Refresh the alerts list
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resolve alert",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAlert = async (alert: any) => {
+    const confirmed = window.confirm(`Are you sure you want to delete this alert?\n\nAlert: ${alert.title || alert.description}\n\nThis action cannot be undone.`);
+    if (!confirmed) return;
+
+    const confirmText = prompt('Type "DELETE" to confirm:');
+    if (confirmText !== 'DELETE') return;
+
+    try {
+      const { error } = await supabase
+        .from('safety_alerts')
+        .delete()
+        .eq('id', alert.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Alert Deleted",
+        description: "Emergency alert has been deleted",
+      });
+      
+      fetchEmergencyAlerts(); // Refresh the alerts list
+    } catch (error) {
+      console.error('Error deleting alert:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete alert",
+        variant: "destructive",
+      });
+    }
+  };
+  
 
   const handleSuspendUser = async (user: any) => {
     const confirm = window.confirm(`Are you sure you want to suspend ${user.full_name}?`);
@@ -908,6 +1021,121 @@ const Admin = () => {
               )}
             </DialogContent>
           </Dialog>
+
+          {/* Emergency Alert Details Dialog */}
+          <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Emergency Alert Details</DialogTitle>
+                <DialogDescription>
+                  View detailed information about this emergency alert
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedAlert && (
+                <div className="grid gap-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <AlertTriangle className="h-6 w-6 text-destructive" />
+                          <div>
+                            <div className="font-medium">{selectedAlert.title || 'Emergency Alert'}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Alert ID: {selectedAlert.id.substring(0, 8)}...
+                            </div>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label>Type</Label>
+                          <Badge variant="outline">{selectedAlert.alert_type || 'other'}</Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Severity</Label>
+                          <Badge variant={selectedAlert.severity === 'critical' ? 'destructive' : 'default'}>
+                            {selectedAlert.severity}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Status</Label>
+                          <Badge variant={selectedAlert.status === 'active' ? 'destructive' : 'default'}>
+                            {selectedAlert.status}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Location</Label>
+                          <span className="text-sm">{selectedAlert.address || 'Location not specified'}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Reporter</Label>
+                          <span className="text-sm">{selectedAlert.profiles?.full_name || 'Anonymous'}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label>Created</Label>
+                          <span className="text-sm">{new Date(selectedAlert.created_at).toLocaleString()}</span>
+                        </div>
+                        
+                        {selectedAlert.verified_at && (
+                          <div className="flex items-center justify-between">
+                            <Label>Verified</Label>
+                            <span className="text-sm">{new Date(selectedAlert.verified_at).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Description</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedAlert.description || 'No description provided'}
+                        </p>
+                        
+                        {selectedAlert.latitude && selectedAlert.longitude && (
+                          <div className="mt-4">
+                            <Label className="text-sm font-medium">Coordinates</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {selectedAlert.latitude}, {selectedAlert.longitude}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleEditAlert(selectedAlert)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Status
+                    </Button>
+                    {selectedAlert.status !== 'resolved' && (
+                      <Button
+                        onClick={() => {
+                          handleResolveAlert(selectedAlert);
+                          setAlertDialogOpen(false);
+                        }}
+                      >
+                        <Shield className="h-4 w-4 mr-2" />
+                        Mark as Resolved
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="emergency">
@@ -977,12 +1205,44 @@ const Admin = () => {
                         <TableCell>{new Date(alert.created_at).toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewAlert(alert)}
+                              title="View Details"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditAlert(alert)}
+                              title="Edit Status"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleResolveAlert(alert)}
+                              title="Mark as Resolved"
+                              disabled={alert.status === 'resolved'}
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                                <DropdownMenuItem onClick={() => handleDeleteAlert(alert)} className="text-destructive">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Alert
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
