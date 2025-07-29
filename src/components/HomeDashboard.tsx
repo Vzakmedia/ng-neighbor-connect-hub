@@ -25,17 +25,44 @@ import CreatePostDialog from './CreatePostDialog';
 import AdvertisementCard from './AdvertisementCard';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const dashboardStats = useDashboardStats();
 
+  // Create dynamic quick stats based on real data
   const quickStats = [
-    { icon: Users, label: 'Active Neighbors', value: '2,400+', color: 'text-community-blue', trend: '+12%' },
-    { icon: MessageSquare, label: 'Posts Today', value: '24', color: 'text-primary', trend: '+8%' },
-    { icon: Calendar, label: 'Upcoming Events', value: '7', color: 'text-community-yellow', trend: '+2%' },
-    { icon: ShoppingBag, label: 'Items for Sale', value: '89', color: 'text-community-green', trend: '+15%' },
+    { 
+      icon: Users, 
+      label: 'Active Neighbors', 
+      value: dashboardStats.loading ? '...' : `${dashboardStats.activeNeighbors}+`, 
+      color: 'text-community-blue', 
+      trend: '+12%' 
+    },
+    { 
+      icon: MessageSquare, 
+      label: 'Posts Today', 
+      value: dashboardStats.loading ? '...' : dashboardStats.postsToday.toString(), 
+      color: 'text-primary', 
+      trend: '+8%' 
+    },
+    { 
+      icon: Calendar, 
+      label: 'Upcoming Events', 
+      value: dashboardStats.loading ? '...' : dashboardStats.upcomingEvents.toString(), 
+      color: 'text-community-yellow', 
+      trend: '+2%' 
+    },
+    { 
+      icon: ShoppingBag, 
+      label: 'Items for Sale', 
+      value: dashboardStats.loading ? '...' : dashboardStats.itemsForSale.toString(), 
+      color: 'text-community-green', 
+      trend: '+15%' 
+    },
   ];
 
   const upcomingEvents = [
@@ -252,7 +279,9 @@ const HomeDashboard = () => {
               return (
                 <Card 
                   key={index} 
-                  className="bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105 min-h-[100px] sm:min-h-[110px]"
+                  className={`bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105 min-h-[100px] sm:min-h-[110px] ${
+                    dashboardStats.loading ? 'animate-pulse' : ''
+                  }`}
                   onClick={handleStatClick}
                 >
                   <CardContent className="p-2 sm:p-3 md:p-4 h-full flex flex-col justify-between">
