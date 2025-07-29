@@ -13,6 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 
 const Admin = () => {
@@ -45,6 +48,8 @@ const Admin = () => {
   const [appConfigs, setAppConfigs] = useState([]);
   const [automationLogs, setAutomationLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
 
   // Simple admin check
   const isAdmin = user?.email === "vzakfenwa@gmail.com";
@@ -418,6 +423,86 @@ const Admin = () => {
     }
   };
 
+  // User management handlers
+  const handleUserClick = (user) => {
+    setSelectedUser(user);
+    setUserDialogOpen(true);
+  };
+
+  const handleUserRoleUpdate = async (userId, newRole) => {
+    try {
+      // First, remove existing role
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Add new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User role updated to ${newRole}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user role",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUserStatusUpdate = async (userId, isActive) => {
+    try {
+      // Note: You may need to add is_active field to profiles table
+      // For now, we'll update the verification status
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_verified: isActive })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User ${isActive ? 'activated' : 'suspended'}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUserVerification = async (userId, isVerified) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_verified: isVerified })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User ${isVerified ? 'verified' : 'unverified'}`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update verification status",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
@@ -657,7 +742,11 @@ const Admin = () => {
                   </TableHeader>
                   <TableBody>
                     {users.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow 
+                        key={user.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleUserClick(user)}
+                      >
                         <TableCell>{user.full_name || 'N/A'}</TableCell>
                         <TableCell>{user.email || 'N/A'}</TableCell>
                         <TableCell>{user.city || 'N/A'}</TableCell>
@@ -667,30 +756,13 @@ const Admin = () => {
                             {user.is_verified ? "Verified" : "Unverified"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center space-x-2">
                             <Button variant="outline" size="sm" title="View Profile">
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button variant="outline" size="sm" title="Edit User">
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Select defaultValue="user">
-                              <SelectTrigger className="w-24 h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="user">User</SelectItem>
-                                <SelectItem value="moderator">Moderator</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button 
-                              variant={user.is_active ? "destructive" : "default"} 
-                              size="sm"
-                              title={user.is_active ? "Suspend User" : "Activate User"}
-                            >
-                              {user.is_active ? "Suspend" : "Activate"}
                             </Button>
                           </div>
                         </TableCell>
@@ -701,6 +773,172 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* User Detail Dialog */}
+          <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>User Profile Details</DialogTitle>
+                <DialogDescription>
+                  View and manage user profile information and permissions
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedUser && (
+                <div className="grid gap-6">
+                  {/* Profile Overview */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={selectedUser.avatar_url} />
+                            <AvatarFallback>
+                              {selectedUser.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold">{selectedUser.full_name || 'N/A'}</h3>
+                            <p className="text-sm text-muted-foreground">{selectedUser.email || 'N/A'}</p>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-2">
+                          <Label className="text-sm font-medium">Phone</Label>
+                          <p className="text-sm">{selectedUser.phone || 'Not provided'}</p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-sm font-medium">Location</Label>
+                          <p className="text-sm">
+                            {[selectedUser.neighborhood, selectedUser.city, selectedUser.state]
+                              .filter(Boolean)
+                              .join(', ') || 'Not provided'}
+                          </p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-sm font-medium">Bio</Label>
+                          <p className="text-sm">{selectedUser.bio || 'No bio provided'}</p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-sm font-medium">Member Since</Label>
+                          <p className="text-sm">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Account Status</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="verified-status">Verified Status</Label>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={selectedUser.is_verified ? "default" : "secondary"}>
+                              {selectedUser.is_verified ? "Verified" : "Unverified"}
+                            </Badge>
+                            <Switch
+                              id="verified-status"
+                              checked={selectedUser.is_verified}
+                              onCheckedChange={(checked) => handleUserVerification(selectedUser.user_id, checked)}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="user-role">User Role</Label>
+                          <Select 
+                            defaultValue="user"
+                            onValueChange={(value) => handleUserRoleUpdate(selectedUser.user_id, value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border border-border">
+                              <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="moderator">Moderator</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label>Account Status</Label>
+                          <Badge variant="default">Active</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Admin Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Button variant="outline" className="w-full">
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Send Message
+                        </Button>
+                        <Button variant="outline" className="w-full">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Reset Password
+                        </Button>
+                        <Button variant="outline" className="w-full">
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Activity
+                        </Button>
+                        <Button variant="destructive" className="w-full">
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                          Suspend Account
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Additional Information */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Activity Summary</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm">Posts Created</span>
+                          <span className="text-sm font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Comments Made</span>
+                          <span className="text-sm font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Services Listed</span>
+                          <span className="text-sm font-medium">0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Marketplace Items</span>
+                          <span className="text-sm font-medium">0</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Recent Activity</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">No recent activity</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* Emergency Management Tab */}
