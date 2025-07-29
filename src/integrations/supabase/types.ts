@@ -508,6 +508,81 @@ export type Database = {
           },
         ]
       }
+      businesses: {
+        Row: {
+          business_license: string | null
+          business_name: string
+          category: string
+          city: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          operating_hours: Json | null
+          phone: string | null
+          physical_address: string | null
+          rating: number | null
+          state: string | null
+          tax_id_number: string | null
+          total_reviews: number | null
+          updated_at: string
+          user_id: string
+          verification_documents: Json | null
+          verification_status: string | null
+          website_url: string | null
+        }
+        Insert: {
+          business_license?: string | null
+          business_name: string
+          category?: string
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          phone?: string | null
+          physical_address?: string | null
+          rating?: number | null
+          state?: string | null
+          tax_id_number?: string | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id: string
+          verification_documents?: Json | null
+          verification_status?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          business_license?: string | null
+          business_name?: string
+          category?: string
+          city?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          phone?: string | null
+          physical_address?: string | null
+          rating?: number | null
+          state?: string | null
+          tax_id_number?: string | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id?: string
+          verification_documents?: Json | null
+          verification_status?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       chat_message_likes: {
         Row: {
           created_at: string

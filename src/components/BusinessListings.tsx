@@ -64,36 +64,54 @@ const BusinessListings = () => {
 
   const fetchBusinesses = async () => {
     try {
-      let query = supabase
+      const { data: businessData, error } = await supabase
         .from('businesses')
-        .select(`
-          *,
-          profiles!businesses_user_id_fkey (
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('verification_status', 'verified')
         .order('is_verified', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      if (selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory);
-      }
-
-      if (selectedLocation !== 'all') {
-        query = query.ilike('city', `%${selectedLocation}%`);
-      }
-
-      if (searchTerm.trim()) {
-        query = query.or(`business_name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await query.limit(50);
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 
-      setBusinesses(data || []);
+      // Fetch profiles separately for each business
+      const businessesWithProfiles = await Promise.all(
+        (businessData || []).map(async (business: any) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', business.user_id)
+            .single();
+
+          return {
+            ...business,
+            profiles: profile || { full_name: 'Business Owner', avatar_url: '' }
+          };
+        })
+      );
+
+      // Apply client-side filtering
+      let filteredBusinesses = businessesWithProfiles;
+
+      if (selectedCategory !== 'all') {
+        filteredBusinesses = filteredBusinesses.filter(b => b.category === selectedCategory);
+      }
+
+      if (selectedLocation !== 'all') {
+        filteredBusinesses = filteredBusinesses.filter(b => 
+          b.city?.toLowerCase().includes(selectedLocation.toLowerCase())
+        );
+      }
+
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        filteredBusinesses = filteredBusinesses.filter(b => 
+          b.business_name?.toLowerCase().includes(searchLower) ||
+          b.description?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      setBusinesses(filteredBusinesses as Business[]);
     } catch (error) {
       console.error('Error fetching businesses:', error);
       toast({

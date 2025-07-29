@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CreateServiceDialog from '@/components/CreateServiceDialog';
 import CreateMarketplaceItemDialog from '@/components/CreateMarketplaceItemDialog';
 import ServicesList from '@/components/ServicesList';
+import BusinessListings from '@/components/BusinessListings';
 
 const Services = () => {
   const { user, loading } = useAuth();
@@ -53,7 +55,20 @@ const Services = () => {
             </div>
           </div>
           
-          <ServicesList onRefresh={refreshTrigger} />
+          <Tabs defaultValue="personal" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="personal">My Services & Goods</TabsTrigger>
+              <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="personal" className="mt-6">
+              <ServicesList onRefresh={refreshTrigger} />
+            </TabsContent>
+
+            <TabsContent value="businesses" className="mt-6">
+              <BusinessListings />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
