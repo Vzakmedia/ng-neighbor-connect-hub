@@ -1717,7 +1717,6 @@ const Admin = () => {
           </Card>
         </TabsContent>
 
-        {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid gap-6">
             <Card>
