@@ -58,9 +58,8 @@ const Services = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="services" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="services">Services</TabsTrigger>
+          <Tabs defaultValue="businesses" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-10 px-3 flex items-center gap-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
@@ -82,10 +81,6 @@ const Services = () => {
               </DropdownMenu>
               <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="services" className="mt-6">
-              <CommunityServices />
-            </TabsContent>
 
             <TabsContent value="businesses" className="mt-6">
               <BusinessListings />
