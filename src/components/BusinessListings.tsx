@@ -336,6 +336,14 @@ const BusinessListings = () => {
                 role="combobox"
                 aria-expanded={locationOpen}
                 className="w-[250px] justify-between"
+                onClick={() => {
+                  console.log('Location button clicked, current state:', {
+                    selectedState,
+                    selectedCity,
+                    selectedNeighborhood,
+                    nigerianLocations: typeof nigerianLocations
+                  });
+                }}
               >
                 {selectedNeighborhood !== 'all' 
                   ? selectedNeighborhood
@@ -348,7 +356,8 @@ const BusinessListings = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[250px] p-0">
-              <Command key={`command-${selectedState}-${selectedCity}-${searchLocation}`}>
+              {locationOpen && (
+                <Command key={`command-${selectedState}-${selectedCity}-${searchLocation}`}>
                 <CommandInput 
                   placeholder="Search locations..." 
                   value={searchLocation || ''}
@@ -510,6 +519,7 @@ const BusinessListings = () => {
                   );
                 })()}
               </Command>
+              )}
             </PopoverContent>
           </Popover>
         </div>
