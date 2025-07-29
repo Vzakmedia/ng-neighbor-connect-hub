@@ -27,6 +27,7 @@ import {
   CheckCircle,
   Clock3
 } from 'lucide-react';
+import BusinessPromotionDialog from './BusinessPromotionDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Business {
@@ -193,6 +194,14 @@ const BusinessDashboard = () => {
                 <Eye className="h-4 w-4 mr-1" />
                 Preview
               </Button>
+              {business.verification_status === 'verified' && (
+                <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
+                  <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    Promote
+                  </Button>
+                </BusinessPromotionDialog>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -370,11 +379,29 @@ const BusinessDashboard = () => {
               <CardDescription>Boost your business visibility with targeted promotions</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
-                <p>Promotions Available After Verification</p>
-                <p className="text-sm">Create targeted ads and promotions once your business is verified</p>
-              </div>
+              {business.verification_status === 'verified' ? (
+                <div className="space-y-4">
+                  <div className="text-center py-6">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <h3 className="text-lg font-semibold mb-2">Ready to Promote Your Business?</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Reach more customers in your community with targeted promotions
+                    </p>
+                    <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
+                      <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Create Promotion Campaign
+                      </Button>
+                    </BusinessPromotionDialog>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
+                  <p>Promotions Available After Verification</p>
+                  <p className="text-sm">Create targeted ads and promotions once your business is verified</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
