@@ -164,58 +164,6 @@ const HomeDashboard = () => {
         </div>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-            {quickStats.map((stat, index) => {
-              const Icon = stat.icon;
-              
-              const handleStatClick = () => {
-                switch (stat.label) {
-                  case 'Active Neighbors':
-                    navigate('/community');
-                    break;
-                  case 'Posts Today':
-                    setActiveTab('all');
-                    break;
-                  case 'Upcoming Events':
-                    navigate('/events');
-                    break;
-                  case 'Items for Sale':
-                    navigate('/marketplace');
-                    break;
-                  default:
-                    break;
-                }
-              };
-              
-              return (
-                <Card 
-                  key={index} 
-                  className={`bg-gradient-card shadow-card hover:shadow-elevated transition-all cursor-pointer touch-manipulation active:scale-95 md:hover:scale-105 min-h-[100px] sm:min-h-[110px] ${
-                    dashboardStats.loading ? 'animate-pulse' : ''
-                  }`}
-                  onClick={handleStatClick}
-                >
-                  <CardContent className="p-2 sm:p-3 md:p-4 h-full flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-1 sm:mb-2">
-                      <Icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-5 md:w-5 ${stat.color}`} />
-                      <Badge variant="secondary" className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 hidden sm:flex">
-                        <TrendingUp className="h-2 w-2 sm:h-2.5 sm:w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
-                        {stat.trend}
-                      </Badge>
-                    </div>
-                    <div className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">{stat.value}</div>
-                    <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground leading-tight">{stat.label}</div>
-                    {/* Mobile trend badge */}
-                    <Badge variant="secondary" className="text-[9px] px-1 py-0.5 mt-1 self-start sm:hidden">
-                      <TrendingUp className="h-2 w-2 mr-0.5" />
-                      {stat.trend}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Main Feed */}
@@ -238,18 +186,32 @@ const HomeDashboard = () => {
                         </Button>
                       ))}
                     </div>
-                    {/* Mobile filter buttons - contained grid */}
+                    {/* Mobile filter buttons - icons only, expand when active */}
                     <div className="md:hidden w-full">
-                      <div className="grid grid-cols-2 gap-1 w-full">
-                        {['all', 'safety', 'events', 'marketplace'].map((tab) => (
+                      <div className="flex justify-center gap-2 w-full">
+                        {[
+                          { key: 'all', icon: Home },
+                          { key: 'safety', icon: AlertTriangle },
+                          { key: 'events', icon: Calendar },
+                          { key: 'marketplace', icon: ShoppingBag }
+                        ].map(({ key, icon: Icon }) => (
                           <Button
-                            key={tab}
-                            variant={activeTab === tab ? 'default' : 'outline'}
+                            key={key}
+                            variant={activeTab === key ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setActiveTab(tab)}
-                            className="capitalize text-xs px-2 py-1.5 w-full"
+                            onClick={() => setActiveTab(key)}
+                            className={`transition-all duration-200 ${
+                              activeTab === key 
+                                ? 'px-3 flex items-center gap-1.5' 
+                                : 'px-2 w-10 h-8'
+                            }`}
                           >
-                            {tab === 'marketplace' ? 'market' : tab}
+                            <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                            {activeTab === key && (
+                              <span className="text-xs capitalize animate-in fade-in slide-in-from-left-2 duration-200">
+                                {key === 'marketplace' ? 'market' : key}
+                              </span>
+                            )}
                           </Button>
                         ))}
                       </div>
