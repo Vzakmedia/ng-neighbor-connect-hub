@@ -35,6 +35,17 @@ const Navigation = () => {
     { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
   ];
 
+  // Mobile-specific order with services and messages swapped
+  const mobileNavItems = [
+    { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
+    { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
+    { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
+    { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
+    { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
+  ];
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
@@ -86,7 +97,7 @@ const Navigation = () => {
         <div className="flex h-16">
           {/* Main nav items - 4 columns */}
           <div className="flex-1 grid grid-cols-4">
-            {navItems.slice(0, 4).map((item) => {
+            {mobileNavItems.slice(0, 4).map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -129,7 +140,7 @@ const Navigation = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" side="top" className="mb-2">
-                {navItems.slice(4).map((item) => {
+                {mobileNavItems.slice(4).map((item) => {
                   const Icon = item.icon;
                   return (
                     <DropdownMenuItem
