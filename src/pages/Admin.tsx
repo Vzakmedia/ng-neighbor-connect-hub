@@ -658,16 +658,51 @@ const Admin = () => {
         .from('marketplace_items')
         .select(`
           *,
-          profiles(full_name)
+          profiles!marketplace_items_user_id_fkey(
+            full_name,
+            email,
+            avatar_url,
+            phone,
+            neighborhood,
+            user_type
+          )
         `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setMarketplaceItems(items || []);
+      // Enhance items with additional data like likes count and inquiry count
+      const enhancedItems = await Promise.all(
+        (items || []).map(async (item) => {
+          // Get likes count
+          const { count: likesCount } = await supabase
+            .from('marketplace_item_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('item_id', item.id);
+
+          // Get inquiries count
+          const { count: inquiriesCount } = await supabase
+            .from('marketplace_inquiries')
+            .select('*', { count: 'exact', head: true })
+            .eq('item_id', item.id);
+
+          return {
+            ...item,
+            likes_count: likesCount || 0,
+            inquiries_count: inquiriesCount || 0
+          };
+        })
+      );
+      
+      setMarketplaceItems(enhancedItems);
+      console.log('Fetched marketplace items:', enhancedItems.length);
     } catch (error) {
       console.error('Error fetching marketplace items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch marketplace data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -720,6 +755,63 @@ const Admin = () => {
       fetchPromotions();
       fetchContentReports();
     }
+  }, [isSuperAdmin]);
+
+  // Set up real-time subscriptions for marketplace
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    console.log('Setting up real-time subscriptions for admin marketplace...');
+
+    const marketplaceChannel = supabase
+      .channel('admin-marketplace-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_items'
+        },
+        (payload) => {
+          console.log('Marketplace real-time update:', payload);
+          // Refetch marketplace data when changes occur
+          fetchMarketplaceItems();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_item_likes'
+        },
+        (payload) => {
+          console.log('Marketplace likes real-time update:', payload);
+          // Refetch marketplace data when likes change
+          fetchMarketplaceItems();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_inquiries'
+        },
+        (payload) => {
+          console.log('Marketplace inquiries real-time update:', payload);
+          // Refetch marketplace data when inquiries change
+          fetchMarketplaceItems();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Admin marketplace subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up admin marketplace subscriptions...');
+      supabase.removeChannel(marketplaceChannel);
+    };
   }, [isSuperAdmin]);
 
   // All functions and effects
@@ -1912,8 +2004,18 @@ const Admin = () => {
         <TabsContent value="marketplace">
           <Card>
             <CardHeader>
-              <CardTitle>Marketplace Management</CardTitle>
-              <p className="text-sm text-muted-foreground">Comprehensive marketplace listings and transaction management</p>
+              <CardTitle className="flex items-center justify-between">
+                <span>Marketplace Management</span>
+                <Badge variant="outline" className="text-xs">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Live Sync</span>
+                  </div>
+                </Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Real-time marketplace listings with live updates • Total Items: {marketplaceItems.length}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -1960,20 +2062,20 @@ const Admin = () => {
                   </Button>
                 </div>
                 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Seller</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Condition</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Listed</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item</TableHead>
+                        <TableHead>Seller</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Engagement</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Rating</TableHead>
+                        <TableHead>Listed</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {marketplaceItems
                       .filter(item => {
@@ -2020,7 +2122,19 @@ const Admin = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{item.condition || 'Not specified'}</Badge>
+                          <div className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="outline" className="text-xs">
+                                ❤️ {item.likes_count || 0}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                💬 {item.inquiries_count || 0}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.condition || 'Condition not specified'}
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={
