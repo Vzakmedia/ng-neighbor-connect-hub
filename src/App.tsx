@@ -20,6 +20,9 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Services from "./pages/Services";
 import Events from "./pages/Events";
+import MyServices from "./pages/MyServices";
+import MyGoods from "./pages/MyGoods";
+import MyBookings from "./pages/MyBookings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -60,6 +63,9 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/my-services" element={<MyServices />} />
+              <Route path="/my-goods" element={<MyGoods />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/events" element={<Events />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />

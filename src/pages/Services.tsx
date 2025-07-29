@@ -4,13 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CreateServiceDialog from '@/components/CreateServiceDialog';
 import CreateMarketplaceItemDialog from '@/components/CreateMarketplaceItemDialog';
-import ServicesList from '@/components/ServicesList';
 import BusinessListings from '@/components/BusinessListings';
 import CommunityServices from '@/components/CommunityServices';
 
@@ -18,8 +16,6 @@ const Services = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [refreshTrigger, setRefreshTrigger] = useState(false);
-  const [myServicesDialogOpen, setMyServicesDialogOpen] = useState(false);
-  const [myServicesTab, setMyServicesTab] = useState('my-services');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -73,22 +69,13 @@ const Services = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-56">
-                  <DropdownMenuItem onClick={() => {
-                    setMyServicesTab('my-services');
-                    setMyServicesDialogOpen(true);
-                  }}>
+                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
                     My Services
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    setMyServicesTab('my-goods');
-                    setMyServicesDialogOpen(true);
-                  }}>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
                     My Goods
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    setMyServicesTab('my-bookings');
-                    setMyServicesDialogOpen(true);
-                  }}>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
                     My Bookings
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -105,21 +92,6 @@ const Services = () => {
             </TabsContent>
           </Tabs>
 
-          {/* My Services & Goods Dialog */}
-          <Dialog open={myServicesDialogOpen} onOpenChange={setMyServicesDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[80vh]">
-              <DialogHeader>
-                <DialogTitle>
-                  {myServicesTab === 'my-services' && 'My Services'}
-                  {myServicesTab === 'my-goods' && 'My Goods'}
-                  {myServicesTab === 'my-bookings' && 'My Bookings'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="overflow-y-auto">
-                <ServicesList onRefresh={refreshTrigger} />
-              </div>
-            </DialogContent>
-          </Dialog>
         </div>
       </main>
     </div>
