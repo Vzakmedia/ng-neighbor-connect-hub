@@ -58,45 +58,29 @@ const Services = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="my-services" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="my-services">My Services</TabsTrigger>
-              <TabsTrigger value="my-goods">My Goods</TabsTrigger>
-              <TabsTrigger value="my-bookings">My Bookings</TabsTrigger>
+          <Tabs defaultValue="businesses" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-10 px-3 flex items-center gap-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    My Services & Goods
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
+                    My Services
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
+                    My Goods
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
+                    My Bookings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="my-services" className="mt-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold">My Services</h2>
-                  <p className="text-muted-foreground">Manage your service offerings</p>
-                </div>
-                <CreateServiceDialog onServiceCreated={handleServiceCreated} />
-              </div>
-              <CommunityServices />
-            </TabsContent>
-
-            <TabsContent value="my-goods" className="mt-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold">My Goods</h2>
-                  <p className="text-muted-foreground">Manage your marketplace items</p>
-                </div>
-                <CreateMarketplaceItemDialog onItemCreated={handleItemCreated} />
-              </div>
-              <CommunityServices />
-            </TabsContent>
-
-            <TabsContent value="my-bookings" className="mt-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold">My Bookings</h2>
-                  <p className="text-muted-foreground">Manage your service bookings and orders</p>
-                </div>
-              </div>
-              <CommunityServices />
-            </TabsContent>
 
             <TabsContent value="businesses" className="mt-6">
               <BusinessListings />
