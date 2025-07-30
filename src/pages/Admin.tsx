@@ -193,48 +193,16 @@ const Admin = () => {
     }
   };
 
-  // Add useEffect to watch state changes
-  useEffect(() => {
-    console.log('🔴 alertDialogOpen changed to:', alertDialogOpen);
-  }, [alertDialogOpen]);
-
-  useEffect(() => {
-    console.log('🔵 editAlertDialogOpen changed to:', editAlertDialogOpen);
-  }, [editAlertDialogOpen]);
-
-  useEffect(() => {
-    console.log('🟢 selectedAlert changed to:', selectedAlert?.id);
-  }, [selectedAlert]);
 
   const handleViewAlert = (alert: any) => {
-    console.log('=== HANDLE VIEW ALERT START ===');
-    console.log('Button clicked for alert:', alert?.id);
-    console.log('Before setState - alertDialogOpen:', alertDialogOpen);
-    console.log('Before setState - selectedAlert:', selectedAlert?.id);
-    
-    // Try using a key to force component re-render
-    const timestamp = Date.now();
-    console.log('Setting timestamp key:', timestamp);
-    
     setSelectedAlert(alert);
     setAlertDialogOpen(true);
-    
-    console.log('After setState calls');
-    console.log('=== HANDLE VIEW ALERT END ===');
   };
 
   const handleEditAlert = (alert: any) => {
-    console.log('=== HANDLE EDIT ALERT START ===');
-    console.log('Button clicked for alert:', alert?.id);
-    console.log('Before setState - editAlertDialogOpen:', editAlertDialogOpen);
-    console.log('Before setState - selectedAlert:', selectedAlert?.id);
-    
     setSelectedAlert(alert);
     setEditingAlertStatus(alert.status);
     setEditAlertDialogOpen(true);
-    
-    console.log('After setState calls');
-    console.log('=== HANDLE EDIT ALERT END ===');
   };
 
   const handleSaveAlertStatus = async () => {
@@ -1455,17 +1423,11 @@ const Admin = () => {
           {/* Debug Info moved to global scope */}
 
           {/* Emergency Alert Details Popup */}
-          <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={false} onOpenChange={(open) => {
-            console.log('=== ALERT DIALOG OPEN CHANGE ===');
-            console.log('New open state:', open);
-            console.log('Current alertDialogOpen:', alertDialogOpen);
-            console.log('Current selectedAlert:', selectedAlert?.id);
+          <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={alertDialogOpen} onOpenChange={(open) => {
             setAlertDialogOpen(open);
             if (!open) {
-              console.log('Closing dialog - clearing selectedAlert');
               setSelectedAlert(null);
             }
-            console.log('=== END ALERT DIALOG OPEN CHANGE ===');
           }}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
               <DialogHeader>
@@ -2166,14 +2128,7 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={(e) => {
-                                console.log('=== VIEW BUTTON CLICKED ===');
-                                console.log('Event:', e);
-                                console.log('Alert ID:', alert.id);
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleViewAlert(alert);
-                              }}
+                              onClick={() => handleViewAlert(alert)}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -2181,14 +2136,7 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={(e) => {
-                                console.log('=== EDIT BUTTON CLICKED ===');
-                                console.log('Event:', e);
-                                console.log('Alert ID:', alert.id);
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleEditAlert(alert);
-                              }}
+                              onClick={() => handleEditAlert(alert)}
                               title="Edit Status"
                             >
                               <Edit className="h-4 w-4" />
@@ -2984,15 +2932,6 @@ const Admin = () => {
       </Tabs>
 
       {/* Global Dialogs - Outside of Tabs */}
-      {/* Debug Info - Enhanced */}
-      <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[9999] rounded" style={{ fontSize: '10px' }}>
-        <div>alertDialogOpen: {alertDialogOpen.toString()}</div>
-        <div>editAlertDialogOpen: {editAlertDialogOpen.toString()}</div>
-        <div>selectedAlert: {selectedAlert?.id || 'none'}</div>
-        <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
-        <div>Component renders: {Date.now()}</div>
-        <div>Modal should show: {(alertDialogOpen && selectedAlert) ? 'YES' : 'NO'}</div>
-      </div>
 
       {/* Emergency Alert Modal */}
       <SimpleModal
