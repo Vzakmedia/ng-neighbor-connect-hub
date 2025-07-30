@@ -2957,6 +2957,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_event: {
+        Args: {
+          _action_type: string
+          _resource_type: string
+          _resource_id?: string
+          _risk_level?: string
+          _details?: Json
+        }
+        Returns: undefined
+      }
       log_staff_activity: {
         Args: {
           _action_type: string
@@ -2996,6 +3006,10 @@ export type Database = {
       }
       user_allows_direct_messages: {
         Args: { target_user_id: string }
+        Returns: boolean
+      }
+      validate_content_input: {
+        Args: { content_text: string; max_length?: number }
         Returns: boolean
       }
     }

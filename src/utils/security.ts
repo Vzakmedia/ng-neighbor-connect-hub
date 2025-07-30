@@ -163,9 +163,9 @@ export const validatePasswordStrength = (password: string): { score: number; fee
   const feedback: string[] = [];
   let score = 0;
 
-  // Minimum 12 characters for better security
-  if (password.length >= 12) score += 1;
-  else feedback.push('At least 12 characters required');
+  // Minimum 14 characters for enhanced security
+  if (password.length >= 14) score += 1;
+  else feedback.push('At least 14 characters required for optimal security');
 
   if (/[a-z]/.test(password)) score += 1;
   else feedback.push('Include lowercase letters');
@@ -179,11 +179,12 @@ export const validatePasswordStrength = (password: string): { score: number; fee
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
   else feedback.push('Include special characters (!@#$%^&*)');
 
-  // Comprehensive common password dictionary
+  // Comprehensive common password dictionary with Nigerian context
   const commonPasswords = [
     'password', '123456', 'password123', 'admin', 'qwerty', 'letmein', 
     'welcome', 'login', 'abc123', 'password1', '123456789', 'qwerty123',
-    'admin123', 'root', 'toor', 'pass', 'test', 'guest', 'user'
+    'admin123', 'root', 'toor', 'pass', 'test', 'guest', 'user',
+    'nigeria', 'lagos', 'abuja', 'naira', 'football', 'soccer'
   ];
   
   if (commonPasswords.some(weak => password.toLowerCase().includes(weak))) {
@@ -209,12 +210,18 @@ export const validatePasswordStrength = (password: string): { score: number; fee
     feedback.push('Avoid keyboard patterns (qwerty, asdf, etc.)');
   }
 
+  // Check for personal information patterns
+  if (/(?:name|email|phone|birth|date)/i.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid using personal information in passwords');
+  }
+
   // Bonus scoring for exceptional security
   if (password.length >= 16) score += 1; // Very long password
   if (password.length >= 20) score += 1; // Extremely long password
   if (/[^\w\s!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1; // Unicode/extended characters
 
-  return { score: Math.min(score, 5), feedback };
+  return { score: Math.min(score, 6), feedback };
 };
 
 // Content Security Policy headers (for future implementation)
