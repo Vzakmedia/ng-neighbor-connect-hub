@@ -1452,40 +1452,7 @@ const Admin = () => {
           </Dialog>
 
           
-          {/* Debug Info - Enhanced */}
-          <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[9999] rounded" style={{ fontSize: '10px' }}>
-            <div>alertDialogOpen: {alertDialogOpen.toString()}</div>
-            <div>editAlertDialogOpen: {editAlertDialogOpen.toString()}</div>
-            <div>selectedAlert: {selectedAlert?.id || 'none'}</div>
-            <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
-            <div>Component renders: {Date.now()}</div>
-            <div>Modal should show: {(alertDialogOpen && selectedAlert) ? 'YES' : 'NO'}</div>
-          </div>
-
-          {/* Simple Modal Test */}
-          <SimpleModal
-            isOpen={alertDialogOpen}
-            onClose={() => setAlertDialogOpen(false)}
-            title="Emergency Alert Details"
-          >
-            {selectedAlert ? (
-              <div>
-                <h3>Alert ID: {selectedAlert.id}</h3>
-                <p>Status: {selectedAlert.status}</p>
-                <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
-                <p>Location: {formatLocation(selectedAlert)}</p>
-                <p>Reporter: {selectedAlert.profiles?.full_name || 'Unknown'}</p>
-                <button 
-                  onClick={() => setAlertDialogOpen(false)}
-                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <div>No alert selected</div>
-            )}
-          </SimpleModal>
+          {/* Debug Info moved to global scope */}
 
           {/* Emergency Alert Details Popup */}
           <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={false} onOpenChange={(open) => {
@@ -3015,6 +2982,89 @@ const Admin = () => {
         </TabsContent>
         </div>
       </Tabs>
+
+      {/* Global Dialogs - Outside of Tabs */}
+      {/* Debug Info - Enhanced */}
+      <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[9999] rounded" style={{ fontSize: '10px' }}>
+        <div>alertDialogOpen: {alertDialogOpen.toString()}</div>
+        <div>editAlertDialogOpen: {editAlertDialogOpen.toString()}</div>
+        <div>selectedAlert: {selectedAlert?.id || 'none'}</div>
+        <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
+        <div>Component renders: {Date.now()}</div>
+        <div>Modal should show: {(alertDialogOpen && selectedAlert) ? 'YES' : 'NO'}</div>
+      </div>
+
+      {/* Emergency Alert Modal */}
+      <SimpleModal
+        isOpen={alertDialogOpen}
+        onClose={() => setAlertDialogOpen(false)}
+        title="Emergency Alert Details"
+      >
+        {selectedAlert ? (
+          <div>
+            <h3>Alert ID: {selectedAlert.id}</h3>
+            <p>Status: {selectedAlert.status}</p>
+            <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
+            <p>Location: {formatLocation(selectedAlert)}</p>
+            <p>Reporter: {selectedAlert.profiles?.full_name || 'Unknown'}</p>
+            <button 
+              onClick={() => setAlertDialogOpen(false)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <div>No alert selected</div>
+        )}
+      </SimpleModal>
+
+      {/* Edit Alert Modal */}
+      <SimpleModal
+        isOpen={editAlertDialogOpen}
+        onClose={() => setEditAlertDialogOpen(false)}
+        title="Edit Alert Status"
+        maxWidth="max-w-md"
+      >
+        {selectedAlert ? (
+          <div>
+            <h3>Edit Alert: {selectedAlert.id}</h3>
+            <p>Current Status: {selectedAlert.status}</p>
+            <label className="block mt-4">
+              New Status:
+              <select 
+                value={editingAlertStatus} 
+                onChange={(e) => setEditingAlertStatus(e.target.value)}
+                className="mt-1 block w-full p-2 border rounded"
+              >
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+                <option value="false_alarm">False Alarm</option>
+                <option value="investigating">Investigating</option>
+              </select>
+            </label>
+            <div className="flex gap-2 mt-4">
+              <button 
+                onClick={() => setEditAlertDialogOpen(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('Save status:', editingAlertStatus);
+                  setEditAlertDialogOpen(false);
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>No alert selected</div>
+        )}
+      </SimpleModal>
     </div>
   );
 };
