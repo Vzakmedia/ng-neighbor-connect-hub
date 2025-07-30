@@ -1314,6 +1314,9 @@ export type Database = {
       }
       marketplace_items: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           category: Database["public"]["Enums"]["item_category"]
           condition: string | null
           created_at: string
@@ -1324,6 +1327,7 @@ export type Database = {
           location: string | null
           price: number | null
           rating: number | null
+          rejection_reason: string | null
           status: Database["public"]["Enums"]["listing_status"] | null
           title: string
           total_reviews: number | null
@@ -1331,6 +1335,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category: Database["public"]["Enums"]["item_category"]
           condition?: string | null
           created_at?: string
@@ -1341,6 +1348,7 @@ export type Database = {
           location?: string | null
           price?: number | null
           rating?: number | null
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["listing_status"] | null
           title: string
           total_reviews?: number | null
@@ -1348,6 +1356,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category?: Database["public"]["Enums"]["item_category"]
           condition?: string | null
           created_at?: string
@@ -1358,6 +1369,7 @@ export type Database = {
           location?: string | null
           price?: number | null
           rating?: number | null
+          rejection_reason?: string | null
           status?: Database["public"]["Enums"]["listing_status"] | null
           title?: string
           total_reviews?: number | null
@@ -2528,6 +2540,9 @@ export type Database = {
       }
       services: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           category: Database["public"]["Enums"]["service_category"]
           created_at: string
           description: string
@@ -2539,12 +2554,16 @@ export type Database = {
           price_min: number | null
           price_type: string | null
           rating: number | null
+          rejection_reason: string | null
           title: string
           total_reviews: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category: Database["public"]["Enums"]["service_category"]
           created_at?: string
           description: string
@@ -2556,12 +2575,16 @@ export type Database = {
           price_min?: number | null
           price_type?: string | null
           rating?: number | null
+          rejection_reason?: string | null
           title: string
           total_reviews?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           category?: Database["public"]["Enums"]["service_category"]
           created_at?: string
           description?: string
@@ -2573,6 +2596,7 @@ export type Database = {
           price_min?: number | null
           price_type?: string | null
           rating?: number | null
+          rejection_reason?: string | null
           title?: string
           total_reviews?: number | null
           updated_at?: string
@@ -2835,6 +2859,22 @@ export type Database = {
     Functions: {
       accept_staff_invitation: {
         Args: { _invitation_code: string; _user_id: string }
+        Returns: boolean
+      }
+      approve_marketplace_item: {
+        Args: {
+          _item_id: string
+          _approval_status: string
+          _rejection_reason?: string
+        }
+        Returns: boolean
+      }
+      approve_service: {
+        Args: {
+          _service_id: string
+          _approval_status: string
+          _rejection_reason?: string
+        }
         Returns: boolean
       }
       calculate_distance: {

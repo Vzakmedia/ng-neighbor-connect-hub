@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 import StaffInvitationManager from "@/components/StaffInvitationManager";
+import ContentModerationPanel from '@/components/ContentModerationPanel';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -1136,6 +1137,10 @@ const Admin = () => {
           <TabsTrigger value="automations" className="w-full justify-start">
             <Settings className="h-4 w-4 mr-2" />
             Automations
+          </TabsTrigger>
+          <TabsTrigger value="content-moderation" className="w-full justify-start">
+            <Shield className="h-4 w-4 mr-2" />
+            Content Moderation
           </TabsTrigger>
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
@@ -3219,6 +3224,10 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="content-moderation" className="space-y-6">
+          <ContentModerationPanel />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
