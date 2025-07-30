@@ -394,16 +394,60 @@ const Admin = () => {
       });
     }
   };
+  // Helper function to get descriptive emergency type label
+  const getEmergencyTypeLabel = (alert: any) => {
+    const typeMap: { [key: string]: string } = {
+      'fire': 'Fire Emergency',
+      'theft': 'Theft/Robbery', 
+      'medical': 'Medical Emergency',
+      'weather': 'Weather Alert',
+      'accident': 'Accident',
+      'break_in': 'Break-in/Burglary',
+      'harassment': 'Harassment/Violence',
+      'medical_emergency': 'Medical Emergency',
+      'violence': 'Violence/Assault',
+      'other': 'Other Emergency'
+    };
+    
+    return typeMap[alert.alert_type] || typeMap[alert.situation_type] || alert.alert_type || alert.situation_type || 'Emergency Alert';
+  };
+
   // Helper function to format location
   const formatLocation = (alert: any) => {
-    if (alert.address && alert.address !== `${alert.latitude}, ${alert.longitude}`) {
+    // First priority: Alert's specific address
+    if (alert.address && alert.address.trim() && !alert.address.includes('undefined') && alert.address !== `${alert.latitude}, ${alert.longitude}`) {
       return alert.address;
     }
-    if (alert.latitude && alert.longitude) {
-      // For now, return a formatted coordinate display until we can implement reverse geocoding
-      return `${parseFloat(alert.latitude).toFixed(4)}, ${parseFloat(alert.longitude).toFixed(4)}`;
+    
+    // Second priority: User profile address  
+    if (alert.profiles?.address && alert.profiles.address.trim()) {
+      return alert.profiles.address;
     }
-    return alert.location || 'Unknown location';
+    
+    // Third priority: Build address from profile location components
+    if (alert.profiles?.neighborhood || alert.profiles?.city || alert.profiles?.state) {
+      const parts = [
+        alert.profiles?.neighborhood,
+        alert.profiles?.city, 
+        alert.profiles?.state
+      ].filter(part => part && part.trim() && part !== 'undefined');
+      
+      if (parts.length > 0) {
+        return parts.join(', ');
+      }
+    }
+    
+    // Fourth priority: Alert location field
+    if (alert.location && alert.location.trim() && alert.location !== 'undefined') {
+      return alert.location;
+    }
+    
+    // Last resort: coordinates if available
+    if (alert.latitude && alert.longitude) {
+      return `Lat: ${parseFloat(alert.latitude).toFixed(4)}, Lng: ${parseFloat(alert.longitude).toFixed(4)}`;
+    }
+    
+    return 'Location unavailable';
   };
 
   const handleCreateAlert = () => {
@@ -1403,7 +1447,7 @@ const Admin = () => {
                         <Badge variant={selectedAlert.severity === 'critical' ? 'destructive' : 'outline'}>
                           {selectedAlert.severity}
                         </Badge>
-                        <Badge variant="outline">{selectedAlert.alert_type || 'other'}</Badge>
+                        <Badge variant="outline" className="font-medium">{getEmergencyTypeLabel(selectedAlert)}</Badge>
                       </div>
                     </div>
                     <div className="text-right">
@@ -2039,9 +2083,15 @@ const Admin = () => {
                       <TableRow key={alert.id}>
                         <TableCell className="font-medium">{alert.title || alert.description || 'Safety Alert'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{alert.alert_type || 'emergency'}</Badge>
+                          <Badge variant="outline" className="font-medium">
+                            {getEmergencyTypeLabel(alert)}
+                          </Badge>
                         </TableCell>
-                        <TableCell>{formatLocation(alert)}</TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="truncate" title={formatLocation(alert)}>
+                            {formatLocation(alert)}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium">{alert.profiles?.full_name || 'Anonymous'}</div>
