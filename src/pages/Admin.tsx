@@ -262,13 +262,19 @@ const Admin = () => {
   const handleViewMarketplaceItem = (item: any) => {
     console.log('View marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
-    setMarketplaceDialogOpen(true);
+    // Use requestAnimationFrame to ensure instant dialog opening
+    requestAnimationFrame(() => {
+      setMarketplaceDialogOpen(true);
+    });
   };
 
   const handleEditMarketplaceItem = (item: any) => {
     console.log('Edit marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
-    setEditMarketplaceDialogOpen(true);
+    // Use requestAnimationFrame to ensure instant dialog opening
+    requestAnimationFrame(() => {
+      setEditMarketplaceDialogOpen(true);
+    });
   };
 
   const handleUpdateMarketplaceStatus = async (item: any, newStatus: string) => {
@@ -2096,7 +2102,7 @@ const Admin = () => {
 
           {/* Marketplace Item Details Dialog */}
           <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999] [&>*]:!duration-0 [&]:!duration-0" style={{ zIndex: 9999, animationDuration: '0ms', transitionDuration: '0ms' }}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <ShoppingCart className="h-6 w-6 text-primary" />
@@ -2318,7 +2324,7 @@ const Admin = () => {
 
           {/* Edit Marketplace Item Dialog */}
           <Dialog open={editMarketplaceDialogOpen} onOpenChange={setEditMarketplaceDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999] [&>*]:!duration-0 [&]:!duration-0" style={{ zIndex: 9999, animationDuration: '0ms', transitionDuration: '0ms' }}>
               <DialogHeader>
                 <DialogTitle>Edit Marketplace Item</DialogTitle>
                 <DialogDescription>
