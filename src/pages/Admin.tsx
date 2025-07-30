@@ -261,8 +261,11 @@ const Admin = () => {
   // Marketplace management handlers
   const handleViewMarketplaceItem = (item: any) => {
     console.log('View marketplace item clicked:', item);
+    console.log('Current marketplaceDialogOpen state:', marketplaceDialogOpen);
     setSelectedMarketplaceItem(item);
+    console.log('Setting marketplaceDialogOpen to true');
     setMarketplaceDialogOpen(true);
+    console.log('State set, marketplaceDialogOpen should now be true');
   };
 
   const handleEditMarketplaceItem = (item: any) => {
@@ -1094,6 +1097,12 @@ const Admin = () => {
       supabase.removeChannel(marketplaceChannel);
     };
   }, [isSuperAdmin]);
+
+  // Debug effect for marketplace dialog state
+  useEffect(() => {
+    console.log('Marketplace dialog state changed:', marketplaceDialogOpen);
+    console.log('Selected marketplace item:', selectedMarketplaceItem?.id);
+  }, [marketplaceDialogOpen, selectedMarketplaceItem]);
 
   // All functions and effects
 
@@ -2773,20 +2782,22 @@ const Admin = () => {
                         <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex space-x-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
+                            <button 
+                              type="button"
+                              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('View Details button clicked for item:', item.id);
-                                handleViewMarketplaceItem(item);
+                                console.log('DIRECT BUTTON: View Details clicked for item:', item.id);
+                                console.log('DIRECT BUTTON: Before state change - marketplaceDialogOpen:', marketplaceDialogOpen);
+                                setSelectedMarketplaceItem(item);
+                                setMarketplaceDialogOpen(true);
+                                console.log('DIRECT BUTTON: After state change - should be true');
                               }}
-                              onMouseDown={(e) => e.stopPropagation()}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
+                            </button>
                             <Button 
                               variant="outline" 
                               size="sm"
