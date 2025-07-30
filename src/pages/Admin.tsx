@@ -262,19 +262,13 @@ const Admin = () => {
   const handleViewMarketplaceItem = (item: any) => {
     console.log('View marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
-    // Use requestAnimationFrame to ensure instant dialog opening
-    requestAnimationFrame(() => {
-      setMarketplaceDialogOpen(true);
-    });
+    setMarketplaceDialogOpen(true);
   };
 
   const handleEditMarketplaceItem = (item: any) => {
     console.log('Edit marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
-    // Use requestAnimationFrame to ensure instant dialog opening
-    requestAnimationFrame(() => {
-      setEditMarketplaceDialogOpen(true);
-    });
+    setEditMarketplaceDialogOpen(true);
   };
 
   const handleUpdateMarketplaceStatus = async (item: any, newStatus: string) => {
@@ -2788,6 +2782,7 @@ const Admin = () => {
                                 console.log('View Details button clicked for item:', item.id);
                                 handleViewMarketplaceItem(item);
                               }}
+                              onMouseDown={(e) => e.stopPropagation()}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -2801,6 +2796,7 @@ const Admin = () => {
                                 console.log('Edit Item button clicked for item:', item.id);
                                 handleEditMarketplaceItem(item);
                               }}
+                              onMouseDown={(e) => e.stopPropagation()}
                               title="Edit Item"
                             >
                               <Edit className="h-4 w-4" />
