@@ -637,7 +637,15 @@ const Admin = () => {
         .from('safety_alerts')
         .select(`
           *,
-          profiles(full_name)
+          profiles(
+            full_name,
+            email,
+            phone,
+            address,
+            city,
+            state,
+            neighborhood
+          )
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -1399,8 +1407,14 @@ const Admin = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium">Reporter</p>
+                      <p className="text-sm font-medium">Reporter Details</p>
                       <p className="text-sm text-muted-foreground">{selectedAlert.profiles?.full_name || 'Anonymous'}</p>
+                      {selectedAlert.profiles?.email && (
+                        <p className="text-xs text-muted-foreground">{selectedAlert.profiles.email}</p>
+                      )}
+                      {selectedAlert.profiles?.phone && (
+                        <p className="text-xs text-muted-foreground">{selectedAlert.profiles.phone}</p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(selectedAlert.created_at).toLocaleString()}
                       </p>
@@ -1438,19 +1452,26 @@ const Admin = () => {
                         <CardTitle className="text-base">Location & Details</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm font-medium">Location:</span>
-                          <span className="text-sm text-muted-foreground">{formatLocation(selectedAlert)}</span>
-                        </div>
-                        
-                        {selectedAlert.latitude && selectedAlert.longitude && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Coordinates:</span>
-                            <span className="text-sm text-muted-foreground font-mono">
-                              {parseFloat(selectedAlert.latitude).toFixed(6)}, {parseFloat(selectedAlert.longitude).toFixed(6)}
-                            </span>
-                          </div>
-                        )}
+                         <div className="flex justify-between">
+                           <span className="text-sm font-medium">Alert Location:</span>
+                           <span className="text-sm text-muted-foreground">{formatLocation(selectedAlert)}</span>
+                         </div>
+                         
+                         {selectedAlert.profiles?.address && (
+                           <div className="flex justify-between">
+                             <span className="text-sm font-medium">Reporter Address:</span>
+                             <span className="text-sm text-muted-foreground">{selectedAlert.profiles.address}</span>
+                           </div>
+                         )}
+                         
+                         {selectedAlert.latitude && selectedAlert.longitude && (
+                           <div className="flex justify-between">
+                             <span className="text-sm font-medium">Coordinates:</span>
+                             <span className="text-sm text-muted-foreground font-mono">
+                               {parseFloat(selectedAlert.latitude).toFixed(6)}, {parseFloat(selectedAlert.longitude).toFixed(6)}
+                             </span>
+                           </div>
+                         )}
                         
                         <div className="flex justify-between">
                           <span className="text-sm font-medium">Verified:</span>
@@ -1620,7 +1641,10 @@ const Admin = () => {
                     >
                       Cancel
                     </Button>
-                    <Button onClick={handleSaveAlertStatus}>
+                    <Button 
+                      onClick={handleSaveAlertStatus}
+                      disabled={!editingAlertStatus || editingAlertStatus === selectedAlert?.status}
+                    >
                       Save Changes
                     </Button>
                   </div>
@@ -2018,7 +2042,15 @@ const Admin = () => {
                           <Badge variant="outline">{alert.alert_type || 'emergency'}</Badge>
                         </TableCell>
                         <TableCell>{formatLocation(alert)}</TableCell>
-                        <TableCell>{alert.profiles?.full_name || 'Anonymous'}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{alert.profiles?.full_name || 'Anonymous'}</div>
+                            <div className="text-sm text-muted-foreground">{alert.profiles?.email || 'No email'}</div>
+                            {alert.profiles?.phone && (
+                              <div className="text-xs text-muted-foreground">{alert.profiles.phone}</div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={alert.status === 'active' ? 'destructive' : 'default'}>
                             {alert.status}
