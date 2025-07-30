@@ -413,6 +413,9 @@ const Admin = () => {
   };
   // Helper function to get descriptive emergency type label
   const getEmergencyTypeLabel = (alert: any) => {
+    // Add null check first
+    if (!alert) return 'Emergency Alert';
+    
     const typeMap: { [key: string]: string } = {
       'fire': 'Fire Emergency',
       'theft': 'Theft/Robbery', 
@@ -431,6 +434,8 @@ const Admin = () => {
 
   // Helper function to format location
   const formatLocation = (alert: any) => {
+    // Add null check first
+    if (!alert) return 'Location unavailable';
     // First priority: Alert's specific address
     if (alert.address && alert.address.trim() && !alert.address.includes('undefined') && alert.address !== `${alert.latitude}, ${alert.longitude}`) {
       return alert.address;
@@ -1450,19 +1455,23 @@ const Admin = () => {
             onClose={() => setAlertDialogOpen(false)}
             title="Emergency Alert Details"
           >
-            <div>
-              <h3>Alert ID: {selectedAlert?.id}</h3>
-              <p>Status: {selectedAlert?.status}</p>
-              <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
-              <p>Location: {formatLocation(selectedAlert)}</p>
-              <p>Reporter: {selectedAlert?.profiles?.full_name}</p>
-              <button 
-                onClick={() => setAlertDialogOpen(false)}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-              >
-                Close
-              </button>
-            </div>
+            {selectedAlert ? (
+              <div>
+                <h3>Alert ID: {selectedAlert.id}</h3>
+                <p>Status: {selectedAlert.status}</p>
+                <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
+                <p>Location: {formatLocation(selectedAlert)}</p>
+                <p>Reporter: {selectedAlert.profiles?.full_name || 'Unknown'}</p>
+                <button 
+                  onClick={() => setAlertDialogOpen(false)}
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <div>No alert selected</div>
+            )}
           </SimpleModal>
 
           {/* Emergency Alert Details Popup */}
