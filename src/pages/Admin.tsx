@@ -1,3 +1,4 @@
+import { SimpleModal } from '@/components/SimpleModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1443,21 +1444,26 @@ const Admin = () => {
             <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
           </div>
 
-          {/* Test if this appears when state is true */}
-          {alertDialogOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center">
-              <div className="bg-white p-4 rounded-lg max-w-md">
-                <h2>TEST MODAL - Alert Dialog Open!</h2>
-                <p>Alert ID: {selectedAlert?.id}</p>
-                <button 
-                  onClick={() => setAlertDialogOpen(false)}
-                  className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
-                >
-                  Close Test Modal
-                </button>
-              </div>
+          {/* Simple Modal Test */}
+          <SimpleModal
+            isOpen={alertDialogOpen}
+            onClose={() => setAlertDialogOpen(false)}
+            title="Emergency Alert Details"
+          >
+            <div>
+              <h3>Alert ID: {selectedAlert?.id}</h3>
+              <p>Status: {selectedAlert?.status}</p>
+              <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
+              <p>Location: {formatLocation(selectedAlert)}</p>
+              <p>Reporter: {selectedAlert?.profiles?.full_name}</p>
+              <button 
+                onClick={() => setAlertDialogOpen(false)}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Close
+              </button>
             </div>
-          )}
+          </SimpleModal>
 
           {/* Emergency Alert Details Popup */}
           <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={false} onOpenChange={(open) => {
