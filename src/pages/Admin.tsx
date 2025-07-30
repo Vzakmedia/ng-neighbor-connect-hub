@@ -1090,7 +1090,8 @@ const Admin = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground">Real-time neighborhood platform management</p>
@@ -3430,6 +3431,7 @@ const Admin = () => {
           <div>No alert selected</div>
         )}
       </SimpleModal>
+      </div>
     </div>
   );
 };
