@@ -198,17 +198,20 @@ const Admin = () => {
     console.log('Current alertDialogOpen state:', alertDialogOpen);
     console.log('Current selectedAlert:', selectedAlert);
     
-    setSelectedAlert(alert);
-    console.log('Set selectedAlert to:', alert.id);
+    // Force close any existing dialogs first
+    setAlertDialogOpen(false);
+    setEditAlertDialogOpen(false);
     
-    setAlertDialogOpen(true);
-    console.log('Set alertDialogOpen to true');
+    // Clear and set new state
+    setSelectedAlert(null);
     
-    // Force re-render
-    requestAnimationFrame(() => {
-      console.log('After frame - alertDialogOpen should be:', alertDialogOpen);
-      console.log('After frame - selectedAlert should be:', selectedAlert?.id);
-    });
+    // Use timeout to ensure clean state reset
+    setTimeout(() => {
+      setSelectedAlert(alert);
+      setAlertDialogOpen(true);
+      console.log('Set selectedAlert to:', alert.id);
+      console.log('Set alertDialogOpen to true');
+    }, 50);
     
     console.log('=== HANDLE VIEW ALERT END ===');
   };
@@ -219,19 +222,23 @@ const Admin = () => {
     console.log('Current editAlertDialogOpen state:', editAlertDialogOpen);
     console.log('Current selectedAlert:', selectedAlert);
     
-    setSelectedAlert(alert);
-    setEditingAlertStatus(alert.status);
-    console.log('Set selectedAlert to:', alert.id);
-    console.log('Set editingAlertStatus to:', alert.status);
+    // Force close any existing dialogs first
+    setAlertDialogOpen(false);
+    setEditAlertDialogOpen(false);
     
-    setEditAlertDialogOpen(true);
-    console.log('Set editAlertDialogOpen to true');
+    // Clear and set new state
+    setSelectedAlert(null);
+    setEditingAlertStatus('');
     
-    // Force re-render
-    requestAnimationFrame(() => {
-      console.log('After frame - editAlertDialogOpen should be:', editAlertDialogOpen);
-      console.log('After frame - selectedAlert should be:', selectedAlert?.id);
-    });
+    // Use timeout to ensure clean state reset
+    setTimeout(() => {
+      setSelectedAlert(alert);
+      setEditingAlertStatus(alert.status);
+      setEditAlertDialogOpen(true);
+      console.log('Set selectedAlert to:', alert.id);
+      console.log('Set editingAlertStatus to:', alert.status);
+      console.log('Set editAlertDialogOpen to true');
+    }, 50);
     
     console.log('=== HANDLE EDIT ALERT END ===');
   };
@@ -1467,7 +1474,7 @@ const Admin = () => {
             }
             console.log('=== END ALERT DIALOG OPEN CHANGE ===');
           }}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <AlertTriangle className="h-6 w-6 text-destructive" />
@@ -1701,7 +1708,7 @@ const Admin = () => {
               setEditingAlertStatus('');
             }
           }}>
-            <DialogContent className="max-w-md z-[100]" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogContent className="max-w-md fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
               <DialogHeader>
                 <DialogTitle>Edit Alert Status</DialogTitle>
                 <DialogDescription>
