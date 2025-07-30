@@ -196,9 +196,13 @@ const Admin = () => {
     console.log('=== HANDLE VIEW ALERT START ===');
     console.log('Button clicked for alert:', alert?.id);
     
-    // Simple state update
-    setSelectedAlert(alert);
-    setAlertDialogOpen(true);
+    // Force component re-render by using functional state updates
+    setSelectedAlert(() => alert);
+    setAlertDialogOpen(() => true);
+    
+    // Also trigger a forced re-render
+    setLoading(prev => !prev);
+    setTimeout(() => setLoading(prev => !prev), 1);
     
     console.log('State should now be: alertDialogOpen=true, selectedAlert=', alert?.id);
     console.log('=== HANDLE VIEW ALERT END ===');
@@ -208,10 +212,14 @@ const Admin = () => {
     console.log('=== HANDLE EDIT ALERT START ===');
     console.log('Button clicked for alert:', alert?.id);
     
-    // Simple state update
-    setSelectedAlert(alert);
-    setEditingAlertStatus(alert.status);
-    setEditAlertDialogOpen(true);
+    // Force component re-render by using functional state updates
+    setSelectedAlert(() => alert);
+    setEditingAlertStatus(() => alert.status);
+    setEditAlertDialogOpen(() => true);
+    
+    // Also trigger a forced re-render
+    setLoading(prev => !prev);
+    setTimeout(() => setLoading(prev => !prev), 1);
     
     console.log('State should now be: editAlertDialogOpen=true, selectedAlert=', alert?.id);
     console.log('=== HANDLE EDIT ALERT END ===');
