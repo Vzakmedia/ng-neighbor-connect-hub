@@ -628,10 +628,14 @@ const Admin = () => {
       if (!user) return;
       
       try {
-        const { data: userRole } = await supabase
+        console.log('Checking super admin status for user:', user.id);
+        const { data: userRole, error } = await supabase
           .rpc('get_user_staff_role', { _user_id: user.id });
           
-        setIsSuperAdmin(userRole === 'super_admin');
+        console.log('User role result:', userRole, 'Error:', error);
+        const isSuper = userRole === 'super_admin';
+        console.log('Setting isSuperAdmin to:', isSuper);
+        setIsSuperAdmin(isSuper);
       } catch (error) {
         console.error('Error checking admin status:', error);
       }
@@ -753,8 +757,12 @@ const Admin = () => {
   };
 
   const fetchMarketplaceItems = async () => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin) {
+      console.log('fetchMarketplaceItems: Not super admin, skipping');
+      return;
+    }
     
+    console.log('fetchMarketplaceItems: Starting fetch...');
     try {
       // Fetch marketplace items (goods) with fixed relationship
       const { data: items, error: itemsError } = await supabase
@@ -934,13 +942,17 @@ const Admin = () => {
 
   // Load all data when admin status is confirmed
   useEffect(() => {
+    console.log('Data loading effect triggered, isSuperAdmin:', isSuperAdmin);
     if (isSuperAdmin) {
+      console.log('Loading admin data...');
       fetchStats();
       fetchUsers();
       fetchEmergencyAlerts();
       fetchMarketplaceItems();
       fetchPromotions();
       fetchContentReports();
+    } else {
+      console.log('Not super admin, not loading data');
     }
   }, [isSuperAdmin]);
 
