@@ -664,8 +664,7 @@ const Admin = () => {
             email,
             avatar_url,
             phone,
-            neighborhood,
-            user_type
+            neighborhood
           )
         `)
         .order('created_at', { ascending: false });
@@ -680,8 +679,7 @@ const Admin = () => {
             email,
             avatar_url,
             phone,
-            neighborhood,
-            user_type
+            neighborhood
           )
         `)
         .order('created_at', { ascending: false });
