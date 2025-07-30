@@ -193,26 +193,47 @@ const Admin = () => {
   };
 
   const handleViewAlert = (alert: any) => {
-    console.log('Opening alert dialog for:', alert);
+    console.log('=== HANDLE VIEW ALERT START ===');
+    console.log('Alert object:', alert);
     console.log('Current alertDialogOpen state:', alertDialogOpen);
+    console.log('Current selectedAlert:', selectedAlert);
+    
     setSelectedAlert(alert);
-    // Use setTimeout to ensure state update happens after current render cycle
-    setTimeout(() => {
-      setAlertDialogOpen(true);
-      console.log('Set alertDialogOpen to true');
-    }, 0);
+    console.log('Set selectedAlert to:', alert.id);
+    
+    setAlertDialogOpen(true);
+    console.log('Set alertDialogOpen to true');
+    
+    // Force re-render
+    requestAnimationFrame(() => {
+      console.log('After frame - alertDialogOpen should be:', alertDialogOpen);
+      console.log('After frame - selectedAlert should be:', selectedAlert?.id);
+    });
+    
+    console.log('=== HANDLE VIEW ALERT END ===');
   };
 
   const handleEditAlert = (alert: any) => {
-    console.log('Opening edit alert dialog for:', alert);
+    console.log('=== HANDLE EDIT ALERT START ===');
+    console.log('Alert object:', alert);
     console.log('Current editAlertDialogOpen state:', editAlertDialogOpen);
+    console.log('Current selectedAlert:', selectedAlert);
+    
     setSelectedAlert(alert);
     setEditingAlertStatus(alert.status);
-    // Use setTimeout to ensure state update happens after current render cycle
-    setTimeout(() => {
-      setEditAlertDialogOpen(true);
-      console.log('Set editAlertDialogOpen to true');
-    }, 0);
+    console.log('Set selectedAlert to:', alert.id);
+    console.log('Set editingAlertStatus to:', alert.status);
+    
+    setEditAlertDialogOpen(true);
+    console.log('Set editAlertDialogOpen to true');
+    
+    // Force re-render
+    requestAnimationFrame(() => {
+      console.log('After frame - editAlertDialogOpen should be:', editAlertDialogOpen);
+      console.log('After frame - selectedAlert should be:', selectedAlert?.id);
+    });
+    
+    console.log('=== HANDLE EDIT ALERT END ===');
   };
 
   const handleSaveAlertStatus = async () => {
@@ -1424,13 +1445,27 @@ const Admin = () => {
             </DialogContent>
           </Dialog>
 
+          
+          {/* Debug Info - Remove after fixing */}
+          <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[9999] rounded" style={{ fontSize: '10px' }}>
+            <div>alertDialogOpen: {alertDialogOpen.toString()}</div>
+            <div>editAlertDialogOpen: {editAlertDialogOpen.toString()}</div>
+            <div>selectedAlert: {selectedAlert?.id || 'none'}</div>
+            <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
+          </div>
+
           {/* Emergency Alert Details Popup */}
-          <Dialog open={alertDialogOpen} onOpenChange={(open) => {
-            console.log('Alert dialog open change:', open);
+          <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={alertDialogOpen} onOpenChange={(open) => {
+            console.log('=== ALERT DIALOG OPEN CHANGE ===');
+            console.log('New open state:', open);
+            console.log('Current alertDialogOpen:', alertDialogOpen);
+            console.log('Current selectedAlert:', selectedAlert?.id);
             setAlertDialogOpen(open);
             if (!open) {
+              console.log('Closing dialog - clearing selectedAlert');
               setSelectedAlert(null);
             }
+            console.log('=== END ALERT DIALOG OPEN CHANGE ===');
           }}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
               <DialogHeader>
@@ -1658,7 +1693,7 @@ const Admin = () => {
           </Dialog>
 
           {/* Edit Alert Status Dialog */}
-          <Dialog open={editAlertDialogOpen} onOpenChange={(open) => {
+          <Dialog key={`edit-alert-dialog-${selectedAlert?.id || 'none'}`} open={editAlertDialogOpen} onOpenChange={(open) => {
             console.log('Edit alert dialog open change:', open);
             setEditAlertDialogOpen(open);
             if (!open) {
@@ -2131,7 +2166,14 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleViewAlert(alert)}
+                              onClick={(e) => {
+                                console.log('=== VIEW BUTTON CLICKED ===');
+                                console.log('Event:', e);
+                                console.log('Alert ID:', alert.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleViewAlert(alert);
+                              }}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -2139,7 +2181,14 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleEditAlert(alert)}
+                              onClick={(e) => {
+                                console.log('=== EDIT BUTTON CLICKED ===');
+                                console.log('Event:', e);
+                                console.log('Alert ID:', alert.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleEditAlert(alert);
+                              }}
                               title="Edit Status"
                             >
                               <Edit className="h-4 w-4" />
