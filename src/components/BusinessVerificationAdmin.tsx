@@ -68,7 +68,7 @@ const BusinessVerificationAdmin = () => {
         .from('businesses')
         .select(`
           *,
-          profiles!user_id (
+          profiles!businesses_user_id_fkey (
             full_name,
             avatar_url,
             phone,
