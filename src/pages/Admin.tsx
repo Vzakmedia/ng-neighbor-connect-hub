@@ -259,11 +259,13 @@ const Admin = () => {
   
   // Marketplace management handlers
   const handleViewMarketplaceItem = (item: any) => {
+    console.log('View marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
     setMarketplaceDialogOpen(true);
   };
 
   const handleEditMarketplaceItem = (item: any) => {
+    console.log('Edit marketplace item clicked:', item);
     setSelectedMarketplaceItem(item);
     setEditMarketplaceDialogOpen(true);
   };
@@ -747,12 +749,12 @@ const Admin = () => {
     if (!isSuperAdmin) return;
     
     try {
-      // Fetch marketplace items (goods)
+      // Fetch marketplace items (goods) with fixed relationship
       const { data: items, error: itemsError } = await supabase
         .from('marketplace_items')
         .select(`
           *,
-          profiles(
+          profiles!marketplace_items_user_id_fkey(
             full_name,
             email,
             avatar_url,
@@ -762,23 +764,32 @@ const Admin = () => {
         `)
         .order('created_at', { ascending: false });
 
-      // Fetch services
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select(`
-          *,
-          profiles(
-            full_name,
-            email,
-            avatar_url,
-            phone,
-            neighborhood
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // Check if services table exists and try to fetch services
+      let services = [];
+      try {
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select(`
+            *,
+            profiles!services_user_id_fkey(
+              full_name,
+              email,
+              avatar_url,
+              phone,
+              neighborhood
+            )
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (!servicesError) {
+          services = servicesData || [];
+        }
+      } catch (error) {
+        console.log('Services table not available or no relationship defined');
+      }
 
-      if (itemsError && servicesError) {
-        throw new Error('Failed to fetch marketplace data');
+      if (itemsError) {
+        throw itemsError;
       }
 
       // Enhance items with additional data
@@ -803,25 +814,38 @@ const Admin = () => {
         })
       );
 
-      // Enhance services with additional data
+      // Enhance services with additional data if available
       const enhancedServices = await Promise.all(
-        (services || []).map(async (service) => {
-          const { count: likesCount } = await supabase
-            .from('service_likes')
-            .select('*', { count: 'exact', head: true })
-            .eq('service_id', service.id);
+        services.map(async (service) => {
+          let likesCount = 0;
+          let bookingsCount = 0;
+          
+          try {
+            const { count: sLikes } = await supabase
+              .from('service_likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('service_id', service.id);
+            likesCount = sLikes || 0;
+          } catch (error) {
+            console.log('Service likes table not available');
+          }
 
-          const { count: bookingsCount } = await supabase
-            .from('service_bookings')
-            .select('*', { count: 'exact', head: true })
-            .eq('service_id', service.id);
+          try {
+            const { count: sBookings } = await supabase
+              .from('service_bookings')
+              .select('*', { count: 'exact', head: true })
+              .eq('service_id', service.id);
+            bookingsCount = sBookings || 0;
+          } catch (error) {
+            console.log('Service bookings table not available');
+          }
 
           return {
             ...service,
             type: 'services',
-            category: 'Service',
-            likes_count: likesCount || 0,
-            inquiries_count: bookingsCount || 0
+            category: service.category || 'Service',
+            likes_count: likesCount,
+            inquiries_count: bookingsCount
           };
         })
       );
@@ -846,20 +870,40 @@ const Admin = () => {
     if (!isSuperAdmin) return;
     
     try {
-      const { data: promoData, error } = await supabase
-        .from('promotions')
-        .select(`
-          *,
-          profiles(full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Try to fetch promotions with profiles relationship, fallback if it fails
+      let promoData = [];
+      try {
+        const { data, error } = await supabase
+          .from('promotions')
+          .select(`
+            *,
+            profiles!promotions_user_id_fkey(full_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(50);
 
-      if (error) throw error;
-      
-      setPromotions(promoData || []);
+        if (!error) {
+          promoData = data || [];
+        } else {
+          throw error;
+        }
+      } catch (error) {
+        console.log('Promotions with profiles relationship failed, trying without profiles:', error);
+        // Fallback to fetch without profiles relationship
+        const { data, error: fallbackError } = await supabase
+          .from('promotions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (fallbackError) throw fallbackError;
+        promoData = data || [];
+      }
+
+      setPromotions(promoData);
     } catch (error) {
       console.error('Error fetching promotions:', error);
+      // Don't show error toast for missing table/relationship
     }
   };
 
@@ -2046,7 +2090,7 @@ const Admin = () => {
 
           {/* Marketplace Item Details Dialog */}
           <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <ShoppingCart className="h-6 w-6 text-primary" />
@@ -2268,7 +2312,7 @@ const Admin = () => {
 
           {/* Edit Marketplace Item Dialog */}
           <Dialog open={editMarketplaceDialogOpen} onOpenChange={setEditMarketplaceDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999]" style={{ zIndex: 9999 }}>
               <DialogHeader>
                 <DialogTitle>Edit Marketplace Item</DialogTitle>
                 <DialogDescription>
@@ -2352,10 +2396,42 @@ const Admin = () => {
                       Cancel
                     </Button>
                     <Button 
-                      onClick={() => {
-                        // Handle save - this would need proper form handling
-                        toast({ title: "Item update functionality coming soon" });
-                        setEditMarketplaceDialogOpen(false);
+                      onClick={async () => {
+                        try {
+                          // Get form values
+                          const titleInput = document.getElementById('item-title') as HTMLInputElement;
+                          const priceInput = document.getElementById('item-price') as HTMLInputElement;
+                          const descriptionInput = document.getElementById('item-description') as HTMLTextAreaElement;
+                          
+                          const updates = {
+                            title: titleInput?.value || selectedMarketplaceItem.title,
+                            price: priceInput?.value ? parseInt(priceInput.value) : selectedMarketplaceItem.price,
+                            description: descriptionInput?.value || selectedMarketplaceItem.description,
+                            updated_at: new Date().toISOString()
+                          };
+
+                          const { error } = await supabase
+                            .from('marketplace_items')
+                            .update(updates)
+                            .eq('id', selectedMarketplaceItem.id);
+
+                          if (error) throw error;
+
+                          toast({ 
+                            title: "Success", 
+                            description: "Marketplace item updated successfully" 
+                          });
+                          
+                          setEditMarketplaceDialogOpen(false);
+                          fetchMarketplaceItems(); // Refresh the list
+                        } catch (error) {
+                          console.error('Error updating marketplace item:', error);
+                          toast({ 
+                            title: "Error", 
+                            description: "Failed to update marketplace item",
+                            variant: "destructive" 
+                          });
+                        }
                       }}
                     >
                       Save Changes
@@ -2668,7 +2744,12 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleViewMarketplaceItem(item)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('View Details button clicked for item:', item.id);
+                                handleViewMarketplaceItem(item);
+                              }}
                               title="View Details"
                             >
                               <Eye className="h-4 w-4" />
@@ -2676,7 +2757,12 @@ const Admin = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleEditMarketplaceItem(item)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Edit Item button clicked for item:', item.id);
+                                handleEditMarketplaceItem(item);
+                              }}
                               title="Edit Item"
                             >
                               <Edit className="h-4 w-4" />
