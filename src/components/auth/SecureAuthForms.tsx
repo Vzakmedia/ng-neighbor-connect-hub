@@ -66,13 +66,14 @@ export const SecureInput: React.FC<SecureInputProps> = ({
   );
 };
 
-// Enhanced password strength validation
+// Enhanced password strength validation with stronger requirements
 export const validatePasswordStrength = (password: string): { score: number; feedback: string[] } => {
   const feedback: string[] = [];
   let score = 0;
 
-  if (password.length >= 8) score += 1;
-  else feedback.push('At least 8 characters required');
+  // Minimum 12 characters (increased from 8)
+  if (password.length >= 12) score += 1;
+  else feedback.push('At least 12 characters required');
 
   if (/[a-z]/.test(password)) score += 1;
   else feedback.push('Include lowercase letters');
@@ -84,14 +85,29 @@ export const validatePasswordStrength = (password: string): { score: number; fee
   else feedback.push('Include numbers');
 
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
-  else feedback.push('Include special characters');
+  else feedback.push('Include special characters (!@#$%^&*)');
 
-  // Check against common weak passwords
-  const commonPasswords = ['password', '123456', 'password123', 'admin', 'qwerty'];
+  // Enhanced common password check
+  const commonPasswords = ['password', '123456', 'password123', 'admin', 'qwerty', 'letmein', 'welcome', 'login', 'abc123'];
   if (commonPasswords.some(weak => password.toLowerCase().includes(weak))) {
     score = Math.max(0, score - 2);
     feedback.push('Avoid common passwords');
   }
 
-  return { score, feedback };
+  // Check for repeating characters
+  if (/(.)\1{2,}/.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid repeating characters');
+  }
+
+  // Check for sequential characters
+  if (/(?:abc|bcd|cde|def|123|234|345|456|789)/i.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid sequential characters');
+  }
+
+  // Bonus for very long passwords
+  if (password.length >= 16) score += 1;
+
+  return { score: Math.min(score, 5), feedback };
 };

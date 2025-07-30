@@ -158,13 +158,14 @@ export const validateEmergencyLocation = (location: { lat: number; lng: number; 
   return true;
 };
 
-// Enhanced password strength validation
+// Enhanced password strength validation with enterprise-grade security
 export const validatePasswordStrength = (password: string): { score: number; feedback: string[] } => {
   const feedback: string[] = [];
   let score = 0;
 
-  if (password.length >= 8) score += 1;
-  else feedback.push('At least 8 characters required');
+  // Minimum 12 characters for better security
+  if (password.length >= 12) score += 1;
+  else feedback.push('At least 12 characters required');
 
   if (/[a-z]/.test(password)) score += 1;
   else feedback.push('Include lowercase letters');
@@ -176,16 +177,44 @@ export const validatePasswordStrength = (password: string): { score: number; fee
   else feedback.push('Include numbers');
 
   if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
-  else feedback.push('Include special characters');
+  else feedback.push('Include special characters (!@#$%^&*)');
 
-  // Check against common weak passwords
-  const commonPasswords = ['password', '123456', 'password123', 'admin', 'qwerty'];
+  // Comprehensive common password dictionary
+  const commonPasswords = [
+    'password', '123456', 'password123', 'admin', 'qwerty', 'letmein', 
+    'welcome', 'login', 'abc123', 'password1', '123456789', 'qwerty123',
+    'admin123', 'root', 'toor', 'pass', 'test', 'guest', 'user'
+  ];
+  
   if (commonPasswords.some(weak => password.toLowerCase().includes(weak))) {
     score = Math.max(0, score - 2);
-    feedback.push('Avoid common passwords');
+    feedback.push('Avoid common passwords and dictionary words');
   }
 
-  return { score, feedback };
+  // Check for character repetition (security weakness)
+  if (/(.)\1{2,}/.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid repeating characters (aaa, 111, etc.)');
+  }
+
+  // Check for sequential patterns (security weakness)
+  if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|123|234|345|456|567|678|789|890)/i.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid sequential characters (abc, 123, etc.)');
+  }
+
+  // Check for keyboard patterns
+  if (/(?:qwe|wer|ert|rty|tyu|yui|uio|iop|asd|sdf|dfg|fgh|ghj|hjk|jkl|zxc|xcv|cvb|vbn|bnm)/i.test(password)) {
+    score = Math.max(0, score - 1);
+    feedback.push('Avoid keyboard patterns (qwerty, asdf, etc.)');
+  }
+
+  // Bonus scoring for exceptional security
+  if (password.length >= 16) score += 1; // Very long password
+  if (password.length >= 20) score += 1; // Extremely long password
+  if (/[^\w\s!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1; // Unicode/extended characters
+
+  return { score: Math.min(score, 5), feedback };
 };
 
 // Content Security Policy headers (for future implementation)

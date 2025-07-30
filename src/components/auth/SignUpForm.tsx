@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import { LocationSelector } from "./LocationSelector";
+import { SecureInput } from "./SecureAuthForms";
+import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
 import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -46,10 +48,12 @@ export const SignUpForm = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
+    // Enhanced password validation
+    const passwordValidation = validatePasswordStrength(formData.password);
+    if (passwordValidation.score < 3) {
       toast({
-        title: "Password Too Short",
-        description: "Password must be at least 6 characters long.",
+        title: "Password Too Weak",
+        description: "Please choose a stronger password. " + passwordValidation.feedback.join(", "),
         variant: "destructive",
       });
       return;
@@ -187,6 +191,7 @@ export const SignUpForm = () => {
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </Button>
         </div>
+        <PasswordStrengthIndicator password={formData.password} />
       </div>
 
       <div className="space-y-2">
