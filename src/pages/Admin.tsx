@@ -194,52 +194,26 @@ const Admin = () => {
 
   const handleViewAlert = (alert: any) => {
     console.log('=== HANDLE VIEW ALERT START ===');
-    console.log('Alert object:', alert);
-    console.log('Current alertDialogOpen state:', alertDialogOpen);
-    console.log('Current selectedAlert:', selectedAlert);
+    console.log('Button clicked for alert:', alert?.id);
     
-    // Force close any existing dialogs first
-    setAlertDialogOpen(false);
-    setEditAlertDialogOpen(false);
+    // Simple state update
+    setSelectedAlert(alert);
+    setAlertDialogOpen(true);
     
-    // Clear and set new state
-    setSelectedAlert(null);
-    
-    // Use timeout to ensure clean state reset
-    setTimeout(() => {
-      setSelectedAlert(alert);
-      setAlertDialogOpen(true);
-      console.log('Set selectedAlert to:', alert.id);
-      console.log('Set alertDialogOpen to true');
-    }, 50);
-    
+    console.log('State should now be: alertDialogOpen=true, selectedAlert=', alert?.id);
     console.log('=== HANDLE VIEW ALERT END ===');
   };
 
   const handleEditAlert = (alert: any) => {
     console.log('=== HANDLE EDIT ALERT START ===');
-    console.log('Alert object:', alert);
-    console.log('Current editAlertDialogOpen state:', editAlertDialogOpen);
-    console.log('Current selectedAlert:', selectedAlert);
+    console.log('Button clicked for alert:', alert?.id);
     
-    // Force close any existing dialogs first
-    setAlertDialogOpen(false);
-    setEditAlertDialogOpen(false);
+    // Simple state update
+    setSelectedAlert(alert);
+    setEditingAlertStatus(alert.status);
+    setEditAlertDialogOpen(true);
     
-    // Clear and set new state
-    setSelectedAlert(null);
-    setEditingAlertStatus('');
-    
-    // Use timeout to ensure clean state reset
-    setTimeout(() => {
-      setSelectedAlert(alert);
-      setEditingAlertStatus(alert.status);
-      setEditAlertDialogOpen(true);
-      console.log('Set selectedAlert to:', alert.id);
-      console.log('Set editingAlertStatus to:', alert.status);
-      console.log('Set editAlertDialogOpen to true');
-    }, 50);
-    
+    console.log('State should now be: editAlertDialogOpen=true, selectedAlert=', alert?.id);
     console.log('=== HANDLE EDIT ALERT END ===');
   };
 
@@ -1461,8 +1435,24 @@ const Admin = () => {
             <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
           </div>
 
+          {/* Test if this appears when state is true */}
+          {alertDialogOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center">
+              <div className="bg-white p-4 rounded-lg max-w-md">
+                <h2>TEST MODAL - Alert Dialog Open!</h2>
+                <p>Alert ID: {selectedAlert?.id}</p>
+                <button 
+                  onClick={() => setAlertDialogOpen(false)}
+                  className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+                >
+                  Close Test Modal
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Emergency Alert Details Popup */}
-          <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={alertDialogOpen} onOpenChange={(open) => {
+          <Dialog key={`alert-dialog-${selectedAlert?.id || 'none'}`} open={false} onOpenChange={(open) => {
             console.log('=== ALERT DIALOG OPEN CHANGE ===');
             console.log('New open state:', open);
             console.log('Current alertDialogOpen:', alertDialogOpen);
