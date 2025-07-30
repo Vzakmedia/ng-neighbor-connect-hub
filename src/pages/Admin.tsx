@@ -226,7 +226,27 @@ const Admin = () => {
       });
       
       setEditAlertDialogOpen(false);
-      fetchEmergencyAlerts(); // Refresh the alerts list
+      
+      // Update local state immediately for real-time feel
+      setEmergencyAlerts(prev => prev.map(alert => 
+        alert.id === selectedAlert.id 
+          ? { 
+              ...alert, 
+              status: editingAlertStatus,
+              verified_at: editingAlertStatus === 'resolved' ? new Date().toISOString() : null,
+              verified_by: editingAlertStatus === 'resolved' ? user?.id : null
+            }
+          : alert
+      ));
+      
+      // Update selectedAlert for modal display
+      setSelectedAlert(prev => prev ? {
+        ...prev,
+        status: editingAlertStatus,
+        verified_at: editingAlertStatus === 'resolved' ? new Date().toISOString() : null,
+        verified_by: editingAlertStatus === 'resolved' ? user?.id : null
+      } : null);
+      
     } catch (error) {
       console.error('Error updating alert:', error);
       toast({
@@ -479,7 +499,18 @@ const Admin = () => {
         description: "Emergency alert has been marked as resolved",
       });
       
-      fetchEmergencyAlerts(); // Refresh the alerts list
+      // Update local state immediately
+      setEmergencyAlerts(prev => prev.map(a => 
+        a.id === alert.id 
+          ? { 
+              ...a, 
+              status: 'resolved',
+              verified_at: new Date().toISOString(),
+              verified_by: user?.id
+            }
+          : a
+      ));
+      
     } catch (error) {
       console.error('Error resolving alert:', error);
       toast({
@@ -510,7 +541,16 @@ const Admin = () => {
         description: "Emergency alert has been deleted",
       });
       
-      fetchEmergencyAlerts(); // Refresh the alerts list
+      // Update local state immediately
+      setEmergencyAlerts(prev => prev.filter(a => a.id !== alert.id));
+      
+      // Close modals if this alert was open
+      if (selectedAlert?.id === alert.id) {
+        setAlertDialogOpen(false);
+        setEditAlertDialogOpen(false);
+        setSelectedAlert(null);
+      }
+      
     } catch (error) {
       console.error('Error deleting alert:', error);
       toast({
@@ -853,12 +893,63 @@ const Admin = () => {
     }
   }, [isSuperAdmin]);
 
-  // Set up real-time subscriptions for marketplace
+  // Set up real-time subscriptions for emergency alerts
   useEffect(() => {
     if (!isSuperAdmin) return;
 
-    console.log('Setting up real-time subscriptions for admin marketplace...');
+    console.log('Setting up real-time subscriptions for emergency alerts...');
 
+    const alertsChannel = supabase
+      .channel('admin-emergency-alerts-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'safety_alerts' },
+        (payload) => {
+          console.log('Emergency alert change received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setEmergencyAlerts(prev => [payload.new as any, ...prev]);
+            
+            // Update stats
+            setStats(prev => ({ 
+              ...prev, 
+              emergencyAlerts: prev.emergencyAlerts + 1 
+            }));
+            
+            toast({
+              title: "New Emergency Alert",
+              description: `New ${getEmergencyTypeLabel(payload.new)} reported`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setEmergencyAlerts(prev => prev.map(alert => 
+              alert.id === payload.new.id ? payload.new as any : alert
+            ));
+            
+            // Update selected alert if it's currently open
+            setSelectedAlert(prev => 
+              prev?.id === payload.new.id ? payload.new as any : prev
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setEmergencyAlerts(prev => prev.filter(alert => alert.id !== payload.old.id));
+            
+            // Update stats
+            setStats(prev => ({ 
+              ...prev, 
+              emergencyAlerts: Math.max(0, prev.emergencyAlerts - 1) 
+            }));
+            
+            // Close modal if deleted alert was open
+            if (selectedAlert?.id === payload.old.id) {
+              setAlertDialogOpen(false);
+              setEditAlertDialogOpen(false);
+              setSelectedAlert(null);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscriptions for marketplace
     const marketplaceChannel = supabase
       .channel('admin-marketplace-changes')
       .on(
