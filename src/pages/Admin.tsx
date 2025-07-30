@@ -764,12 +764,12 @@ const Admin = () => {
     
     console.log('fetchMarketplaceItems: Starting fetch...');
     try {
-      // Fetch marketplace items (goods) with fixed relationship
+      // Fetch marketplace items (goods) with profiles
       const { data: items, error: itemsError } = await supabase
         .from('marketplace_items')
         .select(`
           *,
-          profiles!marketplace_items_user_id_fkey(
+          profiles(
             full_name,
             email,
             avatar_url,
@@ -779,6 +779,18 @@ const Admin = () => {
         `)
         .order('created_at', { ascending: false });
 
+      console.log('Marketplace items query result:', { items, itemsError });
+
+      if (itemsError) {
+        console.error('Error fetching marketplace items:', itemsError);
+        toast({
+          title: "Error",
+          description: `Failed to fetch marketplace items: ${itemsError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if services table exists and try to fetch services
       let services = [];
       try {
@@ -786,7 +798,7 @@ const Admin = () => {
           .from('services')
           .select(`
             *,
-            profiles!services_user_id_fkey(
+            profiles(
               full_name,
               email,
               avatar_url,
@@ -795,6 +807,8 @@ const Admin = () => {
             )
           `)
           .order('created_at', { ascending: false });
+        
+        console.log('Services query result:', { servicesData, servicesError });
         
         if (!servicesError) {
           services = servicesData || [];
@@ -2114,7 +2128,7 @@ const Admin = () => {
 
           {/* Marketplace Item Details Dialog */}
           <Dialog open={marketplaceDialogOpen} onOpenChange={setMarketplaceDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999] [&>*]:!duration-0 [&]:!duration-0" style={{ zIndex: 9999, animationDuration: '0ms', transitionDuration: '0ms' }}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&>*]:!duration-0 [&]:!duration-0" style={{ animationDuration: '0ms', transitionDuration: '0ms' }}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <ShoppingCart className="h-6 w-6 text-primary" />
@@ -2336,7 +2350,7 @@ const Admin = () => {
 
           {/* Edit Marketplace Item Dialog */}
           <Dialog open={editMarketplaceDialogOpen} onOpenChange={setEditMarketplaceDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto fixed inset-0 z-[9999] [&>*]:!duration-0 [&]:!duration-0" style={{ zIndex: 9999, animationDuration: '0ms', transitionDuration: '0ms' }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>*]:!duration-0 [&]:!duration-0" style={{ animationDuration: '0ms', transitionDuration: '0ms' }}>
               <DialogHeader>
                 <DialogTitle>Edit Marketplace Item</DialogTitle>
                 <DialogDescription>
