@@ -193,36 +193,47 @@ const Admin = () => {
     }
   };
 
+  // Add useEffect to watch state changes
+  useEffect(() => {
+    console.log('🔴 alertDialogOpen changed to:', alertDialogOpen);
+  }, [alertDialogOpen]);
+
+  useEffect(() => {
+    console.log('🔵 editAlertDialogOpen changed to:', editAlertDialogOpen);
+  }, [editAlertDialogOpen]);
+
+  useEffect(() => {
+    console.log('🟢 selectedAlert changed to:', selectedAlert?.id);
+  }, [selectedAlert]);
+
   const handleViewAlert = (alert: any) => {
     console.log('=== HANDLE VIEW ALERT START ===');
     console.log('Button clicked for alert:', alert?.id);
+    console.log('Before setState - alertDialogOpen:', alertDialogOpen);
+    console.log('Before setState - selectedAlert:', selectedAlert?.id);
     
-    // Force component re-render by using functional state updates
-    setSelectedAlert(() => alert);
-    setAlertDialogOpen(() => true);
+    // Try using a key to force component re-render
+    const timestamp = Date.now();
+    console.log('Setting timestamp key:', timestamp);
     
-    // Also trigger a forced re-render
-    setLoading(prev => !prev);
-    setTimeout(() => setLoading(prev => !prev), 1);
+    setSelectedAlert(alert);
+    setAlertDialogOpen(true);
     
-    console.log('State should now be: alertDialogOpen=true, selectedAlert=', alert?.id);
+    console.log('After setState calls');
     console.log('=== HANDLE VIEW ALERT END ===');
   };
 
   const handleEditAlert = (alert: any) => {
     console.log('=== HANDLE EDIT ALERT START ===');
     console.log('Button clicked for alert:', alert?.id);
+    console.log('Before setState - editAlertDialogOpen:', editAlertDialogOpen);
+    console.log('Before setState - selectedAlert:', selectedAlert?.id);
     
-    // Force component re-render by using functional state updates
-    setSelectedAlert(() => alert);
-    setEditingAlertStatus(() => alert.status);
-    setEditAlertDialogOpen(() => true);
+    setSelectedAlert(alert);
+    setEditingAlertStatus(alert.status);
+    setEditAlertDialogOpen(true);
     
-    // Also trigger a forced re-render
-    setLoading(prev => !prev);
-    setTimeout(() => setLoading(prev => !prev), 1);
-    
-    console.log('State should now be: editAlertDialogOpen=true, selectedAlert=', alert?.id);
+    console.log('After setState calls');
     console.log('=== HANDLE EDIT ALERT END ===');
   };
 
@@ -1441,12 +1452,14 @@ const Admin = () => {
           </Dialog>
 
           
-          {/* Debug Info - Remove after fixing */}
+          {/* Debug Info - Enhanced */}
           <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[9999] rounded" style={{ fontSize: '10px' }}>
             <div>alertDialogOpen: {alertDialogOpen.toString()}</div>
             <div>editAlertDialogOpen: {editAlertDialogOpen.toString()}</div>
             <div>selectedAlert: {selectedAlert?.id || 'none'}</div>
             <div>editingAlertStatus: {editingAlertStatus || 'none'}</div>
+            <div>Component renders: {Date.now()}</div>
+            <div>Modal should show: {(alertDialogOpen && selectedAlert) ? 'YES' : 'NO'}</div>
           </div>
 
           {/* Simple Modal Test */}
