@@ -196,8 +196,11 @@ const Admin = () => {
     console.log('Opening alert dialog for:', alert);
     console.log('Current alertDialogOpen state:', alertDialogOpen);
     setSelectedAlert(alert);
-    setAlertDialogOpen(true);
-    console.log('Set alertDialogOpen to true');
+    // Use setTimeout to ensure state update happens after current render cycle
+    setTimeout(() => {
+      setAlertDialogOpen(true);
+      console.log('Set alertDialogOpen to true');
+    }, 0);
   };
 
   const handleEditAlert = (alert: any) => {
@@ -205,8 +208,11 @@ const Admin = () => {
     console.log('Current editAlertDialogOpen state:', editAlertDialogOpen);
     setSelectedAlert(alert);
     setEditingAlertStatus(alert.status);
-    setEditAlertDialogOpen(true);
-    console.log('Set editAlertDialogOpen to true');
+    // Use setTimeout to ensure state update happens after current render cycle
+    setTimeout(() => {
+      setEditAlertDialogOpen(true);
+      console.log('Set editAlertDialogOpen to true');
+    }, 0);
   };
 
   const handleSaveAlertStatus = async () => {
@@ -1419,8 +1425,14 @@ const Admin = () => {
           </Dialog>
 
           {/* Emergency Alert Details Popup */}
-          <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <Dialog open={alertDialogOpen} onOpenChange={(open) => {
+            console.log('Alert dialog open change:', open);
+            setAlertDialogOpen(open);
+            if (!open) {
+              setSelectedAlert(null);
+            }
+          }}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <AlertTriangle className="h-6 w-6 text-destructive" />
@@ -1646,8 +1658,15 @@ const Admin = () => {
           </Dialog>
 
           {/* Edit Alert Status Dialog */}
-          <Dialog open={editAlertDialogOpen} onOpenChange={setEditAlertDialogOpen}>
-            <DialogContent className="max-w-md z-[100]">
+          <Dialog open={editAlertDialogOpen} onOpenChange={(open) => {
+            console.log('Edit alert dialog open change:', open);
+            setEditAlertDialogOpen(open);
+            if (!open) {
+              setSelectedAlert(null);
+              setEditingAlertStatus('');
+            }
+          }}>
+            <DialogContent className="max-w-md z-[100]" onPointerDownOutside={(e) => e.preventDefault()}>
               <DialogHeader>
                 <DialogTitle>Edit Alert Status</DialogTitle>
                 <DialogDescription>
