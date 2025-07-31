@@ -68,7 +68,7 @@ export default function ContentModerationPanel() {
         .from('services')
         .select(`
           *,
-          profiles:user_id (
+          profiles!services_user_id_fkey (
             full_name,
             phone
           )
@@ -76,14 +76,27 @@ export default function ContentModerationPanel() {
         .eq('approval_status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (servicesError) throw servicesError;
+      if (servicesError) {
+        console.error('Services error:', servicesError);
+        // Fallback: fetch services without profiles join
+        const { data: servicesOnly, error: fallbackError } = await supabase
+          .from('services')
+          .select('*')
+          .eq('approval_status', 'pending')
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) throw fallbackError;
+        setPendingServices(servicesOnly || []);
+      } else {
+        setPendingServices(services as any || []);
+      }
 
       // Fetch pending marketplace items
       const { data: items, error: itemsError } = await supabase
         .from('marketplace_items')
         .select(`
           *,
-          profiles:user_id (
+          profiles!marketplace_items_user_id_fkey (
             full_name,
             phone
           )
@@ -91,10 +104,20 @@ export default function ContentModerationPanel() {
         .eq('approval_status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (itemsError) throw itemsError;
-
-      setPendingServices(services as any || []);
-      setPendingItems(items as any || []);
+      if (itemsError) {
+        console.error('Items error:', itemsError);
+        // Fallback: fetch items without profiles join
+        const { data: itemsOnly, error: fallbackError } = await supabase
+          .from('marketplace_items')
+          .select('*')
+          .eq('approval_status', 'pending')
+          .order('created_at', { ascending: false });
+        
+        if (fallbackError) throw fallbackError;
+        setPendingItems(itemsOnly || []);
+      } else {
+        setPendingItems(items as any || []);
+      }
     } catch (error) {
       console.error('Error fetching pending content:', error);
       toast({
