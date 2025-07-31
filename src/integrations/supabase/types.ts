@@ -2676,23 +2676,21 @@ export type Database = {
           expires_at: string
           id: string
           invitation_code: string
-          invited_by: string
-          invited_role: Database["public"]["Enums"]["app_role"]
-          is_active: boolean
-          updated_at: string
+          role: string
+          status: string
           used_at: string | null
+          used_by: string | null
         }
         Insert: {
           created_at?: string
           email: string
           expires_at?: string
           id?: string
-          invitation_code: string
-          invited_by: string
-          invited_role: Database["public"]["Enums"]["app_role"]
-          is_active?: boolean
-          updated_at?: string
+          invitation_code?: string
+          role: string
+          status?: string
           used_at?: string | null
+          used_by?: string | null
         }
         Update: {
           created_at?: string
@@ -2700,11 +2698,10 @@ export type Database = {
           expires_at?: string
           id?: string
           invitation_code?: string
-          invited_by?: string
-          invited_role?: Database["public"]["Enums"]["app_role"]
-          is_active?: boolean
-          updated_at?: string
+          role?: string
+          status?: string
           used_at?: string | null
+          used_by?: string | null
         }
         Relationships: []
       }
@@ -2858,7 +2855,9 @@ export type Database = {
     }
     Functions: {
       accept_staff_invitation: {
-        Args: { _invitation_code: string; _user_id: string }
+        Args:
+          | { _invitation_code: string; _user_id: string }
+          | { invitation_code: string; user_email: string }
         Returns: boolean
       }
       approve_marketplace_item: {
@@ -2882,11 +2881,13 @@ export type Database = {
         Returns: number
       }
       create_staff_invitation: {
-        Args: {
-          _email: string
-          _role: Database["public"]["Enums"]["app_role"]
-          _invited_by: string
-        }
+        Args:
+          | {
+              _email: string
+              _role: Database["public"]["Enums"]["app_role"]
+              _invited_by: string
+            }
+          | { invitation_email: string; invitation_role: string }
         Returns: string
       }
       generate_board_invite_code: {
