@@ -31,6 +31,7 @@ import ModeratorDashboard from "./pages/ModeratorDashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import SupportDashboard from "./pages/SupportDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
+import StaffNavigation from "./components/StaffNavigation";
 import StaffLogin from "./pages/StaffLogin";
 
 const queryClient = new QueryClient({
@@ -77,7 +78,7 @@ const App = () => {
           <Route path="/moderator" element={<ModeratorDashboard />} />
           <Route path="/manager" element={<ManagerDashboard />} />
           <Route path="/support" element={<SupportDashboard />} />
-          <Route path="/staff" element={<StaffDashboard />} />
+          <Route path="/staff" element={<StaffNavigation />} />
           <Route path="/business" element={<Business />} />
           <Route path="/staff-login" element={<StaffLogin />} />
             </Routes>

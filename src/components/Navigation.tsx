@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import CreatePostDialog from './CreatePostDialog';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useReadStatus } from '@/hooks/useReadStatus';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Home, 
   MessageSquare, 
@@ -15,15 +17,39 @@ import {
   Calendar,
   Users,
   Building,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 
 const Navigation = () => {
   const { unreadCounts } = useReadStatus();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [hasStaffRole, setHasStaffRole] = useState(false);
   const unreadMessagesCount = useUnreadMessages();
+
+  useEffect(() => {
+    const checkStaffRole = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .in('role', ['super_admin', 'moderator', 'manager', 'support', 'staff'])
+          .single();
+        
+        setHasStaffRole(!!data?.role);
+      } catch (error) {
+        setHasStaffRole(false);
+      }
+    };
+    
+    checkStaffRole();
+  }, [user]);
   
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
@@ -86,9 +112,29 @@ const Navigation = () => {
                     </Badge>
                   )}
                 </button>
-              );
-            })}
-          </nav>
+                );
+              })}
+              
+              {/* Staff Portal Link for staff users */}
+              {hasStaffRole && (
+                <>
+                  <div className="px-3 py-2">
+                    <div className="border-t border-muted" />
+                  </div>
+                  <button
+                    onClick={() => navigate('/staff')}
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      location.pathname === '/staff'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Settings className="mr-3 h-5 w-5" />
+                    <span className="flex-1 text-left">Staff Portal</span>
+                  </button>
+                </>
+              )}
+            </nav>
         </div>
       </aside>
 
@@ -159,6 +205,16 @@ const Navigation = () => {
                   );
                 })}
                 <DropdownMenuSeparator />
+                {/* Staff Portal for mobile */}
+                {hasStaffRole && (
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/staff')}
+                    className="flex items-center py-3"
+                  >
+                    <Settings className="mr-3 h-4 w-4" />
+                    <span>Staff Portal</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem 
                   onClick={() => setCreatePostOpen(true)}
                   className="flex items-center py-3 text-primary"

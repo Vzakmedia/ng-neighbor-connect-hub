@@ -58,10 +58,7 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  // If user has staff role, show staff navigation instead of regular dashboard
-  if (userRole && ['super_admin', 'moderator', 'manager', 'support', 'staff'].includes(userRole)) {
-    return <StaffNavigation />;
-  }
+  // Always show the regular dashboard - staff can access staff portal via navigation
 
   return (
     <div className="min-h-screen bg-background">
