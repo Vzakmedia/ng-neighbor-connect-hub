@@ -12,7 +12,8 @@ import {
   FileText,
   AlertCircle,
   Settings,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -152,9 +153,19 @@ const StaffNavigation = () => {
             <h1 className="text-3xl font-bold">Staff Dashboard Portal</h1>
             <p className="text-muted-foreground">Access your role-specific management tools</p>
           </div>
-          <Badge variant={roleDisplay.color as any} className="text-sm">
-            {roleDisplay.label}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/landing')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Main Site
+            </Button>
+            <Badge variant={roleDisplay.color as any} className="text-sm">
+              {roleDisplay.label}
+            </Badge>
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">
