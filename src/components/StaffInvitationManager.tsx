@@ -15,11 +15,12 @@ import { Copy, Plus, Users, Clock, CheckCircle, XCircle } from "lucide-react";
 interface StaffInvitation {
   id: string;
   email: string;
-  invited_role: string;
+  role: string;
   invitation_code: string;
+  status: string;
   expires_at: string;
   used_at: string | null;
-  is_active: boolean;
+  used_by: string | null;
   created_at: string;
 }
 
@@ -132,7 +133,7 @@ const StaffInvitationManager = () => {
     try {
       const { error } = await supabase
         .from('staff_invitations')
-        .update({ is_active: false })
+        .update({ status: 'inactive' })
         .eq('id', id);
 
       if (error) throw error;
@@ -157,7 +158,7 @@ const StaffInvitationManager = () => {
     if (invitation.used_at) {
       return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Used</Badge>;
     }
-    if (!invitation.is_active) {
+    if (invitation.status === 'inactive') {
       return <Badge variant="secondary"><XCircle className="h-3 w-3 mr-1" />Inactive</Badge>;
     }
     if (new Date(invitation.expires_at) < new Date()) {
@@ -269,7 +270,7 @@ const StaffInvitationManager = () => {
                 <TableCell className="font-medium">{invitation.email}</TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {roles.find(r => r.value === invitation.invited_role)?.label || invitation.invited_role}
+                    {roles.find(r => r.value === invitation.role)?.label || invitation.role}
                   </Badge>
                 </TableCell>
                 <TableCell>{getStatusBadge(invitation)}</TableCell>
@@ -277,7 +278,7 @@ const StaffInvitationManager = () => {
                 <TableCell>{new Date(invitation.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
-                    {invitation.is_active && !invitation.used_at && (
+                    {invitation.status === 'pending' && !invitation.used_at && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -286,7 +287,7 @@ const StaffInvitationManager = () => {
                         <Copy className="h-4 w-4" />
                       </Button>
                     )}
-                    {invitation.is_active && !invitation.used_at && (
+                    {invitation.status === 'pending' && !invitation.used_at && (
                       <Button
                         variant="outline"
                         size="sm"

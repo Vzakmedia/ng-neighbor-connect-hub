@@ -66,15 +66,7 @@ const BusinessVerificationAdmin = () => {
     try {
       const { data, error } = await supabase
         .from('businesses')
-        .select(`
-          *,
-          profiles!businesses_user_id_fkey (
-            full_name,
-            avatar_url,
-            phone,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -86,7 +78,7 @@ const BusinessVerificationAdmin = () => {
             .from('profiles')
             .select('full_name, avatar_url, phone, email')
             .eq('user_id', application.user_id)
-            .single();
+            .maybeSingle();
 
           return {
             ...application,

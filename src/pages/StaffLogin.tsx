@@ -14,10 +14,10 @@ import { Shield, Users, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from
 interface InvitationInfo {
   id: string;
   email: string;
-  invited_role: string;
+  role: string;
   invitation_code: string;
   expires_at: string;
-  is_active: boolean;
+  status: string;
 }
 
 const StaffLogin = () => {
@@ -65,10 +65,10 @@ const StaffLogin = () => {
         .from('staff_invitations')
         .select('*')
         .eq('invitation_code', code)
-        .eq('is_active', true)
+        .eq('status', 'pending')
         .is('used_at', null)
         .gt('expires_at', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         toast({
@@ -158,7 +158,7 @@ const StaffLogin = () => {
 
           toast({
             title: "Account Created!",
-            description: `Welcome to the staff team! You've been assigned the ${invitationInfo.invited_role} role.`
+            description: `Welcome to the staff team! You've been assigned the ${invitationInfo.role} role.`
           });
         }
       }
@@ -209,14 +209,14 @@ const StaffLogin = () => {
                   <p className="text-sm font-medium text-green-800 dark:text-green-200">
                     Valid Staff Invitation
                   </p>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    You're invited to join as a <Badge variant="outline" className="ml-1">
-                      {getRoleDetails(invitationInfo.invited_role).label}
-                    </Badge>
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    {getRoleDetails(invitationInfo.invited_role).description}
-                  </p>
+                   <p className="text-sm text-green-700 dark:text-green-300">
+                     You're invited to join as a <Badge variant="outline" className="ml-1">
+                       {getRoleDetails(invitationInfo.role).label}
+                     </Badge>
+                   </p>
+                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                     {getRoleDetails(invitationInfo.role).description}
+                   </p>
                 </div>
               </div>
             </CardContent>
