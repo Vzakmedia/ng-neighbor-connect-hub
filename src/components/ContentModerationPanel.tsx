@@ -14,8 +14,9 @@ interface PendingService {
   id: string;
   title: string;
   description: string;
-  base_price?: number;
-  hourly_rate?: number;
+  price_min?: number;
+  price_max?: number;
+  price_type?: string;
   category: string;
   location: string;
   images: string[];
@@ -187,6 +188,22 @@ export default function ContentModerationPanel() {
     );
   };
 
+  const formatServicePrice = (service: PendingService) => {
+    if (service.price_min && service.price_max) {
+      if (service.price_min === service.price_max) {
+        return formatPrice(service.price_min);
+      }
+      return `${formatPrice(service.price_min)} - ${formatPrice(service.price_max)}`;
+    }
+    if (service.price_min) {
+      return `From ${formatPrice(service.price_min)}`;
+    }
+    if (service.price_max) {
+      return `Up to ${formatPrice(service.price_max)}`;
+    }
+    return 'Price on request';
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -272,8 +289,7 @@ export default function ContentModerationPanel() {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-primary">
-                {service.base_price ? formatPrice(service.base_price) : 
-                 service.hourly_rate ? `${formatPrice(service.hourly_rate)}/hour` : 'Price TBD'}
+                {formatServicePrice(service)}
               </span>
               <Badge variant="outline" className="ml-2">{service.category}</Badge>
             </div>
