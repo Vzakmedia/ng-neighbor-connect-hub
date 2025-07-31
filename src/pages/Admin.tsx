@@ -127,24 +127,44 @@ const Admin = () => {
 
   const handleToggleVerification = async (user: any) => {
     try {
-      const { error } = await supabase
+      console.log('Toggling verification for user:', user.user_id, 'Current status:', user.is_verified);
+      
+      const newVerificationStatus = !user.is_verified;
+      
+      const { data, error } = await supabase
         .from('profiles')
-        .update({ is_verified: !user.is_verified })
-        .eq('user_id', user.user_id);
+        .update({ is_verified: newVerificationStatus })
+        .eq('user_id', user.user_id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Verification update successful:', data);
 
       toast({
         title: "Verification Updated",
-        description: `User ${user.is_verified ? 'unverified' : 'verified'} successfully`,
+        description: `User ${newVerificationStatus ? 'verified' : 'unverified'} successfully`,
       });
       
-      fetchUsers(); // Refresh the user list
+      // Update local state immediately for better UX
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.user_id === user.user_id 
+            ? { ...u, is_verified: newVerificationStatus }
+            : u
+        )
+      );
+      
+      // Also refresh from server
+      fetchUsers();
     } catch (error) {
       console.error('Error updating verification:', error);
       toast({
         title: "Error",
-        description: "Failed to update verification status",
+        description: `Failed to update verification status: ${error.message}`,
         variant: "destructive",
       });
     }
