@@ -82,14 +82,15 @@ type FeedItem = Post;
 
 interface CommunityFeedProps {
   activeTab?: string;
+  viewScope?: 'neighborhood' | 'state';
 }
 
 type ViewScope = 'neighborhood' | 'state';
 
-const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
+const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewScope, setViewScope] = useState<ViewScope>('neighborhood');
+  const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
@@ -263,6 +264,12 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
 
     checkReadStatuses();
   }, [posts, user, checkIfPostIsRead]);
+
+  useEffect(() => {
+    if (propViewScope) {
+      setViewScope(propViewScope);
+    }
+  }, [propViewScope]);
 
   useEffect(() => {
     fetchPosts();
@@ -612,62 +619,64 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         </div>
       </div>
 
-      {/* View Scope Toggle */}
-      <div className="bg-card p-3 md:p-4 rounded-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium hidden md:inline">Viewing posts from:</span>
-            <span className="text-xs font-medium md:hidden">View:</span>
-          </div>
-          <div className="flex items-center gap-1 w-full sm:w-auto justify-center md:justify-end">
-            <Button
-              variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('neighborhood')}
-              className={`transition-all duration-300 ease-in-out text-xs ${
-                viewScope === 'neighborhood' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
-              }`}
-            >
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              {viewScope === 'neighborhood' && (
-                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
-                  <span className="hidden xs:inline">My </span>Neighborhood
-                </span>
-              )}
-              <span className="hidden md:inline">
-                {viewScope !== 'neighborhood' && (
-                  <>
+      {/* View Scope Toggle - only show if not controlled by parent */}
+      {!propViewScope && (
+        <div className="bg-card p-3 md:p-4 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium hidden md:inline">Viewing posts from:</span>
+              <span className="text-xs font-medium md:hidden">View:</span>
+            </div>
+            <div className="flex items-center gap-1 w-full sm:w-auto justify-center md:justify-end">
+              <Button
+                variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewScope('neighborhood')}
+                className={`transition-all duration-300 ease-in-out text-xs ${
+                  viewScope === 'neighborhood' 
+                    ? 'px-3 flex items-center gap-2 min-w-fit' 
+                    : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
+                }`}
+              >
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                {viewScope === 'neighborhood' && (
+                  <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
                     <span className="hidden xs:inline">My </span>Neighborhood
-                  </>
+                  </span>
                 )}
-              </span>
-            </Button>
-            <Button
-              variant={viewScope === 'state' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('state')}
-              className={`transition-all duration-300 ease-in-out text-xs ${
-                viewScope === 'state' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
-              }`}
-            >
-              <Globe className="h-3 w-3 flex-shrink-0" />
-              {viewScope === 'state' && (
-                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
-                  Entire State
+                <span className="hidden md:inline">
+                  {viewScope !== 'neighborhood' && (
+                    <>
+                      <span className="hidden xs:inline">My </span>Neighborhood
+                    </>
+                  )}
                 </span>
-              )}
-              <span className="hidden md:inline">
-                {viewScope !== 'state' && 'Entire State'}
-              </span>
-            </Button>
+              </Button>
+              <Button
+                variant={viewScope === 'state' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewScope('state')}
+                className={`transition-all duration-300 ease-in-out text-xs ${
+                  viewScope === 'state' 
+                    ? 'px-3 flex items-center gap-2 min-w-fit' 
+                    : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
+                }`}
+              >
+                <Globe className="h-3 w-3 flex-shrink-0" />
+                {viewScope === 'state' && (
+                  <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
+                    Entire State
+                  </span>
+                )}
+                <span className="hidden md:inline">
+                  {viewScope !== 'state' && 'Entire State'}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Read Status Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">

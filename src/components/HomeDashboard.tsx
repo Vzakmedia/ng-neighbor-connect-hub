@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
   Calendar,
   ShoppingBag,
   AlertTriangle,
@@ -17,7 +23,10 @@ import {
   MessageSquare,
   Home,
   Activity,
-  Settings
+  Settings,
+  ChevronDown,
+  Globe,
+  Filter
 } from 'lucide-react';
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
@@ -38,6 +47,7 @@ const HomeDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
   const dashboardStats = useDashboardStats();
   const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(3);
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
@@ -150,6 +160,7 @@ const HomeDashboard = () => {
                 <CardHeader className="pb-3">
                   <div className="space-y-3 md:space-y-0 md:flex md:items-center md:justify-between">
                     <CardTitle className="text-lg md:text-xl">Community Updates</CardTitle>
+                    
                     {/* Desktop filter buttons */}
                     <div className="hidden md:flex space-x-2">
                       {['all', 'safety', 'events', 'marketplace'].map((tab) => (
@@ -164,10 +175,81 @@ const HomeDashboard = () => {
                         </Button>
                       ))}
                     </div>
+
+                    {/* Mobile filter dropdowns */}
+                    <div className="md:hidden flex items-center justify-between gap-2 w-full">
+                      {/* Post Type Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1 justify-between">
+                            <span className="capitalize text-xs">{activeTab === 'all' ? 'All Posts' : activeTab}</span>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[160px]">
+                          {[
+                            { key: 'all', label: 'All Posts', icon: Users },
+                            { key: 'safety', label: 'Safety', icon: AlertTriangle },
+                            { key: 'events', label: 'Events', icon: Calendar },
+                            { key: 'marketplace', label: 'Marketplace', icon: ShoppingBag }
+                          ].map((filter) => {
+                            const Icon = filter.icon;
+                            return (
+                              <DropdownMenuItem
+                                key={filter.key}
+                                onClick={() => setActiveTab(filter.key)}
+                                className="flex items-center gap-2 text-xs"
+                              >
+                                <Icon className="h-3 w-3" />
+                                {filter.label}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* View Scope Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1 justify-between">
+                            <span className="text-xs flex items-center gap-1">
+                              {viewScope === 'neighborhood' ? (
+                                <>
+                                  <MapPin className="h-3 w-3" />
+                                  Neighborhood
+                                </>
+                              ) : (
+                                <>
+                                  <Globe className="h-3 w-3" />
+                                  Entire State
+                                </>
+                              )}
+                            </span>
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[140px]">
+                          <DropdownMenuItem
+                            onClick={() => setViewScope('neighborhood')}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <MapPin className="h-3 w-3" />
+                            Neighborhood
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setViewScope('state')}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <Globe className="h-3 w-3" />
+                            Entire State
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6">
-                  <CommunityFeed activeTab={activeTab} />
+                  <CommunityFeed activeTab={activeTab} viewScope={viewScope} />
                 </CardContent>
               </Card>
             </div>
