@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Star, MessageCircle, Search, Filter } from 'lucide-react';
+import { MapPin, Star, MessageCircle, Search, Filter, Wrench, Package } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 import BookServiceDialog from './BookServiceDialog';
 import RatingDialog from './RatingDialog';
@@ -243,10 +243,31 @@ const CommunityServices = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        {/* Desktop tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-2">
           <TabsTrigger value="services">Services ({filteredServices.length})</TabsTrigger>
           <TabsTrigger value="goods">Goods ({filteredItems.length})</TabsTrigger>
         </TabsList>
+        
+        {/* Mobile tabs - responsive filter buttons */}
+        <div className="md:hidden w-full mb-4">
+          <div className="flex justify-center gap-1 w-full">
+            <TabsTrigger 
+              value="services" 
+              className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Wrench className="h-3 w-3 mr-1" />
+              Services
+            </TabsTrigger>
+            <TabsTrigger 
+              value="goods"
+              className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <Package className="h-3 w-3 mr-1" />
+              Goods
+            </TabsTrigger>
+          </div>
+        </div>
 
         <TabsContent value="services" className="space-y-4 mt-6">
           {filteredServices.length === 0 ? (

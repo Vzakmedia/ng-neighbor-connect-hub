@@ -9,7 +9,7 @@ import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from "@/hooks/useAuth";
-import { Megaphone, Plus } from 'lucide-react';
+import { Megaphone, Plus, MessageCircle, Users } from 'lucide-react';
 
 const Community = () => {
   const { user, loading } = useAuth();
@@ -59,10 +59,31 @@ const Community = () => {
           <PaymentStatusHandler />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            {/* Desktop tabs */}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
               <TabsTrigger value="feed">Community Feed</TabsTrigger>
               <TabsTrigger value="boards">Discussion Boards</TabsTrigger>
             </TabsList>
+            
+            {/* Mobile tabs - responsive filter buttons */}
+            <div className="md:hidden w-full mb-4">
+              <div className="flex justify-center gap-1 w-full">
+                <TabsTrigger 
+                  value="feed" 
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <MessageCircle className="h-3 w-3 mr-1" />
+                  Feed
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="boards"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Users className="h-3 w-3 mr-1" />
+                  Boards
+                </TabsTrigger>
+              </div>
+            </div>
             
             <TabsContent value="feed" className="mt-6">
               <CommunityFeed />

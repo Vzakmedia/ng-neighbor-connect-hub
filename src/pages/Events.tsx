@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, Users } from 'lucide-react';
 import EventFeed from '@/components/EventFeed';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import MyEventsPanel from '@/components/MyEventsPanel';
@@ -50,10 +50,31 @@ const Events = () => {
           </div>
           
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            {/* Desktop tabs */}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
               <TabsTrigger value="all">All Events</TabsTrigger>
               <TabsTrigger value="my-events">My Events</TabsTrigger>
             </TabsList>
+            
+            {/* Mobile tabs - responsive filter buttons */}
+            <div className="md:hidden w-full mb-4">
+              <div className="flex justify-center gap-1 w-full">
+                <TabsTrigger 
+                  value="all" 
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Calendar className="h-3 w-3 mr-1" />
+                  All Events
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="my-events"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <Users className="h-3 w-3 mr-1" />
+                  My Events
+                </TabsTrigger>
+              </div>
+            </div>
             
             <TabsContent value="all">
               <EventFeed key={refreshKey} />

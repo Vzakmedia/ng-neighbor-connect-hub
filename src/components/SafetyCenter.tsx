@@ -22,7 +22,8 @@ import {
   Zap,
   Settings,
   Bell,
-  RefreshCw
+  RefreshCw,
+  List
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -474,34 +475,61 @@ const SafetyCenter = () => {
           </Button>
         </div>
         
-        {/* Mobile compact view buttons */}
-        <div className="md:hidden grid grid-cols-3 gap-1 w-full">
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            onClick={() => setViewMode('list')}
-            size="sm"
-            className="text-xs"
-          >
-            List
-          </Button>
-          <Button
-            variant={viewMode === 'map' ? 'default' : 'outline'}
-            onClick={() => setViewMode('map')}
-            size="sm"
-            className="text-xs flex items-center justify-center gap-1"
-          >
-            <MapPin className="h-3 w-3" />
-            Map
-          </Button>
-          <Button
-            variant={viewMode === 'feed' ? 'default' : 'outline'}
-            onClick={() => setViewMode('feed')}
-            size="sm"
-            className="text-xs flex items-center justify-center gap-1"
-          >
-            <Activity className="h-3 w-3" />
-            Feed
-          </Button>
+        {/* Mobile filter buttons - icons only, expand when active */}
+        <div className="md:hidden w-full">
+          <div className="flex justify-center gap-1 w-full">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              onClick={() => setViewMode('list')}
+              size="sm"
+              className={`transition-all duration-300 ease-in-out text-xs ${
+                viewMode === 'list' 
+                  ? 'px-3 flex items-center gap-2 min-w-fit' 
+                  : 'px-0 w-8 h-8 justify-center'
+              }`}
+            >
+              <List className="h-3 w-3 flex-shrink-0" />
+              {viewMode === 'list' && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                  List
+                </span>
+              )}
+            </Button>
+            <Button
+              variant={viewMode === 'map' ? 'default' : 'outline'}
+              onClick={() => setViewMode('map')}
+              size="sm"
+              className={`transition-all duration-300 ease-in-out text-xs ${
+                viewMode === 'map' 
+                  ? 'px-3 flex items-center gap-2 min-w-fit' 
+                  : 'px-0 w-8 h-8 justify-center'
+              }`}
+            >
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              {viewMode === 'map' && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                  Map
+                </span>
+              )}
+            </Button>
+            <Button
+              variant={viewMode === 'feed' ? 'default' : 'outline'}
+              onClick={() => setViewMode('feed')}
+              size="sm"
+              className={`transition-all duration-300 ease-in-out text-xs ${
+                viewMode === 'feed' 
+                  ? 'px-3 flex items-center gap-2 min-w-fit' 
+                  : 'px-0 w-8 h-8 justify-center'
+              }`}
+            >
+              <Activity className="h-3 w-3 flex-shrink-0" />
+              {viewMode === 'feed' && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                  Feed
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -627,7 +655,8 @@ const SafetyCenter = () => {
       ) : (
         /* Tabbed Alert Views */
         <Tabs defaultValue="safety-alerts" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          {/* Desktop tabs */}
+          <TabsList className="hidden md:grid w-full grid-cols-2">
             <TabsTrigger value="safety-alerts" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Safety Alerts ({alerts.length})
@@ -637,6 +666,26 @@ const SafetyCenter = () => {
               Panic Alerts ({panicAlerts.length})
             </TabsTrigger>
           </TabsList>
+          
+          {/* Mobile tabs - responsive filter buttons */}
+          <div className="md:hidden w-full mb-4">
+            <div className="flex justify-center gap-1 w-full">
+              <TabsTrigger 
+                value="safety-alerts" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Shield className="h-3 w-3 mr-1" />
+                Safety
+              </TabsTrigger>
+              <TabsTrigger 
+                value="panic-alerts"
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Panic
+              </TabsTrigger>
+            </div>
+          </div>
           
           <TabsContent value="safety-alerts" className="space-y-4 mt-6">
             {loading ? (

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogIn, UserPlus } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
@@ -21,10 +22,31 @@ export const AuthPage = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            {/* Desktop tabs */}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
+            
+            {/* Mobile tabs - responsive filter buttons */}
+            <div className="md:hidden w-full mb-4">
+              <div className="flex justify-center gap-1 w-full">
+                <TabsTrigger 
+                  value="login" 
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <LogIn className="h-3 w-3 mr-1" />
+                  Login
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="signup"
+                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <UserPlus className="h-3 w-3 mr-1" />
+                  Sign Up
+                </TabsTrigger>
+              </div>
+            </div>
             
             <TabsContent value="login" className="space-y-4 mt-6">
               <LoginForm onSwitchToReset={() => setActiveTab("reset")} />

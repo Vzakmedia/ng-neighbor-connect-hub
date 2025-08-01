@@ -617,26 +617,53 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Viewing posts from:</span>
+            <span className="text-sm font-medium hidden md:inline">Viewing posts from:</span>
+            <span className="text-xs font-medium md:hidden">View:</span>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1 w-full sm:w-auto justify-center md:justify-end">
             <Button
               variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewScope('neighborhood')}
-              className="text-xs flex-1 sm:flex-none px-2 sm:px-3"
+              className={`transition-all duration-300 ease-in-out text-xs ${
+                viewScope === 'neighborhood' 
+                  ? 'px-3 flex items-center gap-2 min-w-fit' 
+                  : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
+              }`}
             >
-              <MapPin className="h-3 w-3 mr-1" />
-              <span className="hidden xs:inline">My </span>Neighborhood
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              {viewScope === 'neighborhood' && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
+                  <span className="hidden xs:inline">My </span>Neighborhood
+                </span>
+              )}
+              <span className="hidden md:inline">
+                {viewScope !== 'neighborhood' && (
+                  <>
+                    <span className="hidden xs:inline">My </span>Neighborhood
+                  </>
+                )}
+              </span>
             </Button>
             <Button
               variant={viewScope === 'state' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewScope('state')}
-              className="text-xs flex-1 sm:flex-none px-2 sm:px-3"
+              className={`transition-all duration-300 ease-in-out text-xs ${
+                viewScope === 'state' 
+                  ? 'px-3 flex items-center gap-2 min-w-fit' 
+                  : 'px-2 md:px-3 w-10 md:w-auto md:flex-none justify-center md:justify-start'
+              }`}
             >
-              <Globe className="h-3 w-3 mr-1" />
-              Entire State
+              <Globe className="h-3 w-3 flex-shrink-0" />
+              {viewScope === 'state' && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300 md:inline">
+                  Entire State
+                </span>
+              )}
+              <span className="hidden md:inline">
+                {viewScope !== 'state' && 'Entire State'}
+              </span>
             </Button>
           </div>
         </div>
