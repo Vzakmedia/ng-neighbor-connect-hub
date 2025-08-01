@@ -9,6 +9,14 @@ export interface Message {
   recipient_id: string;
   created_at: string;
   status: 'sent' | 'delivered' | 'read';
+  attachments?: Array<{
+    id: string;
+    type: 'image' | 'video' | 'file';
+    name: string;
+    url: string;
+    size: number;
+    mimeType: string;
+  }>;
 }
 
 export const useDirectMessages = (userId: string | undefined) => {
@@ -28,7 +36,28 @@ export const useDirectMessages = (userId: string | undefined) => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Map the database response to our Message interface
+      const mappedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        created_at: msg.created_at,
+        status: msg.status as 'sent' | 'delivered' | 'read',
+        attachments: Array.isArray(msg.attachments) 
+          ? msg.attachments as Array<{
+              id: string;
+              type: 'image' | 'video' | 'file';
+              name: string;
+              url: string;
+              size: number;
+              mimeType: string;
+            }>
+          : []
+      }));
+      
+      setMessages(mappedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -59,6 +88,47 @@ export const useDirectMessages = (userId: string | undefined) => {
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Could not send message.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, toast]);
+
+  const sendMessageWithAttachments = useCallback(async (
+    content: string, 
+    recipientId: string, 
+    attachments: Array<{
+      id: string;
+      type: 'image' | 'video' | 'file';
+      name: string;
+      url: string;
+      size: number;
+      mimeType: string;
+    }> = []
+  ) => {
+    if (!userId || (!content.trim() && attachments.length === 0)) return false;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('direct_messages')
+        .insert({
+          content: content.trim() || '',
+          sender_id: userId,
+          recipient_id: recipientId,
+          status: 'sent',
+          attachments: attachments
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error sending message with attachments:', error);
       toast({
         title: "Error",
         description: "Could not send message.",
@@ -113,6 +183,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     loading,
     fetchMessages,
     sendMessage,
+    sendMessageWithAttachments,
     markMessageAsRead,
     markConversationAsRead,
     addMessage,

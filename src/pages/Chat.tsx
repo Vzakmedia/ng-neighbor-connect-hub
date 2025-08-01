@@ -33,6 +33,7 @@ const Chat = () => {
     messages, 
     fetchMessages, 
     sendMessage,
+    sendMessageWithAttachments,
     markConversationAsRead,
     addMessage,
     updateMessage 
@@ -119,14 +120,25 @@ const Chat = () => {
     findConversation();
   }, [conversationId, user?.id, navigate]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, attachments?: Array<{
+    id: string;
+    type: 'image' | 'video' | 'file';
+    name: string;
+    url: string;
+    size: number;
+    mimeType: string;
+  }>) => {
     if (!conversation || !user) return;
     
     const recipientId = conversation.user1_id === user.id 
       ? conversation.user2_id 
       : conversation.user1_id;
     
-    await sendMessage(content, recipientId);
+    if (attachments && attachments.length > 0) {
+      await sendMessageWithAttachments(content, recipientId, attachments);
+    } else {
+      await sendMessage(content, recipientId);
+    }
   };
 
   const handleBack = () => {

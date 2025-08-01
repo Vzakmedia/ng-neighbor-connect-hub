@@ -16,13 +16,16 @@ import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message } from '@/hooks/useDirectMessages';
 import { useMessageActions } from '@/hooks/useMessageActions';
+import { useFileUpload, type Attachment } from '@/hooks/useFileUpload';
 import MessageSelectionToolbar from './MessageSelectionToolbar';
+import AttachmentButton from './AttachmentButton';
+import AttachmentDisplay from './AttachmentDisplay';
 
 interface MessageThreadProps {
   conversation: Conversation;
   messages: Message[];
   currentUserId?: string;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, attachments?: Attachment[]) => void;
   showReadReceipts: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onBack?: () => void;
@@ -46,15 +49,27 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onSelectedMessagesChange
 }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
+  const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      onSendMessage(newMessage);
+  const handleSendMessage = async () => {
+    if (newMessage.trim() || pendingAttachments.length > 0) {
+      await onSendMessage(newMessage, pendingAttachments);
       setNewMessage('');
+      setPendingAttachments([]);
     }
+  };
+
+  const handleFileSelect = async (files: File[]) => {
+    const attachments = await uploadMultipleFiles(files);
+    setPendingAttachments(prev => [...prev, ...attachments]);
+  };
+
+  const removePendingAttachment = (attachmentId: string) => {
+    setPendingAttachments(prev => prev.filter(att => att.id !== attachmentId));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -179,7 +194,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                         : 'bg-muted'
                     } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    {message.content && <p className="text-sm">{message.content}</p>}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <AttachmentDisplay 
+                        attachments={message.attachments}
+                        onPreview={(attachment) => {
+                          // Handle attachment preview
+                          window.open(attachment.url, '_blank');
+                        }}
+                      />
+                    )}
                   </div>
                   
                   <div className={`flex items-center mt-1 space-x-1 ${
@@ -242,7 +266,33 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
       {/* Message input */}
       <div className="p-4 border-t">
+        {/* Pending attachments preview */}
+        {pendingAttachments.length > 0 && (
+          <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+            <p className="text-sm font-medium mb-2">Attachments to send:</p>
+            <div className="space-y-2">
+              {pendingAttachments.map((attachment) => (
+                <div key={attachment.id} className="flex items-center gap-2 p-2 bg-background rounded border">
+                  <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePendingAttachment(attachment.id)}
+                    className="h-6 w-6 p-0 text-destructive"
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="flex space-x-2">
+          <AttachmentButton 
+            onFileSelect={handleFileSelect}
+            uploading={uploading}
+          />
           <Textarea
             ref={textareaRef}
             value={newMessage}
@@ -254,7 +304,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() && pendingAttachments.length === 0}
             size="icon"
             className="bg-gradient-primary hover:opacity-90 transition-opacity"
           >
