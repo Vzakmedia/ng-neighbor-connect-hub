@@ -90,6 +90,8 @@ export const useWebRTCCall = (conversationId: string) => {
       if (!manager) return;
 
       const stream = await manager.answerCall(incomingCall.offer, acceptVideo);
+      manager.markCallAsAnswered();
+      
       setWebrtcManager(manager);
       setLocalStream(stream);
       setIsInCall(true);
@@ -106,8 +108,11 @@ export const useWebRTCCall = (conversationId: string) => {
 
   // Decline incoming call
   const declineCall = useCallback(() => {
+    if (webrtcManager) {
+      webrtcManager.markCallAsDeclined();
+    }
     setIncomingCall(null);
-  }, []);
+  }, [webrtcManager]);
 
   // End current call
   const endCall = useCallback(() => {

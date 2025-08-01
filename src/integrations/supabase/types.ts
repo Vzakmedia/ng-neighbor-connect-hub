@@ -619,6 +619,48 @@ export type Database = {
         }
         Relationships: []
       }
+      call_logs: {
+        Row: {
+          call_status: string
+          call_type: string
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          duration_seconds: number | null
+          end_time: string | null
+          id: string
+          receiver_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          call_status?: string
+          call_type: string
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          receiver_id: string
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          call_status?: string
+          call_type?: string
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          receiver_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       call_signaling: {
         Row: {
           conversation_id: string

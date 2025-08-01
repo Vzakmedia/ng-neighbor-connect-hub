@@ -7,6 +7,8 @@ export class WebRTCManager {
   private conversationId: string;
   private currentUserId: string;
   private isInitiator: boolean = false;
+  private callStartTime: Date | null = null;
+  private currentCallLogId: string | null = null;
 
   constructor(
     conversationId: string,
@@ -56,11 +58,16 @@ export class WebRTCManager {
     try {
       this.isInitiator = true;
       
+      // Create call log entry
+      await this.createCallLog(video ? 'video' : 'voice');
+      
       // Get user media
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: video
       });
+
+      this.callStartTime = new Date();
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {
@@ -82,12 +89,18 @@ export class WebRTCManager {
       return this.localStream;
     } catch (error) {
       console.error('Error starting call:', error);
+      // Update call log as failed
+      if (this.currentCallLogId) {
+        await this.updateCallLog('failed');
+      }
       throw error;
     }
   }
 
   async answerCall(offer: RTCSessionDescriptionInit, video: boolean = false) {
     try {
+      this.callStartTime = new Date();
+      
       // Get user media
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -179,6 +192,12 @@ export class WebRTCManager {
   }
 
   endCall() {
+    // Calculate duration and update call log
+    if (this.callStartTime && this.currentCallLogId) {
+      const duration = Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000);
+      this.updateCallLog('ended', duration);
+    }
+
     // Send end call signal
     this.sendSignalingMessage({ type: 'call-end' });
 
@@ -194,6 +213,10 @@ export class WebRTCManager {
       this.pc = null;
     }
 
+    // Reset call state
+    this.callStartTime = null;
+    this.currentCallLogId = null;
+
     this.onCallEnd();
   }
 
@@ -203,5 +226,89 @@ export class WebRTCManager {
 
   getRemoteStream() {
     return this.remoteStream;
+  }
+
+  private async createCallLog(callType: 'voice' | 'video'): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('call_logs')
+        .insert({
+          conversation_id: this.conversationId,
+          caller_id: this.currentUserId,
+          receiver_id: await this.getOtherUserId(),
+          call_type: callType,
+          call_status: 'failed' // Will be updated when call connects
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      this.currentCallLogId = data.id;
+    } catch (error) {
+      console.error('Error creating call log:', error);
+    }
+  }
+
+  private async updateCallLog(status: string, duration?: number): Promise<void> {
+    if (!this.currentCallLogId) return;
+
+    try {
+      const updateData: any = {
+        call_status: status,
+        updated_at: new Date().toISOString()
+      };
+
+      if (status === 'ended' && duration !== undefined) {
+        updateData.end_time = new Date().toISOString();
+        updateData.duration_seconds = duration;
+      }
+
+      const { error } = await supabase
+        .from('call_logs')
+        .update(updateData)
+        .eq('id', this.currentCallLogId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating call log:', error);
+    }
+  }
+
+  private async getOtherUserId(): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('direct_conversations')
+        .select('user1_id, user2_id')
+        .eq('id', this.conversationId)
+        .single();
+
+      if (error) throw error;
+      
+      return data.user1_id === this.currentUserId ? data.user2_id : data.user1_id;
+    } catch (error) {
+      console.error('Error getting other user ID:', error);
+      return '';
+    }
+  }
+
+  // Method to update call log when call is answered
+  markCallAsAnswered(): void {
+    if (this.currentCallLogId) {
+      this.updateCallLog('answered');
+    }
+  }
+
+  // Method to update call log when call is declined
+  markCallAsDeclined(): void {
+    if (this.currentCallLogId) {
+      this.updateCallLog('declined');
+    }
+  }
+
+  // Method to update call log when call is missed
+  markCallAsMissed(): void {
+    if (this.currentCallLogId) {
+      this.updateCallLog('missed');
+    }
   }
 }
