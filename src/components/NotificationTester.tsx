@@ -4,16 +4,9 @@ import { Volume2, Play } from 'lucide-react';
 
 // Simple embedded notification tester
 const NotificationTester = () => {
-  // Test audio immediately when component mounts
+  // Log when component mounts
   useEffect(() => {
-    console.log('NotificationTester: Component mounted');
-    
-    // Test basic audio after 2 seconds
-    const timer = setTimeout(() => {
-      testBasicAudio();
-    }, 2000);
-    
-    return () => clearTimeout(timer);
+    console.log('NotificationTester: Component mounted - audio requires user interaction');
   }, []);
 
   const testBasicAudio = async () => {
