@@ -4,10 +4,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
+import { useMessageActions } from '@/hooks/useMessageActions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Phone, Video, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Phone, Video, MoreVertical, CheckSquare, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { formatDistanceToNow } from 'date-fns';
 import MessageThread from '@/components/messaging/MessageThread';
 
 const Chat = () => {
@@ -16,6 +24,10 @@ const Chat = () => {
   const { user } = useAuth();
   const [conversation, setConversation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+
+  const { deleteMessages, deleteConversation } = useMessageActions();
 
   const { 
     messages, 
@@ -121,6 +133,20 @@ const Chat = () => {
     navigate('/messages');
   };
 
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      setSelectedMessages(new Set());
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    const success = await deleteConversation(conversationId || '');
+    if (success) {
+      navigate('/messages');
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
@@ -166,6 +192,9 @@ const Chat = () => {
               <p className="text-sm text-muted-foreground truncate">
                 {conversation.other_user_phone || 'No phone number'}
               </p>
+              <span className="text-xs text-muted-foreground">
+                Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+              </span>
             </div>
           </div>
           
@@ -176,9 +205,30 @@ const Chat = () => {
             <Button variant="ghost" size="icon">
               <Video className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSelectionMode}
+              className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
+            >
+              <CheckSquare className="h-5 w-5" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem 
+                  onClick={handleDeleteConversation}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Conversation
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -192,6 +242,9 @@ const Chat = () => {
           onSendMessage={handleSendMessage}
           showReadReceipts={true}
           messagesEndRef={null}
+          isSelectionMode={isSelectionMode}
+          selectedMessages={selectedMessages}
+          onSelectedMessagesChange={setSelectedMessages}
           onMessageDeleted={() => {
             // Refetch messages when a message is deleted
             if (conversation) {

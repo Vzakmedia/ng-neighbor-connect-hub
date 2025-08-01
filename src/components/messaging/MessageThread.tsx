@@ -27,6 +27,9 @@ interface MessageThreadProps {
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onBack?: () => void;
   onMessageDeleted?: () => void;
+  isSelectionMode?: boolean;
+  selectedMessages?: Set<string>;
+  onSelectedMessagesChange?: (messages: Set<string>) => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -37,11 +40,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   showReadReceipts,
   messagesEndRef,
   onBack,
-  onMessageDeleted
+  onMessageDeleted,
+  isSelectionMode = false,
+  selectedMessages = new Set(),
+  onSelectedMessagesChange
 }) => {
   const [newMessage, setNewMessage] = useState('');
-  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
@@ -92,41 +96,40 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   };
 
   const handleLongPress = (messageId: string) => {
-    if (!isSelectionMode) {
-      setIsSelectionMode(true);
-      setSelectedMessages(new Set([messageId]));
+    if (!isSelectionMode && onSelectedMessagesChange) {
+      onSelectedMessagesChange(new Set([messageId]));
     }
   };
 
   const handleMessageSelect = (messageId: string, checked: boolean) => {
+    if (!onSelectedMessagesChange) return;
+    
     const newSelected = new Set(selectedMessages);
     if (checked) {
       newSelected.add(messageId);
     } else {
       newSelected.delete(messageId);
     }
-    setSelectedMessages(newSelected);
-    
-    if (newSelected.size === 0) {
-      setIsSelectionMode(false);
-    }
+    onSelectedMessagesChange(newSelected);
   };
 
   const handleDeleteSelected = async () => {
+    if (!onSelectedMessagesChange) return;
+    
     const selectedArray = Array.from(selectedMessages);
     const success = await deleteMessages(selectedArray);
     if (success) {
-      setSelectedMessages(new Set());
-      setIsSelectionMode(false);
+      onSelectedMessagesChange(new Set());
       onMessageDeleted?.();
     }
   };
 
   const handleDeleteConversation = async () => {
+    if (!onSelectedMessagesChange) return;
+    
     const success = await deleteConversation(conversation.id);
     if (success) {
-      setSelectedMessages(new Set());
-      setIsSelectionMode(false);
+      onSelectedMessagesChange(new Set());
       onBack?.();
     }
   };
@@ -139,80 +142,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   };
 
   const handleClearSelection = () => {
-    setSelectedMessages(new Set());
-    setIsSelectionMode(false);
-  };
-
-  const toggleSelectionMode = () => {
-    setIsSelectionMode(!isSelectionMode);
-    if (isSelectionMode) {
-      setSelectedMessages(new Set());
+    if (onSelectedMessagesChange) {
+      onSelectedMessagesChange(new Set());
     }
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b flex items-center space-x-3">
-        {onBack && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="md:hidden"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        )}
-        
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={conversation.other_user_avatar || ''} />
-          <AvatarFallback>
-            {getInitials(conversation.other_user_name)}
-          </AvatarFallback>
-        </Avatar>
-        
-        <div className="flex-1">
-          <h3 className="text-lg font-medium">
-            {conversation.other_user_name}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {conversation.other_user_phone || 'No phone number'}
-          </p>
-          <span className="text-xs text-muted-foreground">
-            Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleSelectionMode}
-            className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
-          >
-            <CheckSquare className="h-4 w-4" />
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem 
-                onClick={() => handleDeleteConversation()}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Conversation
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
       {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
