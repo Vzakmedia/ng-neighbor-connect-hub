@@ -146,7 +146,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
 
-    const channel = (supabase as any)
+    const channel = supabase
       .channel(`call_signaling:${conversationId}`)
       .on(
         'postgres_changes',
@@ -164,6 +164,7 @@ export const useWebRTCCall = (conversationId: string) => {
           if (message.sender_id === user.id) return;
 
           if (message.message.type === 'offer') {
+            console.log('Incoming call offer received');
             // Incoming call
             setIncomingCall({
               offer: message.message.offer,
@@ -171,16 +172,20 @@ export const useWebRTCCall = (conversationId: string) => {
               fromUserId: message.sender_id
             });
           } else if (message.message.type === 'answer' && webrtcManager) {
+            console.log('Call answer received');
             // Call was answered
             webrtcManager.markCallAsAnswered();
             await webrtcManager.handleSignalingMessage(message.message);
           } else if (webrtcManager) {
+            console.log('Other signaling message:', message.message.type);
             // Handle other signaling messages
             await webrtcManager.handleSignalingMessage(message.message);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Call signaling subscription status:', status);
+      });
 
     return () => {
       console.log('Cleaning up signaling subscription');
