@@ -570,70 +570,53 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         />
       </div>
 
-      {/* Mobile Controls */}
-      <div className="md:hidden flex items-center justify-between gap-2">
-        {/* Expandable Read Status Controls */}
-        <div className="flex items-center gap-1">
-          <Button
-            variant={showUnreadOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-            className={`transition-all duration-300 ease-in-out ${
-              showUnreadOnly 
-                ? 'px-3 flex items-center gap-2 min-w-fit' 
-                : 'px-0 w-8 h-8 justify-center'
-            }`}
-          >
-            {showUnreadOnly ? <EyeOff className="h-3 w-3 flex-shrink-0" /> : <Eye className="h-3 w-3 flex-shrink-0" />}
-            {showUnreadOnly && (
-              <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                Show All
-              </span>
-            )}
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={markAllCommunityPostsAsRead}
-            disabled={unreadCounts.community === 0}
-            className={`transition-all duration-300 ease-in-out ${
-              unreadCounts.community > 0 
-                ? 'px-3 flex items-center gap-2 min-w-fit' 
-                : 'px-0 w-8 h-8 justify-center opacity-50'
-            }`}
-          >
-            <CheckCheck className="h-3 w-3 flex-shrink-0" />
-            {unreadCounts.community > 0 && (
-              <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                Mark All Read
-              </span>
-            )}
-          </Button>
-          
-          {unreadCounts.community > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {unreadCounts.community}
-            </Badge>
-          )}
+      {/* Post Type Filter Buttons */}
+      {/* Desktop filter buttons */}
+      <div className="hidden md:flex flex-wrap gap-2">
+        {postTypeFilters.map((filter) => {
+          const Icon = filter.icon;
+          return (
+            <Button
+              key={filter.key}
+              variant={selectedPostType === filter.key ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedPostType(filter.key)}
+              className="text-xs"
+            >
+              <Icon className="h-3 w-3 mr-1" />
+              {filter.label}
+            </Button>
+          );
+        })}
+      </div>
+      
+      {/* Mobile filter buttons - icons only, expand when active */}
+      <div className="md:hidden w-full">
+        <div className="flex justify-center gap-1 w-full flex-wrap">
+          {postTypeFilters.map((filter) => {
+            const Icon = filter.icon;
+            return (
+              <Button
+                key={filter.key}
+                variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedPostType(filter.key)}
+                className={`transition-all duration-300 ease-in-out ${
+                  selectedPostType === filter.key 
+                    ? 'px-3 flex items-center gap-2 min-w-fit' 
+                    : 'px-0 w-8 h-8 justify-center'
+                }`}
+              >
+                <Icon className="h-3 w-3 flex-shrink-0" />
+                {selectedPostType === filter.key && (
+                  <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                    {filter.label}
+                  </span>
+                )}
+              </Button>
+            );
+          })}
         </div>
-
-        {/* Location Scope Indicator - controlled by parent */}
-        {propViewScope && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            {propViewScope === 'neighborhood' ? (
-              <>
-                <MapPin className="h-3 w-3" />
-                <span>Neighborhood</span>
-              </>
-            ) : (
-              <>
-                <Globe className="h-3 w-3" />
-                <span>State</span>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* View Scope Toggle - only show if not controlled by parent */}
@@ -695,8 +678,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         </div>
       )}
 
-      {/* Desktop Read Status Controls */}
-      <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
+      {/* Read Status Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
           <div className="flex items-center gap-2">
             <Button
