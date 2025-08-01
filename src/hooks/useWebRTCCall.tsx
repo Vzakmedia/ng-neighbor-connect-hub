@@ -120,15 +120,14 @@ export const useWebRTCCall = (userId: string) => {
     try {
       const { error } = await supabase
         .from('call_signals')
-        .insert([{
+        .insert({
           call_id: message.callId,
           type: message.type,
           data: message.data,
           from_user_id: message.fromUserId,
           to_user_id: message.toUserId,
-          call_type: message.callType,
-          created_at: new Date().toISOString()
-        }]);
+          call_type: message.callType
+        });
 
       if (error) {
         console.error('Error sending signaling message:', error);
