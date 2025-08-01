@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Search, Settings, Users, Bell, BellOff, X } from 'lucide-react';
+import { MessageCircle, Search, Settings, Users, Bell, BellOff, X, Plus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, type Message } from '@/hooks/useDirectMessages';
@@ -35,6 +36,9 @@ const MessagingContent = () => {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [showMobileConversationList, setShowMobileConversationList] = useState(true);
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [messagingPreferences, setMessagingPreferences] = useState<MessagingPreferences>({
     allow_messages: true,
     show_read_receipts: true,
@@ -56,7 +60,8 @@ const MessagingContent = () => {
     conversations, 
     loading: conversationsLoading, 
     fetchConversations,
-    markConversationAsRead: markConvAsRead
+    markConversationAsRead: markConvAsRead,
+    createOrFindConversation
   } = useConversations(user?.id);
 
   const unreadCount = useUnreadMessages();
@@ -166,6 +171,8 @@ const MessagingContent = () => {
 
   const handleConversationSelect = (conversation: Conversation) => {
     setActiveConversation(conversation);
+    setSearchQuery(''); // Clear search when selecting conversation
+    setSearchResults([]);
     if (isMobile) {
       setShowMobileConversationList(false);
     }
@@ -174,6 +181,58 @@ const MessagingContent = () => {
   const handleBackToConversations = () => {
     setActiveConversation(null);
     setShowMobileConversationList(true);
+  };
+
+  const performUserSearch = async (query: string) => {
+    if (!query.trim() || !user) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, phone')
+        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .neq('user_id', user.id)
+        .limit(5);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      performUserSearch(value);
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+  };
+
+  const startConversationWithUser = async (userId: string) => {
+    const conversationId = await createOrFindConversation(userId);
+    if (conversationId) {
+      // Find the conversation in our list or create a new one
+      const existingConv = conversations.find(c => c.id === conversationId);
+      if (existingConv) {
+        setActiveConversation(existingConv);
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+      if (isMobile) {
+        setShowMobileConversationList(false);
+      }
+    }
   };
 
   const clearAllNotifications = async () => {
@@ -220,17 +279,59 @@ const MessagingContent = () => {
                       Clear ({unreadCount})
                     </Button>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowNewMessageDialog(true)}
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
+
+              {/* Search Section */}
+              <div className="p-4 border-b">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Start typing to search for users..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {/* Search Results */}
+                {searchQuery && (
+                  <div className="mt-2 bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-3 text-center text-muted-foreground text-sm">
+                        Searching...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="space-y-1 p-2">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user.user_id}
+                            className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer"
+                            onClick={() => startConversationWithUser(user.user_id)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback>
+                                {getInitials(user.full_name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{user.full_name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 text-center text-muted-foreground text-sm">
+                        No users found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               
-              <ScrollArea className="h-[calc(100vh-10rem)]">
+              <ScrollArea className="h-[calc(100vh-14rem)]">
                 {conversationsLoading ? (
                   <div className="p-4 text-center text-muted-foreground">
                     Loading conversations...
@@ -239,14 +340,7 @@ const MessagingContent = () => {
                   <div className="p-4 text-center text-muted-foreground">
                     <MessageCircle className="h-8 w-8 mx-auto mb-2" />
                     <p>No conversations yet</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2"
-                      onClick={() => setShowNewMessageDialog(true)}
-                    >
-                      Start a conversation
-                    </Button>
+                    <p className="text-sm mt-1">Start typing above to search for users</p>
                   </div>
                 ) : (
                   <div className="space-y-1 p-2">
@@ -325,6 +419,54 @@ const MessagingContent = () => {
                     </Button>
                   )}
                 </div>
+                
+                {/* Search Section */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Start typing to search for users..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {/* Search Results */}
+                {searchQuery && (
+                  <div className="mb-4 bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-3 text-center text-muted-foreground text-sm">
+                        Searching...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="space-y-1 p-2">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user.user_id}
+                            className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer"
+                            onClick={() => startConversationWithUser(user.user_id)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback>
+                                {getInitials(user.full_name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{user.full_name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 text-center text-muted-foreground text-sm">
+                        No users found
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="conversations">
                     <MessageCircle className="h-4 w-4 mr-2" />
@@ -341,25 +483,18 @@ const MessagingContent = () => {
                 </TabsList>
               </div>
 
-              <TabsContent value="conversations" className="h-[calc(100%-8rem)] mt-0">
+              <TabsContent value="conversations" className="h-[calc(100%-12rem)] mt-0">
                 <ScrollArea className="h-full">
                   {conversationsLoading ? (
                     <div className="p-4 text-center text-muted-foreground">
                       Loading conversations...
                     </div>
                   ) : conversations.length === 0 ? (
-                    <div className="p-4 text-center text-muted-foreground">
-                      <MessageCircle className="h-8 w-8 mx-auto mb-2" />
-                      <p>No conversations yet</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => setShowNewMessageDialog(true)}
-                      >
-                        Start a conversation
-                      </Button>
-                    </div>
+                  <div className="p-4 text-center text-muted-foreground">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2" />
+                    <p>No conversations yet</p>
+                    <p className="text-sm mt-1">Start typing above to search for users</p>
+                  </div>
                   ) : (
                     <div className="space-y-1 p-2">
                       {conversations.map((conversation) => {
@@ -405,11 +540,11 @@ const MessagingContent = () => {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="contacts" className="h-[calc(100%-8rem)] mt-0">
+              <TabsContent value="contacts" className="h-[calc(100%-12rem)] mt-0">
                 <MessagingContacts onStartConversation={() => setShowNewMessageDialog(true)} />
               </TabsContent>
 
-              <TabsContent value="settings" className="h-[calc(100%-8rem)] mt-0">
+              <TabsContent value="settings" className="h-[calc(100%-12rem)] mt-0">
                 <div className="p-4 space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -473,14 +608,6 @@ const MessagingContent = () => {
                 <div className="text-center">
                   <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Select a conversation to start messaging</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setShowNewMessageDialog(true)}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Start new conversation
-                  </Button>
                 </div>
               </div>
             )}
