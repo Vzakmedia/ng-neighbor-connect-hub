@@ -106,7 +106,7 @@ const Chat = () => {
           .from('direct_conversations')
           .select('*')
           .eq('id', conversationId)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid errors if not found
 
         if (convError || !convData) {
           console.error('Conversation not found:', convError);
@@ -120,7 +120,7 @@ const Chat = () => {
           .from('profiles')
           .select('user_id, full_name, avatar_url, phone')
           .eq('user_id', otherUserId)
-          .single();
+          .maybeSingle();
 
         const formattedConversation = {
           ...convData,
@@ -156,6 +156,11 @@ const Chat = () => {
     };
 
     findConversation();
+  }, [conversationId, user?.id, navigate, fetchMessages, markConversationAsRead]);
+
+  // Separate useEffect for polling to prevent re-initialization
+  useEffect(() => {
+    if (!conversation || !user || !conversationId) return;
     
     // Set up polling fallback for message updates
     const setupPolling = () => {
@@ -163,28 +168,26 @@ const Chat = () => {
         clearInterval(pollingIntervalRef.current);
       }
       
+      const otherUserId = conversation.user1_id === user.id 
+        ? conversation.user2_id 
+        : conversation.user1_id;
+      
       pollingIntervalRef.current = setInterval(() => {
-        if (conversation && user) {
-          const otherUserId = conversation.user1_id === user.id 
-            ? conversation.user2_id 
-            : conversation.user1_id;
-          console.log('Polling for new messages...');
-          fetchMessages(otherUserId);
-        }
-      }, 3000); // Poll every 3 seconds
+        console.log('Polling for new messages...');
+        fetchMessages(otherUserId);
+      }, 5000); // Poll every 5 seconds (less aggressive)
     };
     
-    if (user && conversationId) {
-      setupPolling();
-    }
+    setupPolling();
     
-    // Cleanup polling on unmount
+    // Cleanup polling on unmount or conversation change
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
-  }, [conversationId, user?.id, navigate, conversation, fetchMessages]);
+  }, [conversation?.id, user?.id, fetchMessages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -255,18 +258,21 @@ const Chat = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading conversation...</p>
+        </div>
       </div>
     );
   }
 
   if (!conversation) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Conversation not found</p>
-          <Button onClick={handleBack}>Back to Messages</Button>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">Conversation not found</p>
+          <Button onClick={handleBack} variant="outline">Back to Messages</Button>
         </div>
       </div>
     );
