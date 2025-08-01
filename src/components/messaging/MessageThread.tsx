@@ -163,10 +163,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="h-full flex flex-col relative overflow-hidden">
       {/* Messages - with bottom padding to account for sticky input */}
-      <ScrollArea className="flex-1">
-        <div className="space-y-4 p-4 pb-32">
+      <ScrollArea className="flex-1 overflow-y-auto">
+        <div className="space-y-2 md:space-y-4 p-2 md:p-4 pb-32">
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
@@ -186,9 +186,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   </div>
                 )}
                 
-                <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
+                <div className={`max-w-[85%] md:max-w-[70%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
                   <div 
-                    className={`p-3 rounded-lg ${
+                    className={`p-2 md:p-3 rounded-lg ${
                       isOwn 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
@@ -239,8 +239,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 </div>
                 
                 {!isOwn && (
-                  <div className={`mr-2 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
-                    <Avatar className="h-6 w-6">
+                  <div className={`mr-1 md:mr-2 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
+                    <Avatar className="h-5 w-5 md:h-6 md:w-6">
                       <AvatarImage src={conversation.other_user_avatar || ''} />
                       <AvatarFallback className="text-xs">
                         {getInitials(conversation.other_user_name)}
@@ -266,15 +266,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       />
 
       {/* Fixed/Pinned Message input - WhatsApp style sticky bottom */}
-      <div className="sticky bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 shadow-lg">
+      <div className="flex-shrink-0 sticky bottom-0 left-0 right-0 p-2 md:p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 shadow-lg">
         {/* Pending attachments preview */}
         {pendingAttachments.length > 0 && (
-          <div className="mb-4 p-3 bg-muted/30 rounded-lg">
-            <p className="text-sm font-medium mb-2">Attachments to send:</p>
+          <div className="mb-2 md:mb-4 p-2 md:p-3 bg-muted/30 rounded-lg">
+            <p className="text-xs md:text-sm font-medium mb-2">Attachments to send:</p>
             <div className="space-y-2">
               {pendingAttachments.map((attachment) => (
                 <div key={attachment.id} className="flex items-center gap-2 p-2 bg-background rounded border">
-                  <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                  <span className="text-xs md:text-sm flex-1 truncate">{attachment.name}</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -289,7 +289,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           </div>
         )}
         
-        <div className="flex space-x-2">
+        <div className="flex space-x-1 md:space-x-2">
           <AttachmentButton 
             onFileSelect={handleFileSelect}
             uploading={uploading}
@@ -300,16 +300,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+            className="flex-1 min-h-[36px] md:min-h-[40px] max-h-[120px] resize-none text-sm md:text-base"
             rows={1}
           />
           <Button 
             onClick={handleSendMessage}
             disabled={!newMessage.trim() && pendingAttachments.length === 0}
             size="icon"
-            className="bg-gradient-primary hover:opacity-90 transition-opacity"
+            className="bg-gradient-primary hover:opacity-90 transition-opacity h-9 w-9 md:h-10 md:w-10"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
         </div>
       </div>
