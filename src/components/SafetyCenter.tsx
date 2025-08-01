@@ -409,26 +409,22 @@ const SafetyCenter = () => {
           <PanicButton />
           <ReportIncidentDialog
             trigger={
-              <Button className="flex items-center gap-2 hidden md:flex">
+              <Button className="hidden md:flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Report Incident
+              </Button>
+            }
+          />
+          <ReportIncidentDialog
+            trigger={
+              <Button className="md:hidden h-9 w-9 p-0">
+                <Plus className="h-4 w-4" />
               </Button>
             }
           />
         </div>
       </div>
       
-      {/* Mobile Report Button */}
-      <div className="md:hidden">
-        <ReportIncidentDialog
-          trigger={
-            <Button className="w-full flex items-center justify-center gap-2">
-              <Plus className="h-4 w-4" />
-              Report Incident
-            </Button>
-          }
-        />
-      </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -451,7 +447,8 @@ const SafetyCenter = () => {
 
       {/* View Toggle and Filters */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="flex items-center gap-2">
+        {/* Desktop view buttons */}
+        <div className="hidden md:flex items-center gap-2">
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             onClick={() => setViewMode('list')}
@@ -474,6 +471,36 @@ const SafetyCenter = () => {
           >
             <Activity className="h-4 w-4 mr-1" />
             Live Feed
+          </Button>
+        </div>
+        
+        {/* Mobile compact view buttons */}
+        <div className="md:hidden grid grid-cols-3 gap-1 w-full">
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            onClick={() => setViewMode('list')}
+            size="sm"
+            className="text-xs"
+          >
+            List
+          </Button>
+          <Button
+            variant={viewMode === 'map' ? 'default' : 'outline'}
+            onClick={() => setViewMode('map')}
+            size="sm"
+            className="text-xs flex items-center justify-center gap-1"
+          >
+            <MapPin className="h-3 w-3" />
+            Map
+          </Button>
+          <Button
+            variant={viewMode === 'feed' ? 'default' : 'outline'}
+            onClick={() => setViewMode('feed')}
+            size="sm"
+            className="text-xs flex items-center justify-center gap-1"
+          >
+            <Activity className="h-3 w-3" />
+            Feed
           </Button>
         </div>
 

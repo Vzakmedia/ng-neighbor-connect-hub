@@ -185,7 +185,8 @@ const BusinessDashboard = () => {
                 {renderStars(business.rating)}
               </div>
             </div>
-            <div className="flex gap-2">
+            {/* Desktop buttons */}
+            <div className="hidden md:flex gap-2">
               <Button variant="outline" size="sm">
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
@@ -199,6 +200,23 @@ const BusinessDashboard = () => {
                   <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                     <TrendingUp className="h-4 w-4 mr-1" />
                     Promote
+                  </Button>
+                </BusinessPromotionDialog>
+              )}
+            </div>
+            
+            {/* Mobile buttons - icon only */}
+            <div className="md:hidden flex gap-1">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <Eye className="h-4 w-4" />
+              </Button>
+              {business.verification_status === 'verified' && (
+                <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
+                  <Button size="sm" className="h-8 w-8 p-0 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                    <TrendingUp className="h-4 w-4" />
                   </Button>
                 </BusinessPromotionDialog>
               )}

@@ -45,7 +45,8 @@ const Services = () => {
           </div>
           
           <Tabs defaultValue="businesses" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            {/* Desktop TabsList */}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="h-10 px-3 flex items-center gap-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
@@ -67,6 +68,32 @@ const Services = () => {
               </DropdownMenu>
               <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
             </TabsList>
+            
+            {/* Mobile compact buttons */}
+            <div className="md:hidden flex gap-2 w-full">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs">
+                    My Services
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
+                    My Services
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
+                    My Goods
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
+                    My Bookings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="default" size="sm" className="flex-1 text-xs">
+                Local Businesses
+              </Button>
+            </div>
 
             <TabsContent value="businesses" className="mt-6">
               <BusinessListings />

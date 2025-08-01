@@ -635,7 +635,8 @@ const BusinessListings = () => {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
+                {/* Desktop buttons */}
+                <div className="hidden md:flex gap-2 pt-2">
                   {business.phone && (
                     <Button variant="outline" size="sm" className="flex-1">
                       <Phone className="h-4 w-4 mr-1" />
@@ -645,6 +646,22 @@ const BusinessListings = () => {
                   {business.email && (
                     <Button variant="outline" size="sm" className="flex-1">
                       <Mail className="h-4 w-4 mr-1" />
+                      Email
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Mobile buttons - compact */}
+                <div className="md:hidden flex gap-1 pt-2">
+                  {business.phone && (
+                    <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                  )}
+                  {business.email && (
+                    <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
+                      <Mail className="h-3 w-3 mr-1" />
                       Email
                     </Button>
                   )}
