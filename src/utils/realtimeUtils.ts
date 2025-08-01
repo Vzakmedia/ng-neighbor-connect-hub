@@ -25,14 +25,14 @@ export const createSafeSubscription = (
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         console.error(`${debugName}: Subscription failed with status ${status}, falling back to polling`);
         
-        // Setup polling fallback immediately
+        // Setup polling fallback immediately with longer interval to reduce blinking
         const pollKey = `${channelName}_poll`;
         if (!(window as any)[pollKey]) {
           console.log(`${debugName}: Starting polling fallback`);
           const interval = setInterval(() => {
             console.log(`${debugName}: Polling fallback refresh`);
             if (onError) onError();
-          }, Math.min(pollInterval, 5000)); // Cap at 5 seconds max
+          }, Math.min(pollInterval, 20000)); // Cap at 20 seconds to reduce blinking
           (window as any)[pollKey] = interval;
         }
       } else if (status === 'SUBSCRIBED') {
@@ -49,10 +49,10 @@ export const createSafeSubscription = (
   } catch (error) {
     console.error(`${debugName}: Error creating subscription:`, error);
     
-    // Immediate fallback to polling
+    // Immediate fallback to polling with longer interval
     const pollKey = `${channelName}_poll`;
     if (!(window as any)[pollKey] && onError) {
-      const interval = setInterval(onError, pollInterval);
+      const interval = setInterval(onError, Math.min(pollInterval, 20000));
       (window as any)[pollKey] = interval;
       console.log(`${debugName}: Immediate polling fallback activated due to error`);
     }
