@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
+import TestAudioButton from '@/components/TestAudioButton';
 import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
 import {
@@ -311,14 +312,17 @@ const SettingsContent = () => {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="notification-volume">Notification Volume</Label>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => testSound('normal')}
-                          >
-                            <Play className="h-3 w-3 mr-1" />
-                            Test
-                          </Button>
+                          <div className="flex gap-2">
+                            <TestAudioButton />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => testSound('normal')}
+                            >
+                              <Play className="h-3 w-3 mr-1" />
+                              Test
+                            </Button>
+                          </div>
                         </div>
                         <Slider
                           id="notification-volume"

@@ -9,6 +9,7 @@ import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shie
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
@@ -21,6 +22,9 @@ const Header = () => {
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
+  
+  // Add message notifications hook
+  useMessageNotifications({ userId: user?.id });
 
   useEffect(() => {
     if (user) {
