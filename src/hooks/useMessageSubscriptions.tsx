@@ -78,10 +78,13 @@ export const useMessageSubscriptions = ({
           ? `direct-messages-${userId}-${recipientId}`
           : `user-messages-${userId}`,
         onError: () => {
-          console.error('Message subscription error');
-          onConversationUpdate?.();
+          console.log('Message subscription error - refreshing messages and conversations');
+          // Refresh data when subscription fails
+          setTimeout(() => {
+            onConversationUpdate?.();
+          }, 1000);
         },
-        pollInterval: 30000,
+        pollInterval: 5000, // More frequent polling for better real-time feel
         debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
       }
     );
@@ -98,6 +101,7 @@ export const useMessageSubscriptions = ({
           table: 'direct_conversations',
           filter: `or(user1_id.eq.${userId},user2_id.eq.${userId})`
         }, () => {
+          console.log('Conversation updated via subscription');
           onConversationUpdate();
         })
         .on('postgres_changes', {
@@ -106,15 +110,18 @@ export const useMessageSubscriptions = ({
           table: 'direct_conversations',
           filter: `or(user1_id.eq.${userId},user2_id.eq.${userId})`
         }, () => {
+          console.log('New conversation created via subscription');
           onConversationUpdate();
         }),
       {
         channelName: `conversations-${userId}`,
         onError: () => {
-          console.error('Conversation subscription error');
-          onConversationUpdate();
+          console.log('Conversation subscription error - refreshing conversations');
+          setTimeout(() => {
+            onConversationUpdate();
+          }, 1000);
         },
-        pollInterval: 30000,
+        pollInterval: 10000, // More frequent polling
         debugName: 'MessagingContent-conversations'
       }
     );

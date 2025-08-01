@@ -161,20 +161,20 @@ const Chat = () => {
     if (attachments && attachments.length > 0) {
       const success = await sendMessageWithAttachments(content, recipientId, attachments);
       if (success) {
-        // Immediately refresh messages to show the sent message
+        // Immediately refresh messages and auto-scroll
+        fetchMessages(recipientId);
         setTimeout(() => {
-          fetchMessages(recipientId);
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+        }, 200);
       }
     } else {
       const success = await sendMessage(content, recipientId);
       if (success) {
-        // Immediately refresh messages to show the sent message
+        // Immediately refresh messages and auto-scroll
+        fetchMessages(recipientId);
         setTimeout(() => {
-          fetchMessages(recipientId);
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+        }, 200);
       }
     }
   };

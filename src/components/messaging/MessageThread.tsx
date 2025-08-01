@@ -164,9 +164,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* Messages - with bottom padding to account for fixed input */}
+      {/* Messages - with bottom padding to account for sticky input */}
       <ScrollArea className="flex-1">
-        <div className="space-y-4 p-4 pb-40">
+        <div className="space-y-4 p-4 pb-32">
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
@@ -265,8 +265,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         loading={loading}
       />
 
-      {/* Fixed/Pinned Message input - stays at bottom during scroll */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40">
+      {/* Fixed/Pinned Message input - WhatsApp style sticky bottom */}
+      <div className="sticky bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 shadow-lg">
         {/* Pending attachments preview */}
         {pendingAttachments.length > 0 && (
           <div className="mb-4 p-3 bg-muted/30 rounded-lg">
