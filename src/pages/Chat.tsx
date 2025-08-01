@@ -191,18 +191,8 @@ const Chat = () => {
     
     // Set up polling fallback for message updates
     const setupPolling = () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-      
-      const otherUserId = conversation.user1_id === user.id 
-        ? conversation.user2_id 
-        : conversation.user1_id;
-      
-      pollingIntervalRef.current = setInterval(() => {
-        console.log('Polling for new messages...');
-        fetchMessages(otherUserId);
-      }, 5000); // Poll every 5 seconds (less aggressive)
+      // Polling disabled to prevent constant refreshes that were causing app instability
+      console.log('Message polling disabled to prevent refresh loops');
     };
     
     setupPolling();

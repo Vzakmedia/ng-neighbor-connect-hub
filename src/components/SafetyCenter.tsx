@@ -175,19 +175,12 @@ const SafetyCenter = () => {
       }
     );
 
-    // Auto-refresh every 30 seconds if enabled
-    let refreshInterval: NodeJS.Timeout;
-    if (autoRefresh) {
-      refreshInterval = setInterval(() => {
-        fetchAlerts();
-        fetchPanicAlerts();
-      }, 30000);
-    }
+    // Auto-refresh disabled to prevent constant refreshes
+    console.log('SafetyCenter auto-refresh disabled to prevent refresh loops');
 
     return () => {
       alertsSubscription?.unsubscribe();
       cleanupSafeSubscription('safety_alerts_updates', 'SafetyCenter');
-      if (refreshInterval) clearInterval(refreshInterval);
     };
   }, [filterSeverity, filterType, filterStatus, autoRefresh, toast]);
 

@@ -22,11 +22,8 @@ export const useReadStatus = () => {
     let pollInterval: NodeJS.Timeout;
 
     const setupPolling = () => {
-      if (pollInterval) return; // Don't setup multiple polling intervals
-      
-      pollInterval = setInterval(() => {
-        loadUnreadCounts();
-      }, 45000); // Poll every 45 seconds for unread counts
+      // Polling disabled to prevent constant refreshes
+      console.log('Polling disabled for useReadStatus to prevent refresh loops');
     };
 
     try {

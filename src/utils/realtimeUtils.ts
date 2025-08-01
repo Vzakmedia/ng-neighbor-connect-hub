@@ -23,23 +23,15 @@ export const createSafeSubscription = (
       console.log(`${debugName}: Subscription status: ${status}`);
       
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        console.error(`${debugName}: Subscription failed with status ${status}, falling back to polling`);
+        console.error(`${debugName}: Subscription failed with status ${status}, disabling polling to prevent refresh loops`);
         
-        // Immediately call onError to trigger data refresh
+        // Only call onError once, don't set up polling that causes constant refreshes
         if (onError) {
-          onError();
+          setTimeout(onError, 1000); // Single delayed call
         }
         
-        // Setup polling fallback with reasonable timing
-        const pollKey = `${channelName}_poll`;
-        if (!(window as any)[pollKey]) {
-          console.log(`${debugName}: Starting polling fallback`);
-          const interval = setInterval(() => {
-            console.log(`${debugName}: Polling fallback refresh`);
-            if (onError) onError();
-          }, Math.max(pollInterval, 30000)); // Minimum 30 seconds between polls
-          (window as any)[pollKey] = interval;
-        }
+        // Do NOT setup polling fallback to prevent constant refreshes
+        console.log(`${debugName}: Polling fallback disabled to prevent refresh loops`);
       } else if (status === 'SUBSCRIBED') {
         console.log(`${debugName}: Successfully subscribed to realtime updates`);
         // Clear any existing polling since realtime is working
@@ -55,12 +47,8 @@ export const createSafeSubscription = (
     console.error(`${debugName}: Error creating subscription:`, error);
     
     // Immediate fallback to polling
-    const pollKey = `${channelName}_poll`;
-    if (!(window as any)[pollKey] && onError) {
-      const interval = setInterval(onError, Math.max(pollInterval, 30000)); // Minimum 30 seconds
-      (window as any)[pollKey] = interval;
-      console.log(`${debugName}: Immediate polling fallback activated due to error`);
-    }
+    // Disable immediate polling fallback to prevent constant refreshes
+    console.log(`${debugName}: Polling fallback disabled due to subscription error`);
     
     // Return a dummy subscription object
     return {
