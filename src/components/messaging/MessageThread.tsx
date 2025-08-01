@@ -251,7 +251,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
               </div>
             );
           })}
-          <div ref={messagesEndRef} />
+          {/* Auto-scroll target */}
+          <div ref={messagesEndRef} className="h-1" />
         </div>
       </ScrollArea>
 

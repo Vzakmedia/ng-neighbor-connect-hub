@@ -25,9 +25,13 @@ export const useMessageSubscriptions = ({
   const setupMessageSubscription = useCallback(() => {
     if (!userId || messageSubscriptionRef.current) return;
 
+    console.log('Setting up message subscription for user:', userId, 'recipient:', recipientId);
+
     const filter = recipientId 
       ? `or(and(sender_id.eq.${userId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${userId}))`
       : `or(sender_id.eq.${userId},recipient_id.eq.${userId})`;
+
+    console.log('Subscription filter:', filter);
 
     messageSubscriptionRef.current = createSafeSubscription(
       (channel) => channel
@@ -37,7 +41,17 @@ export const useMessageSubscriptions = ({
           table: 'direct_messages',
           filter
         }, (payload) => {
+          console.log('New message received via subscription:', payload);
           const newMessage = payload.new as Message;
+          // Ensure attachments are properly parsed
+          if (newMessage.attachments && typeof newMessage.attachments === 'string') {
+            try {
+              newMessage.attachments = JSON.parse(newMessage.attachments as any);
+            } catch (e) {
+              console.error('Error parsing attachments:', e);
+              newMessage.attachments = [];
+            }
+          }
           onNewMessage(newMessage);
         })
         .on('postgres_changes', {
@@ -46,7 +60,17 @@ export const useMessageSubscriptions = ({
           table: 'direct_messages',
           filter
         }, (payload) => {
+          console.log('Message updated via subscription:', payload);
           const updatedMessage = payload.new as Message;
+          // Ensure attachments are properly parsed
+          if (updatedMessage.attachments && typeof updatedMessage.attachments === 'string') {
+            try {
+              updatedMessage.attachments = JSON.parse(updatedMessage.attachments as any);
+            } catch (e) {
+              console.error('Error parsing attachments:', e);
+              updatedMessage.attachments = [];
+            }
+          }
           onMessageUpdate(updatedMessage);
         }),
       {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
@@ -26,6 +26,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { deleteMessages, deleteConversation } = useMessageActions();
 
@@ -44,20 +45,33 @@ const Chat = () => {
   // Set up real-time subscriptions for this specific conversation
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: (message) => {
+    onNewMessage: useCallback((message) => {
+      console.log('New message received:', message);
       if (conversation && 
           ((conversation.user1_id === message.sender_id && conversation.user2_id === message.recipient_id) ||
            (conversation.user1_id === message.recipient_id && conversation.user2_id === message.sender_id))) {
+        console.log('Adding message to current conversation');
         addMessage(message);
+        
+        // Auto-scroll to bottom when new message arrives
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
         
         // Mark as read if user is recipient
         if (message.recipient_id === user?.id) {
           markConversationAsRead(conversation.id);
         }
       }
-    },
-    onMessageUpdate: updateMessage,
-    onConversationUpdate: fetchConversations,
+    }, [conversation, addMessage, markConversationAsRead, user?.id]),
+    onMessageUpdate: useCallback((message) => {
+      console.log('Message updated:', message);
+      updateMessage(message);
+    }, [updateMessage]),
+    onConversationUpdate: useCallback(() => {
+      console.log('Conversation updated, fetching conversations');
+      fetchConversations();
+    }, [fetchConversations]),
     activeConversationId: conversationId
   });
 
@@ -120,6 +134,16 @@ const Chat = () => {
     findConversation();
   }, [conversationId, user?.id, navigate]);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [messages]);
+
+  // Auto-scroll to bottom after sending a message
   const handleSendMessage = async (content: string, attachments?: Array<{
     id: string;
     type: 'image' | 'video' | 'file';
@@ -135,9 +159,23 @@ const Chat = () => {
       : conversation.user1_id;
     
     if (attachments && attachments.length > 0) {
-      await sendMessageWithAttachments(content, recipientId, attachments);
+      const success = await sendMessageWithAttachments(content, recipientId, attachments);
+      if (success) {
+        // Immediately refresh messages to show the sent message
+        setTimeout(() => {
+          fetchMessages(recipientId);
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+      }
     } else {
-      await sendMessage(content, recipientId);
+      const success = await sendMessage(content, recipientId);
+      if (success) {
+        // Immediately refresh messages to show the sent message
+        setTimeout(() => {
+          fetchMessages(recipientId);
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+      }
     }
   };
 
@@ -270,7 +308,7 @@ const Chat = () => {
           currentUserId={user?.id || ''}
           onSendMessage={handleSendMessage}
           showReadReceipts={true}
-          messagesEndRef={null}
+          messagesEndRef={messagesEndRef}
           isSelectionMode={isSelectionMode}
           selectedMessages={selectedMessages}
           onSelectedMessagesChange={setSelectedMessages}
