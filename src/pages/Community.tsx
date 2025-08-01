@@ -42,15 +42,16 @@ const Community = () => {
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
           {/* Header with Create Ad Button */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold">Community</h1>
               <p className="text-muted-foreground">Connect with your neighborhood</p>
             </div>
             <CreateCommunityAdDialog>
-              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
+              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300 w-full sm:w-auto">
                 <Megaphone className="h-4 w-4" />
-                <span className="hidden md:inline">Create Ad</span>
+                <span className="sm:hidden">Create Ad</span>
+                <span className="hidden sm:inline">Create Ad</span>
                 <Plus className="h-4 w-4" />
               </Button>
             </CreateCommunityAdDialog>

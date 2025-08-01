@@ -432,35 +432,37 @@ const Marketplace = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Marketplace</h1>
           <p className="text-muted-foreground">Discover local services and goods in your neighborhood</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Create Listing
         </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-muted p-1 rounded-lg w-fit">
-        <Button
-          variant={activeTab === 'services' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('services')}
-          className="flex items-center gap-2"
-        >
-          <Users className="h-4 w-4" />
-          Services
-        </Button>
-        <Button
-          variant={activeTab === 'goods' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('goods')}
-          className="flex items-center gap-2"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          Goods
-        </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex space-x-1 bg-muted p-1 rounded-lg w-full sm:w-fit">
+          <Button
+            variant={activeTab === 'services' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('services')}
+            className="flex items-center gap-2 flex-1 sm:flex-none"
+          >
+            <Users className="h-4 w-4" />
+            Services
+          </Button>
+          <Button
+            variant={activeTab === 'goods' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('goods')}
+            className="flex items-center gap-2 flex-1 sm:flex-none"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Goods
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -492,9 +494,10 @@ const Marketplace = () => {
             })}
           </SelectContent>
         </Select>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
           <Filter className="h-4 w-4" />
-          More Filters
+          <span className="hidden sm:inline">More Filters</span>
+          <span className="sm:hidden">Filters</span>
         </Button>
       </div>
 

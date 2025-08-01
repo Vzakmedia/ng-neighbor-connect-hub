@@ -305,7 +305,7 @@ const BusinessListings = () => {
     <div className="space-y-6">
       {/* Search and Filters */}
       <div className="space-y-4">
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -316,7 +316,7 @@ const BusinessListings = () => {
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -335,7 +335,7 @@ const BusinessListings = () => {
                 variant="outline"
                 role="combobox"
                 aria-expanded={locationOpen}
-                className="w-[250px] justify-between"
+                className="w-full sm:w-[250px] justify-between"
               >
                 {selectedNeighborhood !== 'all' 
                   ? selectedNeighborhood

@@ -34,7 +34,7 @@ const Business = () => {
       
       <main className="md:ml-64 pb-16 md:pb-0">
         <div className="container py-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h1 className="text-2xl font-bold">My Business</h1>
           </div>
           
