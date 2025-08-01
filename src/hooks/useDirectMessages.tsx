@@ -142,25 +142,58 @@ export const useDirectMessages = (userId: string | undefined) => {
 
   const markMessageAsRead = useCallback(async (messageId: string) => {
     try {
-      await supabase
-        .from('direct_messages')
-        .update({ status: 'read' })
-        .eq('id', messageId);
+      const { error } = await supabase.rpc('mark_message_as_read', {
+        message_id: messageId
+      });
+      
+      if (error) {
+        console.error('Error marking message as read:', error);
+        return false;
+      }
+      
+      // Update local state immediately
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, status: 'read' as const }
+            : msg
+        )
+      );
+      
+      return true;
     } catch (error) {
       console.error('Error marking message as read:', error);
+      return false;
     }
   }, []);
 
   const markConversationAsRead = useCallback(async (conversationId: string) => {
-    if (!userId) return;
+    if (!userId) return false;
     
     try {
-      await supabase.rpc('mark_direct_messages_as_read', {
+      const { error } = await supabase.rpc('mark_direct_messages_as_read', {
         conversation_id: conversationId,
         current_user_id: userId
       });
+      
+      if (error) {
+        console.error('Error marking conversation as read:', error);
+        return false;
+      }
+      
+      // Update local message states to 'read' for messages we received
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.recipient_id === userId 
+            ? { ...msg, status: 'read' as const }
+            : msg
+        )
+      );
+      
+      return true;
     } catch (error) {
       console.error('Error marking conversation as read:', error);
+      return false;
     }
   }, [userId]);
 

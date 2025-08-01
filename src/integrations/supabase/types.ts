@@ -3048,6 +3048,10 @@ export type Database = {
         Args: { conversation_id: string; current_user_id: string }
         Returns: undefined
       }
+      mark_message_as_read: {
+        Args: { message_id: string }
+        Returns: boolean
+      }
       mark_messages_as_delivered: {
         Args: { recipient_user_id: string; sender_user_id: string }
         Returns: undefined
