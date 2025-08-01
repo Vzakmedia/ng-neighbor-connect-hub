@@ -146,7 +146,8 @@ export const useWebRTCCall = (conversationId: string) => {
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
     let pollingInterval: NodeJS.Timeout | null = null;
-    let lastMessageId: string | null = null;
+    let lastProcessedId: string | null = null;
+    const processedMessageIds = new Set<string>();
 
     // Try realtime subscription first
     const channel = supabase
@@ -201,11 +202,12 @@ export const useWebRTCCall = (conversationId: string) => {
 
           // Process new messages
           for (const message of data || []) {
-            if (message.id !== lastMessageId) {
+            if (!processedMessageIds.has(message.id)) {
               console.log('Received signaling message via polling:', message);
+              processedMessageIds.add(message.id);
               await handleSignalingMessage(message);
-              lastMessageId = message.id;
-              break; // Only process the latest message
+              lastProcessedId = message.id;
+              break; // Only process one message per poll
             }
           }
         } catch (error) {
@@ -218,6 +220,10 @@ export const useWebRTCCall = (conversationId: string) => {
     const handleSignalingMessage = async (message: any) => {
       // Ignore messages from ourselves
       if (message.sender_id === user.id) return;
+      
+      // Prevent duplicate processing
+      if (processedMessageIds.has(message.id)) return;
+      processedMessageIds.add(message.id);
 
       if (message.message.type === 'offer') {
         console.log('Incoming call offer received - setting incoming call state');

@@ -64,14 +64,27 @@ export class WebRTCManager {
       
       // Get user media with more robust error handling
       try {
-        this.localStream = await navigator.mediaDevices.getUserMedia({
+        console.log('Requesting media access - video:', video, 'audio: true');
+        const constraints = {
           audio: true,
-          video: video
-        });
-        console.log('Got local media stream');
+          video: video ? {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          } : false
+        };
+        
+        this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('Got local media stream:', this.localStream.getTracks().map(t => `${t.kind}: ${t.label}`));
       } catch (mediaError) {
         console.error('Error getting user media:', mediaError);
-        throw new Error('Camera or microphone access denied');
+        if (mediaError.name === 'NotAllowedError') {
+          throw new Error('Camera or microphone access denied. Please allow access and try again.');
+        } else if (mediaError.name === 'NotFoundError') {
+          throw new Error('No camera or microphone found on this device.');
+        } else {
+          throw new Error(`Media access error: ${mediaError.message}`);
+        }
       }
 
       this.callStartTime = new Date();
@@ -132,10 +145,18 @@ export class WebRTCManager {
       this.callStartTime = new Date();
       
       // Get user media
-      this.localStream = await navigator.mediaDevices.getUserMedia({
+      console.log('Answering call with video:', video);
+      const constraints = {
         audio: true,
-        video: video
-      });
+        video: video ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        } : false
+      };
+      
+      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Got local media stream for answer:', this.localStream.getTracks().map(t => `${t.kind}: ${t.label}`));
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {
