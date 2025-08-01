@@ -1,31 +1,24 @@
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
-import { Conversation } from './MessagingContent';
-import { MessageCircle } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { type Conversation } from '@/hooks/useConversations';
 
 interface ConversationListProps {
   conversations: Conversation[];
-  activeConversation: Conversation | null;
-  onConversationClick: (conversation: Conversation) => void;
+  activeConversationId?: string;
   currentUserId?: string;
+  onConversationSelect: (conversation: Conversation) => void;
+  loading?: boolean;
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
-  activeConversation,
-  onConversationClick,
-  currentUserId
+  activeConversationId,
+  currentUserId,
+  onConversationSelect,
+  loading = false,
 }) => {
-  const getUnreadStatus = (conversation: Conversation) => {
-    if (!currentUserId) return false;
-    
-    return conversation.user1_id === currentUserId 
-      ? conversation.user1_has_unread 
-      : conversation.user2_has_unread;
-  };
-
   const getInitials = (fullName: string | null) => {
     if (!fullName) return 'U';
     return fullName
@@ -36,90 +29,81 @@ const ConversationList: React.FC<ConversationListProps> = ({
       .toUpperCase();
   };
 
+  if (loading) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Loading conversations...
+      </div>
+    );
+  }
+
   if (conversations.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-center p-6">
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <MessageCircle className="h-12 w-12 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium">No conversations yet</h3>
-          <p className="text-muted-foreground">
-            Start a new conversation to begin messaging
-          </p>
-        </div>
+      <div className="p-4 text-center text-muted-foreground">
+        <p>No conversations yet</p>
+        <p className="text-sm mt-2">Start a new conversation to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Conversations</h2>
-      </div>
-      
-      <ScrollArea className="flex-grow">
-        <div className="space-y-1 p-2">
-          {conversations.map((conversation) => {
-            const isActive = activeConversation?.id === conversation.id;
-            const hasUnread = getUnreadStatus(conversation);
-            
-            return (
-              <div
-                key={conversation.id}
-                onClick={() => onConversationClick(conversation)}
-                className={`flex items-center space-x-3 p-3 rounded-md cursor-pointer transition-colors ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'hover:bg-muted'
-                }`}
-              >
+    <ScrollArea className="h-full">
+      <div className="space-y-1 p-2">
+        {conversations.map((conversation) => {
+          const isActive = activeConversationId === conversation.id;
+          const hasUnread = currentUserId 
+            ? (conversation.user1_id === currentUserId 
+                ? conversation.user1_has_unread 
+                : conversation.user2_has_unread)
+            : false;
+
+          return (
+            <div
+              key={conversation.id}
+              onClick={() => onConversationSelect(conversation)}
+              className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                isActive 
+                  ? 'bg-primary/10 border border-primary/20' 
+                  : 'hover:bg-muted'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={conversation.otherUser?.avatar_url || ''} />
+                  <AvatarImage src={conversation.other_user_avatar || ''} />
                   <AvatarFallback>
-                    {getInitials(conversation.otherUser?.full_name)}
+                    {getInitials(conversation.other_user_name)}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className={`text-sm font-medium truncate ${
-                      isActive ? 'text-primary-foreground' : 'text-foreground'
+                    <p className={`font-medium truncate ${
+                      hasUnread ? 'text-foreground' : 'text-muted-foreground'
                     }`}>
-                      {conversation.otherUser?.full_name || 'Unknown User'}
+                      {conversation.other_user_name}
                     </p>
-                    
-                    <div className="flex items-center space-x-2">
-                      {hasUnread && (
-                        <Badge 
-                          variant="secondary" 
-                          className={`h-2 w-2 p-0 rounded-full ${
-                            isActive ? 'bg-primary-foreground' : 'bg-primary'
-                          }`}
-                        />
-                      )}
-                      <span className={`text-xs ${
-                        isActive ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                      }`}>
-                        {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-                      </span>
-                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+                    </span>
                   </div>
                   
-                  {conversation.lastMessage && (
-                    <p className={`text-xs truncate ${
-                      isActive ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}>
-                      {conversation.lastMessage}
-                    </p>
-                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground truncate">
+                      {conversation.other_user_phone || 'No phone'}
+                    </span>
+                    {hasUnread && (
+                      <Badge variant="secondary" className="text-xs">
+                        New
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
-    </div>
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
   );
 };
 

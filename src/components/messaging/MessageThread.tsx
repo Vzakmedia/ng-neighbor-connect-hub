@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Send, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Conversation, Message } from './MessagingContent';
+import { type Conversation } from '@/hooks/useConversations';
+import { type Message } from '@/hooks/useDirectMessages';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -91,19 +92,22 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         )}
         
         <Avatar className="h-10 w-10">
-          <AvatarImage src={conversation.otherUser?.avatar_url || ''} />
+          <AvatarImage src={conversation.other_user_avatar || ''} />
           <AvatarFallback>
-            {getInitials(conversation.otherUser?.full_name)}
+            {getInitials(conversation.other_user_name)}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex-1">
           <h3 className="text-lg font-medium">
-            {conversation.otherUser?.full_name || 'Unknown User'}
+            {conversation.other_user_name}
           </h3>
           <p className="text-sm text-muted-foreground">
-            Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+            {conversation.other_user_phone || 'No phone number'}
           </p>
+          <span className="text-xs text-muted-foreground">
+            Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
+          </span>
         </div>
       </div>
 
@@ -142,9 +146,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 {!isOwn && (
                   <div className="order-0 mr-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={conversation.otherUser?.avatar_url || ''} />
+                      <AvatarImage src={conversation.other_user_avatar || ''} />
                       <AvatarFallback className="text-xs">
-                        {getInitials(conversation.otherUser?.full_name)}
+                        {getInitials(conversation.other_user_name)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
