@@ -31,7 +31,6 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
@@ -880,10 +879,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 {post.title && (
                   <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
                 )}
-                
-                <div className="max-h-32 overflow-y-auto">
-                  <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4 pr-2">{post.content}</p>
-                </div>
+                <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
                 
                 {/* Display tags if any */}
                 {post.tags && post.tags.length > 0 && (

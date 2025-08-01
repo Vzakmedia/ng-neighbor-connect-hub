@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -186,242 +185,238 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
           <DialogTitle>Create a Post</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 pb-4">
-            {/* User Info */}
-            <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarImage src={profile?.avatar_url || ""} />
-                <AvatarFallback>
-                  {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{profile?.full_name || "Anonymous"}</p>
-                <p className="text-sm text-muted-foreground">
-                  {profile?.neighborhood || profile?.city || "Your neighborhood"}
-                </p>
-              </div>
-            </div>
-
-            {/* Post Type */}
-            <div className="space-y-2">
-              <Label>Post Type</Label>
-              <Select value={postType} onValueChange={setPostType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {postTypes.map((type) => {
-                    const Icon = type.icon;
-                    return (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center space-x-2">
-                          <Icon className={`h-4 w-4 ${type.color}`} />
-                          <span>{type.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Title (for certain post types) */}
-            {['marketplace', 'event', 'safety'].includes(postType) && (
-              <div className="space-y-2">
-                <Label>Title</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a title for your post..."
-                  required
-                />
-              </div>
-            )}
-
-            {/* Content */}
-            <div className="space-y-2">
-              <Label>Content</Label>
-              <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="What's happening in your neighborhood?"
-                rows={4}
-                required
-                className="resize-none"
-              />
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label>Location (Optional)</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Add specific location..."
-                    className="pl-10"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={openLocationPicker}
-                  className="flex items-center gap-2"
-                >
-                  <Navigation className="h-4 w-4" />
-                  Use my location
-                </Button>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags (Optional)</Label>
-              <div className="space-y-3">
-                <div className="flex space-x-2">
-                  <Input
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    onKeyDown={handleTagKeyPress}
-                    placeholder="Add tags (press Enter or comma to add)..."
-                    disabled={tags.length >= 5}
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={addTag}
-                    disabled={!currentTag.trim() || tags.length >= 5}
-                  >
-                    Add
-                  </Button>
-                </div>
-                
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        #{tag}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="ml-1 h-auto p-0 text-xs"
-                          onClick={() => removeTag(tag)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-                
-                <span className="text-xs text-muted-foreground">
-                  {tags.length}/5 tags
-                </span>
-              </div>
-            </div>
-
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <Label>Images (Optional)</Label>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" className="relative">
-                    <ImagePlus className="h-4 w-4 mr-2" />
-                    Add Images
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Up to 4 images
-                  </span>
-                </div>
-                
-                {images.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {images.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-20 object-cover rounded-md"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* RSVP Settings for Events */}
-            {postType === 'event' && (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="rsvp-enabled"
-                    checked={rsvpEnabled}
-                    onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
-                  />
-                  <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Enable RSVP for this event
-                  </Label>
-                </div>
-                <p className="text-xs text-muted-foreground ml-6">
-                  Allow people to RSVP and track attendance for your event
-                </p>
-              </div>
-            )}
-
-            {/* Post Type Preview */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Posting as:</span>
-                <Badge variant="outline" className="text-xs">
-                  {(() => {
-                    const currentType = getCurrentPostType();
-                    const Icon = currentType.icon;
-                    return (
-                      <>
-                        <Icon className={`h-3 w-3 mr-1 ${currentType.color}`} />
-                        {currentType.label}
-                      </>
-                    );
-                  })()}
-                </Badge>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* User Info */}
+          <div className="flex items-center space-x-3">
+            <Avatar>
+              <AvatarImage src={profile?.avatar_url || ""} />
+              <AvatarFallback>
+                {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{profile?.full_name || "Anonymous"}</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.neighborhood || profile?.city || "Your neighborhood"}
+              </p>
             </div>
           </div>
-        </ScrollArea>
 
-        <form onSubmit={handleSubmit}>
-          <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
+          {/* Post Type */}
+          <div className="space-y-2">
+            <Label>Post Type</Label>
+            <Select value={postType} onValueChange={setPostType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {postTypes.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center space-x-2">
+                        <Icon className={`h-4 w-4 ${type.color}`} />
+                        <span>{type.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Title (for certain post types) */}
+          {['marketplace', 'event', 'safety'].includes(postType) && (
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter a title for your post..."
+                required
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="space-y-2">
+            <Label>Content</Label>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's happening in your neighborhood?"
+              rows={4}
+              required
+              className="resize-none"
+            />
+          </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label>Location (Optional)</Label>
+            <div className="space-y-2">
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Add specific location..."
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={openLocationPicker}
+                className="flex items-center gap-2"
+              >
+                <Navigation className="h-4 w-4" />
+                Use my location
+              </Button>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label>Tags (Optional)</Label>
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <Input
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyDown={handleTagKeyPress}
+                  placeholder="Add tags (press Enter or comma to add)..."
+                  disabled={tags.length >= 5}
+                  className="flex-1"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={addTag}
+                  disabled={!currentTag.trim() || tags.length >= 5}
+                >
+                  Add
+                </Button>
+              </div>
+              
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      #{tag}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="ml-1 h-auto p-0 text-xs"
+                        onClick={() => removeTag(tag)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              <span className="text-xs text-muted-foreground">
+                {tags.length}/5 tags
+              </span>
+            </div>
+          </div>
+
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label>Images (Optional)</Label>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" className="relative">
+                  <ImagePlus className="h-4 w-4 mr-2" />
+                  Add Images
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Up to 4 images
+                </span>
+              </div>
+              
+              {images.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-20 object-cover rounded-md"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RSVP Settings for Events */}
+          {postType === 'event' && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rsvp-enabled"
+                  checked={rsvpEnabled}
+                  onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
+                />
+                <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Enable RSVP for this event
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground ml-6">
+                Allow people to RSVP and track attendance for your event
+              </p>
+            </div>
+          )}
+
+          {/* Post Type Preview */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">Posting as:</span>
+              <Badge variant="outline" className="text-xs">
+                {(() => {
+                  const currentType = getCurrentPostType();
+                  const Icon = currentType.icon;
+                  return (
+                    <>
+                      <Icon className={`h-3 w-3 mr-1 ${currentType.color}`} />
+                      {currentType.label}
+                    </>
+                  );
+                })()}
+              </Badge>
+            </div>
+          </div>
+
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
