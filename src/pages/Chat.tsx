@@ -57,28 +57,38 @@ const Chat = () => {
     const findConversation = async () => {
       setLoading(true);
       
-      // First try to find in existing conversations
-      await fetchConversations();
-      const foundConv = conversations.find(c => c.id === conversationId);
-      
-      if (foundConv) {
-        setConversation(foundConv);
-        const otherUserId = foundConv.user1_id === user.id 
-          ? foundConv.user2_id 
-          : foundConv.user1_id;
+      try {
+        // Fetch conversations and wait for the result
+        await fetchConversations();
         
-        await fetchMessages(otherUserId);
-        await markConversationAsRead(conversationId);
-      } else {
-        // Conversation not found, redirect back
+        // Use a small delay to ensure state is updated
+        setTimeout(() => {
+          const foundConv = conversations.find(c => c.id === conversationId);
+          
+          if (foundConv) {
+            setConversation(foundConv);
+            const otherUserId = foundConv.user1_id === user.id 
+              ? foundConv.user2_id 
+              : foundConv.user1_id;
+            
+            fetchMessages(otherUserId);
+            markConversationAsRead(conversationId);
+          } else {
+            // Conversation not found, redirect back
+            navigate('/messages');
+          }
+          
+          setLoading(false);
+        }, 100);
+      } catch (error) {
+        console.error('Error loading conversation:', error);
         navigate('/messages');
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     findConversation();
-  }, [conversationId, user, navigate]);
+  }, [conversationId, user?.id, navigate, fetchConversations]);
 
   const handleSendMessage = async (content: string) => {
     if (!conversation || !user) return;
