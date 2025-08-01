@@ -111,7 +111,9 @@ const Chat = () => {
   });
 
   useEffect(() => {
+    console.log('Chat useEffect triggered:', { user: user?.id, conversationId, loading });
     if (!user || !conversationId) {
+      console.log('Redirecting to messages - missing user or conversationId');
       navigate('/messages');
       return;
     }
