@@ -125,9 +125,9 @@ const BusinessVerificationAdmin = () => {
             recipient_id: application.user_id,
             notification_type: 'business_verification',
             content: action === 'approve' 
-              ? `Congratulations! Your business "${application.business_name}" has been verified and is now live on NeighborLink.`
+              ? `Congratulations! Your business "${application.business_name}" has been verified and is now live on NeighborLink NG.`
               : `Your business application for "${application.business_name}" has been rejected. ${reviewNotes ? `Reason: ${reviewNotes}` : 'Please review and resubmit.'}`,
-            sender_name: 'NeighborLink Admin'
+            sender_name: 'NeighborLink NG Admin'
           });
       }
 

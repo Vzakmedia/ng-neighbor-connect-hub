@@ -363,7 +363,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
             Register Your Business
           </DialogTitle>
           <DialogDescription>
-            Join NeighborLink's verified business directory and reach more customers in your community
+            Join NeighborLink NG's verified business directory and reach more customers in your community
           </DialogDescription>
         </DialogHeader>
 

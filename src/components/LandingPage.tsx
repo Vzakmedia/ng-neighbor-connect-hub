@@ -248,7 +248,10 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-8 w-32 object-contain" />
+                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">NL</span>
+                </div>
+                <span className="font-semibold text-lg">Neighborlink</span>
               </div>
               <p className="text-muted-foreground mb-4">
                 Building stronger, safer communities across Nigeria through meaningful neighborhood connections.
@@ -279,7 +282,7 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 NeighborLink. All rights reserved.</p>
+            <p>&copy; 2024 Neighborlink. All rights reserved.</p>
           </div>
         </div>
       </footer>
