@@ -20,8 +20,8 @@ export const useMessageNotifications = ({ userId, currentConversationId }: UseMe
     console.log('useMessageNotifications: Last check time:', lastCheckTimeRef.current);
 
     try {
-      // Check for messages received in the last 30 seconds
-      const thirtySecondsAgo = new Date(Date.now() - 30000);
+      // Check for messages received in the last 10 seconds (reduced window for faster detection)
+      const tenSecondsAgo = new Date(Date.now() - 10000);
       
       const { data: newMessages, error } = await supabase
         .from('direct_messages')
@@ -94,11 +94,11 @@ export const useMessageNotifications = ({ userId, currentConversationId }: UseMe
     // Initial check
     checkForNewMessages();
     
-    // Set up polling every 5 seconds
+    // Set up polling every 2 seconds for faster notifications
     pollingIntervalRef.current = setInterval(() => {
       console.log('useMessageNotifications: Polling interval triggered');
       checkForNewMessages();
-    }, 5000);
+    }, 2000); // Reduced from 5000 to 2000ms
 
     return () => {
       if (pollingIntervalRef.current) {

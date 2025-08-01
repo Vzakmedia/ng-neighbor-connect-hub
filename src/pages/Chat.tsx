@@ -209,8 +209,8 @@ const Chat = () => {
         }
       };
       
-      // Poll every 3 seconds for better real-time feel
-      pollingIntervalRef.current = setInterval(pollForMessages, 3000);
+      // Poll every 2 seconds for better real-time feel (reduced from 3 seconds)
+      pollingIntervalRef.current = setInterval(pollForMessages, 2000);
     };
     
     setupPolling();

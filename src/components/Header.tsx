@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import { messageNotifier } from "@/utils/messageNotifier";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
@@ -36,6 +37,19 @@ const Header = () => {
     userId: user?.id,
     currentConversationId // Pass the current conversation ID to avoid duplicate notifications
   });
+
+  // Set up instant notification system
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Header: Setting up instant message notifier');
+      messageNotifier.startListening(user.id, currentConversationId);
+      
+      return () => {
+        console.log('Header: Cleaning up instant message notifier');
+        messageNotifier.stopListening();
+      };
+    }
+  }, [user?.id, currentConversationId]);
 
   useEffect(() => {
     if (user) {
