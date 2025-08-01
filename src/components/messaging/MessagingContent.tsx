@@ -491,7 +491,7 @@ const MessagingContent = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Messages</h1>
@@ -501,14 +501,14 @@ const MessagingContent = () => {
             onClick={markAllNotificationsAsRead}
             variant="outline"
             size="sm"
-            className="text-xs"
+            className="text-xs flex-1 sm:flex-none"
           >
             Clear Notifications
           </Button>
           <Button
             onClick={startNewConversation}
             size="sm"
-            className="bg-gradient-primary hover:opacity-90 transition-opacity"
+            className="bg-gradient-primary hover:opacity-90 transition-opacity flex-1 sm:flex-none"
           >
             New Message
           </Button>
@@ -523,34 +523,23 @@ const MessagingContent = () => {
         </TabsList>
         
         <TabsContent value="conversations" className="space-y-4">
-          <div className="flex flex-col md:flex-row h-[70vh] gap-4">
-            <div className="w-full md:w-1/3 border rounded-md overflow-hidden">
-              {loading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <ConversationList 
-                  conversations={conversations}
-                  activeConversation={activeConversation}
-                  onConversationClick={handleConversationClick}
-                  currentUserId={user?.id}
-                />
-              )}
-            </div>
-            
-            <div className="w-full md:w-2/3 border rounded-md overflow-hidden">
+          <div className="flex flex-col h-[70vh] gap-4">
+            {/* Mobile: Show conversation list or message thread */}
+            <div className="block md:hidden h-full">
               {activeConversation ? (
-                <MessageThread
-                  conversation={activeConversation}
-                  messages={messages}
-                  currentUserId={user?.id}
-                  onSendMessage={(content) => sendMessage(content, activeConversation.user1_id === user?.id ? activeConversation.user2_id : activeConversation.user1_id)}
-                  showReadReceipts={preferences.show_read_receipts}
-                  messagesEndRef={messagesEndRef}
-                />
+                <div className="border rounded-md overflow-hidden h-full">
+                  <MessageThread
+                    conversation={activeConversation}
+                    messages={messages}
+                    currentUserId={user?.id}
+                    onSendMessage={(content) => sendMessage(content, activeConversation.user1_id === user?.id ? activeConversation.user2_id : activeConversation.user1_id)}
+                    showReadReceipts={preferences.show_read_receipts}
+                    messagesEndRef={messagesEndRef}
+                    onBack={() => setActiveConversation(null)}
+                  />
+                </div>
               ) : newConversation ? (
-                <div className="h-full flex flex-col">
+                <div className="border rounded-md overflow-hidden h-full flex flex-col">
                   <div className="p-4 border-b flex items-center justify-between">
                     <h3 className="text-lg font-medium">New Conversation</h3>
                     <Button
@@ -567,24 +556,87 @@ const MessagingContent = () => {
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center text-center p-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-center">
-                      <MessageCircle className="h-12 w-12 text-muted-foreground" />
+                <div className="border rounded-md overflow-hidden h-full">
+                  {loading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
-                    <h3 className="text-lg font-medium">No conversation selected</h3>
-                    <p className="text-muted-foreground">
-                      Select a conversation from the list or start a new one
-                    </p>
-                    <Button
-                      onClick={startNewConversation}
-                      className="bg-gradient-primary hover:opacity-90 transition-opacity"
-                    >
-                      Start New Conversation
-                    </Button>
-                  </div>
+                  ) : (
+                    <ConversationList 
+                      conversations={conversations}
+                      activeConversation={activeConversation}
+                      onConversationClick={handleConversationClick}
+                      currentUserId={user?.id}
+                    />
+                  )}
                 </div>
               )}
+            </div>
+
+            {/* Desktop: Show both side by side */}
+            <div className="hidden md:flex flex-row h-full gap-4">
+              <div className="w-1/3 border rounded-md overflow-hidden">
+                {loading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <ConversationList 
+                    conversations={conversations}
+                    activeConversation={activeConversation}
+                    onConversationClick={handleConversationClick}
+                    currentUserId={user?.id}
+                  />
+                )}
+              </div>
+              
+              <div className="w-2/3 border rounded-md overflow-hidden">
+                {activeConversation ? (
+                  <MessageThread
+                    conversation={activeConversation}
+                    messages={messages}
+                    currentUserId={user?.id}
+                    onSendMessage={(content) => sendMessage(content, activeConversation.user1_id === user?.id ? activeConversation.user2_id : activeConversation.user1_id)}
+                    showReadReceipts={preferences.show_read_receipts}
+                    messagesEndRef={messagesEndRef}
+                  />
+                ) : newConversation ? (
+                  <div className="h-full flex flex-col">
+                    <div className="p-4 border-b flex items-center justify-between">
+                      <h3 className="text-lg font-medium">New Conversation</h3>
+                      <Button
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setNewConversation(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="p-4 flex-grow overflow-auto">
+                      <UserSearch onUserSelect={handleUserSelect} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-center p-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-center">
+                        <MessageCircle className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-medium">No conversation selected</h3>
+                      <p className="text-muted-foreground">
+                        Select a conversation from the list or start a new one
+                      </p>
+                      <Button
+                        onClick={startNewConversation}
+                        className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                      >
+                        Start New Conversation
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </TabsContent>
