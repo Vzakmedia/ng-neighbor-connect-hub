@@ -8,7 +8,7 @@ import { useMessageActions } from '@/hooks/useMessageActions';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Phone, Video, MoreVertical, CheckSquare, Trash2 } from 'lucide-react';
+import { ArrowLeft, Phone, Video, MoreVertical, CheckSquare, Trash2, PhoneCall } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -198,12 +198,24 @@ const Chat = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Phone className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Video className="h-5 w-5" />
-              </Button>
+              {/* Combined Call Button with Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <PhoneCall className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="z-50 bg-background border shadow-lg">
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                    <Phone className="h-4 w-4" />
+                    Voice Call
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                    <Video className="h-4 w-4" />
+                    Video Call
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="ghost"
                 size="icon"
