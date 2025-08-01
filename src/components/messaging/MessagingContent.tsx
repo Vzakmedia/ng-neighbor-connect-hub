@@ -13,6 +13,7 @@ import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useToast } from '@/hooks/use-toast';
 import { useReadStatus } from '@/hooks/useReadStatus';
+import { useMessageActions } from '@/hooks/useMessageActions';
 import { supabase } from '@/integrations/supabase/client';
 
 const MessagingContent = () => {

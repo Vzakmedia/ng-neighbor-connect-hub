@@ -4,10 +4,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Send, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message } from '@/hooks/useDirectMessages';
+import { useMessageActions } from '@/hooks/useMessageActions';
+import MessageSelectionToolbar from './MessageSelectionToolbar';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -17,6 +26,7 @@ interface MessageThreadProps {
   showReadReceipts: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onBack?: () => void;
+  onMessageDeleted?: () => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -26,10 +36,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onSendMessage,
   showReadReceipts,
   messagesEndRef,
-  onBack
+  onBack,
+  onMessageDeleted
 }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
@@ -76,6 +91,65 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  const handleLongPress = (messageId: string) => {
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedMessages(new Set([messageId]));
+    }
+  };
+
+  const handleMessageSelect = (messageId: string, checked: boolean) => {
+    const newSelected = new Set(selectedMessages);
+    if (checked) {
+      newSelected.add(messageId);
+    } else {
+      newSelected.delete(messageId);
+    }
+    setSelectedMessages(newSelected);
+    
+    if (newSelected.size === 0) {
+      setIsSelectionMode(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const selectedArray = Array.from(selectedMessages);
+    const success = await deleteMessages(selectedArray);
+    if (success) {
+      setSelectedMessages(new Set());
+      setIsSelectionMode(false);
+      onMessageDeleted?.();
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    const success = await deleteConversation(conversation.id);
+    if (success) {
+      setSelectedMessages(new Set());
+      setIsSelectionMode(false);
+      onBack?.();
+    }
+  };
+
+  const handleDeleteSingleMessage = async (messageId: string) => {
+    const success = await deleteSingleMessage(messageId);
+    if (success) {
+      onMessageDeleted?.();
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedMessages(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      setSelectedMessages(new Set());
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -109,6 +183,34 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
           </span>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSelectionMode}
+            className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
+          >
+            <CheckSquare className="h-4 w-4" />
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem 
+                onClick={() => handleDeleteConversation()}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Conversation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Messages */}
@@ -116,19 +218,30 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         <div className="space-y-4">
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
+            const isSelected = selectedMessages.has(message.id);
             
             return (
               <div 
                 key={message.id} 
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                onDoubleClick={() => handleLongPress(message.id)}
               >
-                <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                {isSelectionMode && (
+                  <div className={`flex items-center mr-2 ${isOwn ? 'order-3' : 'order-0'}`}>
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={(checked) => handleMessageSelect(message.id, checked as boolean)}
+                    />
+                  </div>
+                )}
+                
+                <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
                   <div 
                     className={`p-3 rounded-lg ${
                       isOwn 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
-                    }`}
+                    } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                   >
                     <p className="text-sm">{message.content}</p>
                   </div>
@@ -141,10 +254,32 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     </span>
                     {getMessageStatusIcon(message.status, isOwn)}
                   </div>
+
+                  {/* Single message delete option for own messages */}
+                  {!isSelectionMode && isOwn && (
+                    <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 bg-background border">
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteSingleMessage(message.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3 mr-2" />
+                            Delete Message
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                 </div>
                 
                 {!isOwn && (
-                  <div className="order-0 mr-2">
+                  <div className={`mr-2 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
                     <Avatar className="h-6 w-6">
                       <AvatarImage src={conversation.other_user_avatar || ''} />
                       <AvatarFallback className="text-xs">
@@ -159,6 +294,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
+
+      {/* Selection Toolbar */}
+      <MessageSelectionToolbar
+        selectedCount={selectedMessages.size}
+        onDeleteSelected={handleDeleteSelected}
+        onDeleteConversation={handleDeleteConversation}
+        onClearSelection={handleClearSelection}
+        loading={loading}
+      />
 
       {/* Message input */}
       <div className="p-4 border-t">

@@ -192,6 +192,15 @@ const Chat = () => {
           onSendMessage={handleSendMessage}
           showReadReceipts={true}
           messagesEndRef={null}
+          onMessageDeleted={() => {
+            // Refetch messages when a message is deleted
+            if (conversation) {
+              const otherUserId = conversation.user1_id === user?.id 
+                ? conversation.user2_id 
+                : conversation.user1_id;
+              fetchMessages(otherUserId);
+            }
+          }}
         />
       </div>
     </div>
