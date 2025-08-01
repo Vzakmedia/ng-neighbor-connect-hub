@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -121,8 +122,8 @@ export const PostFullScreenDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="p-4 pb-3 border-b sticky top-0 bg-background z-10 relative">
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="p-4 pb-3 border-b bg-background z-10 relative flex-shrink-0">
             <div className="flex items-start justify-between">
               {/* Close button positioned absolutely */}
               <button
@@ -163,93 +164,95 @@ export const PostFullScreenDialog = ({
             </div>
           </DialogHeader>
           
-          <div className="p-4 pt-2">
-            {post.title && (
-              <h3 className="font-semibold text-xl mb-4">{post.title}</h3>
-            )}
-            
-            <p className="text-base leading-relaxed mb-6 whitespace-pre-wrap">{post.content}</p>
-            
-            {/* Display tags if any */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                {post.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline">
-                    #{tag}
-                  </Badge>
-                ))}
+          <ScrollArea className="flex-1 p-4 pt-2">
+            <div className="pr-4">
+              {post.title && (
+                <h3 className="font-semibold text-xl mb-4">{post.title}</h3>
+              )}
+              
+              <p className="text-base leading-relaxed mb-6 whitespace-pre-wrap">{post.content}</p>
+              
+              {/* Display tags if any */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {post.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              {/* Display images if any */}
+              {post.images && post.images.length > 0 && (
+                <div className={`grid gap-2 mb-6 ${
+                  post.images.length === 1 ? 'grid-cols-1' : 
+                  post.images.length === 2 ? 'grid-cols-2' : 
+                  'grid-cols-2'
+                }`}>
+                  {post.images.map((imageUrl, index) => (
+                    <img
+                      key={index}
+                      src={imageUrl}
+                      alt="Post image"
+                      className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => handleImageClick(index)}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {/* Action buttons */}
+              <div className="flex items-center justify-between py-4 border-t border-b mb-6">
+                <div className="flex items-center gap-6">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onLike(post.id)}
+                    className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
+                  >
+                    <Heart className={`h-5 w-5 mr-2 ${post.isLiked ? 'fill-current' : ''}`} />
+                    <span>{post.likes} Likes</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowComments(!showComments)}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <MessageCircle className="h-5 w-5 mr-2" />
+                    <span>{post.comments} Comments</span>
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onSave(post.id)}
+                    className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary`}
+                  >
+                    <Bookmark className={`h-5 w-5 ${post.isSaved ? 'fill-current' : ''}`} />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleShare}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
-            )}
-            
-            {/* Display images if any */}
-            {post.images && post.images.length > 0 && (
-              <div className={`grid gap-2 mb-6 ${
-                post.images.length === 1 ? 'grid-cols-1' : 
-                post.images.length === 2 ? 'grid-cols-2' : 
-                'grid-cols-2'
-              }`}>
-                {post.images.map((imageUrl, index) => (
-                  <img
-                    key={index}
-                    src={imageUrl}
-                    alt="Post image"
-                    className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => handleImageClick(index)}
-                  />
-                ))}
-              </div>
-            )}
-            
-            {/* Action buttons */}
-            <div className="flex items-center justify-between py-4 border-t border-b mb-6">
-              <div className="flex items-center gap-6">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => onLike(post.id)}
-                  className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
-                >
-                  <Heart className={`h-5 w-5 mr-2 ${post.isLiked ? 'fill-current' : ''}`} />
-                  <span>{post.likes} Likes</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowComments(!showComments)}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  <span>{post.comments} Comments</span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => onSave(post.id)}
-                  className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary`}
-                >
-                  <Bookmark className={`h-5 w-5 ${post.isSaved ? 'fill-current' : ''}`} />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleShare}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
+              
+              {/* Comment Section */}
+              {showComments && (
+                <CommentSection 
+                  postId={post.id}
+                  commentCount={post.comments}
+                />
+              )}
             </div>
-            
-            {/* Comment Section */}
-            {showComments && (
-              <CommentSection 
-                postId={post.id}
-                commentCount={post.comments}
-              />
-            )}
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 

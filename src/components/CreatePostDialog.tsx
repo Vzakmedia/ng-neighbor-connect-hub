@@ -13,7 +13,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -186,13 +185,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create a Post</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Info */}
           <div className="flex items-center space-x-3">
             <Avatar>
@@ -418,27 +416,24 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             </div>
           </div>
 
-          </form>
-        </ScrollArea>
-
-        <DialogFooter className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={!content.trim() || isSubmitting}
-            className="bg-gradient-primary hover:opacity-90"
-            onClick={handleSubmit}
-          >
-            {isSubmitting ? 'Posting...' : 'Post to Community'}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!content.trim() || isSubmitting}
+              className="bg-gradient-primary hover:opacity-90"
+            >
+              {isSubmitting ? 'Posting...' : 'Post to Community'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
 
       <LocationPickerDialog
