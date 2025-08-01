@@ -9,8 +9,7 @@ import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shie
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
-import { useSimpleMessageNotifications } from "@/hooks/useSimpleMessageNotifications";
-import { messageNotifier } from "@/utils/messageNotifier";
+import { setupDirectMessageNotifications } from '@/utils/directNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
@@ -33,13 +32,25 @@ const Header = () => {
   console.log('Header: Is in chat:', isInChat);
   console.log('Header: Current conversation ID:', currentConversationId);
   
-  // Simplified notification system for debugging
-  const { triggerCheck } = useSimpleMessageNotifications(user?.id);
-  
   console.log('Header: Current path:', currentPath);
   console.log('Header: Is in chat:', isInChat);
   console.log('Header: Current conversation ID:', currentConversationId);
   console.log('Header: User ID:', user?.id);
+
+  // Set up direct message notifications
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Header: Setting up direct message notifications for user:', user.id);
+      const cleanup = setupDirectMessageNotifications(user.id);
+      
+      return () => {
+        console.log('Header: Cleaning up direct message notifications');
+        cleanup();
+      };
+    } else {
+      console.log('Header: No user ID, skipping notification setup');
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
