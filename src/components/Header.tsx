@@ -171,9 +171,9 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">NG</span>
+                <span className="text-white font-bold text-sm">NL</span>
               </div>
-              <span className="font-semibold text-lg">NextDoor NG</span>
+              <span className="font-semibold text-lg">Neighborlink</span>
             </div>
           </div>
 
@@ -269,9 +269,9 @@ const Header = () => {
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
-              <span className="text-white font-bold text-xs">NG</span>
+              <span className="text-white font-bold text-xs">NL</span>
             </div>
-            <span className="font-semibold text-lg">NextDoor NG</span>
+            <span className="font-semibold text-lg">Neighborlink</span>
           </div>
           
           <div className="flex items-center space-x-1">

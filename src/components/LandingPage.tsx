@@ -249,9 +249,9 @@ const LandingPage = () => {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">NG</span>
+                  <span className="text-white font-bold text-sm">NL</span>
                 </div>
-                <span className="font-semibold text-lg">NextDoor NG</span>
+                <span className="font-semibold text-lg">Neighborlink</span>
               </div>
               <p className="text-muted-foreground mb-4">
                 Building stronger, safer communities across Nigeria through meaningful neighborhood connections.
@@ -282,7 +282,7 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 NextDoor NG. All rights reserved.</p>
+            <p>&copy; 2024 Neighborlink. All rights reserved.</p>
           </div>
         </div>
       </footer>
