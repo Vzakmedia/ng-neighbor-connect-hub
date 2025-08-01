@@ -126,10 +126,10 @@ const Header = () => {
           },
           async (payload) => {
             console.log('Header: Received message INSERT event:', payload);
-            // Play message notification sound
+            // Play message notification sound immediately
             try {
-              await playNotification('normal', 0.7);
-              console.log('Header: Played notification sound');
+              await playNotification('notification', 0.7);
+              console.log('Header: Played notification sound for new message');
             } catch (error) {
               console.error('Header: Error playing notification sound:', error);
             }
@@ -138,9 +138,9 @@ const Header = () => {
       {
         channelName: 'header-messages',
         onError: () => {
-          console.error('Header: Message notification subscription error');
+          console.error('Header: Message notification subscription error - retrying...');
         },
-        pollInterval: 30000,
+        pollInterval: 10000, // Check for new messages every 10 seconds as fallback
         debugName: 'HeaderMessages'
       }
     );

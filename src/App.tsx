@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
+import { initializeAudioSystem } from "@/utils/audioUtils";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -45,6 +46,39 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering, React:", React);
+  
+  // Initialize audio system on first user interaction
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        await initializeAudioSystem();
+        console.log('Audio system initialized on app load');
+      } catch (error) {
+        console.log('Audio initialization deferred until user interaction');
+      }
+    };
+
+    // Try to initialize immediately
+    initAudio();
+
+    // Also initialize on first user interaction
+    const handleFirstInteraction = () => {
+      initAudio();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>

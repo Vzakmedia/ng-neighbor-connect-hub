@@ -7,48 +7,76 @@ interface SafeSubscriptionOptions {
   debugName?: string;
 }
 
+// Track active subscriptions to prevent duplicates
+const activeSubscriptions = new Map<string, any>();
+
 export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 60000, debugName = 'unknown' } = options;
+  const { channelName, onError, pollInterval = 30000, debugName = 'unknown' } = options;
   
   console.log(`${debugName}: Attempting to create safe subscription...`);
   
+  // Clean up any existing subscription with the same name
+  if (activeSubscriptions.has(channelName)) {
+    console.log(`${debugName}: Cleaning up existing subscription for ${channelName}`);
+    cleanupSafeSubscription(channelName, debugName);
+  }
+  
   try {
-    const channel = supabase.channel(channelName);
+    // Create unique channel name with timestamp to avoid conflicts
+    const uniqueChannelName = `${channelName}_${Date.now()}`;
+    const channel = supabase.channel(uniqueChannelName);
     const subscription = channelBuilder(channel);
     
-    return subscription.subscribe((status: string) => {
-      console.log(`${debugName}: Subscription status: ${status}`);
-      
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        console.error(`${debugName}: Subscription failed with status ${status}, disabling polling to prevent refresh loops`);
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const subscribeWithRetry = () => {
+      return subscription.subscribe((status: string) => {
+        console.log(`${debugName}: Subscription status: ${status}`);
         
-        // Only call onError once, don't set up polling that causes constant refreshes
-        if (onError) {
-          setTimeout(onError, 1000); // Single delayed call
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.error(`${debugName}: Subscription failed with status ${status}`);
+          
+          // Retry connection up to maxRetries times
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`${debugName}: Retrying subscription (${retryCount}/${maxRetries})...`);
+            
+            setTimeout(() => {
+              // Remove the failed channel and create a new one
+              supabase.removeChannel(channel);
+              const newChannelName = `${channelName}_retry_${Date.now()}`;
+              const newChannel = supabase.channel(newChannelName);
+              const newSubscription = channelBuilder(newChannel);
+              activeSubscriptions.set(channelName, newSubscription);
+              subscribeWithRetry();
+            }, 2000 * retryCount); // Exponential backoff
+          } else {
+            console.error(`${debugName}: Max retries exceeded, subscription failed permanently`);
+            if (onError) {
+              onError();
+            }
+          }
+        } else if (status === 'SUBSCRIBED') {
+          console.log(`${debugName}: Successfully subscribed to realtime updates`);
+          retryCount = 0; // Reset retry count on successful connection
         }
-        
-        // Do NOT setup polling fallback to prevent constant refreshes
-        console.log(`${debugName}: Polling fallback disabled to prevent refresh loops`);
-      } else if (status === 'SUBSCRIBED') {
-        console.log(`${debugName}: Successfully subscribed to realtime updates`);
-        // Clear any existing polling since realtime is working
-        const pollKey = `${channelName}_poll`;
-        if ((window as any)[pollKey]) {
-          clearInterval((window as any)[pollKey]);
-          delete (window as any)[pollKey];
-          console.log(`${debugName}: Cleared polling fallback - realtime working`);
-        }
-      }
-    });
+      });
+    };
+    
+    activeSubscriptions.set(channelName, subscription);
+    subscribeWithRetry();
+    
+    return subscription;
   } catch (error) {
     console.error(`${debugName}: Error creating subscription:`, error);
     
-    // Immediate fallback to polling
-    // Disable immediate polling fallback to prevent constant refreshes
-    console.log(`${debugName}: Polling fallback disabled due to subscription error`);
+    if (onError) {
+      setTimeout(onError, 1000);
+    }
     
     // Return a dummy subscription object
     return {
@@ -59,17 +87,29 @@ export const createSafeSubscription = (
 
 export const cleanupSafeSubscription = (channelName: string, debugName?: string) => {
   try {
-    // Remove the Supabase channel
-    const channel = supabase.channel(channelName);
-    supabase.removeChannel(channel);
+    console.log(`${debugName || 'unknown'}: Cleaning up subscription for ${channelName}`);
     
-    // Clear any polling fallback
-    const pollKey = `${channelName}_poll`;
-    if ((window as any)[pollKey]) {
-      clearInterval((window as any)[pollKey]);
-      delete (window as any)[pollKey];
-      console.log(`${debugName || 'unknown'}: Cleaned up polling fallback`);
+    // Get the subscription from our tracking map
+    const subscription = activeSubscriptions.get(channelName);
+    if (subscription) {
+      // Unsubscribe from the subscription
+      if (typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+      
+      // Remove from our tracking map
+      activeSubscriptions.delete(channelName);
     }
+    
+    // Clean up any channels that match the channelName pattern
+    const channels = supabase.getChannels();
+    channels.forEach(channel => {
+      if (channel.topic.includes(channelName)) {
+        supabase.removeChannel(channel);
+      }
+    });
+    
+    console.log(`${debugName || 'unknown'}: Successfully cleaned up subscription`);
   } catch (error) {
     console.error(`${debugName || 'unknown'}: Error during cleanup:`, error);
   }
