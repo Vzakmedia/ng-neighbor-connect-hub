@@ -9,7 +9,7 @@ import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shie
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
-import { useMessageNotifications } from "@/hooks/useMessageNotifications";
+import { useSimpleMessageNotifications } from "@/hooks/useSimpleMessageNotifications";
 import { messageNotifier } from "@/utils/messageNotifier";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
@@ -33,23 +33,13 @@ const Header = () => {
   console.log('Header: Is in chat:', isInChat);
   console.log('Header: Current conversation ID:', currentConversationId);
   
-  useMessageNotifications({ 
-    userId: user?.id,
-    currentConversationId // Pass the current conversation ID to avoid duplicate notifications
-  });
-
-  // Set up instant notification system
-  useEffect(() => {
-    if (user?.id) {
-      console.log('Header: Setting up instant message notifier');
-      messageNotifier.startListening(user.id, currentConversationId);
-      
-      return () => {
-        console.log('Header: Cleaning up instant message notifier');
-        messageNotifier.stopListening();
-      };
-    }
-  }, [user?.id, currentConversationId]);
+  // Simplified notification system for debugging
+  const { triggerCheck } = useSimpleMessageNotifications(user?.id);
+  
+  console.log('Header: Current path:', currentPath);
+  console.log('Header: Is in chat:', isInChat);
+  console.log('Header: Current conversation ID:', currentConversationId);
+  console.log('Header: User ID:', user?.id);
 
   useEffect(() => {
     if (user) {

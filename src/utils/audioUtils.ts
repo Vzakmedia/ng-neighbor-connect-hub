@@ -3,43 +3,59 @@ let audioContext: AudioContext | null = null;
 
 // Initialize audio context
 const getAudioContext = async (): Promise<AudioContext> => {
+  console.log('getAudioContext: Called, current audioContext:', audioContext?.state);
   if (!audioContext) {
+    console.log('getAudioContext: Creating new AudioContext...');
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    console.log('getAudioContext: Created new AudioContext, state:', audioContext.state);
     
     // Resume audio context if suspended (required for modern browsers)
     if (audioContext.state === 'suspended') {
+      console.log('getAudioContext: AudioContext is suspended, attempting to resume...');
       await audioContext.resume();
+      console.log('getAudioContext: AudioContext resumed, new state:', audioContext.state);
     }
+  } else if (audioContext.state === 'suspended') {
+    console.log('getAudioContext: Existing AudioContext is suspended, attempting to resume...');
+    await audioContext.resume();
+    console.log('getAudioContext: AudioContext resumed, new state:', audioContext.state);
   }
   return audioContext;
 };
 
 // Generate a pleasant notification sound
 export const generateNotificationSound = async (volume: number = 0.5): Promise<void> => {
+  console.log('generateNotificationSound: Starting with volume:', volume);
   const ctx = await getAudioContext();
+  console.log('generateNotificationSound: Got audio context, state:', ctx.state);
   
   // Create oscillator for main tone
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
+  console.log('generateNotificationSound: Created oscillator and gain node');
   
   // Connect nodes
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
+  console.log('generateNotificationSound: Connected audio nodes');
   
   // Pleasant bell-like tone (major chord)
   oscillator.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
   oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
   oscillator.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+  console.log('generateNotificationSound: Set frequency values');
   
   // Envelope for smooth attack and decay
   gainNode.gain.setValueAtTime(0, ctx.currentTime);
   gainNode.gain.exponentialRampToValueAtTime(volume * 0.3, ctx.currentTime + 0.05);
   gainNode.gain.exponentialRampToValueAtTime(volume * 0.1, ctx.currentTime + 0.3);
   gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+  console.log('generateNotificationSound: Set gain envelope');
   
   oscillator.type = 'sine';
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + 1.0);
+  console.log('generateNotificationSound: Started and scheduled stop for oscillator');
 };
 
 // Generate an emergency alert sound (standard EAS tone)
