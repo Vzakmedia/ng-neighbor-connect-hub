@@ -564,7 +564,8 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
       </div>
 
       {/* Post Type Filter Buttons */}
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+      {/* Desktop filter buttons */}
+      <div className="hidden md:flex flex-wrap gap-2">
         {postTypeFilters.map((filter) => {
           const Icon = filter.icon;
           return (
@@ -580,6 +581,35 @@ const CommunityFeed = ({ activeTab = 'all' }: CommunityFeedProps) => {
             </Button>
           );
         })}
+      </div>
+      
+      {/* Mobile filter buttons - icons only, expand when active */}
+      <div className="md:hidden w-full">
+        <div className="flex justify-center gap-1 w-full flex-wrap">
+          {postTypeFilters.map((filter) => {
+            const Icon = filter.icon;
+            return (
+              <Button
+                key={filter.key}
+                variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedPostType(filter.key)}
+                className={`transition-all duration-300 ease-in-out ${
+                  selectedPostType === filter.key 
+                    ? 'px-3 flex items-center gap-2 min-w-fit' 
+                    : 'px-0 w-8 h-8 justify-center'
+                }`}
+              >
+                <Icon className="h-3 w-3 flex-shrink-0" />
+                {selectedPostType === filter.key && (
+                  <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                    {filter.label}
+                  </span>
+                )}
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       {/* View Scope Toggle */}
