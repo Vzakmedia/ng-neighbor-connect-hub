@@ -5,7 +5,6 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
-import { useWebRTCCall } from '@/hooks/useWebRTCCall';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +17,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import MessageThread from '@/components/messaging/MessageThread';
-import CallDialog from '@/components/CallDialog';
 
 const Chat = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -32,24 +30,6 @@ const Chat = () => {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { deleteMessages, deleteConversation } = useMessageActions();
-  
-  // WebRTC call functionality
-  const {
-    callStatus,
-    callType,
-    incomingCall,
-    remoteUserId,
-    isAudioEnabled,
-    isVideoEnabled,
-    localVideoRef,
-    remoteVideoRef,
-    startCall,
-    answerCall,
-    rejectCall,
-    endCall,
-    toggleAudio,
-    toggleVideo
-  } = useWebRTCCall(user?.id || '');
 
   const { 
     messages, 
@@ -111,19 +91,17 @@ const Chat = () => {
   });
 
   useEffect(() => {
-    console.log('Chat useEffect triggered:', { user: user?.id, conversationId, loading });
     if (!user || !conversationId) {
-      console.log('Redirecting to messages - missing user or conversationId');
       navigate('/messages');
       return;
     }
 
     // Find the conversation
     const findConversation = async () => {
+      setLoading(true);
+      console.log('Finding conversation:', conversationId);
+      
       try {
-        setLoading(true);
-        console.log('Finding conversation:', conversationId);
-        
         // Direct database query for the conversation
         const { data: convData, error: convError } = await supabase
           .from('direct_conversations')
@@ -179,7 +157,7 @@ const Chat = () => {
     };
 
     findConversation();
-  }, [conversationId, user?.id, navigate]);
+  }, [conversationId, user?.id, navigate, fetchMessages, markConversationAsRead]);
 
   // Separate useEffect for polling to prevent re-initialization
   useEffect(() => {
@@ -287,24 +265,6 @@ const Chat = () => {
     }
   };
 
-  const handleVoiceCall = () => {
-    if (conversation) {
-      const targetUserId = conversation.user1_id === user?.id 
-        ? conversation.user2_id 
-        : conversation.user1_id;
-      startCall(targetUserId, 'voice');
-    }
-  };
-
-  const handleVideoCall = () => {
-    if (conversation) {
-      const targetUserId = conversation.user1_id === user?.id 
-        ? conversation.user2_id 
-        : conversation.user1_id;
-      startCall(targetUserId, 'video');
-    }
-  };
-
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
@@ -367,17 +327,11 @@ const Chat = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="z-50 bg-background border shadow-lg">
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={handleVoiceCall}
-                  >
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
                     <Phone className="h-4 w-4" />
                     Voice Call
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={handleVideoCall}
-                  >
+                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
                     <Video className="h-4 w-4" />
                     Video Call
                   </DropdownMenuItem>
@@ -440,23 +394,6 @@ const Chat = () => {
           }}
         />
       </div>
-
-      {/* Call Dialog */}
-      <CallDialog
-        isOpen={callStatus !== 'idle' || !!incomingCall}
-        callStatus={incomingCall ? 'incoming' : callStatus}
-        callType={incomingCall?.callType || callType}
-        remoteUserName={conversation?.other_user_name}
-        isAudioEnabled={isAudioEnabled}
-        isVideoEnabled={isVideoEnabled}
-        localVideoRef={localVideoRef}
-        remoteVideoRef={remoteVideoRef}
-        onAnswer={answerCall}
-        onReject={rejectCall}
-        onEnd={endCall}
-        onToggleAudio={toggleAudio}
-        onToggleVideo={toggleVideo}
-      />
     </div>
   );
 };

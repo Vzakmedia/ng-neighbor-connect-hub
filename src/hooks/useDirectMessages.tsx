@@ -25,22 +25,16 @@ export const useDirectMessages = (userId: string | undefined) => {
   const { toast } = useToast();
 
   const fetchMessages = useCallback(async (otherUserId: string) => {
-    console.log('fetchMessages called with otherUserId:', otherUserId, 'currentUserId:', userId);
-    if (!userId) {
-      console.log('No userId available, returning early');
-      return;
-    }
+    if (!userId) return;
     
     try {
       setLoading(true);
-      console.log('Fetching messages between users:', userId, 'and', otherUserId);
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: true });
 
-      console.log('Raw message data:', data, 'error:', error);
       if (error) throw error;
       
       // Map the database response to our Message interface
@@ -63,7 +57,6 @@ export const useDirectMessages = (userId: string | undefined) => {
           : []
       }));
       
-      console.log('Mapped messages:', mappedMessages, 'count:', mappedMessages.length);
       setMessages(mappedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
