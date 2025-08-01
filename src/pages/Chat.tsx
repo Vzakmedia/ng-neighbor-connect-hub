@@ -5,6 +5,7 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
+import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,6 +18,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import MessageThread from '@/components/messaging/MessageThread';
+import { VideoCallDialog } from '@/components/messaging/VideoCallDialog';
+import { IncomingCallDialog } from '@/components/messaging/IncomingCallDialog';
 
 const Chat = () => {
   const { conversationId } = useParams<{ conversationId: string }>();
@@ -43,6 +46,22 @@ const Chat = () => {
   } = useDirectMessages(user?.id);
 
   const { conversations, fetchConversations } = useConversations(user?.id);
+
+  // WebRTC call functionality
+  const {
+    isInCall,
+    isVideoCall,
+    localStream,
+    remoteStream,
+    incomingCall,
+    startVoiceCall,
+    startVideoCall,
+    answerCall,
+    declineCall,
+    endCall,
+    toggleAudio,
+    toggleVideo,
+  } = useWebRTCCall(conversationId || '');
 
   // Set up real-time subscriptions for this specific conversation
   useMessageSubscriptions({
@@ -327,11 +346,17 @@ const Chat = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="z-50 bg-background border shadow-lg">
-                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={startVoiceCall}
+                  >
                     <Phone className="h-4 w-4" />
                     Voice Call
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={startVideoCall}
+                  >
                     <Video className="h-4 w-4" />
                     Video Call
                   </DropdownMenuItem>
@@ -394,6 +419,30 @@ const Chat = () => {
           }}
         />
       </div>
+
+      {/* Video Call Dialog */}
+      <VideoCallDialog
+        open={isInCall}
+        onOpenChange={() => {}}
+        localStream={localStream}
+        remoteStream={remoteStream}
+        onEndCall={endCall}
+        onToggleAudio={toggleAudio}
+        onToggleVideo={toggleVideo}
+        isVideoCall={isVideoCall}
+        otherUserName={conversation?.other_user_name || 'Unknown User'}
+        otherUserAvatar={conversation?.other_user_avatar}
+      />
+
+      {/* Incoming Call Dialog */}
+      <IncomingCallDialog
+        open={!!incomingCall}
+        callerName={conversation?.other_user_name || 'Unknown User'}
+        callerAvatar={conversation?.other_user_avatar}
+        isVideoCall={incomingCall?.callType === 'video'}
+        onAccept={answerCall}
+        onDecline={declineCall}
+      />
     </div>
   );
 };
