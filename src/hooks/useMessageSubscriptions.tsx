@@ -78,11 +78,8 @@ export const useMessageSubscriptions = ({
           ? `direct-messages-${userId}-${recipientId}`
           : `user-messages-${userId}`,
         onError: () => {
-          console.log('Message subscription error - refreshing messages and conversations');
-          // Refresh data when subscription fails
-          setTimeout(() => {
-            onConversationUpdate?.();
-          }, 1000);
+          console.log('Message subscription error - will retry with backoff');
+          // Don't immediately refresh to avoid infinite loops
         },
         pollInterval: 5000, // More frequent polling for better real-time feel
         debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
@@ -116,10 +113,8 @@ export const useMessageSubscriptions = ({
       {
         channelName: `conversations-${userId}`,
         onError: () => {
-          console.log('Conversation subscription error - refreshing conversations');
-          setTimeout(() => {
-            onConversationUpdate();
-          }, 1000);
+          console.log('Conversation subscription error - will retry with backoff');
+          // Don't immediately refresh to avoid infinite loops
         },
         pollInterval: 10000, // More frequent polling
         debugName: 'MessagingContent-conversations'
