@@ -13,10 +13,17 @@ export const AuthPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">
-            Neighborlink
-          </CardTitle>
+        <CardHeader className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-2">
+            <img 
+              src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+              alt="NeighborLink Logo" 
+              className="h-10 w-10 object-contain"
+            />
+            <CardTitle className="text-2xl font-bold text-community-primary">
+              NeighborLink
+            </CardTitle>
+          </div>
           <CardDescription>
             Connect with your neighborhood community
           </CardDescription>

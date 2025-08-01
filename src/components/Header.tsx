@@ -169,11 +169,13 @@ const Header = () => {
       <div className="hidden md:block">
         <div className="container flex h-16 items-center">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                <span className="text-white font-bold text-sm">NL</span>
-              </div>
-              <span className="font-semibold text-lg">Neighborlink</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                alt="NeighborLink Logo" 
+                className="h-10 w-10 object-contain"
+              />
+              <span className="font-semibold text-lg text-community-primary">NeighborLink</span>
             </div>
           </div>
 
@@ -268,10 +270,12 @@ const Header = () => {
       <div className="md:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
-            <div className="h-7 w-7 rounded-full bg-gradient-primary flex items-center justify-center">
-              <span className="text-white font-bold text-xs">NL</span>
-            </div>
-            <span className="font-semibold text-lg">Neighborlink</span>
+            <img 
+              src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+              alt="NeighborLink Logo" 
+              className="h-8 w-8 object-contain"
+            />
+            <span className="font-semibold text-base text-community-primary">NeighborLink</span>
           </div>
           
           <div className="flex items-center space-x-1">
