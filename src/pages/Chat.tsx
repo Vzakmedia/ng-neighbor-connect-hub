@@ -174,61 +174,66 @@ const Chat = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={handleBack}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+        <div className="p-4 space-y-3">
+          {/* Main header row with avatar, user info, and action buttons */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={handleBack}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={conversation.other_user_avatar || undefined} />
+                <AvatarFallback>
+                  {getInitials(conversation.other_user_name)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 min-w-0">
+                <h1 className="font-semibold truncate">{conversation.other_user_name}</h1>
+                <p className="text-sm text-muted-foreground truncate">
+                  {conversation.other_user_phone || 'No phone number'}
+                </p>
+              </div>
+            </div>
             
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={conversation.other_user_avatar || undefined} />
-              <AvatarFallback>
-                {getInitials(conversation.other_user_name)}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1 min-w-0">
-              <h1 className="font-semibold truncate">{conversation.other_user_name}</h1>
-              <p className="text-sm text-muted-foreground truncate">
-                {conversation.other_user_phone || 'No phone number'}
-              </p>
-              <span className="text-xs text-muted-foreground">
-                Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-              </span>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <Phone className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Video className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSelectionMode}
+                className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
+              >
+                <CheckSquare className="h-5 w-5" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem 
+                    onClick={handleDeleteConversation}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Conversation
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Phone className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Video className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSelectionMode}
-              className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
-            >
-              <CheckSquare className="h-5 w-5" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem 
-                  onClick={handleDeleteConversation}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Conversation
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {/* Last seen status on its own line */}
+          <div className="text-xs text-muted-foreground pl-16">
+            Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
           </div>
         </div>
       </div>
