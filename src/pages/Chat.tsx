@@ -311,18 +311,18 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="p-4 space-y-3">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex-shrink-0">
+        <div className="p-3 md:p-4 space-y-2 md:space-y-3">
           {/* Main header row with avatar, user info, and action buttons */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <Button variant="ghost" size="icon" onClick={handleBack}>
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
               
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-8 w-8 md:h-10 md:w-10">
                 <AvatarImage src={conversation.other_user_avatar || undefined} />
                 <AvatarFallback>
                   {getInitials(conversation.other_user_name)}
@@ -330,19 +330,19 @@ const Chat = () => {
               </Avatar>
               
               <div className="flex-1 min-w-0">
-                <h1 className="font-semibold truncate">{conversation.other_user_name}</h1>
-                <p className="text-sm text-muted-foreground truncate">
+                <h1 className="font-semibold truncate text-sm md:text-base">{conversation.other_user_name}</h1>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">
                   {conversation.other_user_phone || 'No phone number'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               {/* Combined Call Button with Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <PhoneCall className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
+                    <PhoneCall className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="z-50 bg-background border shadow-lg">
@@ -366,14 +366,14 @@ const Chat = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleSelectionMode}
-                className={isSelectionMode ? 'bg-primary text-primary-foreground' : ''}
+                className={`h-8 w-8 md:h-10 md:w-10 ${isSelectionMode ? 'bg-primary text-primary-foreground' : ''}`}
               >
-                <CheckSquare className="h-5 w-5" />
+                <CheckSquare className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
+                    <MoreVertical className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -390,14 +390,14 @@ const Chat = () => {
           </div>
           
           {/* Last seen status on its own line */}
-          <div className="text-xs text-muted-foreground pl-16">
+          <div className="text-xs text-muted-foreground pl-12 md:pl-16">
             Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
           </div>
         </div>
       </div>
 
       {/* Full Screen Message Thread */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <MessageThread
           conversation={conversation}
           messages={messages}
