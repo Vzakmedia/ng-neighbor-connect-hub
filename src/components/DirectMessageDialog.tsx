@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 
 interface Message {
   id: string;
@@ -46,6 +47,7 @@ export const DirectMessageDialog = ({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageSubscriptionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,6 +57,14 @@ export const DirectMessageDialog = ({
     if (isOpen && user && recipientId) {
       initializeConversation();
     }
+    
+    // Cleanup subscription when dialog closes
+    return () => {
+      if (messageSubscriptionRef.current) {
+        cleanupSafeSubscription(messageSubscriptionRef.current);
+        messageSubscriptionRef.current = null;
+      }
+    };
   }, [isOpen, user, recipientId]);
 
   useEffect(() => {
@@ -115,9 +125,52 @@ export const DirectMessageDialog = ({
 
       if (error) throw error;
       setMessages(data || []);
+      
+      // Set up real-time subscription for messages
+      setupMessageSubscription();
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
+  };
+
+  const setupMessageSubscription = () => {
+    if (!user || messageSubscriptionRef.current) return;
+
+    messageSubscriptionRef.current = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `or(and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id}))`
+        }, (payload) => {
+          const newMessage = payload.new as Message;
+          setMessages(prev => {
+            const messageExists = prev.some(msg => msg.id === newMessage.id);
+            if (messageExists) return prev;
+            return [...prev, newMessage];
+          });
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `or(and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id}))`
+        }, (payload) => {
+          const updatedMessage = payload.new as Message;
+          setMessages(prev => 
+            prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+          );
+        }),
+      {
+        channelName: `direct-message-dialog-${user.id}-${recipientId}`,
+        onError: () => {
+          console.error('DirectMessageDialog: Message subscription error');
+        },
+        pollInterval: 30000,
+        debugName: 'DirectMessageDialog-messages'
+      }
+    );
   };
 
   const sendMessage = async () => {
@@ -137,11 +190,6 @@ export const DirectMessageDialog = ({
       if (error) throw error;
 
       setNewMessage('');
-      
-      // Refresh messages
-      if (conversationId) {
-        await fetchMessages(conversationId);
-      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
