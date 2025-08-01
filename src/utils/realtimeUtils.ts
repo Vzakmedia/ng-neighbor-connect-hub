@@ -11,7 +11,7 @@ export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 30000, debugName = 'unknown' } = options;
+  const { channelName, onError, pollInterval = 60000, debugName = 'unknown' } = options;
   
   console.log(`${debugName}: Attempting to create safe subscription...`);
   
@@ -30,14 +30,14 @@ export const createSafeSubscription = (
           onError();
         }
         
-        // Setup polling fallback with more aggressive timing
+        // Setup polling fallback with reasonable timing
         const pollKey = `${channelName}_poll`;
         if (!(window as any)[pollKey]) {
-          console.log(`${debugName}: Starting aggressive polling fallback`);
+          console.log(`${debugName}: Starting polling fallback`);
           const interval = setInterval(() => {
             console.log(`${debugName}: Polling fallback refresh`);
             if (onError) onError();
-          }, Math.min(pollInterval, 5000)); // Cap at 5 seconds max
+          }, Math.max(pollInterval, 30000)); // Minimum 30 seconds between polls
           (window as any)[pollKey] = interval;
         }
       } else if (status === 'SUBSCRIBED') {
@@ -57,7 +57,7 @@ export const createSafeSubscription = (
     // Immediate fallback to polling
     const pollKey = `${channelName}_poll`;
     if (!(window as any)[pollKey] && onError) {
-      const interval = setInterval(onError, pollInterval);
+      const interval = setInterval(onError, Math.max(pollInterval, 30000)); // Minimum 30 seconds
       (window as any)[pollKey] = interval;
       console.log(`${debugName}: Immediate polling fallback activated due to error`);
     }
