@@ -48,14 +48,9 @@ const Community = () => {
               <p className="text-muted-foreground">Connect with your neighborhood</p>
             </div>
             <CreateCommunityAdDialog>
-              {/* Desktop version */}
-              <Button className="hidden md:flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
+              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
                 <Megaphone className="h-4 w-4" />
-                Create Ad
-                <Plus className="h-4 w-4" />
-              </Button>
-              {/* Mobile version - icon only */}
-              <Button className="md:hidden h-9 w-9 p-0 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
+                <span className="hidden md:inline">Create Ad</span>
                 <Plus className="h-4 w-4" />
               </Button>
             </CreateCommunityAdDialog>
