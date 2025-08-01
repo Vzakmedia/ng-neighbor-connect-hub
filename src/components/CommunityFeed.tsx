@@ -31,6 +31,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
@@ -876,45 +877,49 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
               </CardHeader>
               
               <CardContent className="pt-0 px-3 md:px-6">
-                {post.title && (
-                  <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
-                )}
-                <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
-                
-                {/* Display tags if any */}
-                {post.tags && post.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 md:gap-2 mb-3">
-                    {post.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        #{tag}
-                      </Badge>
-                    ))}
-                    {post.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{post.tags.length - 3} more
-                      </Badge>
+                <ScrollArea className="max-h-60 overflow-auto">
+                  <div className="pr-4">
+                    {post.title && (
+                      <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
+                    )}
+                    <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
+                    
+                    {/* Display tags if any */}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 md:gap-2 mb-3">
+                        {post.tags.slice(0, 3).map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            #{tag}
+                          </Badge>
+                        ))}
+                        {post.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{post.tags.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Display images if any */}
+                    {post.images && post.images.length > 0 && (
+                      <div className={`grid gap-1 md:gap-2 mb-3 md:mb-4 ${
+                        post.images.length === 1 ? 'grid-cols-1' : 
+                        post.images.length === 2 ? 'grid-cols-2' : 
+                        'grid-cols-2'
+                      }`}>
+                        {post.images.slice(0, 4).map((imageUrl, index) => (
+                          <img
+                            key={index}
+                            src={imageUrl}
+                            alt="Post image"
+                            className="w-full h-24 md:h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={(e) => handleImageClick(post.images!, index, e)}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
-                )}
-                
-                {/* Display images if any */}
-                {post.images && post.images.length > 0 && (
-                  <div className={`grid gap-1 md:gap-2 mb-3 md:mb-4 ${
-                    post.images.length === 1 ? 'grid-cols-1' : 
-                    post.images.length === 2 ? 'grid-cols-2' : 
-                    'grid-cols-2'
-                  }`}>
-                    {post.images.slice(0, 4).map((imageUrl, index) => (
-                      <img
-                        key={index}
-                        src={imageUrl}
-                        alt="Post image"
-                        className="w-full h-24 md:h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={(e) => handleImageClick(post.images!, index, e)}
-                      />
-                    ))}
-                  </div>
-                )}
+                </ScrollArea>
                 
                 <div className="flex items-center justify-between pt-2 md:pt-3 border-t">
                   <div className="flex items-center gap-2 md:gap-4">
