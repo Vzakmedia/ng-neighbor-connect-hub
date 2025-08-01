@@ -691,45 +691,41 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       {/* Read Status Controls - Mobile Expandable Icons */}
       <div className="md:hidden flex items-center justify-center gap-2 w-full bg-card p-3 rounded-lg flex-wrap">
         {/* View Scope Controls - Mobile only */}
-        {!propViewScope && (
-          <>
-            <Button
-              variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('neighborhood')}
-              className={`transition-all duration-300 ease-in-out ${
-                viewScope === 'neighborhood' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-0 w-8 h-8 justify-center'
-              }`}
-            >
-              <MapPin className="h-3 w-3 flex-shrink-0" />
-              {viewScope === 'neighborhood' && (
-                <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                  Neighborhood
-                </span>
-              )}
-            </Button>
-            
-            <Button
-              variant={viewScope === 'state' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewScope('state')}
-              className={`transition-all duration-300 ease-in-out ${
-                viewScope === 'state' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-0 w-8 h-8 justify-center'
-              }`}
-            >
-              <Globe className="h-3 w-3 flex-shrink-0" />
-              {viewScope === 'state' && (
-                <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                  Entire State
-                </span>
-              )}
-            </Button>
-          </>
-        )}
+        <Button
+          variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewScope('neighborhood')}
+          className={`transition-all duration-300 ease-in-out ${
+            viewScope === 'neighborhood' 
+              ? 'px-3 flex items-center gap-2 min-w-fit' 
+              : 'px-0 w-8 h-8 justify-center'
+          }`}
+        >
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          {viewScope === 'neighborhood' && (
+            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+              Neighborhood
+            </span>
+          )}
+        </Button>
+        
+        <Button
+          variant={viewScope === 'state' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewScope('state')}
+          className={`transition-all duration-300 ease-in-out ${
+            viewScope === 'state' 
+              ? 'px-3 flex items-center gap-2 min-w-fit' 
+              : 'px-0 w-8 h-8 justify-center'
+          }`}
+        >
+          <Globe className="h-3 w-3 flex-shrink-0" />
+          {viewScope === 'state' && (
+            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+              Entire State
+            </span>
+          )}
+        </Button>
         
         {/* Read Status Controls */}
         <Button
