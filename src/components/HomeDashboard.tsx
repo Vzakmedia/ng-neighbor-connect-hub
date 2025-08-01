@@ -178,36 +178,6 @@ const HomeDashboard = () => {
 
                     {/* Mobile filter dropdowns */}
                     <div className="md:hidden flex items-center justify-between gap-2 w-full">
-                      {/* Post Type Dropdown */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="flex-1 justify-between">
-                            <span className="capitalize text-xs">{activeTab === 'all' ? 'All Posts' : activeTab}</span>
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-[160px]">
-                          {[
-                            { key: 'all', label: 'All Posts', icon: Users },
-                            { key: 'safety', label: 'Safety', icon: AlertTriangle },
-                            { key: 'events', label: 'Events', icon: Calendar },
-                            { key: 'marketplace', label: 'Marketplace', icon: ShoppingBag }
-                          ].map((filter) => {
-                            const Icon = filter.icon;
-                            return (
-                              <DropdownMenuItem
-                                key={filter.key}
-                                onClick={() => setActiveTab(filter.key)}
-                                className="flex items-center gap-2 text-xs"
-                              >
-                                <Icon className="h-3 w-3" />
-                                {filter.label}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-
                       {/* View Scope Dropdown */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

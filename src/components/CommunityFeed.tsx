@@ -678,8 +678,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         </div>
       )}
 
-      {/* Read Status Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
+      {/* Read Status Controls - Desktop */}
+      <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
           <div className="flex items-center gap-2">
             <Button
@@ -708,6 +708,52 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           <CheckCheck className="h-3 w-3 mr-1" />
           Mark All Read
         </Button>
+      </div>
+
+      {/* Read Status Controls - Mobile Expandable Icons */}
+      <div className="md:hidden flex items-center justify-center gap-2 w-full bg-card p-3 rounded-lg">
+        <Button
+          variant={showUnreadOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+          className={`transition-all duration-300 ease-in-out ${
+            showUnreadOnly 
+              ? 'px-3 flex items-center gap-2 min-w-fit' 
+              : 'px-0 w-8 h-8 justify-center'
+          }`}
+        >
+          {showUnreadOnly ? <EyeOff className="h-3 w-3 flex-shrink-0" /> : <Eye className="h-3 w-3 flex-shrink-0" />}
+          {showUnreadOnly && (
+            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+              Show All
+            </span>
+          )}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={markAllCommunityPostsAsRead}
+          disabled={unreadCounts.community === 0}
+          className={`transition-all duration-300 ease-in-out ${
+            unreadCounts.community > 0 
+              ? 'px-3 flex items-center gap-2 min-w-fit' 
+              : 'px-0 w-8 h-8 justify-center'
+          }`}
+        >
+          <CheckCheck className="h-3 w-3 flex-shrink-0" />
+          {unreadCounts.community > 0 && (
+            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+              Mark All Read
+            </span>
+          )}
+        </Button>
+        
+        {unreadCounts.community > 0 && (
+          <Badge variant="secondary" className="text-xs ml-2">
+            {unreadCounts.community}
+          </Badge>
+        )}
       </div>
 
       {loading ? (
