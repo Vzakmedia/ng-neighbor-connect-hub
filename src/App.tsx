@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Community from "./pages/Community";
 import Messages from "./pages/Messages";
+import Chat from "./pages/Chat";
 import MarketplacePage from "./pages/MarketplacePage";
 import Safety from "./pages/Safety";
 import Profile from "./pages/Profile";
@@ -63,7 +64,8 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/community" element={<Community />} />
-              <Route path="/messages" element={<Messages />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/chat/:conversationId" element={<Chat />} />
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/profile" element={<Profile />} />
