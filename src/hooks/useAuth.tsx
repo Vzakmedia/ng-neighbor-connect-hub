@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       console.log("Attempting to sign out...");
       
@@ -84,14 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.clear(); // Clear all localStorage as fallback
       window.location.href = '/auth';
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     session,
     loading,
     signOut,
-  };
+  }), [user, session, loading, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
