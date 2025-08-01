@@ -2890,6 +2890,14 @@ export type Database = {
           | { invitation_email: string; invitation_role: string }
         Returns: string
       }
+      delete_conversation: {
+        Args: { conversation_id: string }
+        Returns: boolean
+      }
+      delete_messages: {
+        Args: { message_ids: string[] }
+        Returns: boolean
+      }
       generate_board_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3036,6 +3044,10 @@ export type Database = {
       mark_direct_messages_as_read: {
         Args: { conversation_id: string; current_user_id: string }
         Returns: undefined
+      }
+      soft_delete_messages: {
+        Args: { message_ids: string[] }
+        Returns: boolean
       }
       track_user_activity: {
         Args: {
