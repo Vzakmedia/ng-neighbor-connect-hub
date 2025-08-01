@@ -164,9 +164,35 @@ const HomeDashboard = () => {
                         </Button>
                       ))}
                     </div>
-                    {/* Mobile filter buttons - removed per user request */}
+                    {/* Mobile filter buttons - icons only, expand when active */}
                     <div className="md:hidden w-full">
-                      {/* Top extender icon flow maintained but filter buttons removed */}
+                      <div className="flex justify-center gap-1 w-full">
+                        {[
+                          { key: 'all', icon: Home },
+                          { key: 'safety', icon: AlertTriangle },
+                          { key: 'events', icon: Calendar },
+                          { key: 'marketplace', icon: ShoppingBag }
+                        ].map(({ key, icon: Icon }) => (
+                          <Button
+                            key={key}
+                            variant={activeTab === key ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setActiveTab(key)}
+                            className={`transition-all duration-300 ease-in-out ${
+                              activeTab === key 
+                                ? 'px-3 flex items-center gap-2 min-w-fit' 
+                                : 'px-0 w-8 h-8 justify-center'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 flex-shrink-0" />
+                            {activeTab === key && (
+                              <span className="text-xs capitalize whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                                {key === 'marketplace' ? 'market' : key}
+                              </span>
+                            )}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
