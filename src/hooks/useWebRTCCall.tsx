@@ -84,31 +84,58 @@ export const useWebRTCCall = (userId: string) => {
 
   // Get user media
   const getUserMedia = useCallback(async (video: boolean) => {
+    console.log('getUserMedia called with video:', video);
+    
     try {
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported in this browser');
+      }
+      
       const constraints = {
         audio: true,
         video: video ? { width: 640, height: 480 } : false
       };
+      console.log('Media constraints:', constraints);
       
       localStream.current = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Media stream obtained:', localStream.current);
       
       if (localVideoRef.current && video) {
         localVideoRef.current.srcObject = localStream.current;
+        console.log('Local video element updated');
       }
       
       // Add tracks to peer connection
       if (peerConnection.current) {
+        console.log('Adding tracks to peer connection...');
         localStream.current.getTracks().forEach(track => {
+          console.log('Adding track:', track.kind);
           peerConnection.current?.addTrack(track, localStream.current!);
         });
+        console.log('All tracks added to peer connection');
+      } else {
+        console.warn('Peer connection not available when adding tracks');
       }
       
       return localStream.current;
     } catch (error) {
       console.error('Error accessing media devices:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      
+      let errorMessage = "Could not access camera/microphone";
+      if (error.name === 'NotAllowedError') {
+        errorMessage = "Permission denied. Please allow microphone/camera access.";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = "No microphone or camera found.";
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage = "Media not supported in this browser.";
+      }
+      
       toast({
         title: "Media access error",
-        description: "Could not access camera/microphone",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
@@ -139,21 +166,36 @@ export const useWebRTCCall = (userId: string) => {
 
   // Start call
   const startCall = useCallback(async (targetUserId: string, type: CallType) => {
+    console.log('Starting call:', { targetUserId, type, userId });
+    
     try {
       setCallType(type);
       setRemoteUserId(targetUserId);
       setCallStatus('calling');
       
       callId.current = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('Generated call ID:', callId.current);
       
+      console.log('Initializing peer connection...');
       initializePeerConnection();
+      
+      console.log('Getting user media for type:', type);
       await getUserMedia(type === 'video');
+      console.log('User media obtained successfully');
       
-      // Create offer
-      const offer = await peerConnection.current!.createOffer();
-      await peerConnection.current!.setLocalDescription(offer);
+      if (!peerConnection.current) {
+        throw new Error('Peer connection not initialized');
+      }
       
-      // Send offer
+      console.log('Creating offer...');
+      const offer = await peerConnection.current.createOffer();
+      console.log('Offer created:', offer);
+      
+      console.log('Setting local description...');
+      await peerConnection.current.setLocalDescription(offer);
+      console.log('Local description set');
+      
+      console.log('Sending signaling message...');
       await sendSignalingMessage({
         type: 'offer',
         data: offer,
@@ -162,6 +204,7 @@ export const useWebRTCCall = (userId: string) => {
         fromUserId: userId,
         toUserId: targetUserId
       });
+      console.log('Signaling message sent successfully');
 
       toast({
         title: "Calling...",
@@ -170,6 +213,11 @@ export const useWebRTCCall = (userId: string) => {
       
     } catch (error) {
       console.error('Error starting call:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setCallStatus('idle');
       toast({
         title: "Call failed",
