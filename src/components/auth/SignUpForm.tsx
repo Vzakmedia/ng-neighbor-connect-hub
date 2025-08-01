@@ -96,7 +96,7 @@ export const SignUpForm = () => {
       } else {
         toast({
           title: "Account Created!",
-          description: "Welcome to Neighborlink! You can now access the community features.",
+          description: "Welcome to NeighborLink! You can now access the community features.",
         });
       }
     } catch (error) {
