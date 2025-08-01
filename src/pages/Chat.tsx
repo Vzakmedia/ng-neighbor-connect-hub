@@ -191,26 +191,8 @@ const Chat = () => {
     
     // Set up polling fallback for message updates
     const setupPolling = () => {
-      console.log('Setting up message polling fallback for conversation:', conversationId);
-      
-      const pollForMessages = async () => {
-        try {
-          const otherUserId = conversation.user1_id === user.id 
-            ? conversation.user2_id 
-            : conversation.user1_id;
-          
-          // Fetch latest messages for this conversation
-          await fetchMessages(otherUserId);
-          
-          // Mark conversation as read
-          markConversationAsRead(conversationId);
-        } catch (error) {
-          console.error('Error polling for messages:', error);
-        }
-      };
-      
-      // Poll every 3 seconds for better real-time feel
-      pollingIntervalRef.current = setInterval(pollForMessages, 3000);
+      // Polling disabled to prevent constant refreshes that were causing app instability
+      console.log('Message polling disabled to prevent refresh loops');
     };
     
     setupPolling();
@@ -220,10 +202,9 @@ const Chat = () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
-        console.log('Cleaned up message polling for conversation:', conversationId);
       }
     };
-  }, [conversation?.id, conversation?.user1_id, conversation?.user2_id, user?.id, fetchMessages, markConversationAsRead, conversationId]);
+  }, [conversation?.id, user?.id, fetchMessages]);
 
   // Auto-scroll to bottom when messages change and mark messages as read
   useEffect(() => {

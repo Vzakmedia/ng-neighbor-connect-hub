@@ -95,17 +95,6 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
   try {
     console.log('playNotification called with type:', type, 'volume:', volume);
     
-    // Request audio permission first
-    try {
-      const audioContext = await getAudioContext();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
-    } catch (permissionError) {
-      console.warn('Audio context permission issue:', permissionError);
-    }
-    
-    // Play the appropriate sound
     if (type === 'emergency') {
       await generateEmergencySound(volume);
     } else {
@@ -118,61 +107,17 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
     
     // Try to use the existing notification.mp3 file as fallback
     try {
-      console.log('Attempting fallback audio file...');
       const audio = new Audio('/notification.mp3');
-      audio.volume = Math.min(volume, 1.0); // Ensure volume is within valid range
-      
-      // Handle audio loading and playing
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        await playPromise;
-        console.log('Fallback audio file played successfully');
-      }
+      audio.volume = volume;
+      await audio.play();
+      console.log('Fallback audio file played');
     } catch (fallbackError) {
       console.error('Fallback audio also failed:', fallbackError);
       
-      // Final fallback - try system notification if available
-      try {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('New Message', { 
-            body: 'You have a new message',
-            icon: '/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png',
-            silent: false 
-          });
-          console.log('System notification displayed');
-        } else if ('Notification' in window && Notification.permission === 'default') {
-          // Request notification permission
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            new Notification('New Message', { 
-              body: 'You have a new message',
-              icon: '/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png',
-              silent: false 
-            });
-            console.log('System notification displayed after permission granted');
-          }
-        }
-      } catch (notificationError) {
-        console.error('System notification also failed:', notificationError);
+      // Final fallback to system notification
+      if ('Notification' in window) {
+        new Notification('New message', { silent: false });
       }
     }
-  }
-};
-
-// Initialize audio system on user interaction
-export const initializeAudioSystem = async (): Promise<boolean> => {
-  try {
-    const audioContext = await getAudioContext();
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-    
-    // Test audio capabilities
-    await generateNotificationSound(0.1); // Very quiet test
-    console.log('Audio system initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('Failed to initialize audio system:', error);
-    return false;
   }
 };

@@ -9,7 +9,6 @@ import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shie
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
-import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
@@ -22,9 +21,6 @@ const Header = () => {
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
-  
-  // Add message notifications hook
-  useMessageNotifications({ userId: user?.id });
 
   useEffect(() => {
     if (user) {
@@ -130,10 +126,10 @@ const Header = () => {
           },
           async (payload) => {
             console.log('Header: Received message INSERT event:', payload);
-            // Play message notification sound immediately
+            // Play message notification sound
             try {
-              await playNotification('notification', 0.7);
-              console.log('Header: Played notification sound for new message');
+              await playNotification('normal', 0.7);
+              console.log('Header: Played notification sound');
             } catch (error) {
               console.error('Header: Error playing notification sound:', error);
             }
@@ -142,9 +138,9 @@ const Header = () => {
       {
         channelName: 'header-messages',
         onError: () => {
-          console.error('Header: Message notification subscription error - retrying...');
+          console.error('Header: Message notification subscription error');
         },
-        pollInterval: 10000, // Check for new messages every 10 seconds as fallback
+        pollInterval: 30000,
         debugName: 'HeaderMessages'
       }
     );
