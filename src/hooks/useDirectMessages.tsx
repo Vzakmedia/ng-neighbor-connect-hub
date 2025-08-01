@@ -166,9 +166,16 @@ export const useDirectMessages = (userId: string | undefined) => {
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
+      // Check if message already exists
       const messageExists = prev.some(msg => msg.id === message.id);
-      if (messageExists) return prev;
-      return [...prev, message];
+      if (messageExists) {
+        // Update existing message instead of adding duplicate
+        return prev.map(msg => msg.id === message.id ? message : msg);
+      }
+      
+      // Add new message and sort by created_at to maintain order
+      const newMessages = [...prev, message];
+      return newMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     });
   }, []);
 

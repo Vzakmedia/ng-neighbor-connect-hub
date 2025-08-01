@@ -25,15 +25,30 @@ export const createSafeSubscription = (
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         console.error(`${debugName}: Subscription failed with status ${status}, falling back to polling`);
         
-        // Setup polling fallback
+        // Immediately call onError to trigger data refresh
+        if (onError) {
+          onError();
+        }
+        
+        // Setup polling fallback with more aggressive timing
         const pollKey = `${channelName}_poll`;
-        if (!(window as any)[pollKey] && onError) {
-          const interval = setInterval(onError, pollInterval);
+        if (!(window as any)[pollKey]) {
+          console.log(`${debugName}: Starting aggressive polling fallback`);
+          const interval = setInterval(() => {
+            console.log(`${debugName}: Polling fallback refresh`);
+            if (onError) onError();
+          }, Math.min(pollInterval, 5000)); // Cap at 5 seconds max
           (window as any)[pollKey] = interval;
-          console.log(`${debugName}: Polling fallback activated (${pollInterval}ms interval)`);
         }
       } else if (status === 'SUBSCRIBED') {
         console.log(`${debugName}: Successfully subscribed to realtime updates`);
+        // Clear any existing polling since realtime is working
+        const pollKey = `${channelName}_poll`;
+        if ((window as any)[pollKey]) {
+          clearInterval((window as any)[pollKey]);
+          delete (window as any)[pollKey];
+          console.log(`${debugName}: Cleared polling fallback - realtime working`);
+        }
       }
     });
   } catch (error) {

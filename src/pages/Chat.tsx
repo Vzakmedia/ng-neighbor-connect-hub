@@ -27,6 +27,7 @@ const Chat = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { deleteMessages, deleteConversation } = useMessageActions();
 
@@ -75,9 +76,16 @@ const Chat = () => {
       updateMessage(message);
     }, [updateMessage]),
     onConversationUpdate: useCallback(() => {
-      console.log('Conversation updated, fetching conversations');
+      console.log('Conversation updated, fetching conversations and messages');
       fetchConversations();
-    }, [fetchConversations]),
+      // Also refresh current conversation messages
+      if (conversation) {
+        const otherUserId = conversation.user1_id === user?.id 
+          ? conversation.user2_id 
+          : conversation.user1_id;
+        fetchMessages(otherUserId);
+      }
+    }, [fetchConversations, fetchMessages, conversation, user?.id]),
     activeConversationId: conversationId
   });
 
@@ -148,7 +156,35 @@ const Chat = () => {
     };
 
     findConversation();
-  }, [conversationId, user?.id, navigate]);
+    
+    // Set up polling fallback for message updates
+    const setupPolling = () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      
+      pollingIntervalRef.current = setInterval(() => {
+        if (conversation && user) {
+          const otherUserId = conversation.user1_id === user.id 
+            ? conversation.user2_id 
+            : conversation.user1_id;
+          console.log('Polling for new messages...');
+          fetchMessages(otherUserId);
+        }
+      }, 3000); // Poll every 3 seconds
+    };
+    
+    if (user && conversationId) {
+      setupPolling();
+    }
+    
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [conversationId, user?.id, navigate, conversation, fetchMessages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
