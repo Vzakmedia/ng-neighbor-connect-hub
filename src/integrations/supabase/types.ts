@@ -3048,6 +3048,10 @@ export type Database = {
         Args: { conversation_id: string; current_user_id: string }
         Returns: undefined
       }
+      mark_messages_as_delivered: {
+        Args: { recipient_user_id: string; sender_user_id: string }
+        Returns: undefined
+      }
       soft_delete_messages: {
         Args: { message_ids: string[] }
         Returns: boolean

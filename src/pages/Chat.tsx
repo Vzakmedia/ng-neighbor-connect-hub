@@ -58,9 +58,15 @@ const Chat = () => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
         
-        // Mark as read if user is recipient
+        // Mark as read if user is recipient and also mark as delivered
         if (message.recipient_id === user?.id) {
           markConversationAsRead(conversation.id);
+          
+          // Also mark sender's messages as delivered
+          supabase.rpc('mark_messages_as_delivered', {
+            recipient_user_id: user.id,
+            sender_user_id: message.sender_id
+          });
         }
       }
     }, [conversation, addMessage, markConversationAsRead, user?.id]),
@@ -122,6 +128,16 @@ const Chat = () => {
         // Fetch messages for this conversation
         await fetchMessages(otherUserId);
         await markConversationAsRead(conversationId);
+        
+        // Mark messages as delivered when opening conversation
+        try {
+          await supabase.rpc('mark_messages_as_delivered', {
+            recipient_user_id: user.id,
+            sender_user_id: otherUserId
+          });
+        } catch (error) {
+          console.log('Error marking messages as delivered:', error);
+        }
         
       } catch (error) {
         console.error('Error loading conversation:', error);
