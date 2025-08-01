@@ -9,12 +9,11 @@ import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shie
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
-import { setupDirectMessageNotifications } from '@/utils/directNotifications';
+import { useMessageNotifications } from "@/hooks/useMessageNotifications";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
 import NotificationPanel from '@/components/NotificationPanel';
-import NotificationTester from '@/components/NotificationTester';
 
 const Header = () => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -24,34 +23,8 @@ const Header = () => {
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
   
-  // Add message notifications hook - only for when NOT in chat to avoid duplicate notifications
-  const currentPath = window.location.pathname;
-  const isInChat = currentPath.includes('/chat/');
-  const currentConversationId = isInChat ? currentPath.split('/chat/')[1] : undefined;
-  
-  console.log('Header: Current path:', currentPath);
-  console.log('Header: Is in chat:', isInChat);
-  console.log('Header: Current conversation ID:', currentConversationId);
-  
-  console.log('Header: Current path:', currentPath);
-  console.log('Header: Is in chat:', isInChat);
-  console.log('Header: Current conversation ID:', currentConversationId);
-  console.log('Header: User ID:', user?.id);
-
-  // Set up direct message notifications
-  useEffect(() => {
-    if (user?.id) {
-      console.log('Header: Setting up direct message notifications for user:', user.id);
-      const cleanup = setupDirectMessageNotifications(user.id);
-      
-      return () => {
-        console.log('Header: Cleaning up direct message notifications');
-        cleanup();
-      };
-    } else {
-      console.log('Header: No user ID, skipping notification setup');
-    }
-  }, [user?.id]);
+  // Add message notifications hook
+  useMessageNotifications({ userId: user?.id });
 
   useEffect(() => {
     if (user) {
@@ -388,9 +361,6 @@ const Header = () => {
       onClose={() => setNotificationPanelOpen(false)}
       position="top-right"
     />
-    
-    {/* Audio Test Component */}
-    <NotificationTester />
   </>
   );
 };

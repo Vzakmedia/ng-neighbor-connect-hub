@@ -3,59 +3,43 @@ let audioContext: AudioContext | null = null;
 
 // Initialize audio context
 const getAudioContext = async (): Promise<AudioContext> => {
-  console.log('getAudioContext: Called, current audioContext:', audioContext?.state);
   if (!audioContext) {
-    console.log('getAudioContext: Creating new AudioContext...');
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    console.log('getAudioContext: Created new AudioContext, state:', audioContext.state);
     
     // Resume audio context if suspended (required for modern browsers)
     if (audioContext.state === 'suspended') {
-      console.log('getAudioContext: AudioContext is suspended, attempting to resume...');
       await audioContext.resume();
-      console.log('getAudioContext: AudioContext resumed, new state:', audioContext.state);
     }
-  } else if (audioContext.state === 'suspended') {
-    console.log('getAudioContext: Existing AudioContext is suspended, attempting to resume...');
-    await audioContext.resume();
-    console.log('getAudioContext: AudioContext resumed, new state:', audioContext.state);
   }
   return audioContext;
 };
 
 // Generate a pleasant notification sound
 export const generateNotificationSound = async (volume: number = 0.5): Promise<void> => {
-  console.log('generateNotificationSound: Starting with volume:', volume);
   const ctx = await getAudioContext();
-  console.log('generateNotificationSound: Got audio context, state:', ctx.state);
   
   // Create oscillator for main tone
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
-  console.log('generateNotificationSound: Created oscillator and gain node');
   
   // Connect nodes
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
-  console.log('generateNotificationSound: Connected audio nodes');
   
   // Pleasant bell-like tone (major chord)
   oscillator.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
   oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
   oscillator.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
-  console.log('generateNotificationSound: Set frequency values');
   
   // Envelope for smooth attack and decay
   gainNode.gain.setValueAtTime(0, ctx.currentTime);
   gainNode.gain.exponentialRampToValueAtTime(volume * 0.3, ctx.currentTime + 0.05);
   gainNode.gain.exponentialRampToValueAtTime(volume * 0.1, ctx.currentTime + 0.3);
   gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
-  console.log('generateNotificationSound: Set gain envelope');
   
   oscillator.type = 'sine';
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + 1.0);
-  console.log('generateNotificationSound: Started and scheduled stop for oscillator');
 };
 
 // Generate an emergency alert sound (standard EAS tone)
@@ -109,22 +93,18 @@ export const generateEmergencySound = async (volume: number = 0.7): Promise<void
 // Play notification with specified type and volume
 export const playNotification = async (type: 'normal' | 'emergency' | 'notification', volume: number): Promise<void> => {
   try {
-    console.log('playNotification: Called with type:', type, 'volume:', volume);
+    console.log('playNotification called with type:', type, 'volume:', volume);
     
     // Request audio permission first
     try {
       const audioContext = await getAudioContext();
-      console.log('playNotification: AudioContext state:', audioContext.state);
       if (audioContext.state === 'suspended') {
-        console.log('playNotification: Resuming suspended AudioContext...');
         await audioContext.resume();
-        console.log('playNotification: AudioContext resumed, new state:', audioContext.state);
       }
     } catch (permissionError) {
-      console.warn('playNotification: Audio context permission issue:', permissionError);
+      console.warn('Audio context permission issue:', permissionError);
     }
     
-    console.log('playNotification: Attempting to generate sound...');
     // Play the appropriate sound
     if (type === 'emergency') {
       await generateEmergencySound(volume);
@@ -132,25 +112,24 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
       await generateNotificationSound(volume);
     }
     
-    console.log('playNotification: Notification sound played successfully');
+    console.log('Notification sound played successfully');
   } catch (error) {
-    console.error('playNotification: Error playing notification sound:', error);
+    console.error('Error playing notification sound:', error);
     
     // Try to use the existing notification.mp3 file as fallback
     try {
-      console.log('playNotification: Attempting fallback audio file...');
+      console.log('Attempting fallback audio file...');
       const audio = new Audio('/notification.mp3');
       audio.volume = Math.min(volume, 1.0); // Ensure volume is within valid range
-      console.log('playNotification: Audio element created, attempting to play...');
       
       // Handle audio loading and playing
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         await playPromise;
-        console.log('playNotification: Fallback audio file played successfully');
+        console.log('Fallback audio file played successfully');
       }
     } catch (fallbackError) {
-      console.error('playNotification: Fallback audio also failed:', fallbackError);
+      console.error('Fallback audio also failed:', fallbackError);
       
       // Final fallback - try system notification if available
       try {

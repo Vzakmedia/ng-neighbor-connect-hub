@@ -34,18 +34,18 @@ const MessagingContent = () => {
 
   const unreadCount = useUnreadMessages();
 
-  // Temporarily disable real-time subscriptions to stop the error loop
-  // useMessageSubscriptions({
-  //   userId: user?.id,
-  //   onNewMessage: () => {
-  //     // Refresh conversation list when new messages arrive
-  //     fetchConversations();
-  //   },
-  //   onMessageUpdate: () => {
-  //     fetchConversations();
-  //   },
-  //   onConversationUpdate: fetchConversations
-  // });
+  // Set up real-time subscriptions for conversation updates
+  useMessageSubscriptions({
+    userId: user?.id,
+    onNewMessage: () => {
+      // Refresh conversation list when new messages arrive
+      fetchConversations();
+    },
+    onMessageUpdate: () => {
+      fetchConversations();
+    },
+    onConversationUpdate: fetchConversations
+  });
 
   useEffect(() => {
     if (user) {
