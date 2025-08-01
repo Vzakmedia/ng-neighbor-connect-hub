@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Volume2, TestTube } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
-import { testAudioSystem } from '@/utils/audioTest';
 
 const TestAudioButton = () => {
   const testNotificationSound = async () => {
@@ -18,16 +17,6 @@ const TestAudioButton = () => {
     }
   };
 
-  const runFullAudioTest = async () => {
-    console.log('=== USER CLICKED FULL AUDIO TEST BUTTON ===');
-    const success = await testAudioSystem();
-    if (success) {
-      alert('Full audio system test PASSED! Check console for details.');
-    } else {
-      alert('Full audio system test FAILED! Check console for details.');
-    }
-  };
-
   return (
     <div className="flex gap-2">
       <Button 
@@ -38,15 +27,6 @@ const TestAudioButton = () => {
       >
         <Volume2 className="h-4 w-4" />
         Test Sound
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={runFullAudioTest}
-        className="flex items-center gap-2"
-      >
-        <TestTube className="h-4 w-4" />
-        Full Test
       </Button>
     </div>
   );
