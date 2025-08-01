@@ -170,6 +170,10 @@ export const useWebRTCCall = (conversationId: string) => {
               callType: message.message.callType || 'audio',
               fromUserId: message.sender_id
             });
+          } else if (message.message.type === 'answer' && webrtcManager) {
+            // Call was answered
+            webrtcManager.markCallAsAnswered();
+            await webrtcManager.handleSignalingMessage(message.message);
           } else if (webrtcManager) {
             // Handle other signaling messages
             await webrtcManager.handleSignalingMessage(message.message);
