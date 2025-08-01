@@ -25,15 +25,10 @@ export const createSafeSubscription = (
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         console.error(`${debugName}: Subscription failed with status ${status}, falling back to polling`);
         
-        // Immediately call onError to trigger data refresh
-        if (onError) {
-          onError();
-        }
-        
-        // Setup polling fallback with more aggressive timing
+        // Setup polling fallback immediately
         const pollKey = `${channelName}_poll`;
         if (!(window as any)[pollKey]) {
-          console.log(`${debugName}: Starting aggressive polling fallback`);
+          console.log(`${debugName}: Starting polling fallback`);
           const interval = setInterval(() => {
             console.log(`${debugName}: Polling fallback refresh`);
             if (onError) onError();
