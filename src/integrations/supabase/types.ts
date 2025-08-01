@@ -619,6 +619,63 @@ export type Database = {
         }
         Relationships: []
       }
+      call_signaling: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message: Json
+          sender_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message: Json
+          sender_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message?: Json
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      call_signals: {
+        Row: {
+          call_id: string
+          call_type: string
+          created_at: string
+          data: Json | null
+          from_user_id: string
+          id: string
+          to_user_id: string
+          type: string
+        }
+        Insert: {
+          call_id: string
+          call_type: string
+          created_at?: string
+          data?: Json | null
+          from_user_id: string
+          id?: string
+          to_user_id: string
+          type: string
+        }
+        Update: {
+          call_id?: string
+          call_type?: string
+          created_at?: string
+          data?: Json | null
+          from_user_id?: string
+          id?: string
+          to_user_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       chat_message_likes: {
         Row: {
           created_at: string
@@ -2882,6 +2939,10 @@ export type Database = {
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
+      }
+      cleanup_old_call_signals: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_staff_invitation: {
         Args:

@@ -149,7 +149,7 @@ export class WebRTCManager {
 
   private async sendSignalingMessage(message: any) {
     try {
-      await supabase
+      await (supabase as any)
         .from('call_signaling')
         .insert({
           conversation_id: this.conversationId,

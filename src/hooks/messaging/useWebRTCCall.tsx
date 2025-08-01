@@ -141,7 +141,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
 
-    const channel = supabase
+    const channel = (supabase as any)
       .channel(`call_signaling:${conversationId}`)
       .on(
         'postgres_changes',
