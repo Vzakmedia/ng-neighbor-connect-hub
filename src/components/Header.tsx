@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
 import NotificationPanel from '@/components/NotificationPanel';
+import NotificationTester from '@/components/NotificationTester';
 
 const Header = () => {
   const [notificationCount, setNotificationCount] = useState(0);
@@ -387,6 +388,9 @@ const Header = () => {
       onClose={() => setNotificationPanelOpen(false)}
       position="top-right"
     />
+    
+    {/* Audio Test Component */}
+    <NotificationTester />
   </>
   );
 };
