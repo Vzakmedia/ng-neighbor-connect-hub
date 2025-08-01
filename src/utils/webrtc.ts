@@ -25,7 +25,14 @@ export class WebRTCManager {
     this.pc = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        // Add TURN server for better reliability (you'll need to replace with your own)
+        // { 
+        //   urls: 'turn:your-turn-server.com:3478',
+        //   username: 'username',
+        //   credential: 'password'
+        // }
       ]
     });
 
@@ -186,28 +193,38 @@ export class WebRTCManager {
 
   async handleSignalingMessage(message: any) {
     try {
+      console.log('Handling signaling message:', message.type);
       switch (message.type) {
         case 'offer':
+          console.log('Processing incoming offer');
           // Handle incoming call offer
           await this.pc!.setRemoteDescription(message.offer);
           break;
           
         case 'answer':
+          console.log('Processing call answer');
           // Handle call answer
           await this.pc!.setRemoteDescription(message.answer);
           break;
           
         case 'ice-candidate':
+          console.log('Processing ICE candidate');
           // Handle ICE candidate
-          await this.pc!.addIceCandidate(message.candidate);
+          if (this.pc!.remoteDescription) {
+            await this.pc!.addIceCandidate(message.candidate);
+          } else {
+            console.log('Queuing ICE candidate - no remote description yet');
+          }
           break;
           
         case 'call-end':
+          console.log('Processing call end signal');
           this.endCall();
           break;
       }
     } catch (error) {
       console.error('Error handling signaling message:', error);
+      // Don't throw - this could break the call flow
     }
   }
 
