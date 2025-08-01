@@ -176,45 +176,9 @@ const HomeDashboard = () => {
                       ))}
                     </div>
 
-                    {/* Mobile filter dropdowns */}
-                    <div className="md:hidden flex items-center justify-between gap-2 w-full">
-                      {/* View Scope Dropdown */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="flex-1 justify-between">
-                            <span className="text-xs flex items-center gap-1">
-                              {viewScope === 'neighborhood' ? (
-                                <>
-                                  <MapPin className="h-3 w-3" />
-                                  Neighborhood
-                                </>
-                              ) : (
-                                <>
-                                  <Globe className="h-3 w-3" />
-                                  Entire State
-                                </>
-                              )}
-                            </span>
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[140px]">
-                          <DropdownMenuItem
-                            onClick={() => setViewScope('neighborhood')}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <MapPin className="h-3 w-3" />
-                            Neighborhood
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setViewScope('state')}
-                            className="flex items-center gap-2 text-xs"
-                          >
-                            <Globe className="h-3 w-3" />
-                            Entire State
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {/* Mobile - No dropdowns needed anymore */}
+                    <div className="md:hidden">
+                      {/* Space reserved for future mobile-specific controls if needed */}
                     </div>
                   </div>
                 </CardHeader>
