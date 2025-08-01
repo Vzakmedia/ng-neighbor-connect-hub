@@ -170,7 +170,7 @@ const Header = () => {
         <div className="container flex h-16 items-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-8 w-auto" />
+              <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-8 w-32 object-contain" />
             </div>
           </div>
 
@@ -265,7 +265,7 @@ const Header = () => {
       <div className="md:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
-            <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-7 w-auto" />
+            <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-7 w-28 object-contain" />
           </div>
           
           <div className="flex items-center space-x-1">

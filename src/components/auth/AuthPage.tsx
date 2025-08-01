@@ -15,7 +15,7 @@ export const AuthPage = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex flex-col items-center gap-2">
-            <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-12 w-auto" />
+            <img src="/lovable-uploads/03e76cbb-7d3e-4f68-b6fa-2c271cc8bff0.png" alt="NeighborLink" className="h-12 w-48 object-contain" />
           </div>
           <CardDescription>
             Connect with your neighborhood community
