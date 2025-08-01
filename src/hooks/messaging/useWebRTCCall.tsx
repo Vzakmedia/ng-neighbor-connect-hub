@@ -140,12 +140,15 @@ export const useWebRTCCall = (conversationId: string) => {
     }
   }, [webrtcManager]);
 
-  // Listen for signaling messages
+  // Listen for signaling messages with fallback polling
   useEffect(() => {
     if (!user?.id) return;
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
+    let pollingInterval: NodeJS.Timeout | null = null;
+    let lastMessageId: string | null = null;
 
+    // Try realtime subscription first
     const channel = supabase
       .channel(`call_signaling:${conversationId}`)
       .on(
@@ -157,49 +160,103 @@ export const useWebRTCCall = (conversationId: string) => {
           filter: `conversation_id=eq.${conversationId}`
         },
         async (payload) => {
-          console.log('Received signaling message:', payload);
-          const message = payload.new;
-
-          // Ignore messages from ourselves
-          if (message.sender_id === user.id) return;
-
-          if (message.message.type === 'offer') {
-            console.log('Incoming call offer received - setting incoming call state');
-            // Incoming call
-            setIncomingCall({
-              offer: message.message.offer,
-              callType: message.message.callType || 'audio',
-              fromUserId: message.sender_id
-            });
-          } else if (message.message.type === 'answer') {
-            console.log('Call answer received');
-            if (webrtcManager) {
-              webrtcManager.markCallAsAnswered();
-              await webrtcManager.handleSignalingMessage(message.message);
-            }
-          } else if (message.message.type === 'ice-candidate') {
-            console.log('ICE candidate received');
-            if (webrtcManager) {
-              await webrtcManager.handleSignalingMessage(message.message);
-            }
-          } else if (message.message.type === 'call-end') {
-            console.log('Call end signal received');
-            if (webrtcManager) {
-              await webrtcManager.handleSignalingMessage(message.message);
-            }
-          } else if (webrtcManager) {
-            console.log('Other signaling message:', message.message.type);
-            await webrtcManager.handleSignalingMessage(message.message);
-          }
+          console.log('Received signaling message via realtime:', payload);
+          await handleSignalingMessage(payload.new);
         }
       )
       .subscribe((status) => {
         console.log('Call signaling subscription status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('Realtime subscription successful');
+          // Clear polling since realtime is working
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.log('Realtime failed, starting polling fallback');
+          startPollingFallback();
+        }
       });
 
+    // Polling fallback for when realtime fails
+    const startPollingFallback = () => {
+      if (pollingInterval) return; // Already polling
+      
+      pollingInterval = setInterval(async () => {
+        try {
+          const { data, error } = await supabase
+            .from('call_signaling')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .neq('sender_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+          if (error) {
+            console.error('Polling error:', error);
+            return;
+          }
+
+          // Process new messages
+          for (const message of data || []) {
+            if (message.id !== lastMessageId) {
+              console.log('Received signaling message via polling:', message);
+              await handleSignalingMessage(message);
+              lastMessageId = message.id;
+              break; // Only process the latest message
+            }
+          }
+        } catch (error) {
+          console.error('Error in polling fallback:', error);
+        }
+      }, 2000); // Poll every 2 seconds
+    };
+
+    // Handle signaling messages
+    const handleSignalingMessage = async (message: any) => {
+      // Ignore messages from ourselves
+      if (message.sender_id === user.id) return;
+
+      if (message.message.type === 'offer') {
+        console.log('Incoming call offer received - setting incoming call state');
+        setIncomingCall({
+          offer: message.message.offer,
+          callType: message.message.callType || 'audio',
+          fromUserId: message.sender_id
+        });
+      } else if (message.message.type === 'answer') {
+        console.log('Call answer received');
+        if (webrtcManager) {
+          webrtcManager.markCallAsAnswered();
+          await webrtcManager.handleSignalingMessage(message.message);
+        }
+      } else if (message.message.type === 'ice-candidate') {
+        console.log('ICE candidate received');
+        if (webrtcManager) {
+          await webrtcManager.handleSignalingMessage(message.message);
+        }
+      } else if (message.message.type === 'call-end') {
+        console.log('Call end signal received');
+        if (webrtcManager) {
+          await webrtcManager.handleSignalingMessage(message.message);
+        }
+      } else if (webrtcManager) {
+        console.log('Other signaling message:', message.message.type);
+        await webrtcManager.handleSignalingMessage(message.message);
+      }
+    };
+
+    // Start polling immediately as a backup
+    setTimeout(startPollingFallback, 5000); // Start polling after 5 seconds if realtime hasn't connected
+
     return () => {
-      console.log('Cleaning up signaling subscription');
+      console.log('Cleaning up signaling subscription and polling');
       supabase.removeChannel(channel);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
     };
   }, [conversationId, user?.id]); // Removed webrtcManager dependency
 

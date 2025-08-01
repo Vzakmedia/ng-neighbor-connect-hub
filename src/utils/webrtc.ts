@@ -56,42 +56,72 @@ export class WebRTCManager {
 
   async startCall(video: boolean = false) {
     try {
+      console.log('Starting call - video:', video);
       this.isInitiator = true;
       
       // Create call log entry
       await this.createCallLog(video ? 'video' : 'voice');
       
-      // Get user media
-      this.localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: video
-      });
+      // Get user media with more robust error handling
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: video
+        });
+        console.log('Got local media stream');
+      } catch (mediaError) {
+        console.error('Error getting user media:', mediaError);
+        throw new Error('Camera or microphone access denied');
+      }
 
       this.callStartTime = new Date();
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {
+        console.log('Adding track:', track.kind);
         this.pc?.addTrack(track, this.localStream!);
       });
 
       // Create offer
       const offer = await this.pc!.createOffer();
       await this.pc!.setLocalDescription(offer);
+      console.log('Created offer');
 
-      // Send offer through signaling
-      await this.sendSignalingMessage({
-        type: 'offer',
-        offer: offer,
-        callType: video ? 'video' : 'audio'
-      });
+      // Send offer through signaling with retry mechanism
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          await this.sendSignalingMessage({
+            type: 'offer',
+            offer: offer,
+            callType: video ? 'video' : 'audio'
+          });
+          console.log('Offer sent successfully');
+          break;
+        } catch (signalError) {
+          retryCount++;
+          console.warn(`Signaling attempt ${retryCount} failed:`, signalError);
+          if (retryCount >= maxRetries) {
+            throw new Error('Failed to send call invitation after multiple attempts');
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
 
-      console.log('Call initiated');
+      console.log('Call initiated successfully');
       return this.localStream;
     } catch (error) {
       console.error('Error starting call:', error);
       // Update call log as failed
       if (this.currentCallLogId) {
         await this.updateCallLog('failed');
+      }
+      // Clean up local stream if created
+      if (this.localStream) {
+        this.localStream.getTracks().forEach(track => track.stop());
+        this.localStream = null;
       }
       throw error;
     }
