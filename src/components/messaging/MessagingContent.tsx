@@ -17,6 +17,7 @@ import { useMessageActions } from '@/hooks/useMessageActions';
 import { supabase } from '@/integrations/supabase/client';
 
 const MessagingContent = () => {
+  console.log('MessagingContent rendering');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -25,12 +26,16 @@ const MessagingContent = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  console.log('MessagingContent user:', user);
+
   const { 
     conversations, 
     loading: conversationsLoading, 
     fetchConversations,
     createOrFindConversation
   } = useConversations(user?.id);
+
+  console.log('MessagingContent conversations:', conversations, 'loading:', conversationsLoading);
 
   const unreadCount = useUnreadMessages();
 
