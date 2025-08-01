@@ -1,0 +1,122 @@
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+export interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  recipient_id: string;
+  created_at: string;
+  status: 'sent' | 'delivered' | 'read';
+}
+
+export const useDirectMessages = (userId: string | undefined) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const fetchMessages = useCallback(async (otherUserId: string) => {
+    if (!userId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast({
+        title: "Error",
+        description: "Could not load messages.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, toast]);
+
+  const sendMessage = useCallback(async (content: string, recipientId: string) => {
+    if (!userId || !content.trim()) return false;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('direct_messages')
+        .insert({
+          content: content.trim(),
+          sender_id: userId,
+          recipient_id: recipientId,
+          status: 'sent'
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Could not send message.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, toast]);
+
+  const markMessageAsRead = useCallback(async (messageId: string) => {
+    try {
+      await supabase
+        .from('direct_messages')
+        .update({ status: 'read' })
+        .eq('id', messageId);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  }, []);
+
+  const markConversationAsRead = useCallback(async (conversationId: string) => {
+    if (!userId) return;
+    
+    try {
+      await supabase.rpc('mark_direct_messages_as_read', {
+        conversation_id: conversationId,
+        current_user_id: userId
+      });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }, [userId]);
+
+  const addMessage = useCallback((message: Message) => {
+    setMessages(prev => {
+      const messageExists = prev.some(msg => msg.id === message.id);
+      if (messageExists) return prev;
+      return [...prev, message];
+    });
+  }, []);
+
+  const updateMessage = useCallback((updatedMessage: Message) => {
+    setMessages(prev => 
+      prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+    );
+  }, []);
+
+  return {
+    messages,
+    loading,
+    fetchMessages,
+    sendMessage,
+    markMessageAsRead,
+    markConversationAsRead,
+    addMessage,
+    updateMessage,
+    setMessages
+  };
+};

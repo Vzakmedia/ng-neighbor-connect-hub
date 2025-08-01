@@ -11,19 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Check, CheckCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
-
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  recipient_id: string;
-  created_at: string;
-  status: 'sent' | 'delivered' | 'read';
-}
+import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
+import { useConversations } from '@/hooks/useConversations';
 
 interface DirectMessageDialogProps {
   isOpen: boolean;
@@ -41,171 +32,79 @@ export const DirectMessageDialog = ({
   recipientAvatar
 }: DirectMessageDialogProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageSubscriptionRef = useRef<any>(null);
+
+  // Use custom hooks
+  const { 
+    messages, 
+    loading, 
+    fetchMessages, 
+    sendMessage, 
+    markMessageAsRead,
+    addMessage,
+    updateMessage 
+  } = useDirectMessages(user?.id);
+
+  const { createOrFindConversation } = useConversations(user?.id);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    if (isOpen && user && recipientId) {
-      initializeConversation();
-    }
-    
-    // Cleanup subscription when dialog closes
-    return () => {
-      if (messageSubscriptionRef.current) {
-        cleanupSafeSubscription(messageSubscriptionRef.current);
-        messageSubscriptionRef.current = null;
+  // Set up real-time subscriptions
+  useMessageSubscriptions({
+    userId: user?.id,
+    recipientId,
+    onNewMessage: (message) => {
+      addMessage(message);
+      // Mark as read if user is recipient
+      if (message.recipient_id === user?.id) {
+        markMessageAsRead(message.id);
       }
-    };
-  }, [isOpen, user, recipientId]);
+      setTimeout(scrollToBottom, 100);
+    },
+    onMessageUpdate: updateMessage
+  });
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (isOpen && user && recipientId) {
+      initializeConversation();
+    }
+  }, [isOpen, user, recipientId]);
+
   const initializeConversation = async () => {
     if (!user) return;
 
     try {
-      // Find or create conversation
-      const { data: existingConversation } = await supabase
-        .from('direct_conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${recipientId}),and(user1_id.eq.${recipientId},user2_id.eq.${user.id})`)
-        .maybeSingle();
-
-      let convId = existingConversation?.id;
-
-      if (!convId) {
-        // Create new conversation
-        const { data: newConversation, error } = await supabase
-          .from('direct_conversations')
-          .insert({
-            user1_id: user.id,
-            user2_id: recipientId
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        convId = newConversation.id;
-      }
-
-      setConversationId(convId);
-      
-      // Fetch messages
+      const convId = await createOrFindConversation(recipientId);
       if (convId) {
-        await fetchMessages(convId);
+        setConversationId(convId);
+        await fetchMessages(recipientId);
       }
     } catch (error) {
       console.error('Error initializing conversation:', error);
-      toast({
-        title: "Error",
-        description: "Could not load conversation.",
-        variant: "destructive",
-      });
     }
   };
 
-  const fetchMessages = async (convId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user?.id})`)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
-      
-      // Set up real-time subscription for messages
-      setupMessageSubscription();
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  };
-
-  const setupMessageSubscription = () => {
-    if (!user || messageSubscriptionRef.current) return;
-
-    messageSubscriptionRef.current = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `or(and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id}))`
-        }, (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages(prev => {
-            const messageExists = prev.some(msg => msg.id === newMessage.id);
-            if (messageExists) return prev;
-            return [...prev, newMessage];
-          });
-        })
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `or(and(sender_id.eq.${user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${user.id}))`
-        }, (payload) => {
-          const updatedMessage = payload.new as Message;
-          setMessages(prev => 
-            prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
-          );
-        }),
-      {
-        channelName: `direct-message-dialog-${user.id}-${recipientId}`,
-        onError: () => {
-          console.error('DirectMessageDialog: Message subscription error');
-        },
-        pollInterval: 30000,
-        debugName: 'DirectMessageDialog-messages'
-      }
-    );
-  };
-
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !recipientId || loading) return;
 
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('direct_messages')
-        .insert({
-          content: newMessage,
-          sender_id: user.id,
-          recipient_id: recipientId,
-          status: 'sent'
-        });
-
-      if (error) throw error;
-
+    const success = await sendMessage(newMessage, recipientId);
+    if (success) {
       setNewMessage('');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Could not send message.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
@@ -279,7 +178,7 @@ export const DirectMessageDialog = ({
               rows={1}
             />
             <Button 
-              onClick={sendMessage} 
+              onClick={handleSendMessage} 
               disabled={!newMessage.trim() || loading}
               size="icon"
             >
