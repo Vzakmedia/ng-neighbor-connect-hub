@@ -18,10 +18,19 @@ export interface Conversation {
 export const useConversations = (userId: string | undefined) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
   const { toast } = useToast();
 
   const fetchConversations = useCallback(async () => {
     if (!userId) return;
+
+    // Debounce: prevent calls within 2 seconds of each other
+    const now = Date.now();
+    if (now - lastFetchTime < 2000) {
+      console.log('Debouncing fetchConversations call');
+      return;
+    }
+    setLastFetchTime(now);
 
     try {
       setLoading(true);
@@ -76,7 +85,7 @@ export const useConversations = (userId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [userId, toast]);
+  }, [userId, toast, lastFetchTime]);
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
