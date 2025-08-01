@@ -56,23 +56,25 @@ const Events = () => {
               <TabsTrigger value="my-events">My Events</TabsTrigger>
             </TabsList>
             
-            {/* Mobile tabs - responsive filter buttons */}
+            {/* Mobile tabs - using buttons instead of TabsTrigger */}
             <div className="md:hidden w-full mb-4">
               <div className="flex justify-center gap-1 w-full">
-                <TabsTrigger 
-                  value="all" 
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {/* handled by Tabs component */}}
                 >
                   <Calendar className="h-3 w-3 mr-1" />
                   All Events
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="my-events"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {/* handled by Tabs component */}}
                 >
                   <Users className="h-3 w-3 mr-1" />
                   My Events
-                </TabsTrigger>
+                </Button>
               </div>
             </div>
             

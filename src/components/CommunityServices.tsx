@@ -249,23 +249,25 @@ const CommunityServices = () => {
           <TabsTrigger value="goods">Goods ({filteredItems.length})</TabsTrigger>
         </TabsList>
         
-        {/* Mobile tabs - responsive filter buttons */}
+        {/* Mobile tabs - using buttons instead of TabsTrigger */}
         <div className="md:hidden w-full mb-4">
           <div className="flex justify-center gap-1 w-full">
-            <TabsTrigger 
-              value="services" 
-              className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            <Button
+              variant={activeTab === "services" ? "default" : "outline"}
+              onClick={() => setActiveTab("services")}
+              className="flex-1"
             >
               <Wrench className="h-3 w-3 mr-1" />
               Services
-            </TabsTrigger>
-            <TabsTrigger 
-              value="goods"
-              className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            </Button>
+            <Button
+              variant={activeTab === "goods" ? "default" : "outline"}
+              onClick={() => setActiveTab("goods")}
+              className="flex-1"
             >
               <Package className="h-3 w-3 mr-1" />
               Goods
-            </TabsTrigger>
+            </Button>
           </div>
         </div>
 

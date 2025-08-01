@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogIn, UserPlus } from "lucide-react";
 import { LoginForm } from "./LoginForm";
@@ -28,23 +29,25 @@ export const AuthPage = () => {
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
-            {/* Mobile tabs - responsive filter buttons */}
+            {/* Mobile tabs - using buttons instead of TabsTrigger */}
             <div className="md:hidden w-full mb-4">
               <div className="flex justify-center gap-1 w-full">
-                <TabsTrigger 
-                  value="login" 
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                <Button
+                  variant={activeTab === "login" ? "default" : "outline"}
+                  onClick={() => setActiveTab("login")}
+                  className="flex-1"
                 >
                   <LogIn className="h-3 w-3 mr-1" />
                   Login
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="signup"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                </Button>
+                <Button
+                  variant={activeTab === "signup" ? "default" : "outline"}
+                  onClick={() => setActiveTab("signup")}
+                  className="flex-1"
                 >
                   <UserPlus className="h-3 w-3 mr-1" />
                   Sign Up
-                </TabsTrigger>
+                </Button>
               </div>
             </div>
             

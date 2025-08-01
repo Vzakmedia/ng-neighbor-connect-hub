@@ -65,23 +65,25 @@ const Community = () => {
               <TabsTrigger value="boards">Discussion Boards</TabsTrigger>
             </TabsList>
             
-            {/* Mobile tabs - responsive filter buttons */}
+            {/* Mobile tabs - using buttons instead of TabsTrigger */}
             <div className="md:hidden w-full mb-4">
               <div className="flex justify-center gap-1 w-full">
-                <TabsTrigger 
-                  value="feed" 
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                <Button
+                  variant={activeTab === "feed" ? "default" : "outline"}
+                  onClick={() => setActiveTab("feed")}
+                  className="flex-1"
                 >
                   <MessageCircle className="h-3 w-3 mr-1" />
                   Feed
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="boards"
-                  className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                </Button>
+                <Button
+                  variant={activeTab === "boards" ? "default" : "outline"}
+                  onClick={() => setActiveTab("boards")}
+                  className="flex-1"
                 >
                   <Users className="h-3 w-3 mr-1" />
                   Boards
-                </TabsTrigger>
+                </Button>
               </div>
             </div>
             
