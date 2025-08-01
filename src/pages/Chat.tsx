@@ -63,49 +63,56 @@ const Chat = () => {
     toggleVideo,
   } = useWebRTCCall(conversationId || '');
 
+  // Memoized callbacks to prevent infinite re-renders
+  const onNewMessage = useCallback((message) => {
+    console.log('New message received:', message);
+    if (conversation && 
+        ((conversation.user1_id === message.sender_id && conversation.user2_id === message.recipient_id) ||
+         (conversation.user1_id === message.recipient_id && conversation.user2_id === message.sender_id))) {
+      console.log('Adding message to current conversation');
+      addMessage(message);
+      
+      // Auto-scroll to bottom when new message arrives
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+      // Mark as read if user is recipient and also mark as delivered
+      if (message.recipient_id === user?.id) {
+        markConversationAsRead(conversation.id);
+        
+        // Also mark sender's messages as delivered
+        supabase.rpc('mark_messages_as_delivered', {
+          recipient_user_id: user.id,
+          sender_user_id: message.sender_id
+        });
+      }
+    }
+  }, [conversation?.id, conversation?.user1_id, conversation?.user2_id, addMessage, markConversationAsRead, user?.id]);
+
+  const onMessageUpdate = useCallback((message) => {
+    console.log('Message updated:', message);
+    updateMessage(message);
+  }, [updateMessage]);
+
+  const onConversationUpdate = useCallback(() => {
+    console.log('Conversation updated, fetching conversations and messages');
+    fetchConversations();
+    // Also refresh current conversation messages
+    if (conversation) {
+      const otherUserId = conversation.user1_id === user?.id 
+        ? conversation.user2_id 
+        : conversation.user1_id;
+      fetchMessages(otherUserId);
+    }
+  }, [fetchConversations, fetchMessages, conversation?.id, conversation?.user1_id, conversation?.user2_id, user?.id]);
+
   // Set up real-time subscriptions for this specific conversation
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: useCallback((message) => {
-      console.log('New message received:', message);
-      if (conversation && 
-          ((conversation.user1_id === message.sender_id && conversation.user2_id === message.recipient_id) ||
-           (conversation.user1_id === message.recipient_id && conversation.user2_id === message.sender_id))) {
-        console.log('Adding message to current conversation');
-        addMessage(message);
-        
-        // Auto-scroll to bottom when new message arrives
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-        
-        // Mark as read if user is recipient and also mark as delivered
-        if (message.recipient_id === user?.id) {
-          markConversationAsRead(conversation.id);
-          
-          // Also mark sender's messages as delivered
-          supabase.rpc('mark_messages_as_delivered', {
-            recipient_user_id: user.id,
-            sender_user_id: message.sender_id
-          });
-        }
-      }
-    }, [conversation, addMessage, markConversationAsRead, user?.id]),
-    onMessageUpdate: useCallback((message) => {
-      console.log('Message updated:', message);
-      updateMessage(message);
-    }, [updateMessage]),
-    onConversationUpdate: useCallback(() => {
-      console.log('Conversation updated, fetching conversations and messages');
-      fetchConversations();
-      // Also refresh current conversation messages
-      if (conversation) {
-        const otherUserId = conversation.user1_id === user?.id 
-          ? conversation.user2_id 
-          : conversation.user1_id;
-        fetchMessages(otherUserId);
-      }
-    }, [fetchConversations, fetchMessages, conversation, user?.id]),
+    onNewMessage,
+    onMessageUpdate,
+    onConversationUpdate,
     activeConversationId: conversationId
   });
 
