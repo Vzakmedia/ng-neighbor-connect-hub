@@ -93,18 +93,22 @@ export const generateEmergencySound = async (volume: number = 0.7): Promise<void
 // Play notification with specified type and volume
 export const playNotification = async (type: 'normal' | 'emergency' | 'notification', volume: number): Promise<void> => {
   try {
-    console.log('playNotification called with type:', type, 'volume:', volume);
+    console.log('playNotification: Called with type:', type, 'volume:', volume);
     
     // Request audio permission first
     try {
       const audioContext = await getAudioContext();
+      console.log('playNotification: AudioContext state:', audioContext.state);
       if (audioContext.state === 'suspended') {
+        console.log('playNotification: Resuming suspended AudioContext...');
         await audioContext.resume();
+        console.log('playNotification: AudioContext resumed, new state:', audioContext.state);
       }
     } catch (permissionError) {
-      console.warn('Audio context permission issue:', permissionError);
+      console.warn('playNotification: Audio context permission issue:', permissionError);
     }
     
+    console.log('playNotification: Attempting to generate sound...');
     // Play the appropriate sound
     if (type === 'emergency') {
       await generateEmergencySound(volume);
@@ -112,24 +116,25 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
       await generateNotificationSound(volume);
     }
     
-    console.log('Notification sound played successfully');
+    console.log('playNotification: Notification sound played successfully');
   } catch (error) {
-    console.error('Error playing notification sound:', error);
+    console.error('playNotification: Error playing notification sound:', error);
     
     // Try to use the existing notification.mp3 file as fallback
     try {
-      console.log('Attempting fallback audio file...');
+      console.log('playNotification: Attempting fallback audio file...');
       const audio = new Audio('/notification.mp3');
       audio.volume = Math.min(volume, 1.0); // Ensure volume is within valid range
+      console.log('playNotification: Audio element created, attempting to play...');
       
       // Handle audio loading and playing
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         await playPromise;
-        console.log('Fallback audio file played successfully');
+        console.log('playNotification: Fallback audio file played successfully');
       }
     } catch (fallbackError) {
-      console.error('Fallback audio also failed:', fallbackError);
+      console.error('playNotification: Fallback audio also failed:', fallbackError);
       
       // Final fallback - try system notification if available
       try {

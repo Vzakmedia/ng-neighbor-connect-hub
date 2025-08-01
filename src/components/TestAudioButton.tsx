@@ -4,11 +4,14 @@ import { playNotification } from '@/utils/audioUtils';
 
 const TestAudioButton = () => {
   const testNotificationSound = async () => {
+    console.log('TestAudioButton: Test button clicked');
     try {
+      console.log('TestAudioButton: Calling playNotification...');
       await playNotification('notification', 0.8);
-      console.log('Test notification sound played');
+      console.log('TestAudioButton: playNotification completed successfully');
     } catch (error) {
-      console.error('Error playing test notification:', error);
+      console.error('TestAudioButton: Error playing test notification:', error);
+      alert('Audio test failed: ' + error.message);
     }
   };
 

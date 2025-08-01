@@ -23,8 +23,19 @@ const Header = () => {
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
   
-  // Add message notifications hook
-  useMessageNotifications({ userId: user?.id });
+  // Add message notifications hook - only for when NOT in chat to avoid duplicate notifications
+  const currentPath = window.location.pathname;
+  const isInChat = currentPath.includes('/chat/');
+  const currentConversationId = isInChat ? currentPath.split('/chat/')[1] : undefined;
+  
+  console.log('Header: Current path:', currentPath);
+  console.log('Header: Is in chat:', isInChat);
+  console.log('Header: Current conversation ID:', currentConversationId);
+  
+  useMessageNotifications({ 
+    userId: user?.id,
+    currentConversationId // Pass the current conversation ID to avoid duplicate notifications
+  });
 
   useEffect(() => {
     if (user) {
