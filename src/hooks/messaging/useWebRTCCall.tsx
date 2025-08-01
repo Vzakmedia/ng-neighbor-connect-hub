@@ -164,21 +164,31 @@ export const useWebRTCCall = (conversationId: string) => {
           if (message.sender_id === user.id) return;
 
           if (message.message.type === 'offer') {
-            console.log('Incoming call offer received');
+            console.log('Incoming call offer received - setting incoming call state');
             // Incoming call
             setIncomingCall({
               offer: message.message.offer,
               callType: message.message.callType || 'audio',
               fromUserId: message.sender_id
             });
-          } else if (message.message.type === 'answer' && webrtcManager) {
+          } else if (message.message.type === 'answer') {
             console.log('Call answer received');
-            // Call was answered
-            webrtcManager.markCallAsAnswered();
-            await webrtcManager.handleSignalingMessage(message.message);
+            if (webrtcManager) {
+              webrtcManager.markCallAsAnswered();
+              await webrtcManager.handleSignalingMessage(message.message);
+            }
+          } else if (message.message.type === 'ice-candidate') {
+            console.log('ICE candidate received');
+            if (webrtcManager) {
+              await webrtcManager.handleSignalingMessage(message.message);
+            }
+          } else if (message.message.type === 'call-end') {
+            console.log('Call end signal received');
+            if (webrtcManager) {
+              await webrtcManager.handleSignalingMessage(message.message);
+            }
           } else if (webrtcManager) {
             console.log('Other signaling message:', message.message.type);
-            // Handle other signaling messages
             await webrtcManager.handleSignalingMessage(message.message);
           }
         }
@@ -191,7 +201,7 @@ export const useWebRTCCall = (conversationId: string) => {
       console.log('Cleaning up signaling subscription');
       supabase.removeChannel(channel);
     };
-  }, [conversationId, user?.id, webrtcManager]);
+  }, [conversationId, user?.id]); // Removed webrtcManager dependency
 
   return {
     isInCall,
