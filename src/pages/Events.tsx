@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import EventFeed from '@/components/EventFeed';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import MyEventsPanel from '@/components/MyEventsPanel';
@@ -50,16 +50,9 @@ const Events = () => {
           </div>
           
           <Tabs defaultValue="all" className="w-full">
-            {/* Desktop tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="all">All Events</TabsTrigger>
               <TabsTrigger value="my-events">My Events</TabsTrigger>
-            </TabsList>
-            
-            {/* Mobile tabs - simple responsive layout */}
-            <TabsList className="md:hidden grid w-full grid-cols-2">
-              <TabsTrigger value="all" className="text-xs">All Events</TabsTrigger>
-              <TabsTrigger value="my-events" className="text-xs">My Events</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all">
