@@ -101,11 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  console.log("useAuth hook called");
   const context = useContext(AuthContext);
-  console.log("useAuth context:", context);
   if (context === undefined) {
-    console.error('useAuth called outside of AuthProvider!');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

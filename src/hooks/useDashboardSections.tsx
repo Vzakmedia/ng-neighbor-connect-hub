@@ -99,7 +99,7 @@ export const useUpcomingEvents = (limit: number = 3) => {
 
   useEffect(() => {
     fetchEvents();
-  }, [user, profile, limit]);
+  }, [user?.id, profile?.user_id, limit]);
 
   useEffect(() => {
     if (!user) return;
@@ -185,7 +185,7 @@ export const useSafetyAlerts = (limit: number = 3) => {
 
   useEffect(() => {
     fetchAlerts();
-  }, [user, limit]);
+  }, [user?.id, limit]);
 
   useEffect(() => {
     if (!user) return;
@@ -267,7 +267,7 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
 
   useEffect(() => {
     fetchItems();
-  }, [user, profile, limit]);
+  }, [user?.id, profile?.user_id, limit]);
 
   useEffect(() => {
     if (!user) return;
@@ -366,7 +366,7 @@ export const useTrendingTopics = (limit: number = 4) => {
 
   useEffect(() => {
     fetchTrendingTopics();
-  }, [user, limit]);
+  }, [user?.id, limit]);
 
   useEffect(() => {
     if (!user) return;

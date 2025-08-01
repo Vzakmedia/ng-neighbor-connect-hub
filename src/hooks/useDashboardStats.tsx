@@ -83,7 +83,7 @@ export const useDashboardStats = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [user, profile]);
+  }, [user?.id, profile?.user_id]);
 
   // Set up real-time subscriptions
   useEffect(() => {
