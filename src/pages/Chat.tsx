@@ -120,10 +120,10 @@ const Chat = () => {
 
     // Find the conversation
     const findConversation = async () => {
-      setLoading(true);
-      console.log('Finding conversation:', conversationId);
-      
       try {
+        setLoading(true);
+        console.log('Finding conversation:', conversationId);
+        
         // Direct database query for the conversation
         const { data: convData, error: convError } = await supabase
           .from('direct_conversations')
@@ -179,7 +179,7 @@ const Chat = () => {
     };
 
     findConversation();
-  }, [conversationId, user?.id, navigate, fetchMessages, markConversationAsRead]);
+  }, [conversationId, user?.id, navigate]);
 
   // Separate useEffect for polling to prevent re-initialization
   useEffect(() => {
