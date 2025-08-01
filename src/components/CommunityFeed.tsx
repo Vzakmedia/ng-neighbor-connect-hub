@@ -178,8 +178,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   };
 
   const fetchPosts = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      console.log('CommunityFeed: Missing user or profile', { user: !!user, profile: !!profile });
+      return;
+    }
     
+    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id });
     setLoading(true);
     try {
       // First, get all posts
@@ -239,6 +243,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
       // Process all posts with their like/comment counts
       const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
+      console.log('CommunityFeed: Processed posts', { count: processedPosts.length, viewScope });
       setPosts(processedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
