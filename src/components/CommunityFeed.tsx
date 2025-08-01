@@ -881,11 +881,9 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
                 )}
                 
-                <ScrollArea className="max-h-40 overflow-auto">
-                  <div className="pr-2">
-                    <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
-                  </div>
-                </ScrollArea>
+                <div className="max-h-32 overflow-y-auto">
+                  <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4 pr-2">{post.content}</p>
+                </div>
                 
                 {/* Display tags if any */}
                 {post.tags && post.tags.length > 0 && (
