@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -185,12 +186,14 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] md:max-h-none flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Create a Post</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <ScrollArea className="flex-1 md:overflow-visible">
+          <div className="pr-4 md:pr-0">
+            <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Info */}
           <div className="flex items-center space-x-3">
             <Avatar>
@@ -433,7 +436,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               {isSubmitting ? 'Posting...' : 'Post to Community'}
             </Button>
           </DialogFooter>
-        </form>
+            </form>
+          </div>
+        </ScrollArea>
       </DialogContent>
 
       <LocationPickerDialog
