@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Phone, Video, MoreVertical } from 'lucide-react';
@@ -56,39 +57,55 @@ const Chat = () => {
     // Find the conversation
     const findConversation = async () => {
       setLoading(true);
+      console.log('Finding conversation:', conversationId);
       
       try {
-        // Fetch conversations and wait for the result
-        await fetchConversations();
+        // Direct database query for the conversation
+        const { data: convData, error: convError } = await supabase
+          .from('direct_conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .single();
+
+        if (convError || !convData) {
+          console.error('Conversation not found:', convError);
+          navigate('/messages');
+          return;
+        }
+
+        // Get the other user's profile
+        const otherUserId = convData.user1_id === user.id ? convData.user2_id : convData.user1_id;
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url, phone')
+          .eq('user_id', otherUserId)
+          .single();
+
+        const formattedConversation = {
+          ...convData,
+          other_user_id: otherUserId,
+          other_user_name: profileData?.full_name || 'Unknown User',
+          other_user_avatar: profileData?.avatar_url || null,
+          other_user_phone: profileData?.phone || null,
+        };
+
+        console.log('Conversation found:', formattedConversation);
+        setConversation(formattedConversation);
         
-        // Use a small delay to ensure state is updated
-        setTimeout(() => {
-          const foundConv = conversations.find(c => c.id === conversationId);
-          
-          if (foundConv) {
-            setConversation(foundConv);
-            const otherUserId = foundConv.user1_id === user.id 
-              ? foundConv.user2_id 
-              : foundConv.user1_id;
-            
-            fetchMessages(otherUserId);
-            markConversationAsRead(conversationId);
-          } else {
-            // Conversation not found, redirect back
-            navigate('/messages');
-          }
-          
-          setLoading(false);
-        }, 100);
+        // Fetch messages for this conversation
+        await fetchMessages(otherUserId);
+        await markConversationAsRead(conversationId);
+        
       } catch (error) {
         console.error('Error loading conversation:', error);
         navigate('/messages');
+      } finally {
         setLoading(false);
       }
     };
 
     findConversation();
-  }, [conversationId, user?.id, navigate, fetchConversations]);
+  }, [conversationId, user?.id, navigate]);
 
   const handleSendMessage = async (content: string) => {
     if (!conversation || !user) return;
