@@ -48,10 +48,11 @@ const Community = () => {
               <p className="text-muted-foreground">Connect with your neighborhood</p>
             </div>
             <CreateCommunityAdDialog>
-              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300 sm:w-auto">
+              <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300 w-full sm:w-auto">
                 <Megaphone className="h-4 w-4" />
+                <span className="sm:hidden">Create Ad</span>
                 <span className="hidden sm:inline">Create Ad</span>
-                <Plus className="h-4 w-4 hidden sm:inline" />
+                <Plus className="h-4 w-4" />
               </Button>
             </CreateCommunityAdDialog>
           </div>
@@ -71,16 +72,18 @@ const Community = () => {
                 <Button
                   variant={activeTab === "feed" ? "default" : "outline"}
                   onClick={() => setActiveTab("feed")}
-                  className="flex-1 px-3"
+                  className="flex-1"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-3 w-3 mr-1" />
+                  Feed
                 </Button>
                 <Button
                   variant={activeTab === "boards" ? "default" : "outline"}
                   onClick={() => setActiveTab("boards")}
-                  className="flex-1 px-3"
+                  className="flex-1"
                 >
-                  <Users className="h-4 w-4" />
+                  <Users className="h-3 w-3 mr-1" />
+                  Boards
                 </Button>
               </div>
             </div>
