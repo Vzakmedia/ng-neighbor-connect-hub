@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
+import { ProductDialog } from './ProductDialog';
 
 interface Service {
   id: string;
@@ -70,9 +71,13 @@ interface MarketplaceItem {
   images: string[];
   status: string;
   user_id: string;
+  created_at: string;
   profiles: {
+    user_id: string;
     full_name: string;
     avatar_url?: string;
+    phone?: string;
+    email?: string;
   } | null;
   likes_count?: number;
   is_liked_by_user?: boolean;
@@ -93,6 +98,8 @@ const Marketplace = () => {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [galleryTitle, setGalleryTitle] = useState('');
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<MarketplaceItem | null>(null);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -232,7 +239,7 @@ const Marketplace = () => {
           const [profileResult, likesResult] = await Promise.all([
             supabase
               .from('profiles')
-              .select('full_name, avatar_url')
+              .select('user_id, full_name, avatar_url, phone, email')
               .eq('user_id', item.user_id)
               .single(),
             supabase
@@ -246,7 +253,7 @@ const Marketplace = () => {
 
           return {
             ...item,
-            profiles: profileResult.data || { full_name: 'Anonymous', avatar_url: '' },
+            profiles: profileResult.data || { user_id: item.user_id, full_name: 'Anonymous', avatar_url: '' },
             likes_count: likes.length,
             is_liked_by_user: isLikedByUser
           };
@@ -511,6 +518,12 @@ const Marketplace = () => {
               className={`group hover:shadow-lg transition-all cursor-pointer ${
                 highlightedItemId === item.id ? 'ring-2 ring-primary shadow-lg scale-105' : ''
               }`}
+              onClick={() => {
+                if (activeTab === 'goods') {
+                  setSelectedProduct(item as MarketplaceItem);
+                  setProductDialogOpen(true);
+                }
+              }}
             >
                <CardContent className="p-0">
                   {/* Image Carousel */}
@@ -731,13 +744,20 @@ const Marketplace = () => {
          </div>
        )}
 
-       {/* Image Gallery Dialog */}
-       <ImageGalleryDialog
-         isOpen={galleryOpen}
-         onClose={() => setGalleryOpen(false)}
-         images={selectedImages}
-         title={galleryTitle}
-       />
+        {/* Image Gallery Dialog */}
+        <ImageGalleryDialog
+          isOpen={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+          images={selectedImages}
+          title={galleryTitle}
+        />
+
+        {/* Product Dialog */}
+        <ProductDialog
+          open={productDialogOpen}
+          onOpenChange={setProductDialogOpen}
+          product={selectedProduct}
+        />
      </div>
    );
 };
