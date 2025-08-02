@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
+import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 
 interface Service {
@@ -245,109 +246,6 @@ const Marketplace = () => {
 
   const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
   const currentItems = activeTab === 'services' ? services : items;
-
-  const handleMessageUser = async (sellerId: string, item?: MarketplaceItem) => {
-    if (!user) {
-      toast({
-        title: "Please log in",
-        description: "You need to be logged in to send messages.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (user.id === sellerId) {
-      toast({
-        title: "Cannot message yourself",
-        description: "You cannot send a message to yourself.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Check if conversation already exists
-      const { data: existingConversation } = await supabase
-        .from('direct_conversations')
-        .select('*')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${sellerId}),and(user1_id.eq.${sellerId},user2_id.eq.${user.id})`)
-        .single();
-
-      if (existingConversation) {
-        // If we have item details, send a message about interest in the product
-        if (item) {
-          const messageContent = `Hi! I'm interested in your "${item.title}" listed for ${
-            item.price ? `₦${item.price.toLocaleString()}` : 'the listed price'
-          }. Is it still available?`;
-
-          await supabase
-            .from('direct_messages')
-            .insert({
-              sender_id: user.id,
-              recipient_id: sellerId,
-              content: messageContent,
-              status: 'sent'
-            });
-        }
-        
-        // Navigate to existing conversation
-        navigate('/messages');
-      } else {
-        // Create new conversation
-        const { data: newConversation, error: convError } = await supabase
-          .from('direct_conversations')
-          .insert({
-            user1_id: user.id,
-            user2_id: sellerId,
-            last_message_at: new Date().toISOString(),
-            user1_has_unread: false,
-            user2_has_unread: true
-          })
-          .select()
-          .single();
-
-        if (convError) {
-          console.error('Error creating conversation:', convError);
-          toast({
-            title: "Error",
-            description: "Failed to start conversation. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Send initial message about the product if item details are provided
-        if (item) {
-          const messageContent = `Hi! I'm interested in your "${item.title}" listed for ${
-            item.price ? `₦${item.price.toLocaleString()}` : 'the listed price'
-          }. Is it still available?`;
-
-          const { error: messageError } = await supabase
-            .from('direct_messages')
-            .insert({
-              sender_id: user.id,
-              recipient_id: sellerId,
-              content: messageContent,
-              status: 'sent'
-            });
-
-          if (messageError) {
-            console.error('Error sending initial message:', messageError);
-          }
-        }
-
-        // Navigate to messages page
-        navigate('/messages');
-      }
-    } catch (error) {
-      console.error('Error handling message user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start conversation. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleImageClick = (images: string[], title: string) => {
     setSelectedImages(images);
@@ -733,14 +631,16 @@ const Marketplace = () => {
                         </Button>
                       )
                      ) : (
-                       user?.id !== item.user_id ? (
-                          <Button 
-                            className="flex-1 h-8 text-xs"
-                            onClick={() => handleMessageUser(item.user_id, item as MarketplaceItem)}
+                        user?.id !== item.user_id ? (
+                          <MarketplaceMessageDialog 
+                            sellerId={item.user_id}
+                            item={item as MarketplaceItem}
                           >
-                           <MessageSquare className="h-3 w-3 mr-1" />
-                           Message
-                         </Button>
+                            <Button className="flex-1 h-8 text-xs">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Message
+                            </Button>
+                          </MarketplaceMessageDialog>
                        ) : (
                          <Button variant="outline" className="flex-1 h-8 text-xs" disabled>
                            Your Item
