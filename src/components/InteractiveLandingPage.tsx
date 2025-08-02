@@ -684,8 +684,7 @@ const InteractiveLandingPage = () => {
           }}
         />
         
-        {/* Icon Pattern Overlay */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-20">
           {Array.from({ length: 30 }).map((_, i) => (
             <motion.div
               key={i}
