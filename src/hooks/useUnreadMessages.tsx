@@ -68,7 +68,7 @@ export const useUnreadMessages = () => {
       {
         channelName: 'conversation-updates',
         onError: fetchUnreadCount,
-        pollInterval: 45000,
+        pollInterval: 300000, // Reduced polling to 5 minutes
         debugName: 'useUnreadMessages-conversations'
       }
     );
@@ -86,7 +86,7 @@ export const useUnreadMessages = () => {
       {
         channelName: 'message-updates',
         onError: fetchUnreadCount,
-        pollInterval: 45000,
+        pollInterval: 300000, // Reduced polling to 5 minutes
         debugName: 'useUnreadMessages-messages'
       }
     );

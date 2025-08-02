@@ -84,7 +84,7 @@ export const useMessageSubscriptions = ({
             onConversationUpdate?.();
           }, 1000);
         },
-        pollInterval: 5000, // More frequent polling for better real-time feel
+        pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
         debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
       }
     );
@@ -121,7 +121,7 @@ export const useMessageSubscriptions = ({
             onConversationUpdate();
           }, 1000);
         },
-        pollInterval: 10000, // More frequent polling
+        pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
         debugName: 'MessagingContent-conversations'
       }
     );

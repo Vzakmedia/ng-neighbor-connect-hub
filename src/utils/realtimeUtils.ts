@@ -11,7 +11,7 @@ export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 60000, debugName = 'unknown' } = options;
+  const { channelName, onError, pollInterval = 300000, debugName = 'unknown' } = options;
   
   console.log(`${debugName}: Attempting to create safe subscription...`);
   
