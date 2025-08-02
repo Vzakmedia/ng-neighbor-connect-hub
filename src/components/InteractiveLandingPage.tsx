@@ -721,7 +721,7 @@ const InteractiveLandingPage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-green-500 hover:bg-white hover:text-primary">
                 <Phone className="mr-2 h-4 w-4" />
                 Download App
               </Button>
