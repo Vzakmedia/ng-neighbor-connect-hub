@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, ArrowLeft } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
@@ -10,10 +11,19 @@ import AuthBackground from "./AuthBackground";
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex items-center justify-center relative p-4">
       <AuthBackground />
+      <Button 
+        variant="outline" 
+        onClick={() => navigate("/")}
+        className="absolute top-4 left-4 z-20"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
       <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95 border border-border/50 shadow-2xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2">
