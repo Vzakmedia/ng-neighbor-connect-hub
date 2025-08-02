@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 import StaffInvitationManager from "@/components/StaffInvitationManager";
 import ContentModerationPanel from '@/components/ContentModerationPanel';
+import ContentManagementPanel from '@/components/ContentManagementPanel';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -1210,6 +1211,10 @@ const Admin = () => {
           <TabsTrigger value="content-moderation" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
             Content Moderation
+          </TabsTrigger>
+          <TabsTrigger value="content-management" className="w-full justify-start">
+            <FileText className="h-4 w-4 mr-2" />
+            Content Management
           </TabsTrigger>
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
@@ -3301,6 +3306,10 @@ const Admin = () => {
 
         <TabsContent value="content-moderation" className="space-y-6">
           <ContentModerationPanel />
+        </TabsContent>
+
+        <TabsContent value="content-management" className="space-y-6">
+          <ContentManagementPanel />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">

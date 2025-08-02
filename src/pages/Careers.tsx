@@ -4,9 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Careers = () => {
-  const openPositions = [
+  const [openPositions, setOpenPositions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchJobPostings();
+  }, []);
+
+  const fetchJobPostings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_postings')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOpenPositions(data || []);
+    } catch (error) {
+      console.error('Error fetching job postings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const staticPositions = [
     {
       id: 1,
       title: "Senior React Developer",
@@ -145,7 +171,7 @@ const Careers = () => {
           <section className="space-y-6">
             <h2 className="text-2xl font-bold">Open Positions</h2>
             <div className="grid gap-6">
-              {openPositions.map((position) => (
+              {(openPositions.length > 0 ? openPositions : staticPositions).map((position) => (
                 <Card key={position.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">

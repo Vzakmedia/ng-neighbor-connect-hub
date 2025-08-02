@@ -849,6 +849,36 @@ export type Database = {
         }
         Relationships: []
       }
+      company_info: {
+        Row: {
+          content: string | null
+          data: Json | null
+          id: string
+          section: string
+          title: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          content?: string | null
+          data?: Json | null
+          id?: string
+          section: string
+          title?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          content?: string | null
+          data?: Json | null
+          id?: string
+          section?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       contact_invitation_codes: {
         Row: {
           code: string
@@ -1310,6 +1340,57 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      job_postings: {
+        Row: {
+          benefits: string | null
+          created_at: string
+          created_by: string
+          department: string
+          description: string
+          id: string
+          is_active: boolean | null
+          location: string
+          remote: boolean | null
+          requirements: string | null
+          salary_range: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string | null
+          created_at?: string
+          created_by: string
+          department: string
+          description: string
+          id?: string
+          is_active?: boolean | null
+          location: string
+          remote?: boolean | null
+          requirements?: string | null
+          salary_range?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string | null
+          created_at?: string
+          created_by?: string
+          department?: string
+          description?: string
+          id?: string
+          is_active?: boolean | null
+          location?: string
+          remote?: boolean | null
+          requirements?: string | null
+          salary_range?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1806,6 +1887,48 @@ export type Database = {
           post_id?: string
           read_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      press_releases: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          created_by: string
+          date: string
+          description: string
+          id: string
+          is_published: boolean | null
+          link: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          date: string
+          description: string
+          id?: string
+          is_published?: boolean | null
+          link?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          description?: string
+          id?: string
+          is_published?: boolean | null
+          link?: string | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

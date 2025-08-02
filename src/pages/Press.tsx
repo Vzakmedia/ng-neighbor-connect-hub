@@ -4,34 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Press = () => {
-  const pressReleases = [
-    {
-      id: 1,
-      title: "NeighborLink Launches Revolutionary Community Safety Platform",
-      description: "New platform connects Nigerian neighborhoods with innovative safety features and community engagement tools.",
-      date: "January 15, 2025",
-      category: "Product Launch",
-      link: "#"
-    },
-    {
-      id: 2,
-      title: "Partnership with Local Emergency Services Enhances Response Times",
-      description: "Integration with Nigerian emergency services reduces response times by 40% in participating communities.",
-      date: "December 8, 2024",
-      category: "Partnership",
-      link: "#"
-    },
-    {
-      id: 3,
-      title: "NeighborLink Reaches 100,000 Active Users Milestone",
-      description: "Community platform celebrates significant growth across major Nigerian cities.",
-      date: "November 22, 2024",
-      category: "Milestone",
-      link: "#"
+  const [pressReleases, setPressReleases] = useState<any[]>([]);
+  const [companyInfo, setCompanyInfo] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch press releases
+      const { data: pressData, error: pressError } = await supabase
+        .from('press_releases')
+        .select('*')
+        .eq('is_published', true)
+        .order('date', { ascending: false });
+
+      if (pressError) throw pressError;
+      setPressReleases(pressData || []);
+
+      // Fetch company info
+      const { data: companyData, error: companyError } = await supabase
+        .from('company_info')
+        .select('*');
+
+      if (companyError) throw companyError;
+      
+      // Convert array to object with section as key
+      const infoObject: any = {};
+      companyData?.forEach((item: any) => {
+        infoObject[item.section] = item;
+      });
+      setCompanyInfo(infoObject);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const mediaKit = [
     {
@@ -125,21 +141,18 @@ const Press = () => {
 
           {/* Company Information */}
           <section className="space-y-6">
-            <h2 className="text-2xl font-bold">About NeighborLink</h2>
+            <h2 className="text-2xl font-bold">{companyInfo.about?.title || 'About NeighborLink'}</h2>
             <Card>
               <CardContent className="pt-6">
                 <div className="prose prose-neutral dark:prose-invert max-w-none">
-                  <p className="text-muted-foreground">
-                    NeighborLink is Nigeria's leading community safety and engagement platform, connecting neighbors 
-                    through innovative technology to build stronger, safer communities. Founded in 2024, our platform 
-                    serves over 100,000 active users across major Nigerian cities.
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {companyInfo.about?.content || 'NeighborLink is Nigeria\'s leading community safety and engagement platform, connecting neighbors through innovative technology to build stronger, safer communities.'}
                   </p>
-                  <p className="text-muted-foreground">
-                    Our mission is to empower communities with the tools they need to communicate effectively, 
-                    respond to emergencies quickly, and build meaningful connections with their neighbors. Through 
-                    features like real-time safety alerts, community forums, local services directory, and emergency 
-                    response coordination, NeighborLink is transforming how Nigerian communities interact and support each other.
-                  </p>
+                  {companyInfo.mission?.content && (
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {companyInfo.mission.content}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
