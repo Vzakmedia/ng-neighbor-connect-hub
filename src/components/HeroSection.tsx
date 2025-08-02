@@ -38,17 +38,17 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
         
         {/* Hero Content */}
-        <div className="absolute inset-0 flex items-center py-8 sm:py-10 md:py-16">
+        <div className="absolute inset-0 flex items-center py-12 sm:py-16 md:py-20">
           <div className="container px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
             <div className="max-w-2xl text-white">
-              <Badge className="mb-4 sm:mb-5 md:mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
+              <Badge className="mb-2 sm:mb-3 md:mb-3 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
                 <Users className="w-3 h-3 mr-1" />
                 {getCommunityWelcome()}
               </Badge>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-3 md:mb-3 leading-tight">
                 Connect with your neighbors, build stronger communities
               </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-7 md:mb-8 text-white/90 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-5 md:mb-5 text-white/90 leading-relaxed">
                 Join thousands of neighbors sharing resources, staying safe, and building lasting connections in your community.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
