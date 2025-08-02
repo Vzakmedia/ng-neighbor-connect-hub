@@ -29,7 +29,7 @@ const HeroSection = () => {
   return (
     <div className="relative overflow-hidden hidden sm:block">
       {/* Hero Background */}
-      <div className="relative h-48 sm:h-56 md:h-64 lg:h-80 xl:h-96">
+      <div className="relative h-56 sm:h-64 md:h-72 lg:h-80 xl:h-96">
         <img 
           src={communityHero} 
           alt="Community Connection" 
@@ -38,17 +38,17 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
         
         {/* Hero Content */}
-        <div className="absolute inset-0 flex items-center">
-          <div className="container px-4 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 flex items-center py-8 sm:py-10 md:py-12">
+          <div className="container px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
             <div className="max-w-2xl text-white">
-              <Badge className="mb-3 sm:mb-4 md:mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
+              <Badge className="mb-4 sm:mb-5 md:mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
                 <Users className="w-3 h-3 mr-1" />
                 {getCommunityWelcome()}
               </Badge>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-3 sm:mb-4 md:mb-4 leading-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight">
                 Connect with your neighbors, build stronger communities
               </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-6 md:mb-6 text-white/90 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-7 md:mb-8 text-white/90 leading-relaxed">
                 Join thousands of neighbors sharing resources, staying safe, and building lasting connections in your community.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
