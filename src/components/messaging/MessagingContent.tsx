@@ -24,7 +24,7 @@ const MessagingContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  
 
   const { 
     conversations, 
@@ -35,38 +35,32 @@ const MessagingContent = () => {
 
   const unreadCount = useUnreadMessages();
 
-  // Debounced refresh function to prevent infinite loops
-  const debouncedRefresh = useCallback(() => {
-    if (retryCount < 3) {
-      console.log('Attempting conversation refresh, retry count:', retryCount);
+  // Throttled refresh function to prevent excessive calls
+  const refreshConversations = useCallback(() => {
+    const now = Date.now();
+    const lastRefresh = (window as any).lastConversationRefresh || 0;
+    
+    // Only refresh if it's been at least 2 seconds since last refresh
+    if (now - lastRefresh > 2000) {
+      console.log('Refreshing conversations...');
+      (window as any).lastConversationRefresh = now;
       fetchConversations();
-      setRetryCount(prev => prev + 1);
-    } else {
-      console.log('Max retries reached, stopping conversation refresh attempts');
     }
-  }, [fetchConversations, retryCount]);
+  }, [fetchConversations]);
 
   // Set up real-time subscriptions for conversation updates
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: debouncedRefresh,
-    onMessageUpdate: debouncedRefresh,
-    onConversationUpdate: debouncedRefresh
+    onNewMessage: refreshConversations,
+    onMessageUpdate: refreshConversations,
+    onConversationUpdate: refreshConversations
   });
 
   useEffect(() => {
     if (user) {
-      setRetryCount(0); // Reset retry count on user change
       fetchConversations();
     }
   }, [user, fetchConversations]);
-
-  // Reset retry count when conversations are successfully loaded or loading stops
-  useEffect(() => {
-    if (!conversationsLoading && retryCount > 0) {
-      setRetryCount(0);
-    }
-  }, [conversationsLoading, retryCount]);
 
   const handleConversationSelect = (conversation: Conversation) => {
     // Navigate to full screen chat page
