@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -441,9 +441,9 @@ const InteractiveLandingPage = () => {
                       className={`w-16 h-16 rounded-xl bg-gradient-to-br ${features[activeFeature].color} flex items-center justify-center shadow-lg`}
                       animate={{ rotate: 360 }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    >
-                      <features[activeFeature].icon className="w-8 h-8 text-white" />
-                    </motion.div>
+                     >
+                       {React.createElement(features[activeFeature].icon, { className: "w-8 h-8 text-white" })}
+                     </motion.div>
                     <div>
                       <motion.h3 
                         className="text-2xl font-bold"
