@@ -41,7 +41,7 @@ const AuthBackground = () => {
         if ((row + col) % 3 === 0 || (row * 2 + col) % 5 === 0) {
           const IconComponent = icons[Math.floor(Math.random() * icons.length)];
           const size = Math.random() > 0.7 ? 'w-5 h-5' : 'w-4 h-4';
-          const opacity = Math.random() > 0.5 ? 'opacity-20' : 'opacity-15';
+          const opacity = Math.random() > 0.5 ? 'opacity-60' : 'opacity-50';
           
           pattern.push({
             Icon: IconComponent,
@@ -61,7 +61,7 @@ const AuthBackground = () => {
             x: (col / cols) * 100,
             y: (row / rows) * 100,
             size: 'w-1 h-1',
-            opacity: 'opacity-30',
+            opacity: 'opacity-70',
             key: `dot-${row}-${col}`,
             rotation: 0,
             isDot: true
@@ -75,7 +75,7 @@ const AuthBackground = () => {
             x: (col / cols) * 100,
             y: (row / rows) * 100,
             size: 'w-1.5 h-1.5',
-            opacity: 'opacity-25',
+            opacity: 'opacity-65',
             key: `square-${row}-${col}`,
             rotation: 45,
             isSquare: true
@@ -135,8 +135,8 @@ const AuthBackground = () => {
         );
       })}
 
-      {/* Subtle overlay to ensure form readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/50 to-white/70" />
+      {/* Very light overlay to maintain form readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/10 to-white/20" />
     </div>
   );
 };
