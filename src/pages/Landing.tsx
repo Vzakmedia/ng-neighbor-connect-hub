@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import LandingPage from "@/components/LandingPage";
+import ModernLandingPage from "@/components/ModernLandingPage";
 import { useAuth } from "@/hooks/useAuth";
 
 const Landing = () => {
@@ -21,7 +21,7 @@ const Landing = () => {
     );
   }
 
-  return <LandingPage />;
+  return <ModernLandingPage />;
 };
 
 export default Landing;
