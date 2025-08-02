@@ -673,7 +673,15 @@ const Marketplace = () => {
                     {activeTab === 'services' ? (
                       user?.id !== item.user_id ? (
                         <BookServiceDialog 
-                          service={item as Service} 
+                          service={{
+                            id: item.id,
+                            title: item.title,
+                            description: item.description,
+                            price_min: item.price_min,
+                            price_max: item.price_max,
+                            user_id: item.user_id,
+                            location: item.location
+                          }} 
                           onBookingCreated={handleServiceBooked}
                         >
                           <Button className="flex-1 h-8 text-xs">
