@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
+import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 
 interface Service {
   id: string;
@@ -246,70 +247,6 @@ const Marketplace = () => {
   const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
   const currentItems = activeTab === 'services' ? services : items;
 
-  const handleMessageUser = async (sellerId: string) => {
-    if (!user) {
-      toast({
-        title: "Please log in",
-        description: "You need to be logged in to send messages.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (user.id === sellerId) {
-      toast({
-        title: "Cannot message yourself",
-        description: "You cannot send a message to yourself.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Check if conversation already exists
-      const { data: existingConversation } = await supabase
-        .from('direct_conversations')
-        .select('*')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${sellerId}),and(user1_id.eq.${sellerId},user2_id.eq.${user.id})`)
-        .single();
-
-      if (existingConversation) {
-        // Navigate to existing conversation
-        navigate('/messages');
-      } else {
-        // Create new conversation
-        const { error } = await supabase
-          .from('direct_conversations')
-          .insert({
-            user1_id: user.id,
-            user2_id: sellerId,
-            last_message_at: new Date().toISOString(),
-            user1_has_unread: false,
-            user2_has_unread: false
-          });
-
-        if (error) {
-          console.error('Error creating conversation:', error);
-          toast({
-            title: "Error",
-            description: "Failed to start conversation. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Navigate to messages page
-        navigate('/messages');
-      }
-    } catch (error) {
-      console.error('Error handling message user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start conversation. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleImageClick = (images: string[], title: string) => {
     setSelectedImages(images);
@@ -694,15 +631,25 @@ const Marketplace = () => {
                           Your Service
                         </Button>
                       )
-                     ) : (
+                      ) : (
                        user?.id !== item.user_id ? (
-                         <Button 
-                           className="flex-1 h-8 text-xs"
-                           onClick={() => handleMessageUser(item.user_id)}
+                         <MarketplaceMessageDialog 
+                           item={{
+                             id: item.id,
+                             title: item.title,
+                             description: item.description,
+                             price: (item as MarketplaceItem).price,
+                             is_negotiable: (item as MarketplaceItem).is_negotiable,
+                             condition: (item as MarketplaceItem).condition,
+                             user_id: item.user_id,
+                             images: item.images
+                           }}
                          >
-                           <MessageSquare className="h-3 w-3 mr-1" />
-                           Message
-                         </Button>
+                           <Button className="flex-1 h-8 text-xs">
+                             <MessageSquare className="h-3 w-3 mr-1" />
+                             Message
+                           </Button>
+                         </MarketplaceMessageDialog>
                        ) : (
                          <Button variant="outline" className="flex-1 h-8 text-xs" disabled>
                            Your Item
