@@ -78,11 +78,14 @@ export const useMessageSubscriptions = ({
           ? `direct-messages-${userId}-${recipientId}`
           : `user-messages-${userId}`,
         onError: () => {
-          console.log('Message subscription error - refreshing messages and conversations');
-          // Refresh data when subscription fails
-          setTimeout(() => {
-            onConversationUpdate?.();
-          }, 1000);
+          console.log('Message subscription error - scheduling retry');
+          // Only retry if callback exists and delay to prevent loops
+          if (onConversationUpdate) {
+            setTimeout(() => {
+              console.log('Retrying after message subscription error');
+              onConversationUpdate();
+            }, 5000); // Longer delay to prevent rapid retries
+          }
         },
         pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
         debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
@@ -116,10 +119,11 @@ export const useMessageSubscriptions = ({
       {
         channelName: `conversations-${userId}`,
         onError: () => {
-          console.log('Conversation subscription error - refreshing conversations');
+          console.log('Conversation subscription error - scheduling retry');
           setTimeout(() => {
+            console.log('Retrying after conversation subscription error');
             onConversationUpdate();
-          }, 1000);
+          }, 5000); // Longer delay to prevent rapid retries
         },
         pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
         debugName: 'MessagingContent-conversations'

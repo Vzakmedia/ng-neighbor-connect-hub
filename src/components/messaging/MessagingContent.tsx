@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ const MessagingContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const { 
     conversations, 
@@ -34,24 +35,42 @@ const MessagingContent = () => {
 
   const unreadCount = useUnreadMessages();
 
+  // Debounced refresh function to prevent infinite loops
+  const debouncedRefresh = useCallback(() => {
+    if (retryCount < 3) {
+      const timeout = setTimeout(() => {
+        console.log('Attempting conversation refresh, retry count:', retryCount);
+        fetchConversations();
+        setRetryCount(prev => prev + 1);
+      }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+      
+      return () => clearTimeout(timeout);
+    } else {
+      console.log('Max retries reached, stopping conversation refresh attempts');
+    }
+  }, [fetchConversations, retryCount]);
+
   // Set up real-time subscriptions for conversation updates
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: () => {
-      // Refresh conversation list when new messages arrive
-      fetchConversations();
-    },
-    onMessageUpdate: () => {
-      fetchConversations();
-    },
-    onConversationUpdate: fetchConversations
+    onNewMessage: debouncedRefresh,
+    onMessageUpdate: debouncedRefresh,
+    onConversationUpdate: debouncedRefresh
   });
 
   useEffect(() => {
     if (user) {
+      setRetryCount(0); // Reset retry count on user change
       fetchConversations();
     }
   }, [user, fetchConversations]);
+
+  // Reset retry count when conversations are successfully loaded
+  useEffect(() => {
+    if (conversations.length > 0 && retryCount > 0) {
+      setRetryCount(0);
+    }
+  }, [conversations.length, retryCount]);
 
   const handleConversationSelect = (conversation: Conversation) => {
     // Navigate to full screen chat page
