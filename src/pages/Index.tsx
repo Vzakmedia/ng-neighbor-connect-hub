@@ -32,7 +32,7 @@ const Index = () => {
           .select('role')
           .eq('user_id', user.id)
           .in('role', ['super_admin', 'moderator', 'manager', 'support', 'staff'])
-          .single();
+          .maybeSingle();
         
         setUserRole(data?.role || null);
       } catch (error) {
