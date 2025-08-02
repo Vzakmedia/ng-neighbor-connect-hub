@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import { RateLimiter } from "@/components/security/RateLimiter";
 import { SecureInput } from "@/components/auth/SecureAuthForms";
+import { GoogleAuthButton } from "./GoogleAuthButton";
+import { Separator } from "@/components/ui/separator";
 
 interface LoginFormProps {
   onSwitchToReset: () => void;
@@ -61,20 +63,35 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
   return (
     <RateLimiter action="login" maxAttempts={5} timeWindow={15}>
       {(isLimited, attemptsLeft, timeLeft) => (
-        <form 
-          onSubmit={(e) => handleLogin(e, isLimited ? undefined : () => {})} 
-          className="space-y-4"
-        >
-          {!isLimited && attemptsLeft < 5 && attemptsLeft > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
-              <div className="flex items-center">
-                <Shield className="h-4 w-4 text-yellow-600 mr-2" />
-                <p className="text-sm text-yellow-700">
-                  {attemptsLeft} login attempt{attemptsLeft !== 1 ? 's' : ''} remaining
-                </p>
-              </div>
+        <div className="space-y-4">
+          {/* Google Auth Button */}
+          <GoogleAuthButton mode="signin" />
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
             </div>
-          )}
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          <form 
+            onSubmit={(e) => handleLogin(e, isLimited ? undefined : () => {})} 
+            className="space-y-4"
+          >
+            {!isLimited && attemptsLeft < 5 && attemptsLeft > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <div className="flex items-center">
+                  <Shield className="h-4 w-4 text-yellow-600 mr-2" />
+                  <p className="text-sm text-yellow-700">
+                    {attemptsLeft} login attempt{attemptsLeft !== 1 ? 's' : ''} remaining
+                  </p>
+                </div>
+              </div>
+            )}
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -120,17 +137,18 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
             {isLoading ? "Signing in..." : isLimited ? "Account Temporarily Locked" : "Sign In"}
           </Button>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={onSwitchToReset}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              disabled={isLimited}
-            >
-              Forgot your password?
-            </button>
-          </div>
-        </form>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={onSwitchToReset}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                disabled={isLimited}
+              >
+                Forgot your password?
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </RateLimiter>
   );
