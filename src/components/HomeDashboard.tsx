@@ -35,6 +35,7 @@ import AdvertisementCard from './AdvertisementCard';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import AdCarousel from './AdCarousel';
 import { usePromotionalAds } from '@/hooks/usePromotionalAds';
 import { 
   useUpcomingEvents, 
@@ -49,7 +50,7 @@ const HomeDashboard = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
   const dashboardStats = useDashboardStats();
-  const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(3);
+  const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(8);
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
   const { items: marketplaceHighlights, loading: marketplaceLoading } = useMarketplaceHighlights(3);
@@ -174,6 +175,28 @@ const HomeDashboard = () => {
 
             {/* Sidebar - Visible on desktop only due to space constraints */}
             <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
+              {/* Ad Carousel Section */}
+              <Card className="shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base md:text-lg">
+                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5 mr-2 text-primary" />
+                    <span>Sponsored</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 md:px-6">
+                  {adsLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-48 bg-muted rounded-lg"></div>
+                    </div>
+                  ) : currentAds.length > 0 ? (
+                    <AdCarousel ads={currentAds} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No sponsored content available
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
