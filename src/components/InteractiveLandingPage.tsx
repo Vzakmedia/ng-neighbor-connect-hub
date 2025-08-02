@@ -442,7 +442,10 @@ const InteractiveLandingPage = () => {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                      >
-                       {React.createElement(features[activeFeature].icon, { className: "w-8 h-8 text-white" })}
+                       {(() => {
+                         const IconComponent = features[activeFeature].icon;
+                         return <IconComponent className="w-8 h-8 text-white" />;
+                       })()}
                      </motion.div>
                     <div>
                       <motion.h3 
