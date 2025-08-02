@@ -133,6 +133,7 @@ const Marketplace = () => {
     }
   }, [activeTab, selectedCategory, searchTerm]);
 
+
   // Handle URL parameter for specific item
   useEffect(() => {
     const itemId = searchParams.get('item');
@@ -267,6 +268,31 @@ const Marketplace = () => {
       setLoading(false);
     }
   };
+
+  // Real-time updates for marketplace items likes
+  useEffect(() => {
+    const channel = supabase
+      .channel('marketplace_likes_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_item_likes'
+        },
+        async (payload) => {
+          // Refetch items to update like counts in real-time
+          if (activeTab === 'goods') {
+            fetchItems();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeTab]);
 
   const formatPrice = (price: number) => {
     return `₦${(price / 100).toLocaleString()}`;

@@ -33,12 +33,21 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
   };
 
   const isProductCard = (attachment: Attachment): boolean => {
-    return attachment.mimeType === 'application/json' && 
-           attachment.name.includes('_details.json') &&
-           attachment.url.startsWith('data:application/json;base64,');
+    return (attachment.mimeType === 'application/json' && 
+            attachment.name.endsWith('.json') &&
+            (attachment as any).productData) ||
+           (attachment.mimeType === 'application/json' && 
+            attachment.name.includes('_details.json') &&
+            attachment.url.startsWith('data:application/json;base64,'));
   };
 
   const parseProductData = (attachment: Attachment) => {
+    // First check if productData is directly available
+    if ((attachment as any).productData) {
+      return (attachment as any).productData;
+    }
+
+    // Otherwise try to parse from base64 data
     try {
       const base64Data = attachment.url.replace('data:application/json;base64,', '');
       const jsonData = atob(base64Data);
