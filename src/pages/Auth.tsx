@@ -1,11 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthPage } from "@/components/auth/AuthPage";
+import MobileAuthFlow from "@/components/mobile/MobileAuthFlow";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Auth = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && user) {
@@ -21,7 +24,8 @@ const Auth = () => {
     );
   }
 
-  return <AuthPage />;
+  // Use mobile flow for mobile devices, regular auth page for desktop
+  return isMobile ? <MobileAuthFlow /> : <AuthPage />;
 };
 
 export default Auth;
