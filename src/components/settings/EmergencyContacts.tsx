@@ -461,15 +461,15 @@ const EmergencyContacts = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden">
       {/* Main Emergency Contacts Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 space-y-0">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
             Emergency Contacts
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             
             {/* Confirmation Dialog */}
             <Dialog open={isConfirmingContact} onOpenChange={setIsConfirmingContact}>
@@ -542,9 +542,9 @@ const EmergencyContacts = () => {
                   Add Contact
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
+                  <DialogTitle className="text-lg">
                     {editingContact ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
                   </DialogTitle>
                 </DialogHeader>
@@ -552,31 +552,33 @@ const EmergencyContacts = () => {
                 <div className="space-y-4 py-3">
                   <Alert className="mb-4">
                     <Search className="h-4 w-4" />
-                    <AlertDescription>
+                    <AlertDescription className="text-sm">
                       Search for existing users on the app by typing their name, phone, or email. This helps connect with verified users in the SafeNeighbor network.
                     </AlertDescription>
                   </Alert>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="contact-name">Contact Name *</Label>
+                      <Label htmlFor="contact-name" className="text-sm font-medium">Contact Name *</Label>
                       <Input
                         id="contact-name"
                         placeholder="Full name"
                         value={formData.contact_name}
                         onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+                        className="w-full"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="phone-number">Phone Number *</Label>
-                      <div className="relative">
+                      <Label htmlFor="phone-number" className="text-sm font-medium">Phone Number *</Label>
+                      <div className="relative w-full">
                         <Input
                           id="phone-number"
                           type="tel"
                           placeholder="Search by phone, email or name"
                           value={formData.phone_number}
                           onChange={(e) => handlePhoneChange(e.target.value)}
+                          className="w-full pr-10"
                         />
                         {isSearching && (
                           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -587,7 +589,7 @@ const EmergencyContacts = () => {
                       
                       {/* Search Results */}
                       {searchResults.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-background rounded-md border shadow-lg">
+                        <div className="absolute z-50 mt-1 w-full bg-background rounded-md border shadow-lg max-w-full">
                           <div className="p-2 text-xs text-muted-foreground flex items-center">
                             <Search className="h-3 w-3 mr-1" />
                             Users found in app
@@ -600,7 +602,7 @@ const EmergencyContacts = () => {
                                 className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
                                 onClick={() => selectUserFromSearch(profile)}
                               >
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                                   {profile.avatar_url ? (
                                     <img 
                                       src={profile.avatar_url} 
@@ -611,14 +613,14 @@ const EmergencyContacts = () => {
                                     profile.full_name?.charAt(0) || '?'
                                   )}
                                 </div>
-                                <div>
-                                  <p className="font-medium">{profile.full_name}</p>
-                                  <p className="text-xs text-muted-foreground">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{profile.full_name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
                                     {profile.phone || profile.email}
                                     {profile.neighborhood && ` • ${profile.neighborhood}`}
                                   </p>
                                 </div>
-                                <UserCheck className="h-4 w-4 ml-auto text-green-500" />
+                                <UserCheck className="h-4 w-4 text-green-500 shrink-0" />
                               </button>
                             ))}
                           </div>
@@ -807,34 +809,36 @@ const EmergencyContacts = () => {
           ) : (
             <div className="space-y-4">
               {contacts.map((contact) => (
-                <div key={contact.id} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-medium">{contact.contact_name}</h3>
-                        {contact.is_primary_contact && (
-                          <Badge variant="outline" className="text-xs">Primary</Badge>
-                        )}
-                        {contact.is_confirmed ? (
-                          <Badge className="bg-green-600 text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Confirmed
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">
-                            <Lock className="h-3 w-3 mr-1" />
-                            Pending Confirmation
-                          </Badge>
-                        )}
+                <div key={contact.id} className="border rounded-lg p-3 sm:p-4 w-full max-w-full overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <h3 className="font-medium text-sm sm:text-base truncate">{contact.contact_name}</h3>
+                        <div className="flex flex-wrap gap-1">
+                          {contact.is_primary_contact && (
+                            <Badge variant="outline" className="text-xs">Primary</Badge>
+                          )}
+                          {contact.is_confirmed ? (
+                            <Badge className="bg-green-600 text-xs">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Confirmed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              <Lock className="h-3 w-3 mr-1" />
+                              Pending Confirmation
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {contact.phone_number}
+                          <Phone className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{contact.phone_number}</span>
                         </p>
                         {contact.relationship && (
-                          <p>{contact.relationship}</p>
+                          <p className="truncate">{contact.relationship}</p>
                         )}
                         <div className="flex items-center gap-1 flex-wrap">
                           {contact.preferred_methods.map((method) => {
@@ -842,7 +846,8 @@ const EmergencyContacts = () => {
                             return methodInfo ? (
                               <Badge key={method} variant="secondary" className="text-xs">
                                 {React.cloneElement(methodInfo.icon, { className: "h-3 w-3 mr-1" })}
-                                {methodInfo.label}
+                                <span className="hidden sm:inline">{methodInfo.label}</span>
+                                <span className="sm:hidden">{methodInfo.label.split(' ')[0]}</span>
                               </Badge>
                             ) : null;
                           })}
@@ -850,7 +855,7 @@ const EmergencyContacts = () => {
                       </div>
                     </div>
                     
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap sm:flex-nowrap justify-start sm:justify-end">
                       {!contact.is_confirmed && contact.confirm_code && (
                         <Button
                           variant="ghost"
@@ -861,6 +866,7 @@ const EmergencyContacts = () => {
                             setIsViewingCode(true);
                           }}
                           title="View confirmation code"
+                          className="h-8 w-8 p-0"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -875,6 +881,7 @@ const EmergencyContacts = () => {
                             setIsConfirmingContact(true);
                           }}
                           title="Confirm this contact"
+                          className="h-8 w-8 p-0"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -885,6 +892,7 @@ const EmergencyContacts = () => {
                         size="sm"
                         onClick={() => openEditDialog(contact)}
                         title="Edit contact"
+                        className="h-8 w-8 p-0"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -894,6 +902,7 @@ const EmergencyContacts = () => {
                         size="sm"
                         onClick={() => handleDeleteContact(contact.id, contact.contact_name)}
                         title="Remove contact"
+                        className="h-8 w-8 p-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -904,13 +913,15 @@ const EmergencyContacts = () => {
                     {contact.can_receive_location && (
                       <div className="flex items-center gap-1 text-blue-600">
                         <Shield className="h-3 w-3" />
-                        Can receive location
+                        <span className="hidden sm:inline">Can receive location</span>
+                        <span className="sm:hidden">Location</span>
                       </div>
                     )}
                     {contact.can_alert_public && (
                       <div className="flex items-center gap-1 text-orange-600">
                         <AlertTriangle className="h-3 w-3" />
-                        Can share public alerts
+                        <span className="hidden sm:inline">Can share public alerts</span>
+                        <span className="sm:hidden">Alerts</span>
                       </div>
                     )}
                   </div>
@@ -922,14 +933,14 @@ const EmergencyContacts = () => {
       </Card>
       
       {/* Security Information */}
-      <Card>
+      <Card className="w-full max-w-full overflow-hidden mt-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Shield className="h-5 w-5" />
             Security & Privacy
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 overflow-x-hidden">
           <div className="text-sm space-y-2">
             <p><strong>Confirmation Required:</strong> Emergency contacts must confirm their relationship with you using a secure code before they can receive alerts.</p>
             <p><strong>Location Sharing:</strong> Your exact location will only be shared with contacts who have permission during active emergencies.</p>
