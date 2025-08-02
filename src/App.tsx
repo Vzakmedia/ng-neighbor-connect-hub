@@ -36,6 +36,10 @@ import StaffNavigation from "./components/StaffNavigation";
 import StaffLogin from "./pages/StaffLogin";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
+import Press from "./pages/Press";
+import Careers from "./pages/Careers";
+import ApiDocs from "./pages/ApiDocs";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,8 +89,12 @@ const App = () => {
           <Route path="/staff" element={<StaffNavigation />} />
           <Route path="/business" element={<Business />} />
           <Route path="/staff-login" element={<StaffLogin />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/press" element={<Press />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
           </BrowserRouter>

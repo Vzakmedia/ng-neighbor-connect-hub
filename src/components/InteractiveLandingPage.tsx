@@ -878,7 +878,7 @@ const InteractiveLandingPage = () => {
               <div className="space-y-2 text-sm">
                 <Link to="/auth" className="block text-muted-foreground hover:text-primary transition-colors">Web App</Link>
                 <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Mobile App</a>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">API Documentation</a>
+                <Link to="/api-docs" className="block text-muted-foreground hover:text-primary transition-colors">API Documentation</Link>
               </div>
             </div>
             
@@ -887,8 +887,8 @@ const InteractiveLandingPage = () => {
               <div className="space-y-2 text-sm">
                 <a href="#about" className="block text-muted-foreground hover:text-primary transition-colors">About Us</a>
                 <a href="#contact" className="block text-muted-foreground hover:text-primary transition-colors">Contact</a>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Careers</a>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Press</a>
+                <Link to="/careers" className="block text-muted-foreground hover:text-primary transition-colors">Careers</Link>
+                <Link to="/press" className="block text-muted-foreground hover:text-primary transition-colors">Press</Link>
               </div>
             </div>
             
@@ -897,8 +897,7 @@ const InteractiveLandingPage = () => {
               <div className="space-y-2 text-sm">
                 <Link to="/privacy" className="block text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Community Guidelines</a>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Security</a>
+                <Link to="/community-guidelines" className="block text-muted-foreground hover:text-primary transition-colors">Community Guidelines & Security</Link>
               </div>
             </div>
           </div>
