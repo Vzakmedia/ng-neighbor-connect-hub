@@ -7,9 +7,10 @@ const Landing = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect authenticated users to dashboard
   useEffect(() => {
     if (!loading && user) {
-      navigate("/");
+      navigate('/dashboard');
     }
   }, [user, loading, navigate]);
 

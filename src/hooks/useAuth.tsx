@@ -73,8 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
       
-      // Force reload to ensure clean state
-      window.location.href = '/auth';
+      // Redirect to landing page after sign out
+      window.location.href = '/';
       
     } catch (error) {
       console.error("Sign out catch error:", error);
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
       localStorage.clear(); // Clear all localStorage as fallback
-      window.location.href = '/auth';
+      window.location.href = '/';
     }
   }, []);
 
