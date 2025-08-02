@@ -19,4 +19,11 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    target: 'es2015', // Support older iOS Safari versions
+    polyfillModulePreload: false,
+  },
+  esbuild: {
+    target: 'es2015', // Ensures compatibility with iOS Safari 10.3+
+  },
 }));
