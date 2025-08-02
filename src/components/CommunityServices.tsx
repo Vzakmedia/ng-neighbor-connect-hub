@@ -200,46 +200,50 @@ const CommunityServices = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 md:gap-4">
+        {/* Search bar */}
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search services and goods..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-12 md:h-10"
           />
         </div>
         
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {(activeTab === 'services' ? serviceCategories : itemCategories).map((category) => (
-              <SelectItem key={category} value={category}>
-                {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Filters row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:flex-1 h-12 md:h-10">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-md">
+              <SelectItem value="all">All Categories</SelectItem>
+              {(activeTab === 'services' ? serviceCategories : itemCategories).map((category) => (
+                <SelectItem key={category} value={category} className="py-3">
+                  {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={locationFilter} onValueChange={setLocationFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <MapPin className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Locations</SelectItem>
-            <SelectItem value="neighborhood">My Neighborhood</SelectItem>
-            <SelectItem value="city">My City</SelectItem>
-            <SelectItem value="state">My State</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-full sm:flex-1 h-12 md:h-10">
+              <MapPin className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-md">
+              <SelectItem value="all" className="py-3">All Locations</SelectItem>
+              <SelectItem value="neighborhood" className="py-3">My Neighborhood</SelectItem>
+              <SelectItem value="city" className="py-3">My City</SelectItem>
+              <SelectItem value="state" className="py-3">My State</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -249,29 +253,29 @@ const CommunityServices = () => {
           <TabsTrigger value="goods">Goods ({filteredItems.length})</TabsTrigger>
         </TabsList>
         
-        {/* Mobile tabs - using buttons instead of TabsTrigger */}
+        {/* Mobile & tablet tabs */}
         <div className="md:hidden w-full mb-4">
-          <div className="flex justify-center gap-1 w-full">
+          <div className="flex gap-2 w-full">
             <Button
               variant={activeTab === "services" ? "default" : "outline"}
               onClick={() => setActiveTab("services")}
-              className="flex-1"
+              className="flex-1 h-12 sm:h-10"
             >
-              <Wrench className="h-3 w-3 mr-1" />
-              Services
+              <Wrench className="h-4 w-4 mr-2" />
+              <span className="text-sm">Services ({filteredServices.length})</span>
             </Button>
             <Button
               variant={activeTab === "goods" ? "default" : "outline"}
               onClick={() => setActiveTab("goods")}
-              className="flex-1"
+              className="flex-1 h-12 sm:h-10"
             >
-              <Package className="h-3 w-3 mr-1" />
-              Goods
+              <Package className="h-4 w-4 mr-2" />
+              <span className="text-sm">Goods ({filteredItems.length})</span>
             </Button>
           </div>
         </div>
 
-        <TabsContent value="services" className="space-y-4 mt-6">
+        <TabsContent value="services" className="space-y-3 md:space-y-4 mt-4 md:mt-6">
           {filteredServices.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
@@ -281,29 +285,29 @@ const CommunityServices = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {filteredServices.map((service) => (
                 <Card key={service.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <Avatar>
+                  <CardHeader className="pb-3 md:pb-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12">
                           <AvatarImage src={service.profiles.avatar_url} />
                           <AvatarFallback>
                             {service.profiles.full_name?.charAt(0) || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{service.title}</CardTitle>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base md:text-lg break-words">{service.title}</CardTitle>
                           <p className="text-sm text-muted-foreground">
                             by {service.profiles.full_name}
                           </p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge variant="outline" className="text-xs">
                               {service.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             {service.rating && (
-                              <Badge variant="secondary" className="gap-1">
+                              <Badge variant="secondary" className="gap-1 text-xs">
                                 <Star className="h-3 w-3 fill-current" />
                                 {service.rating.toFixed(1)}
                               </Badge>
@@ -311,8 +315,8 @@ const CommunityServices = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => {
+                      <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <Button variant="outline" size="sm" className="h-10 text-sm" onClick={() => {
                           toast({
                             title: "Feature Coming Soon",
                             description: "Direct messaging will be available soon",
@@ -333,44 +337,44 @@ const CommunityServices = () => {
                           }}
                           onBookingCreated={fetchCommunityServices}
                         >
-                          <Button size="sm">Book Service</Button>
+                          <Button size="sm" className="h-10 text-sm">Book Service</Button>
                         </BookServiceDialog>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-3 break-words">{service.description}</p>
                     
                     {/* Service Gallery */}
                     {service.images && service.images.length > 0 && (
-                      <div className="flex gap-2 mb-3 overflow-x-auto">
+                      <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
                         {service.images.slice(0, 3).map((imageUrl, index) => (
                           <img
                             key={index}
                             src={imageUrl}
                             alt={`${service.title} gallery ${index + 1}`}
-                            className="w-16 h-16 object-cover rounded flex-shrink-0"
+                            className="w-16 h-16 md:w-20 md:h-20 object-cover rounded flex-shrink-0"
                           />
                         ))}
                         {service.images.length > 3 && (
-                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                          <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
                             +{service.images.length - 3}
                           </div>
                         )}
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="space-y-1">
                         {service.location && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            {service.location}
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="break-words">{service.location}</span>
                           </div>
                         )}
                         
                         {(service.price_min || service.price_max) && (
-                          <div className="text-lg font-semibold">
+                          <div className="text-base md:text-lg font-semibold">
                             ₦{service.price_min || 0} - ₦{service.price_max || 0}
                             <span className="text-sm font-normal text-muted-foreground">
                               /{service.price_type || 'hourly'}
@@ -379,7 +383,7 @@ const CommunityServices = () => {
                         )}
                       </div>
                       
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground self-start sm:self-center">
                         {formatTimeAgo(service.created_at)}
                       </p>
                     </div>
@@ -390,7 +394,7 @@ const CommunityServices = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="goods" className="space-y-4 mt-6">
+        <TabsContent value="goods" className="space-y-3 md:space-y-4 mt-4 md:mt-6">
           {filteredItems.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
@@ -400,28 +404,28 @@ const CommunityServices = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {filteredItems.map((item) => (
                 <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <Avatar>
+                  <CardHeader className="pb-3 md:pb-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12">
                           <AvatarImage src={item.profiles.avatar_url} />
                           <AvatarFallback>
                             {item.profiles.full_name?.charAt(0) || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{item.title}</CardTitle>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base md:text-lg break-words">{item.title}</CardTitle>
                           <p className="text-sm text-muted-foreground">
                             by {item.profiles.full_name}
                           </p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge variant="outline" className="text-xs">
                               {item.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs">
                               {item.condition.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                             {item.is_negotiable && (
@@ -432,7 +436,7 @@ const CommunityServices = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                         <Button variant="outline" size="sm" onClick={() => {
                           toast({
                             title: "Feature Coming Soon",

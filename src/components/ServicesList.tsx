@@ -365,17 +365,17 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                         </Badge>
                       </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex flex-wrap gap-2">
                       <EditServiceDialog service={service} onServiceUpdated={fetchMyServices}>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="h-10 text-sm">
                           <Edit className="h-4 w-4 mr-1" />
-                          Edit
+                          <span className="hidden sm:inline">Edit</span>
                         </Button>
                       </EditServiceDialog>
                       <ManageAvailabilityDialog service={{ id: service.id, title: service.title }}>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="h-10 text-sm">
                           <Clock className="h-4 w-4 mr-1" />
-                          Availability
+                          <span className="hidden sm:inline">Availability</span>
                         </Button>
                       </ManageAvailabilityDialog>
                       <CreatePromotionDialog 
@@ -384,14 +384,15 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                         itemTitle={service.title}
                         onPromotionCreated={fetchMyServices}
                       >
-                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20 h-10 text-sm">
                           <Megaphone className="h-4 w-4 mr-1" />
-                          Promote
+                          <span className="hidden sm:inline">Promote</span>
                         </Button>
                       </CreatePromotionDialog>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-10 text-sm"
                         onClick={() => toggleServiceStatus(service.id, service.is_active)}
                       >
                         {service.is_active ? "Deactivate" : "Activate"}
@@ -399,6 +400,7 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="h-10"
                         onClick={() => handleDeleteService(service.id, service.title)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -406,48 +408,50 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
-                  
-                  {/* Service Gallery */}
-                  {service.images && service.images.length > 0 && (
-                    <div className="flex gap-2 mb-3 overflow-x-auto">
-                      {service.images.slice(0, 3).map((imageUrl, index) => (
-                        <img
-                          key={index}
-                          src={imageUrl}
-                          alt={`${service.title} gallery ${index + 1}`}
-                          className="w-16 h-16 object-cover rounded flex-shrink-0"
-                        />
-                      ))}
-                      {service.images.length > 3 && (
-                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
-                          +{service.images.length - 3}
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-muted-foreground mb-3 break-words">{service.description}</p>
+                    
+                    {/* Service Gallery */}
+                    {service.images && service.images.length > 0 && (
+                      <div className="flex gap-2 mb-3 overflow-x-auto pb-2">
+                        {service.images.slice(0, 3).map((imageUrl, index) => (
+                          <img
+                            key={index}
+                            src={imageUrl}
+                            alt={`${service.title} gallery ${index + 1}`}
+                            className="w-16 h-16 md:w-20 md:h-20 object-cover rounded flex-shrink-0"
+                          />
+                        ))}
+                        {service.images.length > 3 && (
+                          <div className="w-16 h-16 md:w-20 md:h-20 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                            +{service.images.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      {service.location && (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span className="break-words">{service.location}</span>
                         </div>
                       )}
-                    </div>
-                  )}
-                  
-                  {service.location && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                      <MapPin className="h-4 w-4" />
-                      {service.location}
-                    </div>
-                  )}
 
-                  {(service.price_min || service.price_max) && (
-                    <div className="text-lg font-semibold mb-2">
-                      ₦{service.price_min || 0} - ₦{service.price_max || 0}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        /{service.price_type || 'hourly'}
-                      </span>
-                    </div>
-                  )}
+                      {(service.price_min || service.price_max) && (
+                        <div className="text-base md:text-lg font-semibold">
+                          ₦{service.price_min || 0} - ₦{service.price_max || 0}
+                          <span className="text-sm font-normal text-muted-foreground">
+                            /{service.price_type || 'hourly'}
+                          </span>
+                        </div>
+                      )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Created {formatTimeAgo(service.created_at)}
-                  </p>
-                </CardContent>
+                      <p className="text-xs text-muted-foreground">
+                        Created {formatTimeAgo(service.created_at)}
+                      </p>
+                    </div>
+                  </CardContent>
               </Card>
             ))}
           </div>

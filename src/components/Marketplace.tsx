@@ -432,24 +432,24 @@ const Marketplace = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:gap-0 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Marketplace</h1>
-          <p className="text-muted-foreground">Discover local services and goods in your neighborhood</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Marketplace</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Discover local services and goods in your neighborhood</p>
         </div>
-        <Button className="flex items-center gap-2 w-full sm:w-auto">
+        <Button className="flex items-center gap-2 h-12 lg:h-10 w-full lg:w-auto">
           <Plus className="h-4 w-4" />
           Create Listing
         </Button>
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="flex space-x-1 bg-muted p-1 rounded-lg w-full sm:w-fit">
+      <div className="flex flex-col gap-4">
+        <div className="flex bg-muted p-1 rounded-lg w-full">
           <Button
             variant={activeTab === 'services' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('services')}
-            className="flex items-center gap-2 flex-1 sm:flex-none"
+            className="flex items-center gap-2 flex-1 h-12 md:h-10"
           >
             <Users className="h-4 w-4" />
             Services
@@ -457,7 +457,7 @@ const Marketplace = () => {
           <Button
             variant={activeTab === 'goods' ? 'default' : 'ghost'}
             onClick={() => setActiveTab('goods')}
-            className="flex items-center gap-2 flex-1 sm:flex-none"
+            className="flex items-center gap-2 flex-1 h-12 md:h-10"
           >
             <ShoppingBag className="h-4 w-4" />
             Goods
@@ -466,39 +466,41 @@ const Marketplace = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 md:gap-4">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder={`Search ${activeTab}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-12 md:h-10"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {currentCategories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <SelectItem key={category.value} value={category.value}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    {category.label}
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4" />
-          <span className="hidden sm:inline">More Filters</span>
-          <span className="sm:hidden">Filters</span>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full h-12 md:h-10">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-md">
+              {currentCategories.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <SelectItem key={category.value} value={category.value} className="py-3">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {category.label}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
+            <Filter className="h-4 w-4" />
+            <span className="hidden sm:inline">More Filters</span>
+            <span className="sm:hidden">Filters</span>
+          </Button>
+        </div>
       </div>
 
       {/* Category Grid */}

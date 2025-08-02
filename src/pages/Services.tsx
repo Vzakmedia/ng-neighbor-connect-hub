@@ -40,9 +40,7 @@ const Services = () => {
       <Navigation />
       
       <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
-          <div className="mb-6">
-          </div>
+        <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
           
           <Tabs defaultValue="businesses" className="w-full">
             {/* Desktop TabsList */}
@@ -54,7 +52,7 @@ const Services = () => {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
+                <DropdownMenuContent align="center" className="w-56 bg-background border shadow-md">
                   <DropdownMenuItem onClick={() => navigate('/my-services')}>
                     My Services
                   </DropdownMenuItem>
@@ -69,33 +67,33 @@ const Services = () => {
               <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
             </TabsList>
             
-            {/* Mobile compact buttons */}
-            <div className="md:hidden flex gap-2 w-full">
+            {/* Mobile & tablet responsive navigation */}
+            <div className="md:hidden flex flex-col sm:flex-row gap-3 w-full mb-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex-1 text-xs">
-                    My Services
-                    <ChevronDown className="h-3 w-3 ml-1" />
+                  <Button variant="outline" className="w-full sm:flex-1 h-12 sm:h-10 text-sm">
+                    My Services & Goods
+                    <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
-                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
+                <DropdownMenuContent align="center" className="w-72 bg-background border shadow-md">
+                  <DropdownMenuItem onClick={() => navigate('/my-services')} className="py-3">
                     My Services
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
+                  <DropdownMenuItem onClick={() => navigate('/my-goods')} className="py-3">
                     My Goods
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
+                  <DropdownMenuItem onClick={() => navigate('/my-bookings')} className="py-3">
                     My Bookings
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="default" size="sm" className="flex-1 text-xs">
+              <Button variant="default" className="w-full sm:flex-1 h-12 sm:h-10 text-sm">
                 Local Businesses
               </Button>
             </div>
 
-            <TabsContent value="businesses" className="mt-6">
+            <TabsContent value="businesses" className="mt-4 md:mt-6">
               <BusinessListings />
             </TabsContent>
           </Tabs>
