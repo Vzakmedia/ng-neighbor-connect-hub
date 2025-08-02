@@ -153,9 +153,9 @@ const HomeDashboard = () => {
 
         <TabsContent value="overview" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {/* Main Feed */}
-            <div className="xl:col-span-2">
+            <div className="lg:col-span-2">
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
                   <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
@@ -188,8 +188,8 @@ const HomeDashboard = () => {
               </Card>
             </div>
 
-            {/* Sidebar - Visible on tablets and up */}
-            <div className="hidden sm:block space-y-4 sm:space-y-5 md:space-y-6">
+            {/* Sidebar - Visible on desktop only due to space constraints */}
+            <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
               {/* Real-time Promotional Ads */}
               <div className="space-y-3 sm:space-y-4 md:space-y-4">
                 {adsLoading ? (

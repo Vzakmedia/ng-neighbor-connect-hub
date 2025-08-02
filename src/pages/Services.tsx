@@ -39,7 +39,7 @@ const Services = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-64 pb-16 md:pb-0">
+      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
           
           <Tabs defaultValue="businesses" className="w-full">

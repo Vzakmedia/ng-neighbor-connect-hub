@@ -34,7 +34,7 @@ const MyGoods = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-64 pb-16 md:pb-0">
+      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
           <div className="flex flex-col gap-4 mb-4 md:mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

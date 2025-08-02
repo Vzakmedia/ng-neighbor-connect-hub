@@ -78,39 +78,52 @@ const Navigation = () => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 bg-card border-r">
+      {/* Desktop Sidebar - Full width on desktop, icon-only on tablet */}
+      <aside className="hidden md:flex md:w-16 lg:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 bg-card border-r">
         <div className="flex-1 flex flex-col min-h-0 pt-4">
-          <div className="px-4 mb-4">
+          {/* Create Post Button - hidden on tablet, full on desktop */}
+          <div className="px-2 lg:px-4 mb-4">
             <Button 
-              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity lg:px-4 md:px-2"
               onClick={() => setCreatePostOpen(true)}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Post
+              <Plus className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Create Post</span>
             </Button>
           </div>
           
-          <nav className="flex-1 px-2 space-y-1">
+          <nav className="flex-1 px-1 lg:px-2 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.path)}
-                  className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${
                     location.pathname === item.path
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-foreground hover:bg-muted'
                   }`}
+                  title={item.label} // Tooltip for tablet view
                 >
-                  <Icon className="mr-3 h-5 w-5" />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <Icon className="h-5 w-5 lg:mr-3 flex-shrink-0" />
+                  <span className="hidden lg:block flex-1 text-left">{item.label}</span>
                   {item.count > 0 && (
-                    <Badge variant="secondary" className="ml-auto">
-                      {item.count}
-                    </Badge>
+                    <>
+                      {/* Desktop badge */}
+                      <Badge variant="secondary" className="hidden lg:block ml-auto">
+                        {item.count}
+                      </Badge>
+                      {/* Tablet notification dot */}
+                      <div className="lg:hidden absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full"></div>
+                    </>
                   )}
+                  
+                  {/* Tablet tooltip */}
+                  <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
+                    {item.label}
+                    {item.count > 0 && ` (${item.count})`}
+                  </div>
                 </button>
                 );
               })}
@@ -118,19 +131,25 @@ const Navigation = () => {
               {/* Staff Portal Link for staff users */}
               {hasStaffRole && (
                 <>
-                  <div className="px-3 py-2">
+                  <div className="px-2 lg:px-3 py-2">
                     <div className="border-t border-muted" />
                   </div>
                   <button
                     onClick={() => navigate('/staff')}
-                    className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                    className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${
                       location.pathname === '/staff'
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-foreground hover:bg-muted'
                     }`}
+                    title="Staff Portal"
                   >
-                    <Settings className="mr-3 h-5 w-5" />
-                    <span className="flex-1 text-left">Staff Portal</span>
+                    <Settings className="h-5 w-5 lg:mr-3 flex-shrink-0" />
+                    <span className="hidden lg:block flex-1 text-left">Staff Portal</span>
+                    
+                    {/* Tablet tooltip */}
+                    <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
+                      Staff Portal
+                    </div>
                   </button>
                 </>
               )}

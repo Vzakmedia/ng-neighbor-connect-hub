@@ -39,7 +39,7 @@ const Events = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-64 pb-16 md:pb-0">
+      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-4 md:py-6 px-3 md:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
             <h1 className="text-xl md:text-2xl font-bold truncate">Community Events</h1>

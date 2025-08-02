@@ -32,7 +32,7 @@ const MarketplacePage = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-64 pb-16 md:pb-0">
+      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-6">
           <Marketplace />
         </div>
