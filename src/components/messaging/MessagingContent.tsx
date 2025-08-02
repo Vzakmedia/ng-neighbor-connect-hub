@@ -38,13 +38,9 @@ const MessagingContent = () => {
   // Debounced refresh function to prevent infinite loops
   const debouncedRefresh = useCallback(() => {
     if (retryCount < 3) {
-      const timeout = setTimeout(() => {
-        console.log('Attempting conversation refresh, retry count:', retryCount);
-        fetchConversations();
-        setRetryCount(prev => prev + 1);
-      }, Math.pow(2, retryCount) * 1000); // Exponential backoff
-      
-      return () => clearTimeout(timeout);
+      console.log('Attempting conversation refresh, retry count:', retryCount);
+      fetchConversations();
+      setRetryCount(prev => prev + 1);
     } else {
       console.log('Max retries reached, stopping conversation refresh attempts');
     }
@@ -65,12 +61,12 @@ const MessagingContent = () => {
     }
   }, [user, fetchConversations]);
 
-  // Reset retry count when conversations are successfully loaded
+  // Reset retry count when conversations are successfully loaded or loading stops
   useEffect(() => {
-    if (conversations.length > 0 && retryCount > 0) {
+    if (!conversationsLoading && retryCount > 0) {
       setRetryCount(0);
     }
-  }, [conversations.length, retryCount]);
+  }, [conversationsLoading, retryCount]);
 
   const handleConversationSelect = (conversation: Conversation) => {
     // Navigate to full screen chat page
