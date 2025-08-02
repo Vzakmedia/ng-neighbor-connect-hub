@@ -29,67 +29,37 @@ export const usePromotionalAds = (maxAds: number = 3) => {
     if (!user || !profile) return;
 
     try {
-      // Fetch active promotions with user profiles and item data
-      const { data: promotionsData, error } = await supabase
-        .from('promotions')
+      // Fetch active promoted posts with campaign and user profile data
+      const { data: promotedPostsData, error } = await supabase
+        .from('promoted_posts')
         .select(`
           *,
-          profiles!promotions_user_id_fkey (
-            full_name,
-            avatar_url,
-            neighborhood,
-            city,
-            state
+          promotion_campaigns!inner (
+            user_id,
+            status,
+            start_date,
+            end_date
           )
         `)
-        .eq('status', 'active')
+        .eq('is_active', true)
+        .eq('promotion_campaigns.status', 'active')
         .order('created_at', { ascending: false })
         .limit(maxAds);
 
       if (error) throw error;
 
-      // Enrich promotions with service/item data and format for ads
+      // Enrich promotions with user profile data and format for ads
       const enrichedAds = await Promise.all(
-        (promotionsData || []).map(async (promotion) => {
-          let itemData: any = null;
-          let itemPrice = '';
-          let itemCategory = '';
-          let itemImages: string[] = [];
-
-          // Fetch related service or marketplace item data
-          if (promotion.item_type === 'service') {
-            const { data: serviceData } = await supabase
-              .from('services')
-              .select('title, description, price_min, price_max, category, images')
-              .eq('id', promotion.item_id)
-              .single();
-            
-            itemData = serviceData;
-            if (serviceData) {
-              itemCategory = serviceData.category;
-              itemImages = serviceData.images || [];
-              if (serviceData.price_min && serviceData.price_max) {
-                itemPrice = `₦${serviceData.price_min.toLocaleString()} - ₦${serviceData.price_max.toLocaleString()}`;
-              } else if (serviceData.price_min) {
-                itemPrice = `From ₦${serviceData.price_min.toLocaleString()}`;
-              }
-            }
-          } else {
-            const { data: itemData } = await supabase
-              .from('marketplace_items')
-              .select('title, description, price, category, images')
-              .eq('id', promotion.item_id)
-              .single();
-            
-            if (itemData) {
-              itemCategory = itemData.category;
-              itemImages = itemData.images || [];
-              itemPrice = itemData.price ? `₦${itemData.price.toLocaleString()}` : '';
-            }
-          }
+        (promotedPostsData || []).map(async (promotedPost) => {
+          // Get user profile data
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url, neighborhood, city, state')
+            .eq('user_id', promotedPost.promotion_campaigns.user_id)
+            .single();
 
           // Calculate time posted
-          const createdDate = new Date(promotion.created_at);
+          const createdDate = new Date(promotedPost.created_at);
           const now = new Date();
           const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
           
@@ -103,19 +73,22 @@ export const usePromotionalAds = (maxAds: number = 3) => {
             timePosted = `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
           }
 
+          // Extract data from post_content JSON
+          const postContent = promotedPost.post_content as any;
+          
           const ad: PromotionalAd = {
-            id: promotion.id,
-            title: promotion.title,
-            description: promotion.description || itemData?.description || '',
-            image: itemImages.length > 0 ? itemImages[0] : undefined,
-            location: (promotion.profiles as any)?.neighborhood || (promotion.profiles as any)?.city || 'Location not specified',
-            category: itemCategory,
-            price: itemPrice,
-            url: promotion.website_url || undefined,
+            id: promotedPost.id,
+            title: postContent.title || 'Advertisement',
+            description: postContent.description || '',
+            image: postContent.images && postContent.images.length > 0 ? postContent.images[0] : undefined,
+            location: profileData?.neighborhood || profileData?.city || 'Location not specified',
+            category: postContent.business_category || promotedPost.post_type,
+            price: `₦${promotedPost.daily_budget}/day`,
+            url: postContent.website_url || undefined,
             sponsored: true,
             timePosted,
-            promotion_type: promotion.promotion_type,
-            contact_info: promotion.contact_info
+            promotion_type: promotedPost.post_type,
+            contact_info: postContent.contact_info
           };
 
           return ad;
@@ -140,12 +113,12 @@ export const usePromotionalAds = (maxAds: number = 3) => {
 
     const subscription = createSafeSubscription(
       (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'promotions'
-        }, () => {
-          fetchPromotionalAds();
+         .on('postgres_changes', {
+           event: '*',
+           schema: 'public',
+           table: 'promoted_posts'
+         }, () => {
+           fetchPromotionalAds();
         }),
       {
         channelName: 'promotional_ads_changes',

@@ -87,24 +87,8 @@ const HomeDashboard = () => {
     },
   ];
 
-  // Fallback advertisements (show only if no promotional ads are available)
-  const fallbackAdvertisements = [
-    {
-      id: 'fallback-1',
-      title: 'Fresh Groceries Delivered',
-      description: 'Get fresh groceries delivered to your door. Same-day delivery available in Victoria Island.',
-      image: '/placeholder.svg',
-      location: 'Victoria Island',
-      category: 'Services',
-      price: 'From ₦500',
-      url: 'https://example.com/groceries',
-      sponsored: true,
-      timePosted: '2 hours ago'
-    }
-  ];
-
-  // Use promotional ads if available, otherwise fall back to default ads
-  const currentAds = !adsLoading && promotionalAds.length > 0 ? promotionalAds : fallbackAdvertisements;
+  // Use only real promotional ads from the database
+  const currentAds = promotionalAds;
 
   return (
     <div className="space-y-4 sm:space-y-5 md:space-y-6 overflow-x-hidden">
@@ -488,18 +472,34 @@ const HomeDashboard = () => {
         </TabsContent>
 
         <TabsContent value="ads" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            {!adsLoading && currentAds.map((ad) => (
-              <AdvertisementCard key={ad.id} ad={ad} />
-            ))}
-            {adsLoading && (
-              Array.from({ length: 3 }).map((_, index) => (
+          {adsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+              {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="animate-pulse">
                   <div className="h-48 bg-muted rounded-lg"></div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          ) : currentAds.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+              {currentAds.map((ad) => (
+                <AdvertisementCard key={ad.id} ad={ad} />
+              ))}
+            </div>
+          ) : (
+            <Card className="shadow-card">
+              <CardContent className="p-8 text-center">
+                <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Active Advertisements</h3>
+                <p className="text-muted-foreground mb-4">
+                  There are no active promoted advertisements at the moment.
+                </p>
+                <Button onClick={() => navigate('/community')} variant="outline">
+                  View Community Posts Instead
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
