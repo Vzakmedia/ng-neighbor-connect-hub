@@ -39,6 +39,8 @@ import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
 import PromotedContent from '@/components/PromotedContent';
 import { SponsoredContent } from '@/components/SponsoredContent';
+import FeedAdCard from '@/components/FeedAdCard';
+import { usePromotionalAds } from '@/hooks/usePromotionalAds';
 
 
 interface DatabasePost {
@@ -79,7 +81,7 @@ interface Post {
   isSaved: boolean;
 }
 
-type FeedItem = Post;
+type FeedItem = Post | { type: 'ad'; ad: any };
 
 interface CommunityFeedProps {
   activeTab?: string;
@@ -90,7 +92,9 @@ type ViewScope = 'neighborhood' | 'state';
 
 const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { ads: promotionalAds } = usePromotionalAds(5);
   const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -270,6 +274,57 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
     checkReadStatuses();
   }, [posts, user, checkIfPostIsRead]);
+
+  // Create combined feed with ads interspersed between posts
+  useEffect(() => {
+    const createFeedWithAds = () => {
+      if (posts.length === 0) {
+        setFeedItems([]);
+        return;
+      }
+
+      const combinedFeed: FeedItem[] = [];
+      posts.forEach((post, index) => {
+        combinedFeed.push(post);
+        
+        // Insert ads every 3 posts, but not after the last post
+        if ((index + 1) % 3 === 0 && index < posts.length - 1 && promotionalAds.length > 0) {
+          const adIndex = Math.floor(index / 3) % promotionalAds.length;
+          const adData = promotionalAds[adIndex];
+          
+          // Transform promotional ad to match FeedAdCard format
+          const feedAd = {
+            id: adData.id,
+            business: {
+              name: adData.location.split(',')[0] || 'Local Business',
+              logo: undefined,
+              location: adData.location,
+              verified: true
+            },
+            title: adData.title,
+            description: adData.description,
+            category: adData.category,
+            image: adData.image,
+            cta: 'Learn More',
+            url: adData.url,
+            promoted: true,
+            timePosted: adData.timePosted,
+            likes: Math.floor(Math.random() * 50) + 10,
+            comments: Math.floor(Math.random() * 20) + 5,
+            rating: 4.5,
+            price: adData.price,
+            type: 'general' as const
+          };
+          
+          combinedFeed.push({ type: 'ad', ad: feedAd });
+        }
+      });
+      
+      setFeedItems(combinedFeed);
+    };
+
+    createFeedWithAds();
+  }, [posts, promotionalAds]);
 
   useEffect(() => {
     if (propViewScope) {
@@ -526,8 +581,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     setUserProfileOpen(true);
   };
 
-  // Filter posts based on search and post type
-  const filteredPosts = posts.filter(post => {
+  // Filter feed items based on search and post type
+  const filteredFeedItems = feedItems.filter(item => {
+    // Skip ads when filtering - they should always be shown
+    if (item.type === 'ad') return true;
+    
+    const post = item as Post;
     // Filter by search query
     const matchesSearch = searchQuery === '' || 
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -777,7 +836,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground mt-2">Loading posts...</p>
         </div>
-      ) : filteredPosts.length === 0 ? (
+      ) : filteredFeedItems.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
             No posts found for this {viewScope === 'neighborhood' ? 'neighborhood' : 'state'} and category.
@@ -787,43 +846,27 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Banner Promotions - Full Width */}
-          <PromotedContent promotionType="banner" maxItems={1} />
-          
-          {/* Featured Promotions - Large Cards */}
-          <PromotedContent promotionType="featured" maxItems={2} />
-          
-          {/* Regular Posts with Boost and Highlight Promotions Interspersed */}
-          {filteredPosts.map((post: Post, index) => {
+        <div className="space-y-4">
+          {filteredFeedItems.map((item, index) => {
+            if (item.type === 'ad') {
+              return (
+                <FeedAdCard 
+                  key={`ad-${item.ad.id}-${index}`} 
+                  ad={item.ad} 
+                />
+              );
+            }
+            
+            const post = item as Post;
             const typeBadge = getPostTypeBadge(post.type);
             
-            // Extra safety check - this should now never be needed due to proper transformDatabasePost
+            // Extra safety check
             if (!post || !post.author) {
               console.warn('Post or post.author is undefined:', post);
               return null;
             }
             
             return (
-              <div key={`post-section-${index}`} className="space-y-4">
-                {/* Insert Boost promotions every 3 posts */}
-                {index % 3 === 0 && index > 0 && (
-                  <PromotedContent promotionType="boost" maxItems={1} />
-                )}
-                
-                 {/* Insert Highlight promotions every 5 posts */}
-                {index % 5 === 0 && index > 0 && (
-                  <PromotedContent promotionType="highlight" maxItems={2} />
-                )}
-                
-                 {/* Insert Sponsored Content every 4 posts */}
-                {index % 4 === 0 && index > 0 && (
-                  <SponsoredContent 
-                    userLocation={profile?.city || profile?.state} 
-                    limit={2}
-                  />
-                )}
-                
                 <Card
                   key={post.id} 
                   className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
@@ -970,7 +1013,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 )}
               </CardContent>
                 </Card>
-              </div>
             );
           })}
         </div>

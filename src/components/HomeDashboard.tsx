@@ -174,18 +174,6 @@ const HomeDashboard = () => {
 
             {/* Sidebar - Visible on desktop only due to space constraints */}
             <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
-              {/* Real-time Promotional Ads */}
-              <div className="space-y-3 sm:space-y-4 md:space-y-4">
-                {adsLoading ? (
-                  <div className="animate-pulse">
-                    <div className="h-32 bg-muted rounded-lg"></div>
-                  </div>
-                ) : (
-                  currentAds.slice(0, 1).map((ad) => (
-                    <AdvertisementCard key={ad.id} ad={ad} />
-                  ))
-                )}
-              </div>
 
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
@@ -372,12 +360,6 @@ const HomeDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Another Promotional Ad Slot */}
-              <div className="space-y-4">
-                {!adsLoading && currentAds.length > 1 && currentAds.slice(1, 2).map((ad) => (
-                  <AdvertisementCard key={ad.id} ad={ad} />
-                ))}
-              </div>
 
               {/* Trending Topics */}
               <Card className="shadow-card">
