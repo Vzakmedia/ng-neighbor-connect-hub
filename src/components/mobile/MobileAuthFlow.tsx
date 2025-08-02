@@ -14,8 +14,8 @@ const MobileAuthFlow = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user has seen onboarding before
-    const seenOnboarding = localStorage.getItem('neighborlink_onboarding_seen');
+    // Check if user has seen onboarding before (mobile app specific key)
+    const seenOnboarding = localStorage.getItem('neighborlink_mobile_onboarding_seen');
     if (seenOnboarding) {
       setHasSeenOnboarding(true);
     }
@@ -37,8 +37,8 @@ const MobileAuthFlow = () => {
   };
 
   const handleGetStarted = () => {
-    // Mark onboarding as seen
-    localStorage.setItem('neighborlink_onboarding_seen', 'true');
+    // Mark mobile onboarding as seen
+    localStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
     setCurrentStep('auth');
   };
 

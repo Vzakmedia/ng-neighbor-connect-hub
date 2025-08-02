@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { AuthPage } from "@/components/auth/AuthPage";
 import MobileAuthFlow from "@/components/mobile/MobileAuthFlow";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Capacitor } from '@capacitor/core';
 
 const Auth = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  
+  // Check if running in mobile app (Capacitor) vs web browser
+  const isMobileApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
     if (!loading && user) {
@@ -24,8 +26,8 @@ const Auth = () => {
     );
   }
 
-  // Use mobile flow for mobile devices, regular auth page for desktop
-  return isMobile ? <MobileAuthFlow /> : <AuthPage />;
+  // Use mobile flow only for mobile app (Capacitor), regular auth page for web
+  return isMobileApp ? <MobileAuthFlow /> : <AuthPage />;
 };
 
 export default Auth;
