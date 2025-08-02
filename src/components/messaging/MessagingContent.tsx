@@ -9,11 +9,9 @@ import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, type Conversation } from '@/hooks/useConversations';
-import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useToast } from '@/hooks/use-toast';
 import { useReadStatus } from '@/hooks/useReadStatus';
-import { useMessageActions } from '@/hooks/useMessageActions';
 import { supabase } from '@/integrations/supabase/client';
 
 const MessagingContent = () => {
@@ -35,73 +33,6 @@ const MessagingContent = () => {
   } = useConversations(user?.id);
 
   const unreadCount = useUnreadMessages();
-
-  // Silent background refresh - no loading states or user feedback
-  const backgroundRefresh = useCallback(async () => {
-    if (!user?.id) return;
-    
-    const now = Date.now();
-    const lastRefresh = (window as any).lastBackgroundRefresh || 0;
-    
-    // Throttle to prevent excessive calls
-    if (now - lastRefresh < 2000) return;
-    
-    console.log('Background refresh of conversations...');
-    (window as any).lastBackgroundRefresh = now;
-    
-    try {
-      const { data, error } = await supabase
-        .from('direct_conversations')
-        .select(`
-          id,
-          user1_id,
-          user2_id,
-          last_message_at,
-          user1_has_unread,
-          user2_has_unread,
-          created_at,
-          updated_at
-        `)
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false });
-
-      if (error) throw error;
-
-      const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, phone')
-        .in('user_id', userIds);
-
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-      const formattedConversations = (data || []).map(conv => {
-        const isUser1 = conv.user1_id === user.id;
-        const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
-        const otherUser = profileMap.get(otherUserId);
-        
-        return {
-          ...conv,
-          other_user_id: otherUserId,
-          other_user_name: otherUser?.full_name || 'Unknown User',
-          other_user_avatar: otherUser?.avatar_url || null,
-          other_user_phone: otherUser?.phone || null,
-        };
-      });
-
-      setConversations(formattedConversations);
-    } catch (error) {
-      console.error('Background refresh error:', error);
-    }
-  }, [user?.id, setConversations]);
-
-  // Set up real-time subscriptions for conversation updates
-  useMessageSubscriptions({
-    userId: user?.id,
-    onNewMessage: backgroundRefresh,
-    onMessageUpdate: backgroundRefresh,
-    onConversationUpdate: backgroundRefresh
-  });
 
   useEffect(() => {
     if (user) {
