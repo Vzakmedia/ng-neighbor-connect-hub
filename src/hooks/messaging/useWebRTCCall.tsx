@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToastNotifications } from '@/hooks/common/useToastNotifications';
 import { WebRTCManager } from '@/utils/webrtc';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription } from '@/utils/realtimeUtils';
 
 export const useWebRTCCall = (conversationId: string) => {
   const { user } = useAuth();
@@ -146,75 +147,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
     let pollingInterval: NodeJS.Timeout | null = null;
-    let lastProcessedId: string | null = null;
     const processedMessageIds = new Set<string>();
-
-    // Try realtime subscription first
-    const channel = supabase
-      .channel(`call_signaling:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'call_signaling',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        async (payload) => {
-          console.log('Received signaling message via realtime:', payload);
-          await handleSignalingMessage(payload.new);
-        }
-      )
-      .subscribe((status) => {
-        console.log('Call signaling subscription status:', status);
-        
-        if (status === 'SUBSCRIBED') {
-          console.log('Realtime subscription successful');
-          // Clear polling since realtime is working
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-          }
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.log('Realtime failed, starting polling fallback');
-          startPollingFallback();
-        }
-      });
-
-    // Polling fallback for when realtime fails
-    const startPollingFallback = () => {
-      if (pollingInterval) return; // Already polling
-      
-      pollingInterval = setInterval(async () => {
-        try {
-          const { data, error } = await supabase
-            .from('call_signaling')
-            .select('*')
-            .eq('conversation_id', conversationId)
-            .neq('sender_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(5);
-
-          if (error) {
-            console.error('Polling error:', error);
-            return;
-          }
-
-          // Process new messages
-          for (const message of data || []) {
-            if (!processedMessageIds.has(message.id)) {
-              console.log('Received signaling message via polling:', message);
-              processedMessageIds.add(message.id);
-              await handleSignalingMessage(message);
-              lastProcessedId = message.id;
-              break; // Only process one message per poll
-            }
-          }
-        } catch (error) {
-          console.error('Error in polling fallback:', error);
-        }
-      }, 2000); // Poll every 2 seconds
-    };
 
     // Handle signaling messages
     const handleSignalingMessage = async (message: any) => {
@@ -254,15 +187,63 @@ export const useWebRTCCall = (conversationId: string) => {
       }
     };
 
-    // Start polling immediately as a backup
-    setTimeout(startPollingFallback, 5000); // Start polling after 5 seconds if realtime hasn't connected
+    // Polling fallback for when realtime fails
+    const startPollingFallback = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('call_signaling')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .neq('sender_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Polling error:', error);
+          return;
+        }
+
+        // Process new messages
+        for (const message of data || []) {
+          if (!processedMessageIds.has(message.id)) {
+            console.log('Received signaling message via polling:', message);
+            await handleSignalingMessage(message);
+            break; // Only process one message per poll
+          }
+        }
+      } catch (error) {
+        console.error('Error in polling fallback:', error);
+      }
+    };
+
+    // Use safe subscription with proper error handling
+    const subscription = createSafeSubscription(
+      (channel) => {
+        return channel.on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'call_signaling',
+            filter: `conversation_id=eq.${conversationId}`
+          },
+          async (payload) => {
+            console.log('Received signaling message via realtime:', payload);
+            await handleSignalingMessage(payload.new);
+          }
+        );
+      },
+      {
+        channelName: `call_signaling_${conversationId}`,
+        debugName: 'WebRTCCall',
+        onError: startPollingFallback,
+        pollInterval: 2000,
+      }
+    );
 
     return () => {
       console.log('Cleaning up signaling subscription and polling');
-      supabase.removeChannel(channel);
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
+      subscription.unsubscribe();
     };
   }, [conversationId, user?.id]); // Removed webrtcManager dependency
 
