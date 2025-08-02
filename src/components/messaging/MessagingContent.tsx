@@ -30,30 +30,80 @@ const MessagingContent = () => {
     conversations, 
     loading: conversationsLoading, 
     fetchConversations,
-    createOrFindConversation
+    createOrFindConversation,
+    setConversations
   } = useConversations(user?.id);
 
   const unreadCount = useUnreadMessages();
 
-  // Throttled refresh function to prevent excessive calls
-  const refreshConversations = useCallback(() => {
+  // Silent refresh function that doesn't trigger loading states
+  const silentRefreshConversations = useCallback(async () => {
+    if (!user?.id) return;
+    
     const now = Date.now();
     const lastRefresh = (window as any).lastConversationRefresh || 0;
     
     // Only refresh if it's been at least 2 seconds since last refresh
     if (now - lastRefresh > 2000) {
-      console.log('Refreshing conversations...');
+      console.log('Silent refresh of conversations...');
       (window as any).lastConversationRefresh = now;
-      fetchConversations();
+      
+      try {
+        // Fetch conversations directly without triggering loading state
+        const { data, error } = await supabase
+          .from('direct_conversations')
+          .select(`
+            id,
+            user1_id,
+            user2_id,
+            last_message_at,
+            user1_has_unread,
+            user2_has_unread,
+            created_at,
+            updated_at
+          `)
+          .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+          .order('last_message_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Fetch user profiles separately
+        const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url, phone')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+        const formattedConversations = (data || []).map(conv => {
+          const isUser1 = conv.user1_id === user.id;
+          const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
+          const otherUser = profileMap.get(otherUserId);
+          
+          return {
+            ...conv,
+            other_user_id: otherUserId,
+            other_user_name: otherUser?.full_name || 'Unknown User',
+            other_user_avatar: otherUser?.avatar_url || null,
+            other_user_phone: otherUser?.phone || null,
+          };
+        });
+
+        // Update conversations state directly
+        setConversations(formattedConversations);
+      } catch (error) {
+        console.error('Silent refresh error:', error);
+      }
     }
-  }, [fetchConversations]);
+  }, [user?.id]);
 
   // Set up real-time subscriptions for conversation updates
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: refreshConversations,
-    onMessageUpdate: refreshConversations,
-    onConversationUpdate: refreshConversations
+    onNewMessage: silentRefreshConversations,
+    onMessageUpdate: silentRefreshConversations,
+    onConversationUpdate: silentRefreshConversations
   });
 
   useEffect(() => {
