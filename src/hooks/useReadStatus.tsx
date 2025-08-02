@@ -182,9 +182,12 @@ export const useReadStatus = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) {
+        console.error('Error checking if post is read:', error);
+        return false;
+      }
       return !!data;
     } catch (error) {
       console.error('Error checking if post is read:', error);
@@ -201,9 +204,12 @@ export const useReadStatus = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('post_id', postId)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) {
+        console.error('Error checking if board post is read:', error);
+        return false;
+      }
       return !!data;
     } catch (error) {
       console.error('Error checking if board post is read:', error);
