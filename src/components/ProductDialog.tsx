@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 
 interface MarketplaceItem {
@@ -34,6 +37,8 @@ interface MarketplaceItem {
   is_negotiable: boolean;
   location: string;
   created_at: string;
+  likes_count?: number;
+  is_liked_by_user?: boolean;
   user_id: string;
   profiles: {
     user_id: string;
@@ -52,8 +57,57 @@ interface ProductDialogProps {
 
 export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProps) => {
   const { user } = useAuth();
+  const { sendMessageWithAttachments } = useDirectMessages(user?.id);
+  const { toast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [likesCount, setLikesCount] = useState(product?.likes_count || 0);
+  const [isLiked, setIsLiked] = useState(product?.is_liked_by_user || false);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // Update local state when product changes
+  useEffect(() => {
+    if (product) {
+      setLikesCount(product.likes_count || 0);
+      setIsLiked(product.is_liked_by_user || false);
+      setCurrentImageIndex(0);
+    }
+  }, [product]);
+
+  // Real-time updates for likes
+  useEffect(() => {
+    if (!product?.id) return;
+
+    const channel = supabase
+      .channel(`marketplace_item_${product.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_item_likes',
+          filter: `item_id=eq.${product.id}`
+        },
+        async () => {
+          // Refetch likes count when likes change
+          const { data: likes } = await supabase
+            .from('marketplace_item_likes')
+            .select('user_id')
+            .eq('item_id', product.id);
+          
+          const newLikesCount = likes?.length || 0;
+          const newIsLiked = user ? likes?.some(like => like.user_id === user.id) || false : false;
+          
+          setLikesCount(newLikesCount);
+          setIsLiked(newIsLiked);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [product?.id, user?.id]);
 
   if (!product) return null;
 
@@ -78,6 +132,150 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const prevImage = () => {
     if (product.images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user || isLiking) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to like items",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLiking(true);
+    try {
+      if (isLiked) {
+        // Unlike the item
+        const { error } = await supabase
+          .from('marketplace_item_likes')
+          .delete()
+          .eq('item_id', product.id)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Like the item
+        const { error } = await supabase
+          .from('marketplace_item_likes')
+          .insert([
+            {
+              item_id: product.id,
+              user_id: user.id,
+            }
+          ]);
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/marketplace?item=${product.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.title,
+          text: `Check out this item: ${product.title}`,
+          url: shareUrl,
+        });
+      } catch (error) {
+        // User cancelled sharing or sharing failed
+        console.log('Sharing cancelled');
+      }
+    } else {
+      // Fallback to copying to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link copied!",
+          description: "Product link copied to clipboard",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to copy link to clipboard",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleContactSeller = async () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to contact sellers",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (user.id === product.user_id) {
+      toast({
+        title: "Cannot message yourself",
+        description: "You cannot send a message to yourself",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Send a message with product details embedded in the attachments as JSON
+      const productLink = `${window.location.origin}/marketplace?item=${product.id}`;
+      
+      const success = await sendMessageWithAttachments(
+        `Hi! I'm interested in your item: ${product.title}`,
+        product.user_id,
+        [
+          {
+            id: `product_${product.id}`,
+            type: 'file' as const,
+            name: `${product.title}.json`,
+            url: productLink,
+            size: 0,
+            mimeType: 'application/json',
+            // Store product data in a custom property that AttachmentDisplay can read
+            productData: {
+              id: product.id,
+              title: product.title,
+              description: product.description,
+              price: product.price,
+              is_negotiable: product.is_negotiable,
+              condition: product.condition,
+              image: product.images?.[0],
+              link: productLink,
+            }
+          } as any
+        ]
+      );
+
+      if (success) {
+        toast({
+          title: "Message sent!",
+          description: "Your message has been sent to the seller",
+        });
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -224,41 +422,37 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
               {!isOwner && (
                 <div className="flex gap-3 pt-4">
                   <Button
-                    onClick={() => setMessageDialogOpen(true)}
+                    onClick={handleContactSeller}
                     className="flex-1"
                   >
                     Contact Seller
                   </Button>
-                  <Button variant="outline" size="icon">
-                    <Heart className="h-4 w-4" />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={handleLike}
+                    disabled={isLiking}
+                    className={isLiked ? "text-red-500 border-red-500" : ""}
+                  >
+                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
                   </Button>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={handleShare}>
                     <Share2 className="h-4 w-4" />
                   </Button>
+                </div>
+              )}
+
+              {/* Like count display */}
+              {likesCount > 0 && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                  <Heart className="h-4 w-4" />
+                  <span>{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
                 </div>
               )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Message Dialog */}
-      {messageDialogOpen && (
-        <MarketplaceMessageDialog
-          item={{
-            id: product.id,
-            title: product.title,
-            description: product.description,
-            price: product.price,
-            is_negotiable: product.is_negotiable,
-            condition: product.condition,
-            user_id: product.user_id,
-            images: product.images,
-          }}
-        >
-          <Button onClick={() => setMessageDialogOpen(false)}>Close</Button>
-        </MarketplaceMessageDialog>
-      )}
     </>
   );
 };
