@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,24 @@ const SettingsContent = () => {
     emergencyVolume: [0.8],
     soundEnabled: true
   });
+
+  // Load audio settings from localStorage on component mount
+  useEffect(() => {
+    const savedAudioSettings = localStorage.getItem('audioSettings');
+    if (savedAudioSettings) {
+      try {
+        const parsed = JSON.parse(savedAudioSettings);
+        setAudioSettings(parsed);
+      } catch (error) {
+        console.error('Error loading audio settings:', error);
+      }
+    }
+  }, []);
+
+  // Save audio settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('audioSettings', JSON.stringify(audioSettings));
+  }, [audioSettings]);
 
   // Privacy Settings
   const [privacySettings, setPrivacySettings] = useState({

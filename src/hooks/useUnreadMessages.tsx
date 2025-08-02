@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
+import { playNotification } from '@/utils/audioUtils';
 
 export const useUnreadMessages = () => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const previousCountRef = useRef(0);
 
   const fetchUnreadCount = async () => {
     if (!user) {
@@ -34,6 +36,23 @@ export const useUnreadMessages = () => {
         }
       });
 
+      // Play notification sound if count increased
+      if (totalUnread > previousCountRef.current && previousCountRef.current > 0) {
+        try {
+          // Get audio settings from localStorage
+          const audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}');
+          const soundEnabled = audioSettings.soundEnabled !== false; // Default to true
+          const volume = audioSettings.notificationVolume?.[0] || 0.5;
+          
+          if (soundEnabled) {
+            playNotification('notification', volume);
+          }
+        } catch (error) {
+          console.error('Error playing notification sound:', error);
+        }
+      }
+      
+      previousCountRef.current = totalUnread;
       setUnreadCount(totalUnread);
     } catch (error) {
       console.error('Error fetching unread messages:', error);

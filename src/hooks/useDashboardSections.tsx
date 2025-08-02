@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
+import { playNotification } from '@/utils/audioUtils';
 
 interface UpcomingEvent {
   id: string;
@@ -134,6 +135,7 @@ export const useSafetyAlerts = (limit: number = 3) => {
   const { user } = useAuth();
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const alertCountRef = useRef(0);
 
   const fetchAlerts = async () => {
     if (!user) return;
@@ -174,6 +176,24 @@ export const useSafetyAlerts = (limit: number = 3) => {
         };
       });
 
+      // Play notification sound if new alerts arrived
+      if (formattedAlerts.length > alertCountRef.current && alertCountRef.current > 0) {
+        try {
+          // Get audio settings from localStorage
+          const audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}');
+          const soundEnabled = audioSettings.soundEnabled !== false; // Default to true
+          const volume = audioSettings.emergencyVolume?.[0] || 0.7;
+          
+          if (soundEnabled) {
+            // Use emergency sound for safety alerts
+            playNotification('emergency', volume);
+          }
+        } catch (error) {
+          console.error('Error playing safety alert notification sound:', error);
+        }
+      }
+      
+      alertCountRef.current = formattedAlerts.length;
       setAlerts(formattedAlerts);
     } catch (error) {
       console.error('Error fetching safety alerts:', error);
