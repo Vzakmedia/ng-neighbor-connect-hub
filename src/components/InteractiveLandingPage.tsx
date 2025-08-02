@@ -185,7 +185,7 @@ const InteractiveLandingPage = () => {
       />
 
       {/* Main boxed container */}
-      <div className="max-w-6xl mx-auto bg-background shadow-2xl relative overflow-hidden">
+      <div className="max-w-6xl mx-auto bg-background relative overflow-hidden">
         {/* Header */}
         <motion.header 
           initial={{ y: -100 }}
