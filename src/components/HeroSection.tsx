@@ -38,7 +38,7 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
         
         {/* Hero Content */}
-        <div className="absolute inset-0 flex items-center py-8 sm:py-10 md:py-12">
+        <div className="absolute inset-0 flex items-center py-8 sm:py-10 md:py-16">
           <div className="container px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
             <div className="max-w-2xl text-white">
               <Badge className="mb-4 sm:mb-5 md:mb-6 bg-white/20 text-white border-white/30 hover:bg-white/30 text-xs sm:text-sm">
