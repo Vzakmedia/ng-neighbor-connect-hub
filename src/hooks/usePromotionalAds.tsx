@@ -157,7 +157,6 @@ export const usePromotionalAds = (maxAds: number = 3) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('promotional_ads_changes', 'PromotionalAds');
     };
   }, [user, maxAds]);
 

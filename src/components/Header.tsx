@@ -32,8 +32,6 @@ const Header = () => {
     
     return () => {
       console.log('Header: Cleaning up subscriptions');
-      cleanupSafeSubscription('header-notifications', 'Header');
-      cleanupSafeSubscription('header-messages', 'HeaderMessages');
     };
   }, [user]);
 

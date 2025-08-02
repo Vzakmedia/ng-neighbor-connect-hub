@@ -115,7 +115,6 @@ export const useDashboardStats = () => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('dashboard_stats_changes', 'DashboardStats');
     };
   }, [user]);
 

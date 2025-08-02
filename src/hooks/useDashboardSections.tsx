@@ -124,7 +124,6 @@ export const useUpcomingEvents = (limit: number = 3) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('upcoming_events_changes', 'UpcomingEvents');
     };
   }, [user, limit]);
 
@@ -209,7 +208,6 @@ export const useSafetyAlerts = (limit: number = 3) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('safety_alerts_changes', 'SafetyAlerts');
     };
   }, [user, limit]);
 
@@ -291,7 +289,6 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('marketplace_highlights_changes', 'MarketplaceHighlights');
     };
   }, [user, limit]);
 
@@ -390,7 +387,6 @@ export const useTrendingTopics = (limit: number = 4) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('trending_topics_changes', 'TrendingTopics');
     };
   }, [user, limit]);
 

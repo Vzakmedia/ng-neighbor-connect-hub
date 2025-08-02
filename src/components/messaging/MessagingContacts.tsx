@@ -253,8 +253,6 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     return () => {
       contactRequestsSubscription?.unsubscribe();
       emergencyContactsSubscription?.unsubscribe();
-      cleanupSafeSubscription('contact-requests-changes', 'MessagingContacts-contact-requests');
-      cleanupSafeSubscription('emergency-contacts-changes', 'MessagingContacts-emergency-contacts');
     };
   }, [user]);
 

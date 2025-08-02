@@ -94,8 +94,6 @@ export const useUnreadMessages = () => {
     return () => {
       conversationSubscription?.unsubscribe();
       messageSubscription?.unsubscribe();
-      cleanupSafeSubscription('conversation-updates', 'useUnreadMessages-conversations');
-      cleanupSafeSubscription('message-updates', 'useUnreadMessages-messages');
     };
   }, [user]);
 

@@ -246,7 +246,6 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription(`post_comments_${postId}`, 'CommentDropdown');
     };
   }, [open, postId, user]);
 

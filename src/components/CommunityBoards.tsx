@@ -1341,7 +1341,6 @@ const CommunityBoards = () => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription(`board_posts_${selectedBoard}`, 'CommunityBoards');
     };
   }, [selectedBoard, user]);
 

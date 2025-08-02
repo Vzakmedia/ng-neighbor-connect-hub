@@ -309,7 +309,6 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription(`comment_section_${postId}`, 'CommentSection');
     };
   }, [postId, user]);
 

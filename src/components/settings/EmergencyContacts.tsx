@@ -200,7 +200,6 @@ const EmergencyContacts = () => {
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('emergency-contacts', 'EmergencyContacts');
     };
   };
 

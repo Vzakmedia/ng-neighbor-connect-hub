@@ -180,7 +180,6 @@ const SafetyCenter = () => {
 
     return () => {
       alertsSubscription?.unsubscribe();
-      cleanupSafeSubscription('safety_alerts_updates', 'SafetyCenter');
     };
   }, [filterSeverity, filterType, filterStatus, autoRefresh, toast]);
 

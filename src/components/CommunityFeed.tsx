@@ -325,7 +325,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
     return () => {
       subscription?.unsubscribe();
-      cleanupSafeSubscription('community_feed_changes', 'CommunityFeed');
     };
   }, [user, profile, viewScope]);
 

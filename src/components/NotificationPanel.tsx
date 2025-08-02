@@ -44,7 +44,7 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
     }
     
     return () => {
-      cleanupSafeSubscription('notification-panel', 'NotificationPanel');
+      // Cleanup handled by subscription internally
     };
   }, [user]);
 
