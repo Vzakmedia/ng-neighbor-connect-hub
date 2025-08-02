@@ -11,23 +11,51 @@ export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 300000, debugName = 'unknown' } = options;
+  const { channelName, onError, pollInterval = 30000, debugName = 'unknown' } = options; // Reduced to 30 seconds
   
   console.log(`${debugName}: Attempting to create safe subscription...`);
+  
+  let pollingInterval: NodeJS.Timeout | null = null;
+  let isRealTimeConnected = false;
+  
+  // Start immediate polling fallback
+  const startPolling = () => {
+    if (pollingInterval) clearInterval(pollingInterval);
+    if (onError && !isRealTimeConnected) {
+      console.log(`${debugName}: Starting polling fallback every ${pollInterval/1000} seconds`);
+      pollingInterval = setInterval(() => {
+        console.log(`${debugName}: Polling for updates...`);
+        onError();
+      }, pollInterval);
+    }
+  };
+  
+  const stopPolling = () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+      console.log(`${debugName}: Stopped polling - real-time connected`);
+    }
+  };
   
   try {
     const channel = supabase.channel(channelName);
     const subscription = channelBuilder(channel);
     
+    // Start polling immediately in case real-time doesn't work
+    startPolling();
+    
     const subscriptionResult = subscription.subscribe((status: string) => {
       console.log(`${debugName}: Subscription status: ${status}`);
       
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        console.warn(`${debugName}: Subscription failed with status ${status}, will work with polling fallback`);
-        // Don't call onError for timeout issues to prevent infinite loops
-        // The polling fallback will handle updates
-      } else if (status === 'SUBSCRIBED') {
+      if (status === 'SUBSCRIBED') {
         console.log(`${debugName}: Successfully subscribed to realtime updates`);
+        isRealTimeConnected = true;
+        stopPolling();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        console.warn(`${debugName}: Subscription failed with status ${status}, using polling fallback`);
+        isRealTimeConnected = false;
+        startPolling();
       }
     });
     
@@ -37,6 +65,10 @@ export const createSafeSubscription = (
       subscription: subscriptionResult,
       unsubscribe: () => {
         try {
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
           supabase.removeChannel(channel);
           console.log(`${debugName}: Successfully unsubscribed and removed channel`);
         } catch (error) {
@@ -47,11 +79,20 @@ export const createSafeSubscription = (
   } catch (error) {
     console.error(`${debugName}: Error creating subscription:`, error);
     
+    // Still start polling if subscription creation fails
+    startPolling();
+    
     // Return a dummy subscription object
     return {
       channel: null,
       subscription: null,
-      unsubscribe: () => console.log(`${debugName}: Dummy subscription unsubscribe called`)
+      unsubscribe: () => {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+        console.log(`${debugName}: Dummy subscription unsubscribe called`);
+      }
     };
   }
 };

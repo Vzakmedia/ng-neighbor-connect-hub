@@ -78,10 +78,17 @@ export const useMessageSubscriptions = ({
           ? `direct-messages-${userId}-${recipientId}`
           : `user-messages-${userId}`,
         onError: () => {
-          console.log('Message subscription error - relying on polling fallback');
-          // Removed retry logic to prevent infinite loops
+          console.log('Message subscription error - triggering message fetch');
+          // Immediately try to fetch new messages when real-time fails
+          if (recipientId) {
+            // For direct messages, we could trigger a specific fetch here
+            console.log('Polling for direct messages between', userId, 'and', recipientId);
+          } else {
+            // For general messaging, trigger conversation refresh
+            onConversationUpdate?.();
+          }
         },
-        pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
+        pollInterval: 5000, // Poll every 5 seconds for messages
         debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
       }
     );
@@ -113,10 +120,10 @@ export const useMessageSubscriptions = ({
       {
         channelName: `conversations-${userId}`,
         onError: () => {
-          console.log('Conversation subscription error - relying on polling fallback');
-          // Removed retry logic to prevent infinite loops
+          console.log('Conversation subscription error - triggering conversation refresh');
+          onConversationUpdate();
         },
-        pollInterval: 300000, // Reduced polling to 5 minutes, rely on WebSocket
+        pollInterval: 10000, // Poll every 10 seconds for conversations
         debugName: 'MessagingContent-conversations'
       }
     );

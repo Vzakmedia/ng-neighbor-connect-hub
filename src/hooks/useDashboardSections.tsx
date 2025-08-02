@@ -221,7 +221,7 @@ export const useSafetyAlerts = (limit: number = 3) => {
       {
         channelName: 'safety_alerts_changes',
         onError: fetchAlerts,
-        pollInterval: 120000, // 2 minutes
+        pollInterval: 10000, // Poll every 10 seconds for safety alerts
         debugName: 'SafetyAlerts'
       }
     );
