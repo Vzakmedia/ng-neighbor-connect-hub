@@ -47,7 +47,8 @@ const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogPr
     return `₦${(price / 100).toLocaleString()}`;
   };
 
-  const defaultMessage = `Hi! I'm interested in your item "${item.title}" listed for ${formatPrice(item.price)}${item.is_negotiable ? ' (negotiable)' : ''}. Is it still available?`;
+  const productLink = `${window.location.origin}/marketplace?item=${item.id}`;
+  const defaultMessage = `Hi! I'm interested in your item "${item.title}" listed for ${formatPrice(item.price)}${item.is_negotiable ? ' (negotiable)' : ''}. Is it still available?\n\nProduct Link: ${productLink}`;
 
   const handleSendMessage = async () => {
     if (!user) {
