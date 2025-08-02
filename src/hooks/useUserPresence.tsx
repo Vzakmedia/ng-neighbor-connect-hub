@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { createSafeSubscription } from '@/utils/realtimeUtils';
 
 interface UserPresence {
   [userId: string]: {
@@ -44,49 +45,61 @@ export const useUserPresence = () => {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase.channel('online_users', {
-      config: {
-        presence: {
-          key: user.id,
-        },
+    const subscription = createSafeSubscription(
+      (channel) => {
+        return channel
+          .on('presence', { event: 'sync' }, () => {
+            try {
+              const presences = channel.presenceState() as UserPresence;
+              updatePresenceState(presences);
+            } catch (error) {
+              console.error('Error syncing presence:', error);
+            }
+          })
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log('User joined:', key, newPresences);
+          })
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            console.log('User left:', key, leftPresences);
+          })
+          .subscribe(async (status) => {
+            if (status !== 'SUBSCRIBED') return;
+
+            try {
+              // Get user profile data
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, avatar_url')
+                .eq('user_id', user.id)
+                .single();
+
+              // Track current user presence
+              const presenceTrackStatus = await channel.track({
+                user_id: user.id,
+                online_at: new Date().toISOString(),
+                user_name: profile?.full_name || 'Anonymous',
+                avatar_url: profile?.avatar_url || null,
+              });
+
+              console.log('Presence track status:', presenceTrackStatus);
+            } catch (error) {
+              console.error('Error tracking presence:', error);
+            }
+          });
       },
-    });
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const presences = channel.presenceState() as UserPresence;
-        updatePresenceState(presences);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', key, newPresences);
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', key, leftPresences);
-      })
-      .subscribe(async (status) => {
-        if (status !== 'SUBSCRIBED') return;
-
-        // Get user profile data
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, avatar_url')
-          .eq('user_id', user.id)
-          .single();
-
-        // Track current user presence
-        const presenceTrackStatus = await channel.track({
-          user_id: user.id,
-          online_at: new Date().toISOString(),
-          user_name: profile?.full_name || 'Anonymous',
-          avatar_url: profile?.avatar_url || null,
-        });
-
-        console.log('Presence track status:', presenceTrackStatus);
-      });
+      {
+        channelName: `online_users_${user.id}`,
+        debugName: 'UserPresence',
+        onError: () => {
+          // Fallback: Don't update presence state on polling
+          console.log('UserPresence: Using polling fallback (presence not available)');
+        },
+      }
+    );
 
     // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      subscription.unsubscribe();
     };
   }, [user, updatePresenceState]);
 
