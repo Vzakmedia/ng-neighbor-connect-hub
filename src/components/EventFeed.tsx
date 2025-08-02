@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { 
   Heart, 
   MessageCircle, 
@@ -392,10 +392,13 @@ const EventFeed = () => {
             <CardHeader className="pb-2 p-3 md:p-6">
               <div className="flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex items-start space-x-2 md:space-x-3 min-w-0 flex-1">
-                  <Avatar className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0">
-                    <AvatarImage src={event.author.avatar} />
-                    <AvatarFallback className="text-xs md:text-sm">{event.author.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <OnlineAvatar
+                    userId={event.user_id}
+                    src={event.author.avatar}
+                    fallback={event.author.name.charAt(0)}
+                    size="lg"
+                    className="flex-shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm md:text-base truncate leading-tight">{event.author.name}</p>
                     <div className="flex flex-col text-xs text-muted-foreground gap-0.5 mt-0.5">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield } from 'lucide-react';
@@ -220,14 +220,12 @@ const Header = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      {profile?.avatar_url && (
-                        <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
-                      )}
-                      <AvatarFallback>
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OnlineAvatar
+                      userId={user?.id}
+                      src={profile?.avatar_url}
+                      fallback={getInitials()}
+                      size="md"
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -304,14 +302,12 @@ const Header = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-7 w-7 rounded-full">
-                    <Avatar className="h-7 w-7">
-                      {profile?.avatar_url && (
-                        <AvatarImage src={profile.avatar_url} alt={getDisplayName()} />
-                      )}
-                      <AvatarFallback className="text-xs">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OnlineAvatar
+                      userId={user?.id}
+                      src={profile?.avatar_url}
+                      fallback={getInitials()}
+                      size="sm"
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>

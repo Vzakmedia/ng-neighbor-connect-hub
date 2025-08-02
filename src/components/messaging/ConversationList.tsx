@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type Conversation } from '@/hooks/useConversations';
@@ -68,12 +68,12 @@ const ConversationList: React.FC<ConversationListProps> = ({
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={conversation.other_user_avatar || ''} />
-                  <AvatarFallback>
-                    {getInitials(conversation.other_user_name)}
-                  </AvatarFallback>
-                </Avatar>
+                <OnlineAvatar
+                  userId={conversation.other_user_id}
+                  src={conversation.other_user_avatar || ''}
+                  fallback={getInitials(conversation.other_user_name)}
+                  size="lg"
+                />
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -240,12 +240,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 
                 {!isOwn && (
                   <div className={`mr-1 md:mr-2 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
-                    <Avatar className="h-5 w-5 md:h-6 md:w-6">
-                      <AvatarImage src={conversation.other_user_avatar || ''} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(conversation.other_user_name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OnlineAvatar
+                      userId={conversation.other_user_id}
+                      src={conversation.other_user_avatar || ''}
+                      fallback={getInitials(conversation.other_user_name)}
+                      size="sm"
+                    />
                   </div>
                 )}
               </div>
