@@ -171,7 +171,7 @@ const InteractiveLandingPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-muted/30">
       <FloatingElements />
       
       {/* Animated cursor follower */}
@@ -184,12 +184,14 @@ const InteractiveLandingPage = () => {
         transition={{ type: "spring", damping: 20, stiffness: 400 }}
       />
 
-      {/* Header */}
-      <motion.header 
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      >
+      {/* Main boxed container */}
+      <div className="max-w-6xl mx-auto bg-background shadow-2xl relative overflow-hidden">
+        {/* Header */}
+        <motion.header 
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        >
         <div className="container flex h-16 items-center justify-between px-4">
           <motion.div
             whileHover={{ scale: 1.05 }}
@@ -868,6 +870,7 @@ const InteractiveLandingPage = () => {
           </motion.div>
         </div>
       </footer>
+      </div>
     </div>
   );
 };
