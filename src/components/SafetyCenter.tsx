@@ -389,21 +389,23 @@ const SafetyCenter = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       {/* Header with Panic Button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            Safety Center
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-6 w-6 md:h-8 md:w-8 text-primary flex-shrink-0" />
+            <span className="truncate">Safety Center</span>
           </h1>
-          <p className="text-muted-foreground">Community safety alerts and emergency reporting</p>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
+            Community safety alerts and emergency reporting
+          </p>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           <PanicButton />
           <ReportIncidentDialog
             trigger={
-              <Button className="hidden md:flex items-center gap-2">
+              <Button className="hidden sm:flex items-center gap-2 text-sm">
                 <Plus className="h-4 w-4" />
                 Report Incident
               </Button>
@@ -411,7 +413,7 @@ const SafetyCenter = () => {
           />
           <ReportIncidentDialog
             trigger={
-              <Button className="md:hidden h-9 w-9 p-0">
+              <Button className="sm:hidden h-9 w-9 p-0">
                 <Plus className="h-4 w-4" />
               </Button>
             }
@@ -420,8 +422,8 @@ const SafetyCenter = () => {
       </div>
       
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         {[
           { label: 'Active Alerts', value: alerts.filter(a => a.status === 'active').length, color: 'text-red-600', icon: AlertTriangle },
           { label: 'Resolved Today', value: alerts.filter(a => a.status === 'resolved' && new Date(a.created_at).toDateString() === new Date().toDateString()).length, color: 'text-green-600', icon: CheckCircle },
@@ -429,31 +431,34 @@ const SafetyCenter = () => {
           { label: 'My Panic Alerts', value: panicAlerts.filter(a => a.user_id === user?.id).length, color: 'text-purple-600', icon: AlertTriangle },
           { label: 'Total Reports', value: alerts.length, color: 'text-blue-600', icon: Shield }
         ].map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-4 text-center">
-              <stat.icon className={`h-6 w-6 mx-auto mb-2 ${stat.color}`} />
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+          <Card key={index} className="touch-manipulation">
+            <CardContent className="p-3 md:p-4 text-center">
+              <stat.icon className={`h-5 w-5 md:h-6 md:w-6 mx-auto mb-2 ${stat.color}`} />
+              <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
+              <div className="text-xs md:text-sm text-muted-foreground leading-tight">{stat.label}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* View Toggle and Filters */}
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        {/* Desktop view buttons */}
+      <div className="flex flex-col lg:flex-row gap-3 md:gap-4 items-start lg:items-center justify-between">
+        {/* Desktop/Tablet view buttons */}
         <div className="hidden md:flex items-center gap-2">
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             onClick={() => setViewMode('list')}
             size="sm"
+            className="touch-manipulation"
           >
+            <List className="h-4 w-4 mr-1" />
             List View
           </Button>
           <Button
             variant={viewMode === 'map' ? 'default' : 'outline'}
             onClick={() => setViewMode('map')}
             size="sm"
+            className="touch-manipulation"
           >
             <MapPin className="h-4 w-4 mr-1" />
             Map View
@@ -462,26 +467,27 @@ const SafetyCenter = () => {
             variant={viewMode === 'feed' ? 'default' : 'outline'}
             onClick={() => setViewMode('feed')}
             size="sm"
+            className="touch-manipulation"
           >
             <Activity className="h-4 w-4 mr-1" />
             Live Feed
           </Button>
         </div>
         
-        {/* Mobile filter buttons - icons only, expand when active */}
+        {/* Mobile view buttons - improved touch targets */}
         <div className="md:hidden w-full">
-          <div className="flex justify-center gap-1 w-full">
+          <div className="flex justify-center gap-2 w-full">
             <Button
               variant={viewMode === 'list' ? 'default' : 'outline'}
               onClick={() => setViewMode('list')}
               size="sm"
-              className={`transition-all duration-300 ease-in-out text-xs ${
+              className={`transition-all duration-300 ease-in-out text-xs touch-manipulation ${
                 viewMode === 'list' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-0 w-8 h-8 justify-center'
+                  ? 'px-4 flex items-center gap-2 min-w-fit' 
+                  : 'px-3 min-w-[44px] h-10 justify-center'
               }`}
             >
-              <List className="h-3 w-3 flex-shrink-0" />
+              <List className="h-4 w-4 flex-shrink-0" />
               {viewMode === 'list' && (
                 <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
                   List
@@ -492,13 +498,13 @@ const SafetyCenter = () => {
               variant={viewMode === 'map' ? 'default' : 'outline'}
               onClick={() => setViewMode('map')}
               size="sm"
-              className={`transition-all duration-300 ease-in-out text-xs ${
+              className={`transition-all duration-300 ease-in-out text-xs touch-manipulation ${
                 viewMode === 'map' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-0 w-8 h-8 justify-center'
+                  ? 'px-4 flex items-center gap-2 min-w-fit' 
+                  : 'px-3 min-w-[44px] h-10 justify-center'
               }`}
             >
-              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <MapPin className="h-4 w-4 flex-shrink-0" />
               {viewMode === 'map' && (
                 <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
                   Map
@@ -509,13 +515,13 @@ const SafetyCenter = () => {
               variant={viewMode === 'feed' ? 'default' : 'outline'}
               onClick={() => setViewMode('feed')}
               size="sm"
-              className={`transition-all duration-300 ease-in-out text-xs ${
+              className={`transition-all duration-300 ease-in-out text-xs touch-manipulation ${
                 viewMode === 'feed' 
-                  ? 'px-3 flex items-center gap-2 min-w-fit' 
-                  : 'px-0 w-8 h-8 justify-center'
+                  ? 'px-4 flex items-center gap-2 min-w-fit' 
+                  : 'px-3 min-w-[44px] h-10 justify-center'
               }`}
             >
-              <Activity className="h-3 w-3 flex-shrink-0" />
+              <Activity className="h-4 w-4 flex-shrink-0" />
               {viewMode === 'feed' && (
                 <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
                   Feed
@@ -525,11 +531,12 @@ const SafetyCenter = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Filters - improved mobile layout */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
           <select
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value)}
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm min-h-[44px] touch-manipulation"
           >
             <option value="all">All Severities</option>
             <option value="critical">Critical</option>
@@ -541,7 +548,7 @@ const SafetyCenter = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm min-h-[44px] touch-manipulation"
           >
             {alertTypes.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -551,7 +558,7 @@ const SafetyCenter = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-input rounded-md bg-background text-sm min-h-[44px] touch-manipulation"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -559,23 +566,22 @@ const SafetyCenter = () => {
             <option value="resolved">Resolved</option>
             <option value="false_alarm">False Alarm</option>
           </select>
-
         </div>
       </div>
 
       {/* Content Area */}
       {viewMode === 'map' ? (
-        <Card className="h-[600px]">
+        <Card className="h-[400px] md:h-[500px] lg:h-[600px]">
           <CardContent className="p-0 h-full">
             <SafetyMap alerts={alerts} onAlertClick={(alert) => setSelectedAlert(alert as any)} />
           </CardContent>
         </Card>
       ) : viewMode === 'feed' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+          <div className="xl:col-span-2">
             <RealTimeAlertFeed 
               onAlertClick={(alert) => setSelectedAlert(alert as any)} 
-              className="h-[600px]"
+              className="h-[400px] md:h-[500px] lg:h-[600px]"
             />
           </div>
           <div className="space-y-4">
@@ -587,7 +593,12 @@ const SafetyCenter = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button onClick={fetchAlerts} variant="outline" size="sm" className="w-full">
+                <Button 
+                  onClick={fetchAlerts} 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full touch-manipulation min-h-[44px]"
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh Alerts
                 </Button>
@@ -595,7 +606,7 @@ const SafetyCenter = () => {
                   onClick={() => setAutoRefresh(!autoRefresh)} 
                   variant={autoRefresh ? "default" : "outline"} 
                   size="sm" 
-                  className="w-full"
+                  className="w-full touch-manipulation min-h-[44px]"
                 >
                   <Bell className="h-4 w-4 mr-2" />
                   {autoRefresh ? 'Disable' : 'Enable'} Auto-refresh
@@ -616,17 +627,17 @@ const SafetyCenter = () => {
                   {panicAlerts.slice(0, 3).map((panicAlert) => (
                     <div 
                       key={panicAlert.id}
-                      className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                      className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors touch-manipulation min-h-[44px] flex flex-col justify-center"
                       onClick={() => setSelectedPanicAlert(panicAlert)}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <span className="text-sm font-medium">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                          <span className="text-sm font-medium truncate">
                             {panicAlert.situation_type.replace('_', ' ')}
                           </span>
                         </div>
-                        <Badge variant={panicAlert.is_resolved ? "secondary" : "destructive"} className="text-xs">
+                        <Badge variant={panicAlert.is_resolved ? "secondary" : "destructive"} className="text-xs flex-shrink-0">
                           {panicAlert.is_resolved ? 'Resolved' : 'Active'}
                         </Badge>
                       </div>
@@ -648,34 +659,38 @@ const SafetyCenter = () => {
       ) : (
         /* Tabbed Alert Views */
         <Tabs defaultValue="safety-alerts" className="w-full">
-          {/* Desktop tabs */}
-          <TabsList className="hidden md:grid w-full grid-cols-2">
-            <TabsTrigger value="safety-alerts" className="flex items-center gap-2">
+          {/* Desktop/Tablet tabs */}
+          <TabsList className="hidden md:grid w-full grid-cols-2 h-12">
+            <TabsTrigger value="safety-alerts" className="flex items-center gap-2 text-sm touch-manipulation">
               <Shield className="h-4 w-4" />
-              Safety Alerts ({alerts.length})
+              <span className="hidden lg:inline">Safety Alerts</span>
+              <span className="lg:hidden">Safety</span>
+              ({alerts.length})
             </TabsTrigger>
-            <TabsTrigger value="panic-alerts" className="flex items-center gap-2">
+            <TabsTrigger value="panic-alerts" className="flex items-center gap-2 text-sm touch-manipulation">
               <AlertTriangle className="h-4 w-4" />
-              Panic Alerts ({panicAlerts.length})
+              <span className="hidden lg:inline">Panic Alerts</span>
+              <span className="lg:hidden">Panic</span>
+              ({panicAlerts.length})
             </TabsTrigger>
           </TabsList>
           
-          {/* Mobile tabs - using buttons instead of TabsTrigger */}
+          {/* Mobile tabs - improved touch targets */}
           <div className="md:hidden w-full mb-4">
-            <div className="flex justify-center gap-1 w-full">
+            <div className="flex gap-2 w-full">
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 min-h-[44px] touch-manipulation"
               >
-                <Shield className="h-3 w-3 mr-1" />
-                Safety
+                <Shield className="h-4 w-4 mr-2" />
+                Safety ({alerts.length})
               </Button>
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 min-h-[44px] touch-manipulation"
               >
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Panic
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Panic ({panicAlerts.length})
               </Button>
             </div>
           </div>
@@ -708,51 +723,53 @@ const SafetyCenter = () => {
               alerts.map((alert) => {
                 const AlertIcon = alertTypeIcons[alert.alert_type as keyof typeof alertTypeIcons] || AlertTriangle;
                 return (
-                  <Card key={alert.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedAlert(alert)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`p-2 rounded-lg ${severityColors[alert.severity]}`}>
-                            <AlertIcon className="h-5 w-5" />
+                  <Card key={alert.id} className="hover:shadow-md transition-shadow cursor-pointer touch-manipulation" onClick={() => setSelectedAlert(alert)}>
+                    <CardContent className="p-3 md:p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`p-2 rounded-lg flex-shrink-0 ${severityColors[alert.severity]}`}>
+                            <AlertIcon className="h-4 w-4 md:h-5 md:w-5" />
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-lg">{alert.title}</h3>
-                              <Badge 
-                                variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
-                                className={severityColors[alert.severity]}
-                              >
-                                {alert.severity}
-                              </Badge>
-                              {alert.is_verified && (
-                                <Badge variant="outline" className="text-green-600 border-green-200">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Verified
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-base md:text-lg truncate">{alert.title}</h3>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge 
+                                  variant={alert.severity === 'critical' ? 'destructive' : 'secondary'}
+                                  className={`${severityColors[alert.severity]} text-xs`}
+                                >
+                                  {alert.severity}
                                 </Badge>
-                              )}
+                                {alert.is_verified && (
+                                  <Badge variant="outline" className="text-green-600 border-green-200 text-xs">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Verified
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             
-                            <p className="text-muted-foreground mb-3 line-clamp-2">{alert.description}</p>
+                            <p className="text-muted-foreground mb-3 line-clamp-2 text-sm md:text-base">{alert.description}</p>
                             
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {alert.address || 'Location not specified'}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{alert.address || 'Location not specified'}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {getTimeSince(alert.created_at)}
+                                <Clock className="h-3 w-3 flex-shrink-0" />
+                                <span>{getTimeSince(alert.created_at)}</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {alert.profiles?.full_name || 'Anonymous'}
+                              <div className="flex items-center gap-1 min-w-0">
+                                <User className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{alert.profiles?.full_name || 'Anonymous'}</span>
                               </div>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col items-end gap-2">
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           {getSeverityIcon(alert.severity)}
                           <Badge variant="outline" className="text-xs">
                             {alert.status.replace('_', ' ')}
@@ -831,17 +848,21 @@ const SafetyCenter = () => {
         </Tabs>
       )}
 
-      {/* Alert Detail Modal/Sidebar would go here */}
+      {/* Alert Detail Modal/Sidebar - Mobile optimized */}
       {selectedAlert && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  {selectedAlert.title}
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 md:p-4">
+          <Card className="max-w-2xl w-full max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl min-w-0">
+                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate">{selectedAlert.title}</span>
                 </CardTitle>
-                <Button variant="ghost" onClick={() => setSelectedAlert(null)}>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedAlert(null)}
+                  className="flex-shrink-0 touch-manipulation min-h-[44px] min-w-[44px]"
+                >
                   <XCircle className="h-4 w-4" />
                 </Button>
               </div>
