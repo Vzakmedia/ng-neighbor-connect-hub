@@ -34,6 +34,8 @@ import SupportDashboard from "./pages/SupportDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 import StaffNavigation from "./components/StaffNavigation";
 import StaffLogin from "./pages/StaffLogin";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +85,8 @@ const App = () => {
           <Route path="/staff" element={<StaffNavigation />} />
           <Route path="/business" element={<Business />} />
           <Route path="/staff-login" element={<StaffLogin />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
           </BrowserRouter>
