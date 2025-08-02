@@ -366,14 +366,14 @@ const EventFeed = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
+      {/* Search Bar - Mobile optimized */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search events..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 min-h-[44px] touch-manipulation"
         />
       </div>
 
@@ -388,73 +388,91 @@ const EventFeed = () => {
         </Card>
       ) : (
         filteredEvents.map((event) => (
-          <Card key={event.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3">
-                  <Avatar className="w-10 h-10">
+          <Card key={event.id} className="hover:shadow-md transition-shadow touch-manipulation">
+            <CardHeader className="pb-3 p-4 md:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start space-x-3 min-w-0 flex-1">
+                  <Avatar className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0">
                     <AvatarImage src={event.author.avatar} />
-                    <AvatarFallback>{event.author.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-xs">{event.author.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-semibold text-sm">{event.author.name}</p>
-                    <div className="flex items-center text-xs text-muted-foreground space-x-2">
-                      <MapPin className="h-3 w-3" />
-                      <span>{event.author.location}</span>
-                      <Clock className="h-3 w-3 ml-2" />
-                      <span>{formatTimeAgo(event.timestamp)}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm md:text-base truncate">{event.author.name}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center text-xs text-muted-foreground gap-1 sm:gap-2">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{event.author.location}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <span>{formatTimeAgo(event.timestamp)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 flex-shrink-0">
                   <Badge variant="secondary" className="text-xs">
                     <Calendar className="h-3 w-3 mr-1" />
                     Event
                   </Badge>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 touch-manipulation">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
             
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 p-4 md:p-6">
               {event.title && (
-                <h3 className="text-lg font-semibold mb-2">{event.title}</h3>
+                <h3 className="text-base md:text-lg font-semibold mb-2 line-clamp-2">{event.title}</h3>
               )}
               
-              <p className="text-foreground mb-3 whitespace-pre-wrap">{event.content}</p>
+              <p className="text-foreground mb-3 whitespace-pre-wrap text-sm md:text-base line-clamp-3">{event.content}</p>
               
               {event.images && event.images.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className={`grid gap-2 mb-3 ${
+                  event.images.length === 1 ? 'grid-cols-1' : 
+                  event.images.length === 2 ? 'grid-cols-2' : 
+                  'grid-cols-2'
+                }`}>
                   {event.images.slice(0, 4).map((image, index) => (
                     <img
                       key={index}
                       src={image}
                       alt="Event image"
-                      className="rounded-lg object-cover w-full h-32"
+                      className="rounded-lg object-cover w-full h-24 md:h-32 touch-manipulation"
                     />
                   ))}
+                  {event.images.length > 4 && (
+                    <div className="rounded-lg bg-muted flex items-center justify-center h-24 md:h-32 text-sm text-muted-foreground">
+                      +{event.images.length - 4} more
+                    </div>
+                  )}
                 </div>
               )}
 
               {event.tags && event.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {event.tags.map((tag, index) => (
+                  {event.tags.slice(0, 3).map((tag, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
                       #{tag}
                     </Badge>
                   ))}
+                  {event.tags.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{event.tags.length - 3} more
+                    </Badge>
+                  )}
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t">
-                <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t gap-3">
+                <div className="flex items-center justify-center sm:justify-start space-x-2 sm:space-x-4">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleLike(event.id)}
-                    className={`text-xs ${event.isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+                    className={`text-xs min-h-[44px] px-3 touch-manipulation ${event.isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
                   >
                     <Heart className={`h-4 w-4 mr-1 ${event.isLiked ? 'fill-current' : ''}`} />
                     {event.likes}
@@ -464,7 +482,7 @@ const EventFeed = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleComments(event.id)}
-                    className="text-xs text-muted-foreground"
+                    className="text-xs text-muted-foreground min-h-[44px] px-3 touch-manipulation"
                   >
                     <MessageCircle className="h-4 w-4 mr-1" />
                     {event.comments}
@@ -474,14 +492,24 @@ const EventFeed = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleShare(event)}
-                    className="text-xs text-muted-foreground"
+                    className="text-xs text-muted-foreground min-h-[44px] px-3 touch-manipulation"
                   >
                     <Share2 className="h-4 w-4 mr-1" />
-                    Share
+                    <span className="hidden sm:inline">Share</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSave(event.id)}
+                    className={`text-xs min-h-[44px] px-3 touch-manipulation ${event.isSaved ? 'text-blue-500' : 'text-muted-foreground'}`}
+                  >
+                    <Bookmark className={`h-4 w-4 mr-1 ${event.isSaved ? 'fill-current' : ''}`} />
+                    <span className="hidden sm:inline">{event.isSaved ? 'Saved' : 'Save'}</span>
                   </Button>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center sm:justify-end space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -489,7 +517,7 @@ const EventFeed = () => {
                       setSelectedEvent(event);
                       setViewEventDialogOpen(true);
                     }}
-                    className="h-8 px-3 text-xs"
+                    className="min-h-[44px] px-3 text-xs touch-manipulation flex-1 sm:flex-none"
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     View Event
@@ -500,21 +528,12 @@ const EventFeed = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleRSVP(event)}
-                      className="h-8 px-3 text-xs"
+                      className="min-h-[44px] px-3 text-xs touch-manipulation flex-1 sm:flex-none"
                     >
                       <Users className="h-4 w-4 mr-1" />
                       RSVP
                     </Button>
                   )}
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSave(event.id)}
-                    className={`text-xs ${event.isSaved ? 'text-primary' : 'text-muted-foreground'}`}
-                  >
-                    <Bookmark className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
-                  </Button>
                 </div>
               </div>
 

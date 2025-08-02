@@ -40,12 +40,12 @@ const Events = () => {
       <Navigation />
       
       <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h1 className="text-2xl font-bold">Community Events</h1>
+        <div className="container py-4 md:py-6 px-3 md:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
+            <h1 className="text-xl md:text-2xl font-bold truncate">Community Events</h1>
             <Button 
               onClick={() => setCreateDialogOpen(true)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto touch-manipulation min-h-[44px] text-sm"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Event
@@ -53,29 +53,35 @@ const Events = () => {
           </div>
           
           <Tabs defaultValue="all" className="w-full">
-            {/* Desktop tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
-              <TabsTrigger value="all">All Events</TabsTrigger>
-              <TabsTrigger value="my-events">My Events</TabsTrigger>
+            {/* Desktop/Tablet tabs */}
+            <TabsList className="hidden md:grid w-full grid-cols-2 h-12">
+              <TabsTrigger value="all" className="touch-manipulation text-sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                All Events
+              </TabsTrigger>
+              <TabsTrigger value="my-events" className="touch-manipulation text-sm">
+                <Users className="h-4 w-4 mr-2" />
+                My Events
+              </TabsTrigger>
             </TabsList>
             
-            {/* Mobile tabs - using buttons instead of TabsTrigger */}
+            {/* Mobile tabs - improved touch targets */}
             <div className="md:hidden w-full mb-4">
-              <div className="flex justify-center gap-1 w-full">
+              <div className="flex gap-2 w-full">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 min-h-[44px] touch-manipulation text-sm"
                   onClick={() => {/* handled by Tabs component */}}
                 >
-                  <Calendar className="h-3 w-3 mr-1" />
+                  <Calendar className="h-4 w-4 mr-2" />
                   All Events
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 min-h-[44px] touch-manipulation text-sm"
                   onClick={() => {/* handled by Tabs component */}}
                 >
-                  <Users className="h-3 w-3 mr-1" />
+                  <Users className="h-4 w-4 mr-2" />
                   My Events
                 </Button>
               </div>

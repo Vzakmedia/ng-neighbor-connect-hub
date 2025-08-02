@@ -358,43 +358,108 @@ const MyEventsPanel = () => {
   const selectedEvent = events.find(e => e.id === selectedEventId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">My Events</h2>
-        <Badge variant="secondary">{events.length} Events</Badge>
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-xl md:text-2xl font-bold">My Events</h2>
+        <Badge variant="secondary" className="self-start sm:self-center">
+          {events.length} Event{events.length !== 1 ? 's' : ''}
+        </Badge>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="rsvps">RSVPs</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 h-12">
+          <TabsTrigger value="overview" className="touch-manipulation text-sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="rsvps" className="touch-manipulation text-sm">
+            <Users className="h-4 w-4 mr-2" />
+            RSVPs
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           {events.map((event) => (
-            <Card key={event.id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{event.title}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+            <Card key={event.id} className="touch-manipulation">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base md:text-lg line-clamp-2">{event.title}</CardTitle>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm text-muted-foreground mt-2">
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {formatTimeAgo(event.created_at)}
+                        <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                        <span>{formatTimeAgo(event.created_at)}</span>
                       </div>
                       {event.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {event.location}
+                        <div className="flex items-center gap-1 min-w-0">
+                          <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <span className="truncate">{event.location}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  
+                  {/* Mobile action buttons */}
+                  <div className="lg:hidden flex flex-col gap-2 w-full">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditEvent(event)}
+                        className="flex-1 min-h-[44px] touch-manipulation text-xs"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewRsvps(event.id)}
+                        className="flex-1 min-h-[44px] touch-manipulation text-xs"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        RSVPs
+                      </Button>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {event.rsvp_enabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportRSVPs(event.id, event.title)}
+                          className="flex-1 min-h-[44px] touch-manipulation text-xs"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Export
+                        </Button>
+                      )}
+                      <Button
+                        variant={event.rsvp_enabled ? "destructive" : "default"}
+                        size="sm"
+                        onClick={() => toggleRsvpEnabled(event.id, event.rsvp_enabled)}
+                        className="flex-1 min-h-[44px] touch-manipulation text-xs"
+                      >
+                        {event.rsvp_enabled ? 'Disable RSVP' : 'Enable RSVP'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteEvent(event.id, event.title)}
+                        className="min-h-[44px] touch-manipulation text-xs px-3"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Desktop action buttons */}
+                  <div className="hidden lg:flex gap-2 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEditEvent(event)}
+                      className="touch-manipulation"
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -403,6 +468,7 @@ const MyEventsPanel = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleViewRsvps(event.id)}
+                      className="touch-manipulation"
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View RSVPs
@@ -412,6 +478,7 @@ const MyEventsPanel = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => exportRSVPs(event.id, event.title)}
+                        className="touch-manipulation"
                       >
                         <Download className="h-4 w-4 mr-1" />
                         Export RSVPs
@@ -421,6 +488,7 @@ const MyEventsPanel = () => {
                       variant={event.rsvp_enabled ? "destructive" : "default"}
                       size="sm"
                       onClick={() => toggleRsvpEnabled(event.id, event.rsvp_enabled)}
+                      className="touch-manipulation"
                     >
                       {event.rsvp_enabled ? 'Disable RSVP' : 'Enable RSVP'}
                     </Button>
@@ -428,6 +496,7 @@ const MyEventsPanel = () => {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDeleteEvent(event.id, event.title)}
+                      className="touch-manipulation"
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
@@ -435,21 +504,21 @@ const MyEventsPanel = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">{event.content}</p>
+              <CardContent className="pt-0">
+                <p className="text-sm md:text-base text-muted-foreground mb-4 line-clamp-3">{event.content}</p>
                 
                 {event.rsvp_enabled && (
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1">
-                      <Badge variant="default">{event.rsvp_count}</Badge>
+                      <Badge variant="default" className="text-xs">{event.rsvp_count}</Badge>
                       <span>Going</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="secondary">{event.interested_count}</Badge>
+                      <Badge variant="secondary" className="text-xs">{event.interested_count}</Badge>
                       <span>Interested</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline">{event.not_going_count}</Badge>
+                      <Badge variant="outline" className="text-xs">{event.not_going_count}</Badge>
                       <span>Not Going</span>
                     </div>
                   </div>
@@ -457,11 +526,16 @@ const MyEventsPanel = () => {
 
                 {event.tags && event.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-3">
-                    {event.tags.map((tag, index) => (
+                    {event.tags.slice(0, 5).map((tag, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         #{tag}
                       </Badge>
                     ))}
+                    {event.tags.length > 5 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{event.tags.length - 5} more
+                      </Badge>
+                    )}
                   </div>
                 )}
               </CardContent>
