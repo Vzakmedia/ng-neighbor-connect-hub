@@ -36,7 +36,7 @@ interface MarketplaceMessageDialogProps {
 
 const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogProps) => {
   const { user } = useAuth();
-  const { sendMessage } = useDirectMessages(user?.id);
+  const { sendMessageWithAttachments } = useDirectMessages(user?.id);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -76,10 +76,32 @@ const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogPr
     }
 
     const messageToSend = customMessage.trim() || defaultMessage;
+    
+    // Create product attachment as a special message with metadata
+    const productData = JSON.stringify({
+      type: 'product_card',
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      price: item.price,
+      is_negotiable: item.is_negotiable,
+      condition: item.condition,
+      image: item.images?.[0] || null,
+      link: productLink
+    });
+
+    const productAttachment = {
+      id: `product_${item.id}`,
+      type: 'file' as const,
+      name: `${item.title}_details.json`,
+      url: `data:application/json;base64,${btoa(productData)}`,
+      size: productData.length,
+      mimeType: 'application/json'
+    };
 
     setLoading(true);
     try {
-      const success = await sendMessage(messageToSend, item.user_id);
+      const success = await sendMessageWithAttachments(messageToSend, item.user_id, [productAttachment]);
       
       if (success) {
         toast({
