@@ -1,112 +1,113 @@
-import { motion } from 'framer-motion';
 import { 
-  Users, 
-  Shield, 
   MessageSquare, 
-  Home, 
-  Calendar, 
-  ShoppingBag, 
+  MessageCircle,
+  Mail,
+  Phone,
+  Video,
+  Send,
+  Mic,
+  Users,
   Heart,
-  MapPin,
-  Bell,
-  UserCheck,
-  Lock,
-  Wifi
+  Smile
 } from 'lucide-react';
 
 const AuthBackground = () => {
-  // Array of app-related icons with different sizes and animation properties
-  const iconData = [
-    { Icon: Users, size: 'w-6 h-6', delay: 0, pulse: true },
-    { Icon: Shield, size: 'w-5 h-5', delay: 0.5, pulse: false },
-    { Icon: MessageSquare, size: 'w-7 h-7', delay: 1, pulse: true },
-    { Icon: Home, size: 'w-6 h-6', delay: 1.5, pulse: false },
-    { Icon: Calendar, size: 'w-5 h-5', delay: 2, pulse: true },
-    { Icon: ShoppingBag, size: 'w-6 h-6', delay: 2.5, pulse: false },
-    { Icon: Heart, size: 'w-4 h-4', delay: 3, pulse: true },
-    { Icon: MapPin, size: 'w-5 h-5', delay: 3.5, pulse: false },
-    { Icon: Bell, size: 'w-6 h-6', delay: 4, pulse: true },
-    { Icon: UserCheck, size: 'w-5 h-5', delay: 4.5, pulse: false },
-    { Icon: Lock, size: 'w-4 h-4', delay: 5, pulse: true },
-    { Icon: Wifi, size: 'w-6 h-6', delay: 5.5, pulse: false },
+  // WhatsApp-style chat bubble pattern
+  const chatIcons = [
+    MessageSquare, MessageCircle, Mail, Phone, Video, 
+    Send, Mic, Users, Heart, Smile
   ];
 
-  // Generate random positions for icons
-  const generateRandomPosition = () => ({
-    x: Math.random() * 90, // 0-90% of screen width
-    y: Math.random() * 90, // 0-90% of screen height
-  });
+  // Create a structured grid pattern like WhatsApp
+  const generateGridPattern = () => {
+    const patterns = [];
+    const gridSize = 8; // 8x8 grid
+    const iconSize = ['w-4 h-4', 'w-5 h-5', 'w-6 h-6', 'w-7 h-7'];
+    const opacities = ['opacity-10', 'opacity-15', 'opacity-20', 'opacity-25'];
+    
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        // Skip some positions to create WhatsApp-like spacing
+        if ((row + col) % 3 === 0 || (row * col) % 4 === 0) {
+          const IconComponent = chatIcons[Math.floor(Math.random() * chatIcons.length)];
+          const size = iconSize[Math.floor(Math.random() * iconSize.length)];
+          const opacity = opacities[Math.floor(Math.random() * opacities.length)];
+          const rotation = Math.floor(Math.random() * 4) * 90; // 0, 90, 180, 270 degrees
+          
+          patterns.push({
+            Icon: IconComponent,
+            x: (col / gridSize) * 100,
+            y: (row / gridSize) * 100,
+            size,
+            opacity,
+            rotation,
+            key: `${row}-${col}`
+          });
+        }
+      }
+    }
+    return patterns;
+  };
+
+  const iconPattern = generateGridPattern();
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Generate multiple sets of icons for a rich pattern */}
-      {Array.from({ length: 3 }).map((_, setIndex) => (
-        iconData.map((iconInfo, index) => {
-          const position = generateRandomPosition();
-          const IconComponent = iconInfo.Icon;
-          const uniqueKey = `${setIndex}-${index}`;
-          
-          return (
-            <motion.div
-              key={uniqueKey}
-              className={`absolute text-primary/60 ${iconInfo.size}`}
-              style={{
-                left: `${position.x}%`,
-                top: `${position.y}%`,
-              }}
-              initial={{ 
-                opacity: 0, 
-                scale: 0,
-                rotate: 0
-              }}
-              animate={{ 
-                opacity: [0.3, 1, 0.6, 1],
-                scale: iconInfo.pulse ? [1, 1.2, 1, 1.1, 1] : [1, 1.05, 1],
-                rotate: [0, 10, -10, 0],
-              }}
-              transition={{
-                duration: iconInfo.pulse ? 4 : 6,
-                delay: iconInfo.delay + (setIndex * 0.5),
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <IconComponent className="w-full h-full" />
-            </motion.div>
-          );
-        })
-      ))}
+      {/* WhatsApp-style pattern background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-green-50/30 via-green-100/20 to-green-200/30" />
       
-      {/* Floating orbs for additional visual interest */}
-      {Array.from({ length: 8 }).map((_, index) => {
-        const position = generateRandomPosition();
+      {/* Chat bubble pattern icons */}
+      {iconPattern.map((item) => {
+        const IconComponent = item.Icon;
         return (
-          <motion.div
-            key={`orb-${index}`}
-            className="absolute rounded-full bg-primary/40"
+          <div
+            key={item.key}
+            className={`absolute text-green-600 ${item.size} ${item.opacity}`}
             style={{
-              left: `${position.x}%`,
-              top: `${position.y}%`,
-              width: Math.random() * 20 + 10, // 10-30px
-              height: Math.random() * 20 + 10,
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              transform: `rotate(${item.rotation}deg)`,
             }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.6, 1, 0.6],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2, // 3-5 seconds
-              delay: index * 0.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
+          >
+            <IconComponent className="w-full h-full" />
+          </div>
         );
       })}
 
-      {/* Very light gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-muted/10" />
+      {/* Additional large chat bubbles for WhatsApp feel */}
+      <div className="absolute top-10 left-10 text-green-500/20">
+        <MessageCircle className="w-16 h-16" />
+      </div>
+      <div className="absolute top-20 right-16 text-green-600/15">
+        <MessageSquare className="w-12 h-12 rotate-12" />
+      </div>
+      <div className="absolute bottom-16 left-20 text-green-500/25">
+        <Send className="w-10 h-10 -rotate-12" />
+      </div>
+      <div className="absolute bottom-20 right-12 text-green-600/20">
+        <Users className="w-14 h-14 rotate-45" />
+      </div>
+      <div className="absolute top-1/2 left-1/4 text-green-500/10">
+        <Phone className="w-8 h-8 rotate-90" />
+      </div>
+      <div className="absolute top-1/3 right-1/3 text-green-600/15">
+        <Video className="w-9 h-9 -rotate-45" />
+      </div>
+
+      {/* WhatsApp-style dots pattern */}
+      {Array.from({ length: 20 }).map((_, index) => (
+        <div
+          key={`dot-${index}`}
+          className="absolute w-1 h-1 bg-green-500/20 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+
+      {/* Subtle overlay to ensure readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background/60 via-background/30 to-background/60" />
     </div>
   );
 };
