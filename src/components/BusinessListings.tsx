@@ -302,31 +302,33 @@ const BusinessListings = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Search and Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <div className="space-y-3 md:space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search businesses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-12 md:h-10"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {businessCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : formatCategory(category)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          
+          <div className="flex flex-col sm:flex-row gap-3 lg:gap-2">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:flex-1 lg:w-[180px] h-12 md:h-10">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-md">
+                {businessCategories.map((category) => (
+                  <SelectItem key={category} value={category} className="py-3 md:py-2">
+                    {category === 'all' ? 'All Categories' : formatCategory(category)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           
           {/* Enhanced Location Search - Simplified Version */}
           <Popover open={locationOpen} onOpenChange={setLocationOpen}>
@@ -335,20 +337,22 @@ const BusinessListings = () => {
                 variant="outline"
                 role="combobox"
                 aria-expanded={locationOpen}
-                className="w-full sm:w-[250px] justify-between"
+                className="w-full sm:flex-1 lg:w-[250px] justify-between h-12 md:h-10"
               >
-                {selectedNeighborhood !== 'all' 
-                  ? selectedNeighborhood
-                  : selectedCity !== 'all' 
-                  ? selectedCity
-                  : selectedState !== 'all' 
-                  ? selectedState
-                  : "Select location..."}
+                <span className="truncate">
+                  {selectedNeighborhood !== 'all' 
+                    ? selectedNeighborhood
+                    : selectedCity !== 'all' 
+                    ? selectedCity
+                    : selectedState !== 'all' 
+                    ? selectedState
+                    : "Select location..."}
+                </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[250px] p-0">
-              <div className="p-2">
+            <PopoverContent className="w-[280px] sm:w-[320px] p-0 bg-background border shadow-md">
+              <div className="p-3">
                 <input
                   type="text"
                   placeholder="Search locations..."
@@ -358,7 +362,7 @@ const BusinessListings = () => {
                 />
               </div>
               
-              <ScrollArea className="h-[300px]">
+              <ScrollArea className="h-[280px] md:h-[300px]">
                 <div className="p-2 space-y-2">
                   {/* Quick Reset */}
                   <div className="space-y-1">
@@ -370,7 +374,7 @@ const BusinessListings = () => {
                         setSelectedNeighborhood('all');
                         setLocationOpen(false);
                       }}
-                      className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                      className="w-full flex items-center px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
                       <Check className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
                       All Locations
@@ -397,10 +401,10 @@ const BusinessListings = () => {
                                 handleStateChange(state);
                                 setLocationOpen(false);
                               }}
-                              className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
+                              className="w-full flex items-center px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
-                              {state}
+                              <span className="truncate">{state}</span>
                             </button>
                           ))}
                         </div>
@@ -549,17 +553,18 @@ const BusinessListings = () => {
             </PopoverContent>
           </Popover>
         </div>
+        </div>
 
         {/* Register Business CTA */}
         <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">Own a business?</h3>
-                <p className="text-muted-foreground">Register your business and reach more customers in your community</p>
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-1">
+                <h3 className="font-semibold text-base md:text-lg">Own a business?</h3>
+                <p className="text-sm md:text-base text-muted-foreground">Register your business and reach more customers in your community</p>
               </div>
               <BusinessRegistrationDialog onBusinessRegistered={fetchBusinesses}>
-                <Button className="flex items-center gap-2">
+                <Button className="flex items-center gap-2 h-12 lg:h-10 w-full lg:w-auto">
                   <Plus className="h-4 w-4" />
                   Register Business
                 </Button>
@@ -582,22 +587,22 @@ const BusinessListings = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {businesses.map((business) => (
             <Card key={business.id} className="group hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 md:pb-4">
                 <div className="flex items-start gap-3">
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
                     <AvatarImage src={business.logo_url || business.profiles?.avatar_url} />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-xs md:text-sm">
                       {getBusinessInitials(business.business_name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-base truncate">{business.business_name}</CardTitle>
+                      <CardTitle className="text-sm md:text-base truncate">{business.business_name}</CardTitle>
                       {business.is_verified && (
-                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
                     </div>
                     <Badge variant="outline" className="text-xs mt-1">
@@ -607,67 +612,55 @@ const BusinessListings = () => {
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground line-clamp-2">
+              <CardContent className="space-y-3 pt-0">
+                <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                   {business.description}
                 </p>
 
-                {renderStars(business.rating)}
+                <div className="text-xs md:text-sm">
+                  {renderStars(business.rating)}
+                </div>
 
                 {business.physical_address && (
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <span className="line-clamp-2">{business.physical_address}</span>
+                  <div className="flex items-start gap-2 text-xs md:text-sm text-muted-foreground">
+                    <MapPin className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2 break-words">{business.physical_address}</span>
                   </div>
                 )}
 
                 {(business.city || business.state) && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{business.city}{business.city && business.state && ', '}{business.state}</span>
+                  <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
+                    <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                    <span className="truncate">{business.city}{business.city && business.state && ', '}{business.state}</span>
                   </div>
                 )}
 
                 {business.operating_hours && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                    <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                     <span>View Hours</span>
                   </div>
                 )}
 
-                {/* Desktop buttons */}
-                <div className="hidden md:flex gap-2 pt-2">
+                {/* Action buttons - responsive layout */}
+                <div className="flex gap-2 pt-2">
                   {business.phone && (
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Phone className="h-4 w-4 mr-1" />
-                      Call
+                    <Button variant="outline" size="sm" className="flex-1 h-10 text-xs md:text-sm">
+                      <Phone className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                      <span className="hidden sm:inline">Call</span>
+                      <span className="sm:hidden">Call</span>
                     </Button>
                   )}
                   {business.email && (
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Mail className="h-4 w-4 mr-1" />
-                      Email
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Mobile buttons - compact */}
-                <div className="md:hidden flex gap-1 pt-2">
-                  {business.phone && (
-                    <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
-                      <Phone className="h-3 w-3 mr-1" />
-                      Call
-                    </Button>
-                  )}
-                  {business.email && (
-                    <Button variant="outline" size="sm" className="flex-1 text-xs px-2">
-                      <Mail className="h-3 w-3 mr-1" />
-                      Email
+                    <Button variant="outline" size="sm" className="flex-1 h-10 text-xs md:text-sm">
+                      <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                      <span className="hidden sm:inline">Email</span>
+                      <span className="sm:hidden">Email</span>
                     </Button>
                   )}
                 </div>
 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground pt-1">
                   Listed {formatTimeAgo(business.created_at)}
                 </p>
               </CardContent>
