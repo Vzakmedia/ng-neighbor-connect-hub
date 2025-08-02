@@ -6,13 +6,15 @@ import { LogIn, UserPlus } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import AuthBackground from "./AuthBackground";
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center relative p-4">
+      <AuthBackground />
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95 border border-border/50 shadow-2xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2">
             <img 
