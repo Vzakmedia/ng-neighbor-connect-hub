@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
@@ -82,6 +82,7 @@ const Marketplace = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'services' | 'goods'>('services');
   const [services, setServices] = useState<Service[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
@@ -91,6 +92,7 @@ const Marketplace = () => {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [galleryTitle, setGalleryTitle] = useState('');
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -123,6 +125,31 @@ const Marketplace = () => {
       fetchItems();
     }
   }, [activeTab, selectedCategory, searchTerm]);
+
+  // Handle URL parameter for specific item
+  useEffect(() => {
+    const itemId = searchParams.get('item');
+    if (itemId) {
+      setHighlightedItemId(itemId);
+      setActiveTab('goods'); // Switch to goods tab when item is specified
+      
+      // Clear the URL parameter after a short delay to clean up URL
+      setTimeout(() => {
+        setHighlightedItemId(null);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('item');
+        setSearchParams(newSearchParams, { replace: true });
+      }, 3000);
+      
+      // Scroll to the item after data loads
+      setTimeout(() => {
+        const element = document.getElementById(`item-${itemId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [searchParams, setSearchParams]);
 
   const fetchServices = async () => {
     setLoading(true);
@@ -478,7 +505,13 @@ const Marketplace = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentItems.map((item) => (
-            <Card key={item.id} className="group hover:shadow-lg transition-shadow cursor-pointer">
+            <Card 
+              key={item.id} 
+              id={`item-${item.id}`}
+              className={`group hover:shadow-lg transition-all cursor-pointer ${
+                highlightedItemId === item.id ? 'ring-2 ring-primary shadow-lg scale-105' : ''
+              }`}
+            >
                <CardContent className="p-0">
                   {/* Image Carousel */}
                   <div 
