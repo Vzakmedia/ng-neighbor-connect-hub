@@ -40,7 +40,7 @@ const AuthBackground = () => {
         // Create varied spacing like the reference
         if ((row + col) % 3 === 0 || (row * 2 + col) % 5 === 0) {
           const IconComponent = icons[Math.floor(Math.random() * icons.length)];
-          const size = Math.random() > 0.7 ? 'w-5 h-5' : 'w-4 h-4';
+          const size = Math.random() > 0.7 ? 'w-8 h-8' : Math.random() > 0.4 ? 'w-7 h-7' : 'w-6 h-6';
           const opacity = Math.random() > 0.5 ? 'opacity-60' : 'opacity-50';
           
           pattern.push({
@@ -60,7 +60,7 @@ const AuthBackground = () => {
             Icon: null,
             x: (col / cols) * 100,
             y: (row / rows) * 100,
-            size: 'w-1 h-1',
+            size: 'w-2 h-2',
             opacity: 'opacity-70',
             key: `dot-${row}-${col}`,
             rotation: 0,
@@ -74,7 +74,7 @@ const AuthBackground = () => {
             Icon: null,
             x: (col / cols) * 100,
             y: (row / rows) * 100,
-            size: 'w-1.5 h-1.5',
+            size: 'w-3 h-3',
             opacity: 'opacity-65',
             key: `square-${row}-${col}`,
             rotation: 45,
