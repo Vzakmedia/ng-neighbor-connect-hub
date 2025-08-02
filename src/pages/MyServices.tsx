@@ -37,24 +37,26 @@ const MyServices = () => {
       <Navigation />
       
       <main className="md:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 md:mb-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-10 w-fit"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
             
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold">My Services</h1>
-              <p className="text-muted-foreground">Manage your service offerings</p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold break-words">My Services</h1>
+              <p className="text-sm md:text-base text-muted-foreground">Manage your service offerings</p>
             </div>
             
-            <CreateServiceDialog onServiceCreated={handleServiceCreated} />
+            <div className="w-full sm:w-auto">
+              <CreateServiceDialog onServiceCreated={handleServiceCreated} />
+            </div>
           </div>
 
           <ServicesList onRefresh={refreshTrigger} showOnlyServices={true} />

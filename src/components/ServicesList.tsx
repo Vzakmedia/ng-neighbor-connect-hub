@@ -351,16 +351,16 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
         ) : (
           <div className="space-y-4">
             {myServices.map((service) => (
-              <Card key={service.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{service.title}</CardTitle>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="outline">
+              <Card key={service.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3 md:pb-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base md:text-lg break-words">{service.title}</CardTitle>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
                           {service.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
-                        <Badge variant={service.is_active ? "default" : "destructive"}>
+                        <Badge variant={service.is_active ? "default" : "destructive"} className="text-xs">
                           {service.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>
@@ -472,19 +472,19 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
         ) : (
           <div className="space-y-4">
             {myItems.map((item) => (
-              <Card key={item.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{item.title}</CardTitle>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant="outline">
+              <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3 md:pb-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base md:text-lg break-words">{item.title}</CardTitle>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
                           {item.category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
-                        <Badge variant={item.status === 'active' ? "default" : "secondary"}>
+                        <Badge variant={item.status === 'active' ? "default" : "secondary"} className="text-xs">
                           {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                         </Badge>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="text-xs">
                           {item.condition.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
                         {item.is_negotiable && (
@@ -494,28 +494,30 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex flex-wrap gap-2">
                       <CreatePromotionDialog 
                         itemId={item.id} 
                         itemType="item" 
                         itemTitle={item.title}
                         onPromotionCreated={fetchMyItems}
                       >
-                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
+                        <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20 h-10 text-sm">
                           <Megaphone className="h-4 w-4 mr-1" />
-                          Promote
+                          <span className="hidden sm:inline">Promote</span>
                         </Button>
                       </CreatePromotionDialog>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-10 text-sm"
                         onClick={() => toggleItemStatus(item.id, item.status)}
                       >
-                        {item.status === 'active' ? "Mark as Sold" : "Mark as Active"}
+                        {item.status === 'active' ? 'Mark as Sold' : 'Mark as Active'}
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="h-10"
                         onClick={() => handleDeleteItem(item.id, item.title)}
                       >
                         <Trash2 className="h-4 w-4" />
