@@ -82,7 +82,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="max-w-sm cursor-pointer hover:shadow-md transition-shadow" onClick={handleViewProduct}>
+    <Card className="max-w-sm hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex gap-3">
           {product.image ? (
@@ -107,7 +107,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
             <div className="flex items-center justify-between">
               <Badge variant="secondary" className="text-xs">{product.condition}</Badge>
-              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" disabled={loading}>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-6 px-2 text-xs" 
+                disabled={loading}
+                onClick={handleViewProduct}
+              >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 {loading ? 'Loading...' : 'View'}
               </Button>
