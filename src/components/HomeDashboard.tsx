@@ -107,22 +107,22 @@ const HomeDashboard = () => {
   const currentAds = !adsLoading && promotionalAds.length > 0 ? promotionalAds : fallbackAdvertisements;
 
   return (
-    <div className="space-y-4 md:space-y-6 overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-5 md:space-y-6 overflow-x-hidden">
       {/* Hero Section */}
       <HeroSection />
 
       {/* Welcome Section - now more compact */}
-      <div className="bg-gradient-primary rounded-lg p-3 md:p-4 text-white">
+      <div className="bg-gradient-primary rounded-lg p-3 sm:p-4 md:p-4 text-white">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h2 className="text-base md:text-lg font-semibold mb-1">Good morning! 👋</h2>
-            <p className="text-white/90 text-xs md:text-sm leading-tight">What's happening in your neighborhood today?</p>
+            <h2 className="text-base sm:text-lg md:text-lg font-semibold mb-1">Good morning! 👋</h2>
+            <p className="text-white/90 text-xs sm:text-sm md:text-sm leading-tight">What's happening in your neighborhood today?</p>
           </div>
           <Button 
-            className="bg-white/20 hover:bg-white/30 text-white border-white/30 flex-shrink-0 text-xs md:text-sm px-3 md:px-4 py-2"
+            className="bg-white/20 hover:bg-white/30 text-white border-white/30 flex-shrink-0 text-xs sm:text-sm md:text-sm px-3 sm:px-4 md:px-4 py-2"
             onClick={() => setCreatePostOpen(true)}
           >
-            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4 md:h-4 md:w-4 mr-1 sm:mr-2 md:mr-2" />
             <span className="hidden sm:inline">Create Post</span>
             <span className="sm:hidden">Post</span>
           </Button>
@@ -151,25 +151,25 @@ const HomeDashboard = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+        <TabsContent value="overview" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {/* Main Feed */}
-            <div className="lg:col-span-2">
+            <div className="xl:col-span-2">
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
-                  <div className="space-y-3 md:space-y-0 md:flex md:items-center md:justify-between">
-                    <CardTitle className="text-lg md:text-xl">Community Updates</CardTitle>
+                  <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+                    <CardTitle className="text-lg sm:text-xl md:text-xl">Community Updates</CardTitle>
                     
                     {/* Desktop filter buttons */}
-                    <div className="hidden md:flex space-x-2">
+                    <div className="hidden sm:flex space-x-2">
                       {['all', 'safety', 'events', 'marketplace'].map((tab) => (
                         <Button
                           key={tab}
                           variant={activeTab === tab ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => setActiveTab(tab)}
-                          className="capitalize"
+                          className="capitalize text-xs sm:text-sm"
                         >
                           {tab}
                         </Button>
@@ -177,21 +177,21 @@ const HomeDashboard = () => {
                     </div>
 
                     {/* Mobile - No dropdowns needed anymore */}
-                    <div className="md:hidden">
+                    <div className="sm:hidden">
                       {/* Space reserved for future mobile-specific controls if needed */}
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="px-3 md:px-6">
+                <CardContent className="px-3 sm:px-4 md:px-6">
                   <CommunityFeed activeTab={activeTab} viewScope={viewScope} />
                 </CardContent>
               </Card>
             </div>
 
-            {/* Sidebar - Hidden on mobile */}
-            <div className="hidden md:block space-y-4 md:space-y-6">
+            {/* Sidebar - Visible on tablets and up */}
+            <div className="hidden sm:block space-y-4 sm:space-y-5 md:space-y-6">
               {/* Real-time Promotional Ads */}
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-3 sm:space-y-4 md:space-y-4">
                 {adsLoading ? (
                   <div className="animate-pulse">
                     <div className="h-32 bg-muted rounded-lg"></div>
@@ -206,8 +206,8 @@ const HomeDashboard = () => {
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center text-base md:text-lg">
-                      <Calendar className="h-4 w-4 md:h-5 md:w-5 mr-2 text-community-yellow" />
+                    <CardTitle className="flex items-center text-base sm:text-lg md:text-lg">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 md:h-5 md:w-5 mr-2 text-community-yellow" />
                       <span>Upcoming Events</span>
                     </CardTitle>
                     <Button 
@@ -221,7 +221,7 @@ const HomeDashboard = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="px-3 md:px-6">
+                <CardContent className="px-3 sm:px-4 md:px-6">
                   {eventsLoading ? (
                     <div className="space-y-3">
                       {Array.from({ length: 2 }).map((_, index) => (
@@ -233,25 +233,25 @@ const HomeDashboard = () => {
                       ))}
                     </div>
                   ) : upcomingEvents.length > 0 ? (
-                    <div className="space-y-3 md:space-y-4">
+                    <div className="space-y-3 sm:space-y-4 md:space-y-4">
                       {upcomingEvents.slice(0, 2).map((event) => (
                         <div 
                           key={event.id} 
-                          className="border-l-4 border-primary pl-3 md:pl-4 pb-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors touch-manipulation active:bg-muted/70"
+                          className="border-l-4 border-primary pl-3 sm:pl-4 md:pl-4 pb-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -ml-2 transition-colors touch-manipulation active:bg-muted/70"
                           onClick={() => navigate('/events')}
                           title={`View details for ${event.title}`}
                         >
-                          <h4 className="font-medium mb-1 text-sm md:text-base">{event.title}</h4>
-                          <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
+                          <h4 className="font-medium mb-1 text-sm sm:text-base md:text-base">{event.title}</h4>
+                          <div className="flex items-center text-xs sm:text-sm md:text-sm text-muted-foreground mb-1 sm:mb-2 md:mb-2">
                             <Clock className="h-3 w-3 mr-1" />
                             {event.date} at {event.time}
                           </div>
-                          <div className="flex items-center text-xs md:text-sm text-muted-foreground mb-2">
+                          <div className="flex items-center text-xs sm:text-sm md:text-sm text-muted-foreground mb-2">
                             <MapPin className="h-3 w-3 mr-1" />
                             {event.location}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs md:text-sm text-muted-foreground">
+                            <span className="text-xs sm:text-sm md:text-sm text-muted-foreground">
                               {event.attendees} interested
                             </span>
                             <Badge variant="outline" className="text-xs">
@@ -436,24 +436,24 @@ const HomeDashboard = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="automations" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+        <TabsContent value="automations" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
           <HomeAutomations />
         </TabsContent>
 
-        <TabsContent value="insights" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+        <TabsContent value="insights" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
           <NeighborhoodInsights />
           
           {/* Trending Topics */}
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center text-lg">
+              <CardTitle className="flex items-center text-lg sm:text-xl">
                 <TrendingUp className="h-5 w-5 mr-2 text-primary" />
                 Trending Topics
               </CardTitle>
             </CardHeader>
             <CardContent>
               {topicsLoading ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div key={index} className="animate-pulse">
                       <div className="h-8 bg-muted rounded"></div>
@@ -461,7 +461,7 @@ const HomeDashboard = () => {
                   ))}
                 </div>
               ) : trendingTopics.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {trendingTopics.map((topic, index) => (
                     <div 
                       key={topic.tag} 
@@ -471,7 +471,7 @@ const HomeDashboard = () => {
                         navigate('/community');
                       }}
                     >
-                      <span className="font-medium text-sm">{topic.tag}</span>
+                      <span className="font-medium text-sm sm:text-base">{topic.tag}</span>
                       <Badge variant="outline" className="text-xs">
                         {topic.posts}
                       </Badge>
@@ -487,8 +487,8 @@ const HomeDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ads" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <TabsContent value="ads" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {!adsLoading && currentAds.map((ad) => (
               <AdvertisementCard key={ad.id} ad={ad} />
             ))}
