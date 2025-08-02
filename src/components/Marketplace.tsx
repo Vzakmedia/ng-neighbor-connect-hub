@@ -246,7 +246,7 @@ const Marketplace = () => {
   const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
   const currentItems = activeTab === 'services' ? services : items;
 
-  const handleMessageUser = async (sellerId: string) => {
+  const handleMessageUser = async (sellerId: string, item?: MarketplaceItem) => {
     if (!user) {
       toast({
         title: "Please log in",
@@ -274,28 +274,66 @@ const Marketplace = () => {
         .single();
 
       if (existingConversation) {
+        // If we have item details, send a message about interest in the product
+        if (item) {
+          const messageContent = `Hi! I'm interested in your "${item.title}" listed for ${
+            item.price ? `₦${item.price.toLocaleString()}` : 'the listed price'
+          }. Is it still available?`;
+
+          await supabase
+            .from('direct_messages')
+            .insert({
+              sender_id: user.id,
+              recipient_id: sellerId,
+              content: messageContent,
+              status: 'sent'
+            });
+        }
+        
         // Navigate to existing conversation
         navigate('/messages');
       } else {
         // Create new conversation
-        const { error } = await supabase
+        const { data: newConversation, error: convError } = await supabase
           .from('direct_conversations')
           .insert({
             user1_id: user.id,
             user2_id: sellerId,
             last_message_at: new Date().toISOString(),
             user1_has_unread: false,
-            user2_has_unread: false
-          });
+            user2_has_unread: true
+          })
+          .select()
+          .single();
 
-        if (error) {
-          console.error('Error creating conversation:', error);
+        if (convError) {
+          console.error('Error creating conversation:', convError);
           toast({
             title: "Error",
             description: "Failed to start conversation. Please try again.",
             variant: "destructive",
           });
           return;
+        }
+
+        // Send initial message about the product if item details are provided
+        if (item) {
+          const messageContent = `Hi! I'm interested in your "${item.title}" listed for ${
+            item.price ? `₦${item.price.toLocaleString()}` : 'the listed price'
+          }. Is it still available?`;
+
+          const { error: messageError } = await supabase
+            .from('direct_messages')
+            .insert({
+              sender_id: user.id,
+              recipient_id: sellerId,
+              content: messageContent,
+              status: 'sent'
+            });
+
+          if (messageError) {
+            console.error('Error sending initial message:', messageError);
+          }
         }
 
         // Navigate to messages page
@@ -696,10 +734,10 @@ const Marketplace = () => {
                       )
                      ) : (
                        user?.id !== item.user_id ? (
-                         <Button 
-                           className="flex-1 h-8 text-xs"
-                           onClick={() => handleMessageUser(item.user_id)}
-                         >
+                          <Button 
+                            className="flex-1 h-8 text-xs"
+                            onClick={() => handleMessageUser(item.user_id, item as MarketplaceItem)}
+                          >
                            <MessageSquare className="h-3 w-3 mr-1" />
                            Message
                          </Button>
