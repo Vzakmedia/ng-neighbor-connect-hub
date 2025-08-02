@@ -147,7 +147,7 @@ const HomeDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="ads" className="flex items-center">
             <TrendingUp className="h-4 w-4 mr-2" />
-            Local Deals
+            Adverts
           </TabsTrigger>
         </TabsList>
 
