@@ -49,7 +49,7 @@ const AuthBackground = () => {
           return (
             <motion.div
               key={uniqueKey}
-              className={`absolute text-primary/10 ${iconInfo.size}`}
+              className={`absolute text-primary/30 ${iconInfo.size}`}
               style={{
                 left: `${position.x}%`,
                 top: `${position.y}%`,
@@ -60,7 +60,7 @@ const AuthBackground = () => {
                 rotate: 0
               }}
               animate={{ 
-                opacity: [0, 0.6, 0.3, 0.6],
+                opacity: [0, 0.8, 0.4, 0.8],
                 scale: iconInfo.pulse ? [1, 1.2, 1, 1.1, 1] : [1, 1.05, 1],
                 rotate: [0, 10, -10, 0],
               }}
@@ -83,7 +83,7 @@ const AuthBackground = () => {
         return (
           <motion.div
             key={`orb-${index}`}
-            className="absolute rounded-full bg-primary/5"
+            className="absolute rounded-full bg-primary/20"
             style={{
               left: `${position.x}%`,
               top: `${position.y}%`,
@@ -92,7 +92,7 @@ const AuthBackground = () => {
             }}
             animate={{
               y: [0, -20, 0],
-              opacity: [0.3, 0.7, 0.3],
+              opacity: [0.4, 0.8, 0.4],
               scale: [1, 1.1, 1],
             }}
             transition={{
@@ -106,7 +106,7 @@ const AuthBackground = () => {
       })}
 
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/70 to-muted/90" />
+      <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-muted/30" />
     </div>
   );
 };
