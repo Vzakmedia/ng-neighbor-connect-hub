@@ -23,11 +23,9 @@ export const createSafeSubscription = (
       console.log(`${debugName}: Subscription status: ${status}`);
       
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        console.error(`${debugName}: Subscription failed with status ${status}`);
-        
-        if (onError) {
-          setTimeout(onError, 2000); // Delayed retry
-        }
+        console.warn(`${debugName}: Subscription failed with status ${status}, will work with polling fallback`);
+        // Don't call onError for timeout issues to prevent infinite loops
+        // The polling fallback will handle updates
       } else if (status === 'SUBSCRIBED') {
         console.log(`${debugName}: Successfully subscribed to realtime updates`);
       }
