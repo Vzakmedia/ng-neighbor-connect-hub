@@ -669,7 +669,7 @@ const InteractiveLandingPage = () => {
 
       {/* Enhanced CTA Section */}
       <motion.section 
-        className="py-24 bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground relative overflow-hidden"
+        className="py-24 bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground relative overflow-hidden rounded-[15px]"
         style={{ y: y1 }}
       >
         <motion.div
