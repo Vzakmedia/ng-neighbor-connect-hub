@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import BusinessListings from '@/components/BusinessListings';
-import CommunityServices from '@/components/CommunityServices';
 
 const Services = () => {
   const { user, loading } = useAuth();
@@ -41,63 +38,39 @@ const Services = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
-          
-          <Tabs defaultValue="businesses" className="w-full">
-            {/* Desktop TabsList */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-10 px-3 flex items-center gap-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                    My Services & Goods
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56 bg-background border shadow-md">
-                  <DropdownMenuItem onClick={() => navigate('/my-services')}>
-                    My Services
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-goods')}>
-                    My Goods
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-bookings')}>
-                    My Bookings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
-            </TabsList>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl md:text-3xl font-bold">My Services & Goods</h1>
+            <p className="text-muted-foreground">Manage your services, goods, and bookings</p>
             
-            {/* Mobile & tablet responsive navigation */}
-            <div className="md:hidden flex flex-col sm:flex-row gap-3 w-full mb-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:flex-1 h-12 sm:h-10 text-sm">
-                    My Services & Goods
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-72 bg-background border shadow-md">
-                  <DropdownMenuItem onClick={() => navigate('/my-services')} className="py-3">
-                    My Services
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-goods')} className="py-3">
-                    My Goods
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-bookings')} className="py-3">
-                    My Bookings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="default" className="w-full sm:flex-1 h-12 sm:h-10 text-sm">
-                Local Businesses
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
+              <Button 
+                onClick={() => navigate('/my-services')} 
+                variant="outline" 
+                className="h-20 flex flex-col items-center gap-2"
+              >
+                <span className="font-semibold">My Services</span>
+                <span className="text-sm text-muted-foreground">Manage your services</span>
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/my-goods')} 
+                variant="outline" 
+                className="h-20 flex flex-col items-center gap-2"
+              >
+                <span className="font-semibold">My Goods</span>
+                <span className="text-sm text-muted-foreground">Manage your goods</span>
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/my-bookings')} 
+                variant="outline" 
+                className="h-20 flex flex-col items-center gap-2"
+              >
+                <span className="font-semibold">My Bookings</span>
+                <span className="text-sm text-muted-foreground">View your bookings</span>
               </Button>
             </div>
-
-            <TabsContent value="businesses" className="mt-4 md:mt-6">
-              <BusinessListings />
-            </TabsContent>
-          </Tabs>
-
+          </div>
         </div>
       </main>
     </div>
