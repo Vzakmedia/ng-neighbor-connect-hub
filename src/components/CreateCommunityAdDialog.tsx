@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { 
   Dialog, 
   DialogContent, 
@@ -17,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, Target, Clock, DollarSign, MapPin, Users } from 'lucide-react';
+import { Megaphone, Target, Clock, DollarSign, MapPin, Users, Upload, X, Image } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface CreateCommunityAdDialogProps {
@@ -43,6 +44,7 @@ const adTypes = [
 const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { uploadFile, uploading } = useFileUpload(user?.id || '');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -62,6 +64,39 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
     business_category: '',
     call_to_action: 'Learn More'
   });
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          const attachment = await uploadFile(file);
+          if (attachment) {
+            setFormData(prev => ({
+              ...prev,
+              images: [...prev.images, attachment.url]
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
 
   const calculateTotalCost = () => {
     const selectedAdType = adTypes.find(type => type.value === formData.ad_type);
@@ -290,6 +325,57 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                   </Select>
                 </div>
               </div>
+
+              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <Label>Advertisement Images</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={uploading}
+                    />
+                    <Label 
+                      htmlFor="image-upload" 
+                      className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploading ? 'Uploading...' : 'Upload Images'}
+                    </Label>
+                    <span className="text-sm text-muted-foreground">
+                      Upload up to 5 images
+                    </span>
+                  </div>
+                  
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {formData.images.map((imageUrl, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={imageUrl}
+                            alt={`Ad image ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -437,6 +523,17 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                       {formData.business_category || 'General'}
                     </Badge>
                   </div>
+                  
+                  {formData.images.length > 0 && (
+                    <div className="mb-3">
+                      <img
+                        src={formData.images[0]}
+                        alt="Ad preview"
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   <h4 className="font-semibold">{formData.title || "Your Ad Title"}</h4>
                   <p className="text-sm text-muted-foreground mb-2">
                     {formData.description || "Your ad description will appear here"}
