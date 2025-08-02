@@ -159,20 +159,44 @@ const SettingsContent = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
       <div className="flex items-center gap-2">
-        <Settings className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
+        <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="emergency">Emergency</TabsTrigger>
-          <TabsTrigger value="contacts">Contacts</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="data">Data</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1 p-1">
+          <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 py-2">
+            <Bell className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Notifications</span>
+            <span className="sm:hidden">Notify</span>
+          </TabsTrigger>
+          <TabsTrigger value="emergency" className="text-xs sm:text-sm px-2 py-2">
+            <AlertTriangle className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Emergency</span>
+            <span className="sm:hidden">Emergency</span>
+          </TabsTrigger>
+          <TabsTrigger value="contacts" className="text-xs sm:text-sm px-2 py-2">
+            <Users className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Contacts</span>
+            <span className="sm:hidden">Contacts</span>
+          </TabsTrigger>
+          <TabsTrigger value="privacy" className="text-xs sm:text-sm px-2 py-2">
+            <Shield className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Privacy</span>
+            <span className="sm:hidden">Privacy</span>
+          </TabsTrigger>
+          <TabsTrigger value="account" className="text-xs sm:text-sm px-2 py-2">
+            <User className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Account</span>
+            <span className="sm:hidden">Account</span>
+          </TabsTrigger>
+          <TabsTrigger value="data" className="text-xs sm:text-sm px-2 py-2">
+            <Download className="h-4 w-4 sm:hidden mr-1" />
+            <span className="hidden sm:inline">Data</span>
+            <span className="sm:hidden">Data</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Notifications Tab */}
@@ -188,10 +212,10 @@ const SettingsContent = () => {
               <div className="space-y-4">
                 <h3 className="font-medium">Safety & Emergency</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="safety-alerts">Safety Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="safety-alerts" className="text-sm font-medium">Safety Alerts</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Receive notifications about safety incidents in your area
                       </p>
                     </div>
@@ -199,13 +223,14 @@ const SettingsContent = () => {
                       id="safety-alerts"
                       checked={notificationSettings.safetyAlerts}
                       onCheckedChange={(checked) => handleNotificationChange('safetyAlerts', checked)}
+                      className="shrink-0"
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="emergency-alerts">Emergency Alerts</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="emergency-alerts" className="text-sm font-medium">Emergency Alerts</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Critical emergency notifications and panic button responses
                       </p>
                     </div>
@@ -213,6 +238,7 @@ const SettingsContent = () => {
                       id="emergency-alerts"
                       checked={notificationSettings.emergencyAlerts}
                       onCheckedChange={(checked) => handleNotificationChange('emergencyAlerts', checked)}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
@@ -223,10 +249,10 @@ const SettingsContent = () => {
               <div className="space-y-4">
                 <h3 className="font-medium">Community & Services</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="marketplace-updates">Marketplace Updates</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="marketplace-updates" className="text-sm font-medium">Marketplace Updates</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         New items, price changes, and marketplace activity
                       </p>
                     </div>
@@ -234,13 +260,14 @@ const SettingsContent = () => {
                       id="marketplace-updates"
                       checked={notificationSettings.marketplaceUpdates}
                       onCheckedChange={(checked) => handleNotificationChange('marketplaceUpdates', checked)}
+                      className="shrink-0"
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="community-posts">Community Posts</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="community-posts" className="text-sm font-medium">Community Posts</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         New posts and discussions in your neighborhood
                       </p>
                     </div>
@@ -248,13 +275,14 @@ const SettingsContent = () => {
                       id="community-posts"
                       checked={notificationSettings.communityPosts}
                       onCheckedChange={(checked) => handleNotificationChange('communityPosts', checked)}
+                      className="shrink-0"
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="service-bookings">Service Bookings</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="service-bookings" className="text-sm font-medium">Service Bookings</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Booking confirmations, updates, and reminders
                       </p>
                     </div>
@@ -262,6 +290,7 @@ const SettingsContent = () => {
                       id="service-bookings"
                       checked={notificationSettings.serviceBookings}
                       onCheckedChange={(checked) => handleNotificationChange('serviceBookings', checked)}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
@@ -272,10 +301,10 @@ const SettingsContent = () => {
               <div className="space-y-4">
                 <h3 className="font-medium">Delivery Methods</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-notifications">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="email-notifications" className="text-sm font-medium">Email Notifications</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Receive notifications via email
                       </p>
                     </div>
@@ -283,13 +312,14 @@ const SettingsContent = () => {
                       id="email-notifications"
                       checked={notificationSettings.emailNotifications}
                       onCheckedChange={(checked) => handleNotificationChange('emailNotifications', checked)}
+                      className="shrink-0"
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="push-notifications">Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="push-notifications" className="text-sm font-medium">Push Notifications</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Receive push notifications on this device
                       </p>
                     </div>
@@ -297,6 +327,7 @@ const SettingsContent = () => {
                       id="push-notifications"
                       checked={notificationSettings.pushNotifications}
                       onCheckedChange={(checked) => handleNotificationChange('pushNotifications', checked)}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
@@ -310,10 +341,10 @@ const SettingsContent = () => {
                   Sound Settings
                 </h3>
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="sound-enabled">Enable Notification Sounds</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="sound-enabled" className="text-sm font-medium">Enable Notification Sounds</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Play sounds for notifications and alerts
                       </p>
                     </div>
@@ -321,6 +352,7 @@ const SettingsContent = () => {
                       id="sound-enabled"
                       checked={audioSettings.soundEnabled}
                       onCheckedChange={(checked) => setAudioSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                      className="shrink-0"
                     />
                   </div>
 
@@ -436,10 +468,10 @@ const SettingsContent = () => {
                     </Select>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="show-phone">Show Phone Number</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="show-phone" className="text-sm font-medium">Show Phone Number</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Display your phone number on your profile
                       </p>
                     </div>
@@ -447,13 +479,14 @@ const SettingsContent = () => {
                       id="show-phone"
                       checked={privacySettings.showPhone}
                       onCheckedChange={(checked) => handlePrivacyChange('showPhone', checked)}
+                      className="shrink-0"
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="show-address">Show Address</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="show-address" className="text-sm font-medium">Show Address</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Display your full address on your profile
                       </p>
                     </div>
@@ -461,6 +494,7 @@ const SettingsContent = () => {
                       id="show-address"
                       checked={privacySettings.showAddress}
                       onCheckedChange={(checked) => handlePrivacyChange('showAddress', checked)}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
@@ -471,10 +505,10 @@ const SettingsContent = () => {
               <div className="space-y-4">
                 <h3 className="font-medium">Communication</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="allow-messages">Allow Direct Messages</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="allow-messages" className="text-sm font-medium">Allow Direct Messages</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Let other users message you directly
                       </p>
                     </div>
@@ -482,6 +516,7 @@ const SettingsContent = () => {
                       id="allow-messages"
                       checked={messagingPreferences.allow_messages}
                       onCheckedChange={(checked) => setMessagingPreferences(prev => ({ ...prev, allow_messages: checked }))}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
@@ -492,10 +527,10 @@ const SettingsContent = () => {
               <div className="space-y-4">
                 <h3 className="font-medium">Location Services</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="share-location">Share Location</Label>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="share-location" className="text-sm font-medium">Share Location</Label>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                         Allow the app to access your location for neighborhood features
                       </p>
                     </div>
@@ -503,6 +538,7 @@ const SettingsContent = () => {
                       id="share-location"
                       checked={privacySettings.shareLocation}
                       onCheckedChange={(checked) => handlePrivacyChange('shareLocation', checked)}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
