@@ -17,38 +17,35 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-interface PromotionData {
-  id: string;
-  user_id: string;
-  item_id: string;
-  item_type: 'service' | 'item';
+interface PostContent {
   title: string;
   description: string;
-  promotion_type: 'featured' | 'boost' | 'highlight' | 'banner';
-  status: string;
+  business_name?: string;
+  business_category?: string;
+  website_url?: string;
+  contact_info?: string;
+  call_to_action?: string;
+  images?: string[];
+}
+
+interface PromotionData {
+  id: string;
+  campaign_id: string;
+  post_type: string;
+  post_content: any; // JSON type from database
+  daily_budget: number;
+  is_active: boolean;
   created_at: string;
+  promotion_campaigns: {
+    user_id: string;
+    status: string;
+  };
   profiles?: {
     full_name: string | null;
     avatar_url: string | null;
     neighborhood: string | null;
     city: string | null;
     state: string | null;
-  } | null;
-  services?: {
-    title: string;
-    description: string;
-    price_min?: number;
-    price_max?: number;
-    price_type?: string;
-    category: string;
-    images: string[];
-  } | null;
-  marketplace_items?: {
-    title: string;
-    description: string;
-    price: number;
-    category: string;
-    images: string[];
   } | null;
 }
 
@@ -71,47 +68,32 @@ const PromotedContent = ({ promotionType, maxItems = 3 }: PromotedContentProps) 
     
     setLoading(true);
     try {
-      let query = supabase
-        .from('promotions')
+      const { data: promotionsData, error } = await supabase
+        .from('promoted_posts')
         .select(`
           *,
-          profiles:user_id (
-            full_name,
-            avatar_url,
-            neighborhood,
-            city,
-            state
+          promotion_campaigns!inner (
+            user_id,
+            status
           )
         `)
-        .eq('status', 'active')
-        .eq('promotion_type', promotionType)
+        .eq('is_active', true)
+        .eq('promotion_campaigns.status', 'active')
         .order('created_at', { ascending: false })
         .limit(maxItems);
 
-      const { data: promotionsData, error } = await query;
-
       if (error) throw error;
 
-      // Fetch related service or marketplace item data
+      // Fetch profile data for each promotion
       const enrichedPromotions = await Promise.all(
         (promotionsData || []).map(async (promotion) => {
-          if (promotion.item_type === 'service') {
-            const { data: serviceData } = await supabase
-              .from('services')
-              .select('title, description, price_min, price_max, price_type, category, images')
-              .eq('id', promotion.item_id)
-              .single();
-            
-            return { ...promotion as any, services: serviceData };
-          } else {
-            const { data: itemData } = await supabase
-              .from('marketplace_items')
-              .select('title, description, price, category, images')
-              .eq('id', promotion.item_id)
-              .single();
-            
-            return { ...promotion as any, marketplace_items: itemData };
-          }
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url, neighborhood, city, state')
+            .eq('user_id', promotion.promotion_campaigns.user_id)
+            .single();
+          
+          return { ...promotion, profiles: profileData };
         })
       );
 
@@ -138,38 +120,8 @@ const PromotedContent = ({ promotionType, maxItems = 3 }: PromotedContentProps) 
     }
   };
 
-  const getCardSize = (type: string) => {
-    switch (type) {
-      case 'banner':
-        return 'col-span-full'; // Full width banner
-      case 'featured':
-        return 'col-span-2'; // Large featured card
-      case 'boost':
-        return 'col-span-1'; // Medium card
-      case 'highlight':
-        return 'col-span-1'; // Small highlighted card
-      default:
-        return 'col-span-1';
-    }
-  };
-
-  const getItemData = (promotion: PromotionData) => {
-    return promotion.item_type === 'service' 
-      ? promotion.services 
-      : promotion.marketplace_items;
-  };
-
-  const getItemPrice = (promotion: PromotionData, itemData: any) => {
-    if (promotion.item_type === 'service') {
-      const service = itemData as typeof promotion.services;
-      if (service?.price_min && service?.price_max) {
-        return `₦${service.price_min.toLocaleString()} - ₦${service.price_max.toLocaleString()}`;
-      }
-      return service?.price_min ? `₦${service.price_min.toLocaleString()}` : 'Contact for price';
-    } else {
-      const item = itemData as typeof promotion.marketplace_items;
-      return item?.price ? `₦${item.price.toLocaleString()}` : 'Price on request';
-    }
+  const getPromotionPrice = (promotion: PromotionData) => {
+    return `₦${promotion.daily_budget.toLocaleString()}/day`;
   };
 
   if (loading || promotions.length === 0) {
@@ -180,67 +132,64 @@ const PromotedContent = ({ promotionType, maxItems = 3 }: PromotedContentProps) 
     <div className="space-y-4">
       {promotionType === 'banner' && (
         <div className="w-full">
-          {promotions.slice(0, 1).map((promotion) => {
-            const itemData = getItemData(promotion);
-            if (!itemData) return null;
-
-            return (
-              <Card key={promotion.id} className="relative overflow-hidden bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20">
-                <div className="absolute top-2 right-2">
-                  <Badge variant="default" className="bg-primary">
-                    {getPromotionIcon(promotion.promotion_type)}
-                    <span className="ml-1">Promoted</span>
-                  </Badge>
-                </div>
-                
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row gap-4 items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Avatar>
-                          <AvatarImage src={promotion.profiles?.avatar_url || ''} />
-                          <AvatarFallback>
-                            {promotion.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-medium">{promotion.profiles?.full_name}</h4>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {promotion.profiles?.neighborhood || promotion.profiles?.city}
-                          </div>
+          {promotions.slice(0, 1).map((promotion) => (
+            <Card key={promotion.id} className="relative overflow-hidden bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary/20">
+              <div className="absolute top-2 right-2">
+                <Badge variant="default" className="bg-primary">
+                  {getPromotionIcon(promotionType)}
+                  <span className="ml-1">Promoted</span>
+                </Badge>
+              </div>
+              
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar>
+                        <AvatarImage src={promotion.profiles?.avatar_url || ''} />
+                        <AvatarFallback>
+                          {promotion.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-medium">{promotion.profiles?.full_name}</h4>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {promotion.profiles?.neighborhood || promotion.profiles?.city}
                         </div>
-                      </div>
-                      
-                      <h3 className="text-xl font-bold mb-2">{itemData.title}</h3>
-                      <p className="text-muted-foreground mb-4">{itemData.description}</p>
-                      
-                      <div className="flex items-center gap-4">
-                        <Badge variant="secondary">
-                          {getItemPrice(promotion, itemData)}
-                        </Badge>
-                        <Badge variant="outline">{itemData.category}</Badge>
-                        <Button size="sm" className="ml-auto">
-                          View Details
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </Button>
                       </div>
                     </div>
                     
-                    {itemData.images && itemData.images.length > 0 && (
-                      <div className="w-full md:w-48 h-32 md:h-40">
-                        <img
-                          src={itemData.images[0]}
-                          alt={itemData.title}
-                          className="w-full h-full object-cover rounded-md"
-                        />
-                      </div>
-                    )}
+                    <h3 className="text-xl font-bold mb-2">{promotion.post_content.title}</h3>
+                    <p className="text-muted-foreground mb-4">{promotion.post_content.description}</p>
+                    
+                    <div className="flex items-center gap-4">
+                      <Badge variant="secondary">
+                        {getPromotionPrice(promotion)}
+                      </Badge>
+                      {promotion.post_content.business_category && (
+                        <Badge variant="outline">{promotion.post_content.business_category}</Badge>
+                      )}
+                      <Button size="sm" className="ml-auto">
+                        {promotion.post_content.call_to_action || 'Learn More'}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  
+                  {promotion.post_content.images && promotion.post_content.images.length > 0 && (
+                    <div className="w-full md:w-48 h-32 md:h-40">
+                      <img
+                        src={promotion.post_content.images[0]}
+                        alt={promotion.post_content.title}
+                        className="w-full h-full object-cover rounded-md"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
@@ -248,83 +197,80 @@ const PromotedContent = ({ promotionType, maxItems = 3 }: PromotedContentProps) 
         <div className={`grid gap-4 ${
           promotionType === 'featured' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'
         }`}>
-          {promotions.map((promotion) => {
-            const itemData = getItemData(promotion);
-            if (!itemData) return null;
+          {promotions.map((promotion) => (
+            <Card 
+              key={promotion.id} 
+              className={`relative overflow-hidden transition-all hover:shadow-lg ${
+                promotionType === 'featured' 
+                  ? 'border-2 border-primary/30 bg-primary/5' 
+                  : promotionType === 'highlight'
+                  ? 'border-l-4 border-l-primary bg-primary/5'
+                  : 'border-primary/20'
+              }`}
+            >
+              <div className="absolute top-2 right-2 z-10">
+                <Badge variant="default" className="bg-primary text-xs">
+                  {getPromotionIcon(promotionType)}
+                  <span className="ml-1">Promoted</span>
+                </Badge>
+              </div>
 
-            return (
-              <Card 
-                key={promotion.id} 
-                className={`relative overflow-hidden transition-all hover:shadow-lg ${
-                  promotionType === 'featured' 
-                    ? 'border-2 border-primary/30 bg-primary/5' 
-                    : promotionType === 'highlight'
-                    ? 'border-l-4 border-l-primary bg-primary/5'
-                    : 'border-primary/20'
-                }`}
-              >
-                <div className="absolute top-2 right-2 z-10">
-                  <Badge variant="default" className="bg-primary text-xs">
-                    {getPromotionIcon(promotion.promotion_type)}
-                    <span className="ml-1">Promoted</span>
-                  </Badge>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className={promotionType === 'featured' ? 'h-10 w-10' : 'h-8 w-8'}>
+                    <AvatarImage src={promotion.profiles?.avatar_url || ''} />
+                    <AvatarFallback>
+                      {promotion.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className={`font-medium ${promotionType === 'featured' ? 'text-base' : 'text-sm'}`}>
+                      {promotion.profiles?.full_name}
+                    </h4>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {promotion.profiles?.neighborhood || promotion.profiles?.city}
+                    </div>
+                  </div>
                 </div>
+              </CardHeader>
 
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className={promotionType === 'featured' ? 'h-10 w-10' : 'h-8 w-8'}>
-                      <AvatarImage src={promotion.profiles?.avatar_url || ''} />
-                      <AvatarFallback>
-                        {promotion.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className={`font-medium ${promotionType === 'featured' ? 'text-base' : 'text-sm'}`}>
-                        {promotion.profiles?.full_name}
-                      </h4>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {promotion.profiles?.neighborhood || promotion.profiles?.city}
-                      </div>
-                    </div>
+              <CardContent className="pt-0">
+                {promotion.post_content.images && promotion.post_content.images.length > 0 && (
+                  <div className={`mb-3 ${promotionType === 'featured' ? 'h-48' : 'h-32'}`}>
+                    <img
+                      src={promotion.post_content.images[0]}
+                      alt={promotion.post_content.title}
+                      className="w-full h-full object-cover rounded-md"
+                    />
                   </div>
-                </CardHeader>
-
-                <CardContent className="pt-0">
-                  {itemData.images && itemData.images.length > 0 && (
-                    <div className={`mb-3 ${promotionType === 'featured' ? 'h-48' : 'h-32'}`}>
-                      <img
-                        src={itemData.images[0]}
-                        alt={itemData.title}
-                        className="w-full h-full object-cover rounded-md"
-                      />
-                    </div>
-                  )}
-                  
-                  <h3 className={`font-semibold mb-2 ${promotionType === 'featured' ? 'text-lg' : 'text-sm'}`}>
-                    {itemData.title}
-                  </h3>
-                  <p className={`text-muted-foreground mb-3 ${promotionType === 'featured' ? 'text-sm' : 'text-xs'} line-clamp-2`}>
-                    {itemData.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {getItemPrice(promotion, itemData)}
-                      </Badge>
+                )}
+                
+                <h3 className={`font-semibold mb-2 ${promotionType === 'featured' ? 'text-lg' : 'text-sm'}`}>
+                  {promotion.post_content.title}
+                </h3>
+                <p className={`text-muted-foreground mb-3 ${promotionType === 'featured' ? 'text-sm' : 'text-xs'} line-clamp-2`}>
+                  {promotion.post_content.description}
+                </p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {getPromotionPrice(promotion)}
+                    </Badge>
+                    {promotion.post_content.business_category && (
                       <Badge variant="outline" className="text-xs">
-                        {itemData.category}
+                        {promotion.post_content.business_category}
                       </Badge>
-                    </div>
-                    <Button size="sm" variant="ghost">
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <Button size="sm" variant="ghost">
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
