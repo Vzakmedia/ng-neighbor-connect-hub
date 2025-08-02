@@ -159,56 +159,52 @@ const SettingsContent = () => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
-      <div className="flex items-center gap-2">
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="flex items-center gap-2 mb-4 sm:mb-6 px-1">
         <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
         <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
       </div>
 
-      <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1 p-1">
-          <TabsTrigger value="notifications" className="text-xs sm:text-sm px-2 py-2">
-            <Bell className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Notifications</span>
-            <span className="sm:hidden">Notify</span>
-          </TabsTrigger>
-          <TabsTrigger value="emergency" className="text-xs sm:text-sm px-2 py-2">
-            <AlertTriangle className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Emergency</span>
-            <span className="sm:hidden">Emergency</span>
-          </TabsTrigger>
-          <TabsTrigger value="contacts" className="text-xs sm:text-sm px-2 py-2">
-            <Users className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Contacts</span>
-            <span className="sm:hidden">Contacts</span>
-          </TabsTrigger>
-          <TabsTrigger value="privacy" className="text-xs sm:text-sm px-2 py-2">
-            <Shield className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Privacy</span>
-            <span className="sm:hidden">Privacy</span>
-          </TabsTrigger>
-          <TabsTrigger value="account" className="text-xs sm:text-sm px-2 py-2">
-            <User className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Account</span>
-            <span className="sm:hidden">Account</span>
-          </TabsTrigger>
-          <TabsTrigger value="data" className="text-xs sm:text-sm px-2 py-2">
-            <Download className="h-4 w-4 sm:hidden mr-1" />
-            <span className="hidden sm:inline">Data</span>
-            <span className="sm:hidden">Data</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="notifications" className="w-full max-w-full">
+        <div className="w-full overflow-x-auto pb-2 mb-4">
+          <TabsList className="inline-flex h-auto min-w-full w-max p-1 gap-1">
+            <TabsTrigger value="notifications" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Bell className="h-3 w-3 mr-1" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="emergency" className="text-xs px-2 py-2 whitespace-nowrap">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Emergency
+            </TabsTrigger>
+            <TabsTrigger value="contacts" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Users className="h-3 w-3 mr-1" />
+              Contacts
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Shield className="h-3 w-3 mr-1" />
+              Privacy
+            </TabsTrigger>
+            <TabsTrigger value="account" className="text-xs px-2 py-2 whitespace-nowrap">
+              <User className="h-3 w-3 mr-1" />
+              Account
+            </TabsTrigger>
+            <TabsTrigger value="data" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Download className="h-3 w-3 mr-1" />
+              Data
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Notifications Tab */}
-        <TabsContent value="notifications">
-          <Card>
+        <TabsContent value="notifications" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Bell className="h-5 w-5" />
                 Notification Preferences
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 overflow-x-hidden">
               <div className="space-y-4">
                 <h3 className="font-medium">Safety & Emergency</h3>
                 <div className="space-y-4">
@@ -418,45 +414,47 @@ const SettingsContent = () => {
         </TabsContent>
 
         {/* Emergency Tab */}
-        <TabsContent value="emergency">
-          <Card>
+        <TabsContent value="emergency" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertTriangle className="h-5 w-5" />
                 Emergency Settings
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-hidden">
               <EmergencySettings />
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Contacts Tab */}
-        <TabsContent value="contacts">
-          <EmergencyContacts />
+        <TabsContent value="contacts" className="w-full max-w-full">
+          <div className="w-full max-w-full overflow-hidden">
+            <EmergencyContacts />
+          </div>
         </TabsContent>
 
         {/* Privacy Tab */}
-        <TabsContent value="privacy">
-          <Card>
+        <TabsContent value="privacy" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Shield className="h-5 w-5" />
                 Privacy & Security
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 overflow-x-hidden">
               <div className="space-y-4">
                 <h3 className="font-medium">Profile Visibility</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="profile-visibility">Who can see your profile?</Label>
+                    <Label htmlFor="profile-visibility" className="text-sm font-medium">Who can see your profile?</Label>
                     <Select
                       value={privacySettings.profileVisibility}
                       onValueChange={(value) => handlePrivacyChange('profileVisibility', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -548,21 +546,21 @@ const SettingsContent = () => {
         </TabsContent>
 
         {/* Account Tab */}
-        <TabsContent value="account">
-          <Card>
+        <TabsContent value="account" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="h-5 w-5" />
                 Account Settings
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 overflow-x-hidden">
               <div className="space-y-4">
                 <h3 className="font-medium">Sign Out</h3>
                 <p className="text-sm text-muted-foreground">
                   Sign out of your account on this device.
                 </p>
-                <Button variant="outline" onClick={handleSignOut}>
+                <Button variant="outline" onClick={handleSignOut} className="w-full sm:w-auto">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </Button>
@@ -578,12 +576,12 @@ const SettingsContent = () => {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
+                    <Button variant="destructive" className="w-full sm:w-auto">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Account
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -591,9 +589,9 @@ const SettingsContent = () => {
                         and remove your data from our servers.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteAccount}>Delete Account</AlertDialogAction>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteAccount} className="w-full sm:w-auto">Delete Account</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -603,21 +601,21 @@ const SettingsContent = () => {
         </TabsContent>
 
         {/* Data Tab */}
-        <TabsContent value="data">
-          <Card>
+        <TabsContent value="data" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Download className="h-5 w-5" />
                 Data & Privacy
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 overflow-x-hidden">
               <div className="space-y-4">
                 <h3 className="font-medium">Export Your Data</h3>
                 <p className="text-sm text-muted-foreground">
                   Download a copy of your personal data, including your profile, posts, and activity.
                 </p>
-                <Button variant="outline" onClick={handleExportData}>
+                <Button variant="outline" onClick={handleExportData} className="w-full sm:w-auto">
                   <Download className="h-4 w-4 mr-2" />
                   Request Data Export
                 </Button>
@@ -630,7 +628,7 @@ const SettingsContent = () => {
                 <p className="text-sm text-muted-foreground">
                   Import data from a file or another service.
                 </p>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full sm:w-auto">
                   <Upload className="h-4 w-4 mr-2" />
                   Import Data
                 </Button>

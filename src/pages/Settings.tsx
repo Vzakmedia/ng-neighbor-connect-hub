@@ -32,8 +32,8 @@ const Settings = () => {
       <Header />
       <Navigation />
       
-      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
-        <div className="container py-6 max-w-4xl">
+      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0 min-w-0">
+        <div className="container py-4 px-4 max-w-4xl mx-auto overflow-x-hidden">
           <SettingsContent />
         </div>
       </main>
