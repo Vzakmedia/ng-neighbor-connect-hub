@@ -331,42 +331,42 @@ const ProfileOverview = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full overflow-hidden space-y-4 sm:space-y-6">
       {/* Profile Header Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              My Profile
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <User className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">My Profile</span>
             </CardTitle>
             {!editing ? (
-              <Button variant="outline" onClick={() => setEditing(true)}>
+              <Button variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">
                 <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
+                <span className="sm:inline">Edit Profile</span>
               </Button>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={cancelEditing}>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button variant="outline" onClick={cancelEditing} className="w-full sm:w-auto">
                   <X className="h-4 w-4 mr-2" />
-                  Cancel
+                  <span className="sm:inline">Cancel</span>
                 </Button>
-                <Button onClick={handleSubmit}>
+                <Button onClick={handleSubmit} className="w-full sm:w-auto">
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  <span className="sm:inline">Save</span>
                 </Button>
               </div>
             )}
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Profile Picture Section */}
-          <div className="flex items-start space-x-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+            <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
                 <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="text-xl bg-gradient-primary text-white">
+                <AvatarFallback className="text-lg sm:text-xl bg-gradient-primary text-white">
                   {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -394,29 +394,29 @@ const ProfileOverview = () => {
               />
             </div>
             
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 w-full space-y-3 sm:space-y-4">
               {/* Name Section */}
-              <div>
+              <div className="text-center sm:text-left">
                 {editing ? (
                   <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name</Label>
+                    <Label htmlFor="full_name" className="text-sm">Full Name</Label>
                     <Input
                       id="full_name"
                       value={formData.full_name}
                       onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                       placeholder="Enter your full name"
-                      className="text-lg font-semibold"
+                      className="text-base sm:text-lg font-semibold w-full"
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-semibold">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-semibold truncate">
                       {profile?.full_name || 'No name set'}
                     </h2>
                     {profile?.is_verified && (
-                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 flex-shrink-0">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Verified
+                        <span className="text-xs">Verified</span>
                       </Badge>
                     )}
                   </div>
@@ -427,18 +427,18 @@ const ProfileOverview = () => {
               <div>
                 {editing ? (
                   <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
+                    <Label htmlFor="bio" className="text-sm">Bio</Label>
                     <Textarea
                       id="bio"
                       value={formData.bio}
                       onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                       placeholder="Tell us about yourself..."
                       rows={3}
-                      className="resize-none"
+                      className="resize-none w-full"
                     />
                   </div>
                 ) : (
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-sm sm:text-base text-center sm:text-left">
                     {profile?.bio || 'No bio available'}
                   </p>
                 )}
@@ -449,124 +449,129 @@ const ProfileOverview = () => {
       </Card>
 
       {/* Contact Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5" />
-            Contact Information
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Phone className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Contact Information</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="w-full">
               {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-sm">Phone Number</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="Enter your phone number"
+                    className="w-full"
                   />
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{profile?.phone || 'No phone number'}</span>
+                <div className="flex items-center gap-2 w-full">
+                  <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm sm:text-base truncate">{profile?.phone || 'No phone number'}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{user?.email || 'No email'}</span>
+            <div className="flex items-center gap-2 w-full">
+              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm sm:text-base truncate">{user?.email || 'No email'}</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Location Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Location Details
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <MapPin className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Location Details</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+        <CardContent className="p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="w-full">
               {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
+                  <Label htmlFor="state" className="text-sm">State</Label>
                   <Input
                     id="state"
                     value={formData.state}
                     onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
                     placeholder="Enter your state"
+                    className="w-full"
                   />
                 </div>
               ) : (
                 <div>
-                  <Label className="text-sm text-muted-foreground">State</Label>
-                  <p className="font-medium">{profile?.state || 'Not specified'}</p>
+                  <Label className="text-xs sm:text-sm text-muted-foreground">State</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.state || 'Not specified'}</p>
                 </div>
               )}
             </div>
 
-            <div>
+            <div className="w-full">
               {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city" className="text-sm">City</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                     placeholder="Enter your city"
+                    className="w-full"
                   />
                 </div>
               ) : (
                 <div>
-                  <Label className="text-sm text-muted-foreground">City</Label>
-                  <p className="font-medium">{profile?.city || 'Not specified'}</p>
+                  <Label className="text-xs sm:text-sm text-muted-foreground">City</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.city || 'Not specified'}</p>
                 </div>
               )}
             </div>
 
-            <div>
+            <div className="w-full">
               {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Neighborhood</Label>
+                  <Label htmlFor="neighborhood" className="text-sm">Neighborhood</Label>
                   <Input
                     id="neighborhood"
                     value={formData.neighborhood}
                     onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
                     placeholder="Enter your neighborhood"
+                    className="w-full"
                   />
                 </div>
               ) : (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Neighborhood</Label>
-                  <p className="font-medium">{profile?.neighborhood || 'Not specified'}</p>
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Neighborhood</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.neighborhood || 'Not specified'}</p>
                 </div>
               )}
             </div>
 
-            <div className="md:col-span-2">
+            <div className="w-full lg:col-span-2">
               {editing ? (
                 <div className="space-y-2">
-                  <Label htmlFor="address">Full Address</Label>
+                  <Label htmlFor="address" className="text-sm">Full Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                     placeholder="Enter your full address"
+                    className="w-full"
                   />
                 </div>
               ) : (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Full Address</Label>
-                  <p className="font-medium">{profile?.address || 'Not specified'}</p>
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Full Address</Label>
+                  <p className="font-medium text-sm sm:text-base break-words">{profile?.address || 'Not specified'}</p>
                 </div>
               )}
             </div>
@@ -575,20 +580,20 @@ const ProfileOverview = () => {
       </Card>
 
       {/* Account Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Account Information
+      <Card className="w-full max-w-full overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Shield className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Account Information</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm text-muted-foreground">Member Since</Label>
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="w-full">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Member Since</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">
+                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="font-medium text-sm sm:text-base">
                   {new Date(profile?.created_at || '').toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
@@ -598,23 +603,25 @@ const ProfileOverview = () => {
               </div>
             </div>
 
-            <div>
-              <Label className="text-sm text-muted-foreground">Account Status</Label>
-              <div className="flex items-center gap-2 mt-1">
+            <div className="w-full">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Account Status</Label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
                 {profile?.is_verified ? (
                   <>
-                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">Verified Account</span>
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400 text-sm sm:text-base">Verified Account</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 flex-shrink-0 w-fit">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
+                      <span className="text-xs">Verified</span>
                     </Badge>
                   </>
                 ) : (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-amber-500" />
-                    <span className="font-medium text-amber-700 dark:text-amber-400">Unverified Account</span>
-                  </>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-amber-500 flex-shrink-0" />
+                    <span className="font-medium text-amber-700 dark:text-amber-400 text-sm sm:text-base">Unverified Account</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -622,24 +629,24 @@ const ProfileOverview = () => {
 
           {!profile?.is_verified && (
             <div className="pt-4 border-t">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-foreground">Account Verification</h3>
-                  <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-medium text-foreground text-sm sm:text-base">Account Verification</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Get your account verified to build trust in the community
                   </p>
                 </div>
                 <Button 
                   onClick={handleVerificationRequest}
                   disabled={requestingVerification}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto flex-shrink-0"
                 >
                   {requestingVerification ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                   ) : (
                     <Shield className="h-4 w-4 mr-2" />
                   )}
-                  {requestingVerification ? 'Requesting...' : 'Request Verification'}
+                  <span className="text-sm">{requestingVerification ? 'Requesting...' : 'Request Verification'}</span>
                 </Button>
               </div>
             </div>
