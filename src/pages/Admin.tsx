@@ -3754,66 +3754,113 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {appConfigs.map((config) => (
-                  <div key={config.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h3 className="font-medium">{config.config_key.replace(/_/g, ' ').toUpperCase()}</h3>
-                        <p className="text-sm text-muted-foreground">{config.description}</p>
-                      </div>
-                      <Badge variant="outline">{config.config_type}</Badge>
+                {/* General Settings */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-medium">General Settings</h3>
+                      <p className="text-sm text-muted-foreground">Basic platform configuration</p>
                     </div>
-                    
-                    {config.config_type === 'theme' && (
-                      <div className="space-y-2">
-                        <Input 
-                          placeholder="Primary Color" 
-                          defaultValue={config.config_value.primary_color}
-                          className="mb-2"
-                        />
-                        <div className="flex items-center space-x-2">
-                          <Switch defaultChecked={config.config_value.dark_mode} />
-                          <span className="text-sm">Dark Mode</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {config.config_type === 'emergency_settings' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm">Alert Radius (km):</span>
-                          <Input 
-                            type="number" 
-                            defaultValue={config.config_value.auto_alert_radius}
-                            className="w-20"
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch defaultChecked={config.config_value.auto_resolve_false_alarms} />
-                          <span className="text-sm">Auto-resolve false alarms</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {config.config_type === 'app_settings' && (
-                      <div className="space-y-2">
-                        <Textarea 
-                          placeholder="Configuration JSON"
-                          defaultValue={JSON.stringify(config.config_value, null, 2)}
-                          className="font-mono text-sm"
-                        />
-                      </div>
-                    )}
-                     
-                    <Button
-                      size="sm" 
-                      className="mt-3" 
-                      onClick={() => handleConfigUpdate(config.config_key, config.config_value)}
-                    >
-                      Save Changes
-                    </Button>
+                    <Badge variant="outline">General</Badge>
                   </div>
-                ))}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="app-name">Application Name</Label>
+                        <Input id="app-name" defaultValue="Community Platform" />
+                      </div>
+                      <div>
+                        <Label htmlFor="app-version">Version</Label>
+                        <Input id="app-version" defaultValue="1.0.0" disabled />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="app-description">Description</Label>
+                      <Textarea id="app-description" defaultValue="A community platform for neighborhoods" />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={true} />
+                      <Label>Enable new user registrations</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={true} />
+                      <Label>Require email verification</Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Safety & Emergency Settings */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-medium">Safety & Emergency Settings</h3>
+                      <p className="text-sm text-muted-foreground">Configure emergency alert system</p>
+                    </div>
+                    <Badge variant="outline">Emergency</Badge>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="alert-radius">Alert Radius (km)</Label>
+                        <Input id="alert-radius" type="number" defaultValue="5" />
+                      </div>
+                      <div>
+                        <Label htmlFor="response-time">Max Response Time (min)</Label>
+                        <Input id="response-time" type="number" defaultValue="15" />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={true} />
+                      <Label>Auto-send alerts to emergency contacts</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={false} />
+                      <Label>Auto-resolve false alarms after 24h</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={true} />
+                      <Label>Enable location sharing for emergencies</Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content & Moderation Settings */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-medium">Content & Moderation</h3>
+                      <p className="text-sm text-muted-foreground">Configure content policies and moderation</p>
+                    </div>
+                    <Badge variant="outline">Moderation</Badge>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={true} />
+                      <Label>Enable automatic content scanning</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch defaultChecked={false} />
+                      <Label>Auto-hide reported content</Label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="max-post-length">Max post length (characters)</Label>
+                        <Input id="max-post-length" type="number" defaultValue="2000" />
+                      </div>
+                      <div>
+                        <Label htmlFor="max-attachments">Max attachments per post</Label>
+                        <Input id="max-attachments" type="number" defaultValue="5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save All Changes Button */}
+                <div className="flex justify-end">
+                  <Button onClick={() => toast({ title: "Settings saved", description: "All configuration changes have been saved." })}>
+                    Save All Changes
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
