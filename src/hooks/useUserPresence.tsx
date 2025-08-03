@@ -38,6 +38,7 @@ export const useUserPresence = () => {
       }
     });
 
+    console.log('Updating presence state:', { userIds: Array.from(userIds), flattened });
     setPresenceState(flattened);
     setOnlineUsers(userIds);
   }, []);
@@ -55,6 +56,7 @@ export const useUserPresence = () => {
               .on('presence', { event: 'sync' }, () => {
                 try {
                   const presences = channel.presenceState() as UserPresence;
+                  console.log('Presence sync - raw presences:', presences);
                   updatePresenceState(presences);
                 } catch (error) {
                   console.error('Error syncing presence:', error);
@@ -62,9 +64,15 @@ export const useUserPresence = () => {
               })
               .on('presence', { event: 'join' }, ({ key, newPresences }) => {
                 console.log('User joined:', key, newPresences);
+                // Manually sync after join to get updated state
+                const presences = channel.presenceState() as UserPresence;
+                updatePresenceState(presences);
               })
               .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
                 console.log('User left:', key, leftPresences);
+                // Manually sync after leave to get updated state  
+                const presences = channel.presenceState() as UserPresence;
+                updatePresenceState(presences);
               })
               .subscribe(async (status) => {
                 if (status !== 'SUBSCRIBED') return;
@@ -92,7 +100,7 @@ export const useUserPresence = () => {
               });
           },
           {
-            channelName: `online_users_${user.id}`,
+            channelName: 'global_user_presence', // Use shared channel for all users
             debugName: 'UserPresence',
             onError: () => {
               // Fallback: Don't update presence state on polling
