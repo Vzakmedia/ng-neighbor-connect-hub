@@ -129,7 +129,9 @@ const Header = () => {
   };
 
   const subscribeToMessages = () => {
-    console.log('Header: Starting safe subscription to messages for user:', user?.id);
+    if (!user) return;
+    
+    console.log('Header: Starting safe subscription to messages for user:', user.id);
     
     createSafeSubscription(
       (channel) => channel
@@ -139,7 +141,7 @@ const Header = () => {
             event: 'INSERT',
             schema: 'public',
             table: 'direct_messages',
-            filter: `recipient_id=eq.${user?.id}`
+            filter: `recipient_id=eq.${user.id}`
           },
            async (payload) => {
              console.log('Header: Received message INSERT event:', payload);
@@ -161,7 +163,8 @@ const Header = () => {
       {
         channelName: 'header-messages',
         onError: () => {
-          console.error('Header: Message notification subscription error');
+          console.log('Header: Message subscription error - fallback triggered');
+          // No additional action needed - polling will handle it
         },
         pollInterval: 30000,
         debugName: 'HeaderMessages'
