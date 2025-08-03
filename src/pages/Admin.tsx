@@ -1038,8 +1038,12 @@ const Admin = () => {
   };
 
   const fetchAutomations = async () => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin) {
+      console.log('fetchAutomations: Not super admin, skipping');
+      return;
+    }
     
+    console.log('fetchAutomations: Loading sample automation data...');
     try {
       // Since there's no automations table yet, let's create sample data
       // In a real implementation, this would fetch from an automations table
@@ -1083,18 +1087,21 @@ const Admin = () => {
       ];
 
       setAutomations(sampleAutomations);
+      console.log('fetchAutomations: Loaded', sampleAutomations.length, 'automations');
       
       // Update stats with active automations count
       setStats(prev => ({
         ...prev,
         activeAutomations: sampleAutomations.filter(a => a.status === 'active').length
       }));
+      console.log('fetchAutomations: Active automations count:', sampleAutomations.filter(a => a.status === 'active').length);
     } catch (error) {
       console.error('Error fetching automations:', error);
     }
   };
 
   const handleConfigureAutomation = (automation: any) => {
+    console.log('Configure automation clicked:', automation);
     toast({
       title: "Configure Automation",
       description: `Opening configuration for ${automation.name}`,
@@ -1103,6 +1110,7 @@ const Admin = () => {
   };
 
   const handleViewAutomationLogs = (automation: any) => {
+    console.log('View automation logs clicked:', automation);
     toast({
       title: "Automation Logs",
       description: `Viewing logs for ${automation.name}`,
@@ -1147,6 +1155,7 @@ const Admin = () => {
   };
 
   const handleCreateAutomation = () => {
+    console.log('Create automation clicked');
     toast({
       title: "Create Automation",
       description: "Automation creation wizard coming soon",
