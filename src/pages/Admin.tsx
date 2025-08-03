@@ -3753,111 +3753,592 @@ const Admin = () => {
               <p className="text-sm text-muted-foreground">Manage platform settings and configuration</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* General Settings */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="font-medium">General Settings</h3>
-                      <p className="text-sm text-muted-foreground">Basic platform configuration</p>
+                      <h3 className="text-xl font-semibold">General Settings</h3>
+                      <p className="text-sm text-muted-foreground">Basic platform configuration and core functionality</p>
                     </div>
                     <Badge variant="outline">General</Badge>
                   </div>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor="app-name">Application Name</Label>
-                        <Input id="app-name" defaultValue="Community Platform" />
+                        <Input id="app-name" defaultValue="NeighborConnect" onChange={(e) => handleConfigUpdate('app_name', e.target.value)} />
                       </div>
                       <div>
                         <Label htmlFor="app-version">Version</Label>
-                        <Input id="app-version" defaultValue="1.0.0" disabled />
+                        <Input id="app-version" defaultValue="1.0.0" onChange={(e) => handleConfigUpdate('app_version', e.target.value)} />
+                      </div>
+                      <div>
+                        <Label htmlFor="timezone">Default Timezone</Label>
+                        <Select onValueChange={(value) => handleConfigUpdate('default_timezone', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                            <SelectItem value="America/Chicago">Central Time</SelectItem>
+                            <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                            <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                            <SelectItem value="UTC">UTC</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="app-description">Description</Label>
-                      <Textarea id="app-description" defaultValue="A community platform for neighborhoods" />
+                      <Label htmlFor="app-description">Application Description</Label>
+                      <Textarea id="app-description" defaultValue="Connecting neighbors, building stronger communities through safety, communication, and local commerce." onChange={(e) => handleConfigUpdate('app_description', e.target.value)} />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={true} />
-                      <Label>Enable new user registrations</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable new user registrations</Label>
+                          <p className="text-sm text-muted-foreground">Allow new users to create accounts</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('allow_registration', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Require email verification</Label>
+                          <p className="text-sm text-muted-foreground">New users must verify email addresses</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('require_email_verification', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Maintenance mode</Label>
+                          <p className="text-sm text-muted-foreground">Show maintenance page to all users</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('maintenance_mode', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Debug mode</Label>
+                          <p className="text-sm text-muted-foreground">Enable detailed error logging</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('debug_mode', checked)} />
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={true} />
-                      <Label>Require email verification</Label>
+                  </div>
+                </div>
+
+                {/* Authentication & Security */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">Authentication & Security</h3>
+                      <p className="text-sm text-muted-foreground">Configure security policies and authentication settings</p>
+                    </div>
+                    <Badge variant="outline">Security</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="session-timeout">Session Timeout (hours)</Label>
+                        <Input id="session-timeout" type="number" defaultValue="24" onChange={(e) => handleConfigUpdate('session_timeout_hours', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="max-login-attempts">Max Login Attempts</Label>
+                        <Input id="max-login-attempts" type="number" defaultValue="5" onChange={(e) => handleConfigUpdate('max_login_attempts', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="lockout-duration">Lockout Duration (minutes)</Label>
+                        <Input id="lockout-duration" type="number" defaultValue="15" onChange={(e) => handleConfigUpdate('lockout_duration_minutes', parseInt(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Two-Factor Authentication</Label>
+                          <p className="text-sm text-muted-foreground">Enable 2FA for enhanced security</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('enable_2fa', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Social Login</Label>
+                          <p className="text-sm text-muted-foreground">Allow login with Google, Facebook, etc.</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_social_login', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Strong Password Requirements</Label>
+                          <p className="text-sm text-muted-foreground">Enforce complex password rules</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('strong_passwords', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Email Notifications for Login</Label>
+                          <p className="text-sm text-muted-foreground">Notify users of new login attempts</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('login_notifications', checked)} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Safety & Emergency Settings */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="font-medium">Safety & Emergency Settings</h3>
-                      <p className="text-sm text-muted-foreground">Configure emergency alert system</p>
+                      <h3 className="text-xl font-semibold">Safety & Emergency Settings</h3>
+                      <p className="text-sm text-muted-foreground">Configure emergency alert system and safety features</p>
                     </div>
                     <Badge variant="outline">Emergency</Badge>
                   </div>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
                         <Label htmlFor="alert-radius">Alert Radius (km)</Label>
-                        <Input id="alert-radius" type="number" defaultValue="5" />
+                        <Input id="alert-radius" type="number" defaultValue="5" onChange={(e) => handleConfigUpdate('emergency_alert_radius', parseInt(e.target.value))} />
                       </div>
                       <div>
                         <Label htmlFor="response-time">Max Response Time (min)</Label>
-                        <Input id="response-time" type="number" defaultValue="15" />
+                        <Input id="response-time" type="number" defaultValue="15" onChange={(e) => handleConfigUpdate('max_response_time', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="auto-escalation">Auto-escalate After (min)</Label>
+                        <Input id="auto-escalation" type="number" defaultValue="60" onChange={(e) => handleConfigUpdate('auto_escalate_minutes', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="false-alarm-timeout">False Alarm Timeout (hours)</Label>
+                        <Input id="false-alarm-timeout" type="number" defaultValue="24" onChange={(e) => handleConfigUpdate('false_alarm_timeout_hours', parseInt(e.target.value))} />
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={true} />
-                      <Label>Auto-send alerts to emergency contacts</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={false} />
-                      <Label>Auto-resolve false alarms after 24h</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={true} />
-                      <Label>Enable location sharing for emergencies</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Auto-send alerts to emergency contacts</Label>
+                          <p className="text-sm text-muted-foreground">Automatically notify emergency contacts</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('auto_emergency_alerts', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Auto-resolve false alarms</Label>
+                          <p className="text-sm text-muted-foreground">Automatically resolve false alarms after timeout</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('auto_resolve_false_alarms', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable location sharing for emergencies</Label>
+                          <p className="text-sm text-muted-foreground">Allow precise location sharing during alerts</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_location_sharing', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Panic Button Feature</Label>
+                          <p className="text-sm text-muted-foreground">Show panic button for immediate help</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_panic_button', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Audio Alerts</Label>
+                          <p className="text-sm text-muted-foreground">Play sound alerts for emergency notifications</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_audio_alerts', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Silent Mode Override</Label>
+                          <p className="text-sm text-muted-foreground">Override device silent mode for emergencies</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('override_silent_mode', checked)} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Content & Moderation Settings */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="font-medium">Content & Moderation</h3>
-                      <p className="text-sm text-muted-foreground">Configure content policies and moderation</p>
+                      <h3 className="text-xl font-semibold">Content & Moderation</h3>
+                      <p className="text-sm text-muted-foreground">Configure content policies, moderation tools, and user-generated content rules</p>
                     </div>
                     <Badge variant="outline">Moderation</Badge>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={true} />
-                      <Label>Enable automatic content scanning</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch defaultChecked={false} />
-                      <Label>Auto-hide reported content</Label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
-                        <Label htmlFor="max-post-length">Max post length (characters)</Label>
-                        <Input id="max-post-length" type="number" defaultValue="2000" />
+                        <Label htmlFor="max-post-length">Max Post Length</Label>
+                        <Input id="max-post-length" type="number" defaultValue="5000" onChange={(e) => handleConfigUpdate('max_post_length', parseInt(e.target.value))} />
                       </div>
                       <div>
-                        <Label htmlFor="max-attachments">Max attachments per post</Label>
-                        <Input id="max-attachments" type="number" defaultValue="5" />
+                        <Label htmlFor="max-attachments">Max Attachments</Label>
+                        <Input id="max-attachments" type="number" defaultValue="10" onChange={(e) => handleConfigUpdate('max_attachments', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="max-file-size">Max File Size (MB)</Label>
+                        <Input id="max-file-size" type="number" defaultValue="25" onChange={(e) => handleConfigUpdate('max_file_size_mb', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="post-cooldown">Post Cooldown (seconds)</Label>
+                        <Input id="post-cooldown" type="number" defaultValue="30" onChange={(e) => handleConfigUpdate('post_cooldown_seconds', parseInt(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Automatic content scanning</Label>
+                          <p className="text-sm text-muted-foreground">Scan posts for inappropriate content using AI</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('auto_content_moderation', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Auto-hide reported content</Label>
+                          <p className="text-sm text-muted-foreground">Immediately hide content when reported</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('auto_hide_reported', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Profanity Filter</Label>
+                          <p className="text-sm text-muted-foreground">Filter inappropriate language automatically</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_profanity_filter', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Image Content Moderation</Label>
+                          <p className="text-sm text-muted-foreground">Scan uploaded images for inappropriate content</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_image_moderation', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>User Reputation System</Label>
+                          <p className="text-sm text-muted-foreground">Enable user reputation scores based on behavior</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_reputation_system', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Comment Approval Required</Label>
+                          <p className="text-sm text-muted-foreground">Require manual approval for all comments</p>
+                        </div>
+                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('require_comment_approval', checked)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business & Marketplace */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">Business & Marketplace</h3>
+                      <p className="text-sm text-muted-foreground">Configure business features, marketplace settings, and monetization options</p>
+                    </div>
+                    <Badge variant="outline">Business</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label htmlFor="business-fee">Business Verification Fee ($)</Label>
+                        <Input id="business-fee" type="number" defaultValue="25" onChange={(e) => handleConfigUpdate('business_verification_fee', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="marketplace-fee">Marketplace Fee (%)</Label>
+                        <Input id="marketplace-fee" type="number" defaultValue="3" onChange={(e) => handleConfigUpdate('marketplace_fee_percent', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="promotion-fee">Promotion Fee ($)</Label>
+                        <Input id="promotion-fee" type="number" defaultValue="10" onChange={(e) => handleConfigUpdate('promotion_fee', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="escrow-hold">Escrow Hold (days)</Label>
+                        <Input id="escrow-hold" type="number" defaultValue="7" onChange={(e) => handleConfigUpdate('escrow_hold_days', parseInt(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Require Business Verification</Label>
+                          <p className="text-sm text-muted-foreground">Business accounts must be verified to list services</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('require_business_verification', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Marketplace</Label>
+                          <p className="text-sm text-muted-foreground">Allow users to buy and sell items</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_marketplace', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Promotions</Label>
+                          <p className="text-sm text-muted-foreground">Allow paid promotions and advertisements</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_promotions', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Service Bookings</Label>
+                          <p className="text-sm text-muted-foreground">Allow users to book services directly</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_service_bookings', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Escrow Protection</Label>
+                          <p className="text-sm text-muted-foreground">Hold payments in escrow until completion</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_escrow_protection', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Reviews & Ratings</Label>
+                          <p className="text-sm text-muted-foreground">Enable review system for businesses</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_reviews_ratings', checked)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notifications & Communication */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">Notifications & Communication</h3>
+                      <p className="text-sm text-muted-foreground">Configure notification preferences and communication features</p>
+                    </div>
+                    <Badge variant="outline">Communication</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="email-notifications">Email Notifications</Label>
+                        <Select onValueChange={(value) => handleConfigUpdate('email_notifications', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select policy" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All notifications</SelectItem>
+                            <SelectItem value="important">Important only</SelectItem>
+                            <SelectItem value="emergency">Emergency only</SelectItem>
+                            <SelectItem value="disabled">Disabled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="push-notifications">Push Notifications</Label>
+                        <Select onValueChange={(value) => handleConfigUpdate('push_notifications', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select policy" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All notifications</SelectItem>
+                            <SelectItem value="important">Important only</SelectItem>
+                            <SelectItem value="emergency">Emergency only</SelectItem>
+                            <SelectItem value="disabled">Disabled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Direct Messages</Label>
+                          <p className="text-sm text-muted-foreground">Allow private messaging between users</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_direct_messages', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Video Calls</Label>
+                          <p className="text-sm text-muted-foreground">Allow video calling between users</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_video_calls', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Group Chat Feature</Label>
+                          <p className="text-sm text-muted-foreground">Enable group messaging capabilities</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_group_chat', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Read Receipts</Label>
+                          <p className="text-sm text-muted-foreground">Show when messages are read</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_read_receipts', checked)} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="message-retention">Message Retention (days)</Label>
+                        <Input id="message-retention" type="number" defaultValue="365" onChange={(e) => handleConfigUpdate('message_retention_days', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="notification-quiet-hours">Quiet Hours (24h format)</Label>
+                        <Input id="notification-quiet-hours" defaultValue="22:00-08:00" onChange={(e) => handleConfigUpdate('quiet_hours', e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Privacy & Data Management */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">Privacy & Data Management</h3>
+                      <p className="text-sm text-muted-foreground">Configure privacy settings, data handling, and compliance features</p>
+                    </div>
+                    <Badge variant="outline">Privacy</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="data-retention">Data Retention (days)</Label>
+                        <Input id="data-retention" type="number" defaultValue="2555" onChange={(e) => handleConfigUpdate('data_retention_days', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="backup-frequency">Backup Frequency</Label>
+                        <Select onValueChange={(value) => handleConfigUpdate('backup_frequency', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="cookie-consent">Cookie Consent Duration (days)</Label>
+                        <Input id="cookie-consent" type="number" defaultValue="365" onChange={(e) => handleConfigUpdate('cookie_consent_days', parseInt(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Analytics</Label>
+                          <p className="text-sm text-muted-foreground">Collect anonymous usage data for improvements</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_analytics', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Allow Data Export</Label>
+                          <p className="text-sm text-muted-foreground">Users can export their personal data</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('allow_data_export', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Allow Account Deletion</Label>
+                          <p className="text-sm text-muted-foreground">Users can permanently delete their accounts</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('allow_account_deletion', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>GDPR Compliance Mode</Label>
+                          <p className="text-sm text-muted-foreground">Enable additional GDPR compliance features</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('gdpr_compliance_mode', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Show Privacy Dashboard</Label>
+                          <p className="text-sm text-muted-foreground">Provide users with privacy control dashboard</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('show_privacy_dashboard', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Anonymous Usage Statistics</Label>
+                          <p className="text-sm text-muted-foreground">Collect non-personal usage statistics</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('anonymous_statistics', checked)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Advanced Performance & Scaling */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">Performance & Scaling</h3>
+                      <p className="text-sm text-muted-foreground">Configure performance optimization and scaling settings</p>
+                    </div>
+                    <Badge variant="outline">Performance</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label htmlFor="cache-ttl">Cache TTL (minutes)</Label>
+                        <Input id="cache-ttl" type="number" defaultValue="60" onChange={(e) => handleConfigUpdate('cache_ttl_minutes', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="rate-limit">Rate Limit (req/min)</Label>
+                        <Input id="rate-limit" type="number" defaultValue="100" onChange={(e) => handleConfigUpdate('rate_limit_per_minute', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="max-concurrent">Max Concurrent Users</Label>
+                        <Input id="max-concurrent" type="number" defaultValue="10000" onChange={(e) => handleConfigUpdate('max_concurrent_users', parseInt(e.target.value))} />
+                      </div>
+                      <div>
+                        <Label htmlFor="db-timeout">Database Timeout (sec)</Label>
+                        <Input id="db-timeout" type="number" defaultValue="30" onChange={(e) => handleConfigUpdate('database_timeout_seconds', parseInt(e.target.value))} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable CDN</Label>
+                          <p className="text-sm text-muted-foreground">Use Content Delivery Network for static assets</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_cdn', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Image Compression</Label>
+                          <p className="text-sm text-muted-foreground">Automatically compress uploaded images</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_image_compression', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Lazy Loading</Label>
+                          <p className="text-sm text-muted-foreground">Load content as users scroll</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_lazy_loading', checked)} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable Real-time Updates</Label>
+                          <p className="text-sm text-muted-foreground">Push real-time updates to connected users</p>
+                        </div>
+                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('enable_realtime_updates', checked)} />
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Save All Changes Button */}
-                <div className="flex justify-end">
-                  <Button onClick={() => toast({ title: "Settings saved", description: "All configuration changes have been saved." })}>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Changes are saved automatically. Some settings may require a restart to take effect.
+                  </p>
+                  <Button size="lg" onClick={() => toast({ title: "Settings saved", description: "All configuration changes have been saved successfully." })}>
+                    <Settings className="mr-2 h-4 w-4" />
                     Save All Changes
                   </Button>
                 </div>
