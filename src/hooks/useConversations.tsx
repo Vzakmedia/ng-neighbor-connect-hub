@@ -23,6 +23,7 @@ export const useConversations = (userId: string | undefined) => {
   const fetchConversations = useCallback(async () => {
     if (!userId) {
       console.log('No userId provided to fetchConversations');
+      setConversations([]);
       setLoading(false);
       return;
     }
@@ -73,11 +74,18 @@ export const useConversations = (userId: string | undefined) => {
       setConversations(formattedConversations);
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      toast({
-        title: "Error",
-        description: "Could not load conversations.",
-        variant: "destructive",
-      });
+      setConversations([]); // Set empty array on error to prevent infinite loading
+      // Only show toast if it's not a network timeout or similar
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as any).message;
+        if (!errorMessage.includes('timeout') && !errorMessage.includes('network')) {
+          toast({
+            title: "Error",
+            description: "Could not load conversations.",
+            variant: "destructive",
+          });
+        }
+      }
     } finally {
       setLoading(false);
     }

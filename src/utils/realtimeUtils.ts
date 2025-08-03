@@ -9,8 +9,8 @@ interface SafeSubscriptionOptions {
 
 // Circuit breaker to prevent overwhelming the system
 let failureCount = 0;
-const MAX_FAILURES = 5;
-const CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
+const MAX_FAILURES = 10; // Increased from 5 to 10
+const CIRCUIT_BREAKER_TIMEOUT = 30000; // Reduced from 1 minute to 30 seconds
 let circuitBreakerOpenUntil = 0;
 
 export const createSafeSubscription = (
