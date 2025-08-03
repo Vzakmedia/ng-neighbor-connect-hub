@@ -4477,6 +4477,201 @@ const Admin = () => {
                   </div>
                 </div>
 
+                {/* SEO & Web Presence */}
+                <div className="border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">SEO & Web Presence</h3>
+                      <p className="text-sm text-muted-foreground">Configure search engine optimization, meta tags, and web presence settings</p>
+                    </div>
+                    <Badge variant="outline">SEO</Badge>
+                  </div>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="site-title">Site Title</Label>
+                        <Input 
+                          id="site-title" 
+                          placeholder="Your Community Platform" 
+                          defaultValue={getConfigValue('site_title', 'Community Platform')}
+                          onChange={(e) => handleConfigUpdate('site_title', e.target.value, 'Main title of the website')}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="site-tagline">Site Tagline</Label>
+                        <Input 
+                          id="site-tagline" 
+                          placeholder="Connect with your neighborhood" 
+                          defaultValue={getConfigValue('site_tagline', 'Connect with your neighborhood')}
+                          onChange={(e) => handleConfigUpdate('site_tagline', e.target.value, 'Site tagline/subtitle')}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="meta-description">Meta Description</Label>
+                      <Textarea 
+                        id="meta-description" 
+                        placeholder="A comprehensive community platform connecting neighbors, local businesses, and emergency services..." 
+                        rows={3}
+                        defaultValue={getConfigValue('meta_description', 'A comprehensive community platform connecting neighbors, local businesses, and emergency services.')}
+                        onChange={(e) => handleConfigUpdate('meta_description', e.target.value, 'Meta description for search engines')}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="meta-keywords">Meta Keywords</Label>
+                        <Input 
+                          id="meta-keywords" 
+                          placeholder="community, neighborhood, local business, emergency"
+                          defaultValue={getConfigValue('meta_keywords', 'community, neighborhood, local business, emergency')}
+                          onChange={(e) => handleConfigUpdate('meta_keywords', e.target.value, 'Comma-separated keywords for SEO')}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="canonical-url">Canonical URL</Label>
+                        <Input 
+                          id="canonical-url" 
+                          placeholder="https://yoursite.com"
+                          defaultValue={getConfigValue('canonical_url', '')}
+                          onChange={(e) => handleConfigUpdate('canonical_url', e.target.value, 'Canonical URL for SEO')}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="og-title">Open Graph Title</Label>
+                        <Input 
+                          id="og-title" 
+                          placeholder="Community Platform - Connect with Neighbors"
+                          defaultValue={getConfigValue('og_title', getConfigValue('site_title', 'Community Platform'))}
+                          onChange={(e) => handleConfigUpdate('og_title', e.target.value, 'Open Graph title for social media')}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="og-image">Open Graph Image URL</Label>
+                        <Input 
+                          id="og-image" 
+                          placeholder="https://yoursite.com/og-image.jpg"
+                          defaultValue={getConfigValue('og_image', '')}
+                          onChange={(e) => handleConfigUpdate('og_image', e.target.value, 'Open Graph image URL for social media')}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="og-description">Open Graph Description</Label>
+                      <Textarea 
+                        id="og-description" 
+                        placeholder="Join your local community platform to connect with neighbors, discover local businesses, and stay safe together." 
+                        rows={2}
+                        defaultValue={getConfigValue('og_description', getConfigValue('meta_description', 'A comprehensive community platform connecting neighbors, local businesses, and emergency services.'))}
+                        onChange={(e) => handleConfigUpdate('og_description', e.target.value, 'Open Graph description for social media')}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="twitter-handle">Twitter Handle</Label>
+                        <Input 
+                          id="twitter-handle" 
+                          placeholder="@yourcommunity"
+                          defaultValue={getConfigValue('twitter_handle', '')}
+                          onChange={(e) => handleConfigUpdate('twitter_handle', e.target.value, 'Twitter handle for Twitter Cards')}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="google-analytics">Google Analytics ID</Label>
+                        <Input 
+                          id="google-analytics" 
+                          placeholder="G-XXXXXXXXXX"
+                          defaultValue={getConfigValue('google_analytics_id', '')}
+                          onChange={(e) => handleConfigUpdate('google_analytics_id', e.target.value, 'Google Analytics tracking ID')}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="google-search-console">Google Search Console</Label>
+                        <Input 
+                          id="google-search-console" 
+                          placeholder="google-site-verification=..."
+                          defaultValue={getConfigValue('google_search_console', '')}
+                          onChange={(e) => handleConfigUpdate('google_search_console', e.target.value, 'Google Search Console verification code')}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="robots-txt">Robots.txt Rules</Label>
+                        <Input 
+                          id="robots-txt" 
+                          placeholder="User-agent: *"
+                          defaultValue={getConfigValue('robots_txt_rules', 'User-agent: *\nDisallow: /admin\nDisallow: /api')}
+                          onChange={(e) => handleConfigUpdate('robots_txt_rules', e.target.value, 'Custom robots.txt rules')}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Enable SEO Optimization</Label>
+                          <p className="text-sm text-muted-foreground">Automatically optimize pages for search engines</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('enable_seo_optimization', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('enable_seo_optimization', checked, 'Enable automatic SEO optimization')} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Generate Sitemap</Label>
+                          <p className="text-sm text-muted-foreground">Automatically generate XML sitemap</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('generate_sitemap', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('generate_sitemap', checked, 'Enable automatic sitemap generation')} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Open Graph Tags</Label>
+                          <p className="text-sm text-muted-foreground">Add Open Graph meta tags for social media</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('enable_open_graph', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('enable_open_graph', checked, 'Enable Open Graph meta tags')} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Twitter Cards</Label>
+                          <p className="text-sm text-muted-foreground">Enable Twitter Card meta tags</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('enable_twitter_cards', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('enable_twitter_cards', checked, 'Enable Twitter Card meta tags')} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Schema Markup</Label>
+                          <p className="text-sm text-muted-foreground">Add structured data markup</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('enable_schema_markup', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('enable_schema_markup', checked, 'Enable JSON-LD structured data')} 
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Analytics Tracking</Label>
+                          <p className="text-sm text-muted-foreground">Enable Google Analytics tracking</p>
+                        </div>
+                        <Switch 
+                          defaultChecked={getConfigValue('enable_analytics_tracking', true)} 
+                          onCheckedChange={(checked) => handleConfigUpdate('enable_analytics_tracking', checked, 'Enable Google Analytics tracking')} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Advanced Performance & Scaling */}
                 <div className="border rounded-lg p-6">
                   <div className="flex items-center justify-between mb-6">
