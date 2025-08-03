@@ -7,26 +7,58 @@ interface SafeSubscriptionOptions {
   debugName?: string;
 }
 
+// Circuit breaker to prevent overwhelming the system
+let failureCount = 0;
+const MAX_FAILURES = 5;
+const CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
+let circuitBreakerOpenUntil = 0;
+
 export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 30000, debugName = 'unknown' } = options; // Reduced to 30 seconds
+  const { channelName, onError, pollInterval = 60000, debugName = 'unknown' } = options; // Increased to 60 seconds to reduce load
   
   console.log(`${debugName}: Attempting to create safe subscription...`);
   
   let pollingInterval: NodeJS.Timeout | null = null;
   let isRealTimeConnected = false;
   
-  // Start immediate polling fallback
+  // Start immediate polling fallback with circuit breaker
   const startPolling = () => {
     if (pollingInterval) clearInterval(pollingInterval);
+    
+    // Check circuit breaker
+    if (Date.now() < circuitBreakerOpenUntil) {
+      console.log(`${debugName}: Circuit breaker open, skipping polling`);
+      return;
+    }
+    
     if (onError && !isRealTimeConnected) {
       console.log(`${debugName}: Starting polling fallback every ${pollInterval/1000} seconds`);
-      pollingInterval = setInterval(() => {
-        console.log(`${debugName}: Polling for updates...`);
-        onError();
-      }, pollInterval);
+      // Add a small delay before starting to prevent immediate spam
+      setTimeout(() => {
+        pollingInterval = setInterval(() => {
+          try {
+            console.log(`${debugName}: Polling for updates...`);
+            onError();
+            // Reset failure count on successful poll
+            failureCount = 0;
+          } catch (error) {
+            failureCount++;
+            console.error(`${debugName}: Polling error (${failureCount}/${MAX_FAILURES}):`, error);
+            
+            if (failureCount >= MAX_FAILURES) {
+              console.warn(`${debugName}: Too many failures, opening circuit breaker`);
+              circuitBreakerOpenUntil = Date.now() + CIRCUIT_BREAKER_TIMEOUT;
+              if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+              }
+            }
+          }
+        }, pollInterval);
+      }, 2000); // 2 second delay before starting
     }
   };
   

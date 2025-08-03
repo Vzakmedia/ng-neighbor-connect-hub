@@ -21,10 +21,15 @@ export const useConversations = (userId: string | undefined) => {
   const { toast } = useToast();
 
   const fetchConversations = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('No userId provided to fetchConversations');
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Fetching conversations for user:', userId);
       const { data, error } = await supabase
         .from('direct_conversations')
         .select(`

@@ -105,11 +105,12 @@ export const useUserPresence = () => {
               });
           },
           {
-            channelName: 'global_user_presence', // Use shared channel for all users
+            channelName: 'global_user_presence',
             debugName: 'UserPresence',
+            pollInterval: 60000, // Poll every 60 seconds for presence
             onError: () => {
-              // Fallback: Don't update presence state on polling
-              console.log('UserPresence: Using polling fallback (presence not available)');
+              console.log('UserPresence: Connection issues, using polling fallback');
+              // Don't update presence state on errors to avoid clearing it
             },
           }
         );

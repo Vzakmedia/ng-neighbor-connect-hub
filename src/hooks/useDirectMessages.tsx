@@ -25,10 +25,15 @@ export const useDirectMessages = (userId: string | undefined) => {
   const { toast } = useToast();
 
   const fetchMessages = useCallback(async (otherUserId: string) => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('No userId provided to fetchMessages');
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('Fetching messages between', userId, 'and', otherUserId);
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
