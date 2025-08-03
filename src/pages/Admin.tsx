@@ -1195,58 +1195,24 @@ const Admin = () => {
     }
   };
   const fetchAutomationLogs = async () => {
-    if (!isSuperAdmin) return;
-    
     try {
-      // Sample automation logs data
-      const sampleLogs = [
-        {
-          id: '1',
-          automation_id: '1',
-          automation_name: 'Emergency Alert Notifications',
-          execution_status: 'success',
-          executed_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          processing_time_ms: 245
-        },
-        {
-          id: '2',
-          automation_id: '2',
-          automation_name: 'Promotion Analytics Aggregation',
-          execution_status: 'success',
-          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          processing_time_ms: 1800
-        },
-        {
-          id: '3',
-          automation_id: '1',
-          automation_name: 'Emergency Alert Notifications',
-          execution_status: 'error',
-          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          processing_time_ms: 156
-        },
-        {
-          id: '4',
-          automation_id: '4',
-          automation_name: 'Weekly Analytics Report',
-          execution_status: 'success',
-          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-          processing_time_ms: 3200
-        },
-        {
-          id: '5',
-          automation_id: '2',
-          automation_name: 'Promotion Analytics Aggregation',
-          execution_status: 'warning',
-          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-          processing_time_ms: 2100
-        }
-      ];
+      const { data, error } = await supabase
+        .from('automation_logs')
+        .select('*')
+        .order('executed_at', { ascending: false })
+        .limit(100);
 
-      setAutomationLogs(sampleLogs);
+      if (error) throw error;
+
+      console.log('fetchAutomationLogs: Loaded', data?.length || 0, 'logs');
+      setAutomationLogs(data || []);
     } catch (error) {
       console.error('Error fetching automation logs:', error);
+      // Set empty array if no logs found
+      setAutomationLogs([]);
     }
   };
+
   const fetchSponsoredContent = async () => {
     if (!isSuperAdmin) return;
     
