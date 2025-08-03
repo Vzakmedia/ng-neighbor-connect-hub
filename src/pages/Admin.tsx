@@ -23,6 +23,8 @@ import StaffInvitationManager from "@/components/StaffInvitationManager";
 import ContentModerationPanel from '@/components/ContentModerationPanel';
 import ContentManagementPanel from '@/components/ContentManagementPanel';
 import CreateAutomationDialog from '@/components/CreateAutomationDialog';
+import ConfigureAutomationDialog from '@/components/ConfigureAutomationDialog';
+import AutomationLogsDialog from '@/components/AutomationLogsDialog';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -80,6 +82,9 @@ const Admin = () => {
   const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
   const [editMarketplaceDialogOpen, setEditMarketplaceDialogOpen] = useState(false);
   const [createAutomationDialogOpen, setCreateAutomationDialogOpen] = useState(false);
+  const [configureAutomationDialogOpen, setConfigureAutomationDialogOpen] = useState(false);
+  const [automationLogsDialogOpen, setAutomationLogsDialogOpen] = useState(false);
+  const [selectedAutomation, setSelectedAutomation] = useState<any>(null);
   
   
   // Config update handler
@@ -1104,20 +1109,14 @@ const Admin = () => {
 
   const handleConfigureAutomation = (automation: any) => {
     console.log('Configure automation clicked:', automation);
-    toast({
-      title: "Configure Automation",
-      description: `Opening configuration for ${automation.name}`,
-    });
-    // In a real implementation, this would open a configuration dialog
+    setSelectedAutomation(automation);
+    setConfigureAutomationDialogOpen(true);
   };
 
   const handleViewAutomationLogs = (automation: any) => {
     console.log('View automation logs clicked:', automation);
-    toast({
-      title: "Automation Logs",
-      description: `Viewing logs for ${automation.name}`,
-    });
-    // In a real implementation, this would filter logs or open a detailed view
+    setSelectedAutomation(automation);
+    setAutomationLogsDialogOpen(true);
   };
 
   const handleToggleAutomation = async (automation: any) => {
@@ -3873,6 +3872,21 @@ const Admin = () => {
             description: "Automation added to the list",
           });
         }}
+      />
+
+      {/* Configure Automation Dialog */}
+      <ConfigureAutomationDialog
+        open={configureAutomationDialogOpen}
+        onOpenChange={setConfigureAutomationDialogOpen}
+        automation={selectedAutomation}
+        onAutomationUpdated={fetchAutomations}
+      />
+
+      {/* Automation Logs Dialog */}
+      <AutomationLogsDialog
+        open={automationLogsDialogOpen}
+        onOpenChange={setAutomationLogsDialogOpen}
+        automation={selectedAutomation}
       />
       </div>
     </div>

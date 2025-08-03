@@ -187,6 +187,43 @@ const CreateAutomationDialog = ({
     }));
   };
 
+  const addCondition = (conditionType: string) => {
+    const newRule = {
+      field: conditionType,
+      operator: 'equals',
+      value: ''
+    };
+    setConfig(prev => ({
+      ...prev,
+      conditions: {
+        ...prev.conditions,
+        rules: [...prev.conditions.rules, newRule]
+      }
+    }));
+  };
+
+  const removeCondition = (index: number) => {
+    setConfig(prev => ({
+      ...prev,
+      conditions: {
+        ...prev.conditions,
+        rules: prev.conditions.rules.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const updateCondition = (index: number, field: string, value: string) => {
+    setConfig(prev => ({
+      ...prev,
+      conditions: {
+        ...prev.conditions,
+        rules: prev.conditions.rules.map((rule, i) => 
+          i === index ? { ...rule, [field]: value } : rule
+        )
+      }
+    }));
+  };
+
   const getDefaultActionConfig = (actionType: string) => {
     switch (actionType) {
       case 'send_email':
@@ -197,6 +234,14 @@ const CreateAutomationDialog = ({
         return { table: '', operation: 'update', data: {} };
       case 'webhook':
         return { url: '', method: 'POST', headers: {}, body: {} };
+      case 'send_sms':
+        return { to: '', message: '' };
+      case 'create_task':
+        return { title: '', description: '', assignee: '', priority: 'medium' };
+      case 'backup_data':
+        return { tables: [], format: 'json', compress: true };
+      case 'generate_report':
+        return { type: 'analytics', format: 'pdf', recipients: [] };
       default:
         return {};
     }
@@ -287,6 +332,14 @@ const CreateAutomationDialog = ({
                           <SelectItem value="promotion_ended">Promotion Campaign Ended</SelectItem>
                           <SelectItem value="marketplace_item_sold">Marketplace Item Sold</SelectItem>
                           <SelectItem value="service_booked">Service Booked</SelectItem>
+                          <SelectItem value="new_post_created">New Community Post Created</SelectItem>
+                          <SelectItem value="user_banned">User Banned/Suspended</SelectItem>
+                          <SelectItem value="payment_received">Payment Received</SelectItem>
+                          <SelectItem value="high_activity_threshold">High Activity Threshold Reached</SelectItem>
+                          <SelectItem value="system_error">System Error Detected</SelectItem>
+                          <SelectItem value="user_inactive">User Inactive for X Days</SelectItem>
+                          <SelectItem value="storage_threshold">Storage Threshold Reached</SelectItem>
+                          <SelectItem value="security_incident">Security Incident Detected</SelectItem>
                         </SelectContent>
                       </Select>
                     </CardContent>
@@ -373,16 +426,71 @@ const CreateAutomationDialog = ({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <Button variant="outline" className="w-full">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Condition
-                    </Button>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <Button variant="outline" onClick={() => addCondition('user_role')}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        User Role
+                      </Button>
+                      <Button variant="outline" onClick={() => addCondition('time_range')}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Time Range
+                      </Button>
+                      <Button variant="outline" onClick={() => addCondition('location')}>
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Location
+                      </Button>
+                      <Button variant="outline" onClick={() => addCondition('custom_field')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Custom Field
+                      </Button>
+                    </div>
                     
                     {config.conditions.rules.length === 0 && (
                       <div className="text-center py-8 text-muted-foreground">
-                        No conditions added yet
+                        No conditions added yet. Click above to add conditions.
                       </div>
                     )}
+                    
+                    {config.conditions.rules.map((rule, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Condition {index + 1}</h4>
+                          <Button variant="ghost" size="sm" onClick={() => removeCondition(index)}>
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Select value={rule.field} onValueChange={(value) => updateCondition(index, 'field', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Field" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user_role">User Role</SelectItem>
+                              <SelectItem value="time">Time</SelectItem>
+                              <SelectItem value="location">Location</SelectItem>
+                              <SelectItem value="status">Status</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={rule.operator} onValueChange={(value) => updateCondition(index, 'operator', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Operator" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="equals">Equals</SelectItem>
+                              <SelectItem value="not_equals">Not Equals</SelectItem>
+                              <SelectItem value="contains">Contains</SelectItem>
+                              <SelectItem value="greater_than">Greater Than</SelectItem>
+                              <SelectItem value="less_than">Less Than</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input 
+                            value={rule.value} 
+                            onChange={(e) => updateCondition(index, 'value', e.target.value)}
+                            placeholder="Value" 
+                          />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -416,6 +524,22 @@ const CreateAutomationDialog = ({
               <Button variant="outline" onClick={() => addAction('webhook')}>
                 <Zap className="h-4 w-4 mr-2" />
                 Call Webhook
+              </Button>
+              <Button variant="outline" onClick={() => addAction('send_sms')}>
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send SMS
+              </Button>
+              <Button variant="outline" onClick={() => addAction('create_task')}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Task
+              </Button>
+              <Button variant="outline" onClick={() => addAction('backup_data')}>
+                <Database className="h-4 w-4 mr-2" />
+                Backup Data
+              </Button>
+              <Button variant="outline" onClick={() => addAction('generate_report')}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Generate Report
               </Button>
             </div>
             
