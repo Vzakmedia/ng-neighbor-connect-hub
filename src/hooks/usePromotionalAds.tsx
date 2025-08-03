@@ -9,6 +9,7 @@ interface PromotionalAd {
   title: string;
   description: string;
   image?: string;
+  images?: string[];
   location: string;
   category: string;
   price?: string;
@@ -81,6 +82,7 @@ export const usePromotionalAds = (maxAds: number = 3) => {
             title: postContent.title || 'Advertisement',
             description: postContent.description || '',
             image: postContent.images && postContent.images.length > 0 ? postContent.images[0] : undefined,
+            images: postContent.images || [],
             location: profileData?.neighborhood || profileData?.city || 'Location not specified',
             category: postContent.business_category || promotedPost.post_type,
             price: `₦${promotedPost.daily_budget}/day`,

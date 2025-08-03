@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { businessId, promotionType, duration, targetLocation } = await req.json();
+    const { businessId, promotionType, duration, targetLocation, images = [] } = await req.json();
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -126,6 +126,7 @@ serve(async (req) => {
       end_date: endDate.toISOString(),
       status: 'pending_payment',
       target_locations: targetLocation ? [targetLocation] : [],
+      images: images,
       stripe_session_id: session.id,
       created_by: user.id
     });

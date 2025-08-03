@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Megaphone, Target, Clock, DollarSign } from 'lucide-react';
+import { PromotionImageUpload } from '@/components/PromotionImageUpload';
 
 interface CreatePromotionDialogProps {
   children: React.ReactNode;
@@ -227,6 +228,13 @@ const CreatePromotionDialog = ({
               placeholder="Phone number, email, or other contact details"
             />
           </div>
+
+          {/* Image Upload Section */}
+          <PromotionImageUpload
+            images={formData.images}
+            onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+            maxImages={3}
+          />
 
           {/* Promotion Preview */}
           <Card className="border-dashed">

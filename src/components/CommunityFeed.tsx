@@ -344,6 +344,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
             description: adData.description,
             category: adData.category,
             image: adData.image,
+            images: adData.images,
             cta: 'Learn More',
             url: adData.url,
             promoted: true,

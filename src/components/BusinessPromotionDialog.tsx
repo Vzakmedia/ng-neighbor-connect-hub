@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Megaphone, Star, TrendingUp, Zap, CheckCircle, MapPin, Calendar } from 'lucide-react';
+import { PromotionImageUpload } from '@/components/PromotionImageUpload';
 
 interface BusinessPromotionDialogProps {
   business: any;
@@ -25,6 +26,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
   const [promotionType, setPromotionType] = useState('basic');
   const [duration, setDuration] = useState('7');
   const [targetLocation, setTargetLocation] = useState('all');
+  const [images, setImages] = useState<string[]>([]);
 
   const promotionPlans = {
     basic: {
@@ -89,7 +91,8 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
           businessId: business.id,
           promotionType,
           duration: parseInt(duration),
-          targetLocation: targetLocation === 'all' ? null : targetLocation
+          targetLocation: targetLocation === 'all' ? null : targetLocation,
+          images
         }
       });
 
@@ -231,6 +234,16 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Image Upload Section */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Promotion Images</Label>
+            <PromotionImageUpload
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+            />
           </div>
 
           {/* Summary */}

@@ -19,6 +19,7 @@ interface PromotionalAd {
   title: string;
   description: string;
   image?: string;
+  images?: string[];
   location: string;
   category: string;
   price?: string;
@@ -116,11 +117,31 @@ const AdCarousel = ({ ads, autoSlideInterval = 5000 }: AdCarouselProps) => {
               {currentAd.description}
             </p>
 
-            {currentAd.image && (
-              <div 
-                className="mb-3 rounded-lg overflow-hidden bg-muted h-32 bg-cover bg-center" 
-                style={{ backgroundImage: `url(${currentAd.image})` }} 
-              />
+            {/* Image Display */}
+            {(currentAd.image || (currentAd.images && currentAd.images.length > 0)) && (
+              <div className="mb-3">
+                {currentAd.images && currentAd.images.length > 1 ? (
+                  <div className="grid grid-cols-2 gap-1">
+                    {currentAd.images.slice(0, 2).map((img, index) => (
+                      <div 
+                        key={index}
+                        className="rounded-lg overflow-hidden bg-muted h-20 bg-cover bg-center" 
+                        style={{ backgroundImage: `url(${img})` }}
+                      />
+                    ))}
+                    {currentAd.images.length > 2 && (
+                      <div className="col-span-2 text-center">
+                        <span className="text-xs text-muted-foreground">+{currentAd.images.length - 2} more images</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div 
+                    className="rounded-lg overflow-hidden bg-muted h-32 bg-cover bg-center" 
+                    style={{ backgroundImage: `url(${currentAd.image || currentAd.images?.[0]})` }} 
+                  />
+                )}
+              </div>
             )}
 
             {currentAd.price && (

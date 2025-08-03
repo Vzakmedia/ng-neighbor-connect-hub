@@ -1990,6 +1990,7 @@ export type Database = {
           created_at: string
           daily_budget: number
           id: string
+          images: string[] | null
           is_active: boolean | null
           post_content: Json
           post_id: string | null
@@ -2003,6 +2004,7 @@ export type Database = {
           created_at?: string
           daily_budget: number
           id?: string
+          images?: string[] | null
           is_active?: boolean | null
           post_content: Json
           post_id?: string | null
@@ -2016,6 +2018,7 @@ export type Database = {
           created_at?: string
           daily_budget?: number
           id?: string
+          images?: string[] | null
           is_active?: boolean | null
           post_content?: Json
           post_id?: string | null
@@ -2093,6 +2096,7 @@ export type Database = {
           description: string | null
           end_date: string
           id: string
+          images: string[] | null
           payment_amount: number | null
           payment_completed_at: string | null
           payment_session_id: string | null
@@ -2113,6 +2117,7 @@ export type Database = {
           description?: string | null
           end_date: string
           id?: string
+          images?: string[] | null
           payment_amount?: number | null
           payment_completed_at?: string | null
           payment_session_id?: string | null
@@ -2133,6 +2138,7 @@ export type Database = {
           description?: string | null
           end_date?: string
           id?: string
+          images?: string[] | null
           payment_amount?: number | null
           payment_completed_at?: string | null
           payment_session_id?: string | null
@@ -2840,6 +2846,7 @@ export type Database = {
           daily_budget: number | null
           end_date: string
           id: string
+          images: string[] | null
           performance_metrics: Json | null
           promotion_id: string | null
           start_date: string
@@ -2858,6 +2865,7 @@ export type Database = {
           daily_budget?: number | null
           end_date: string
           id?: string
+          images?: string[] | null
           performance_metrics?: Json | null
           promotion_id?: string | null
           start_date?: string
@@ -2876,6 +2884,7 @@ export type Database = {
           daily_budget?: number | null
           end_date?: string
           id?: string
+          images?: string[] | null
           performance_metrics?: Json | null
           promotion_id?: string | null
           start_date?: string

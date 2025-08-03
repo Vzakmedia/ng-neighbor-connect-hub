@@ -25,6 +25,7 @@ interface FeedAdvertisement {
   description: string;
   category: string;
   image?: string;
+  images?: string[];
   cta: string;
   url?: string;
   promoted: boolean;
@@ -100,9 +101,32 @@ const FeedAdCard = ({ ad }: FeedAdProps) => {
           </p>
         </div>
 
-        {ad.image && (
-          <div className="mb-4 rounded-lg overflow-hidden bg-muted h-48 bg-cover bg-center" 
-               style={{ backgroundImage: `url(${ad.image})` }} />
+        {/* Image Gallery */}
+        {(ad.image || (ad.images && ad.images.length > 0)) && (
+          <div className="mb-4">
+            {ad.images && ad.images.length > 1 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {ad.images.slice(0, 4).map((img, index) => (
+                  <div 
+                    key={index}
+                    className="rounded-lg overflow-hidden bg-muted h-32 bg-cover bg-center relative" 
+                    style={{ backgroundImage: `url(${img})` }}
+                  >
+                    {index === 3 && ad.images!.length > 4 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="text-white font-semibold">+{ad.images!.length - 4} more</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div 
+                className="rounded-lg overflow-hidden bg-muted h-48 bg-cover bg-center" 
+                style={{ backgroundImage: `url(${ad.image || ad.images?.[0]})` }} 
+              />
+            )}
+          </div>
         )}
 
         {ad.price && (
