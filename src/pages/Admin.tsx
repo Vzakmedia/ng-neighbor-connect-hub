@@ -1654,27 +1654,66 @@ const Admin = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tab = document.querySelector('[data-state="inactive"][value="users"]') as HTMLElement;
+                      if (tab) tab.click();
+                    }}
+                  >
                     <Users className="h-4 w-4" />
                     <span className="text-xs">View Users</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tab = document.querySelector('[data-state="inactive"][value="emergency"]') as HTMLElement;
+                      if (tab) tab.click();
+                    }}
+                  >
                     <AlertTriangle className="h-4 w-4" />
                     <span className="text-xs">Safety Alerts</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tab = document.querySelector('[data-state="inactive"][value="marketplace"]') as HTMLElement;
+                      if (tab) tab.click();
+                    }}
+                  >
                     <ShoppingCart className="h-4 w-4" />
                     <span className="text-xs">Marketplace</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tab = document.querySelector('[data-state="inactive"][value="analytics"]') as HTMLElement;
+                      if (tab) tab.click();
+                    }}
+                  >
                     <BarChart3 className="h-4 w-4" />
                     <span className="text-xs">Analytics</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => {
+                      const tab = document.querySelector('[data-state="inactive"][value="automations"]') as HTMLElement;
+                      if (tab) tab.click();
+                    }}
+                  >
                     <Settings className="h-4 w-4" />
                     <span className="text-xs">Settings</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center space-y-1">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={handleExportMarketplaceData}
+                  >
                     <Download className="h-4 w-4" />
                     <span className="text-xs">Export Data</span>
                   </Button>
