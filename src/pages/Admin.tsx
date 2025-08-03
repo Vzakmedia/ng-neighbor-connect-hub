@@ -1037,6 +1037,210 @@ const Admin = () => {
     }
   };
 
+  const fetchAutomations = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      // Since there's no automations table yet, let's create sample data
+      // In a real implementation, this would fetch from an automations table
+      const sampleAutomations = [
+        {
+          id: '1',
+          name: 'Emergency Alert Notifications',
+          description: 'Automatically send notifications to emergency contacts when alerts are created',
+          status: 'active',
+          last_run: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+          execution_count: 145,
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString() // 7 days ago
+        },
+        {
+          id: '2',
+          name: 'Promotion Analytics Aggregation',
+          description: 'Daily aggregation of promotion performance metrics',
+          status: 'active',
+          last_run: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+          execution_count: 28,
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString() // 14 days ago
+        },
+        {
+          id: '3',
+          name: 'Content Moderation Queue',
+          description: 'Automatically flag content that requires review',
+          status: 'paused',
+          last_run: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+          execution_count: 89,
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() // 30 days ago
+        },
+        {
+          id: '4',
+          name: 'Weekly Analytics Report',
+          description: 'Generate and email weekly platform analytics reports',
+          status: 'active',
+          last_run: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 7 days ago
+          execution_count: 12,
+          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60).toISOString() // 60 days ago
+        }
+      ];
+
+      setAutomations(sampleAutomations);
+      
+      // Update stats with active automations count
+      setStats(prev => ({
+        ...prev,
+        activeAutomations: sampleAutomations.filter(a => a.status === 'active').length
+      }));
+    } catch (error) {
+      console.error('Error fetching automations:', error);
+    }
+  };
+
+  const handleConfigureAutomation = (automation: any) => {
+    toast({
+      title: "Configure Automation",
+      description: `Opening configuration for ${automation.name}`,
+    });
+    // In a real implementation, this would open a configuration dialog
+  };
+
+  const handleViewAutomationLogs = (automation: any) => {
+    toast({
+      title: "Automation Logs",
+      description: `Viewing logs for ${automation.name}`,
+    });
+    // In a real implementation, this would filter logs or open a detailed view
+  };
+
+  const handleToggleAutomation = async (automation: any) => {
+    try {
+      const newStatus = automation.status === 'active' ? 'paused' : 'active';
+      
+      // Update local state immediately for better UX
+      setAutomations(prev => prev.map(a => 
+        a.id === automation.id 
+          ? { ...a, status: newStatus }
+          : a
+      ));
+
+      // Update stats
+      const updatedAutomations = automations.map(a => 
+        a.id === automation.id ? { ...a, status: newStatus } : a
+      );
+      setStats(prev => ({
+        ...prev,
+        activeAutomations: updatedAutomations.filter(a => a.status === 'active').length
+      }));
+
+      toast({
+        title: "Automation Updated",
+        description: `${automation.name} has been ${newStatus}`,
+      });
+
+      // In a real implementation, this would make an API call to update the automation
+    } catch (error) {
+      console.error('Error toggling automation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update automation status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateAutomation = () => {
+    toast({
+      title: "Create Automation",
+      description: "Automation creation wizard coming soon",
+    });
+    // In a real implementation, this would open a creation dialog
+  };
+
+  const handleExportAutomationLogs = async () => {
+    try {
+      const exportData = automationLogs.map(log => ({
+        id: log.id,
+        automation_name: log.automation_name,
+        status: log.execution_status,
+        executed_at: log.executed_at,
+        processing_time_ms: log.processing_time_ms
+      }));
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `automation-logs-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Logs Exported",
+        description: `${exportData.length} automation logs exported`,
+      });
+    } catch (error) {
+      console.error('Error exporting automation logs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export automation logs",
+        variant: "destructive",
+      });
+    }
+  };
+  const fetchAutomationLogs = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      // Sample automation logs data
+      const sampleLogs = [
+        {
+          id: '1',
+          automation_id: '1',
+          automation_name: 'Emergency Alert Notifications',
+          execution_status: 'success',
+          executed_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          processing_time_ms: 245
+        },
+        {
+          id: '2',
+          automation_id: '2',
+          automation_name: 'Promotion Analytics Aggregation',
+          execution_status: 'success',
+          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          processing_time_ms: 1800
+        },
+        {
+          id: '3',
+          automation_id: '1',
+          automation_name: 'Emergency Alert Notifications',
+          execution_status: 'error',
+          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+          processing_time_ms: 156
+        },
+        {
+          id: '4',
+          automation_id: '4',
+          automation_name: 'Weekly Analytics Report',
+          execution_status: 'success',
+          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          processing_time_ms: 3200
+        },
+        {
+          id: '5',
+          automation_id: '2',
+          automation_name: 'Promotion Analytics Aggregation',
+          execution_status: 'warning',
+          executed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+          processing_time_ms: 2100
+        }
+      ];
+
+      setAutomationLogs(sampleLogs);
+    } catch (error) {
+      console.error('Error fetching automation logs:', error);
+    }
+  };
   const fetchSponsoredContent = async () => {
     if (!isSuperAdmin) return;
     
@@ -1120,6 +1324,8 @@ const Admin = () => {
       fetchPromotions();
       fetchSponsoredContent();
       fetchContentReports();
+      fetchAutomations();
+      fetchAutomationLogs();
     } else {
       console.log('Not super admin, not loading data');
     }
@@ -3260,7 +3466,7 @@ const Admin = () => {
                       <h3 className="font-medium">Active Automations</h3>
                       <p className="text-sm text-muted-foreground">{loading ? '...' : stats.activeAutomations} workflows running</p>
                     </div>
-                    <Button size="sm">
+                    <Button size="sm" onClick={handleCreateAutomation}>
                       <Play className="h-4 w-4 mr-2" />
                       Create New
                     </Button>
@@ -3284,21 +3490,21 @@ const Admin = () => {
                           <span>Executions: {automation.execution_count || 0}</span>
                         </div>
                         <div className="flex space-x-2 mt-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleConfigureAutomation(automation)}>
                             <Settings className="h-3 w-3 mr-1" />
                             Configure
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleViewAutomationLogs(automation)}>
                             <BarChart3 className="h-3 w-3 mr-1" />
                             Logs
                           </Button>
                           {automation.status === 'active' ? (
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => handleToggleAutomation(automation)}>
                               <Pause className="h-3 w-3 mr-1" />
                               Pause
                             </Button>
                           ) : (
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => handleToggleAutomation(automation)}>
                               <Play className="h-3 w-3 mr-1" />
                               Start
                             </Button>
@@ -3330,7 +3536,7 @@ const Admin = () => {
                         <SelectItem value="warning">Warning</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={handleExportAutomationLogs}>
                       <Download className="h-4 w-4 mr-2" />
                       Export Logs
                     </Button>
