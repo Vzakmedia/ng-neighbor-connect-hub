@@ -678,7 +678,8 @@ const Admin = () => {
         { count: emergencyAlerts },
         { count: marketplaceItems },
         { count: flaggedContent },
-        { count: promotions }
+        { count: promotionCampaigns },
+        { count: sponsoredContent }
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('community_posts').select('*', { count: 'exact', head: true }),
@@ -686,7 +687,8 @@ const Admin = () => {
         supabase.from('safety_alerts').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
         supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('promotions').select('*', { count: 'exact', head: true }).eq('status', 'active')
+        supabase.from('promotion_campaigns').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('promoted_posts').select('*', { count: 'exact', head: true }).eq('is_active', true)
       ]);
 
       setStats({
@@ -695,9 +697,9 @@ const Admin = () => {
         eventsThisMonth: eventsThisMonth || 0,
         emergencyAlerts: emergencyAlerts || 0,
         marketplaceItems: marketplaceItems || 0,
-        promotions: promotions || 0,
+        promotions: promotionCampaigns || 0,
         flaggedContent: flaggedContent || 0,
-        sponsoredContent: 0,
+        sponsoredContent: sponsoredContent || 0,
         activeAutomations: 0,
         configSettings: 0,
         safetyReports: emergencyAlerts || 0
@@ -918,40 +920,79 @@ const Admin = () => {
     if (!isSuperAdmin) return;
     
     try {
-      // Try to fetch promotions with profiles relationship, fallback if it fails
-      let promoData = [];
-      try {
-        const { data, error } = await supabase
-          .from('promotions')
-          .select(`
-            *,
-            profiles!promotions_user_id_fkey(full_name)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(50);
+      // Fetch promotion campaigns with user profiles
+      const { data: campaigns, error: campaignsError } = await supabase
+        .from('promotion_campaigns')
+        .select(`
+          *,
+          profiles(full_name, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-        if (!error) {
-          promoData = data || [];
-        } else {
-          throw error;
-        }
-      } catch (error) {
-        console.log('Promotions with profiles relationship failed, trying without profiles:', error);
-        // Fallback to fetch without profiles relationship
-        const { data, error: fallbackError } = await supabase
-          .from('promotions')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (fallbackError) throw fallbackError;
-        promoData = data || [];
+      if (campaignsError) {
+        console.error('Error fetching promotion campaigns:', campaignsError);
+        setPromotions([]);
+        return;
       }
 
-      setPromotions(promoData);
+      setPromotions(campaigns || []);
     } catch (error) {
       console.error('Error fetching promotions:', error);
-      // Don't show error toast for missing table/relationship
+      setPromotions([]);
+    }
+  };
+
+  const fetchSponsoredContent = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      // Fetch promoted posts with analytics
+      const { data: promotedPosts, error: postsError } = await supabase
+        .from('promoted_posts')
+        .select(`
+          *,
+          promotion_campaigns(
+            user_id,
+            title,
+            budget,
+            status,
+            profiles(full_name, email)
+          ),
+          promotion_analytics(
+            impressions,
+            clicks,
+            conversions,
+            click_through_rate,
+            conversion_rate,
+            cost_per_conversion,
+            spend
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (postsError) {
+        console.error('Error fetching promoted posts:', postsError);
+        setSponsoredContent([]);
+        return;
+      }
+
+      // Transform the data for admin display
+      const transformedContent = (promotedPosts || []).map(post => ({
+        ...post,
+        title: post.promotion_campaigns?.title || `${post.post_type} promotion`,
+        budget: post.promotion_campaigns?.budget || 0,
+        status: post.is_active ? 'active' : 'paused',
+        impressions: post.promotion_analytics?.[0]?.impressions || 0,
+        clicks: post.promotion_analytics?.[0]?.clicks || 0,
+        spend: post.promotion_analytics?.[0]?.spend || 0
+      }));
+
+      setSponsoredContent(transformedContent);
+    } catch (error) {
+      console.error('Error fetching sponsored content:', error);
+      setSponsoredContent([]);
     }
   };
 
@@ -983,6 +1024,7 @@ const Admin = () => {
       fetchEmergencyAlerts();
       fetchMarketplaceItems();
       fetchPromotions();
+      fetchSponsoredContent();
       fetchContentReports();
     } else {
       console.log('Not super admin, not loading data');
