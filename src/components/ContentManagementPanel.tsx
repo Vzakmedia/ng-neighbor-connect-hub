@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from 'lucide-react';
 
 interface PressRelease {
@@ -104,6 +105,7 @@ const ContentManagementPanel = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadCategory, setUploadCategory] = useState('brand-guidelines');
   const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number; error?: string }[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -455,6 +457,81 @@ const ContentManagementPanel = () => {
         description: "Failed to delete press material",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleMediaKitUpload = async (files: File[], category: string) => {
+    if (!files.length) return;
+
+    setUploadingFiles(files.map(file => ({ name: file.name, progress: 0 })));
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileName = `${category}/${Date.now()}-${file.name}`;
+        
+        // Update progress
+        setUploadingFiles(prev => prev.map((uploadFile, index) => 
+          index === i ? { ...uploadFile, progress: 50 } : uploadFile
+        ));
+
+        const { error: uploadError } = await supabase.storage
+          .from('press-materials')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          setUploadingFiles(prev => prev.map((uploadFile, index) => 
+            index === i ? { ...uploadFile, error: uploadError.message, progress: 0 } : uploadFile
+          ));
+          continue;
+        }
+
+        // Add metadata to company_info table
+        const { error: dbError } = await supabase
+          .from('company_info')
+          .insert({
+            section: 'press_materials',
+            title: file.name,
+            content: `Media kit file for ${category.replace('-', ' ')}`,
+            data: {
+              category: category,
+              file_path: fileName,
+              file_size: file.size,
+              file_type: file.type,
+              uploaded_at: new Date().toISOString()
+            },
+            updated_by: (await supabase.auth.getUser()).data.user?.id
+          });
+
+        if (dbError) {
+          setUploadingFiles(prev => prev.map((uploadFile, index) => 
+            index === i ? { ...uploadFile, error: dbError.message, progress: 0 } : uploadFile
+          ));
+          continue;
+        }
+
+        // Update progress to complete
+        setUploadingFiles(prev => prev.map((uploadFile, index) => 
+          index === i ? { ...uploadFile, progress: 100 } : uploadFile
+        ));
+      }
+
+      toast({
+        title: "Success",
+        description: "Media kit files uploaded successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload media kit files",
+        variant: "destructive",
+      });
+    } finally {
+      // Clear upload progress after delay
+      setTimeout(() => setUploadingFiles([]), 3000);
     }
   };
 
@@ -873,157 +950,289 @@ const ContentManagementPanel = () => {
         </TabsContent>
 
         {/* Press Materials Tab */}
-        <TabsContent value="press-materials" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Press Materials</h3>
-              <p className="text-sm text-muted-foreground">Manage files for the Press page including logos, brand guidelines, and media kits</p>
-            </div>
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload File
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Upload Press Material</DialogTitle>
-                  <DialogDescription>
-                    Upload documents and files for the Press page media kit
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleFileUpload} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={uploadCategory} onValueChange={setUploadCategory}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="brand-guidelines">Brand Guidelines</SelectItem>
-                        <SelectItem value="logos">High-Resolution Logos</SelectItem>
-                        <SelectItem value="screenshots">Product Screenshots</SelectItem>
-                        <SelectItem value="fact-sheet">Company Fact Sheet</SelectItem>
-                        <SelectItem value="press-releases">Press Release Files</SelectItem>
-                        <SelectItem value="media-kit">Media Kit Assets</SelectItem>
-                      </SelectContent>
-                    </Select>
+        <TabsContent value="press-materials" className="space-y-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Media Kit Upload</h3>
+            <p className="text-sm text-muted-foreground">
+              Upload files for the four media kit categories displayed on the press page
+            </p>
+          </div>
+          
+          <div className="grid gap-6">
+            {/* Brand Guidelines */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">Brand Guidelines</h4>
+                    <Badge variant="outline">PDF</Badge>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="file">File</Label>
+                  <p className="text-sm text-muted-foreground">Logo usage, colors, and brand standards</p>
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-4 text-center transition-colors hover:border-primary/50"
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files);
+                      handleMediaKitUpload(files, 'brand-guidelines');
+                    }}
+                  >
                     <Input
-                      id="file"
                       type="file"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                      accept=".pdf,.zip,.png,.jpg,.jpeg,.svg,.doc,.docx"
-                      required
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        handleMediaKitUpload(files, 'brand-guidelines');
+                      }}
+                      className="hidden"
+                      id="brand-guidelines-upload"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Supported formats: PDF, ZIP, PNG, JPG, SVG, DOC, DOCX
-                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('brand-guidelines-upload')?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload PDF
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">or drag and drop files here</p>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={uploadDescription}
-                      onChange={(e) => setUploadDescription(e.target.value)}
-                      placeholder="Brief description of the file"
-                      rows={2}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* High-Resolution Logos */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">High-Resolution Logos</h4>
+                    <Badge variant="outline">ZIP</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Vector and raster formats available</p>
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-4 text-center transition-colors hover:border-primary/50"
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files);
+                      handleMediaKitUpload(files, 'logos');
+                    }}
+                  >
+                    <Input
+                      type="file"
+                      accept=".zip,.png,.jpg,.jpeg,.svg"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        handleMediaKitUpload(files, 'logos');
+                      }}
+                      className="hidden"
+                      id="logos-upload"
                     />
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
-                      Cancel
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('logos-upload')?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Files
                     </Button>
-                    <Button type="submit" disabled={!uploadFile}>
-                      Upload
-                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">or drag and drop files here</p>
                   </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Screenshots */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">Product Screenshots</h4>
+                    <Badge variant="outline">ZIP</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">High-quality app and platform images</p>
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-4 text-center transition-colors hover:border-primary/50"
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files);
+                      handleMediaKitUpload(files, 'screenshots');
+                    }}
+                  >
+                    <Input
+                      type="file"
+                      accept=".zip,.png,.jpg,.jpeg"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        handleMediaKitUpload(files, 'screenshots');
+                      }}
+                      className="hidden"
+                      id="screenshots-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('screenshots-upload')?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Files
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">or drag and drop files here</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Fact Sheet */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h4 className="font-semibold">Company Fact Sheet</h4>
+                    <Badge variant="outline">PDF</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Key statistics and company information</p>
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-4 text-center transition-colors hover:border-primary/50"
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => { 
+                      e.preventDefault(); 
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files);
+                      handleMediaKitUpload(files, 'fact-sheet');
+                    }}
+                  >
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        handleMediaKitUpload(files, 'fact-sheet');
+                      }}
+                      className="hidden"
+                      id="fact-sheet-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('fact-sheet-upload')?.click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload PDF
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">or drag and drop files here</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upload Progress */}
+            {uploadingFiles.length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <p className="text-sm font-medium">Uploading files...</p>
+                    {uploadingFiles.map((file, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="truncate">{file.name}</span>
+                          <span>{file.progress}%</span>
+                        </div>
+                        <Progress value={file.progress} className="h-2" />
+                        {file.error && (
+                          <p className="text-xs text-destructive">{file.error}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          <Card>
-            <CardContent className="pt-6">
-              {companyInfo.filter(item => item.section === 'press_materials').length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No press materials uploaded</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload brand assets, logos, and documents for media professionals
-                  </p>
-                  <Button onClick={() => setUploadDialogOpen(true)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload First File
-                  </Button>
-                </div>
-              ) : (
+          {/* Uploaded Files Display */}
+          {companyInfo.filter(item => item.section === 'press_materials').length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Uploaded Media Kit Files</CardTitle>
+                <CardDescription>
+                  Files available for download on the press page
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
-                  <div className="grid gap-4">
-                    {companyInfo
-                      .filter(item => item.section === 'press_materials')
-                      .map((item) => (
-                        <Card key={item.id} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-start gap-3">
-                              <FileText className="h-5 w-5 text-primary mt-1" />
-                              <div className="flex-1">
-                                <h4 className="font-medium">{item.title}</h4>
-                                {item.content && (
-                                  <p className="text-sm text-muted-foreground mt-1">{item.content}</p>
-                                )}
-                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                  <Badge variant="outline">
-                                    {item.data?.category?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                                  </Badge>
-                                  <span>
-                                    {item.data?.file_size ? `${Math.round(item.data.file_size / 1024)}KB` : ''}
-                                  </span>
-                                  <span>
-                                    {item.data?.uploaded_at ? new Date(item.data.uploaded_at).toLocaleDateString() : ''}
-                                  </span>
-                                </div>
+                  {companyInfo
+                    .filter(item => item.section === 'press_materials')
+                    .map((item) => (
+                      <Card key={item.id} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start gap-3">
+                            <FileText className="h-5 w-5 text-primary mt-1" />
+                            <div className="flex-1">
+                              <h4 className="font-medium">{item.title}</h4>
+                              {item.content && (
+                                <p className="text-sm text-muted-foreground mt-1">{item.content}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                <Badge variant="outline">
+                                  {item.data?.category?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                </Badge>
+                                <span>
+                                  {item.data?.file_size ? `${Math.round(item.data.file_size / 1024)}KB` : ''}
+                                </span>
+                                <span>
+                                  {item.data?.uploaded_at ? new Date(item.data.uploaded_at).toLocaleDateString() : ''}
+                                </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
-                              >
-                                <ExternalLink className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteFile(item.data?.file_path)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </div>
-                        </Card>
-                      ))}
-                  </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteFile(item.data?.file_path)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
