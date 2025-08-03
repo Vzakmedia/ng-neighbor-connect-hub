@@ -102,11 +102,64 @@ const Admin = () => {
   
   
   // Config update handler
-  const handleConfigUpdate = async (key: string, value: any) => {
-    toast({
-      title: "Configuration Updated",
-      description: "Settings have been saved successfully.",
-    });
+  const handleConfigUpdate = async (key: string, value: any, description?: string) => {
+    try {
+      const { error } = await supabase
+        .from('app_configuration')
+        .upsert({
+          config_key: key,
+          config_value: value,
+          config_type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
+          description: description || `Configuration for ${key}`,
+          updated_by: user?.id,
+          is_public: false
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Configuration Updated",
+        description: "Settings have been saved successfully.",
+      });
+
+      // Update local state
+      setAppConfigs(prev => {
+        const existing = prev.find(config => config.config_key === key);
+        if (existing) {
+          return prev.map(config => 
+            config.config_key === key 
+              ? { ...config, config_value: value, updated_at: new Date().toISOString() }
+              : config
+          );
+        } else {
+          return [...prev, {
+            id: crypto.randomUUID(),
+            config_key: key,
+            config_value: value,
+            config_type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
+            description: description || `Configuration for ${key}`,
+            updated_by: user?.id,
+            is_public: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }];
+        }
+      });
+
+    } catch (error) {
+      console.error('Error updating configuration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save configuration",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get config value helper
+  const getConfigValue = (key: string, defaultValue: any = null) => {
+    const config = appConfigs.find(c => c.config_key === key);
+    return config ? config.config_value : defaultValue;
   };
 
   // User management handlers
@@ -1425,6 +1478,31 @@ const Admin = () => {
     }
   };
 
+  const fetchAppConfigs = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: configs, error } = await supabase
+        .from('app_configuration')
+        .select('*')
+        .order('config_key', { ascending: true });
+
+      if (error) throw error;
+      
+      console.log('Loaded app configurations:', configs?.length || 0);
+      setAppConfigs(configs || []);
+      
+      // Update stats with config count
+      setStats(prev => ({ 
+        ...prev, 
+        configSettings: configs?.length || 0 
+      }));
+    } catch (error) {
+      console.error('Error fetching app configurations:', error);
+      setAppConfigs([]);
+    }
+  };
+
   // Load all data when admin status is confirmed
   useEffect(() => {
     console.log('Data loading effect triggered, isSuperAdmin:', isSuperAdmin);
@@ -1439,6 +1517,7 @@ const Admin = () => {
       fetchContentReports();
       fetchAutomations();
       fetchAutomationLogs();
+      fetchAppConfigs();
       fetchRecentActivity();
       fetchSystemHealth();
       
@@ -3753,6 +3832,25 @@ const Admin = () => {
               <p className="text-sm text-muted-foreground">Manage platform settings and configuration</p>
             </CardHeader>
             <CardContent>
+              {appConfigs.length > 0 && (
+                <div className="mb-6 p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Configuration Status</h4>
+                    <Badge variant="secondary">{appConfigs.length} settings configured</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">App Name:</span> {getConfigValue('app_name', 'NeighborConnect')}
+                    </div>
+                    <div>
+                      <span className="font-medium">Maintenance:</span> {getConfigValue('maintenance_mode', false) ? 'Active' : 'Off'}
+                    </div>
+                    <div>
+                      <span className="font-medium">Registration:</span> {getConfigValue('allow_registration', true) ? 'Enabled' : 'Disabled'}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-8">
                 {/* General Settings */}
                 <div className="border rounded-lg p-6">
@@ -3765,63 +3863,88 @@ const Admin = () => {
                   </div>
                   <div className="grid gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="app-name">Application Name</Label>
-                        <Input id="app-name" defaultValue="NeighborConnect" onChange={(e) => handleConfigUpdate('app_name', e.target.value)} />
-                      </div>
-                      <div>
-                        <Label htmlFor="app-version">Version</Label>
-                        <Input id="app-version" defaultValue="1.0.0" onChange={(e) => handleConfigUpdate('app_version', e.target.value)} />
-                      </div>
-                      <div>
-                        <Label htmlFor="timezone">Default Timezone</Label>
-                        <Select onValueChange={(value) => handleConfigUpdate('default_timezone', value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select timezone" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                            <SelectItem value="America/Chicago">Central Time</SelectItem>
-                            <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                            <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                            <SelectItem value="UTC">UTC</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="app-description">Application Description</Label>
-                      <Textarea id="app-description" defaultValue="Connecting neighbors, building stronger communities through safety, communication, and local commerce." onChange={(e) => handleConfigUpdate('app_description', e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex items-center justify-between">
+                       <div>
+                         <Label htmlFor="app-name">Application Name</Label>
+                         <Input 
+                           id="app-name" 
+                           value={getConfigValue('app_name', 'NeighborConnect')} 
+                           onChange={(e) => handleConfigUpdate('app_name', e.target.value, 'The main name of the application')} 
+                         />
+                       </div>
+                       <div>
+                         <Label htmlFor="app-version">Version</Label>
+                         <Input 
+                           id="app-version" 
+                           value={getConfigValue('app_version', '1.0.0')} 
+                           onChange={(e) => handleConfigUpdate('app_version', e.target.value, 'Current version of the application')} 
+                         />
+                       </div>
                         <div>
-                          <Label>Enable new user registrations</Label>
-                          <p className="text-sm text-muted-foreground">Allow new users to create accounts</p>
-                        </div>
-                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('allow_registration', checked)} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Require email verification</Label>
-                          <p className="text-sm text-muted-foreground">New users must verify email addresses</p>
-                        </div>
-                        <Switch defaultChecked={true} onCheckedChange={(checked) => handleConfigUpdate('require_email_verification', checked)} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Maintenance mode</Label>
-                          <p className="text-sm text-muted-foreground">Show maintenance page to all users</p>
-                        </div>
-                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('maintenance_mode', checked)} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Debug mode</Label>
-                          <p className="text-sm text-muted-foreground">Enable detailed error logging</p>
-                        </div>
-                        <Switch defaultChecked={false} onCheckedChange={(checked) => handleConfigUpdate('debug_mode', checked)} />
-                      </div>
+                          <Label htmlFor="timezone">Default Timezone</Label>
+                         <Select value={getConfigValue('default_timezone', 'UTC')} onValueChange={(value) => handleConfigUpdate('default_timezone', value, 'Default timezone for the application')}>
+                           <SelectTrigger>
+                             <SelectValue placeholder="Select timezone" />
+                           </SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="Africa/Lagos">West Africa Time (Lagos)</SelectItem>
+                             <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                             <SelectItem value="America/Chicago">Central Time</SelectItem>
+                             <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                             <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                             <SelectItem value="UTC">UTC</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                     </div>
+                     <div>
+                       <Label htmlFor="app-description">Application Description</Label>
+                       <Textarea 
+                         id="app-description" 
+                         value={getConfigValue('app_description', 'Connecting neighbors, building stronger communities through safety, communication, and local commerce.')} 
+                         onChange={(e) => handleConfigUpdate('app_description', e.target.value, 'Main description of the application')} 
+                       />
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <Label>Enable new user registrations</Label>
+                           <p className="text-sm text-muted-foreground">Allow new users to create accounts</p>
+                         </div>
+                         <Switch 
+                           checked={getConfigValue('allow_registration', true)} 
+                           onCheckedChange={(checked) => handleConfigUpdate('allow_registration', checked, 'Whether new users can register accounts')} 
+                         />
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <Label>Require email verification</Label>
+                           <p className="text-sm text-muted-foreground">New users must verify email addresses</p>
+                         </div>
+                         <Switch 
+                           checked={getConfigValue('require_email_verification', true)} 
+                           onCheckedChange={(checked) => handleConfigUpdate('require_email_verification', checked, 'Whether email verification is required for new users')} 
+                         />
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <Label>Maintenance mode</Label>
+                           <p className="text-sm text-muted-foreground">Show maintenance page to all users</p>
+                         </div>
+                         <Switch 
+                           checked={getConfigValue('maintenance_mode', false)} 
+                           onCheckedChange={(checked) => handleConfigUpdate('maintenance_mode', checked, 'Whether the app is in maintenance mode')} 
+                         />
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <Label>Debug mode</Label>
+                           <p className="text-sm text-muted-foreground">Enable detailed error logging</p>
+                         </div>
+                         <Switch 
+                           checked={getConfigValue('debug_mode', false)} 
+                           onCheckedChange={(checked) => handleConfigUpdate('debug_mode', checked, 'Whether debug mode is enabled for detailed logging')} 
+                         />
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -3837,18 +3960,33 @@ const Admin = () => {
                   </div>
                   <div className="grid gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="session-timeout">Session Timeout (hours)</Label>
-                        <Input id="session-timeout" type="number" defaultValue="24" onChange={(e) => handleConfigUpdate('session_timeout_hours', parseInt(e.target.value))} />
-                      </div>
-                      <div>
-                        <Label htmlFor="max-login-attempts">Max Login Attempts</Label>
-                        <Input id="max-login-attempts" type="number" defaultValue="5" onChange={(e) => handleConfigUpdate('max_login_attempts', parseInt(e.target.value))} />
-                      </div>
-                      <div>
-                        <Label htmlFor="lockout-duration">Lockout Duration (minutes)</Label>
-                        <Input id="lockout-duration" type="number" defaultValue="15" onChange={(e) => handleConfigUpdate('lockout_duration_minutes', parseInt(e.target.value))} />
-                      </div>
+                       <div>
+                         <Label htmlFor="session-timeout">Session Timeout (hours)</Label>
+                         <Input 
+                           id="session-timeout" 
+                           type="number" 
+                           value={getConfigValue('session_timeout_hours', 24)} 
+                           onChange={(e) => handleConfigUpdate('session_timeout_hours', parseInt(e.target.value), 'How long user sessions last in hours')} 
+                         />
+                       </div>
+                       <div>
+                         <Label htmlFor="max-login-attempts">Max Login Attempts</Label>
+                         <Input 
+                           id="max-login-attempts" 
+                           type="number" 
+                           value={getConfigValue('max_login_attempts', 5)} 
+                           onChange={(e) => handleConfigUpdate('max_login_attempts', parseInt(e.target.value), 'Maximum failed login attempts before lockout')} 
+                         />
+                       </div>
+                       <div>
+                         <Label htmlFor="lockout-duration">Lockout Duration (minutes)</Label>
+                         <Input 
+                           id="lockout-duration" 
+                           type="number" 
+                           value={getConfigValue('lockout_duration_minutes', 15)} 
+                           onChange={(e) => handleConfigUpdate('lockout_duration_minutes', parseInt(e.target.value), 'How long accounts are locked after failed attempts')} 
+                         />
+                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="flex items-center justify-between">
