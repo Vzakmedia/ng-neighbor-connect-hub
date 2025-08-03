@@ -75,6 +75,7 @@ export const useUserPresence = () => {
                 updatePresenceState(presences);
               })
               .subscribe(async (status) => {
+                console.log('Presence subscription status:', status);
                 if (status !== 'SUBSCRIBED') return;
 
                 try {
@@ -94,6 +95,10 @@ export const useUserPresence = () => {
                   });
 
                   console.log('Presence track status:', presenceTrackStatus);
+                  
+                  // Also get current presence state after we track
+                  const currentPresences = channel.presenceState() as UserPresence;
+                  updatePresenceState(currentPresences);
                 } catch (error) {
                   console.error('Error tracking presence:', error);
                 }

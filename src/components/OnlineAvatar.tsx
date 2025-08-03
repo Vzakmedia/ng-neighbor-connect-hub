@@ -59,10 +59,13 @@ export const OnlineAvatar: React.FC<OnlineAvatarProps> = ({
         </AvatarFallback>
       </Avatar>
       
-      {isOnline && showOnlineStatus && (
+      {showOnlineStatus && userId && (
         <div 
           className={cn(
-            'absolute rounded-full bg-green-500 border-2 border-background animate-pulse-online',
+            'absolute rounded-full border-2 border-background',
+            isOnline 
+              ? 'bg-green-500 animate-pulse-online' 
+              : 'bg-gray-400',
             dotSizeClasses[size]
           )}
         />
