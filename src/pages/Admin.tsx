@@ -4251,16 +4251,16 @@ const Admin = () => {
                   <div className="grid gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
-                        <Label htmlFor="business-fee">Business Verification Fee ($)</Label>
-                        <Input id="business-fee" type="number" defaultValue="25" onChange={(e) => handleConfigUpdate('business_verification_fee', parseInt(e.target.value))} />
+                        <Label htmlFor="business-fee">Business Verification Fee (₦)</Label>
+                        <Input id="business-fee" type="number" defaultValue="15000" onChange={(e) => handleConfigUpdate('business_verification_fee', parseInt(e.target.value))} />
                       </div>
                       <div>
                         <Label htmlFor="marketplace-fee">Marketplace Fee (%)</Label>
                         <Input id="marketplace-fee" type="number" defaultValue="3" onChange={(e) => handleConfigUpdate('marketplace_fee_percent', parseInt(e.target.value))} />
                       </div>
                       <div>
-                        <Label htmlFor="promotion-fee">Promotion Fee ($)</Label>
-                        <Input id="promotion-fee" type="number" defaultValue="10" onChange={(e) => handleConfigUpdate('promotion_fee', parseInt(e.target.value))} />
+                        <Label htmlFor="promotion-fee">Promotion Fee (₦)</Label>
+                        <Input id="promotion-fee" type="number" defaultValue="5000" onChange={(e) => handleConfigUpdate('promotion_fee', parseInt(e.target.value))} />
                       </div>
                       <div>
                         <Label htmlFor="escrow-hold">Escrow Hold (days)</Label>
