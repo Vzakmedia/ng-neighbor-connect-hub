@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -364,12 +365,13 @@ const ProfileOverview = () => {
           {/* Profile Picture Section */}
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
             <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="text-lg sm:text-xl bg-gradient-primary text-white">
-                  {profile?.full_name ? getInitials(profile.full_name) : 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <OnlineAvatar
+                userId={user?.id}
+                src={profile?.avatar_url || undefined}
+                fallback={profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                size="xl"
+                showOnlineStatus={false}
+              />
               {editing && (
                 <Button
                   size="sm"

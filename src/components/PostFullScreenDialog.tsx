@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { 
   Heart, 
   MessageCircle, 
@@ -30,6 +31,7 @@ import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 
 interface Post {
   id: string;
+  user_id: string;
   author: {
     name: string;
     avatar?: string;
@@ -136,12 +138,12 @@ export const PostFullScreenDialog = ({
                 className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity pr-12"
                 onClick={() => onProfileClick(post.author.name, post.author.avatar)}
               >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={post.author.avatar} />
-                  <AvatarFallback>
-                    {post.author.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
+                <OnlineAvatar
+                  userId={post.user_id}
+                  src={post.author.avatar}
+                  fallback={post.author.name.split(' ').map(n => n[0]).join('')}
+                  size="xl"
+                />
                 <div>
                   <div className="flex items-center space-x-2">
                     <h4 className="font-medium text-lg">

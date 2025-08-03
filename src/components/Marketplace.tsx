@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -663,12 +664,12 @@ const Marketplace = () => {
                   {/* Provider Info */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={item.profiles?.avatar_url} />
-                        <AvatarFallback className="text-xs">
-                          {item.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
+                      <OnlineAvatar
+                        userId={item.user_id}
+                        src={item.profiles?.avatar_url}
+                        fallback={item.profiles?.full_name?.charAt(0) || 'U'}
+                        size="sm"
+                      />
                       <span className="text-sm text-muted-foreground">{item.profiles?.full_name || 'Unknown'}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">

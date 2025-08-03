@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { 
   Heart, 
   MessageCircle, 
@@ -64,6 +65,7 @@ interface DatabasePost {
 
 interface Post {
   id: string;
+  user_id: string;
   author: {
     name: string;
     avatar?: string;
@@ -167,6 +169,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
     return {
       id: dbPost.id,
+      user_id: dbPost.user_id,
       author: {
         name: authorName,
         avatar: authorAvatar,
@@ -929,12 +932,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       handleProfileClick(post.author.name, post.author.avatar);
                     }}
                   >
-                    <Avatar>
-                      <AvatarImage src={post.author.avatar} />
-                      <AvatarFallback>
-                        {post.author.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OnlineAvatar
+                      userId={post.user_id}
+                      src={post.author.avatar}
+                      fallback={post.author.name.split(' ').map(n => n[0]).join('')}
+                      size="lg"
+                    />
                     <div>
                       <div className="flex items-center space-x-2">
                         <h4 className="font-medium">

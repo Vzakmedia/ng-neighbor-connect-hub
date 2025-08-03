@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import {
   Dialog,
   DialogContent,
@@ -193,12 +194,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* User Info */}
           <div className="flex items-center space-x-3">
-            <Avatar>
-              <AvatarImage src={profile?.avatar_url || ""} />
-              <AvatarFallback>
-                {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <OnlineAvatar
+              userId={user?.id}
+              src={profile?.avatar_url || undefined}
+              fallback={profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+              size="md"
+            />
             <div>
               <p className="font-medium">{profile?.full_name || "Anonymous"}</p>
               <p className="text-sm text-muted-foreground">

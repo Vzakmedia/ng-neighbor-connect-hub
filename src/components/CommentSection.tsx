@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
@@ -19,6 +20,7 @@ interface Comment {
   created_at: string;
   parent_comment_id: string | null;
   profiles: {
+    user_id: string;
     full_name: string | null;
     avatar_url: string | null;
   } | null;
@@ -425,12 +427,12 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
 
   const renderComment = (comment: Comment, isReply = false) => (
     <div key={comment.id} className={`flex space-x-3 ${isReply ? 'ml-8 mt-2' : ''}`}>
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-        <AvatarFallback className="text-xs">
-          {comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-        </AvatarFallback>
-      </Avatar>
+      <OnlineAvatar
+        userId={comment.user_id}
+        src={comment.profiles?.avatar_url || undefined}
+        fallback={comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+        size="md"
+      />
       <div className="flex-1 min-w-0">
         <div className="bg-background rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
@@ -470,12 +472,12 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
         {replyingTo === comment.id && (
           <div className="mt-3 ml-2">
             <div className="flex space-x-2">
-              <Avatar className="h-6 w-6 shrink-0">
-                <AvatarImage src={profile?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <OnlineAvatar
+                userId={user?.id}
+                src={profile?.avatar_url || undefined}
+                fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                size="sm"
+              />
               <div className="flex-1 space-y-2">
                 <div className="relative">
                   <Textarea
@@ -600,12 +602,12 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
       {/* Comment Input */}
       <div className="border-t bg-background/50 p-4">
         <div className="flex space-x-3">
-          <Avatar className="h-8 w-8 shrink-0">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="text-xs">
-              {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <OnlineAvatar
+            userId={user?.id}
+            src={profile?.avatar_url || undefined}
+            fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+            size="md"
+          />
           <div className="flex-1 space-y-2 relative">
             <div className="relative">
               <Textarea

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -2033,12 +2034,12 @@ const CommunityBoards = () => {
                       )}
                       
                       <div className="flex items-start space-x-3">
-                        <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarImage src={post.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {post.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
+                        <OnlineAvatar
+                          userId={post.user_id}
+                          src={post.profiles?.avatar_url || undefined}
+                          fallback={post.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                          size="lg"
+                        />
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
