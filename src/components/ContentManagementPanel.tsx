@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Eye, FileText, Briefcase } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from 'lucide-react';
 
 interface PressRelease {
   id: string;
@@ -48,7 +48,7 @@ interface CompanyInfo {
   section: string;
   title?: string;
   content?: string;
-  data: any;
+  data: Record<string, any>;
   updated_at: string;
 }
 
@@ -57,12 +57,14 @@ const ContentManagementPanel = () => {
   const [pressReleases, setPressReleases] = useState<PressRelease[]>([]);
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo[]>([]);
+  const [pressFiles, setPressFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Dialog states
   const [pressDialogOpen, setPressDialogOpen] = useState(false);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingPress, setEditingPress] = useState<PressRelease | null>(null);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
   const [editingCompany, setEditingCompany] = useState<CompanyInfo | null>(null);
@@ -98,6 +100,11 @@ const ContentManagementPanel = () => {
     data: {}
   });
 
+  // File upload state
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState('brand-guidelines');
+  const [uploadDescription, setUploadDescription] = useState('');
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -131,7 +138,22 @@ const ContentManagementPanel = () => {
         .order('section');
 
       if (companyError) throw companyError;
-      setCompanyInfo(companyData || []);
+      setCompanyInfo((companyData || []).map(item => ({
+        ...item,
+        data: typeof item.data === 'object' && item.data !== null ? item.data : {}
+      })));
+
+      // Fetch press materials from storage
+      const { data: filesData, error: filesError } = await supabase.storage
+        .from('press-materials')
+        .list('', { limit: 100 });
+
+      if (filesError) {
+        console.log('Press materials bucket may not exist yet:', filesError);
+        setPressFiles([]);
+      } else {
+        setPressFiles(filesData || []);
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -351,6 +373,97 @@ const ContentManagementPanel = () => {
     setCompanyDialogOpen(true);
   };
 
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+
+    try {
+      const fileName = `${uploadCategory}/${Date.now()}-${uploadFile.name}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('press-materials')
+        .upload(fileName, uploadFile);
+
+      if (uploadError) throw uploadError;
+
+      // Add metadata to company_info table
+      const { error: dbError } = await supabase
+        .from('company_info')
+        .insert({
+          section: 'press_materials',
+          title: uploadFile.name,
+          content: uploadDescription,
+          data: {
+            category: uploadCategory,
+            file_path: fileName,
+            file_size: uploadFile.size,
+            file_type: uploadFile.type,
+            uploaded_at: new Date().toISOString()
+          },
+          updated_by: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Press material uploaded successfully",
+      });
+
+      setUploadDialogOpen(false);
+      setUploadFile(null);
+      setUploadDescription('');
+      setUploadCategory('brand-guidelines');
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload press material",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteFile = async (fileName: string) => {
+    try {
+      const { error } = await supabase.storage
+        .from('press-materials')
+        .remove([fileName]);
+
+      if (error) throw error;
+
+      // Remove from company_info table
+      const deleteResult = await supabase
+        .from('company_info')
+        .delete()
+        .eq('section', 'press_materials')
+        .eq('data->>file_path', fileName);
+
+      if (deleteResult.error) throw deleteResult.error;
+
+      toast({
+        title: "Success",
+        description: "Press material deleted successfully",
+      });
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete press material",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getFileUrl = (fileName: string) => {
+    return supabase.storage
+      .from('press-materials')
+      .getPublicUrl(fileName).data.publicUrl;
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center p-8">Loading...</div>;
   }
@@ -374,6 +487,10 @@ const ContentManagementPanel = () => {
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Company Info
+          </TabsTrigger>
+          <TabsTrigger value="press-materials" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Press Materials
           </TabsTrigger>
         </TabsList>
 
@@ -753,6 +870,160 @@ const ContentManagementPanel = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Press Materials Tab */}
+        <TabsContent value="press-materials" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Press Materials</h3>
+              <p className="text-sm text-muted-foreground">Manage files for the Press page including logos, brand guidelines, and media kits</p>
+            </div>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload File
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Upload Press Material</DialogTitle>
+                  <DialogDescription>
+                    Upload documents and files for the Press page media kit
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleFileUpload} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select value={uploadCategory} onValueChange={setUploadCategory}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="brand-guidelines">Brand Guidelines</SelectItem>
+                        <SelectItem value="logos">High-Resolution Logos</SelectItem>
+                        <SelectItem value="screenshots">Product Screenshots</SelectItem>
+                        <SelectItem value="fact-sheet">Company Fact Sheet</SelectItem>
+                        <SelectItem value="press-releases">Press Release Files</SelectItem>
+                        <SelectItem value="media-kit">Media Kit Assets</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="file">File</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                      accept=".pdf,.zip,.png,.jpg,.jpeg,.svg,.doc,.docx"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Supported formats: PDF, ZIP, PNG, JPG, SVG, DOC, DOCX
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      value={uploadDescription}
+                      onChange={(e) => setUploadDescription(e.target.value)}
+                      placeholder="Brief description of the file"
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={!uploadFile}>
+                      Upload
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6">
+              {companyInfo.filter(item => item.section === 'press_materials').length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No press materials uploaded</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Upload brand assets, logos, and documents for media professionals
+                  </p>
+                  <Button onClick={() => setUploadDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload First File
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid gap-4">
+                    {companyInfo
+                      .filter(item => item.section === 'press_materials')
+                      .map((item) => (
+                        <Card key={item.id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-start gap-3">
+                              <FileText className="h-5 w-5 text-primary mt-1" />
+                              <div className="flex-1">
+                                <h4 className="font-medium">{item.title}</h4>
+                                {item.content && (
+                                  <p className="text-sm text-muted-foreground mt-1">{item.content}</p>
+                                )}
+                                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                  <Badge variant="outline">
+                                    {item.data?.category?.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                  </Badge>
+                                  <span>
+                                    {item.data?.file_size ? `${Math.round(item.data.file_size / 1024)}KB` : ''}
+                                  </span>
+                                  <span>
+                                    {item.data?.uploaded_at ? new Date(item.data.uploaded_at).toLocaleDateString() : ''}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteFile(item.data?.file_path)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
