@@ -46,14 +46,22 @@ export const useConversations = (userId: string | undefined) => {
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw error;
+      }
 
       // Fetch user profiles separately
       const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
-      const { data: profiles } = await supabase
+      
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, full_name, avatar_url, phone')
         .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 

@@ -163,10 +163,10 @@ const Header = () => {
       {
         channelName: 'header-messages',
         onError: () => {
-          console.log('Header: Message subscription error - fallback triggered');
-          // No additional action needed - polling will handle it
+          // Silent error handling for header - don't spam logs since this is just for notifications
+          // The actual messaging pages will handle their own errors
         },
-        pollInterval: 30000,
+        pollInterval: 60000, // Reduced polling frequency for header
         debugName: 'HeaderMessages'
       }
     );
