@@ -136,7 +136,7 @@ const Admin = () => {
             id: crypto.randomUUID(),
             config_key: key,
             config_value: value,
-            config_type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
+            config_type: 'app_settings',
             description: description || `Configuration for ${key}`,
             updated_by: user?.id,
             is_public: false,
