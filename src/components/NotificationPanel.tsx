@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { playNotification } from '@/utils/audioUtils';
+import { useBackgroundNotifications } from '@/hooks/useBackgroundNotifications';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 
 interface NotificationPanelProps {
@@ -34,6 +35,7 @@ interface Notification {
 const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: NotificationPanelProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showBackgroundNotification } = useBackgroundNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -110,28 +112,52 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
               const newNotification = payload.new as Notification;
               setNotifications(prev => [newNotification, ...prev]);
               
-              // Play appropriate sound based on notification type
+              // Use background notification system
               if (newNotification.notification_type === 'panic_alert') {
-                playNotification('emergency');
+                showBackgroundNotification({
+                  type: 'emergency',
+                  title: '🚨 EMERGENCY ALERT',
+                  body: `Emergency alert from ${newNotification.sender_name || 'someone'}`,
+                  tag: 'emergency-alert',
+                  requireSound: true
+                });
                 toast({
                   title: "🚨 EMERGENCY ALERT",
                   description: "Someone needs your help! Check your notifications.",
                   variant: "destructive",
                 });
               } else if (newNotification.notification_type === 'contact_request') {
-                playNotification('notification');
+                showBackgroundNotification({
+                  type: 'notification',
+                  title: 'Emergency Contact Request',
+                  body: `${newNotification.sender_name || 'Someone'} wants to add you as emergency contact`,
+                  tag: 'contact-request',
+                  requireSound: false
+                });
                 toast({
                   title: "New Contact Request",
                   description: `${newNotification.sender_name || 'Someone'} wants to add you as an emergency contact.`,
                 });
               } else if (newNotification.notification_type === 'message') {
-                playNotification('notification');
+                showBackgroundNotification({
+                  type: 'notification',
+                  title: 'New Message',
+                  body: `${newNotification.sender_name || 'Someone'} sent you a message`,
+                  tag: 'new-message',
+                  requireSound: false
+                });
                 toast({
                   title: "New Message",
                   description: `${newNotification.sender_name || 'Someone'} sent you a message.`,
                 });
               } else {
-                playNotification('normal');
+                showBackgroundNotification({
+                  type: 'normal',
+                  title: 'New Notification',
+                  body: newNotification.content || 'You have a new notification',
+                  tag: 'general-notification',
+                  requireSound: false
+                });
               }
             }
           }

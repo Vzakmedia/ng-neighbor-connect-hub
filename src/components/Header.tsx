@@ -12,6 +12,7 @@ import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
+import { useBackgroundNotifications } from '@/hooks/useBackgroundNotifications';
 import NotificationPanel from '@/components/NotificationPanel';
 
 const Header = () => {
@@ -21,6 +22,7 @@ const Header = () => {
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
+  const { showBackgroundNotification, isPageVisible } = useBackgroundNotifications();
 
   useEffect(() => {
     if (user) {
@@ -70,21 +72,38 @@ const Header = () => {
              console.log('Header: Received notification INSERT event');
              loadNotificationCount();
              
-             // Play notification sound
-             if (payload.new) {
-               const notification = payload.new as any;
-               try {
+              // Use background notification system
+              if (payload.new) {
+                const notification = payload.new as any;
+                try {
+                  let notificationType: 'emergency' | 'normal' | 'notification' = 'normal';
+                  let title = 'New Notification';
+                  let body = 'You have a new notification';
+                  
                   if (notification.notification_type === 'panic_alert') {
-                    await playNotification('emergency');
+                    notificationType = 'emergency';
+                    title = '🚨 EMERGENCY ALERT';
+                    body = 'Emergency alert in your area - check immediately';
                   } else if (notification.notification_type === 'contact_request') {
-                    await playNotification('notification');
+                    notificationType = 'notification';
+                    title = 'Emergency Contact Request';
+                    body = `${notification.sender_name || 'Someone'} wants to add you as emergency contact`;
                   } else {
-                    await playNotification('normal');
+                    title = 'New Notification';
+                    body = notification.content || 'You have a new notification';
                   }
-               } catch (error) {
-                 console.error('Header: Error playing notification sound:', error);
-               }
-             }
+                  
+                  showBackgroundNotification({
+                    type: notificationType,
+                    title,
+                    body,
+                    tag: `notification-${notification.id}`,
+                    requireSound: notificationType === 'emergency'
+                  });
+                } catch (error) {
+                  console.error('Header: Error showing background notification:', error);
+                }
+              }
            }
         )
         .on(
@@ -122,16 +141,22 @@ const Header = () => {
             table: 'direct_messages',
             filter: `recipient_id=eq.${user?.id}`
           },
-          async (payload) => {
-            console.log('Header: Received message INSERT event:', payload);
-            // Play message notification sound
-            try {
-              await playNotification('normal');
-              console.log('Header: Played notification sound');
-            } catch (error) {
-              console.error('Header: Error playing notification sound:', error);
-            }
-          }
+           async (payload) => {
+             console.log('Header: Received message INSERT event:', payload);
+             // Use background notification for messages
+             try {
+               showBackgroundNotification({
+                 type: 'notification',
+                 title: 'New Message',
+                 body: 'You have received a new message',
+                 tag: `message-${payload.new?.id}`,
+                 requireSound: false
+               });
+               console.log('Header: Showed background notification for message');
+             } catch (error) {
+               console.error('Header: Error showing background notification for message:', error);
+             }
+           }
         ),
       {
         channelName: 'header-messages',
