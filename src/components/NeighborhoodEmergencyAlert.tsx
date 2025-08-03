@@ -130,7 +130,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                 
                 if (distance <= (payload.new.radius_km || 5)) {
                   // Play emergency sound for nearby public alerts
-                  playNotification('emergency', 0.6);
+                  playNotification('emergency');
                   
                   toast({
                     title: "🚨 EMERGENCY ALERT IN YOUR AREA",

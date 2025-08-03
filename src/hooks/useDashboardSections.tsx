@@ -186,7 +186,7 @@ export const useSafetyAlerts = (limit: number = 3) => {
           
           if (soundEnabled) {
             // Use emergency sound for safety alerts
-            playNotification('emergency', volume);
+            playNotification('emergency');
           }
         } catch (error) {
           console.error('Error playing safety alert notification sound:', error);

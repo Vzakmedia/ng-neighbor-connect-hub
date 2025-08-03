@@ -45,7 +45,7 @@ export const useUnreadMessages = () => {
           const volume = audioSettings.notificationVolume?.[0] || 0.5;
           
           if (soundEnabled) {
-            playNotification('notification', volume);
+            playNotification('notification');
           }
         } catch (error) {
           console.error('Error playing notification sound:', error);

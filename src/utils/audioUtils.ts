@@ -90,10 +90,80 @@ export const generateEmergencySound = async (volume: number = 0.7): Promise<void
   osc2.stop(ctx.currentTime + duration);
 };
 
-// Play notification with specified type and volume
-export const playNotification = async (type: 'normal' | 'emergency' | 'notification', volume: number): Promise<void> => {
+// Check if notifications and sound are allowed
+export const checkNotificationPermission = async (): Promise<boolean> => {
   try {
-    console.log('playNotification called with type:', type, 'volume:', volume);
+    // Check if browser supports notifications
+    if (!('Notification' in window)) {
+      console.log('Browser does not support notifications');
+      return false;
+    }
+
+    // Check current permission status
+    let permission = Notification.permission;
+    
+    // If permission is not determined, request it
+    if (permission === 'default') {
+      permission = await Notification.requestPermission();
+    }
+    
+    return permission === 'granted';
+  } catch (error) {
+    console.error('Error checking notification permission:', error);
+    return false;
+  }
+};
+
+// Check if user has enabled sound in settings
+export const isSoundEnabled = (): boolean => {
+  try {
+    const audioSettings = localStorage.getItem('audioSettings');
+    if (audioSettings) {
+      const settings = JSON.parse(audioSettings);
+      return settings.soundEnabled === true;
+    }
+    return true; // Default to enabled if no settings found
+  } catch (error) {
+    console.error('Error checking sound settings:', error);
+    return true; // Default to enabled on error
+  }
+};
+
+// Get volume level from user settings
+export const getSoundVolume = (): number => {
+  try {
+    const audioSettings = localStorage.getItem('audioSettings');
+    if (audioSettings) {
+      const settings = JSON.parse(audioSettings);
+      return settings.volume || 0.5; // Default volume
+    }
+    return 0.5; // Default volume
+  } catch (error) {
+    console.error('Error getting sound volume:', error);
+    return 0.5; // Default volume on error
+  }
+};
+
+// Enhanced play notification with permission and settings check
+export const playNotification = async (type: 'normal' | 'emergency' | 'notification', customVolume?: number): Promise<void> => {
+  try {
+    console.log('playNotification called with type:', type, 'customVolume:', customVolume);
+    
+    // Check if notifications are allowed
+    const hasNotificationPermission = await checkNotificationPermission();
+    if (!hasNotificationPermission) {
+      console.log('Notification permission not granted, skipping sound');
+      return;
+    }
+
+    // Check if sound is enabled in user settings
+    if (!isSoundEnabled()) {
+      console.log('Sound disabled in user settings, skipping sound');
+      return;
+    }
+
+    // Get volume from settings or use custom volume
+    const volume = customVolume !== undefined ? customVolume : getSoundVolume();
     
     if (type === 'emergency') {
       await generateEmergencySound(volume);
@@ -108,16 +178,49 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
     // Try to use the existing notification.mp3 file as fallback
     try {
       const audio = new Audio('/notification.mp3');
+      const volume = customVolume !== undefined ? customVolume : getSoundVolume();
       audio.volume = volume;
       await audio.play();
       console.log('Fallback audio file played');
     } catch (fallbackError) {
       console.error('Fallback audio also failed:', fallbackError);
       
-      // Final fallback to system notification
-      if ('Notification' in window) {
-        new Notification('New message', { silent: false });
+      // Final fallback to system notification (but only if user has enabled sounds)
+      if ('Notification' in window && isSoundEnabled()) {
+        new Notification('New alert', { silent: false });
       }
     }
+  }
+};
+
+// Play emergency alert sound specifically for critical alerts
+export const playEmergencyAlert = async (): Promise<void> => {
+  try {
+    console.log('Playing emergency alert sound');
+    
+    // Check permissions and settings
+    const hasPermission = await checkNotificationPermission();
+    if (!hasPermission || !isSoundEnabled()) {
+      console.log('Cannot play emergency alert - permissions or settings');
+      return;
+    }
+
+    // Play emergency sound at high volume for emergencies
+    const volume = Math.min(getSoundVolume() * 1.5, 1.0); // Boost volume for emergencies but cap at 1.0
+    await generateEmergencySound(volume);
+    
+    // Also show a browser notification for emergencies
+    if ('Notification' in window) {
+      new Notification('🚨 EMERGENCY ALERT', {
+        body: 'Emergency alert in your area',
+        icon: '/favicon.ico',
+        silent: false,
+        requireInteraction: true,
+        tag: 'emergency-alert'
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error playing emergency alert:', error);
   }
 };

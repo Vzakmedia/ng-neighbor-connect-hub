@@ -74,13 +74,13 @@ const Header = () => {
              if (payload.new) {
                const notification = payload.new as any;
                try {
-                 if (notification.notification_type === 'panic_alert') {
-                   await playNotification('emergency', 0.8);
-                 } else if (notification.notification_type === 'contact_request') {
-                   await playNotification('notification', 0.5);
-                 } else {
-                   await playNotification('normal', 0.3);
-                 }
+                  if (notification.notification_type === 'panic_alert') {
+                    await playNotification('emergency');
+                  } else if (notification.notification_type === 'contact_request') {
+                    await playNotification('notification');
+                  } else {
+                    await playNotification('normal');
+                  }
                } catch (error) {
                  console.error('Header: Error playing notification sound:', error);
                }
@@ -126,7 +126,7 @@ const Header = () => {
             console.log('Header: Received message INSERT event:', payload);
             // Play message notification sound
             try {
-              await playNotification('normal', 0.7);
+              await playNotification('normal');
               console.log('Header: Played notification sound');
             } catch (error) {
               console.error('Header: Error playing notification sound:', error);

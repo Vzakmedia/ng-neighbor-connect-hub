@@ -112,26 +112,26 @@ const NotificationPanel = ({ isOpen, onClose, position = 'top-right' }: Notifica
               
               // Play appropriate sound based on notification type
               if (newNotification.notification_type === 'panic_alert') {
-                playNotification('emergency', 0.8);
+                playNotification('emergency');
                 toast({
                   title: "🚨 EMERGENCY ALERT",
                   description: "Someone needs your help! Check your notifications.",
                   variant: "destructive",
                 });
               } else if (newNotification.notification_type === 'contact_request') {
-                playNotification('notification', 0.5);
+                playNotification('notification');
                 toast({
                   title: "New Contact Request",
                   description: `${newNotification.sender_name || 'Someone'} wants to add you as an emergency contact.`,
                 });
               } else if (newNotification.notification_type === 'message') {
-                playNotification('notification', 0.4);
+                playNotification('notification');
                 toast({
                   title: "New Message",
                   description: `${newNotification.sender_name || 'Someone'} sent you a message.`,
                 });
               } else {
-                playNotification('normal', 0.3);
+                playNotification('normal');
               }
             }
           }

@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
+import NotificationInitializer from "@/components/NotificationInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
@@ -65,8 +66,9 @@ const App = () => {
           <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
+        <BrowserRouter>
+          <NotificationInitializer />
+          <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
