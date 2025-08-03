@@ -588,6 +588,100 @@ const Admin = () => {
       });
     }
   };
+
+  const handleGenerateRevenueReport = async () => {
+    try {
+      setLoading(true);
+      
+      // Generate revenue report from promotion campaigns and sponsored content
+      const { data: campaigns, error: campaignsError } = await supabase
+        .from('promotion_campaigns')
+        .select(`
+          *,
+          promoted_posts(
+            id,
+            daily_budget,
+            promotion_analytics(spend)
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (campaignsError) throw campaignsError;
+
+      // Get user profiles separately to avoid relation issues
+      const userIds = [...new Set((campaigns || []).map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email')
+        .in('user_id', userIds);
+
+      // Create a map for quick profile lookup
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+      // Calculate total revenue and format report
+      let totalRevenue = 0;
+      const reportData = (campaigns || []).map(campaign => {
+        const profile = profileMap.get(campaign.user_id);
+        const totalSpend = campaign.promoted_posts?.reduce((sum: number, post: any) => {
+          const postSpend = post.promotion_analytics?.reduce((pSum: number, analytics: any) => pSum + (analytics.spend || 0), 0) || 0;
+          return sum + postSpend;
+        }, 0) || 0;
+        
+        totalRevenue += totalSpend;
+        
+        return {
+          campaign_id: campaign.id,
+          title: campaign.title,
+          advertiser: profile?.full_name || 'Unknown',
+          email: profile?.email || 'Unknown',
+          budget: campaign.budget,
+          spent: totalSpend,
+          status: campaign.status,
+          start_date: campaign.start_date,
+          end_date: campaign.end_date,
+          created_at: campaign.created_at
+        };
+      });
+
+      // Create and download report
+      const reportContent = {
+        generated_at: new Date().toISOString(),
+        generated_by: user?.email,
+        summary: {
+          total_campaigns: reportData.length,
+          total_revenue: totalRevenue,
+          active_campaigns: reportData.filter(r => r.status === 'active').length,
+          completed_campaigns: reportData.filter(r => r.status === 'completed').length
+        },
+        campaigns: reportData
+      };
+
+      const dataStr = JSON.stringify(reportContent, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `revenue-report-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Revenue Report Generated",
+        description: `Report generated with ₦${totalRevenue.toLocaleString()} total revenue from ${reportData.length} campaigns`,
+      });
+    } catch (error) {
+      console.error('Error generating revenue report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate revenue report",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
 
   const handleSuspendUser = async (user: any) => {
@@ -2974,7 +3068,7 @@ const Admin = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button>Revenue Report</Button>
+                  <Button onClick={handleGenerateRevenueReport}>Revenue Report</Button>
                 </div>
                 
                 <Table>
