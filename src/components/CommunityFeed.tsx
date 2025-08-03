@@ -849,32 +849,28 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         )}
       </div>
 
-      {/* Load More Button */}
-      {!loading && (
+      {/* Load More Button - Only show when there are new posts */}
+      {!loading && hasNewPosts && (
         <div className="flex justify-center mb-4">
           <Button
             onClick={loadMorePosts}
             disabled={loadingMore}
-            variant={hasNewPosts ? "default" : "outline"}
+            variant="default"
             size="sm"
-            className={`transition-all duration-300 ${
-              hasNewPosts ? 'animate-pulse bg-primary shadow-lg' : ''
-            }`}
+            className="animate-pulse bg-primary shadow-lg transition-all duration-300"
           >
             {loadingMore ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                 Loading...
               </>
-            ) : hasNewPosts ? (
+            ) : (
               <>
                 <Badge variant="secondary" className="mr-2 bg-white text-primary">
                   New
                 </Badge>
                 Load Latest Posts
               </>
-            ) : (
-              'Refresh Posts'
             )}
           </Button>
         </div>
