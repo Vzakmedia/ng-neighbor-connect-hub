@@ -106,7 +106,7 @@ class ErrorHandler {
   }
 
   // Classify errors based on their properties
-  private classifyError(error: any, context?: { route?: string; userId?: string }): ErrorInfo {
+  public classifyError(error: any, context?: { route?: string; userId?: string }): ErrorInfo {
     const timestamp = new Date().toISOString();
     const baseInfo = {
       timestamp,

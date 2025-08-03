@@ -1304,6 +1304,51 @@ export type Database = {
         }
         Relationships: []
       }
+      error_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          error_code: string | null
+          error_type: string
+          id: string
+          message: string
+          route: string | null
+          severity: string
+          stack_trace: string | null
+          timestamp: string
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          error_code?: string | null
+          error_type: string
+          id?: string
+          message: string
+          route?: string | null
+          severity: string
+          stack_trace?: string | null
+          timestamp?: string
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          error_code?: string | null
+          error_type?: string
+          id?: string
+          message?: string
+          route?: string | null
+          severity?: string
+          stack_trace?: string | null
+          timestamp?: string
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: []
+      }
       event_rsvps: {
         Row: {
           created_at: string
