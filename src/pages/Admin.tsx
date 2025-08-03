@@ -130,7 +130,10 @@ const Admin = () => {
       
       const { error } = await supabase
         .from('app_configuration')
-        .upsert(configData);
+        .upsert(configData, {
+          onConflict: 'config_key',
+          ignoreDuplicates: false
+        });
 
       if (error) {
         console.error('Supabase error:', error);
