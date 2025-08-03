@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { MessageCircle, Search, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
@@ -161,12 +162,12 @@ const MessagingContent = () => {
                       className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer"
                       onClick={() => startConversationWithUser(user.user_id)}
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {getInitials(user.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <OnlineAvatar
+                        userId={user.user_id}
+                        src={user.avatar_url || undefined}
+                        fallback={getInitials(user.full_name)}
+                        size="md"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{user.full_name}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
@@ -207,12 +208,12 @@ const MessagingContent = () => {
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
                     onClick={() => handleConversationSelect(conversation)}
                   >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={conversation.other_user_avatar || undefined} />
-                      <AvatarFallback>
-                        {getInitials(conversation.other_user_name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <OnlineAvatar
+                      userId={conversation.other_user_id}
+                      src={conversation.other_user_avatar || undefined}
+                      fallback={getInitials(conversation.other_user_name)}
+                      size="lg"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="font-medium truncate">

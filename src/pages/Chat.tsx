@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import OnlineAvatar from '@/components/OnlineAvatar';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
+import { useUserPresence } from '@/hooks/useUserPresence';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
@@ -22,6 +24,7 @@ import { VideoCallDialog } from '@/components/messaging/VideoCallDialog';
 import { IncomingCallDialog } from '@/components/messaging/IncomingCallDialog';
 
 const Chat = () => {
+  const { isUserOnline } = useUserPresence();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -319,15 +322,20 @@ const Chat = () => {
                 <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
               
-              <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                <AvatarImage src={conversation.other_user_avatar || undefined} />
-                <AvatarFallback>
-                  {getInitials(conversation.other_user_name)}
-                </AvatarFallback>
-              </Avatar>
+              <OnlineAvatar
+                userId={conversation.other_user_id}
+                src={conversation.other_user_avatar || undefined}
+                fallback={getInitials(conversation.other_user_name)}
+                size="lg"
+              />
               
               <div className="flex-1 min-w-0">
-                <h1 className="font-semibold truncate text-sm md:text-base">{conversation.other_user_name}</h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-semibold truncate text-sm md:text-base">{conversation.other_user_name}</h1>
+                  {isUserOnline(conversation.other_user_id) && (
+                    <span className="text-xs text-green-500 font-medium">Online</span>
+                  )}
+                </div>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">
                   {conversation.other_user_phone || 'No phone number'}
                 </p>
