@@ -22,6 +22,7 @@ import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 import StaffInvitationManager from "@/components/StaffInvitationManager";
 import ContentModerationPanel from '@/components/ContentModerationPanel';
 import ContentManagementPanel from '@/components/ContentManagementPanel';
+import CreateAutomationDialog from '@/components/CreateAutomationDialog';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -78,6 +79,7 @@ const Admin = () => {
   const [selectedMarketplaceItem, setSelectedMarketplaceItem] = useState<any>(null);
   const [marketplaceDialogOpen, setMarketplaceDialogOpen] = useState(false);
   const [editMarketplaceDialogOpen, setEditMarketplaceDialogOpen] = useState(false);
+  const [createAutomationDialogOpen, setCreateAutomationDialogOpen] = useState(false);
   
   
   // Config update handler
@@ -1156,11 +1158,7 @@ const Admin = () => {
 
   const handleCreateAutomation = () => {
     console.log('Create automation clicked');
-    toast({
-      title: "Create Automation",
-      description: "Automation creation wizard coming soon",
-    });
-    // In a real implementation, this would open a creation dialog
+    setCreateAutomationDialogOpen(true);
   };
 
   const handleExportAutomationLogs = async () => {
@@ -3863,6 +3861,19 @@ const Admin = () => {
           <div>No alert selected</div>
         )}
       </SimpleModal>
+
+      {/* Create Automation Dialog */}
+      <CreateAutomationDialog
+        open={createAutomationDialogOpen}
+        onOpenChange={setCreateAutomationDialogOpen}
+        onAutomationCreated={() => {
+          fetchAutomations();
+          toast({
+            title: "Success",
+            description: "Automation added to the list",
+          });
+        }}
+      />
       </div>
     </div>
   );
