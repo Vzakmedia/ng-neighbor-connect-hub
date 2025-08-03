@@ -94,6 +94,9 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasNewPosts, setHasNewPosts] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -182,14 +185,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     };
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (isInitialLoad = false) => {
     if (!user || !profile) {
       console.log('CommunityFeed: Missing user or profile', { user: !!user, profile: !!profile });
       return;
     }
     
-    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id });
-    setLoading(true);
+    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id, isInitialLoad });
+    
+    if (isInitialLoad) {
+      setLoading(true);
+    }
+    
     try {
       // First, get all posts
       let postsQuery = supabase
@@ -250,10 +257,42 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
       console.log('CommunityFeed: Processed posts', { count: processedPosts.length, viewScope });
       setPosts(processedPosts);
+      setLastFetchTime(new Date());
+      setHasNewPosts(false);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const loadMorePosts = async () => {
+    setLoadingMore(true);
+    await fetchPosts(false);
+    setLoadingMore(false);
+    toast({
+      title: "Posts refreshed",
+      description: "Latest posts have been loaded.",
+    });
+  };
+
+  const checkForNewPosts = async () => {
+    if (!user || !profile || !lastFetchTime) return;
+
+    try {
+      const { data: newPostsData } = await supabase
+        .from('community_posts')
+        .select('id, created_at')
+        .gt('created_at', lastFetchTime.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (newPostsData && newPostsData.length > 0) {
+        setHasNewPosts(true);
+      }
+    } catch (error) {
+      console.error('Error checking for new posts:', error);
     }
   };
 
@@ -333,55 +372,34 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   }, [propViewScope]);
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(true);
   }, [user, profile, viewScope]);
 
-  // Set up safe real-time subscription for posts and interactions
+  // Set up safe real-time subscription for new posts detection only
   useEffect(() => {
     if (!user) return;
 
     const subscription = createSafeSubscription(
       (channel) => channel
         .on('postgres_changes', {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'community_posts'
         }, () => {
-          fetchPosts();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'post_likes'
-        }, () => {
-          fetchPosts();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'post_comments'
-        }, () => {
-          fetchPosts();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'saved_posts'
-        }, () => {
-          fetchPosts();
+          checkForNewPosts();
         }),
       {
-        channelName: 'community_feed_changes',
-        onError: fetchPosts,
-        pollInterval: 45000,
-        debugName: 'CommunityFeed'
+        channelName: 'community_feed_new_posts',
+        onError: () => checkForNewPosts(),
+        pollInterval: 30000,
+        debugName: 'CommunityFeedNewPosts'
       }
     );
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, profile, viewScope]);
+  }, [user, profile, viewScope, lastFetchTime]);
 
 
   const getPostTypeIcon = (type: string) => {
@@ -830,6 +848,37 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           </Badge>
         )}
       </div>
+
+      {/* Load More Button */}
+      {!loading && (
+        <div className="flex justify-center mb-4">
+          <Button
+            onClick={loadMorePosts}
+            disabled={loadingMore}
+            variant={hasNewPosts ? "default" : "outline"}
+            size="sm"
+            className={`transition-all duration-300 ${
+              hasNewPosts ? 'animate-pulse bg-primary shadow-lg' : ''
+            }`}
+          >
+            {loadingMore ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                Loading...
+              </>
+            ) : hasNewPosts ? (
+              <>
+                <Badge variant="secondary" className="mr-2 bg-white text-primary">
+                  New
+                </Badge>
+                Load Latest Posts
+              </>
+            ) : (
+              'Refresh Posts'
+            )}
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-8">
