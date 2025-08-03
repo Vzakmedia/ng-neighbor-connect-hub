@@ -74,6 +74,7 @@ const Admin = () => {
   // State management, auth checks, data fetching functions
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adminCheckComplete, setAdminCheckComplete] = useState(false);
   
   // Filter states
   const [alertTypeFilter, setAlertTypeFilter] = useState('all');
@@ -103,20 +104,41 @@ const Admin = () => {
   
   // Config update handler
   const handleConfigUpdate = async (key: string, value: any, description?: string) => {
+    console.log('handleConfigUpdate called with:', { key, value, description, user: user?.id, isSuperAdmin });
+    
+    if (!user || !isSuperAdmin) {
+      console.error('Permission denied: user or super admin check failed');
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to update configurations",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
+      const configData = {
+        config_key: key,
+        config_value: value,
+        config_type: 'app_settings',
+        description: description || `Configuration for ${key}`,
+        updated_by: user.id,
+        is_public: false
+      };
+      
+      console.log('Attempting to upsert config:', configData);
+      
       const { error } = await supabase
         .from('app_configuration')
-        .upsert({
-          config_key: key,
-          config_value: value,
-          config_type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
-          description: description || `Configuration for ${key}`,
-          updated_by: user?.id,
-          is_public: false
-        });
+        .upsert(configData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
+      console.log('Configuration saved successfully');
+      
       toast({
         title: "Configuration Updated",
         description: "Settings have been saved successfully.",
@@ -138,7 +160,7 @@ const Admin = () => {
             config_value: value,
             config_type: 'app_settings',
             description: description || `Configuration for ${key}`,
-            updated_by: user?.id,
+            updated_by: user.id,
             is_public: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -812,19 +834,48 @@ const Admin = () => {
   // Check if user is super admin
   useEffect(() => {
     const checkSuperAdmin = async () => {
-      if (!user) return;
+      if (!user) {
+        setAdminCheckComplete(true);
+        return;
+      }
       
       try {
         console.log('Checking super admin status for user:', user.id);
-        const { data: userRole, error } = await supabase
+        
+        // First check via RPC function
+        const { data: userRole, error: rpcError } = await supabase
           .rpc('get_user_staff_role', { _user_id: user.id });
+        
+        console.log('RPC User role result:', userRole, 'Error:', rpcError);
+        
+        if (userRole === 'super_admin' || userRole === 'admin') {
+          console.log('Setting isSuperAdmin to true via RPC');
+          setIsSuperAdmin(true);
+          setAdminCheckComplete(true);
+          return;
+        }
+        
+        // Fallback: Check user_roles table directly
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
           
-        console.log('User role result:', userRole, 'Error:', error);
-        const isSuper = userRole === 'super_admin';
-        console.log('Setting isSuperAdmin to:', isSuper);
-        setIsSuperAdmin(isSuper);
+        console.log('Direct role check result:', roleData, 'Error:', roleError);
+        
+        if (roleData && (roleData.role === 'super_admin' || roleData.role === 'admin')) {
+          console.log('Setting isSuperAdmin to true via direct check');
+          setIsSuperAdmin(true);
+        } else {
+          console.log('User is not super admin or admin');
+          setIsSuperAdmin(false);
+        }
       } catch (error) {
         console.error('Error checking admin status:', error);
+        setIsSuperAdmin(false);
+      } finally {
+        setAdminCheckComplete(true);
       }
     };
     
@@ -1675,6 +1726,20 @@ const Admin = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (!adminCheckComplete) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <h1 className="text-2xl font-bold mb-2">Checking Permissions</h1>
+            <p className="text-muted-foreground">Verifying your admin access...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!isSuperAdmin) {
