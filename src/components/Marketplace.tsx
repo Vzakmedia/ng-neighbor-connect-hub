@@ -111,7 +111,7 @@ const Marketplace = () => {
     { value: 'all', label: 'All Services', icon: Users },
     { value: 'home_repair', label: 'Home Repair', icon: Wrench },
     { value: 'tutoring', label: 'Tutoring', icon: GraduationCap },
-    { value: 'pet_sitting', label: 'Pet Sitting', icon: Heart },
+    { value: 'nanny', label: 'Nanny', icon: Heart },
     { value: 'cleaning', label: 'Cleaning', icon: Home },
     { value: 'tech_support', label: 'Tech Support', icon: Zap },
     { value: 'transport', label: 'Transport', icon: Car },
