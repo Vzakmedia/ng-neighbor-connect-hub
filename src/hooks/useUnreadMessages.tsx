@@ -40,11 +40,10 @@ export const useUnreadMessages = () => {
         }
       });
 
-      // Only play notification sound for genuine new messages from realtime
+      // Only play notification sound for genuine new messages
       const shouldPlayNotification = 
         totalUnread > previousCountRef.current && // Count increased
         !isInitialLoadRef.current && // Not the initial load
-        isFromRealtime && // Only from realtime updates, not polling
         windowHasFocusRef.current; // Only when window has focus
 
       console.log('Notification check:', {
