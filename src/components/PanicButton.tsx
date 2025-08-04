@@ -21,9 +21,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { checkPanicButtonRateLimit, updatePanicButtonRateLimit, validateEmergencyLocation, sanitizeText } from '@/utils/security';
+import { useSecurityAudit } from '@/hooks/useSecurityAudit';
 
 const PanicButton = () => {
   const { user } = useAuth();
+  const { logPanicButton } = useSecurityAudit();
   const [isPressed, setIsPressed] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
@@ -159,6 +161,9 @@ const PanicButton = () => {
       
       // Update rate limiting
       await updatePanicButtonRateLimit(user.id);
+
+      // Log panic button press for security audit
+      logPanicButton({ lat: location.latitude, lng: location.longitude });
 
       // Get user profile for name
       const { data: profile } = await supabase
