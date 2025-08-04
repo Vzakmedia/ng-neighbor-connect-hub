@@ -233,22 +233,35 @@ const PanicButton = () => {
         }
       }
 
-      // Call emergency alert function to notify contacts
-      const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
-        body: {
-          panic_alert_id: panicData.id,
-          situation_type: selectedSituation,
-          location: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            address
-          },
-          user_name: userName
-        }
-      });
+      // Call emergency alert function to notify contacts (non-blocking)
+      try {
+        const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
+          body: {
+            panic_alert_id: panicData.id,
+            situation_type: selectedSituation,
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+              address
+            },
+            user_name: userName
+          }
+        });
 
-      if (alertFunctionError) {
-        console.error('Error calling emergency alert function:', alertFunctionError);
+        if (alertFunctionError) {
+          console.error('Error calling emergency alert function:', alertFunctionError);
+          // Don't fail the entire panic alert if edge function fails
+          toast({
+            title: "Alert Sent with Limited Notifications",
+            description: "Emergency alert created but some notifications may have failed",
+            variant: "default"
+          });
+        } else {
+          console.log('Emergency alert function called successfully');
+        }
+      } catch (edgeFunctionError) {
+        console.error('Emergency alert function failed:', edgeFunctionError);
+        // Don't fail the main alert creation
       }
 
       // Create a safety alert for community visibility
