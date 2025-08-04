@@ -47,6 +47,15 @@ export const useUnreadMessages = () => {
         isFromRealtime && // Only from realtime updates, not polling
         windowHasFocusRef.current; // Only when window has focus
 
+      console.log('Notification check:', {
+        totalUnread,
+        previousCount: previousCountRef.current,
+        isInitialLoad: isInitialLoadRef.current,
+        isFromRealtime,
+        windowHasFocus: windowHasFocusRef.current,
+        shouldPlayNotification
+      });
+
       if (shouldPlayNotification) {
         try {
           // Get audio settings from localStorage
@@ -56,6 +65,8 @@ export const useUnreadMessages = () => {
           if (soundEnabled) {
             console.log('Playing notification sound for new message');
             playNotification('notification');
+          } else {
+            console.log('Sound disabled in settings');
           }
         } catch (error) {
           console.error('Error playing notification sound:', error);
