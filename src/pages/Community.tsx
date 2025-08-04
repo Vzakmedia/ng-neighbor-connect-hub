@@ -116,7 +116,7 @@ const Community = () => {
       <Button
         onClick={() => setCreatePostOpen(true)}
         size="icon"
-        className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl bg-primary/20 backdrop-blur-md border border-white/20 hover:bg-primary/30 transition-all duration-300 z-50 animate-bounce"
+        className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg hover:shadow-xl bg-primary/20 backdrop-blur-md border border-white/20 hover:bg-primary/30 transition-all duration-300 z-50 animate-slow-bounce"
       >
         <Plus className="h-5 w-5 text-white" />
       </Button>
