@@ -6,6 +6,7 @@ import CommunityBoards from '@/components/CommunityBoards';
 import CommunityFeed from '@/components/CommunityFeed';
 import PaymentStatusHandler from '@/components/PaymentStatusHandler';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
+import CreatePostDialog from '@/components/CreatePostDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +16,7 @@ const Community = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("feed");
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -109,6 +111,21 @@ const Community = () => {
           </Tabs>
         </div>
       </main>
+
+      {/* Floating Create Post Button */}
+      <Button
+        onClick={() => setCreatePostOpen(true)}
+        size="icon"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300 z-50"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen} 
+      />
     </div>
   );
 };
