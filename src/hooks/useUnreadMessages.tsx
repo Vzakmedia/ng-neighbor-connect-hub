@@ -11,6 +11,12 @@ export const useUnreadMessages = () => {
   const isInitialLoadRef = useRef(true);
   const windowHasFocusRef = useRef(true);
 
+  console.log('useUnreadMessages hook initialized:', { 
+    userExists: !!user, 
+    userId: user?.id,
+    currentUnreadCount: unreadCount 
+  });
+
   const fetchUnreadCount = async (isFromRealtime = false) => {
     console.log('fetchUnreadCount called:', { isFromRealtime, userExists: !!user });
     
