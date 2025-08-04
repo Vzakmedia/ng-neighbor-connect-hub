@@ -12,12 +12,12 @@ export const useUnreadMessages = () => {
   const windowHasFocusRef = useRef(true);
 
   const fetchUnreadCount = async (isFromRealtime = false) => {
+    console.log('fetchUnreadCount called:', { isFromRealtime, userExists: !!user });
+    
     if (!user) {
       setUnreadCount(0);
       return;
     }
-
-    const currentTime = Date.now();
     
     try {
       // Count unread messages from direct_conversations
