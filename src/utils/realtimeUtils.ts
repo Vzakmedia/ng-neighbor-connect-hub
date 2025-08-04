@@ -23,6 +23,7 @@ export const createSafeSubscription = (
   
   let pollingInterval: NodeJS.Timeout | null = null;
   let isRealTimeConnected = false;
+  let pollCount = 0;
   
   // Start immediate polling fallback with circuit breaker
   const startPolling = () => {
@@ -40,7 +41,11 @@ export const createSafeSubscription = (
       setTimeout(() => {
         pollingInterval = setInterval(() => {
           try {
-            console.log(`${debugName}: Polling for updates...`);
+            // Only log every 10th poll to reduce console spam
+            if (pollCount % 10 === 0) {
+              console.log(`${debugName}: Polling for updates... (${pollCount} polls)`);
+            }
+            pollCount++;
             onError();
             // Reset failure count on successful poll
             failureCount = 0;
