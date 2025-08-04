@@ -134,15 +134,22 @@ const PanicButton = () => {
       return;
     }
 
+    console.log('Panic button triggered by user:', user.id);
+
     // Check rate limiting
-    const canTrigger = await checkPanicButtonRateLimit(user.id);
-    if (!canTrigger) {
-      toast({
-        title: "Rate Limit Exceeded",
-        description: "You can only trigger 3 panic alerts per hour. Please wait before trying again.",
-        variant: "destructive",
-      });
-      return;
+    try {
+      const canTrigger = await checkPanicButtonRateLimit(user.id);
+      if (!canTrigger) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "You can only trigger 3 panic alerts per hour. Please wait before trying again.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (rateLimitError) {
+      console.error('Rate limit check failed:', rateLimitError);
+      // Continue anyway for emergency situations
     }
 
     setLoading(true);
