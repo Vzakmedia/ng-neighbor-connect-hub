@@ -192,7 +192,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           <DialogTitle>Create a Post</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+        <ScrollArea className="flex-1 h-[60vh] pr-4 overflow-y-auto">{" "}
           <form onSubmit={handleSubmit} className="space-y-6 pb-4">
             {/* User Info */}
             <div className="flex items-center space-x-3">
