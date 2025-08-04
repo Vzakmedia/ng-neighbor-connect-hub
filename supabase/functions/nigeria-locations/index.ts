@@ -377,35 +377,114 @@ serve(async (req) => {
         break;
         
       case 'neighborhoods':
-        searchQuery = query ? 
-          `${query} area ${city} ${state} Nigeria` : 
-          `neighborhoods areas ${city} ${state} Nigeria`;
+        // Enhanced Nigerian neighborhoods database with popular areas
+        const nigerianNeighborhoods: { [key: string]: { [key: string]: string[] } } = {
+          'Lagos': {
+            'Lagos Island': ['Victoria Island', 'Ikoyi', 'Lagos Island Central', 'Tafawa Balewa Square', 'Marina', 'Broad Street'],
+            'Eti-Osa': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Banana Island', 'Chevron Drive', 'VGC', 'Oniru', 'Jakande', 'Sangotedo', 'Bogije'],
+            'Ikeja': ['Allen Avenue', 'Computer Village', 'Omole Phase 1', 'Omole Phase 2', 'Magodo GRA', 'Ogba', 'Oregun', 'Alausa', 'Adeniyi Jones'],
+            'Surulere': ['Adeniran Ogunsanya', 'Bode Thomas', 'Iponri', 'Shitta', 'Aguda', 'Lawanson'],
+            'Yaba': ['Sabo', 'Akoka', 'Somolu', 'Bariga', 'Gbagada Phase 1', 'Gbagada Phase 2'],
+            'Alimosho': ['Igando', 'Ikotun', 'Idimu', 'Egbe', 'Iyana Ipaja', 'Dopemu'],
+            'Kosofe': ['Maryland', 'Anthony Village', 'Ojota', 'Ketu', 'Mile 12'],
+            'Ikorodu': ['Ikorodu Town', 'Sagamu Road', 'Igbogbo', 'Bayeku', 'Ijede'],
+            'Badagry': ['Badagry Town', 'Seme Border', 'Ajara', 'Igbogbo'],
+            'Epe': ['Epe Town', 'Noforija', 'Eredo', 'Ejinrin'],
+            'Ibeju-Lekki': ['Awoyaya', 'Lakowe', 'Abijo', 'Bogije', 'Eleko'],
+            'Ojo': ['Alaba', 'Okokomaiko', 'Agboju', 'Festac Town', 'LASU'],
+            'Amuwo-Odofin': ['Mile 2', 'Festac Town', 'Satellite Town', 'Trade Fair', 'Kirikiri'],
+            'Apapa': ['Apapa Town', 'Liverpool', 'Marine Beach', 'Kirikiri', 'Tin Can Island'],
+            'Ajeromi-Ifelodun': ['Ajegunle', 'Layeni', 'Tolu', 'Boundary']
+          },
+          'Federal Capital Territory': {
+            'Abuja Municipal': ['Maitama', 'Asokoro', 'Wuse Zone 1', 'Wuse Zone 2', 'Garki Area 1', 'Garki Area 2', 'Central Business District', 'Three Arms Zone', 'Guzape'],
+            'Gwagwalada': ['Gwagwalada Town', 'Dobi', 'Ibwa', 'Paiko', 'Phase 1', 'Phase 2'],
+            'Kuje': ['Kuje Town', 'Rubochi', 'Yaba', 'Gudun Karya', 'Kuje Phase 1'],
+            'Abaji': ['Abaji Town', 'Pandogari', 'Rimini', 'Yaba'],
+            'Kwali': ['Kwali Town', 'Kilankwa', 'Yangoji', 'Dobi'],
+            'Bwari': ['Kubwa', 'Dutse', 'Bwari Town', 'Zuba', 'Sabon Wuse', 'Byazhin', 'Ushafa']
+          },
+          'Kano': {
+            'Kano Municipal': ['Sabon Gari', 'Fagge', 'Kofar Mata', 'Kurmi Market', 'Emir\'s Palace', 'Railway Quarters'],
+            'Fagge': ['Fagge Town', 'Yan Awaki', 'Gobirawa', 'Sharada'],
+            'Dala': ['Dala Town', 'Kofar Mazugal', 'Kofar Na\'isa', 'Jakara'],
+            'Gwale': ['Gwale Town', 'Dorayi', 'Gwammaja', 'Hotoro'],
+            'Nassarawa': ['Nassarawa Town', 'Bompai', 'Zoo Road', 'Hotoro'],
+            'Ungogo': ['Ungogo Town', 'Bachirawa', 'Panshekara', 'Rijiyar Zaki']
+          },
+          'Rivers': {
+            'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Mile 1', 'Mile 2', 'Mile 3', 'Trans Amadi', 'Diobu', 'D-Line'],
+            'Obio-Akpor': ['Rumuola', 'Rumuogba', 'Choba', 'Aluu', 'Mgbuoba', 'Woji', 'Shell Location'],
+            'Okrika': ['Okrika Town', 'Bolo', 'George', 'Ogoloma'],
+            'Eleme': ['Alesa', 'Agbonchia', 'Ebubu', 'Ogale']
+          }
+        };
+
+        // First try to find neighborhoods in our Nigerian database
+        if (nigerianNeighborhoods[state] && nigerianNeighborhoods[state][city]) {
+          const cityNeighborhoods = nigerianNeighborhoods[state][city];
+          locations = cityNeighborhoods
+            .filter(neighborhood => 
+              !query || neighborhood.toLowerCase().includes(query.toLowerCase())
+            )
+            .map(neighborhood => ({
+              name: neighborhood,
+              formatted_address: `${neighborhood}, ${city}, ${state}, Nigeria`,
+              place_id: `ng_${state.toLowerCase().replace(/\s+/g, '_')}_${city.toLowerCase().replace(/\s+/g, '_')}_${neighborhood.toLowerCase().replace(/\s+/g, '_').replace(/'/g, '')}`,
+              types: ['sublocality', 'political']
+            }));
           
-        // Use multiple search strategies for neighborhoods
+          // If we found matches in our database, return them
+          if (locations.length > 0) {
+            break;
+          }
+        }
+
+        // Fallback to Google Places API with improved Nigerian search terms
+        searchQuery = query ? 
+          `${query} ${city} ${state} Nigeria` : 
+          `neighborhoods ${city} ${state} Nigeria`;
+          
+        // Enhanced search strategies for Nigerian locations
         const neighborhoodQueries = [
-          searchQuery,
-          `${query || ''} estate ${city} ${state} Nigeria`,
-          `${query || ''} district ${city} ${state} Nigeria`,
-          `${query || ''} GRA ${city} ${state} Nigeria`
-        ].filter(q => q.trim());
+          query ? `${query} ${city} ${state} Nigeria` : `areas in ${city} ${state} Nigeria`,
+          query ? `${query} estate ${city} Nigeria` : `estates in ${city} ${state} Nigeria`,
+          query ? `${query} district ${city} Nigeria` : `districts in ${city} ${state} Nigeria`,
+          query ? `${query} GRA ${city} Nigeria` : `GRA ${city} ${state} Nigeria`,
+          query ? `${query} phase ${city} Nigeria` : `phases in ${city} ${state} Nigeria`,
+          query ? `${query} layout ${city} Nigeria` : `layouts in ${city} ${state} Nigeria`
+        ];
         
         const allNeighborhoodResults = await Promise.all(
-          neighborhoodQueries.map(async (query) => {
+          neighborhoodQueries.slice(0, 4).map(async (searchQuery) => {
             try {
               const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-              placesUrl.searchParams.set('query', query);
+              placesUrl.searchParams.set('query', searchQuery);
               placesUrl.searchParams.set('key', apiKey);
               placesUrl.searchParams.set('region', 'ng');
+              placesUrl.searchParams.set('type', 'sublocality');
               
               const response = await fetch(placesUrl.toString());
               const data = await response.json();
               
               if (data.status === 'OK') {
-                return data.results || [];
+                // Filter results to ensure they're actually in Nigeria and the specified state/city
+                return data.results.filter(result => {
+                  const address = result.formatted_address?.toLowerCase() || '';
+                  return address.includes('nigeria') && 
+                         address.includes(state.toLowerCase()) &&
+                         address.includes(city.toLowerCase());
+                }) || [];
               }
+              
+              if (data.status === 'OVER_QUERY_LIMIT') {
+                console.warn('Google Places API quota exceeded');
+                return [];
+              }
+              
               return [];
             } catch (error) {
-              console.error(`Error with neighborhood query "${query}":`, error);
+              console.error(`Error with neighborhood query "${searchQuery}":`, error);
               return [];
             }
           })
@@ -414,10 +493,10 @@ serve(async (req) => {
         // Flatten and deduplicate results
         const allNeighborhoods = allNeighborhoodResults.flat();
         const uniqueNeighborhoods = allNeighborhoods.filter((area, index, self) => 
-          index === self.findIndex(a => a.name.toLowerCase() === area.name.toLowerCase())
+          index === self.findIndex(a => a.name?.toLowerCase() === area.name?.toLowerCase())
         );
         
-        locations = uniqueNeighborhoods.slice(0, 30);
+        locations = uniqueNeighborhoods.slice(0, 25);
         break;
         
       default:
