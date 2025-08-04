@@ -9,7 +9,7 @@ export const useUnreadMessages = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const previousCountRef = useRef(0);
   const isInitialLoadRef = useRef(true);
-  const lastFetchTimeRef = useRef(0);
+  const windowHasFocusRef = useRef(true);
 
   const fetchUnreadCount = async (isFromRealtime = false) => {
     if (!user) {
@@ -40,12 +40,12 @@ export const useUnreadMessages = () => {
         }
       });
 
-      // Only play notification sound for genuine new messages
+      // Only play notification sound for genuine new messages from realtime
       const shouldPlayNotification = 
         totalUnread > previousCountRef.current && // Count increased
         !isInitialLoadRef.current && // Not the initial load
-        (isFromRealtime || currentTime - lastFetchTimeRef.current > 30000) && // Either from realtime or significant time gap
-        document.hasFocus(); // Only when window is focused
+        isFromRealtime && // Only from realtime updates, not polling
+        windowHasFocusRef.current; // Only when window has focus
 
       if (shouldPlayNotification) {
         try {
@@ -64,7 +64,6 @@ export const useUnreadMessages = () => {
       
       // Update refs
       previousCountRef.current = totalUnread;
-      lastFetchTimeRef.current = currentTime;
       
       // Mark initial load as complete
       if (isInitialLoadRef.current) {
@@ -79,6 +78,18 @@ export const useUnreadMessages = () => {
 
   useEffect(() => {
     if (!user) return;
+
+    // Track window focus state
+    const handleFocus = () => {
+      windowHasFocusRef.current = true;
+    };
+    
+    const handleBlur = () => {
+      windowHasFocusRef.current = false;
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
 
     // Initial fetch
     fetchUnreadCount();
@@ -129,6 +140,8 @@ export const useUnreadMessages = () => {
     );
 
     return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
       conversationSubscription?.unsubscribe();
       messageSubscription?.unsubscribe();
     };
