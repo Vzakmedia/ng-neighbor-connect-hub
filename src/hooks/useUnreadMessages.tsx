@@ -8,13 +8,17 @@ export const useUnreadMessages = () => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const previousCountRef = useRef(0);
+  const isInitialLoadRef = useRef(true);
+  const lastFetchTimeRef = useRef(0);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = async (isFromRealtime = false) => {
     if (!user) {
       setUnreadCount(0);
       return;
     }
 
+    const currentTime = Date.now();
+    
     try {
       // Count unread messages from direct_conversations
       const { data: conversations, error } = await supabase
@@ -36,15 +40,21 @@ export const useUnreadMessages = () => {
         }
       });
 
-      // Play notification sound if count increased
-      if (totalUnread > previousCountRef.current && previousCountRef.current > 0) {
+      // Only play notification sound for genuine new messages
+      const shouldPlayNotification = 
+        totalUnread > previousCountRef.current && // Count increased
+        !isInitialLoadRef.current && // Not the initial load
+        (isFromRealtime || currentTime - lastFetchTimeRef.current > 30000) && // Either from realtime or significant time gap
+        document.hasFocus(); // Only when window is focused
+
+      if (shouldPlayNotification) {
         try {
           // Get audio settings from localStorage
           const audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}');
           const soundEnabled = audioSettings.soundEnabled !== false; // Default to true
-          const volume = audioSettings.notificationVolume?.[0] || 0.5;
           
           if (soundEnabled) {
+            console.log('Playing notification sound for new message');
             playNotification('notification');
           }
         } catch (error) {
@@ -52,7 +62,15 @@ export const useUnreadMessages = () => {
         }
       }
       
+      // Update refs
       previousCountRef.current = totalUnread;
+      lastFetchTimeRef.current = currentTime;
+      
+      // Mark initial load as complete
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
+      }
+      
       setUnreadCount(totalUnread);
     } catch (error) {
       console.error('Error fetching unread messages:', error);
@@ -74,7 +92,7 @@ export const useUnreadMessages = () => {
           table: 'direct_conversations',
           filter: `user1_id=eq.${user.id}`
         }, () => {
-          fetchUnreadCount();
+          fetchUnreadCount(true); // Mark as from realtime
         })
         .on('postgres_changes', {
           event: '*',
@@ -82,7 +100,7 @@ export const useUnreadMessages = () => {
           table: 'direct_conversations',
           filter: `user2_id=eq.${user.id}`
         }, () => {
-          fetchUnreadCount();
+          fetchUnreadCount(true); // Mark as from realtime
         }),
       {
         channelName: 'conversation-updates',
@@ -100,7 +118,7 @@ export const useUnreadMessages = () => {
           table: 'direct_messages',
           filter: `recipient_id=eq.${user.id}`
         }, () => {
-          fetchUnreadCount();
+          fetchUnreadCount(true); // Mark as from realtime
         }),
       {
         channelName: 'message-updates',
