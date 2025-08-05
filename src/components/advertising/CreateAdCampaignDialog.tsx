@@ -23,7 +23,7 @@ interface CreateAdCampaignDialogProps {
   onCampaignCreated?: () => void;
   preSelectedContent?: {
     id: string;
-    type: 'service' | 'marketplace_item' | 'business' | 'community_post' | 'event';
+    type: string;
     title: string;
     description?: string;
   };
@@ -45,7 +45,7 @@ interface PromotableContent {
   title: string;
   description?: string;
   price?: number;
-  type: 'service' | 'marketplace_item' | 'business' | 'community_post' | 'event';
+  type: string;
 }
 
 export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelectedContent }: CreateAdCampaignDialogProps) => {
@@ -59,7 +59,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
 
   const [formData, setFormData] = useState({
     campaignName: '',
-    campaignType: 'direct_ad' as 'service' | 'marketplace_item' | 'business' | 'community_post' | 'event' | 'direct_ad',
+    campaignType: 'direct_ad' as string,
     contentId: '',
     geographicScope: 'city' as 'city' | 'state' | 'nationwide',
     targetCities: [] as string[],
@@ -137,10 +137,12 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
           query = supabase.from('businesses').select('id, business_name as title, description').eq('user_id', user?.id);
           break;
         case 'community_post':
-          query = supabase.from('community_posts').select('id, title, content as description').eq('user_id', user?.id);
-          break;
+        case 'general':
+        case 'safety':
+        case 'marketplace':
+        case 'help':
         case 'event':
-          query = supabase.from('community_posts').select('id, title, content as description').eq('user_id', user?.id).eq('post_type', 'event');
+          query = supabase.from('community_posts').select('id, title, content as description').eq('user_id', user?.id).eq('post_type', formData.campaignType);
           break;
         default:
           return;
@@ -194,8 +196,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
         ...(formData.campaignType === 'service' && { service_id: formData.contentId }),
         ...(formData.campaignType === 'marketplace_item' && { marketplace_item_id: formData.contentId }),
         ...(formData.campaignType === 'business' && { business_id: formData.contentId }),
-        ...(formData.campaignType === 'community_post' && { community_post_id: formData.contentId }),
-        ...(formData.campaignType === 'event' && { event_id: formData.contentId }),
+        ...(['general', 'safety', 'marketplace', 'help', 'event'].includes(formData.campaignType) && { community_post_id: formData.contentId }),
         
         // Direct ad content
         ...(formData.campaignType === 'direct_ad' && {
@@ -301,19 +302,22 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
 
               <div>
                 <Label htmlFor="campaignType">What do you want to promote?</Label>
-                <Select value={formData.campaignType} onValueChange={(value: any) => setFormData({ ...formData, campaignType: value, contentId: '' })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="service">My Service</SelectItem>
-                    <SelectItem value="marketplace_item">My Marketplace Item</SelectItem>
-                    <SelectItem value="business">My Business</SelectItem>
-                    <SelectItem value="community_post">My Community Post</SelectItem>
-                    <SelectItem value="event">My Event</SelectItem>
-                    <SelectItem value="direct_ad">Create Custom Ad</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={formData.campaignType} onValueChange={(value: any) => setFormData({ ...formData, campaignType: value, contentId: '' })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="service">My Service</SelectItem>
+                      <SelectItem value="marketplace_item">My Marketplace Item</SelectItem>
+                      <SelectItem value="business">My Business</SelectItem>
+                      <SelectItem value="general">General Post</SelectItem>
+                      <SelectItem value="safety">Safety Alert</SelectItem>
+                      <SelectItem value="marketplace">Marketplace Post</SelectItem>
+                      <SelectItem value="help">Help Request</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                      <SelectItem value="direct_ad">Create Custom Ad</SelectItem>
+                    </SelectContent>
+                  </Select>
               </div>
 
               {formData.campaignType !== 'direct_ad' && (

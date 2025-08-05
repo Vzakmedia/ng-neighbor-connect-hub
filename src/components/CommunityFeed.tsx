@@ -1168,15 +1168,15 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       {user?.id === post.user_id && (
                         <>
                           <DropdownMenuItem asChild>
-                            <PromotePostButton
-                              postId={post.id}
-                              postType={post.type === 'event' ? 'event' : 'community_post'}
-                              postTitle={post.title || `${post.type} post`}
-                              postDescription={post.content}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start"
-                            />
+                          <PromotePostButton
+                            postId={post.id}
+                            postType={post.type}
+                            postTitle={post.title || `${post.type} post`}
+                            postDescription={post.content}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                          />
                           </DropdownMenuItem>
                         </>
                       )}
@@ -1256,7 +1256,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                      {user?.id === post.user_id && (
                        <PromotePostButton
                          postId={post.id}
-                         postType="community_post"
+                         postType={post.type}
                          postTitle={post.title || post.content.slice(0, 50)}
                          postDescription={post.content}
                          variant="ghost"

@@ -5,7 +5,7 @@ import { Megaphone } from 'lucide-react';
 
 interface PromotePostButtonProps {
   postId: string;
-  postType: 'community_post' | 'event';
+  postType: string;
   postTitle: string;
   postDescription?: string;
   variant?: "default" | "outline" | "destructive" | "secondary" | "ghost" | "link";
