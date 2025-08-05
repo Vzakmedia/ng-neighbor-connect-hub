@@ -29,6 +29,7 @@ import MyBookings from "./pages/MyBookings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import CompleteProfile from "./pages/CompleteProfile";
+import VerifyEmail from "./pages/VerifyEmail";
 import Admin from "./pages/Admin";
 import Business from "./pages/Business";
 import ModeratorDashboard from "./pages/ModeratorDashboard";
@@ -88,6 +89,7 @@ const App = () => {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/events" element={<Events />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/verify-email" element={<VerifyEmail />} />
               <Route path="/auth/complete-profile" element={<CompleteProfile />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/moderator" element={<ModeratorDashboard />} />

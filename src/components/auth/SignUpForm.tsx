@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User, Loader2 } from "lucide-react";
 import { LocationSelector } from "./LocationSelector";
 import { SecureInput } from "./SecureAuthForms";
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
@@ -12,6 +12,9 @@ import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStren
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GoogleAuthButton } from "./GoogleAuthButton";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Camera, Upload } from "lucide-react";
+import { useRef, useState as useSignupState } from "react";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -24,10 +27,13 @@ export const SignUpForm = () => {
     city: "",
     neighborhood: "",
     address: "",
+    avatarUrl: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useSignupState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +43,67 @@ export const SignUpForm = () => {
 
   const handleLocationChange = (state: string, city: string, neighborhood: string) => {
     setFormData(prev => ({ ...prev, state, city, neighborhood }));
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `temp-${Date.now()}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+
+      // Upload to avatars bucket
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+
+      toast({
+        title: "Avatar Uploaded",
+        description: "Your profile picture has been uploaded successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -103,8 +170,8 @@ export const SignUpForm = () => {
 
     try {
       const redirectUrl = window.location.hostname === 'localhost' 
-        ? `${window.location.origin}/`
-        : 'https://neighborlink.ng/';
+        ? `${window.location.origin}/auth/verify-email`
+        : 'https://neighborlink.ng/auth/verify-email';
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -118,6 +185,7 @@ export const SignUpForm = () => {
             city: formData.city,
             neighborhood: formData.neighborhood,
             address: formData.address,
+            avatar_url: formData.avatarUrl,
           },
         },
       });
@@ -137,17 +205,10 @@ export const SignUpForm = () => {
           });
         }
       } else {
-        if (data.user && !data.user.email_confirmed_at) {
-          toast({
-            title: "Check Your Email",
-            description: "Please check your email and click the confirmation link to complete your account setup.",
-          });
-        } else {
-          toast({
-            title: "Account Created!",
-            description: "Welcome to NeighborLink! You can now access the community features.",
-          });
-        }
+        toast({
+          title: "Check Your Email",
+          description: "Please check your email and click the confirmation link to complete your account setup.",
+        });
       }
     } catch (error) {
       toast({
@@ -177,6 +238,41 @@ export const SignUpForm = () => {
       </div>
 
       <form onSubmit={handleSignUp} className="space-y-4">
+      {/* Profile Picture Upload */}
+      <div className="flex flex-col items-center space-y-4">
+        <div className="relative">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={formData.avatarUrl} />
+            <AvatarFallback>
+              {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : <User className="h-8 w-8" />}
+            </AvatarFallback>
+          </Avatar>
+          <Button
+            type="button"
+            size="sm"
+            className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+          >
+            {uploadingAvatar ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+        </div>
+        <p className="text-sm text-muted-foreground text-center">
+          Upload a profile picture (optional)
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="fullName">Full Name</Label>
         <Input

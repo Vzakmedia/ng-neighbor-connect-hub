@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProfileCompletion } from "@/components/auth/ProfileCompletion";
+import { EnhancedProfileCompletion } from "@/components/auth/EnhancedProfileCompletion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -62,7 +62,7 @@ const CompleteProfile = () => {
     return null;
   }
 
-  return <ProfileCompletion />;
+  return <EnhancedProfileCompletion />;
 };
 
 export default CompleteProfile;

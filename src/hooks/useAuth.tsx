@@ -26,19 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("Auth state changed:", event, session?.user?.email_confirmed_at);
           setSession(session);
           
-          // Only set user if email is confirmed (for direct signups)
-          if (session?.user) {
-            // Allow Google OAuth users (they don't need email confirmation)
-            // For email signups, require email confirmation
-            const isGoogleAuth = session.user.app_metadata?.provider === 'google';
-            const isEmailConfirmed = session.user.email_confirmed_at;
-            
-            if (isGoogleAuth || isEmailConfirmed) {
-              setUser(session.user);
-            } else {
-              // Email signup but not confirmed yet
-              setUser(null);
-            }
+          // Only set user if email is confirmed (ALL users need email confirmation)
+          if (session?.user && session.user.email_confirmed_at) {
+            setUser(session.user);
           } else {
             setUser(null);
           }
@@ -53,15 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         
         // Apply same email confirmation logic for initial session
-        if (session?.user) {
-          const isGoogleAuth = session.user.app_metadata?.provider === 'google';
-          const isEmailConfirmed = session.user.email_confirmed_at;
-          
-          if (isGoogleAuth || isEmailConfirmed) {
-            setUser(session.user);
-          } else {
-            setUser(null);
-          }
+        if (session?.user && session.user.email_confirmed_at) {
+          setUser(session.user);
         } else {
           setUser(null);
         }
