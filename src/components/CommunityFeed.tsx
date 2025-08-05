@@ -416,15 +416,13 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           console.log('CommunityFeed: Community post change detected:', payload);
           
           if (payload.eventType === 'INSERT') {
-            // New post added - refresh feed
-            fetchPosts(false);
-            toast({
-              title: "New post",
-              description: "A new post has been added to your feed.",
-            });
+            // New post added - just set flag for user to refresh manually
+            setHasNewPosts(true);
           } else if (payload.eventType === 'UPDATE') {
-            // Post updated - refresh feed
-            fetchPosts(false);
+            // Post updated - update in place if exists
+            setPosts(prev => prev.map(post => 
+              post.id === payload.new.id ? { ...post } : post
+            ));
           } else if (payload.eventType === 'DELETE') {
             // Post deleted - remove from state
             setPosts(prev => prev.filter(post => post.id !== payload.old.id));

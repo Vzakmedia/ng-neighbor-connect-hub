@@ -123,7 +123,7 @@ export const PostFullScreenDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-4 pb-3 border-b sticky top-0 bg-background z-10 relative">
             <div className="flex items-start justify-between">
               {/* Close button positioned absolutely */}
@@ -165,7 +165,7 @@ export const PostFullScreenDialog = ({
             </div>
           </DialogHeader>
           
-          <div className="p-4 pt-2">
+          <div className="p-4 pt-2 overflow-y-auto flex-1">
             {post.title && (
               <h3 className="font-semibold text-xl mb-4">{post.title}</h3>
             )}
