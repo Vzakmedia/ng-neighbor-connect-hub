@@ -399,31 +399,135 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     fetchPosts(true);
   }, [user, profile, viewScope]);
 
-  // Set up Facebook-style auto-refresh system
+  // Enhanced real-time system for comprehensive updates
   useEffect(() => {
     if (!user) return;
 
+    console.log('CommunityFeed: Setting up comprehensive real-time subscriptions');
+
     const subscription = createSafeSubscription(
       (channel) => channel
+        // Listen to all community posts changes
         .on('postgres_changes', {
-          event: 'INSERT',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'community_posts'
-        }, () => {
-          autoRefreshPosts();
+        }, (payload) => {
+          console.log('CommunityFeed: Community post change detected:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // New post added - refresh feed
+            fetchPosts(false);
+            toast({
+              title: "New post",
+              description: "A new post has been added to your feed.",
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            // Post updated - refresh feed
+            fetchPosts(false);
+          } else if (payload.eventType === 'DELETE') {
+            // Post deleted - remove from state
+            setPosts(prev => prev.filter(post => post.id !== payload.old.id));
+            toast({
+              title: "Post removed",
+              description: "A post has been removed from your feed.",
+            });
+          }
+        })
+        // Listen to post likes changes
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        }, (payload) => {
+          console.log('CommunityFeed: Post like change detected:', payload);
+          
+          const postId = payload.new?.post_id || payload.old?.post_id;
+          if (!postId) return;
+
+          // Update like count and status in real-time
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              if (payload.eventType === 'INSERT') {
+                return {
+                  ...post,
+                  likes: post.likes + 1,
+                  isLiked: payload.new.user_id === user.id ? true : post.isLiked
+                };
+              } else if (payload.eventType === 'DELETE') {
+                return {
+                  ...post,
+                  likes: Math.max(0, post.likes - 1),
+                  isLiked: payload.old.user_id === user.id ? false : post.isLiked
+                };
+              }
+            }
+            return post;
+          }));
+        })
+        // Listen to post comments changes
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'post_comments'
+        }, (payload) => {
+          console.log('CommunityFeed: Comment change detected:', payload);
+          
+          const postId = payload.new?.post_id || payload.old?.post_id;
+          if (!postId) return;
+
+          // Update comment count in real-time
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              if (payload.eventType === 'INSERT') {
+                return { ...post, comments: post.comments + 1 };
+              } else if (payload.eventType === 'DELETE') {
+                return { ...post, comments: Math.max(0, post.comments - 1) };
+              }
+            }
+            return post;
+          }));
+        })
+        // Listen to saved posts changes
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'saved_posts',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          console.log('CommunityFeed: Saved post change detected:', payload);
+          
+          const postId = payload.new?.post_id || payload.old?.post_id;
+          if (!postId) return;
+
+          // Update saved status in real-time
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              if (payload.eventType === 'INSERT') {
+                return { ...post, isSaved: true };
+              } else if (payload.eventType === 'DELETE') {
+                return { ...post, isSaved: false };
+              }
+            }
+            return post;
+          }));
         }),
       {
-        channelName: 'community_feed_auto_refresh',
-        onError: () => autoRefreshPosts(),
-        pollInterval: 30000,
-        debugName: 'CommunityFeedAutoRefresh'
+        channelName: 'community_feed_comprehensive',
+        onError: () => {
+          console.log('CommunityFeed: Real-time error, falling back to polling');
+          fetchPosts(false);
+        },
+        pollInterval: 30000, // Poll every 30 seconds as fallback
+        debugName: 'CommunityFeedComprehensive'
       }
     );
 
     return () => {
+      console.log('CommunityFeed: Cleaning up real-time subscriptions');
       subscription?.unsubscribe();
     };
-  }, [user, profile, viewScope, lastFetchTime]);
+  }, [user, profile, viewScope]);
 
 
   const getPostTypeIcon = (type: string) => {

@@ -282,36 +282,111 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     }
   };
 
-  // Set up safe real-time subscription for comments
+  // Enhanced real-time subscription for comprehensive comment updates
   useEffect(() => {
     if (!user) return;
 
+    console.log(`CommentSection: Setting up comprehensive real-time for post ${postId}`);
+
     const subscription = createSafeSubscription(
       (channel) => channel
+        // Listen to comment changes for this specific post
         .on('postgres_changes', {
-          event: '*',
+          event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'post_comments',
           filter: `post_id=eq.${postId}`
-        }, () => {
-          fetchComments();
+        }, (payload) => {
+          console.log('CommentSection: Comment change detected:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // Refresh comments to get the new comment with profile data
+            fetchComments();
+          } else if (payload.eventType === 'UPDATE') {
+            // Comment updated - refresh to get updated content
+            fetchComments();
+          } else if (payload.eventType === 'DELETE') {
+            // Comment deleted - remove from state immediately
+            setComments(prev => {
+              const filterComments = (comments: Comment[]): Comment[] => {
+                return comments.reduce((acc, comment) => {
+                  if (comment.id === payload.old.id) {
+                    return acc; // Skip deleted comment
+                  }
+                  
+                  const updatedComment = {
+                    ...comment,
+                    replies: comment.replies ? filterComments(comment.replies) : []
+                  };
+                  
+                  acc.push(updatedComment);
+                  return acc;
+                }, [] as Comment[]);
+              };
+              
+              return filterComments(prev);
+            });
+          }
         })
+        // Listen to comment likes changes
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'comment_likes'
-        }, () => {
-          fetchComments();
+        }, (payload) => {
+          console.log('CommentSection: Comment like change detected:', payload);
+          
+          const commentId = payload.new?.comment_id || payload.old?.comment_id;
+          if (!commentId) return;
+
+          // Update like count and status in real-time
+          setComments(prev => {
+            const updateCommentLikes = (comments: Comment[]): Comment[] => {
+              return comments.map(comment => {
+                if (comment.id === commentId) {
+                  if (payload.eventType === 'INSERT') {
+                    return {
+                      ...comment,
+                      likes_count: comment.likes_count + 1,
+                      is_liked_by_user: payload.new.user_id === user.id ? true : comment.is_liked_by_user
+                    };
+                  } else if (payload.eventType === 'DELETE') {
+                    return {
+                      ...comment,
+                      likes_count: Math.max(0, comment.likes_count - 1),
+                      is_liked_by_user: payload.old.user_id === user.id ? false : comment.is_liked_by_user
+                    };
+                  }
+                }
+                
+                // Also check replies
+                if (comment.replies) {
+                  return {
+                    ...comment,
+                    replies: updateCommentLikes(comment.replies)
+                  };
+                }
+                
+                return comment;
+              });
+            };
+            
+            return updateCommentLikes(prev);
+          });
         }),
       {
-        channelName: `comment_section_${postId}`,
-        onError: fetchComments,
-        pollInterval: 45000,
-        debugName: 'CommentSection'
+        channelName: `comment_section_comprehensive_${postId}`,
+        onError: () => {
+          console.log('CommentSection: Real-time error, refreshing comments');
+          fetchComments();
+        },
+        pollInterval: 15000, // Poll every 15 seconds for comments
+        debugName: 'CommentSectionComprehensive'
       }
     );
 
     return () => {
+      console.log(`CommentSection: Cleaning up real-time for post ${postId}`);
       subscription?.unsubscribe();
     };
   }, [postId, user]);

@@ -249,6 +249,88 @@ const EventFeed = () => {
     fetchEvents();
   }, [user, profile]);
 
+  // Real-time subscription for events
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('EventFeed: Setting up real-time subscriptions for events');
+
+    const subscription = supabase
+      .channel('events_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'community_posts',
+        filter: 'post_type=eq.event'
+      }, (payload) => {
+        console.log('EventFeed: Event change detected:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          fetchEvents();
+          toast({
+            title: "New event",
+            description: "A new event has been added.",
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          fetchEvents();
+        } else if (payload.eventType === 'DELETE') {
+          setEvents(prev => prev.filter(event => event.id !== payload.old.id));
+        }
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'post_likes'
+      }, (payload: any) => {
+        const postId = (payload.new as any)?.post_id || (payload.old as any)?.post_id;
+        if (!postId) return;
+
+        setEvents(prev => prev.map(event => {
+          if (event.id === postId) {
+            if (payload.eventType === 'INSERT') {
+              return {
+                ...event,
+                likes: event.likes + 1,
+                isLiked: (payload.new as any).user_id === user.id ? true : event.isLiked
+              };
+            } else if (payload.eventType === 'DELETE') {
+              return {
+                ...event,
+                likes: Math.max(0, event.likes - 1),
+                isLiked: (payload.old as any).user_id === user.id ? false : event.isLiked
+              };
+            }
+          }
+          return event;
+        }));
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'post_comments'
+      }, (payload: any) => {
+        const postId = (payload.new as any)?.post_id || (payload.old as any)?.post_id;
+        if (!postId) return;
+
+        setEvents(prev => prev.map(event => {
+          if (event.id === postId) {
+            if (payload.eventType === 'INSERT') {
+              return { ...event, comments: event.comments + 1 };
+            } else if (payload.eventType === 'DELETE') {
+              return { ...event, comments: Math.max(0, event.comments - 1) };
+            }
+          }
+          return event;
+        }));
+      })
+      .subscribe();
+
+    return () => {
+      console.log('EventFeed: Cleaning up real-time subscriptions');
+      supabase.removeChannel(subscription);
+    };
+  }, [user, profile]);
+
   const handleLike = async (eventId: string) => {
     if (!user) return;
 
