@@ -51,10 +51,14 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
             .from('services')
             .select('*')
             .eq('user_id', user.id)
-            .eq('approval_status', 'approved')
             .order('created_at', { ascending: false });
           
-          if (servicesError) throw servicesError;
+          if (servicesError) {
+            console.error('Error fetching services:', servicesError);
+            throw servicesError;
+          }
+          
+          console.log('Fetched services:', services);
           data = (services || []).map(service => ({
             ...service,
             type: 'service'
@@ -66,10 +70,14 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
             .from('marketplace_items')
             .select('*')
             .eq('user_id', user.id)
-            .eq('approval_status', 'approved')
             .order('created_at', { ascending: false });
           
-          if (itemsError) throw itemsError;
+          if (itemsError) {
+            console.error('Error fetching marketplace items:', itemsError);
+            throw itemsError;
+          }
+          
+          console.log('Fetched marketplace items:', items);
           data = (items || []).map(item => ({
             ...item,
             type: 'marketplace_item'
@@ -184,7 +192,7 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
         <Card>
           <CardContent className="text-center py-6">
             <div className="text-sm text-muted-foreground">
-              No {adType.replace('_', ' ')}s found. Create some first to promote them.
+              No {adType.replace('_', ' ')}s found. {adType === 'service' ? 'Create a service first to promote it.' : adType === 'marketplace_item' ? 'List an item in the marketplace first to promote it.' : `Create some ${adType.replace('_', ' ')}s first to promote them.`}
             </div>
           </CardContent>
         </Card>
