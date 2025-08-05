@@ -94,6 +94,7 @@ const Marketplace = () => {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
   const [loading, setLoading] = useState(true);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -132,7 +133,7 @@ const Marketplace = () => {
     } else {
       fetchItems();
     }
-  }, [activeTab, selectedCategory, searchTerm]);
+  }, [activeTab, selectedCategory, searchTerm, viewScope]);
 
 
   // Handle URL parameter for specific item
@@ -214,11 +215,19 @@ const Marketplace = () => {
         })
       );
 
-      // Filter services by user's city and state
+      // Filter services by user's location based on view scope
       const filteredServices = servicesWithProfilesAndLikes.filter(service => {
-        if (!currentUserProfile?.city || !currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
-        return service.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase() && 
-               service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+        if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
+        
+        if (viewScope === 'state') {
+          // For entire state view, show services from the same state only
+          return service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+        } else {
+          // For neighborhood view, show services from same city and state
+          const sameCity = service.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
+          const sameState = service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+          return sameCity && sameState && currentUserProfile.city;
+        }
       });
 
       setServices(filteredServices as any || []);
@@ -283,11 +292,19 @@ const Marketplace = () => {
         })
       );
 
-      // Filter items by user's city and state
+      // Filter items by user's location based on view scope
       const filteredItems = itemsWithProfilesAndLikes.filter(item => {
-        if (!currentUserProfile?.city || !currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
-        return item.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase() && 
-               item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+        if (!currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
+        
+        if (viewScope === 'state') {
+          // For entire state view, show items from the same state only
+          return item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+        } else {
+          // For neighborhood view, show items from same city and state
+          const sameCity = item.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
+          const sameState = item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+          return sameCity && sameState && currentUserProfile.city;
+        }
       });
 
       setItems(filteredItems as any || []);
@@ -503,6 +520,22 @@ const Marketplace = () => {
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex bg-muted p-1 rounded-lg w-full sm:w-auto">
+            <Button
+              variant={viewScope === 'neighborhood' ? 'default' : 'ghost'}
+              onClick={() => setViewScope('neighborhood')}
+              className="flex-1 h-10 text-sm"
+            >
+              Neighborhood
+            </Button>
+            <Button
+              variant={viewScope === 'state' ? 'default' : 'ghost'}
+              onClick={() => setViewScope('state')}
+              className="flex-1 h-10 text-sm"
+            >
+              Entire State
+            </Button>
+          </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full h-12 md:h-10">
               <SelectValue placeholder="Category" />
