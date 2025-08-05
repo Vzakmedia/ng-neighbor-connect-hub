@@ -117,57 +117,41 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
     try {
       const totalCost = calculateTotalCost();
       
-      // Create promotion campaign
-      const campaignData = {
-        user_id: user.id,
-        title: formData.title,
-        description: formData.description,
-        budget: totalCost,
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + parseInt(formData.duration_days) * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'pending_payment',
-        target_audience: {
-          type: formData.target_audience,
-          states: formData.target_states,
-          demographics: 'general'
-        },
-        target_locations: formData.target_states,
-        spent_amount: 0
-      };
+      // Get or create pricing tier first
+      const { data: pricingTier } = await supabase
+        .from('ad_pricing_tiers')
+        .select('id')
+        .eq('ad_type', formData.ad_type)
+        .eq('is_active', true)
+        .single();
 
+      // Create advertisement campaign
       const { data: campaign, error: campaignError } = await supabase
-        .from('promotion_campaigns')
-        .insert([campaignData])
+        .from('advertisement_campaigns')
+        .insert([{
+          user_id: user.id,
+          campaign_name: formData.title,
+          ad_title: formData.title,
+          ad_description: formData.description,
+          campaign_type: formData.ad_type,
+          total_budget: totalCost,
+          daily_budget: totalCost / parseInt(formData.duration_days),
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + parseInt(formData.duration_days) * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'draft',
+          payment_status: 'pending',
+          approval_status: 'pending',
+          target_geographic_scope: formData.target_audience,
+          target_states: formData.target_states,
+          ad_url: formData.website_url,
+          ad_call_to_action: formData.call_to_action,
+          ad_images: formData.images,
+          pricing_tier_id: pricingTier?.id || null
+        }])
         .select()
         .single();
 
       if (campaignError) throw campaignError;
-
-      // Create promoted post
-      const postData = {
-        campaign_id: campaign.id,
-        post_type: formData.ad_type,
-        post_content: {
-          title: formData.title,
-          description: formData.description,
-          business_name: formData.business_name,
-          business_category: formData.business_category,
-          website_url: formData.website_url,
-          contact_info: formData.contact_info,
-          call_to_action: formData.call_to_action,
-          images: formData.images
-        },
-        daily_budget: totalCost / parseInt(formData.duration_days),
-        cost_per_click: 5.0,
-        priority: 1,
-        is_active: false
-      };
-
-      const { error: postError } = await supabase
-        .from('promoted_posts')
-        .insert([postData]);
-
-      if (postError) throw postError;
 
       // Initiate payment process
       await initiatePayment(campaign.id, totalCost);
@@ -314,9 +298,6 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
               {/* Content Suggestions */}
               {formData.ad_type && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Debug: ad_type = {formData.ad_type}
-                  </p>
                   <ContentSuggestionPanel
                     adType={formData.ad_type}
                     onContentSelect={handleContentSelect}
