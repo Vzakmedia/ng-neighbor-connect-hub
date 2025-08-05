@@ -377,46 +377,91 @@ serve(async (req) => {
         break;
         
       case 'neighborhoods':
-        // Enhanced Nigerian neighborhoods database with popular areas
+        // Comprehensive Nigerian neighborhoods database with detailed areas
         const nigerianNeighborhoods: { [key: string]: { [key: string]: string[] } } = {
           'Lagos': {
-            'Lagos Island': ['Victoria Island', 'Ikoyi', 'Lagos Island Central', 'Tafawa Balewa Square', 'Marina', 'Broad Street'],
-            'Eti-Osa': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Banana Island', 'Chevron Drive', 'VGC', 'Oniru', 'Jakande', 'Sangotedo', 'Bogije'],
-            'Ikeja': ['Allen Avenue', 'Computer Village', 'Omole Phase 1', 'Omole Phase 2', 'Magodo GRA', 'Ogba', 'Oregun', 'Alausa', 'Adeniyi Jones'],
-            'Surulere': ['Adeniran Ogunsanya', 'Bode Thomas', 'Iponri', 'Shitta', 'Aguda', 'Lawanson'],
-            'Yaba': ['Sabo', 'Akoka', 'Somolu', 'Bariga', 'Gbagada Phase 1', 'Gbagada Phase 2'],
-            'Alimosho': ['Igando', 'Ikotun', 'Idimu', 'Egbe', 'Iyana Ipaja', 'Dopemu'],
-            'Kosofe': ['Maryland', 'Anthony Village', 'Ojota', 'Ketu', 'Mile 12'],
-            'Ikorodu': ['Ikorodu Town', 'Sagamu Road', 'Igbogbo', 'Bayeku', 'Ijede'],
-            'Badagry': ['Badagry Town', 'Seme Border', 'Ajara', 'Igbogbo'],
-            'Epe': ['Epe Town', 'Noforija', 'Eredo', 'Ejinrin'],
-            'Ibeju-Lekki': ['Awoyaya', 'Lakowe', 'Abijo', 'Bogije', 'Eleko'],
-            'Ojo': ['Alaba', 'Okokomaiko', 'Agboju', 'Festac Town', 'LASU'],
-            'Amuwo-Odofin': ['Mile 2', 'Festac Town', 'Satellite Town', 'Trade Fair', 'Kirikiri'],
-            'Apapa': ['Apapa Town', 'Liverpool', 'Marine Beach', 'Kirikiri', 'Tin Can Island'],
-            'Ajeromi-Ifelodun': ['Ajegunle', 'Layeni', 'Tolu', 'Boundary']
+            'Lagos Island': ['Victoria Island', 'Ikoyi', 'Marina', 'Broad Street', 'Tafawa Balewa Square', 'CMS', 'Idumota', 'Balogun', 'Ereko', 'Epetedo'],
+            'Victoria Island': ['Victoria Island Central', 'Bar Beach', 'Onikan', 'Tiamiyu Savage', 'Adeola Odeku', 'Ahmadu Bello Way', 'Akin Adesola', 'Ozumba Mbadiwe'],
+            'Ikoyi': ['Ikoyi Phase 1', 'Ikoyi Phase 2', 'Banana Island', 'Old Ikoyi', 'Dolphin Estate', 'Parkview Estate', 'Osborne Foreshore'],
+            'Eti-Osa': ['Lekki Phase 1', 'Lekki Phase 2', 'Lekki Peninsula', 'Ajah', 'VGC', 'Oniru', 'Jakande', 'Sangotedo', 'Bogije', 'Chevron Drive', 'Richmond Gate', 'Royal Garden Estate'],
+            'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Lekki Peninsula Scheme', 'Abraham Adesanya', 'Admiralty Way', 'Chevron Drive', 'Osapa London', 'Agungi', 'Igbo Efon'],
+            'Ajah': ['Ajah Central', 'Thomas Estate', 'Ado', 'Sangotedo', 'Lakowe', 'Awoyaya', 'Majek', 'Badore', 'Ilaje'],
+            'Ikeja': ['Allen Avenue', 'Computer Village', 'Omole Phase 1', 'Omole Phase 2', 'Magodo GRA', 'Ogba', 'Oregun', 'Alausa', 'Adeniyi Jones', 'Ikeja GRA', 'Maryland'],
+            'Surulere': ['Adeniran Ogunsanya', 'Bode Thomas', 'Iponri', 'Shitta', 'Aguda', 'Lawanson', 'Itire', 'Ojuelegba', 'Kilo', 'Enitan'],
+            'Yaba': ['Sabo Yaba', 'Akoka', 'Somolu', 'Bariga', 'Jibowu', 'Oyingbo', 'Ebute Metta', 'Fadeyi'],
+            'Gbagada': ['Gbagada Phase 1', 'Gbagada Phase 2', 'New Garage', 'Soluyi', 'Millenuim Estate', 'Pedro'],
+            'Alimosho': ['Igando', 'Ikotun', 'Idimu', 'Egbe', 'Iyana Ipaja', 'Dopemu', 'Akowonjo', 'Shasha', 'Pipeline'],
+            'Kosofe': ['Maryland', 'Anthony Village', 'Ojota', 'Ketu', 'Mile 12', 'Oworonshoki', 'Alapere'],
+            'Ikorodu': ['Ikorodu Town', 'Sagamu Road', 'Igbogbo', 'Bayeku', 'Ijede', 'Agric', 'Ebute', 'Lasunwon'],
+            'Agege': ['Agege Central', 'Pen Cinema', 'Mulero', 'Abule Egba', 'Oke Odo', 'Orile Agege'],
+            'Ifako-Ijaiye': ['Ifako', 'Ijaiye', 'Fagba', 'Iju', 'Agbado', 'Alakuko'],
+            'Shomolu': ['Shomolu Central', 'Palmgroove', 'Onipanu', 'Bajulaiye', 'Fadeyi'],
+            'Mushin': ['Mushin Central', 'Papa Ajao', 'Odi Olowo', 'Isolo', 'Okota', 'Ajao Estate'],
+            'Oshodi-Isolo': ['Oshodi', 'Isolo', 'Mafoluku', 'Airport Road', 'Ejigbo', 'Okota', 'Bucknor Estate'],
+            'Badagry': ['Badagry Town', 'Seme Border', 'Ajara', 'Igbogbo', 'Topo', 'Gberefu'],
+            'Epe': ['Epe Town', 'Noforija', 'Eredo', 'Ejinrin', 'Orimedu'],
+            'Ibeju-Lekki': ['Awoyaya', 'Lakowe', 'Abijo', 'Bogije', 'Eleko', 'Igando Orudu', 'Elemoro'],
+            'Ojo': ['Alaba', 'Okokomaiko', 'Agboju', 'LASU', 'Igbo Elerin', 'Ijanikin'],
+            'Amuwo-Odofin': ['Mile 2', 'Festac Town', 'Satellite Town', 'Trade Fair', 'Kirikiri', 'Abule Ado'],
+            'Apapa': ['Apapa Town', 'Liverpool', 'Marine Beach', 'Kirikiri', 'Tin Can Island', 'Warehouse'],
+            'Ajeromi-Ifelodun': ['Ajegunle', 'Layeni', 'Tolu', 'Boundary', 'Orile'],
+            'Magodo': ['Magodo Phase 1', 'Magodo Phase 2', 'CMD Road', 'Shangisha']
           },
           'Federal Capital Territory': {
-            'Abuja Municipal': ['Maitama', 'Asokoro', 'Wuse Zone 1', 'Wuse Zone 2', 'Garki Area 1', 'Garki Area 2', 'Central Business District', 'Three Arms Zone', 'Guzape'],
-            'Gwagwalada': ['Gwagwalada Town', 'Dobi', 'Ibwa', 'Paiko', 'Phase 1', 'Phase 2'],
+            'Abuja Municipal': ['Maitama', 'Asokoro', 'Wuse Zone 1', 'Wuse Zone 2', 'Garki Area 1', 'Garki Area 2', 'Central Business District', 'Three Arms Zone', 'Guzape', 'Cadastral Zone'],
+            'Maitama': ['Maitama District', 'Maitama Extension', 'Diplomatic Quarters'],
+            'Asokoro': ['Asokoro District', 'Asokoro Extension'],
+            'Wuse': ['Wuse Zone 1', 'Wuse Zone 2', 'Wuse Market'],
+            'Garki': ['Garki Area 1', 'Garki Area 2', 'Garki Area 3', 'Garki Village'],
+            'Gwarinpa': ['Gwarinpa Estate', 'Gwarinpa 1st Avenue', 'Gwarinpa 2nd Avenue'],
+            'Kubwa': ['Kubwa FHA Estate', 'Kubwa Extension', 'Phase 1', 'Phase 2', 'Phase 3'],
+            'Karu': ['New Karu', 'Old Karu', 'Masaka', 'One Man Village'],
+            'Nyanya': ['Nyanya Town', 'Mararaba', 'New Nyanya'],
+            'Lugbe': ['Lugbe District', 'Lugbe FHA', 'Trademore Estate'],
+            'Life Camp': ['Life Camp Estate', 'Dape', 'Jikwoyi'],
+            'Utako': ['Utako District', 'Jabi'],
+            'Jabi': ['Jabi District', 'Utako'],
+            'Katampe': ['Katampe Main', 'Katampe Extension'],
+            'Lokogoma': ['Lokogoma District', 'Apo Legislative Quarters']
+          },
+          'Kano': {
+            'Kano Municipal': ['Sabon Gari', 'Fagge', 'Kofar Mata', 'Kurmi Market', 'Emir\'s Palace', 'Railway Quarters', 'Race Course', 'Kantin Kwari'],
+            'Fagge': ['Fagge Town', 'Yan Awaki', 'Gobirawa', 'Sharada', 'Kofar Mazugal'],
+            'Dala': ['Dala Town', 'Kofar Mazugal', 'Kofar Na\'isa', 'Jakara', 'Rijiyar Lemo'],
+            'Gwale': ['Gwale Town', 'Dorayi', 'Gwammaja', 'Hotoro', 'Yan Lemo'],
+            'Nassarawa': ['Nassarawa Town', 'Bompai', 'Zoo Road', 'Hotoro', 'Naibawa'],
+            'Ungogo': ['Ungogo Town', 'Bachirawa', 'Panshekara', 'Rijiyar Zaki', 'Karkasara'],
+            'Tarauni': ['Tarauni Town', 'Yankaba', 'Unguwa Uku'],
+            'Sabon Gari': ['Sabon Gari Central', 'Railway Quarters', 'Race Course']
+          },
+          'Rivers': {
+            'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Mile 1', 'Mile 2', 'Mile 3', 'Mile 4', 'Trans Amadi', 'Diobu', 'D-Line', 'Rumuola'],
+            'Obio-Akpor': ['Rumuola', 'Rumuogba', 'Choba', 'Aluu', 'Mgbuoba', 'Woji', 'Shell Location', 'Rumukrushi', 'Ada George'],
+            'Okrika': ['Okrika Town', 'Bolo', 'George', 'Ogoloma', 'Oko'],
+            'Eleme': ['Alesa', 'Agbonchia', 'Ebubu', 'Ogale', 'Eteo'],
+            'Oyigbo': ['Oyigbo Town', 'Afam', 'Kom-Kom'],
+            'Ikwerre': ['Isiokpo', 'Omagwa', 'Ipo', 'Aluu']
+          },
+          'Oyo': {
+            'Ibadan North': ['Bodija', 'Agodi', 'Mokola', 'Sango', 'UI', 'Polytechnic'],
+            'Ibadan South-West': ['Ring Road', 'Dugbe', 'Oke Ado', 'Challenge', 'Felele'],
+            'Ibadan North-East': ['Iwo Road', 'New Garage', 'Beere', 'Oja\'ba'],
+            'Ibadan South-East': ['Mapo', 'Oritamerin', 'Oke Offa', 'Isale Osun'],
+            'Ibadan North-West': ['Onireke', 'Jericho', 'Iyaganku', 'Agbowo'],
+            'Oluyole': ['Oluyole Estate', 'Kosobo', 'Idi Ishin', 'Jericho GRA']
+          },
+          'Kaduna': {
+            'Kaduna North': ['Sabon Tasha', 'Malali', 'Tudun Wada', 'Unguwan Dosa', 'Television', 'Kakuri'],
+            'Kaduna South': ['Barnawa', 'Narayi', 'Kawo', 'Ungwan Rimi', 'Junction Road'],
+            'Chikun': ['Gonin Gora', 'Kujama', 'Nasarawa', 'Chikun'],
+            'Igabi': ['Rigachikun', 'Turunku', 'Zangon Aya']
+          },
+          'Abuja': {
+            'Gwagwalada': ['Gwagwalada Town', 'Dobi', 'Ibwa', 'Paiko', 'Phase 1', 'Phase 2', 'SCC'],
             'Kuje': ['Kuje Town', 'Rubochi', 'Yaba', 'Gudun Karya', 'Kuje Phase 1'],
             'Abaji': ['Abaji Town', 'Pandogari', 'Rimini', 'Yaba'],
             'Kwali': ['Kwali Town', 'Kilankwa', 'Yangoji', 'Dobi'],
             'Bwari': ['Kubwa', 'Dutse', 'Bwari Town', 'Zuba', 'Sabon Wuse', 'Byazhin', 'Ushafa']
-          },
-          'Kano': {
-            'Kano Municipal': ['Sabon Gari', 'Fagge', 'Kofar Mata', 'Kurmi Market', 'Emir\'s Palace', 'Railway Quarters'],
-            'Fagge': ['Fagge Town', 'Yan Awaki', 'Gobirawa', 'Sharada'],
-            'Dala': ['Dala Town', 'Kofar Mazugal', 'Kofar Na\'isa', 'Jakara'],
-            'Gwale': ['Gwale Town', 'Dorayi', 'Gwammaja', 'Hotoro'],
-            'Nassarawa': ['Nassarawa Town', 'Bompai', 'Zoo Road', 'Hotoro'],
-            'Ungogo': ['Ungogo Town', 'Bachirawa', 'Panshekara', 'Rijiyar Zaki']
-          },
-          'Rivers': {
-            'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Mile 1', 'Mile 2', 'Mile 3', 'Trans Amadi', 'Diobu', 'D-Line'],
-            'Obio-Akpor': ['Rumuola', 'Rumuogba', 'Choba', 'Aluu', 'Mgbuoba', 'Woji', 'Shell Location'],
-            'Okrika': ['Okrika Town', 'Bolo', 'George', 'Ogoloma'],
-            'Eleme': ['Alesa', 'Agbonchia', 'Ebubu', 'Ogale']
           }
         };
 
