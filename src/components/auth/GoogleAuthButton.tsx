@@ -15,10 +15,14 @@ export const GoogleAuthButton = ({ mode }: GoogleAuthButtonProps) => {
     setIsLoading(true);
     
     try {
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/auth/complete-profile`
+        : 'https://neighborlink.ng/auth/complete-profile';
+        
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/complete-profile`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

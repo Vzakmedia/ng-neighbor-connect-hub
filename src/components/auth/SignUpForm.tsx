@@ -102,7 +102,9 @@ export const SignUpForm = () => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? `${window.location.origin}/`
+        : 'https://neighborlink.ng/';
       
       const { error } = await supabase.auth.signUp({
         email: formData.email,
