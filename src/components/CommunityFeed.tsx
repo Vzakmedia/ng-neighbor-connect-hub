@@ -816,40 +816,19 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search posts, users, or tags..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Post Type Filter Buttons */}
-      {/* Desktop filter buttons */}
-      <div className="hidden md:flex flex-wrap gap-2">
-        {postTypeFilters.map((filter) => {
-          const Icon = filter.icon;
-          return (
-            <Button
-              key={filter.key}
-              variant={selectedPostType === filter.key ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedPostType(filter.key)}
-              className="text-xs"
-            >
-              <Icon className="h-3 w-3 mr-1" />
-              {filter.label}
-            </Button>
-          );
-        })}
-      </div>
-      
-      {/* Mobile filter buttons - icons only, expand when active */}
-      <div className="md:hidden w-full">
-        <div className="flex justify-center gap-1 w-full flex-wrap">
+      {/* Search Bar and Post Type Filter Buttons on Same Line */}
+      {/* Desktop layout */}
+      <div className="hidden md:flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search posts, users, or tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
           {postTypeFilters.map((filter) => {
             const Icon = filter.icon;
             return (
@@ -858,21 +837,54 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 variant={selectedPostType === filter.key ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedPostType(filter.key)}
-                className={`transition-all duration-300 ease-in-out ${
-                  selectedPostType === filter.key 
-                    ? 'px-3 flex items-center gap-2 min-w-fit' 
-                    : 'px-0 w-8 h-8 justify-center'
-                }`}
+                className="text-xs"
               >
-                <Icon className="h-3 w-3 flex-shrink-0" />
-                {selectedPostType === filter.key && (
-                  <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                    {filter.label}
-                  </span>
-                )}
+                <Icon className="h-3 w-3 mr-1" />
+                {filter.label}
               </Button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Mobile layout - search bar full width, then filter buttons below */}
+      <div className="md:hidden space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search posts, users, or tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="w-full">
+          <div className="flex justify-center gap-1 w-full flex-wrap">
+            {postTypeFilters.map((filter) => {
+              const Icon = filter.icon;
+              return (
+                <Button
+                  key={filter.key}
+                  variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedPostType(filter.key)}
+                  className={`transition-all duration-300 ease-in-out ${
+                    selectedPostType === filter.key 
+                      ? 'px-3 flex items-center gap-2 min-w-fit' 
+                      : 'px-0 w-8 h-8 justify-center'
+                  }`}
+                >
+                  <Icon className="h-3 w-3 flex-shrink-0" />
+                  {selectedPostType === filter.key && (
+                    <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                      {filter.label}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
