@@ -83,6 +83,12 @@ const Admin = () => {
   const [marketplaceCategoryFilter, setMarketplaceCategoryFilter] = useState('all');
   const [marketplaceStatusFilter, setMarketplaceStatusFilter] = useState('all');
   
+  // User grouping states
+  const [groupedUsers, setGroupedUsers] = useState({});
+  const [selectedState, setSelectedState] = useState('all');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [userViewMode, setUserViewMode] = useState<'list' | 'grouped'>('grouped');
+  
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -1098,9 +1104,51 @@ const Admin = () => {
       
       console.log('Fetched users:', usersWithRoles.length);
       setUsers(usersWithRoles);
+      
+      // Group users by location for better backend handling
+      const grouped = groupUsersByLocation(usersWithRoles);
+      setGroupedUsers(grouped);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
+  };
+
+  // Helper function to group users by location hierarchy
+  const groupUsersByLocation = (users: any[]) => {
+    const grouped: any = {};
+    
+    users.forEach(user => {
+      const state = user.state || 'Unknown State';
+      const city = user.city || 'Unknown City';
+      const neighborhood = user.neighborhood || 'Unknown Neighborhood';
+      
+      if (!grouped[state]) {
+        grouped[state] = {
+          users: [],
+          cities: {}
+        };
+      }
+      
+      if (!grouped[state].cities[city]) {
+        grouped[state].cities[city] = {
+          users: [],
+          neighborhoods: {}
+        };
+      }
+      
+      if (!grouped[state].cities[city].neighborhoods[neighborhood]) {
+        grouped[state].cities[city].neighborhoods[neighborhood] = {
+          users: []
+        };
+      }
+      
+      // Add user to all appropriate levels
+      grouped[state].users.push(user);
+      grouped[state].cities[city].users.push(user);
+      grouped[state].cities[city].neighborhoods[neighborhood].users.push(user);
+    });
+    
+    return grouped;
   };
 
   const fetchEmergencyAlerts = async () => {
@@ -2215,8 +2263,44 @@ const Admin = () => {
                         <SelectItem value="staff">Staff</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Select value={selectedState} onValueChange={setSelectedState}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="State" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All States</SelectItem>
+                        {Object.keys(groupedUsers).map(state => (
+                          <SelectItem key={state} value={state}>{state}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedState !== 'all' && (
+                      <Select value={selectedCity} onValueChange={setSelectedCity}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="City" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Cities</SelectItem>
+                          {Object.keys(groupedUsers[selectedState]?.cities || {}).map(city => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="view-mode" className="text-sm">View:</Label>
+                      <Select value={userViewMode} onValueChange={(value: 'list' | 'grouped') => setUserViewMode(value)}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="grouped">Grouped</SelectItem>
+                          <SelectItem value="list">List</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     {selectedUsers.length > 0 && (
                       <>
                         <Badge variant="secondary">{selectedUsers.length} selected</Badge>
@@ -2254,145 +2338,332 @@ const Admin = () => {
                   </div>
                 </div>
                 
-                {/* Filter users based on search and role filter */}
+                {/* Filter and render users based on view mode */}
                 {(() => {
-                  const filteredUsers = users.filter(user => {
-                    const matchesSearch = !userSearchQuery || 
-                      user.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-                      user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-                      user.neighborhood?.toLowerCase().includes(userSearchQuery.toLowerCase());
+                  const getFilteredUsers = () => {
+                    let usersToFilter = users;
                     
-                    const matchesRole = userRoleFilter === 'all' || 
-                      user.user_roles?.[0]?.role === userRoleFilter;
+                    // Apply location filters first
+                    if (selectedState !== 'all') {
+                      usersToFilter = usersToFilter.filter(user => user.state === selectedState);
+                      
+                      if (selectedCity !== 'all') {
+                        usersToFilter = usersToFilter.filter(user => user.city === selectedCity);
+                      }
+                    }
                     
-                    return matchesSearch && matchesRole;
-                  });
+                    // Apply search and role filters
+                    return usersToFilter.filter(user => {
+                      const matchesSearch = !userSearchQuery || 
+                        user.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                        user.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                        user.neighborhood?.toLowerCase().includes(userSearchQuery.toLowerCase());
+                      
+                      const matchesRole = userRoleFilter === 'all' || 
+                        user.user_roles?.[0]?.role === userRoleFilter;
+                      
+                      return matchesSearch && matchesRole;
+                    });
+                  };
 
+                  const filteredUsers = getFilteredUsers();
+
+                  // Render grouped view
+                  if (userViewMode === 'grouped') {
+                    const displayStates = selectedState === 'all' 
+                      ? Object.keys(groupedUsers) 
+                      : [selectedState].filter(state => groupedUsers[state]);
+
+                    return (
+                      <div className="space-y-6">
+                        {displayStates.map(state => {
+                          const stateData = groupedUsers[state];
+                          if (!stateData) return null;
+
+                          const displayCities = selectedCity === 'all' 
+                            ? Object.keys(stateData.cities) 
+                            : [selectedCity].filter(city => stateData.cities[city]);
+
+                          return (
+                            <Card key={state} className="overflow-hidden">
+                              <CardHeader className="bg-muted/50">
+                                <CardTitle className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-5 w-5" />
+                                    <span>{state}</span>
+                                  </div>
+                                  <Badge variant="secondary">
+                                    {stateData.users.length} users
+                                  </Badge>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-0">
+                                {displayCities.map(city => {
+                                  const cityData = stateData.cities[city];
+                                  if (!cityData) return null;
+
+                                  return (
+                                    <div key={city} className="border-b last:border-b-0">
+                                      <div className="p-4 bg-accent/20">
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="font-medium flex items-center gap-2">
+                                            <Building className="h-4 w-4" />
+                                            {city}
+                                          </h4>
+                                          <Badge variant="outline">
+                                            {cityData.users.length} users
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      
+                                      {Object.keys(cityData.neighborhoods).map(neighborhood => {
+                                        const neighborhoodData = cityData.neighborhoods[neighborhood];
+                                        const neighborhoodUsers = neighborhoodData.users.filter(user => {
+                                          const matchesSearch = !userSearchQuery || 
+                                            user.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                                            user.email?.toLowerCase().includes(userSearchQuery.toLowerCase());
+                                          
+                                          const matchesRole = userRoleFilter === 'all' || 
+                                            user.user_roles?.[0]?.role === userRoleFilter;
+                                          
+                                          return matchesSearch && matchesRole;
+                                        });
+
+                                        if (neighborhoodUsers.length === 0) return null;
+
+                                        return (
+                                          <div key={neighborhood} className="p-4 border-l-2 border-primary/20 ml-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                              <h5 className="text-sm font-medium text-muted-foreground">
+                                                📍 {neighborhood}
+                                              </h5>
+                                              <Badge variant="outline" className="text-xs">
+                                                {neighborhoodUsers.length} users
+                                              </Badge>
+                                            </div>
+                                            
+                                            <div className="grid gap-2">
+                                              {neighborhoodUsers.map(user => (
+                                                <div key={user.user_id} className="flex items-center justify-between p-2 bg-background rounded border">
+                                                  <div className="flex items-center space-x-3">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={selectedUsers.includes(user.user_id)}
+                                                      onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                          setSelectedUsers([...selectedUsers, user.user_id]);
+                                                        } else {
+                                                          setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
+                                                        }
+                                                      }}
+                                                      className="rounded"
+                                                    />
+                                                    <Avatar className="h-8 w-8">
+                                                      <AvatarImage src={user.avatar_url} />
+                                                      <AvatarFallback>
+                                                        {user.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                                      </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                      <div className="font-medium text-sm">{user.full_name || 'Unknown User'}</div>
+                                                      <div className="text-xs text-muted-foreground">{user.email}</div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div className="flex items-center space-x-2">
+                                                    <Badge variant="outline" className="text-xs">
+                                                      {user.user_roles?.[0]?.role || 'user'}
+                                                    </Badge>
+                                                    <Badge variant={user.is_verified ? 'default' : 'secondary'} className="text-xs">
+                                                      {user.is_verified ? 'Verified' : 'Unverified'}
+                                                    </Badge>
+                                                    <Button 
+                                                      variant="outline" 
+                                                      size="sm" 
+                                                      onClick={() => {
+                                                        setSelectedUser(user);
+                                                        setUserDialogOpen(true);
+                                                      }}
+                                                    >
+                                                      <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                      <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                          <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                      </DropdownMenuTrigger>
+                                                      <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEditUserRole(user)}>
+                                                          <Edit className="h-4 w-4 mr-2" />
+                                                          Edit Role
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
+                                                          <Shield className="h-4 w-4 mr-2" />
+                                                          {user.is_verified ? 'Unverify' : 'Verify'} User
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleSendMessage(user)}>
+                                                          <MessageSquare className="h-4 w-4 mr-2" />
+                                                          Send Message
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleExportUserData(user)}>
+                                                          <Download className="h-4 w-4 mr-2" />
+                                                          Export Data
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem 
+                                                          onClick={() => handleDeleteUser(user)}
+                                                          className="text-destructive"
+                                                        >
+                                                          <Trash2 className="h-4 w-4 mr-2" />
+                                                          Delete User
+                                                        </DropdownMenuItem>
+                                                      </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                        
+                        {displayStates.length === 0 && (
+                          <div className="text-center py-8">
+                            <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">No users found matching your filters</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Render list view (original table)
                   return (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedUsers(filteredUsers.map(u => u.user_id));
-                            } else {
-                              setSelectedUsers([]);
-                            }
-                          }}
-                          className="rounded"
-                        />
-                      </TableHead>
-                      <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="w-12">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.includes(user.user_id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedUsers([...selectedUsers, user.user_id]);
-                              } else {
-                                setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
-                              }
-                            }}
-                            className="rounded"
-                          />
-                        </TableCell>
-                        <TableCell className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback>
-                              {user.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.full_name || 'Unknown User'}</div>
-                            <div className="text-sm text-muted-foreground">{user.neighborhood}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{user.email || 'No email'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {user.user_roles?.[0]?.role || 'user'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.is_verified ? 'default' : 'secondary'}>
-                            {user.is_verified ? 'Verified' : 'Unverified'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setUserDialogOpen(true);
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedUsers(filteredUsers.map(u => u.user_id));
+                                } else {
+                                  setSelectedUsers([]);
+                                }
                               }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
+                              className="rounded"
+                            />
+                          </TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Joined</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="w-12">
+                              <input
+                                type="checkbox"
+                                checked={selectedUsers.includes(user.user_id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedUsers([...selectedUsers, user.user_id]);
+                                  } else {
+                                    setSelectedUsers(selectedUsers.filter(id => id !== user.user_id));
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                            </TableCell>
+                            <TableCell className="flex items-center space-x-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user.avatar_url} />
+                                <AvatarFallback>
+                                  {user.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{user.full_name || 'Unknown User'}</div>
+                                <div className="text-sm text-muted-foreground">{user.neighborhood}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{user.email || 'No email'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {user.user_roles?.[0]?.role || 'user'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={user.is_verified ? 'default' : 'secondary'}>
+                                {user.is_verified ? 'Verified' : 'Unverified'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setUserDialogOpen(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditUserRole(user)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Role
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  {user.is_verified ? 'Unverify' : 'Verify'} User
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleSendMessage(user)}>
-                                  <MessageSquare className="h-4 w-4 mr-2" />
-                                  Send Message
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExportUserData(user)}>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Export Data
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleSuspendUser(user)}
-                                  className="text-destructive"
-                                >
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Suspend User
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteUser(user)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete User
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEditUserRole(user)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit Role
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleToggleVerification(user)}>
+                                      <Shield className="h-4 w-4 mr-2" />
+                                      {user.is_verified ? 'Unverify' : 'Verify'} User
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleSendMessage(user)}>
+                                      <MessageSquare className="h-4 w-4 mr-2" />
+                                      Send Message
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExportUserData(user)}>
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Export Data
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDeleteUser(user)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete User
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   );
                 })()}
               </div>
