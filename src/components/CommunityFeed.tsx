@@ -1232,24 +1232,36 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                     >
                       <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                       <span className="text-xs md:text-sm">{post.comments}</span>
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-1 md:gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => toggleSave(post.id)}
-                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
-                    >
-                      <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleShare(post)}
-                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
-                    >
-                      <Share2 className="h-3 w-3 md:h-4 md:w-4" />
+                     </Button>
+                   </div>
+                   <div className="flex items-center gap-1 md:gap-2">
+                     {/* Boost Post Button - only show for post owner */}
+                     {user?.id === post.user_id && (
+                       <PromotePostButton
+                         postId={post.id}
+                         postType="community_post"
+                         postTitle={post.title || post.content.slice(0, 50)}
+                         postDescription={post.content}
+                         variant="ghost"
+                         size="sm"
+                         className="text-primary hover:text-primary/80 px-2 md:px-3 h-8 md:h-9"
+                       />
+                     )}
+                     <Button 
+                       variant="ghost" 
+                       size="sm"
+                       onClick={() => toggleSave(post.id)}
+                       className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
+                     >
+                       <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
+                     </Button>
+                     <Button 
+                       variant="ghost" 
+                       size="sm" 
+                       onClick={() => handleShare(post)}
+                       className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
+                     >
+                       <Share2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </div>
                 </div>
