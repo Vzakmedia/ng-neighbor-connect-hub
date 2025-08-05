@@ -32,9 +32,11 @@ interface Comment {
 interface CommentSectionProps {
   postId: string;
   commentCount: number;
+  onAvatarClick?: (name: string, avatar?: string) => void;
+  isInline?: boolean;
 }
 
-const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
+const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false }: CommentSectionProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -427,12 +429,18 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
 
   const renderComment = (comment: Comment, isReply = false) => (
     <div key={comment.id} className={`flex space-x-3 ${isReply ? 'ml-8 mt-2' : ''}`}>
-      <OnlineAvatar
-        userId={comment.user_id}
-        src={comment.profiles?.avatar_url || undefined}
-        fallback={comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-        size="md"
-      />
+      <div 
+        className="avatar-clickable cursor-pointer"
+        onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User', comment.profiles?.avatar_url || undefined)}
+      >
+        <OnlineAvatar
+          userId={comment.user_id}
+          src={comment.profiles?.avatar_url || undefined}
+          fallback={comment.profiles?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+          size="md"
+          className="hover:ring-2 hover:ring-primary/50 transition-all"
+        />
+      </div>
       <div className="flex-1 min-w-0">
         <div className="bg-background rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
@@ -472,12 +480,18 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
         {replyingTo === comment.id && (
           <div className="mt-3 ml-2">
             <div className="flex space-x-2">
-              <OnlineAvatar
-                userId={user?.id}
-                src={profile?.avatar_url || undefined}
-                fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                size="sm"
-              />
+              <div 
+                className="avatar-clickable cursor-pointer"
+                onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
+              >
+                <OnlineAvatar
+                  userId={user?.id}
+                  src={profile?.avatar_url || undefined}
+                  fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                  size="sm"
+                  className="hover:ring-2 hover:ring-primary/50 transition-all"
+                />
+              </div>
               <div className="flex-1 space-y-2">
                 <div className="relative">
                   <Textarea
@@ -561,30 +575,10 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
   );
 
   return (
-    <div className="border-t bg-muted/20 mt-4">
-      {/* Comments List */}
-      <div className="max-h-80 px-4 py-2 overflow-y-auto" style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'hsl(var(--border)) transparent'
-      }}>
-        <style>
-          {`
-            .comments-container::-webkit-scrollbar {
-              width: 8px;
-            }
-            .comments-container::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            .comments-container::-webkit-scrollbar-thumb {
-              background-color: hsl(var(--border));
-              border-radius: 4px;
-            }
-            .comments-container::-webkit-scrollbar-thumb:hover {
-              background-color: hsl(var(--muted-foreground));
-            }
-          `}
-        </style>
-        <div className="comments-container space-y-3">
+    <div className={`space-y-4 ${isInline ? '' : 'border-t bg-muted/20 mt-4 p-4'}`}>
+      {/* Comments list */}
+      <ScrollArea className={isInline ? "max-h-64" : "max-h-96"}>
+        <div className="space-y-4">
           {loading ? (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
@@ -597,17 +591,23 @@ const CommentSection = ({ postId, commentCount }: CommentSectionProps) => {
             comments.map(comment => renderComment(comment))
           )}
         </div>
-      </div>
+      </ScrollArea>
 
-      {/* Comment Input */}
-      <div className="border-t bg-background/50 p-4">
+      {/* Main comment input */}
+      <div className={`mt-4 pt-3 ${isInline ? 'border-t-0' : 'border-t'}`}>
         <div className="flex space-x-3">
-          <OnlineAvatar
-            userId={user?.id}
-            src={profile?.avatar_url || undefined}
-            fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-            size="md"
-          />
+          <div 
+            className="avatar-clickable cursor-pointer"
+            onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
+          >
+            <OnlineAvatar
+              userId={user?.id}
+              src={profile?.avatar_url || undefined}
+              fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+              size="md"
+              className="hover:ring-2 hover:ring-primary/50 transition-all"
+            />
+          </div>
           <div className="flex-1 space-y-2 relative">
             <div className="relative">
               <Textarea

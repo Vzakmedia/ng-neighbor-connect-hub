@@ -123,6 +123,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>(undefined);
+  const [inlineComments, setInlineComments] = useState<Set<string>>(new Set());
   const [hasNewPosts, setHasNewPosts] = useState(false);
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -589,6 +590,24 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       }
       return newSet;
     });
+  };
+
+  const toggleInlineComments = (postId: string) => {
+    setInlineComments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAvatarClick = (authorName: string, avatarUrl?: string) => {
+    setSelectedUserName(authorName);
+    setSelectedUserAvatar(avatarUrl);
+    setUserProfileOpen(true);
   };
 
   const handlePostClick = async (postId: string, event?: React.MouseEvent) => {
@@ -1107,6 +1126,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   <CommentSection 
                     postId={post.id}
                     commentCount={post.comments}
+                    onAvatarClick={handleAvatarClick}
+                    isInline={true}
                   />
                 )}
               </CardContent>

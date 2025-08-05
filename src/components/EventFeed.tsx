@@ -25,6 +25,7 @@ import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 import RSVPDialog from '@/components/RSVPDialog';
 import ViewEventDialog from '@/components/ViewEventDialog';
+import { UserProfileDialog } from '@/components/UserProfileDialog';
 
 interface DatabasePost {
   id: string;
@@ -83,6 +84,10 @@ const EventFeed = () => {
   const [viewEventDialogOpen, setViewEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
+  const [inlineComments, setInlineComments] = useState<Set<string>>(new Set());
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState('');
+  const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>(undefined);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -333,6 +338,24 @@ const EventFeed = () => {
     });
   };
 
+  const toggleInlineComments = (eventId: string) => {
+    setInlineComments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAvatarClick = (authorName: string, avatarUrl?: string) => {
+    setSelectedUserName(authorName);
+    setSelectedUserAvatar(avatarUrl);
+    setUserProfileOpen(true);
+  };
+
   const handleShare = (event: Event) => {
     setSelectedEvent(event);
     setShareDialogOpen(true);
@@ -401,13 +424,18 @@ const EventFeed = () => {
             <CardHeader className="pb-2 p-3 md:p-6">
               <div className="flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex items-start space-x-2 md:space-x-3 min-w-0 flex-1">
-                  <OnlineAvatar
-                    userId={event.user_id}
-                    src={event.author.avatar}
-                    fallback={event.author.name.charAt(0)}
-                    size="lg"
-                    className="flex-shrink-0"
-                  />
+                   <div 
+                     className="avatar-clickable cursor-pointer"
+                     onClick={() => handleAvatarClick(event.author.name, event.author.avatar)}
+                   >
+                     <OnlineAvatar
+                       userId={event.user_id}
+                       src={event.author.avatar}
+                       fallback={event.author.name.charAt(0)}
+                       size="lg"
+                       className="flex-shrink-0 hover:ring-2 hover:ring-primary/50 transition-all"
+                     />
+                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm md:text-base truncate leading-tight">{event.author.name}</p>
                     <div className="flex flex-col text-xs text-muted-foreground gap-0.5 mt-0.5">
@@ -494,15 +522,15 @@ const EventFeed = () => {
                       <span className="text-xs">{event.likes}</span>
                     </Button>
                     
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleComments(event.id)}
-                      className="text-xs text-muted-foreground min-h-[40px] px-2 md:px-3 touch-manipulation"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      <span className="text-xs">{event.comments}</span>
-                    </Button>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => toggleInlineComments(event.id)}
+                       className={`text-xs min-h-[40px] px-2 md:px-3 touch-manipulation ${inlineComments.has(event.id) ? 'text-primary' : 'text-muted-foreground'}`}
+                     >
+                       <MessageCircle className="h-4 w-4 mr-1" />
+                       <span className="text-xs">{event.comments}</span>
+                     </Button>
                     
                     <Button
                       variant="ghost"
@@ -555,11 +583,13 @@ const EventFeed = () => {
                 </div>
               </div>
 
-              {openComments.has(event.id) && (
-                <div className="mt-4 pt-4 border-t">
+              {inlineComments.has(event.id) && (
+                <div className="mt-4 pt-4 border-t comment-section">
                   <CommentSection 
                     postId={event.id} 
                     commentCount={event.comments}
+                    onAvatarClick={handleAvatarClick}
+                    isInline={true}
                   />
                 </div>
               )}
@@ -594,6 +624,13 @@ const EventFeed = () => {
           />
         </>
       )}
+
+      <UserProfileDialog
+        isOpen={userProfileOpen}
+        onClose={() => setUserProfileOpen(false)}
+        userName={selectedUserName}
+        userAvatar={selectedUserAvatar}
+      />
     </div>
   );
 };
