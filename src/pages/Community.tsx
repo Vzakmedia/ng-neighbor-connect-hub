@@ -51,11 +51,7 @@ const Community = () => {
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Community</h1>
                 <div className="flex items-center gap-2">
-                  <CreateCommunityAdDialog>
-                    <Button size="icon" className="bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
-                      <Megaphone className="h-4 w-4" />
-                    </Button>
-                  </CreateCommunityAdDialog>
+                  {/* Removed create ad button */}
                   <Button
                     variant={activeTab === "feed" ? "default" : "outline"}
                     onClick={() => setActiveTab("feed")}
@@ -81,13 +77,7 @@ const Community = () => {
                 <h1 className="text-2xl font-bold">Community</h1>
                 <p className="text-muted-foreground">Connect with your neighborhood</p>
               </div>
-              <CreateCommunityAdDialog>
-                <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
-                  <Megaphone className="h-4 w-4" />
-                  Create Ad
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </CreateCommunityAdDialog>
+              {/* Removed create ad button */}
             </div>
           </div>
 

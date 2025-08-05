@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield } from 'lucide-react';
+import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
+import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
@@ -264,6 +265,12 @@ const Header = () => {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  <CreateCommunityAdDialog>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Megaphone className="mr-2 h-4 w-4" />
+                      Create Ad
+                    </DropdownMenuItem>
+                  </CreateCommunityAdDialog>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
@@ -346,6 +353,12 @@ const Header = () => {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  <CreateCommunityAdDialog>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Megaphone className="mr-2 h-4 w-4" />
+                      <span className="text-sm">Create Ad</span>
+                    </DropdownMenuItem>
+                  </CreateCommunityAdDialog>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
                     <span className="text-sm">Profile</span>
