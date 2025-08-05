@@ -433,62 +433,243 @@ serve(async (req) => {
             'Ojota': ['Ojota Central', 'Ogudu', 'Ogudu GRA', 'Ogudu Orioke', 'Ketu', 'Mile 12', 'Lamgbasa']
           },
           'Federal Capital Territory': {
-            'Abuja Municipal': ['Maitama', 'Asokoro', 'Wuse Zone 1', 'Wuse Zone 2', 'Garki Area 1', 'Garki Area 2', 'Central Business District', 'Three Arms Zone', 'Guzape', 'Cadastral Zone'],
-            'Maitama': ['Maitama District', 'Maitama Extension', 'Diplomatic Quarters'],
-            'Asokoro': ['Asokoro District', 'Asokoro Extension'],
-            'Wuse': ['Wuse Zone 1', 'Wuse Zone 2', 'Wuse Market'],
-            'Garki': ['Garki Area 1', 'Garki Area 2', 'Garki Area 3', 'Garki Village'],
-            'Gwarinpa': ['Gwarinpa Estate', 'Gwarinpa 1st Avenue', 'Gwarinpa 2nd Avenue'],
-            'Kubwa': ['Kubwa FHA Estate', 'Kubwa Extension', 'Phase 1', 'Phase 2', 'Phase 3'],
-            'Karu': ['New Karu', 'Old Karu', 'Masaka', 'One Man Village'],
-            'Nyanya': ['Nyanya Town', 'Mararaba', 'New Nyanya'],
-            'Lugbe': ['Lugbe District', 'Lugbe FHA', 'Trademore Estate'],
-            'Life Camp': ['Life Camp Estate', 'Dape', 'Jikwoyi'],
-            'Utako': ['Utako District', 'Jabi'],
-            'Jabi': ['Jabi District', 'Utako'],
-            'Katampe': ['Katampe Main', 'Katampe Extension'],
-            'Lokogoma': ['Lokogoma District', 'Apo Legislative Quarters']
+            'Abuja Municipal': ['Maitama', 'Asokoro', 'Wuse Zone 1', 'Wuse Zone 2', 'Garki Area 1', 'Garki Area 2', 'Garki Area 3', 'Central Business District', 'Three Arms Zone', 'Guzape', 'Cadastral Zone', 'City Gate', 'Jahi', 'Katampe'],
+            'Maitama': ['Maitama District', 'Maitama Extension', 'Diplomatic Quarters', 'Shehu Yar\'Adua Way', 'Aguiyi Ironsi Way'],
+            'Asokoro': ['Asokoro District', 'Asokoro Extension', 'Villa Nova Estate', 'Agura Hotel Area'],
+            'Wuse': ['Wuse Zone 1', 'Wuse Zone 2', 'Wuse Market', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7'],
+            'Garki': ['Garki Area 1', 'Garki Area 2', 'Garki Area 3', 'Garki Village', 'Area 7', 'Area 8', 'Area 10', 'Area 11'],
+            'Gwarinpa': ['Gwarinpa Estate', 'Gwarinpa 1st Avenue', 'Gwarinpa 2nd Avenue', '3rd Avenue', '4th Avenue', '5th Avenue', '6th Avenue'],
+            'Kubwa': ['Kubwa FHA Estate', 'Kubwa Extension', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Arab Road', 'Byazhin', 'Dawaki'],
+            'Karu': ['New Karu', 'Old Karu', 'Masaka', 'One Man Village', 'Ado', 'Karshi', 'Gurku'],
+            'Nyanya': ['Nyanya Town', 'Mararaba', 'New Nyanya', 'Karu Site', 'Aso Pada'],
+            'Lugbe': ['Lugbe District', 'Lugbe FHA', 'Trademore Estate', 'Airport Road', 'Lugbe Main'],
+            'Life Camp': ['Life Camp Estate', 'Dape', 'Jikwoyi', 'Kado Estate', 'Gishiri'],
+            'Utako': ['Utako District', 'Jabi Lake', 'Jabi Motor Park'],
+            'Jabi': ['Jabi District', 'Utako', 'Jabi Lake Mall Area', 'Gilmore'],
+            'Katampe': ['Katampe Main', 'Katampe Extension', 'Hillcrest', 'Diplomatic Zone'],
+            'Lokogoma': ['Lokogoma District', 'Apo Legislative Quarters', 'Apo Resettlement', 'Gaduwa'],
+            'Gwagwalada': ['Gwagwalada Town', 'Dobi', 'Ibwa', 'Paiko', 'Phase 1', 'Phase 2', 'SCC', 'Staff Quarters', 'Zuba Road'],
+            'Kuje': ['Kuje Town', 'Rubochi', 'Yaba', 'Gudun Karya', 'Kuje Phase 1', 'Chibiri', 'Kwaku'],
+            'Abaji': ['Abaji Town', 'Pandogari', 'Rimini', 'Yaba', 'Agyana', 'Naharati'],
+            'Kwali': ['Kwali Town', 'Kilankwa', 'Yangoji', 'Dobi', 'Sheda', 'Pai'],
+            'Bwari': ['Kubwa', 'Dutse', 'Bwari Town', 'Zuba', 'Sabon Wuse', 'Byazhin', 'Ushafa', 'Mpape', 'Usuma']
           },
           'Kano': {
-            'Kano Municipal': ['Sabon Gari', 'Fagge', 'Kofar Mata', 'Kurmi Market', 'Emir\'s Palace', 'Railway Quarters', 'Race Course', 'Kantin Kwari'],
-            'Fagge': ['Fagge Town', 'Yan Awaki', 'Gobirawa', 'Sharada', 'Kofar Mazugal'],
-            'Dala': ['Dala Town', 'Kofar Mazugal', 'Kofar Na\'isa', 'Jakara', 'Rijiyar Lemo'],
-            'Gwale': ['Gwale Town', 'Dorayi', 'Gwammaja', 'Hotoro', 'Yan Lemo'],
-            'Nassarawa': ['Nassarawa Town', 'Bompai', 'Zoo Road', 'Hotoro', 'Naibawa'],
-            'Ungogo': ['Ungogo Town', 'Bachirawa', 'Panshekara', 'Rijiyar Zaki', 'Karkasara'],
-            'Tarauni': ['Tarauni Town', 'Yankaba', 'Unguwa Uku'],
-            'Sabon Gari': ['Sabon Gari Central', 'Railway Quarters', 'Race Course']
+            'Kano Municipal': ['Sabon Gari', 'Fagge', 'Kofar Mata', 'Kurmi Market', 'Emir\'s Palace', 'Railway Quarters', 'Race Course', 'Kantin Kwari', 'Gyadi-Gyadi', 'Koki', 'Tudun Murtala'],
+            'Fagge': ['Fagge Town', 'Yan Awaki', 'Gobirawa', 'Sharada', 'Kofar Mazugal', 'Rijiyar Lemo', 'Kwana Hudu'],
+            'Dala': ['Dala Town', 'Kofar Mazugal', 'Kofar Na\'isa', 'Jakara', 'Rijiyar Lemo', 'Yammama', 'Goron Dutse'],
+            'Gwale': ['Gwale Town', 'Dorayi', 'Gwammaja', 'Hotoro', 'Yan Lemo', 'Kofar Wambai', 'Tudun Fulani'],
+            'Nassarawa': ['Nassarawa Town', 'Bompai', 'Zoo Road', 'Hotoro', 'Naibawa', 'Kano Club', 'Government House Area'],
+            'Ungogo': ['Ungogo Town', 'Bachirawa', 'Panshekara', 'Rijiyar Zaki', 'Karkasara', 'Gayawa', 'Rijiya'],
+            'Tarauni': ['Tarauni Town', 'Yankaba', 'Unguwa Uku', 'Kofar Ruwa', 'Kofar Kwaru'],
+            'Sabon Gari': ['Sabon Gari Central', 'Railway Quarters', 'Race Course', 'Sauna', 'Agege'],
+            'Dawakin Kudu': ['Dawakin Kudu Town', 'Tudun Waziri', 'Dawaki'],
+            'Kumbotso': ['Kumbotso Town', 'Challawa', 'Panshekara Extension'],
+            'Warawa': ['Warawa Town', 'Kofar Guga'],
+            'Gwarzo': ['Gwarzo Town', 'Getso'],
+            'Kiru': ['Kiru Town', 'Beli', 'Dabi']
           },
           'Rivers': {
-            'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Mile 1', 'Mile 2', 'Mile 3', 'Mile 4', 'Trans Amadi', 'Diobu', 'D-Line', 'Rumuola'],
-            'Obio-Akpor': ['Rumuola', 'Rumuogba', 'Choba', 'Aluu', 'Mgbuoba', 'Woji', 'Shell Location', 'Rumukrushi', 'Ada George'],
-            'Okrika': ['Okrika Town', 'Bolo', 'George', 'Ogoloma', 'Oko'],
-            'Eleme': ['Alesa', 'Agbonchia', 'Ebubu', 'Ogale', 'Eteo'],
-            'Oyigbo': ['Oyigbo Town', 'Afam', 'Kom-Kom'],
-            'Ikwerre': ['Isiokpo', 'Omagwa', 'Ipo', 'Aluu']
+            'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Mile 1', 'Mile 2', 'Mile 3', 'Mile 4', 'Trans Amadi', 'Diobu', 'D-Line', 'Rumuola', 'Artillery', 'Borikiri', 'Creek Road', 'Forces Avenue', 'Stadium Road', 'Aba Road'],
+            'Obio-Akpor': ['Rumuola', 'Rumuogba', 'Choba', 'Aluu', 'Mgbuoba', 'Woji', 'Shell Location', 'Rumukrushi', 'Ada George', 'Rumuokwuta', 'Rumueme', 'Elimgbu', 'Ozuoba', 'Eagle Island'],
+            'Okrika': ['Okrika Town', 'Bolo', 'George', 'Ogoloma', 'Oko', 'Bat Island', 'Krotown'],
+            'Eleme': ['Alesa', 'Agbonchia', 'Ebubu', 'Ogale', 'Eteo', 'Alode', 'Akpajo'],
+            'Oyigbo': ['Oyigbo Town', 'Afam', 'Kom-Kom', 'Ndele', 'Okoloma'],
+            'Ikwerre': ['Isiokpo', 'Omagwa', 'Ipo', 'Aluu', 'Ubima', 'Apani'],
+            'Bonny': ['Bonny Town', 'Finima', 'Hart Island'],
+            'Degema': ['Degema Town', 'Bukuma', 'Ke'],
+            'Ahoada East': ['Ahoada East Town', 'Edoha', 'Ihugbogo'],
+            'Ahoada West': ['Ahoada West Town', 'Mbiama', 'Joinkrama']
           },
           'Oyo': {
-            'Ibadan North': ['Bodija', 'Agodi', 'Mokola', 'Sango', 'UI', 'Polytechnic'],
-            'Ibadan South-West': ['Ring Road', 'Dugbe', 'Oke Ado', 'Challenge', 'Felele'],
-            'Ibadan North-East': ['Iwo Road', 'New Garage', 'Beere', 'Oja\'ba'],
-            'Ibadan South-East': ['Mapo', 'Oritamerin', 'Oke Offa', 'Isale Osun'],
-            'Ibadan North-West': ['Onireke', 'Jericho', 'Iyaganku', 'Agbowo'],
-            'Oluyole': ['Oluyole Estate', 'Kosobo', 'Idi Ishin', 'Jericho GRA']
+            'Ibadan North': ['Bodija', 'Agodi', 'Mokola', 'Sango', 'UI', 'Polytechnic', 'Ojoo', 'Secretariat', 'Parliament Road', 'Yemetu'],
+            'Ibadan South-West': ['Ring Road', 'Dugbe', 'Oke Ado', 'Challenge', 'Felele', 'Molete', 'Oritamerin', 'Oke Bola'],
+            'Ibadan North-East': ['Iwo Road', 'New Garage', 'Beere', 'Oja\'ba', 'Sabo', 'Oyedepo', 'Agbeni'],
+            'Ibadan South-East': ['Mapo', 'Oritamerin', 'Oke Offa', 'Isale Osun', 'Orita Challenge', 'Oke Ado'],
+            'Ibadan North-West': ['Onireke', 'Jericho', 'Iyaganku', 'Agbowo', 'Bodija Market', 'Sango UI'],
+            'Oluyole': ['Oluyole Estate', 'Kosobo', 'Idi Ishin', 'Jericho GRA', 'Ring Road Estate', 'Apete'],
+            'Lagelu': ['Lalupon', 'Oyedeji', 'Sagbe'],
+            'Akinyele': ['Moniya', 'Akinyele', 'Ojoo'],
+            'Egbeda': ['Egbeda Town', 'Alakia', 'Olodo'],
+            'Ona Ara': ['Akanran', 'Ona Ara', 'Olunloye'],
+            'Ibadan Central': ['Mapo', 'Beere', 'Oja Oba', 'Isale Osun']
           },
           'Kaduna': {
-            'Kaduna North': ['Sabon Tasha', 'Malali', 'Tudun Wada', 'Unguwan Dosa', 'Television', 'Kakuri'],
-            'Kaduna South': ['Barnawa', 'Narayi', 'Kawo', 'Ungwan Rimi', 'Junction Road'],
-            'Chikun': ['Gonin Gora', 'Kujama', 'Nasarawa', 'Chikun'],
-            'Igabi': ['Rigachikun', 'Turunku', 'Zangon Aya']
+            'Kaduna North': ['Sabon Tasha', 'Malali', 'Tudun Wada', 'Unguwan Dosa', 'Television', 'Kakuri', 'Hayin Banki', 'Rigasa', 'Doka', 'Barnawa', 'Romi', 'Narayi High Cost'],
+            'Kaduna South': ['Barnawa', 'Narayi', 'Kawo', 'Ungwan Rimi', 'Junction Road', 'Panteka', 'Nasarawa', 'Angwan Maigero'],
+            'Chikun': ['Gonin Gora', 'Kujama', 'Nasarawa', 'Chikun', 'Millennium City', 'Kurmin Mashi'],
+            'Igabi': ['Rigachikun', 'Turunku', 'Zangon Aya', 'Rigasa', 'Ahmadu Bello Way'],
+            'Zaria': ['Zaria City', 'Sabon Gari Zaria', 'Samaru', 'ABU Campus', 'Tudun Wada Zaria', 'Gyallesu'],
+            'Soba': ['Soba Town', 'Rahama', 'Gimba'],
+            'Makarfi': ['Makarfi Town', 'Gwarzo Road'],
+            'Sabon Gari': ['Sabon Gari Zaria', 'Tudun Jukun', 'Unguwan Fatika']
           },
-          'Abuja': {
-            'Gwagwalada': ['Gwagwalada Town', 'Dobi', 'Ibwa', 'Paiko', 'Phase 1', 'Phase 2', 'SCC'],
-            'Kuje': ['Kuje Town', 'Rubochi', 'Yaba', 'Gudun Karya', 'Kuje Phase 1'],
-            'Abaji': ['Abaji Town', 'Pandogari', 'Rimini', 'Yaba'],
-            'Kwali': ['Kwali Town', 'Kilankwa', 'Yangoji', 'Dobi'],
-            'Bwari': ['Kubwa', 'Dutse', 'Bwari Town', 'Zuba', 'Sabon Wuse', 'Byazhin', 'Ushafa']
+          'Katsina': {
+            'Katsina': ['Katsina Central', 'GRA', 'Kwado Quarters', 'Kofar Guga', 'Kofar Kaura', 'Filin Hockey', 'Low Cost', 'Federal Secretariat', 'Central Market'],
+            'Daura': ['Daura Town', 'Zango', 'Gidan Ango'],
+            'Funtua': ['Funtua Town', 'Industrial Area', 'Mallam Yaro'],
+            'Malumfashi': ['Malumfashi Town', 'Kafur Road'],
+            'Kafur': ['Kafur Town', 'Dankama'],
+            'Kaita': ['Kaita Town', 'Yandoma'],
+            'Jibia': ['Jibia Town', 'Magama'],
+            'Mashi': ['Mashi Town', 'Duma'],
+            'Dutsi': ['Dutsi Town', 'Kyawa'],
+            'Batsari': ['Batsari Town', 'Ruma']
+          },
+          'Jigawa': {
+            'Dutse': ['Dutse Town', 'GRA', 'Central Market', 'Yalleman', 'Limawa', 'Takur'],
+            'Hadejia': ['Hadejia Town', 'Central Market', 'Yalleman Hadejia'],
+            'Kazaure': ['Kazaure Town', 'Roni Road'],
+            'Gumel': ['Gumel Town', 'Maigatari Road'],
+            'Ringim': ['Ringim Town', 'Sankara'],
+            'Birnin Kudu': ['Birnin Kudu Town', 'Unguwar Gini'],
+            'Garki': ['Garki Town', 'Miga Road'],
+            'Babura': ['Babura Town', 'Kyambo']
+          },
+          'Borno': {
+            'Maiduguri': ['Maiduguri Central', 'GRA', 'Monday Market', 'Pompomari', 'Bulumkutu', 'Gwange', 'Lamisula', 'Jiddari Polo', 'Post Office Area', 'Custom Area', 'Railway Quarters'],
+            'Jere': ['Jere Town', 'Addamari', 'Dalori'],
+            'Konduga': ['Konduga Town', 'Kawuri'],
+            'Bama': ['Bama Town', 'Goniri'],
+            'Gwoza': ['Gwoza Town', 'Pulka'],
+            'Dikwa': ['Dikwa Town', 'Marte Road'],
+            'Kukawa': ['Kukawa Town', 'Doro Gowon'],
+            'Gubio': ['Gubio Town', 'Wagir'],
+            'Monguno': ['Monguno Town', 'Geidam Road']
+          },
+          'Yobe': {
+            'Damaturu': ['Damaturu Central', 'GRA', 'Central Market', 'Sabon Fegi', 'Nayinawa', 'Bindigari', 'Damboa Road'],
+            'Potiskum': ['Potiskum Central', 'Central Market', 'Fika Road', 'Kano Road'],
+            'Gashua': ['Gashua Town', 'Central Market'],
+            'Nguru': ['Nguru Town', 'Hadejia Road'],
+            'Geidam': ['Geidam Town', 'Central Market'],
+            'Bade': ['Gashua', 'Bade LGA'],
+            'Fika': ['Fika Town', 'Potiskum Road'],
+            'Gujba': ['Gujba Town', 'Buni Yadi']
+          },
+          'Bauchi': {
+            'Bauchi': ['Bauchi Central', 'GRA', 'Central Market', 'Yelwa', 'Muda Lawal', 'Fadaman Mada', 'Railway Quarters', 'Low Cost', 'Nasarawa Bauchi'],
+            'Azare': ['Azare Town', 'Central Market', 'Katagum Road'],
+            'Misau': ['Misau Town', 'Central Market'],
+            'Jama\'are': ['Jama\'are Town', 'Azare Road'],
+            'Katagum': ['Azare', 'Katagum LGA'],
+            'Zaki': ['Katagum Area'],
+            'Dass': ['Dass Town', 'Bogoro Road'],
+            'Tafawa Balewa': ['Tafawa Balewa Town', 'Bununu'],
+            'Alkaleri': ['Alkaleri Town', 'Futuk']
+          },
+          'Taraba': {
+            'Jalingo': ['Jalingo Central', 'GRA', 'Central Market', 'Hammaruwa', 'Kona', 'Mayo Gwoi', 'Nukkai'],
+            'Wukari': ['Wukari Town', 'Central Market', 'Hospital Road'],
+            'Bali': ['Bali Town', 'Serti'],
+            'Gassol': ['Mutum Biyu', 'Gassol LGA'],
+            'Ibi': ['Ibi Town', 'Wukari Road'],
+            'Takum': ['Takum Town', 'Chanchanji'],
+            'Donga': ['Donga Town', 'Suntai'],
+            'Ussa': ['Lissam', 'Ussa LGA']
+          },
+          'Adamawa': {
+            'Yola North': ['Yola Town', 'GRA', 'Central Market', 'Jimeta', 'Karewa', 'Doubeli', 'Rumde'],
+            'Yola South': ['Yola South LGA', 'Namtari'],
+            'Fufore': ['Gurin', 'Fufore LGA'],
+            'Song': ['Song Town', 'Zumo'],
+            'Girei': ['Girei Town', 'Damare'],
+            'Gombi': ['Gombi Town', 'Garkida'],
+            'Hong': ['Hong Town', 'Hildi'],
+            'Jada': ['Jada Town', 'Mayo Belwa Road'],
+            'Mubi North': ['Mubi Town', 'Central Market', 'Vimtim'],
+            'Mubi South': ['Mubi South LGA', 'Gella']
+          },
+          'Gombe': {
+            'Gombe': ['Gombe Central', 'GRA', 'Central Market', 'Pantami', 'Jekadafari', 'Bolari', 'Tudun Hatsi'],
+            'Akko': ['Kumo', 'Akko LGA'],
+            'Balanga': ['Balanga Town', 'Kindiyo'],
+            'Billiri': ['Billiri Town', 'Bare'],
+            'Dukku': ['Dukku Town', 'Hashidu'],
+            'Funakaye': ['Nafada Road'],
+            'Kaltungo': ['Kaltungo Town', 'Shongom Road'],
+            'Kwami': ['Kwami Town', 'Mallam Sidi']
+          },
+          'Plateau': {
+            'Jos North': ['Jos Central', 'GRA', 'Central Market', 'Gangare', 'Tudun Wada Jos', 'Nassarawa Gwom', 'Jenta', 'Katako'],
+            'Jos South': ['Bukuru', 'Gyel', 'Kugba', 'Vom', 'Zarazong'],
+            'Jos East': ['Angware', 'Jos East LGA'],
+            'Barikin Ladi': ['Gwol', 'Barikin Ladi LGA'],
+            'Riyom': ['Riyom Town', 'Tahoss'],
+            'Bokkos': ['Bokkos Town', 'Daffo'],
+            'Mangu': ['Mangu Town', 'Kerang'],
+            'Pankshin': ['Pankshin Town', 'Chip'],
+            'Kanke': ['Kanke Town', 'Kwolla'],
+            'Kanam': ['Kanam Town', 'Dengi']
+          },
+          'Nasarawa': {
+            'Lafia': ['Lafia Central', 'GRA', 'Central Market', 'Tudun Gwandara', 'Shabu', 'Makama'],
+            'Keffi': ['Keffi Town', 'Central Market', 'Angwan Kwandare'],
+            'Akwanga': ['Akwanga Town', 'Central Market'],
+            'Nasarawa Egon': ['Nasarawa Egon Town', 'Loko'],
+            'Nasarawa': ['Nasarawa Town', 'Central Market'],
+            'Wamba': ['Wamba Town', 'Arikya'],
+            'Kokona': ['Garaku', 'Kokona LGA'],
+            'Awe': ['Awe Town', 'Keana Road'],
+            'Doma': ['Doma Town', 'Awe Road']
+          },
+          'Niger': {
+            'Minna': ['Minna Central', 'GRA', 'Central Market', 'Tunga', 'Sauka Kahuta', 'Limawa', 'Kpakungu', 'Chanchaga', 'Bosso Estate'],
+            'Bida': ['Bida Town', 'Central Market', 'Emirs Palace Area', 'Railway Station'],
+            'Kontagora': ['Kontagora Town', 'Central Market', 'Emir\'s Palace'],
+            'Suleja': ['Suleja Town', 'Madalla', 'Kagini', 'Gwagwa', 'Hassan Dalhat Road'],
+            'New Bussa': ['New Bussa Town', 'Wawa'],
+            'Agaie': ['Agaie Town', 'Lapai Road'],
+            'Bosso': ['Maikunkele', 'Bosso LGA'],
+            'Chanchaga': ['Tunga', 'Chanchaga LGA'],
+            'Mokwa': ['Mokwa Town', 'Central Market'],
+            'Lapai': ['Lapai Town', 'Agaie Road']
           }
         };
+
+        // Add more states with neighborhoods
+        const additionalStates = {
+          'Kwara': {
+            'Ilorin East': ['Ilorin Central', 'GRA', 'Central Market', 'Amilegbe', 'Tanke', 'Fate Road', 'Unity Road'],
+            'Ilorin South': ['Ilorin South LGA', 'Adewole Estate', 'Challenge'],
+            'Ilorin West': ['Ilorin West LGA', 'Oja Oba Market', 'Post Office Area'],
+            'Asa': ['Afon', 'Asa LGA'],
+            'Offa': ['Offa Town', 'Central Market', 'Irra Road'],
+            'Edu': ['Lafiagi', 'Edu LGA'],
+            'Baruten': ['Okuta', 'Baruten LGA'],
+            'Ekiti': ['Araromi', 'Ekiti LGA Kwara'],
+            'Ifelodun': ['Share', 'Ifelodun LGA'],
+            'Irepodun': ['Omu-Aran', 'Ajasse']
+          },
+          'Kogi': {
+            'Lokoja': ['Lokoja Central', 'GRA', 'Felele', 'Phase 1', 'Phase 2', 'Ganaja', 'Adankolo', 'Crusher'],
+            'Ajaokuta': ['Ajaokuta Town', 'Steel Town'],
+            'Okene': ['Okene Town', 'Central Market', 'Obehira'],
+            'Ankpa': ['Ankpa Town', 'Central Market'],
+            'Dekina': ['Dekina Town', 'Anyigba'],
+            'Idah': ['Idah Town', 'Ugwolawo'],
+            'Kabba/Bunu': ['Kabba Town', 'Bunu'],
+            'Koton Karfe': ['Koton Karfe Town'],
+            'Ofu': ['Ugwolawo', 'Ofu LGA'],
+            'Yagba East': ['Isanlu', 'Egbe'],
+            'Yagba West': ['Odo Ere', 'Yagba West LGA']
+          },
+          'Cross River': {
+            'Calabar Municipal': ['Calabar Central', 'GRA', 'Watt Market', 'Mary Slessor Avenue', 'Murtala Mohammed Highway', 'IBB Way'],
+            'Calabar South': ['Calabar South LGA', 'Ikot Ansa'],
+            'Akpabuyo': ['Ikang', 'Akpabuyo LGA'],
+            'Bakassi': ['Bakassi Peninsula'],
+            'Ikom': ['Ikom Town', 'Central Market'],
+            'Ogoja': ['Ogoja Town', 'Central Market'],
+            'Obudu': ['Obudu Town', 'Obudu Ranch'],
+            'Odukpani': ['Odukpani Town', 'Creek Town'],
+            'Yakurr': ['Ugep', 'Yakurr LGA'],
+            'Yala': ['Yala Town', 'Okpoma']
+          }
+        };
+
+        // Merge additional states
+        Object.assign(nigerianNeighborhoods, additionalStates);
 
         // First try to find neighborhoods in our Nigerian database
         if (nigerianNeighborhoods[state] && nigerianNeighborhoods[state][city]) {
