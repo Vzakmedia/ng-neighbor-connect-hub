@@ -145,12 +145,13 @@ export const LocationSelector = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <MapPin className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">Location Information</h3>
+        <h3 className="text-lg font-semibold">Location Information <span className="text-destructive">*</span></h3>
+        <p className="text-sm text-muted-foreground">(All fields required)</p>
       </div>
 
       {/* State Selector */}
       <div className="space-y-2">
-        <Label htmlFor="state">State</Label>
+        <Label htmlFor="state">State <span className="text-destructive">*</span></Label>
         <Select value={selectedState} onValueChange={setSelectedState}>
           <SelectTrigger>
             <SelectValue placeholder={loadingStates ? "Loading states..." : "Select your state"} />
@@ -174,7 +175,7 @@ export const LocationSelector = ({
 
       {/* City Selector */}
       <div className="space-y-2">
-        <Label htmlFor="city">City</Label>
+        <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
         <Select 
           value={selectedCity} 
           onValueChange={setSelectedCity}
@@ -210,7 +211,7 @@ export const LocationSelector = ({
 
       {/* Neighborhood Search and Selector */}
       <div className="space-y-2">
-        <Label htmlFor="neighborhood">Neighborhood</Label>
+        <Label htmlFor="neighborhood">Neighborhood <span className="text-destructive">*</span></Label>
         <div className="space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

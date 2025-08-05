@@ -23,6 +23,7 @@ export const SignUpForm = () => {
     state: "",
     city: "",
     neighborhood: "",
+    address: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,6 +41,43 @@ export const SignUpForm = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required location fields
+    if (!formData.state) {
+      toast({
+        title: "State Required",
+        description: "Please select your state to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.city) {
+      toast({
+        title: "City Required",
+        description: "Please select your city to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.neighborhood) {
+      toast({
+        title: "Neighborhood Required",
+        description: "Please select your neighborhood to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.address.trim()) {
+      toast({
+        title: "Address Required",
+        description: "Please provide your complete address.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -77,6 +115,7 @@ export const SignUpForm = () => {
             state: formData.state,
             city: formData.city,
             neighborhood: formData.neighborhood,
+            address: formData.address,
           },
         },
       });
@@ -175,14 +214,15 @@ export const SignUpForm = () => {
       />
 
       <div className="space-y-2">
-        <Label htmlFor="neighborhood">Additional Neighborhood Info (Optional)</Label>
+        <Label htmlFor="address">Complete Address <span className="text-destructive">*</span></Label>
         <Input
-          id="neighborhood"
-          name="neighborhood"
+          id="address"
+          name="address"
           type="text"
-          placeholder="e.g., Estate name, street name, or landmark"
-          value={formData.neighborhood}
+          placeholder="Enter your complete address (street number, street name, etc.)"
+          value={formData.address}
           onChange={handleInputChange}
+          required
         />
       </div>
       
