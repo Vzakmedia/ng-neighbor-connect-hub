@@ -1150,18 +1150,35 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handlePostClick(post.id)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleShare(post)}>
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share Post
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/community/post/${post.id}`);
+                        toast({ title: "Link copied to clipboard" });
+                      }}>
+                        <Globe className="mr-2 h-4 w-4" />
+                        Copy Link
+                      </DropdownMenuItem>
                       {user?.id === post.user_id && (
-                        <DropdownMenuItem asChild>
-                          <PromotePostButton
-                            postId={post.id}
-                            postType={post.type === 'event' ? 'event' : 'community_post'}
-                            postTitle={post.title || `${post.type} post`}
-                            postDescription={post.content}
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start"
-                          />
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem asChild>
+                            <PromotePostButton
+                              postId={post.id}
+                              postType={post.type === 'event' ? 'event' : 'community_post'}
+                              postTitle={post.title || `${post.type} post`}
+                              postDescription={post.content}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                            />
+                          </DropdownMenuItem>
+                        </>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
