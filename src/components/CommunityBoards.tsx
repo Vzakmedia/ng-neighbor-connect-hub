@@ -34,7 +34,9 @@ import {
   Shield,
   Copy,
   RefreshCw,
-  Trash2
+  Trash2,
+  CheckCircle,
+  Check
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
