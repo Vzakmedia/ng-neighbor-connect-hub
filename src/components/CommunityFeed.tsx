@@ -24,7 +24,8 @@ import {
   Eye,
   EyeOff,
   CheckCheck,
-  X
+  X,
+  ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,6 +44,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { PromotePostButton } from '@/components/PromotePostButton';
 import PromotedContent from '@/components/PromotedContent';
@@ -832,16 +835,61 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           {postTypeFilters.map((filter) => {
             const Icon = filter.icon;
             return (
-              <Button
-                key={filter.key}
-                variant={selectedPostType === filter.key ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedPostType(filter.key)}
-                className="text-xs"
-              >
-                <Icon className="h-3 w-3 mr-1" />
-                {filter.label}
-              </Button>
+              <DropdownMenu key={filter.key}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Icon className="h-3 w-3 mr-1" />
+                    {filter.label}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="bg-background border shadow-lg z-50 min-w-[160px]">
+                  <DropdownMenuLabel>Post Type</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setSelectedPostType(filter.key)}>
+                    <Icon className="h-4 w-4 mr-2" />
+                    {filter.label}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>View Scope</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    My Neighborhood
+                    {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewScope('city')}>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    My City
+                    {viewScope === 'city' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewScope('state')}>
+                    <Globe className="h-4 w-4 mr-2" />
+                    Entire State
+                    {viewScope === 'state' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
+                    {showUnreadOnly ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                    {showUnreadOnly ? 'Show All' : 'Unread Only'}
+                    {showUnreadOnly && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={markAllCommunityPostsAsRead}
+                    disabled={unreadCounts.community === 0}
+                  >
+                    <CheckCheck className="h-4 w-4 mr-2" />
+                    Mark All Read
+                    {unreadCounts.community > 0 && (
+                      <Badge variant="secondary" className="text-xs ml-auto">
+                        {unreadCounts.community}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             );
           })}
         </div>
@@ -864,198 +912,79 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
             {postTypeFilters.map((filter) => {
               const Icon = filter.icon;
               return (
-                <Button
-                  key={filter.key}
-                  variant={selectedPostType === filter.key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedPostType(filter.key)}
-                  className={`transition-all duration-300 ease-in-out ${
-                    selectedPostType === filter.key 
-                      ? 'px-3 flex items-center gap-2 min-w-fit' 
-                      : 'px-0 w-8 h-8 justify-center'
-                  }`}
-                >
-                  <Icon className="h-3 w-3 flex-shrink-0" />
-                  {selectedPostType === filter.key && (
-                    <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                <DropdownMenu key={filter.key}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                      size="sm"
+                      className={`transition-all duration-300 ease-in-out ${
+                        selectedPostType === filter.key 
+                          ? 'px-3 flex items-center gap-2 min-w-fit' 
+                          : 'px-0 w-8 h-8 justify-center'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3 flex-shrink-0" />
+                      {selectedPostType === filter.key && (
+                        <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                          {filter.label}
+                        </span>
+                      )}
+                      {selectedPostType === filter.key && (
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="bg-background border shadow-lg z-50 min-w-[160px]">
+                    <DropdownMenuLabel>Post Type</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setSelectedPostType(filter.key)}>
+                      <Icon className="h-4 w-4 mr-2" />
                       {filter.label}
-                    </span>
-                  )}
-                </Button>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>View Scope</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      My Neighborhood
+                      {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('city')}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      My City
+                      {viewScope === 'city' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('state')}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Entire State
+                      {viewScope === 'state' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
+                      {showUnreadOnly ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {showUnreadOnly ? 'Show All' : 'Unread Only'}
+                      {showUnreadOnly && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={markAllCommunityPostsAsRead}
+                      disabled={unreadCounts.community === 0}
+                    >
+                      <CheckCheck className="h-4 w-4 mr-2" />
+                      Mark All Read
+                      {unreadCounts.community > 0 && (
+                        <Badge variant="secondary" className="text-xs ml-auto">
+                          {unreadCounts.community}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               );
             })}
           </div>
         </div>
       </div>
 
-      {/* View Scope Toggle and Read Status Controls - Desktop only */}
-      {!propViewScope && (
-        <div className="hidden md:block bg-card p-3 md:p-4 rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Viewing posts from:</span>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-center md:justify-end">
-              <Button
-                variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewScope('neighborhood')}
-                className="text-xs px-3 flex items-center gap-2"
-              >
-                <MapPin className="h-3 w-3" />
-                My Neighborhood
-              </Button>
-              <Button
-                variant={viewScope === 'city' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewScope('city')}
-                className="text-xs px-3 flex items-center gap-2"
-              >
-                <MapPin className="h-3 w-3" />
-                My City
-              </Button>
-              <Button
-                variant={viewScope === 'state' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewScope('state')}
-                className="text-xs px-3 flex items-center gap-2"
-              >
-                <Globe className="h-3 w-3" />
-                Entire State
-              </Button>
-              <div className="h-4 w-px bg-border mx-2" />
-              <Button
-                variant={showUnreadOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-                className="text-xs"
-              >
-                {showUnreadOnly ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
-                {showUnreadOnly ? 'Show All' : 'Unread Only'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={markAllCommunityPostsAsRead}
-                className="text-xs"
-                disabled={unreadCounts.community === 0}
-              >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Mark All Read
-              </Button>
-              {unreadCounts.community > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {unreadCounts.community} unread
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
 
-      {/* Read Status Controls - Mobile Expandable Icons */}
-      <div className="md:hidden flex items-center justify-center gap-2 w-full bg-card p-3 rounded-lg flex-wrap">
-        {/* View Scope Controls - Mobile only */}
-        <Button
-          variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewScope('neighborhood')}
-          className={`transition-all duration-300 ease-in-out ${
-            viewScope === 'neighborhood' 
-              ? 'px-3 flex items-center gap-2 min-w-fit' 
-              : 'px-0 w-8 h-8 justify-center'
-          }`}
-        >
-          <MapPin className="h-3 w-3 flex-shrink-0" />
-          {viewScope === 'neighborhood' && (
-            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              Neighborhood
-            </span>
-          )}
-        </Button>
-        
-        <Button
-          variant={viewScope === 'city' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewScope('city')}
-          className={`transition-all duration-300 ease-in-out ${
-            viewScope === 'city' 
-              ? 'px-3 flex items-center gap-2 min-w-fit' 
-              : 'px-0 w-8 h-8 justify-center'
-          }`}
-        >
-          <MapPin className="h-3 w-3 flex-shrink-0" />
-          {viewScope === 'city' && (
-            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              My City
-            </span>
-          )}
-        </Button>
-        
-        <Button
-          variant={viewScope === 'state' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewScope('state')}
-          className={`transition-all duration-300 ease-in-out ${
-            viewScope === 'state' 
-              ? 'px-3 flex items-center gap-2 min-w-fit' 
-              : 'px-0 w-8 h-8 justify-center'
-          }`}
-        >
-          <Globe className="h-3 w-3 flex-shrink-0" />
-          {viewScope === 'state' && (
-            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              Entire State
-            </span>
-          )}
-        </Button>
-        
-        {/* Read Status Controls */}
-        <Button
-          variant={showUnreadOnly ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-          className={`transition-all duration-300 ease-in-out ${
-            showUnreadOnly 
-              ? 'px-3 flex items-center gap-2 min-w-fit' 
-              : 'px-0 w-8 h-8 justify-center'
-          }`}
-        >
-          {showUnreadOnly ? <EyeOff className="h-3 w-3 flex-shrink-0" /> : <Eye className="h-3 w-3 flex-shrink-0" />}
-          {showUnreadOnly && (
-            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              Show All
-            </span>
-          )}
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={markAllCommunityPostsAsRead}
-          disabled={unreadCounts.community === 0}
-          className={`transition-all duration-300 ease-in-out ${
-            unreadCounts.community > 0 
-              ? 'px-3 flex items-center gap-2 min-w-fit' 
-              : 'px-0 w-8 h-8 justify-center'
-          }`}
-        >
-          <CheckCheck className="h-3 w-3 flex-shrink-0" />
-          {unreadCounts.community > 0 && (
-            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-              Mark All Read
-            </span>
-          )}
-        </Button>
-        
-        {unreadCounts.community > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            {unreadCounts.community}
-          </Badge>
-        )}
-      </div>
 
 
       {loading ? (
