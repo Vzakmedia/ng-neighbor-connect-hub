@@ -408,7 +408,7 @@ serve(async (req) => {
             'Victoria Island': ['Victoria Island Central', 'Bar Beach', 'Onikan', 'Tiamiyu Savage', 'Adeola Odeku', 'Ahmadu Bello Way', 'Akin Adesola', 'Ozumba Mbadiwe'],
             'Ikoyi': ['Ikoyi Phase 1', 'Ikoyi Phase 2', 'Banana Island', 'Old Ikoyi', 'Dolphin Estate', 'Parkview Estate', 'Osborne Foreshore'],
             'Eti-Osa': ['Lekki Phase 1', 'Lekki Phase 2', 'Lekki Peninsula', 'Ajah', 'VGC', 'Oniru', 'Jakande', 'Sangotedo', 'Bogije', 'Chevron Drive', 'Richmond Gate', 'Royal Garden Estate'],
-            'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Lekki Peninsula Scheme', 'Abraham Adesanya', 'Admiralty Way', 'Chevron Drive', 'Osapa London', 'Agungi', 'Igbo Efon'],
+            'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Lekki Peninsula Scheme', 'Abraham Adesanya', 'Admiralty Way', 'Chevron Drive', 'Osapa London', 'Agungi', 'Igbo Efon', 'Lekki Gardens Estate', 'Pearl Gardens', 'Crown Estate', 'Meadow Hall', 'Pinnock Beach Estate', 'Lekki County Homes', 'Victoria Crest Estate', 'Ocean Bay Estate', 'Lekki Royal Garden', 'Greenland Estate', 'Fara Park Estate', 'Lekki Scheme 2', 'Lekki Gardens Phase 1', 'Lekki Gardens Phase 2', 'Lekki Gardens Phase 3', 'Bluewater Scheme'],
             'Ajah': ['Ajah Central', 'Thomas Estate', 'Ado', 'Sangotedo', 'Lakowe', 'Awoyaya', 'Majek', 'Badore', 'Ilaje'],
             'Ikeja': ['Allen Avenue', 'Computer Village', 'Omole Phase 1', 'Omole Phase 2', 'Magodo GRA', 'Ogba', 'Oregun', 'Alausa', 'Adeniyi Jones', 'Ikeja GRA', 'Maryland'],
             'Surulere': ['Adeniran Ogunsanya', 'Bode Thomas', 'Iponri', 'Shitta', 'Aguda', 'Lawanson', 'Itire', 'Ojuelegba', 'Kilo', 'Enitan'],
