@@ -888,7 +888,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         </div>
       </div>
 
-      {/* View Scope Toggle - Desktop only */}
+      {/* View Scope Toggle and Read Status Controls - Desktop only */}
       {!propViewScope && (
         <div className="hidden md:block bg-card p-3 md:p-4 rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -896,7 +896,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Viewing posts from:</span>
             </div>
-            <div className="flex items-center gap-1 w-full sm:w-auto justify-center md:justify-end">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-center md:justify-end">
               <Button
                 variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
                 size="sm"
@@ -924,42 +924,36 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 <Globe className="h-3 w-3" />
                 Entire State
               </Button>
+              <div className="h-4 w-px bg-border mx-2" />
+              <Button
+                variant={showUnreadOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+                className="text-xs"
+              >
+                {showUnreadOnly ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+                {showUnreadOnly ? 'Show All' : 'Unread Only'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={markAllCommunityPostsAsRead}
+                className="text-xs"
+                disabled={unreadCounts.community === 0}
+              >
+                <CheckCheck className="h-3 w-3 mr-1" />
+                Mark All Read
+              </Button>
+              {unreadCounts.community > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {unreadCounts.community} unread
+                </Badge>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Read Status Controls - Desktop */}
-      <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-3 md:p-4 rounded-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant={showUnreadOnly ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-              className="text-xs"
-            >
-              {showUnreadOnly ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
-              {showUnreadOnly ? 'Show All' : 'Unread Only'}
-            </Button>
-            {unreadCounts.community > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {unreadCounts.community} unread
-              </Badge>
-            )}
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={markAllCommunityPostsAsRead}
-          className="text-xs"
-          disabled={unreadCounts.community === 0}
-        >
-          <CheckCheck className="h-3 w-3 mr-1" />
-          Mark All Read
-        </Button>
-      </div>
 
       {/* Read Status Controls - Mobile Expandable Icons */}
       <div className="md:hidden flex items-center justify-center gap-2 w-full bg-card p-3 rounded-lg flex-wrap">
