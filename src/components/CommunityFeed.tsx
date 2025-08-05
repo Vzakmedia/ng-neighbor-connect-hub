@@ -114,6 +114,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>(undefined);
+  const [hasNewPosts, setHasNewPosts] = useState(false);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
