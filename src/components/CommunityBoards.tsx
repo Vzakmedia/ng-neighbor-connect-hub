@@ -1510,24 +1510,58 @@ const CommunityBoards = () => {
       return;
     }
 
+    const boardToDelete = selectedBoard;
+
     try {
-      // Delete board (cascade will handle posts, members, etc.)
+      // First get all post IDs for this board to delete likes
+      const { data: postIds } = await supabase
+        .from('board_posts')
+        .select('id')
+        .eq('board_id', boardToDelete);
+      
+      // Delete post likes if there are posts
+      if (postIds && postIds.length > 0) {
+        await supabase
+          .from('board_post_likes')
+          .delete()
+          .in('post_id', postIds.map(p => p.id));
+      }
+      
+      // Delete related data in order
+      await supabase.from('board_posts').delete().eq('board_id', boardToDelete);
+      await supabase.from('board_members').delete().eq('board_id', boardToDelete);
+      await supabase.from('board_join_requests').delete().eq('board_id', boardToDelete);
+      await supabase.from('board_invite_codes').delete().eq('board_id', boardToDelete);
+      
+      // Finally delete the board
       const { error } = await supabase
         .from('discussion_boards')
         .delete()
-        .eq('id', selectedBoard);
+        .eq('id', boardToDelete);
 
       if (error) throw error;
 
-      // Remove from local state
-      setBoards(prev => prev.filter(board => board.id !== selectedBoard));
+      // Immediately update local state
+      setBoards(prev => prev.filter(board => board.id !== boardToDelete));
+      setPosts([]); // Clear posts if this board was selected
       setSelectedBoard(null);
       setShowSettings(false);
+      
+      // Clear any other board-related state
+      setBoardMembers([]);
+      setJoinRequests([]);
+      setPendingPosts([]);
 
       toast({
         title: "Board deleted",
         description: "The board and all its content have been deleted.",
       });
+      
+      // Refresh boards list to ensure consistency
+      setTimeout(() => {
+        fetchBoards();
+      }, 1000);
+      
     } catch (error) {
       console.error('Error deleting board:', error);
       toast({
