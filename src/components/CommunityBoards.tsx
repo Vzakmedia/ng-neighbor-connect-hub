@@ -344,31 +344,8 @@ const CommunityBoards = () => {
         return;
       }
 
-      // Get all board IDs user is already a member of or has created
-      const { data: memberData } = await supabase
-        .from('board_members')
-        .select('board_id')
-        .eq('user_id', user.id);
-
-      const { data: creatorData } = await supabase
-        .from('discussion_boards')
-        .select('id')
-        .eq('creator_id', user.id);
-
-      const userBoardIds = [
-        ...(memberData?.map(m => m.board_id) || []),
-        ...(creatorData?.map(b => b.id) || [])
-      ];
-
-      // Build location-based query
-      let locationQuery = '';
-      const userLocations = [];
-      
-      if (profileData.neighborhood) userLocations.push(profileData.neighborhood);
-      if (profileData.city) userLocations.push(profileData.city);
-      if (profileData.state) userLocations.push(profileData.state);
-
-      // Fetch public boards based on location scope and visibility
+      // Fetch ALL public boards that match user's location - don't exclude any boards
+      // Users should be able to see all public boards, including ones they're in
       let query = supabase
         .from('discussion_boards')
         .select(`
@@ -377,7 +354,13 @@ const CommunityBoards = () => {
         `)
         .eq('is_public', true);
 
-      // Build complex location filter
+      // Build location-based filter for better discovery
+      const userLocations = [];
+      if (profileData?.neighborhood) userLocations.push(profileData.neighborhood);
+      if (profileData?.city) userLocations.push(profileData.city);
+      if (profileData?.state) userLocations.push(profileData.state);
+
+      // Build complex location filter - show global boards and location-specific ones
       if (userLocations.length > 0) {
         const locationFilters = [
           'location_scope.eq.public', // Always include global boards
@@ -400,18 +383,13 @@ const CommunityBoards = () => {
         query = query.eq('location_scope', 'public');
       }
 
-      // Exclude boards user is already in
-      if (userBoardIds.length > 0) {
-        query = query.not('id', 'in', `(${userBoardIds.join(',')})`);
-      }
-
       const { data: publicBoardsData, error: publicBoardsError } = await query
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (publicBoardsError) throw publicBoardsError;
 
-      // Get member counts for each board
+      // Get member counts and user's role for each board
       const boardsWithCounts = await Promise.all(
         (publicBoardsData || []).map(async (board) => {
           const { count } = await supabase
@@ -419,10 +397,18 @@ const CommunityBoards = () => {
             .select('*', { count: 'exact' })
             .eq('board_id', board.id);
 
+          // Check if user is a member and their role
+          const { data: memberData } = await supabase
+            .from('board_members')
+            .select('role')
+            .eq('board_id', board.id)
+            .eq('user_id', user.id)
+            .single();
+
           return {
             ...board,
             member_count: count || 0,
-            user_role: null
+            user_role: memberData?.role || null
           };
         })
       );
