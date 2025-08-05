@@ -117,13 +117,18 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
     try {
       const totalCost = calculateTotalCost();
       
-      // Get or create pricing tier first
-      const { data: pricingTier } = await supabase
+      // Get pricing tier first
+      const { data: pricingTier, error: tierError } = await supabase
         .from('ad_pricing_tiers')
         .select('id')
         .eq('ad_type', formData.ad_type)
+        .eq('geographic_scope', formData.target_audience)
         .eq('is_active', true)
         .single();
+
+      if (tierError || !pricingTier) {
+        throw new Error(`No pricing tier found for ${formData.ad_type} with ${formData.target_audience} scope`);
+      }
 
       // Create advertisement campaign
       const { data: campaign, error: campaignError } = await supabase
@@ -146,7 +151,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
           ad_url: formData.website_url,
           ad_call_to_action: formData.call_to_action,
           ad_images: formData.images,
-          pricing_tier_id: pricingTier?.id || null
+          pricing_tier_id: pricingTier.id
         }])
         .select()
         .single();
@@ -156,11 +161,11 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
       // Initiate payment process
       await initiatePayment(campaign.id, totalCost);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating ad:', error);
       toast({
         title: "Error",
-        description: "Failed to create advertisement",
+        description: `Failed to create advertisement: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
