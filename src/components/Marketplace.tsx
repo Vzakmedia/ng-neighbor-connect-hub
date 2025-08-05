@@ -526,7 +526,7 @@ const Marketplace = () => {
               onClick={() => setViewScope('neighborhood')}
               className="flex-1 h-10 text-sm"
             >
-              Neighborhood
+              My City
             </Button>
             <Button
               variant={viewScope === 'state' ? 'default' : 'ghost'}
