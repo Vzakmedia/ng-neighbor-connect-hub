@@ -14,6 +14,7 @@ import { Edit, MapPin, Phone, Mail, User, Star, Camera, Save, X, Upload, Calenda
 import { useToast } from '@/hooks/use-toast';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { LocationSelector } from '@/components/auth/LocationSelector';
 
 interface Profile {
   id: string;
@@ -311,6 +312,10 @@ const ProfileOverview = () => {
     }
   };
 
+  const handleLocationChange = (state: string, city: string, neighborhood: string) => {
+    setFormData(prev => ({ ...prev, state, city, neighborhood }));
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -498,65 +503,34 @@ const ProfileOverview = () => {
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="w-full">
-              {editing ? (
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-sm">State</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                    placeholder="Enter your state"
-                    className="w-full"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <Label className="text-xs sm:text-sm text-muted-foreground">State</Label>
-                  <p className="font-medium text-sm sm:text-base truncate">{profile?.state || 'Not specified'}</p>
-                </div>
-              )}
+          {editing ? (
+            <div className="lg:col-span-2 space-y-4">
+              <Label className="text-sm">Location</Label>
+              <LocationSelector 
+                onLocationChange={handleLocationChange}
+                defaultState={formData.state}
+                defaultCity={formData.city}
+                defaultNeighborhood={formData.neighborhood}
+              />
             </div>
+          ) : (
+            <>
+              <div className="w-full">
+                <Label className="text-xs sm:text-sm text-muted-foreground">State</Label>
+                <p className="font-medium text-sm sm:text-base truncate">{profile?.state || 'Not specified'}</p>
+              </div>
 
-            <div className="w-full">
-              {editing ? (
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-sm">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Enter your city"
-                    className="w-full"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <Label className="text-xs sm:text-sm text-muted-foreground">City</Label>
-                  <p className="font-medium text-sm sm:text-base truncate">{profile?.city || 'Not specified'}</p>
-                </div>
-              )}
-            </div>
+              <div className="w-full">
+                <Label className="text-xs sm:text-sm text-muted-foreground">City</Label>
+                <p className="font-medium text-sm sm:text-base truncate">{profile?.city || 'Not specified'}</p>
+              </div>
 
-            <div className="w-full">
-              {editing ? (
-                <div className="space-y-2">
-                  <Label htmlFor="neighborhood" className="text-sm">Neighborhood</Label>
-                  <Input
-                    id="neighborhood"
-                    value={formData.neighborhood}
-                    onChange={(e) => setFormData(prev => ({ ...prev, neighborhood: e.target.value }))}
-                    placeholder="Enter your neighborhood"
-                    className="w-full"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <Label className="text-xs sm:text-sm text-muted-foreground">Neighborhood</Label>
-                  <p className="font-medium text-sm sm:text-base truncate">{profile?.neighborhood || 'Not specified'}</p>
-                </div>
-              )}
-            </div>
+              <div className="w-full">
+                <Label className="text-xs sm:text-sm text-muted-foreground">Neighborhood</Label>
+                <p className="font-medium text-sm sm:text-base truncate">{profile?.neighborhood || 'Not specified'}</p>
+              </div>
+            </>
+          )}
 
             <div className="w-full lg:col-span-2">
               {editing ? (
