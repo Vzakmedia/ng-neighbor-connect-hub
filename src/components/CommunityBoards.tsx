@@ -120,6 +120,7 @@ const CommunityBoards = () => {
   const [currentInviteCode, setCurrentInviteCode] = useState<any>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [boardSearchTerm, setBoardSearchTerm] = useState('');
+  const [showingDiscoveredBoards, setShowingDiscoveredBoards] = useState(false);
   
   // Board editing states
   const [editingBoard, setEditingBoard] = useState(false);
@@ -1733,111 +1734,21 @@ const CommunityBoards = () => {
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <h2 className="text-base md:text-lg font-semibold">Discussion Boards</h2>
             <div className="flex gap-1 md:gap-2">
-              <Dialog open={showDiscoverBoards} onOpenChange={setShowDiscoverBoards}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      console.log('Discover button clicked');
-                      fetchPublicBoards();
-                    }}
-                    className="text-xs md:text-sm px-2 md:px-3"
-                  >
-                    <Globe className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-                    <span className="hidden md:inline">Discover</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Discover Public Boards</DialogTitle>
-                  </DialogHeader>
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        placeholder="Search boards by name or description..."
-                        value={boardSearchTerm}
-                        onChange={(e) => setBoardSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <ScrollArea className="h-96">
-                    <div className="space-y-3">
-                      {publicBoards.filter(board => 
-                        !boardSearchTerm || 
-                        board.name.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
-                        board.description?.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
-                        board.location?.toLowerCase().includes(boardSearchTerm.toLowerCase())
-                      ).length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-sm">
-                            {boardSearchTerm ? 'No boards found matching your search' : 'No public boards found in your area'}
-                          </p>
-                        </div>
-                      ) : (
-                        publicBoards.filter(board => 
-                          !boardSearchTerm || 
-                          board.name.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
-                          board.description?.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
-                          board.location?.toLowerCase().includes(boardSearchTerm.toLowerCase())
-                        ).map((board) => (
-                          <Card key={board.id} className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <Hash className="h-4 w-4 text-muted-foreground" />
-                                  <h3 className="font-medium">{board.name}</h3>
-                                  <Badge variant="outline" className="text-xs">Public</Badge>
-                                </div>
-                                {board.description && (
-                                  <p className="text-sm text-muted-foreground mb-2">{board.description}</p>
-                                )}
-                                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                                  <div className="flex items-center">
-                                    <MapPin className="h-3 w-3 mr-1" />
-                                    {board.location || 'Global'}
-                                  </div>
-                                  <div className="flex items-center">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    {board.member_count} member{board.member_count !== 1 ? 's' : ''}
-                                  </div>
-                                  <div className="flex items-center">
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    Created {new Date(board.created_at).toLocaleDateString()}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="ml-4 flex flex-col space-y-2">
-                                {board.requires_approval ? (
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => requestToJoinBoard(board.id)}
-                                  >
-                                    Request to Join
-                                  </Button>
-                                ) : (
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => joinBoard(board.id)}
-                                  >
-                                    Join Board
-                                  </Button>
-                                )}
-                                <div className="text-xs text-muted-foreground text-center">
-                                  {board.requires_approval ? 'Requires approval' : 'Open to join'}
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </DialogContent>
-               </Dialog>
+              <Button 
+                variant={showingDiscoveredBoards ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  console.log('Discover button clicked');
+                  if (!showingDiscoveredBoards) {
+                    fetchPublicBoards();
+                  }
+                  setShowingDiscoveredBoards(!showingDiscoveredBoards);
+                }}
+                className="text-xs md:text-sm px-2 md:px-3"
+              >
+                <Globe className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                <span className="hidden md:inline">{showingDiscoveredBoards ? 'My Boards' : 'Discover'}</span>
+              </Button>
                <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
                 <DialogTrigger asChild>
                   <Button 
@@ -1937,16 +1848,115 @@ const CommunityBoards = () => {
         </div>
 
         <ScrollArea className="h-[calc(100%-140px)] md:h-[calc(100%-120px)]">
-          {boards
-            .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
-            .map((board) => (
-            <div
-              key={board.id}
-              onClick={() => setSelectedBoard(board.id)}
-              className={`p-3 md:p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
-                selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
-              }`}
-            >
+          {showingDiscoveredBoards ? (
+            // Show discovered public boards
+            publicBoards.filter(board => 
+              !searchTerm || 
+              board.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              board.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              board.location?.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground p-4">
+                <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">
+                  {searchTerm ? 'No boards found matching your search' : 'No public boards found in your area'}
+                </p>
+              </div>
+            ) : (
+              publicBoards.filter(board => 
+                !searchTerm || 
+                board.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                board.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                board.location?.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map((board) => (
+                <div key={board.id} className="p-3 md:p-4 border-b hover:bg-muted/50 transition-colors">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Hash className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="font-medium text-sm truncate">{board.name}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {board.location_scope === 'neighborhood' ? 'Neighborhood' :
+                             board.location_scope === 'city' ? 'City' :
+                             board.location_scope === 'state' ? 'State' : 'Public'}
+                          </Badge>
+                          {board.user_role && (
+                            <Badge variant="secondary" className="text-xs">
+                              {board.user_role === 'admin' ? 'Admin' : 'Member'}
+                            </Badge>
+                          )}
+                        </div>
+                        {board.description && (
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{board.description}</p>
+                        )}
+                        <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {board.location || 'Global'}
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            {board.member_count}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {!board.user_role && (
+                      <div className="flex flex-col space-y-2">
+                        {board.requires_approval ? (
+                          <Button 
+                            size="sm" 
+                            onClick={() => requestToJoinBoard(board.id)}
+                            className="w-full text-xs"
+                          >
+                            Request to Join
+                          </Button>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            onClick={() => joinBoard(board.id)}
+                            className="w-full text-xs"
+                          >
+                            Join Board
+                          </Button>
+                        )}
+                        <div className="text-xs text-muted-foreground text-center">
+                          {board.requires_approval ? 'Requires approval' : 'Open to join'}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {board.user_role && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedBoard(board.id);
+                          setShowingDiscoveredBoards(false);
+                        }}
+                        className="w-full text-xs"
+                      >
+                        View Board
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )
+          ) : (
+            // Show user's boards
+            boards
+              .filter(board => board.name.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map((board) => (
+              <div
+                key={board.id}
+                onClick={() => setSelectedBoard(board.id)}
+                className={`p-3 md:p-4 cursor-pointer transition-colors border-b hover:bg-muted/50 ${
+                  selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                }`}
+              >
                <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                   <Hash className="h-4 w-4 text-muted-foreground" />
@@ -2040,9 +2050,10 @@ const CommunityBoards = () => {
                   <Badge variant="secondary" className="text-xs">Private</Badge>
                 )}
                 <Badge variant="outline" className="text-xs">{board.user_role}</Badge>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </ScrollArea>
       </div>
 
