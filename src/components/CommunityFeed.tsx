@@ -223,9 +223,10 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         console.error('Error fetching posts:', postsError);
         toast({
           title: "Error loading posts",
-          description: "Failed to load community posts.",
+          description: "Network connection issue. Please check your internet connection and try again.",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -282,6 +283,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       setLastFetchTime(new Date());
     } catch (error) {
       console.error('Error fetching posts:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to load posts. Please check your internet connection.",
+        variant: "destructive",
+      });
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     } finally {
       if (isInitialLoad) {
         setLoading(false);
