@@ -184,13 +184,22 @@ const SafetyCenter = () => {
   }, [filterSeverity, filterType, filterStatus, autoRefresh, toast]);
 
   const fetchAlerts = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
+      // Get current user's profile for location filtering
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('city, state')
+        .eq('user_id', user.id)
+        .single();
+
       let query = supabase
         .from('safety_alerts')
         .select(`
           *,
-          profiles (full_name, avatar_url)
+          profiles (full_name, avatar_url, city, state)
         `)
         .order('created_at', { ascending: false });
 
@@ -219,9 +228,16 @@ const SafetyCenter = () => {
         setLoading(false);
         return;
       }
+
+      // Filter alerts by user's city and state
+      const filteredAlerts = (data || []).filter((alert: any) => {
+        if (!currentUserProfile?.city || !currentUserProfile?.state || !alert.profiles) return false;
+        return alert.profiles.city === currentUserProfile.city && 
+               alert.profiles.state === currentUserProfile.state;
+      });
       
-      console.log('Safety alerts fetched:', data?.length || 0, 'alerts');
-      setAlerts((data as any) || []);
+      console.log('Safety alerts fetched and filtered:', filteredAlerts.length, 'alerts');
+      setAlerts(filteredAlerts as any || []);
     } catch (error) {
       console.error('Error fetching safety alerts:', error);
       toast({

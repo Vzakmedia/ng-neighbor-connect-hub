@@ -180,13 +180,20 @@ const Marketplace = () => {
 
       if (error) throw error;
 
+      // Get current user's profile for location filtering
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('city, state')
+        .eq('user_id', user?.id || '')
+        .single();
+
       // Fetch profiles and likes data for each service
       const servicesWithProfilesAndLikes = await Promise.all(
         (data || []).map(async (service) => {
           const [profileResult, likesResult] = await Promise.all([
             supabase
               .from('profiles')
-              .select('full_name, avatar_url')
+              .select('full_name, avatar_url, city, state')
               .eq('user_id', service.user_id)
               .single(),
             supabase
@@ -200,14 +207,21 @@ const Marketplace = () => {
 
           return {
             ...service,
-            profiles: profileResult.data || { full_name: 'Anonymous', avatar_url: '' },
+            profiles: profileResult.data || { full_name: 'Anonymous', avatar_url: '', city: null, state: null },
             likes_count: likes.length,
             is_liked_by_user: isLikedByUser
           };
         })
       );
 
-      setServices(servicesWithProfilesAndLikes as any || []);
+      // Filter services by user's city and state
+      const filteredServices = servicesWithProfilesAndLikes.filter(service => {
+        if (!currentUserProfile?.city || !currentUserProfile?.state || !service.profiles) return false;
+        return service.profiles.city === currentUserProfile.city && 
+               service.profiles.state === currentUserProfile.state;
+      });
+
+      setServices(filteredServices as any || []);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -235,13 +249,20 @@ const Marketplace = () => {
 
       if (error) throw error;
 
+      // Get current user's profile for location filtering
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('city, state')
+        .eq('user_id', user?.id || '')
+        .single();
+
       // Fetch profiles and likes data for each item
       const itemsWithProfilesAndLikes = await Promise.all(
         (data || []).map(async (item) => {
           const [profileResult, likesResult] = await Promise.all([
             supabase
               .from('profiles')
-              .select('user_id, full_name, avatar_url, phone, email')
+              .select('user_id, full_name, avatar_url, phone, email, city, state')
               .eq('user_id', item.user_id)
               .single(),
             supabase
@@ -255,14 +276,21 @@ const Marketplace = () => {
 
           return {
             ...item,
-            profiles: profileResult.data || { user_id: item.user_id, full_name: 'Anonymous', avatar_url: '' },
+            profiles: profileResult.data || { user_id: item.user_id, full_name: 'Anonymous', avatar_url: '', city: null, state: null },
             likes_count: likes.length,
             is_liked_by_user: isLikedByUser
           };
         })
       );
 
-      setItems(itemsWithProfilesAndLikes as any || []);
+      // Filter items by user's city and state
+      const filteredItems = itemsWithProfilesAndLikes.filter(item => {
+        if (!currentUserProfile?.city || !currentUserProfile?.state || !item.profiles) return false;
+        return item.profiles.city === currentUserProfile.city && 
+               item.profiles.state === currentUserProfile.state;
+      });
+
+      setItems(filteredItems as any || []);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {

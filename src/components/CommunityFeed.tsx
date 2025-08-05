@@ -247,13 +247,15 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           };
         })
         .filter(post => {
-          // Apply location filtering
-          if (viewScope === 'neighborhood' && profile.neighborhood) {
-            return post.profiles?.neighborhood === profile.neighborhood;
-          } else if (viewScope === 'state' && profile.state) {
-            return post.profiles?.state === profile.state;
-          }
-          return true; // If no filtering criteria, show all posts
+          // Apply location filtering based on user's registered city and state
+          if (!post.profiles) return false; // Skip posts without profile data
+          
+          // Always filter by city and state for precise location matching
+          const sameCity = post.profiles.city === profile.city;
+          const sameState = post.profiles.state === profile.state;
+          
+          // Show posts from same city and state
+          return sameCity && sameState && profile.city && profile.state;
         });
 
       // Process all posts with their like/comment counts

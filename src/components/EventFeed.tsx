@@ -99,6 +99,8 @@ const EventFeed = () => {
   };
 
   const fetchEvents = async () => {
+    if (!user || !profile) return;
+    
     try {
       setLoading(true);
       
@@ -145,8 +147,15 @@ const EventFeed = () => {
         return acc;
       }, {} as Record<string, any>) || {};
 
+      // Filter events by user's city and state
+      const filteredPosts = postsData.filter(post => {
+        const postProfile = profilesMap[post.user_id];
+        if (!postProfile || !profile.city || !profile.state) return false;
+        return postProfile.city === profile.city && postProfile.state === profile.state;
+      });
+
       // Get likes and comments counts
-      const eventIds = postsData.map(post => post.id);
+      const eventIds = filteredPosts.map(post => post.id);
       
       const [likesResult, commentsResult, userLikesResult, userSavesResult] = await Promise.all([
         supabase
@@ -182,7 +191,7 @@ const EventFeed = () => {
       const userLikes = new Set(userLikesResult.data?.map(like => like.post_id) || []);
       const userSaves = new Set(userSavesResult.data?.map(save => save.post_id) || []);
 
-      const transformedEvents: Event[] = postsData.map((post: any) => {
+      const transformedEvents: Event[] = filteredPosts.map((post: any) => {
         const profile = profilesMap[post.user_id];
         return {
           id: post.id,
@@ -233,7 +242,7 @@ const EventFeed = () => {
 
   useEffect(() => {
     fetchEvents();
-  }, [user]);
+  }, [user, profile]);
 
   const handleLike = async (eventId: string) => {
     if (!user) return;
