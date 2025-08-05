@@ -450,8 +450,12 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
               </div>
 
               <div className="space-y-2">
-                <Label>Target States</Label>
-                <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                <Label className="text-sm font-medium">
+                  Target States <span className="text-destructive">*</span>
+                </Label>
+                <div className={`grid grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded-md p-3 ${
+                  formData.target_states.length === 0 ? 'border-destructive' : ''
+                }`}>
                   {nigerianStates.map((state) => (
                     <div key={state} className="flex items-center space-x-2">
                       <Checkbox
@@ -469,8 +473,11 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Selected: {formData.target_states.length} state(s)
+                <p className={`text-sm ${
+                  formData.target_states.length === 0 ? 'text-destructive' : 'text-muted-foreground'
+                }`}>
+                  Selected: {formData.target_states.length} state(s) 
+                  {formData.target_states.length === 0 && ' - Please select at least one state'}
                 </p>
               </div>
 
@@ -636,12 +643,22 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                     Next
                   </Button>
                 ) : (
-                  <Button 
-                    type="submit" 
-                    disabled={loading || !formData.contact_info || formData.target_states.length === 0}
-                  >
-                    {loading ? "Creating..." : `Pay ₦${calculateTotalCost().toLocaleString()} & Create Ad`}
-                  </Button>
+                  <div className="space-y-1">
+                    {(!formData.contact_info || formData.target_states.length === 0) && (
+                      <p className="text-sm text-destructive">
+                        Please fill in all required fields:
+                        {!formData.contact_info && " Contact information"}
+                        {formData.target_states.length === 0 && " • Select at least one target state"}
+                      </p>
+                    )}
+                    <Button 
+                      type="submit" 
+                      disabled={loading || !formData.contact_info || formData.target_states.length === 0}
+                      className="w-full"
+                    >
+                      {loading ? "Creating..." : `Pay ₦${calculateTotalCost().toLocaleString()} & Create Ad`}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
