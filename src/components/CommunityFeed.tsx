@@ -41,7 +41,9 @@ import { UserProfileDialog } from '@/components/UserProfileDialog';
 import PromotedContent from '@/components/PromotedContent';
 import { SponsoredContent } from '@/components/SponsoredContent';
 import FeedAdCard from '@/components/FeedAdCard';
+import BoardSuggestionCard from '@/components/BoardSuggestionCard';
 import { usePromotionalAds } from '@/hooks/usePromotionalAds';
+import { useBoardSuggestions } from '@/hooks/useBoardSuggestions';
 
 
 interface DatabasePost {
@@ -83,7 +85,7 @@ interface Post {
   isSaved: boolean;
 }
 
-type FeedItem = Post | { type: 'ad'; ad: any };
+type FeedItem = Post | { type: 'ad'; ad: any } | { type: 'board_suggestion'; board: any };
 
 interface CommunityFeedProps {
   activeTab?: string;
@@ -124,6 +126,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     markAllCommunityPostsAsRead, 
     checkIfPostIsRead 
   } = useReadStatus();
+  const { suggestions: boardSuggestions, refreshSuggestions } = useBoardSuggestions(2);
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -331,9 +334,16 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       posts.forEach((post, index) => {
         combinedFeed.push(post);
         
-        // Insert ads every 3 posts, but not after the last post
-        if ((index + 1) % 3 === 0 && index < posts.length - 1 && promotionalAds.length > 0) {
-          const adIndex = Math.floor(index / 3) % promotionalAds.length;
+        // Insert board suggestions every 4 posts (higher priority than ads)
+        if ((index + 1) % 4 === 0 && boardSuggestions.length > 0 && index < posts.length - 1) {
+          const suggestionIndex = Math.floor(index / 4) % boardSuggestions.length;
+          const boardData = boardSuggestions[suggestionIndex];
+          combinedFeed.push({ type: 'board_suggestion', board: boardData });
+        }
+        
+        // Insert ads every 5 posts, but not after the last post
+        else if ((index + 1) % 5 === 0 && index < posts.length - 1 && promotionalAds.length > 0) {
+          const adIndex = Math.floor(index / 5) % promotionalAds.length;
           const adData = promotionalAds[adIndex];
           
           // Transform promotional ad to match FeedAdCard format
@@ -369,7 +379,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     };
 
     createFeedWithAds();
-  }, [posts, promotionalAds]);
+  }, [posts, promotionalAds, boardSuggestions]);
 
   useEffect(() => {
     if (propViewScope) {
@@ -905,6 +915,16 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 <FeedAdCard 
                   key={`ad-${item.ad.id}-${index}`} 
                   ad={item.ad} 
+                />
+              );
+            }
+            
+            if (item.type === 'board_suggestion') {
+              return (
+                <BoardSuggestionCard
+                  key={`board-${item.board.id}-${index}`}
+                  board={item.board}
+                  onJoin={refreshSuggestions}
                 />
               );
             }

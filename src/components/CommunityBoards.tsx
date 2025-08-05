@@ -344,54 +344,91 @@ const CommunityBoards = () => {
         return;
       }
 
-      // Fetch ALL public boards that match user's location - don't exclude any boards
-      // Users should be able to see all public boards, including ones they're in
-      let query = supabase
-        .from('discussion_boards')
-        .select(`
-          *,
-          creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)
-        `)
-        .eq('is_public', true);
+      // Implement location-based board filtering with hierarchy
+      let allBoards: any[] = [];
 
-      // Build location-based filter for better discovery
-      const userLocations = [];
-      if (profileData?.neighborhood) userLocations.push(profileData.neighborhood);
-      if (profileData?.city) userLocations.push(profileData.city);
-      if (profileData?.state) userLocations.push(profileData.state);
+      // 1. Neighborhood boards (highest priority) - exact match
+      if (profileData?.neighborhood) {
+        const { data: neighborhoodBoards } = await supabase
+          .from('discussion_boards')
+          .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
+          .eq('is_public', true)
+          .eq('location_scope', 'neighborhood')
+          .ilike('location', `%${profileData.neighborhood}%`);
 
-      // Build complex location filter - show global boards and location-specific ones
-      if (userLocations.length > 0) {
-        const locationFilters = [
-          'location_scope.eq.public', // Always include global boards
-        ];
-        
-        // Add location-specific filters
-        if (profileData.state) {
-          locationFilters.push(`and(location_scope.eq.state,location.ilike.%${profileData.state}%)`);
+        if (neighborhoodBoards) {
+          allBoards.push(...neighborhoodBoards);
         }
-        if (profileData.city) {
-          locationFilters.push(`and(location_scope.eq.city,location.ilike.%${profileData.city}%)`);
-        }
-        if (profileData.neighborhood) {
-          locationFilters.push(`and(location_scope.eq.neighborhood,location.ilike.%${profileData.neighborhood}%)`);
-        }
-        
-        query = query.or(locationFilters.join(','));
-      } else {
-        // If no location data, only show global boards
-        query = query.eq('location_scope', 'public');
       }
 
-      const { data: publicBoardsData, error: publicBoardsError } = await query
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // 2. City boards (medium priority) - available to city residents
+      if (profileData?.city) {
+        const { data: cityBoards } = await supabase
+          .from('discussion_boards')
+          .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
+          .eq('is_public', true)
+          .eq('location_scope', 'city')
+          .ilike('location', `%${profileData.city}%`);
 
-      if (publicBoardsError) throw publicBoardsError;
+        if (cityBoards) {
+          // Filter out duplicates by ID
+          const existingIds = new Set(allBoards.map(b => b.id));
+          const newCityBoards = cityBoards.filter(b => !existingIds.has(b.id));
+          allBoards.push(...newCityBoards);
+        }
+      }
+
+      // 3. State boards (lower priority) - available to state residents
+      if (profileData?.state) {
+        const { data: stateBoards } = await supabase
+          .from('discussion_boards')
+          .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
+          .eq('is_public', true)
+          .eq('location_scope', 'state')
+          .ilike('location', `%${profileData.state}%`);
+
+        if (stateBoards) {
+          // Filter out duplicates by ID
+          const existingIds = new Set(allBoards.map(b => b.id));
+          const newStateBoards = stateBoards.filter(b => !existingIds.has(b.id));
+          allBoards.push(...newStateBoards);
+        }
+      }
+
+      // 4. Public boards (lowest priority) - available to everyone
+      const { data: publicBoards } = await supabase
+        .from('discussion_boards')
+        .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
+        .eq('is_public', true)
+        .eq('location_scope', 'public');
+
+      if (publicBoards) {
+        // Filter out duplicates by ID
+        const existingIds = new Set(allBoards.map(b => b.id));
+        const newPublicBoards = publicBoards.filter(b => !existingIds.has(b.id));
+        allBoards.push(...newPublicBoards);
+      }
+
+      // Sort boards by priority (neighborhood > city > state > public) and creation date
+      allBoards.sort((a, b) => {
+        const priorityOrder = { neighborhood: 4, city: 3, state: 2, public: 1 };
+        const aPriority = priorityOrder[a.location_scope] || 0;
+        const bPriority = priorityOrder[b.location_scope] || 0;
+        
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority; // Higher priority first
+        }
+        
+        // Same priority, sort by creation date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      // Limit to 20 boards total
+      const publicBoardsData = allBoards.slice(0, 20);
 
       // Get member counts and user's role for each board
       const boardsWithCounts = await Promise.all(
-        (publicBoardsData || []).map(async (board) => {
+        publicBoardsData.map(async (board) => {
           const { count } = await supabase
             .from('board_members')
             .select('*', { count: 'exact' })
