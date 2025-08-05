@@ -44,41 +44,22 @@ const Community = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
-          {/* Header */}
-          <div className="flex flex-col gap-4 mb-6">
-            {/* Mobile - Header with icons on same line */}
-            <div className="md:hidden">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Community</h1>
-                <div className="flex items-center gap-2">
-                  {/* Removed create ad button */}
-                  <Button
-                    variant={activeTab === "feed" ? "default" : "outline"}
-                    onClick={() => setActiveTab("feed")}
-                    size="icon"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={activeTab === "boards" ? "default" : "outline"}
-                    onClick={() => setActiveTab("boards")}
-                    size="icon"
-                  >
-                    <Users className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-muted-foreground text-left">Connect with your neighborhood</p>
-            </div>
-
-            {/* Desktop - Header with button on same line */}
-            <div className="hidden md:flex items-start justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Community</h1>
-                <p className="text-muted-foreground">Connect with your neighborhood</p>
-              </div>
-              {/* Removed create ad button */}
-            </div>
+          {/* Mobile tab buttons */}
+          <div className="md:hidden flex items-center justify-center gap-2 mb-6">
+            <Button
+              variant={activeTab === "feed" ? "default" : "outline"}
+              onClick={() => setActiveTab("feed")}
+              size="icon"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={activeTab === "boards" ? "default" : "outline"}
+              onClick={() => setActiveTab("boards")}
+              size="icon"
+            >
+              <Users className="h-4 w-4" />
+            </Button>
           </div>
 
           <PaymentStatusHandler />
