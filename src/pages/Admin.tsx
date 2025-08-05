@@ -811,16 +811,22 @@ const Admin = () => {
     if (confirmText !== 'DELETE') return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', user.user_id);
+      // Use the edge function to properly delete the user
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: user.user_id }
+      });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || 'Failed to delete user');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "User Deleted",
-        description: `${user.full_name} has been deleted`,
+        description: `${user.full_name} has been deleted successfully`,
       });
       
       fetchUsers(); // Refresh the user list
@@ -828,7 +834,7 @@ const Admin = () => {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: `Failed to delete user: ${error.message}`,
         variant: "destructive",
       });
     }
