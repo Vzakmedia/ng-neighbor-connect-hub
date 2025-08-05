@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload } from "lucide-react";
 import { useRef, useState as useSignupState } from "react";
+import { AvatarCropper } from "./AvatarCropper";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -31,6 +32,8 @@ export const SignUpForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useSignupState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -43,7 +46,7 @@ export const SignUpForm = () => {
     setFormData(prev => ({ ...prev, state, city, neighborhood }));
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -66,23 +69,29 @@ export const SignUpForm = () => {
       return;
     }
 
+    // Create preview URL and open cropper
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImageSrc(imageUrl);
+    setCropperOpen(true);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     try {
       setUploadingAvatar(true);
       console.log('Starting avatar upload...');
 
       // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `temp-${Date.now()}.${fileExt}`;
+      const fileName = `temp-${Date.now()}.jpeg`;
       const filePath = `profile-pictures/${fileName}`;
       
       console.log('Upload path:', filePath);
-      console.log('File size:', file.size);
-      console.log('File type:', file.type);
+      console.log('Cropped file size:', croppedImageBlob.size);
+      console.log('Cropped file type:', croppedImageBlob.type);
 
-      // Upload to avatars bucket
+      // Upload cropped image to avatars bucket
       const { data, error } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, croppedImageBlob);
 
       console.log('Upload response:', { data, error });
 
@@ -114,6 +123,11 @@ export const SignUpForm = () => {
       });
     } finally {
       setUploadingAvatar(false);
+      // Clean up the object URL
+      if (selectedImageSrc) {
+        URL.revokeObjectURL(selectedImageSrc);
+        setSelectedImageSrc('');
+      }
     }
   };
 
@@ -381,6 +395,20 @@ export const SignUpForm = () => {
         {isLoading ? "Creating account..." : "Create Account"}
       </Button>
     </form>
+
+    {/* Avatar Cropper Dialog */}
+    <AvatarCropper
+      isOpen={cropperOpen}
+      onClose={() => {
+        setCropperOpen(false);
+        if (selectedImageSrc) {
+          URL.revokeObjectURL(selectedImageSrc);
+          setSelectedImageSrc('');
+        }
+      }}
+      imageSrc={selectedImageSrc}
+      onCropComplete={handleCropComplete}
+    />
     </div>
   );
 };
