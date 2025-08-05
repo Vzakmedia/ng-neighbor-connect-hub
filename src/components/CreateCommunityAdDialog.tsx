@@ -36,7 +36,7 @@ const nigerianStates = [
 
 const adTypes = [
   { value: 'community_post', label: 'Community Post Promotion', price: 500 },
-  { value: 'service', label: 'Service Advertisement', price: 1000 },
+  { value: 'direct_ad', label: 'Service Advertisement', price: 1000 },
   { value: 'marketplace_item', label: 'Marketplace Item', price: 750 },
   { value: 'event', label: 'Event Promotion', price: 800 },
   { value: 'business', label: 'Business Advertisement', price: 1500 }
