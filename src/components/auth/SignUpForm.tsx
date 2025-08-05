@@ -68,24 +68,35 @@ export const SignUpForm = () => {
 
     try {
       setUploadingAvatar(true);
+      console.log('Starting avatar upload...');
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `temp-${Date.now()}.${fileExt}`;
       const filePath = `profile-pictures/${fileName}`;
+      
+      console.log('Upload path:', filePath);
+      console.log('File size:', file.size);
+      console.log('File type:', file.type);
 
       // Upload to avatars bucket
       const { data, error } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
-      if (error) throw error;
+      console.log('Upload response:', { data, error });
+
+      if (error) {
+        console.error('Upload error details:', error);
+        throw error;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', publicUrl);
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
 
       toast({
@@ -94,6 +105,8 @@ export const SignUpForm = () => {
       });
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload avatar. Please try again.",
