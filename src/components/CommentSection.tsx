@@ -652,23 +652,21 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   return (
     <div className={`space-y-4 ${isInline ? '' : 'border-t bg-muted/20 mt-4 p-4'}`}>
       {/* Comments list */}
-      <div className={isInline ? "max-h-64 overflow-hidden" : "max-h-96 overflow-hidden"}>
-        <ScrollArea className="h-full">
-          <div className="space-y-4 pr-4">
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-              </div>
-            ) : comments.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No comments yet. Be the first to comment!
-              </p>
-            ) : (
-              comments.map(comment => renderComment(comment))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
+      <ScrollArea className={isInline ? "max-h-64" : "max-h-96"}>
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            </div>
+          ) : comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No comments yet. Be the first to comment!
+            </p>
+          ) : (
+            comments.map(comment => renderComment(comment))
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Main comment input */}
       <div className={`mt-4 pt-3 ${isInline ? 'border-t-0' : 'border-t'}`}>
