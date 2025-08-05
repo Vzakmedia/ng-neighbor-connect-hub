@@ -2021,69 +2021,6 @@ const CommunityBoards = () => {
             </div>
           ))}
         </ScrollArea>
-        
-        <div className="p-4 border-t">
-          <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
-            <DialogTrigger asChild>
-              <Button 
-                size="sm" 
-                className="w-full"
-                onClick={() => console.log('Create Board button clicked')}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Create Board
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Discussion Board</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Board Name</label>
-                  <Input
-                    value={newBoardName}
-                    onChange={(e) => setNewBoardName(e.target.value)}
-                    placeholder="Enter board name..."
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Description</label>
-                  <Textarea
-                    value={newBoardDescription}
-                    onChange={(e) => setNewBoardDescription(e.target.value)}
-                    placeholder="Describe what this board is for..."
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium">Public Board</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Allow anyone to discover and join this board
-                    </p>
-                  </div>
-                  <Switch
-                    checked={newBoardIsPublic}
-                    onCheckedChange={setNewBoardIsPublic}
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => {
-                    setShowCreateBoard(false);
-                    setNewBoardName('');
-                    setNewBoardDescription('');
-                    setNewBoardIsPublic(true);
-                  }}>
-                    Cancel
-                  </Button>
-                  <Button onClick={createBoard} disabled={!newBoardName.trim()}>
-                    Create Board
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
       </div>
 
       {/* Chat Area */}
