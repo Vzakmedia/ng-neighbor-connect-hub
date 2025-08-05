@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Megaphone, Target, Clock, DollarSign, MapPin, Users, Upload, X, Image } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import ContentSuggestionPanel from './ContentSuggestionPanel';
 
 interface CreateCommunityAdDialogProps {
   children: React.ReactNode;
@@ -62,7 +63,8 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
     images: [] as string[],
     business_name: '',
     business_category: '',
-    call_to_action: 'Learn More'
+    call_to_action: 'Learn More',
+    selectedContentId: null as string | null
   });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,9 +233,27 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
       images: [],
       business_name: '',
       business_category: '',
-      call_to_action: 'Learn More'
+      call_to_action: 'Learn More',
+      selectedContentId: null
     });
     setStep(1);
+  };
+
+  const handleContentSelect = (content: any) => {
+    setFormData(prev => ({
+      ...prev,
+      title: content.title,
+      description: content.description,
+      images: content.images || [],
+      business_name: prev.business_name || content.business_name || '',
+      business_category: prev.business_category || content.category || '',
+      selectedContentId: content.contentId
+    }));
+    
+    toast({
+      title: "Content Selected",
+      description: `Selected "${content.title}" for promotion`,
+    });
   };
 
   const nextStep = () => setStep(prev => prev + 1);
@@ -272,6 +292,14 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Content Suggestions */}
+              {formData.ad_type && (
+                <ContentSuggestionPanel
+                  adType={formData.ad_type}
+                  onContentSelect={handleContentSelect}
+                />
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="title">Advertisement Title</Label>
