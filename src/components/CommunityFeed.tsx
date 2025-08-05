@@ -321,23 +321,30 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
   };
 
-  // Check read statuses for posts
+  // Check read statuses for posts with memoization to prevent infinite loops
   useEffect(() => {
     const checkReadStatuses = async () => {
       if (!user || posts.length === 0) return;
       
       const statuses: Record<string, boolean> = {};
+      const postsToCheck = posts.filter(post => !readStatuses.hasOwnProperty(post.id));
+      
+      if (postsToCheck.length === 0) return; // No new posts to check
+      
       await Promise.all(
-        posts.map(async (post) => {
+        postsToCheck.map(async (post) => {
           const isRead = await checkIfPostIsRead(post.id);
           statuses[post.id] = isRead;
         })
       );
-      setReadStatuses(statuses);
+      
+      if (Object.keys(statuses).length > 0) {
+        setReadStatuses(prev => ({ ...prev, ...statuses }));
+      }
     };
 
     checkReadStatuses();
-  }, [posts, user, checkIfPostIsRead]);
+  }, [posts.map(p => p.id).join(','), user?.id]); // Use stable dependency
 
   // Create combined feed with ads interspersed between posts
   useEffect(() => {
