@@ -10,8 +10,6 @@ import { SecureInput } from "./SecureAuthForms";
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
 import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { GoogleAuthButton } from "./GoogleAuthButton";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload } from "lucide-react";
 import { useRef, useState as useSignupState } from "react";
@@ -223,20 +221,6 @@ export const SignUpForm = () => {
 
   return (
     <div className="space-y-4">
-      {/* Google Auth Button */}
-      <GoogleAuthButton mode="signup" />
-      
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or create account with email
-          </span>
-        </div>
-      </div>
-
       <form onSubmit={handleSignUp} className="space-y-4">
       {/* Profile Picture Upload */}
       <div className="flex flex-col items-center space-y-4">
