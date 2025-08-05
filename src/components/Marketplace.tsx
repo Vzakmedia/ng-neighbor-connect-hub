@@ -216,9 +216,9 @@ const Marketplace = () => {
 
       // Filter services by user's city and state
       const filteredServices = servicesWithProfilesAndLikes.filter(service => {
-        if (!currentUserProfile?.city || !currentUserProfile?.state || !service.profiles) return false;
-        return service.profiles.city === currentUserProfile.city && 
-               service.profiles.state === currentUserProfile.state;
+        if (!currentUserProfile?.city || !currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
+        return service.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase() && 
+               service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
       });
 
       setServices(filteredServices as any || []);
@@ -285,9 +285,9 @@ const Marketplace = () => {
 
       // Filter items by user's city and state
       const filteredItems = itemsWithProfilesAndLikes.filter(item => {
-        if (!currentUserProfile?.city || !currentUserProfile?.state || !item.profiles) return false;
-        return item.profiles.city === currentUserProfile.city && 
-               item.profiles.state === currentUserProfile.state;
+        if (!currentUserProfile?.city || !currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
+        return item.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase() && 
+               item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
       });
 
       setItems(filteredItems as any || []);
