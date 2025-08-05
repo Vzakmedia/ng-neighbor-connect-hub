@@ -282,6 +282,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   const loadMorePosts = async () => {
     setLoadingMore(true);
+    setHasNewPosts(false); // Immediately hide the button
     await fetchPosts(false);
     setLoadingMore(false);
     toast({
