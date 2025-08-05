@@ -23,9 +23,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
-          console.log("Auth state changed:", event, session);
+          console.log("Auth state changed:", event, session?.user?.email_confirmed_at);
           setSession(session);
-          setUser(session?.user ?? null);
+          
+          // Only set user if email is confirmed (for direct signups)
+          if (session?.user) {
+            // Allow Google OAuth users (they don't need email confirmation)
+            // For email signups, require email confirmation
+            const isGoogleAuth = session.user.app_metadata?.provider === 'google';
+            const isEmailConfirmed = session.user.email_confirmed_at;
+            
+            if (isGoogleAuth || isEmailConfirmed) {
+              setUser(session.user);
+            } else {
+              // Email signup but not confirmed yet
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
           setLoading(false);
         }
       );
@@ -33,9 +49,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // THEN check for existing session
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log("Got existing session:", session);
+        console.log("Got existing session:", session?.user?.email_confirmed_at);
         setSession(session);
-        setUser(session?.user ?? null);
+        
+        // Apply same email confirmation logic for initial session
+        if (session?.user) {
+          const isGoogleAuth = session.user.app_metadata?.provider === 'google';
+          const isEmailConfirmed = session.user.email_confirmed_at;
+          
+          if (isGoogleAuth || isEmailConfirmed) {
+            setUser(session.user);
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
         setLoading(false);
       }).catch((error) => {
         console.error("Error getting session:", error);

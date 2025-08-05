@@ -106,7 +106,7 @@ export const SignUpForm = () => {
         ? `${window.location.origin}/`
         : 'https://neighborlink.ng/';
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -137,10 +137,17 @@ export const SignUpForm = () => {
           });
         }
       } else {
-        toast({
-          title: "Account Created!",
-          description: "Welcome to NeighborLink! You can now access the community features.",
-        });
+        if (data.user && !data.user.email_confirmed_at) {
+          toast({
+            title: "Check Your Email",
+            description: "Please check your email and click the confirmation link to complete your account setup.",
+          });
+        } else {
+          toast({
+            title: "Account Created!",
+            description: "Welcome to NeighborLink! You can now access the community features.",
+          });
+        }
       }
     } catch (error) {
       toast({
