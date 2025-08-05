@@ -119,6 +119,7 @@ const CommunityBoards = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [currentInviteCode, setCurrentInviteCode] = useState<any>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [boardSearchTerm, setBoardSearchTerm] = useState('');
   
   // Board editing states
   const [editingBoard, setEditingBoard] = useState(false);
@@ -359,7 +360,15 @@ const CommunityBoards = () => {
         ...(creatorData?.map(b => b.id) || [])
       ];
 
-      // Fetch public boards in the same location
+      // Build location-based query
+      let locationQuery = '';
+      const userLocations = [];
+      
+      if (profileData.neighborhood) userLocations.push(profileData.neighborhood);
+      if (profileData.city) userLocations.push(profileData.city);
+      if (profileData.state) userLocations.push(profileData.state);
+
+      // Fetch public boards based on location scope and visibility
       let query = supabase
         .from('discussion_boards')
         .select(`
@@ -368,11 +377,27 @@ const CommunityBoards = () => {
         `)
         .eq('is_public', true);
 
-      // Filter by location
-      if (profileData.city) {
-        query = query.or(`location.ilike.%${profileData.city}%,location.ilike.%${profileData.state}%`);
-      } else if (profileData.state) {
-        query = query.ilike('location', `%${profileData.state}%`);
+      // Build complex location filter
+      if (userLocations.length > 0) {
+        const locationFilters = [
+          'location_scope.eq.public', // Always include global boards
+        ];
+        
+        // Add location-specific filters
+        if (profileData.state) {
+          locationFilters.push(`and(location_scope.eq.state,location.ilike.%${profileData.state}%)`);
+        }
+        if (profileData.city) {
+          locationFilters.push(`and(location_scope.eq.city,location.ilike.%${profileData.city}%)`);
+        }
+        if (profileData.neighborhood) {
+          locationFilters.push(`and(location_scope.eq.neighborhood,location.ilike.%${profileData.neighborhood}%)`);
+        }
+        
+        query = query.or(locationFilters.join(','));
+      } else {
+        // If no location data, only show global boards
+        query = query.eq('location_scope', 'public');
       }
 
       // Exclude boards user is already in
@@ -386,15 +411,24 @@ const CommunityBoards = () => {
 
       if (publicBoardsError) throw publicBoardsError;
 
-      // Transform data to match DiscussionBoard interface
-      const transformedBoards = (publicBoardsData || []).map(board => ({
-        ...board,
-        member_count: 0, // Will be fetched separately if needed
-        user_role: null
-      }));
+      // Get member counts for each board
+      const boardsWithCounts = await Promise.all(
+        (publicBoardsData || []).map(async (board) => {
+          const { count } = await supabase
+            .from('board_members')
+            .select('*', { count: 'exact' })
+            .eq('board_id', board.id);
 
-      setPublicBoards(transformedBoards as DiscussionBoard[]);
-      console.log('Public boards loaded:', transformedBoards.length, transformedBoards);
+          return {
+            ...board,
+            member_count: count || 0,
+            user_role: null
+          };
+        })
+      );
+
+      setPublicBoards(boardsWithCounts as DiscussionBoard[]);
+      console.log('Public boards loaded:', boardsWithCounts.length, boardsWithCounts);
     } catch (error) {
       console.error('Error fetching public boards:', error);
     }
@@ -1458,6 +1492,132 @@ const CommunityBoards = () => {
     }
   };
 
+  // Delete entire board (only creator can do this)
+  const deleteBoard = async () => {
+    if (!selectedBoard || !currentBoard || !user) return;
+
+    // Only creator can delete board
+    if (currentBoard.creator_id !== user.id) {
+      toast({
+        title: "Permission denied",
+        description: "Only the board creator can delete the board.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this board? This action cannot be undone and will remove all posts and members.")) {
+      return;
+    }
+
+    try {
+      // Delete board (cascade will handle posts, members, etc.)
+      const { error } = await supabase
+        .from('discussion_boards')
+        .delete()
+        .eq('id', selectedBoard);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setBoards(prev => prev.filter(board => board.id !== selectedBoard));
+      setSelectedBoard(null);
+      setShowSettings(false);
+
+      toast({
+        title: "Board deleted",
+        description: "The board and all its content have been deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting board:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete board. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Join a public board directly
+  const joinBoard = async (boardId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .insert({
+          board_id: boardId,
+          user_id: user.id,
+          role: 'member'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Joined board",
+        description: "You have successfully joined the board.",
+      });
+
+      // Refresh boards and public boards
+      fetchBoards();
+      fetchPublicBoards();
+    } catch (error) {
+      console.error('Error joining board:', error);
+      toast({
+        title: "Error",
+        description: "Failed to join board. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Leave a board
+  const leaveBoard = async (boardId: string) => {
+    if (!user?.id) return;
+
+    const board = boards.find(b => b.id === boardId);
+    if (board?.creator_id === user.id) {
+      toast({
+        title: "Cannot leave",
+        description: "Board creators cannot leave their own boards. Delete the board instead.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm("Are you sure you want to leave this board?")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .delete()
+        .eq('board_id', boardId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Remove from local state and deselect if it was selected
+      setBoards(prev => prev.filter(board => board.id !== boardId));
+      if (selectedBoard === boardId) {
+        setSelectedBoard(null);
+      }
+
+      toast({
+        title: "Left board",
+        description: "You have left the board.",
+      });
+    } catch (error) {
+      console.error('Error leaving board:', error);
+      toast({
+        title: "Error",
+        description: "Failed to leave board. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchBoards();
@@ -1535,15 +1695,38 @@ const CommunityBoards = () => {
                   <DialogHeader>
                     <DialogTitle>Discover Public Boards</DialogTitle>
                   </DialogHeader>
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Search boards by name or description..."
+                        value={boardSearchTerm}
+                        onChange={(e) => setBoardSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                   <ScrollArea className="h-96">
                     <div className="space-y-3">
-                      {publicBoards.length === 0 ? (
+                      {publicBoards.filter(board => 
+                        !boardSearchTerm || 
+                        board.name.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
+                        board.description?.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
+                        board.location?.toLowerCase().includes(boardSearchTerm.toLowerCase())
+                      ).length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <Globe className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p className="text-sm">No public boards found in your area</p>
+                          <p className="text-sm">
+                            {boardSearchTerm ? 'No boards found matching your search' : 'No public boards found in your area'}
+                          </p>
                         </div>
                       ) : (
-                        publicBoards.map((board) => (
+                        publicBoards.filter(board => 
+                          !boardSearchTerm || 
+                          board.name.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
+                          board.description?.toLowerCase().includes(boardSearchTerm.toLowerCase()) ||
+                          board.location?.toLowerCase().includes(boardSearchTerm.toLowerCase())
+                        ).map((board) => (
                           <Card key={board.id} className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -1561,18 +1744,35 @@ const CommunityBoards = () => {
                                     {board.location || 'Global'}
                                   </div>
                                   <div className="flex items-center">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {board.member_count} member{board.member_count !== 1 ? 's' : ''}
+                                  </div>
+                                  <div className="flex items-center">
                                     <Clock className="h-3 w-3 mr-1" />
                                     Created {new Date(board.created_at).toLocaleDateString()}
                                   </div>
                                 </div>
                               </div>
-                              <Button 
-                                size="sm" 
-                                onClick={() => requestToJoinBoard(board.id)}
-                                className="ml-4"
-                              >
-                                Request to Join
-                              </Button>
+                              <div className="ml-4 flex flex-col space-y-2">
+                                {board.requires_approval ? (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => requestToJoinBoard(board.id)}
+                                  >
+                                    Request to Join
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => joinBoard(board.id)}
+                                  >
+                                    Join Board
+                                  </Button>
+                                )}
+                                <div className="text-xs text-muted-foreground text-center">
+                                  {board.requires_approval ? 'Requires approval' : 'Open to join'}
+                                </div>
+                              </div>
                             </div>
                           </Card>
                         ))
@@ -1690,13 +1890,75 @@ const CommunityBoards = () => {
                 selectedBoard === board.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
+               <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
                   <Hash className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium text-sm">{board.name}</h3>
+                  <h3 className="font-medium text-sm truncate">{board.name}</h3>
                   {board.user_role === 'admin' && <Crown className="h-3 w-3 text-yellow-500" />}
                   {board.creator_id === user?.id && <Badge variant="outline" className="text-xs">Owner</Badge>}
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {board.creator_id === user?.id ? (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          Board Creator
+                        </div>
+                        <button
+                          className="flex w-full items-center px-2 py-1.5 text-xs hover:bg-accent rounded-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBoard(board.id);
+                            setShowSettings(true);
+                          }}
+                        >
+                          <Settings className="mr-2 h-3 w-3" />
+                          Settings
+                        </button>
+                        <button
+                          className="flex w-full items-center px-2 py-1.5 text-xs text-destructive hover:bg-accent rounded-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Are you sure you want to delete "${board.name}"? This cannot be undone.`)) {
+                              const boardIdToDelete = selectedBoard;
+                              setSelectedBoard(board.id);
+                              deleteBoard();
+                            }
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Delete Board
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          Role: {board.user_role}
+                        </div>
+                        <button
+                          className="flex w-full items-center px-2 py-1.5 text-xs text-destructive hover:bg-accent rounded-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            leaveBoard(board.id);
+                          }}
+                        >
+                          <X className="mr-2 h-3 w-3" />
+                          Leave Board
+                        </button>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               
               {board.description && (
@@ -2245,7 +2507,11 @@ const CommunityBoards = () => {
                                         This action cannot be undone
                                       </p>
                                     </div>
-                                    <Button variant="destructive" size="sm">
+                                    <Button 
+                                      variant="destructive" 
+                                      size="sm"
+                                      onClick={deleteBoard}
+                                    >
                                       Delete
                                     </Button>
                                   </div>
