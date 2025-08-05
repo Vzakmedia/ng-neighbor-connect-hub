@@ -96,8 +96,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasNewPosts, setHasNewPosts] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
@@ -270,7 +268,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       console.log('CommunityFeed: Processed posts', { count: processedPosts.length, viewScope });
       setPosts(processedPosts);
       setLastFetchTime(new Date());
-      setHasNewPosts(false);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -280,18 +277,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
   };
 
-  const loadMorePosts = async () => {
-    setLoadingMore(true);
-    setHasNewPosts(false); // Immediately hide the button
-    await fetchPosts(false);
-    setLoadingMore(false);
-    toast({
-      title: "Posts refreshed",
-      description: "Latest posts have been loaded.",
-    });
-  };
-
-  const checkForNewPosts = async () => {
+  const autoRefreshPosts = async () => {
     if (!user || !profile || !lastFetchTime) return;
 
     try {
@@ -302,7 +288,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         .order('created_at', { ascending: false });
 
       if (newPostsData && newPostsData.length > 0) {
-        setHasNewPosts(true);
+        // Automatically refresh posts when new ones are found
+        await fetchPosts(false);
+        toast({
+          title: "New posts loaded",
+          description: `${newPostsData.length} new post${newPostsData.length > 1 ? 's' : ''} loaded automatically.`,
+        });
       }
     } catch (error) {
       console.error('Error checking for new posts:', error);
@@ -389,7 +380,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     fetchPosts(true);
   }, [user, profile, viewScope]);
 
-  // Set up safe real-time subscription for new posts detection only
+  // Set up Facebook-style auto-refresh system
   useEffect(() => {
     if (!user) return;
 
@@ -400,13 +391,13 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           schema: 'public',
           table: 'community_posts'
         }, () => {
-          checkForNewPosts();
+          autoRefreshPosts();
         }),
       {
-        channelName: 'community_feed_new_posts',
-        onError: () => checkForNewPosts(),
+        channelName: 'community_feed_auto_refresh',
+        onError: () => autoRefreshPosts(),
         pollInterval: 30000,
-        debugName: 'CommunityFeedNewPosts'
+        debugName: 'CommunityFeedAutoRefresh'
       }
     );
 
@@ -890,32 +881,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         )}
       </div>
 
-      {/* Load More Button - Only show when there are new posts */}
-      {!loading && hasNewPosts && (
-        <div className="flex justify-center mb-4">
-          <Button
-            onClick={loadMorePosts}
-            disabled={loadingMore}
-            variant="default"
-            size="sm"
-            className="animate-pulse bg-primary shadow-lg transition-all duration-300"
-          >
-            {loadingMore ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                Loading...
-              </>
-            ) : (
-              <>
-                <Badge variant="secondary" className="mr-2 bg-white text-primary">
-                  New
-                </Badge>
-                Load Latest Posts
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {loading ? (
         <div className="text-center py-8">
