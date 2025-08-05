@@ -74,14 +74,12 @@ const Community = () => {
               <p className="text-muted-foreground text-left">Connect with your neighborhood</p>
             </div>
 
-            {/* Desktop - Original layout */}
-            <div className="hidden md:block">
-              <h1 className="text-2xl font-bold">Community</h1>
-              <p className="text-muted-foreground">Connect with your neighborhood</p>
-            </div>
-
-            {/* Desktop - Full layout */}
-            <div className="hidden md:flex items-center justify-end">
+            {/* Desktop - Header with button on same line */}
+            <div className="hidden md:flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">Community</h1>
+                <p className="text-muted-foreground">Connect with your neighborhood</p>
+              </div>
               <CreateCommunityAdDialog>
                 <Button className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300">
                   <Megaphone className="h-4 w-4" />
