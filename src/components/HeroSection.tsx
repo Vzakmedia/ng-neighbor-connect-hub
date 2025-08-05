@@ -51,16 +51,6 @@ const HeroSection = () => {
               <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-5 md:mb-5 text-white/90 leading-relaxed">
                 Join thousands of neighbors sharing resources, staying safe, and building lasting connections in your community.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto text-sm sm:text-base">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Join Your Neighborhood
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button size="lg" variant="outline" className="border-white text-primary hover:bg-white/10 hover:text-white w-full sm:w-auto text-sm sm:text-base">
-                  Learn More
-                </Button>
-              </div>
             </div>
           </div>
         </div>
