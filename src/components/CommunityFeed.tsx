@@ -612,8 +612,23 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   const handlePostClick = async (postId: string, event?: React.MouseEvent) => {
     // Don't open full screen if clicking on interactive elements
-    if (event?.target && (event.target as HTMLElement).closest('button, a, [role="button"]')) {
-      return;
+    if (event?.target) {
+      const target = event.target as HTMLElement;
+      const isInteractiveElement = target.closest(`
+        button, 
+        a, 
+        [role="button"], 
+        input, 
+        textarea, 
+        .avatar-clickable, 
+        .comment-section,
+        [data-interactive],
+        .lucide
+      `.replace(/\s+/g, ''));
+      
+      if (isInteractiveElement) {
+        return;
+      }
     }
     
     if (!readStatuses[postId]) {
