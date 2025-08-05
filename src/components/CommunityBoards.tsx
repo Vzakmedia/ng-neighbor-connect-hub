@@ -52,6 +52,9 @@ interface DiscussionBoard {
   updated_at: string;
   avatar_url: string | null;
   location: string | null;
+  location_scope: 'neighborhood' | 'city' | 'state' | 'public';
+  requires_approval: boolean;
+  auto_approve_members: boolean;
   member_count: number;
   user_role: string | null;
 }
@@ -65,6 +68,9 @@ interface BoardPost {
   image_urls: string[];
   reply_to_id: string | null;
   is_pinned: boolean;
+  approval_status: 'pending' | 'approved' | 'rejected';
+  approved_by: string | null;
+  approved_at: string | null;
   created_at: string;
   updated_at: string;
   profiles: {
@@ -92,7 +98,12 @@ const CommunityBoards = () => {
   const [showDiscoverBoards, setShowDiscoverBoards] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
-  const [newBoardIsPublic, setNewBoardIsPublic] = useState(true); // Default to public
+  const [newBoardIsPublic, setNewBoardIsPublic] = useState(true);
+  const [newBoardLocationScope, setNewBoardLocationScope] = useState<'neighborhood' | 'city' | 'state' | 'public'>('public');
+  const [newBoardRequiresApproval, setNewBoardRequiresApproval] = useState(false);
+  const [newBoardAutoApproveMembers, setNewBoardAutoApproveMembers] = useState(true);
+  const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [pendingPosts, setPendingPosts] = useState<BoardPost[]>([]);
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [userSuggestions, setUserSuggestions] = useState<any[]>([]);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -536,6 +547,16 @@ const CommunityBoards = () => {
         location: profile?.neighborhood || profile?.city || null
       });
 
+      // Determine location based on scope
+      let boardLocation = null;
+      if (newBoardLocationScope === 'neighborhood') {
+        boardLocation = profile?.neighborhood;
+      } else if (newBoardLocationScope === 'city') {
+        boardLocation = profile?.city;
+      } else if (newBoardLocationScope === 'state') {
+        boardLocation = profile?.state;
+      }
+
       // Create board
       const { data: boardData, error: boardError } = await supabase
         .from('discussion_boards')
@@ -544,7 +565,10 @@ const CommunityBoards = () => {
           description: newBoardDescription.trim() || null,
           creator_id: user.id,
           is_public: newBoardIsPublic,
-          location: profile?.neighborhood || profile?.city || null
+          location: boardLocation,
+          location_scope: newBoardLocationScope,
+          requires_approval: newBoardRequiresApproval,
+          auto_approve_members: newBoardAutoApproveMembers
         })
         .select()
         .single();
@@ -574,7 +598,10 @@ const CommunityBoards = () => {
 
       setNewBoardName('');
       setNewBoardDescription('');
-      setNewBoardIsPublic(true); // Reset to default
+      setNewBoardIsPublic(true);
+      setNewBoardLocationScope('public');
+      setNewBoardRequiresApproval(false);
+      setNewBoardAutoApproveMembers(true);
       setShowCreateBoard(false);
       fetchBoards();
       
@@ -607,6 +634,9 @@ const CommunityBoards = () => {
       image_urls: [],
       reply_to_id: isReply ? replyingTo : null,
       is_pinned: false,
+      approval_status: 'approved', // Default for optimistic update
+      approved_by: null,
+      approved_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profiles: {
@@ -775,6 +805,135 @@ const CommunityBoards = () => {
     }
     
     return null;
+  };
+
+  // Moderation functions
+  const approvePost = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_posts')
+        .update({ 
+          approval_status: 'approved',
+          approved_by: user.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      setPosts(posts.map(p => 
+        p.id === postId 
+          ? { ...p, approval_status: 'approved', approved_by: user.id, approved_at: new Date().toISOString() }
+          : p
+      ));
+
+      toast({
+        title: "Post approved",
+        description: "The post has been approved and is now visible to all members.",
+      });
+    } catch (error) {
+      console.error('Error approving post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const rejectPost = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_posts')
+        .update({ approval_status: 'rejected' })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      setPosts(posts.filter(p => p.id !== postId));
+
+      toast({
+        title: "Post rejected",
+        description: "The post has been rejected and removed.",
+      });
+    } catch (error) {
+      console.error('Error rejecting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateMemberStatus = async (memberId: string, status: 'active' | 'pending' | 'banned') => {
+    if (!user || !selectedBoard) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .update({ status })
+        .eq('user_id', memberId)
+        .eq('board_id', selectedBoard);
+
+      if (error) throw error;
+
+      setBoardMembers(boardMembers.map(m => 
+        m.user_id === memberId ? { ...m, status } : m
+      ));
+
+      toast({
+        title: "Member status updated",
+        description: `Member has been ${status === 'banned' ? 'banned' : status}.`,
+      });
+    } catch (error) {
+      console.error('Error updating member status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchPendingPosts = async () => {
+    if (!selectedBoard || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('board_posts')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            avatar_url,
+            neighborhood,
+            city,
+            state
+          )
+        `)
+        .eq('board_id', selectedBoard)
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const processedPosts: BoardPost[] = (data || []).map(post => ({
+        ...post,
+        approval_status: post.approval_status as 'pending' | 'approved' | 'rejected',
+        profiles: post.profiles as any,
+        likes_count: 0,
+        is_liked_by_user: false
+      }));
+      
+      setPendingPosts(processedPosts);
+    } catch (error) {
+      console.error('Error fetching pending posts:', error);
+    }
   };
 
   const getRoleBadge = (userId: string) => {
@@ -1454,13 +1613,49 @@ const CommunityBoards = () => {
                         onChange={(e) => setNewBoardDescription(e.target.value)}
                       />
                     </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="location-scope">Board Scope</Label>
+                      <select
+                        id="location-scope"
+                        className="w-full p-2 border border-input rounded-md bg-background"
+                        value={newBoardLocationScope}
+                        onChange={(e) => setNewBoardLocationScope(e.target.value as any)}
+                      >
+                        <option value="public">Public (Everyone)</option>
+                        <option value="state">State ({profile?.state || 'Your State'})</option>
+                        <option value="city">City ({profile?.city || 'Your City'})</option>
+                        <option value="neighborhood">Neighborhood ({profile?.neighborhood || 'Your Neighborhood'})</option>
+                      </select>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="board-public"
                         checked={newBoardIsPublic}
                         onCheckedChange={setNewBoardIsPublic}
                       />
-                      <Label htmlFor="board-public">Make this board public</Label>
+                      <Label htmlFor="board-public">Make this board discoverable</Label>
+                    </div>
+                    
+                    <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                      <Label className="text-sm font-medium">Moderation Settings</Label>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="requires-approval"
+                          checked={newBoardRequiresApproval}
+                          onCheckedChange={setNewBoardRequiresApproval}
+                        />
+                        <Label htmlFor="requires-approval" className="text-sm">Posts require approval before being visible</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="auto-approve-members"
+                          checked={newBoardAutoApproveMembers}
+                          onCheckedChange={setNewBoardAutoApproveMembers}
+                        />
+                        <Label htmlFor="auto-approve-members" className="text-sm">Automatically approve new members</Label>
+                      </div>
                     </div>
                     <Button onClick={createBoard} className="w-full">
                       Create Board
@@ -1622,6 +1817,67 @@ const CommunityBoards = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
+                  {(currentBoard?.creator_id === user?.id || currentBoard?.user_role === 'admin' || currentBoard?.user_role === 'moderator') && (
+                    <Dialog open={showModerationPanel} onOpenChange={setShowModerationPanel}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={fetchPendingPosts}>
+                          <Shield className="h-4 w-4 mr-1" />
+                          Moderate
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Moderation Panel</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="font-medium mb-2">Pending Posts ({pendingPosts.length})</h3>
+                            <ScrollArea className="h-64">
+                              {pendingPosts.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                                  <p className="text-muted-foreground">No pending posts</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  {pendingPosts.map((post) => (
+                                    <Card key={post.id} className="p-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <div className="flex items-center space-x-2 mb-2">
+                                            <Avatar className="h-6 w-6">
+                                              <AvatarImage src={post.profiles?.avatar_url || undefined} />
+                                              <AvatarFallback>
+                                                {post.profiles?.full_name?.charAt(0) || 'U'}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium text-sm">{post.profiles?.full_name}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                              {formatTimeAgo(post.created_at)}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm">{post.content}</p>
+                                        </div>
+                                        <div className="flex space-x-2 ml-4">
+                                          <Button size="sm" variant="default" onClick={() => approvePost(post.id)}>
+                                            <Check className="h-3 w-3" />
+                                          </Button>
+                                          <Button size="sm" variant="destructive" onClick={() => rejectPost(post.id)}>
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  ))}
+                                </div>
+                              )}
+                            </ScrollArea>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                  
                   <Button variant="outline" size="sm">
                     <Pin className="h-4 w-4 mr-1" />
                     Pinned

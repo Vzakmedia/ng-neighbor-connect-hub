@@ -411,6 +411,7 @@ export type Database = {
           id: string
           joined_at: string
           role: string
+          status: string | null
           user_id: string
         }
         Insert: {
@@ -418,6 +419,7 @@ export type Database = {
           id?: string
           joined_at?: string
           role?: string
+          status?: string | null
           user_id: string
         }
         Update: {
@@ -425,6 +427,7 @@ export type Database = {
           id?: string
           joined_at?: string
           role?: string
+          status?: string | null
           user_id?: string
         }
         Relationships: [
@@ -492,6 +495,9 @@ export type Database = {
       }
       board_posts: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           board_id: string
           content: string
           created_at: string
@@ -504,6 +510,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           board_id: string
           content: string
           created_at?: string
@@ -516,6 +525,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           board_id?: string
           content?: string
           created_at?: string
@@ -1123,6 +1135,7 @@ export type Database = {
       }
       discussion_boards: {
         Row: {
+          auto_approve_members: boolean | null
           avatar_url: string | null
           created_at: string
           creator_id: string
@@ -1130,11 +1143,14 @@ export type Database = {
           id: string
           is_public: boolean | null
           location: string | null
+          location_scope: string | null
           member_limit: number | null
           name: string
+          requires_approval: boolean | null
           updated_at: string
         }
         Insert: {
+          auto_approve_members?: boolean | null
           avatar_url?: string | null
           created_at?: string
           creator_id: string
@@ -1142,11 +1158,14 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           location?: string | null
+          location_scope?: string | null
           member_limit?: number | null
           name: string
+          requires_approval?: boolean | null
           updated_at?: string
         }
         Update: {
+          auto_approve_members?: boolean | null
           avatar_url?: string | null
           created_at?: string
           creator_id?: string
@@ -1154,8 +1173,10 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           location?: string | null
+          location_scope?: string | null
           member_limit?: number | null
           name?: string
+          requires_approval?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -3158,6 +3179,10 @@ export type Database = {
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
+      }
+      can_moderate_board_posts: {
+        Args: { board_id: string; user_id: string }
+        Returns: boolean
       }
       cleanup_old_call_signals: {
         Args: Record<PropertyKey, never>
