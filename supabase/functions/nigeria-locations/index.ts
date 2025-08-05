@@ -93,11 +93,35 @@ serve(async (req) => {
         // Comprehensive city/LGA lists for all states
         const stateCities: { [key: string]: string[] } = {
           'Lagos': [
+            // Major Local Government Areas (LGAs)
             'Lagos Island', 'Lagos Mainland', 'Surulere', 'Ikeja', 'Oshodi-Isolo',
             'Mushin', 'Alimosho', 'Agege', 'Ifako-Ijaiye', 'Kosofe', 'Shomolu',
             'Ikorodu', 'Epe', 'Badagry', 'Ibeju-Lekki', 'Ojo', 'Amuwo-Odofin',
-            'Apapa', 'Eti-Osa', 'Ajeromi-Ifelodun', 'Lekki', 'Victoria Island',
-            'Yaba', 'Gbagada', 'Ojota', 'Magodo', 'Festac', 'Ajah', 'Ikoyi'
+            'Apapa', 'Eti-Osa', 'Ajeromi-Ifelodun',
+            // Major Districts and Areas
+            'Lekki', 'Victoria Island', 'Ikoyi', 'Yaba', 'Gbagada', 'Ojota', 'Magodo',
+            'Festac Town', 'Ajah', 'Maryland', 'Ikeja GRA', 'Anthony Village',
+            'Mile 12', 'Ketu', 'Oworonshoki', 'Alapere', 'Berger', 'Ogba',
+            'Isolo', 'Ejigbo', 'Idimu', 'Igando', 'Abule Egba', 'Oko-Oba',
+            'Agbado', 'Iyana Ipaja', 'Egbeda', 'Akowonjo', 'Dopemu', 'Orile',
+            'Mushin', 'Papa Ajao', 'Oshodi', 'Mafoluku', 'Airport Road',
+            'Ikotun', 'Igbogbo', 'Ikorodu Town', 'Sagamu Road', 'Majek',
+            'Sangotedo', 'Bogije', 'Awoyaya', 'Lakowe', 'Chevron Drive',
+            'Alpha Beach', 'Igbo Efon', 'Abraham Adesanya', 'Thomas Estate',
+            'Adeniyi Jones', 'Allen Avenue', 'Oregun', 'Opebi', 'Toyin Street',
+            'Computer Village', 'Alausa', 'Secretariat', 'Omole Phase 1',
+            'Omole Phase 2', 'Ogba Phase 1', 'Ogba Phase 2', 'Ifako-Gbagada',
+            'New Garage', 'Jibowu', 'Fadeyi', 'Palmgrove', 'Onipanu',
+            'Bariga', 'Somolu', 'Gbagada Phase 1', 'Gbagada Phase 2',
+            'New Garage Gbagada', 'Pedro', 'Shomolu', 'Akoka', 'Abule Ijesha',
+            'Ketu Mile 12', 'Owode', 'Lamgbasa', 'Agric', 'Kosofe',
+            'Mile 2', 'Orile Iganmu', 'Alaba Market', 'Trade Fair',
+            'Satellite Town', 'Festac Phase 1', 'Festac Phase 2', 'Festac Phase 3',
+            'Amuwo Odofin', 'Kirikiri', 'Marine Beach', 'Apapa Road',
+            'Tincan Island', 'Wharf', 'Liverpool', 'Creek Road', 'Broad Street',
+            'Marina', 'Iddo', 'Ebute Metta', 'Yaba College', 'Akoka Yaba',
+            'Sabo Yaba', 'Makoko', 'Otto', 'Iwaya', 'Dolphin Estate',
+            'Ilupeju', 'Mushin Market', 'Ladipo Market', 'Oke Arin'
           ],
           'Federal Capital Territory': [
             'Abuja Municipal', 'Gwagwalada', 'Kuje', 'Abaji', 'Kwali', 'Bwari',
