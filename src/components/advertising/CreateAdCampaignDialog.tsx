@@ -21,6 +21,12 @@ import { cn } from '@/lib/utils';
 interface CreateAdCampaignDialogProps {
   children: React.ReactNode;
   onCampaignCreated?: () => void;
+  preSelectedContent?: {
+    id: string;
+    type: 'service' | 'marketplace_item' | 'business' | 'community_post' | 'event';
+    title: string;
+    description?: string;
+  };
 }
 
 interface PricingTier {
@@ -42,7 +48,7 @@ interface PromotableContent {
   type: 'service' | 'marketplace_item' | 'business' | 'community_post' | 'event';
 }
 
-export const CreateAdCampaignDialog = ({ children, onCampaignCreated }: CreateAdCampaignDialogProps) => {
+export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelectedContent }: CreateAdCampaignDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
@@ -73,10 +79,21 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated }: CreateAd
 
   useEffect(() => {
     if (open) {
+      // Pre-populate form if content is pre-selected
+      if (preSelectedContent && !formData.contentId) {
+        setFormData(prev => ({
+          ...prev,
+          campaignType: preSelectedContent.type,
+          contentId: preSelectedContent.id,
+          campaignName: `Promote: ${preSelectedContent.title}`,
+          adTitle: preSelectedContent.title,
+          adDescription: preSelectedContent.description || ''
+        }));
+      }
       fetchPricingTiers();
       fetchPromotableContent();
     }
-  }, [open, formData.campaignType, formData.geographicScope]);
+  }, [open, formData.campaignType, formData.geographicScope, preSelectedContent]);
 
   const fetchPricingTiers = async () => {
     try {
@@ -123,9 +140,8 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated }: CreateAd
           query = supabase.from('community_posts').select('id, title, content as description').eq('user_id', user?.id);
           break;
         case 'event':
-          // Skip events for now since the table doesn't exist yet
-          setPromotableContent([]);
-          return;
+          query = supabase.from('community_posts').select('id, title, content as description').eq('user_id', user?.id).eq('post_type', 'event');
+          break;
         default:
           return;
       }

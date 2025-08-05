@@ -38,6 +38,13 @@ import ShareDialog from '@/components/ShareDialog';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { PromotePostButton } from '@/components/PromotePostButton';
 import PromotedContent from '@/components/PromotedContent';
 import { SponsoredContent } from '@/components/SponsoredContent';
 import FeedAdCard from '@/components/FeedAdCard';
@@ -984,9 +991,28 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {user?.id === post.user_id && (
+                        <DropdownMenuItem asChild>
+                          <PromotePostButton
+                            postId={post.id}
+                            postType={post.type === 'event' ? 'event' : 'community_post'}
+                            postTitle={post.title || `${post.type} post`}
+                            postDescription={post.content}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                          />
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardHeader>
               

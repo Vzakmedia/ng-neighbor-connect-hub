@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar, MapPin, Users, Edit, Eye, Clock, Download, Trash2 } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 import EditEventDialog from '@/components/EditEventDialog';
+import { PromotePostButton } from '@/components/PromotePostButton';
 
 interface Event {
   id: string;
@@ -423,6 +424,16 @@ const MyEventsPanel = () => {
                     </div>
                     
                     <div className="flex gap-2">
+                      <PromotePostButton
+                        postId={event.id}
+                        postType="event"
+                        postTitle={event.title}
+                        postDescription={event.content}
+                        className="flex-1 min-h-[44px] touch-manipulation text-xs"
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
                       {event.rsvp_enabled && (
                         <Button
                           variant="outline"
@@ -473,6 +484,13 @@ const MyEventsPanel = () => {
                       <Eye className="h-4 w-4 mr-1" />
                       View RSVPs
                     </Button>
+                    <PromotePostButton
+                      postId={event.id}
+                      postType="event"
+                      postTitle={event.title}
+                      postDescription={event.content}
+                      className="touch-manipulation"
+                    />
                     {event.rsvp_enabled && (
                       <Button
                         variant="outline"
