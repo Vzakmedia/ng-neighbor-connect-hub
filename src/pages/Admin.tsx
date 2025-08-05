@@ -53,6 +53,8 @@ const Admin = () => {
   });
   
   const [users, setUsers] = useState([]);
+  const [deletedUsers, setDeletedUsers] = useState([]);
+  const [usersWithoutAddress, setUsersWithoutAddress] = useState([]);
   const [posts, setPosts] = useState([]);
   const [emergencyAlerts, setEmergencyAlerts] = useState([]);
   const [promotions, setPromotions] = useState([]);
@@ -87,7 +89,7 @@ const Admin = () => {
   const [groupedUsers, setGroupedUsers] = useState({});
   const [selectedState, setSelectedState] = useState('all');
   const [selectedCity, setSelectedCity] = useState('all');
-  const [userViewMode, setUserViewMode] = useState<'list' | 'grouped'>('grouped');
+  const [userViewMode, setUserViewMode] = useState<'list' | 'grouped' | 'deleted' | 'incomplete'>('grouped');
   
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -836,11 +838,79 @@ const Admin = () => {
       });
       
       fetchUsers(); // Refresh the user list
+      fetchDeletedUsers(); // Refresh deleted users list
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
         description: `Failed to delete user: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreUser = async (deletedUser: any) => {
+    const confirm = window.confirm(`Are you sure you want to restore ${deletedUser.email}?`);
+    if (!confirm) return;
+
+    try {
+      // Create edge function call to restore user
+      const { data, error } = await supabase.functions.invoke('restore-user', {
+        body: { userId: deletedUser.id }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to restore user');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "User Restored",
+        description: `User account has been restored successfully`,
+      });
+      
+      fetchUsers(); // Refresh the user list
+      fetchDeletedUsers(); // Refresh deleted users list
+    } catch (error) {
+      console.error('Error restoring user:', error);
+      toast({
+        title: "Error",
+        description: `Failed to restore user: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogoutUser = async (user: any) => {
+    const confirm = window.confirm(`Are you sure you want to log out ${user.full_name}? They will need to log in again.`);
+    if (!confirm) return;
+
+    try {
+      // Create edge function call to logout user
+      const { data, error } = await supabase.functions.invoke('logout-user', {
+        body: { userId: user.user_id }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to logout user');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: "User Logged Out",
+        description: `${user.full_name} has been logged out successfully`,
+      });
+    } catch (error) {
+      console.error('Error logging out user:', error);
+      toast({
+        title: "Error",
+        description: `Failed to logout user: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -1108,8 +1178,50 @@ const Admin = () => {
       // Group users by location for better backend handling
       const grouped = groupUsersByLocation(usersWithRoles);
       setGroupedUsers(grouped);
+
+      // Fetch users without proper address setup
+      fetchUsersWithoutAddress();
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchDeletedUsers = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      // Get deleted users from auth.users table
+      const { data, error } = await supabase.functions.invoke('get-deleted-users');
+
+      if (error) {
+        console.error('Error fetching deleted users:', error);
+        return;
+      }
+
+      setDeletedUsers(data?.users || []);
+    } catch (error) {
+      console.error('Error fetching deleted users:', error);
+    }
+  };
+
+  const fetchUsersWithoutAddress = async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const { data: usersWithoutAddr, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or('state.is.null,state.eq.,city.is.null,city.eq.,neighborhood.is.null,neighborhood.eq.')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching users without address:', error);
+        return;
+      }
+
+      setUsersWithoutAddress(usersWithoutAddr || []);
+    } catch (error) {
+      console.error('Error fetching users without address:', error);
     }
   };
 
@@ -1618,6 +1730,7 @@ const Admin = () => {
       console.log('Loading admin data...');
       fetchStats();
       fetchUsers();
+      fetchDeletedUsers();
       fetchEmergencyAlerts();
       fetchMarketplaceItems();
       fetchPromotions();
@@ -2291,13 +2404,15 @@ const Admin = () => {
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor="view-mode" className="text-sm">View:</Label>
-                      <Select value={userViewMode} onValueChange={(value: 'list' | 'grouped') => setUserViewMode(value)}>
+                      <Select value={userViewMode} onValueChange={(value: 'list' | 'grouped' | 'deleted' | 'incomplete') => setUserViewMode(value)}>
                         <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="grouped">Grouped</SelectItem>
                           <SelectItem value="list">List</SelectItem>
+                          <SelectItem value="deleted">Deleted</SelectItem>
+                          <SelectItem value="incomplete">Incomplete Address</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2367,6 +2482,100 @@ const Admin = () => {
                   };
 
                   const filteredUsers = getFilteredUsers();
+
+                  // Render deleted users view
+                  if (userViewMode === 'deleted') {
+                    return (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Deleted Users</CardTitle>
+                          <CardDescription>Users who have been deleted but can be restored</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {deletedUsers.length === 0 ? (
+                            <div className="text-center py-8">
+                              <UserX className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">No deleted users found</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {deletedUsers.map((deletedUser: any) => (
+                                <div key={deletedUser.id} className="flex items-center justify-between p-3 border rounded">
+                                  <div>
+                                    <div className="font-medium">{deletedUser.email}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Deleted: {new Date(deletedUser.deleted_at).toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    onClick={() => handleRestoreUser(deletedUser)}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                    Restore
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+
+                  // Render users without address view  
+                  if (userViewMode === 'incomplete') {
+                    return (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Users with Incomplete Address</CardTitle>
+                          <CardDescription>Users who need to complete their location information</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {usersWithoutAddress.length === 0 ? (
+                            <div className="text-center py-8">
+                              <MapPin className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">All users have complete address information</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {usersWithoutAddress.map((user: any) => (
+                                <div key={user.user_id} className="flex items-center justify-between p-3 border rounded">
+                                  <div className="flex items-center space-x-3">
+                                    <Avatar className="h-10 w-10">
+                                      <AvatarImage src={user.avatar_url} />
+                                      <AvatarFallback>
+                                        {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium">{user.full_name || 'Unknown User'}</div>
+                                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Missing: {[
+                                          !user.state && 'State',
+                                          !user.city && 'City', 
+                                          !user.neighborhood && 'Neighborhood'
+                                        ].filter(Boolean).join(', ')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    onClick={() => handleLogoutUser(user)}
+                                    variant="outline"
+                                    className="flex items-center gap-2"
+                                  >
+                                    <UserX className="h-4 w-4" />
+                                    Logout
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  }
 
                   // Render grouped view
                   if (userViewMode === 'grouped') {
