@@ -50,6 +50,250 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_interactions: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          device_type: string | null
+          id: string
+          interaction_type: string
+          ip_address: unknown | null
+          referrer: string | null
+          user_agent: string | null
+          user_id: string | null
+          user_location: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          interaction_type: string
+          ip_address?: unknown | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_location?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          interaction_type?: string
+          ip_address?: unknown | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_interactions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "advertisement_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_pricing_tiers: {
+        Row: {
+          ad_type: string
+          base_price_per_day: number
+          click_rate_multiplier: number | null
+          created_at: string
+          features: Json | null
+          geographic_scope: string
+          id: string
+          impressions_included: number | null
+          is_active: boolean | null
+          max_duration_days: number | null
+          name: string
+          priority_level: number | null
+          updated_at: string
+        }
+        Insert: {
+          ad_type: string
+          base_price_per_day: number
+          click_rate_multiplier?: number | null
+          created_at?: string
+          features?: Json | null
+          geographic_scope: string
+          id?: string
+          impressions_included?: number | null
+          is_active?: boolean | null
+          max_duration_days?: number | null
+          name: string
+          priority_level?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ad_type?: string
+          base_price_per_day?: number
+          click_rate_multiplier?: number | null
+          created_at?: string
+          features?: Json | null
+          geographic_scope?: string
+          id?: string
+          impressions_included?: number | null
+          is_active?: boolean | null
+          max_duration_days?: number | null
+          name?: string
+          priority_level?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      advertisement_campaigns: {
+        Row: {
+          ad_call_to_action: string | null
+          ad_description: string | null
+          ad_images: Json | null
+          ad_title: string | null
+          ad_url: string | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          business_id: string | null
+          campaign_name: string
+          campaign_type: string
+          community_post_id: string | null
+          created_at: string
+          daily_budget: number
+          end_date: string
+          event_id: string | null
+          id: string
+          marketplace_item_id: string | null
+          payment_amount: number | null
+          payment_completed_at: string | null
+          payment_status: string | null
+          pricing_tier_id: string
+          rejection_reason: string | null
+          service_id: string | null
+          start_date: string
+          status: string
+          stripe_session_id: string | null
+          target_cities: string[] | null
+          target_coordinates: Json | null
+          target_geographic_scope: string
+          target_states: string[] | null
+          total_budget: number
+          total_clicks: number | null
+          total_impressions: number | null
+          total_spent: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_call_to_action?: string | null
+          ad_description?: string | null
+          ad_images?: Json | null
+          ad_title?: string | null
+          ad_url?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_id?: string | null
+          campaign_name: string
+          campaign_type: string
+          community_post_id?: string | null
+          created_at?: string
+          daily_budget: number
+          end_date: string
+          event_id?: string | null
+          id?: string
+          marketplace_item_id?: string | null
+          payment_amount?: number | null
+          payment_completed_at?: string | null
+          payment_status?: string | null
+          pricing_tier_id: string
+          rejection_reason?: string | null
+          service_id?: string | null
+          start_date: string
+          status?: string
+          stripe_session_id?: string | null
+          target_cities?: string[] | null
+          target_coordinates?: Json | null
+          target_geographic_scope: string
+          target_states?: string[] | null
+          total_budget: number
+          total_clicks?: number | null
+          total_impressions?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_call_to_action?: string | null
+          ad_description?: string | null
+          ad_images?: Json | null
+          ad_title?: string | null
+          ad_url?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          business_id?: string | null
+          campaign_name?: string
+          campaign_type?: string
+          community_post_id?: string | null
+          created_at?: string
+          daily_budget?: number
+          end_date?: string
+          event_id?: string | null
+          id?: string
+          marketplace_item_id?: string | null
+          payment_amount?: number | null
+          payment_completed_at?: string | null
+          payment_status?: string | null
+          pricing_tier_id?: string
+          rejection_reason?: string | null
+          service_id?: string | null
+          start_date?: string
+          status?: string
+          stripe_session_id?: string | null
+          target_cities?: string[] | null
+          target_coordinates?: Json | null
+          target_geographic_scope?: string
+          target_states?: string[] | null
+          total_budget?: number
+          total_clicks?: number | null
+          total_impressions?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertisement_campaigns_community_post_id_fkey"
+            columns: ["community_post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advertisement_campaigns_marketplace_item_id_fkey"
+            columns: ["marketplace_item_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advertisement_campaigns_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "ad_pricing_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advertisement_campaigns_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_notifications: {
         Row: {
           alert_id: string | null
@@ -3218,6 +3462,30 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_active_advertisements: {
+        Args: {
+          user_location?: string
+          user_city?: string
+          user_state?: string
+          content_limit?: number
+        }
+        Returns: {
+          campaign_id: string
+          campaign_type: string
+          ad_title: string
+          ad_description: string
+          ad_images: Json
+          ad_url: string
+          ad_call_to_action: string
+          service_data: Json
+          marketplace_data: Json
+          business_data: Json
+          community_post_data: Json
+          event_data: Json
+          priority_level: number
+          daily_budget: number
+        }[]
+      }
       get_active_promoted_content: {
         Args: { user_location?: string; content_limit?: number }
         Returns: {
@@ -3304,6 +3572,19 @@ export type Database = {
       is_board_member: {
         Args: { board_id: string; user_id: string }
         Returns: boolean
+      }
+      log_ad_interaction: {
+        Args: {
+          _campaign_id: string
+          _interaction_type: string
+          _user_id?: string
+          _user_location?: string
+          _device_type?: string
+          _referrer?: string
+          _ip_address?: unknown
+          _user_agent?: string
+        }
+        Returns: undefined
       }
       log_promotion_impression: {
         Args: {

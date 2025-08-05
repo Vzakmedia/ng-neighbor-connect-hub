@@ -7,6 +7,7 @@ import CommunityFeed from '@/components/CommunityFeed';
 import PaymentStatusHandler from '@/components/PaymentStatusHandler';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
 import CreatePostDialog from '@/components/CreatePostDialog';
+import { AdvertisementDisplay } from '@/components/advertising/AdvertisementDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from "@/hooks/useAuth";

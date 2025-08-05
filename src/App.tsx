@@ -33,6 +33,7 @@ import CompleteProfile from "./pages/CompleteProfile";
 import VerifyEmail from "./pages/VerifyEmail";
 import Admin from "./pages/Admin";
 import Business from "./pages/Business";
+import Advertising from "./pages/Advertising";
 import ModeratorDashboard from "./pages/ModeratorDashboard";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import SupportDashboard from "./pages/SupportDashboard";
