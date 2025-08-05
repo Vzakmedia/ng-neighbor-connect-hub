@@ -2845,15 +2845,11 @@ const CommunityBoards = () => {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <Hash className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Select a Discussion Board</h3>
-              <p className="text-muted-foreground mb-4">Choose a board from the sidebar to start chatting</p>
-              <Button onClick={() => setShowCreateBoard(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Board
-              </Button>
-            </div>
+          <div className="text-center">
+            <Hash className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Select a Discussion Board</h3>
+            <p className="text-muted-foreground mb-4">Choose a board from the sidebar to start chatting</p>
+          </div>
           </div>
         )}
       </div>
