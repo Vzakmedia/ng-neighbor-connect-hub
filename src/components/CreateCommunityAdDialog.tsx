@@ -240,20 +240,38 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
   };
 
   const handleContentSelect = (content: any) => {
-    setFormData(prev => ({
-      ...prev,
-      title: content.title,
-      description: content.description,
-      images: content.images || [],
-      business_name: prev.business_name || content.business_name || '',
-      business_category: prev.business_category || content.category || '',
-      selectedContentId: content.contentId
-    }));
-    
-    toast({
-      title: "Content Selected",
-      description: `Selected "${content.title}" for promotion`,
-    });
+    console.log('CreateCommunityAdDialog: handleContentSelect called with:', content);
+    try {
+      setFormData(prev => {
+        const newFormData = {
+          ...prev,
+          title: content.title,
+          description: content.description,
+          images: content.images || [],
+          business_name: prev.business_name || content.business_name || '',
+          business_category: prev.business_category || content.category || '',
+          selectedContentId: content.contentId
+        };
+        console.log('CreateCommunityAdDialog: Setting new form data:', newFormData);
+        return newFormData;
+      });
+      
+      console.log('CreateCommunityAdDialog: Form data updated successfully');
+      
+      toast({
+        title: "Content Selected",
+        description: `Selected "${content.title}" for promotion`,
+      });
+      
+      console.log('CreateCommunityAdDialog: Toast notification sent');
+    } catch (error) {
+      console.error('CreateCommunityAdDialog: Error in handleContentSelect:', error);
+      toast({
+        title: "Error",
+        description: `Failed to select content: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const nextStep = () => setStep(prev => prev + 1);

@@ -33,17 +33,27 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('ContentSuggestionPanel: Effect triggered', { adType, user: !!user });
     if (adType && user) {
+      console.log('ContentSuggestionPanel: Starting fetchContent for type:', adType);
       fetchContent();
+    } else {
+      console.log('ContentSuggestionPanel: Skipping fetchContent - missing adType or user');
     }
   }, [adType, user]);
 
   const fetchContent = async () => {
-    if (!user) return;
+    console.log('ContentSuggestionPanel: fetchContent started', { user: !!user, adType });
+    if (!user) {
+      console.error('ContentSuggestionPanel: No user found');
+      return;
+    }
     
     setLoading(true);
+    console.log('ContentSuggestionPanel: Loading set to true');
     try {
       let data: any[] = [];
+      console.log('ContentSuggestionPanel: About to switch on adType:', adType);
       
       switch (adType) {
         case 'service':
@@ -126,30 +136,51 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           break;
       }
 
+      console.log('ContentSuggestionPanel: Final data before setContent:', data);
       setContent(data);
+      console.log('ContentSuggestionPanel: Content set successfully');
     } catch (error) {
-      console.error('Error fetching content:', error);
+      console.error('ContentSuggestionPanel: Error in fetchContent:', error);
+      console.error('ContentSuggestionPanel: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        adType,
+        userId: user?.id
+      });
       toast({
         title: "Error",
-        description: "Failed to load your content suggestions",
+        description: `Failed to load your content suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
+      console.log('ContentSuggestionPanel: Setting loading to false');
       setLoading(false);
     }
   };
 
   const handleContentSelect = (selectedContent: SuggestedContent) => {
-    onContentSelect({
-      contentId: selectedContent.id,
-      title: selectedContent.title,
-      description: selectedContent.description,
-      images: selectedContent.images || [],
-      price: selectedContent.price,
-      location: selectedContent.location,
-      category: selectedContent.category,
-      type: selectedContent.type
-    });
+    console.log('ContentSuggestionPanel: handleContentSelect called', selectedContent);
+    try {
+      const contentData = {
+        contentId: selectedContent.id,
+        title: selectedContent.title,
+        description: selectedContent.description,
+        images: selectedContent.images || [],
+        price: selectedContent.price,
+        location: selectedContent.location,
+        category: selectedContent.category,
+        type: selectedContent.type
+      };
+      console.log('ContentSuggestionPanel: Calling onContentSelect with:', contentData);
+      onContentSelect(contentData);
+      console.log('ContentSuggestionPanel: onContentSelect completed successfully');
+    } catch (error) {
+      console.error('ContentSuggestionPanel: Error in handleContentSelect:', error);
+      toast({
+        title: "Error",
+        description: `Failed to select content: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const getContentTypeLabel = () => {
