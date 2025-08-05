@@ -33,12 +33,12 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log('ContentSuggestionPanel: Effect triggered', { adType, user: !!user });
+    console.log('ContentSuggestionPanel: Component mounted/updated', { adType, user: !!user });
     if (adType && user) {
       console.log('ContentSuggestionPanel: Starting fetchContent for type:', adType);
       fetchContent();
     } else {
-      console.log('ContentSuggestionPanel: Skipping fetchContent - missing adType or user');
+      console.log('ContentSuggestionPanel: Skipping fetchContent - missing adType or user', { adType: !!adType, user: !!user });
     }
   }, [adType, user]);
 

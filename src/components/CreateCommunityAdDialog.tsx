@@ -313,10 +313,15 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
 
               {/* Content Suggestions */}
               {formData.ad_type && (
-                <ContentSuggestionPanel
-                  adType={formData.ad_type}
-                  onContentSelect={handleContentSelect}
-                />
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Debug: ad_type = {formData.ad_type}
+                  </p>
+                  <ContentSuggestionPanel
+                    adType={formData.ad_type}
+                    onContentSelect={handleContentSelect}
+                  />
+                </div>
               )}
 
               <div className="space-y-2">
