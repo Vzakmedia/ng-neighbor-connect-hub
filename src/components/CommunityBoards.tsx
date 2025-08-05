@@ -395,7 +395,7 @@ const CommunityBoards = () => {
         }
       }
 
-      // 4. Public boards (lowest priority) - available to everyone
+      // 4. Public boards (lowest priority) - available to everyone regardless of location
       const { data: publicBoards } = await supabase
         .from('discussion_boards')
         .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
