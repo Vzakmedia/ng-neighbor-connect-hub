@@ -483,7 +483,7 @@ serve(async (req) => {
           },
           'Oyo': {
             'Ibadan North': ['Bodija', 'Agodi', 'Mokola', 'Sango', 'UI', 'Polytechnic', 'Ojoo', 'Secretariat', 'Parliament Road', 'Yemetu'],
-            'Ibadan South-West': ['Ring Road', 'Dugbe', 'Oke Ado', 'Challenge', 'Felele', 'Molete', 'Oritamerin', 'Oke Bola'],
+            'Ibadan South-West': ['Ring Road', 'Dugbe', 'Oke Ado', 'Challenge', 'Felele', 'Molete', 'Oritamerin', 'Oke Bola', 'Odo-ona', 'Akinyemi', 'Apata', 'Gate', 'Liberty Road', 'Oke Bola Estate', 'Total Garden', 'Gbaremu', 'Odo-ona Kekere', 'Odo-ona Elewe'],
             'Ibadan North-East': ['Iwo Road', 'New Garage', 'Beere', 'Oja\'ba', 'Sabo', 'Oyedepo', 'Agbeni'],
             'Ibadan South-East': ['Mapo', 'Oritamerin', 'Oke Offa', 'Isale Osun', 'Orita Challenge', 'Oke Ado'],
             'Ibadan North-West': ['Onireke', 'Jericho', 'Iyaganku', 'Agbowo', 'Bodija Market', 'Sango UI'],
