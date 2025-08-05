@@ -1051,45 +1051,44 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           </p>
         </div>
       ) : (
-        <ScrollArea className="h-[calc(100vh-300px)]">
-          <div className="space-y-4 pr-4">
-            {filteredFeedItems.map((item, index) => {
-              if (item.type === 'ad') {
-                return (
-                  <FeedAdCard 
-                    key={`ad-${item.ad.id}-${index}`} 
-                    ad={item.ad} 
-                  />
-                );
-              }
-              
-              if (item.type === 'board_suggestion') {
-                return (
-                  <BoardSuggestionCard
-                    key={`board-${item.board.id}-${index}`}
-                    board={item.board}
-                    onJoin={refreshSuggestions}
-                  />
-                );
-              }
-              
-              const post = item as Post;
-              const typeBadge = getPostTypeBadge(post.type);
-              
-              // Extra safety check
-              if (!post || !post.author) {
-                console.warn('Post or post.author is undefined:', post);
-                return null;
-              }
-              
+        <div className="space-y-4">
+          {filteredFeedItems.map((item, index) => {
+            if (item.type === 'ad') {
               return (
-                  <Card
-                    key={post.id} 
-                    className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
-                      !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
-                    }`}
-                    onClick={(e) => handlePostClick(post.id, e)}
-              >
+                <FeedAdCard 
+                  key={`ad-${item.ad.id}-${index}`} 
+                  ad={item.ad} 
+                />
+              );
+            }
+            
+            if (item.type === 'board_suggestion') {
+              return (
+                <BoardSuggestionCard
+                  key={`board-${item.board.id}-${index}`}
+                  board={item.board}
+                  onJoin={refreshSuggestions}
+                />
+              );
+            }
+            
+            const post = item as Post;
+            const typeBadge = getPostTypeBadge(post.type);
+            
+            // Extra safety check
+            if (!post || !post.author) {
+              console.warn('Post or post.author is undefined:', post);
+              return null;
+            }
+            
+            return (
+                <Card
+                  key={post.id} 
+                  className={`shadow-card hover:shadow-elevated transition-shadow cursor-pointer ${
+                    !readStatuses[post.id] ? 'border-l-4 border-l-primary bg-primary/5' : ''
+                  }`}
+                  onClick={(e) => handlePostClick(post.id, e)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div 
@@ -1249,11 +1248,10 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   />
                 )}
               </CardContent>
-                  </Card>
-              );
-            })}
-          </div>
-        </ScrollArea>
+                </Card>
+            );
+          })}
+        </div>
       )}
 
 
