@@ -14,6 +14,7 @@ import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
+import About from "./pages/About";
 import Community from "./pages/Community";
 import Messages from "./pages/Messages";
 import Chat from "./pages/Chat";
@@ -76,6 +77,7 @@ const App = () => {
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
+              <Route path="/about" element={<About />} />
               <Route path="/community" element={<Community />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/chat/:conversationId" element={<Chat />} />

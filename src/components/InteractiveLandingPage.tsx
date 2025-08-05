@@ -172,19 +172,22 @@ const InteractiveLandingPage = () => {
           </motion.div>
           
           <nav className="hidden md:flex items-center space-x-6">
-            {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => <motion.a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-medium hover:text-primary transition-colors" whileHover={{
-              y: -2
-            }} initial={{
-              opacity: 0,
-              y: -20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: index * 0.1
-            }}>
-                {item}
-              </motion.a>)}
+            {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => {
+              const href = item === 'About' ? '/about' : `#${item.toLowerCase()}`;
+              const LinkComponent = item === 'About' ? Link : 'a';
+              
+              return (
+                <motion.div key={item}>
+                  <LinkComponent 
+                    href={item === 'About' ? undefined : href}
+                    to={item === 'About' ? href : undefined}
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
+                    {item}
+                  </LinkComponent>
+                </motion.div>
+              );
+            })}
           </nav>
           
           <div className="flex items-center space-x-2">
@@ -885,7 +888,7 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <div className="space-y-2 text-sm">
-                <a href="#about" className="block text-muted-foreground hover:text-primary transition-colors">About Us</a>
+                <Link to="/about" className="block text-muted-foreground hover:text-primary transition-colors">About Us</Link>
                 <a href="#contact" className="block text-muted-foreground hover:text-primary transition-colors">Contact</a>
                 <Link to="/careers" className="block text-muted-foreground hover:text-primary transition-colors">Careers</Link>
                 <Link to="/press" className="block text-muted-foreground hover:text-primary transition-colors">Press</Link>
