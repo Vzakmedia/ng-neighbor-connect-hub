@@ -33,12 +33,18 @@ export const useUserPresence = () => {
     Object.entries(presences).forEach(([key, presence]) => {
       if (presence && presence.length > 0) {
         const latestPresence = presence[0]; // Get the most recent presence
-        flattened[latestPresence.user_id] = latestPresence;
-        userIds.add(latestPresence.user_id);
+        if (latestPresence.user_id) {
+          flattened[latestPresence.user_id] = latestPresence;
+          userIds.add(latestPresence.user_id);
+        }
       }
     });
 
-    console.log('Updating presence state:', { userIds: Array.from(userIds), flattened });
+    console.log('Real-time presence update:', { 
+      totalOnline: userIds.size, 
+      userIds: Array.from(userIds), 
+      presenceData: flattened 
+    });
     setPresenceState(flattened);
     setOnlineUsers(userIds);
   }, []);
@@ -79,28 +85,34 @@ export const useUserPresence = () => {
                 if (status !== 'SUBSCRIBED') return;
 
                 try {
-                  // Get user profile data
-                  const { data: profile } = await supabase
+                  // Get user profile data from database
+                  const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('full_name, avatar_url')
                     .eq('user_id', user.id)
                     .maybeSingle();
 
-                  // Track current user presence
-                  const presenceTrackStatus = await channel.track({
+                  if (profileError) {
+                    console.error('Error fetching profile:', profileError);
+                  }
+
+                  // Track current user presence with real database data
+                  const presenceData = {
                     user_id: user.id,
                     online_at: new Date().toISOString(),
-                    user_name: profile?.full_name || 'Anonymous',
+                    user_name: profile?.full_name || user.email?.split('@')[0] || 'Anonymous',
                     avatar_url: profile?.avatar_url || null,
-                  });
+                  };
 
-                  console.log('Presence track status:', presenceTrackStatus);
+                  const presenceTrackStatus = await channel.track(presenceData);
+                  console.log('Tracking user presence with database data:', presenceData, presenceTrackStatus);
                   
-                  // Also get current presence state after we track
+                  // Get current presence state after we track
                   const currentPresences = channel.presenceState() as UserPresence;
+                  console.log('Current online users from database:', currentPresences);
                   updatePresenceState(currentPresences);
                 } catch (error) {
-                  console.error('Error tracking presence:', error);
+                  console.error('Error tracking presence with database data:', error);
                 }
               });
           },

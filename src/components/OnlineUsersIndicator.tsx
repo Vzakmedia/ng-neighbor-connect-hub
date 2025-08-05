@@ -8,7 +8,11 @@ import { Users } from 'lucide-react';
 export const OnlineUsersIndicator: React.FC = () => {
   const { onlineUsers, totalOnlineUsers, getUserPresence } = useUserPresence();
 
-  console.log('OnlineUsersIndicator - Total online users:', totalOnlineUsers, 'Users:', onlineUsers);
+  console.log('OnlineUsersIndicator - Real-time online users from database:', {
+    totalOnlineUsers,
+    onlineUserIds: onlineUsers,
+    presenceData: onlineUsers.map(userId => getUserPresence(userId))
+  });
 
   // Always show the component, but with different content when no users are online
   const displayUsers = onlineUsers.length > 0;
