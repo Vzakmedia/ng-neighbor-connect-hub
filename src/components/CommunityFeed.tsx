@@ -1149,7 +1149,22 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
+                      <DropdownMenuItem onClick={() => handleShare(post)}>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share Post
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
+                        toast({ title: "Link copied to clipboard" });
+                      }}>
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePostClick(post.id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
                       {user?.id === post.user_id && (
                         <DropdownMenuItem asChild>
                           <PromotePostButton
