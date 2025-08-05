@@ -33,50 +33,50 @@ const InteractiveLandingPage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveFeature(prev => (prev + 1) % features.length);
-    }, 3000);
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
   const features = [{
     icon: Users,
     title: "Community Connection",
     description: "Connect with neighbors, share experiences, and build lasting relationships in your local community.",
-    color: "from-blue-500 to-blue-600",
-    bgColor: "bg-blue-50",
+    color: "from-primary to-primary/80",
+    bgColor: "bg-primary/5",
     stats: "50K+ neighbors connected"
   }, {
     icon: Shield,
     title: "Safety & Security",
     description: "Share safety alerts, report incidents, and keep your neighborhood secure with emergency features.",
-    color: "from-green-500 to-green-600",
-    bgColor: "bg-green-50",
+    color: "from-primary to-secondary",
+    bgColor: "bg-primary/5",
     stats: "99.9% emergency response rate"
   }, {
     icon: MessageSquare,
     title: "Direct Messaging",
     description: "Secure, private messaging with neighbors including voice calls and video chat capabilities.",
-    color: "from-purple-500 to-purple-600",
-    bgColor: "bg-purple-50",
+    color: "from-secondary to-primary",
+    bgColor: "bg-primary/5",
     stats: "1M+ messages exchanged"
   }, {
     icon: ShoppingBag,
     title: "Local Marketplace",
     description: "Buy and sell items within your community. Find local goods and services easily.",
-    color: "from-orange-500 to-orange-600",
-    bgColor: "bg-orange-50",
+    color: "from-primary/90 to-primary/70",
+    bgColor: "bg-primary/5",
     stats: "₦500M+ in local trades"
   }, {
     icon: Calendar,
     title: "Community Events",
     description: "Discover, create, and attend local events. Stay connected with what's happening around you.",
-    color: "from-red-500 to-red-600",
-    bgColor: "bg-red-50",
+    color: "from-primary/80 to-secondary/90",
+    bgColor: "bg-primary/5",
     stats: "10K+ events hosted"
   }, {
     icon: MapPin,
     title: "Location Services",
     description: "Find local services, businesses, and resources specific to your neighborhood.",
-    color: "from-teal-500 to-teal-600",
-    bgColor: "bg-teal-50",
+    color: "from-secondary/90 to-primary/90",
+    bgColor: "bg-primary/5",
     stats: "5K+ local businesses"
   }];
   const liveStats = [{
@@ -444,7 +444,7 @@ const InteractiveLandingPage = () => {
                     <motion.div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${features[activeFeature].color} flex items-center justify-center shadow-lg`} animate={{
                       rotate: 360
                     }} transition={{
-                      duration: 20,
+                      duration: 40,
                       repeat: Infinity,
                       ease: "linear"
                     }}>
@@ -491,7 +491,7 @@ const InteractiveLandingPage = () => {
                     }} animate={{
                       width: "100%"
                     }} transition={{
-                      duration: 3,
+                      duration: 6,
                       ease: "linear"
                     }} key={activeFeature} />
                   </motion.div>
