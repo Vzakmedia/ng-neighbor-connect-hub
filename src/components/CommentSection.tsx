@@ -65,10 +65,13 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     return `${Math.floor(diffInSeconds / 86400)}d`;
   };
 
-  const fetchComments = async () => {
+  const fetchComments = async (silent = false) => {
     if (!user) return;
     
-    setLoading(true);
+    if (!silent) {
+      setLoading(true);
+    }
+    
     try {
       // First fetch comments
       const { data: commentsData, error: commentsError } = await supabase
@@ -126,7 +129,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -181,8 +186,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
         return;
       }
 
-      // Refresh comments to get the updated structure
-      fetchComments();
+      // Silently refresh comments to get the updated structure
+      fetchComments(true);
       
       if (parentCommentId) {
         setReplyText('');
@@ -300,11 +305,11 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           console.log('CommentSection: Comment change detected:', payload);
           
           if (payload.eventType === 'INSERT') {
-            // Refresh comments to get the new comment with profile data
-            fetchComments();
+            // Silently refresh comments to get the new comment with profile data
+            fetchComments(true);
           } else if (payload.eventType === 'UPDATE') {
-            // Comment updated - refresh to get updated content
-            fetchComments();
+            // Comment updated - silently refresh to get updated content
+            fetchComments(true);
           } else if (payload.eventType === 'DELETE') {
             // Comment deleted - remove from state immediately
             setComments(prev => {
@@ -377,8 +382,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       {
         channelName: `comment_section_comprehensive_${postId}`,
         onError: () => {
-          console.log('CommentSection: Real-time error, refreshing comments');
-          fetchComments();
+          console.log('CommentSection: Real-time error, silently refreshing comments');
+          fetchComments(true);
         },
         pollInterval: 15000, // Poll every 15 seconds for comments
         debugName: 'CommentSectionComprehensive'
@@ -498,7 +503,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
   // Fetch comments when component mounts
   useEffect(() => {
-    fetchComments();
+    fetchComments(false); // Initial load with loading state
     fetchAvailableUsers();
   }, [postId]);
 
