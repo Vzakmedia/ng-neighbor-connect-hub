@@ -87,10 +87,10 @@ type FeedItem = Post | { type: 'ad'; ad: any };
 
 interface CommunityFeedProps {
   activeTab?: string;
-  viewScope?: 'neighborhood' | 'state';
+  viewScope?: 'neighborhood' | 'city' | 'state';
 }
 
-type ViewScope = 'neighborhood' | 'state';
+type ViewScope = 'neighborhood' | 'city' | 'state';
 
 const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: CommunityFeedProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -253,11 +253,15 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           if (viewScope === 'state') {
             // For entire state view, show posts from the same state only
             return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase() && profile.state;
+          } else if (viewScope === 'city') {
+            // For city view, show posts from same city only
+            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && profile.city;
           } else {
-            // For neighborhood view, show posts from same city and state
+            // For neighborhood view, show posts from same neighborhood, city and state
+            const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
             const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
             const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-            return sameCity && sameState && profile.city && profile.state;
+            return sameNeighborhood && sameCity && sameState && profile.neighborhood && profile.city && profile.state;
           }
         });
 
@@ -729,6 +733,15 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                 My Neighborhood
               </Button>
               <Button
+                variant={viewScope === 'city' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewScope('city')}
+                className="text-xs px-3 flex items-center gap-2"
+              >
+                <MapPin className="h-3 w-3" />
+                My City
+              </Button>
+              <Button
                 variant={viewScope === 'state' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewScope('state')}
@@ -791,6 +804,24 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           {viewScope === 'neighborhood' && (
             <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
               Neighborhood
+            </span>
+          )}
+        </Button>
+        
+        <Button
+          variant={viewScope === 'city' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewScope('city')}
+          className={`transition-all duration-300 ease-in-out ${
+            viewScope === 'city' 
+              ? 'px-3 flex items-center gap-2 min-w-fit' 
+              : 'px-0 w-8 h-8 justify-center'
+          }`}
+        >
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          {viewScope === 'city' && (
+            <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+              My City
             </span>
           )}
         </Button>
