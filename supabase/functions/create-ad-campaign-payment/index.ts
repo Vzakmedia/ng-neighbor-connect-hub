@@ -36,7 +36,7 @@ serve(async (req) => {
     const {
       campaignId,
       totalAmount,
-      currency = "ngn",
+      currency = "usd",
       campaignName,
       duration
     } = requestData;

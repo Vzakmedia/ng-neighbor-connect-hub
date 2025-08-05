@@ -1150,35 +1150,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handlePostClick(post.id)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleShare(post)}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share Post
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/community/post/${post.id}`);
-                        toast({ title: "Link copied to clipboard" });
-                      }}>
-                        <Globe className="mr-2 h-4 w-4" />
-                        Copy Link
-                      </DropdownMenuItem>
                       {user?.id === post.user_id && (
-                        <>
-                          <DropdownMenuItem asChild>
+                        <DropdownMenuItem asChild>
                           <PromotePostButton
                             postId={post.id}
-                            postType={post.type}
+                            postType={post.type === 'event' ? 'event' : 'community_post'}
                             postTitle={post.title || `${post.type} post`}
                             postDescription={post.content}
                             variant="ghost"
                             size="sm"
                             className="w-full justify-start"
                           />
-                          </DropdownMenuItem>
-                        </>
+                        </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1249,36 +1232,24 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                     >
                       <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                       <span className="text-xs md:text-sm">{post.comments}</span>
-                     </Button>
-                   </div>
-                   <div className="flex items-center gap-1 md:gap-2">
-                     {/* Boost Post Button - only show for post owner */}
-                     {user?.id === post.user_id && (
-                       <PromotePostButton
-                         postId={post.id}
-                         postType={post.type}
-                         postTitle={post.title || post.content.slice(0, 50)}
-                         postDescription={post.content}
-                         variant="ghost"
-                         size="sm"
-                         className="text-primary hover:text-primary/80 px-2 md:px-3 h-8 md:h-9"
-                       />
-                     )}
-                     <Button 
-                       variant="ghost" 
-                       size="sm"
-                       onClick={() => toggleSave(post.id)}
-                       className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
-                     >
-                       <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
-                     </Button>
-                     <Button 
-                       variant="ghost" 
-                       size="sm" 
-                       onClick={() => handleShare(post)}
-                       className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
-                     >
-                       <Share2 className="h-3 w-3 md:h-4 md:w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => toggleSave(post.id)}
+                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
+                    >
+                      <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleShare(post)}
+                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
+                    >
+                      <Share2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </div>
                 </div>
