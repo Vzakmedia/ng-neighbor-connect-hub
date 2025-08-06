@@ -19,7 +19,6 @@ import {
   Filter,
   Globe,
   Bookmark,
-  Search,
   Calendar,
   Eye,
   EyeOff,
@@ -114,7 +113,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
+  
   const [selectedPostType, setSelectedPostType] = useState<string>('all');
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [readStatuses, setReadStatuses] = useState<Record<string, boolean>>({});
@@ -777,18 +776,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     setUserProfileOpen(true);
   };
 
-  // Filter feed items based on search and post type
+  // Filter feed items based on post type and filters
   const filteredFeedItems = feedItems.filter(item => {
     // Skip ads when filtering - they should always be shown
     if (item.type === 'ad') return true;
     
     const post = item as Post;
-    // Filter by search query
-    const matchesSearch = searchQuery === '' || 
-      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // Filter by post type
     const matchesType = selectedPostType === 'all' || post.type === selectedPostType;
@@ -805,7 +798,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       else matchesTab = post.type === activeTab;
     }
 
-    return matchesSearch && matchesType && matchesTab && matchesReadFilter;
+    return matchesType && matchesTab && matchesReadFilter;
   });
 
   const postTypeFilters = [
@@ -819,18 +812,9 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   return (
     <div className="space-y-4">
-      {/* Search Bar and Post Type Filter Buttons on Same Line */}
+      {/* Post Type Filter Buttons */}
       {/* Desktop layout */}
-      <div className="hidden md:flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search posts, users, or tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <div className="hidden md:flex items-center justify-center">
         <div className="flex gap-2">
           {postTypeFilters.map((filter) => {
             const Icon = filter.icon;
@@ -895,18 +879,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         </div>
       </div>
 
-      {/* Mobile layout - search bar full width, then filter buttons below */}
-      <div className="md:hidden space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search posts, users, or tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
+      {/* Mobile layout */}
+      <div className="md:hidden">
         <div className="w-full">
           <div className="flex justify-center gap-1 w-full flex-wrap">
             {postTypeFilters.map((filter) => {
