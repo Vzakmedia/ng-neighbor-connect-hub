@@ -43,26 +43,49 @@ self.addEventListener('notificationclick', function(event) {
   
   event.notification.close();
 
+  const notificationData = event.notification.data;
+  let urlToOpen = '/dashboard';
+
+  // Route based on notification type
+  if (notificationData && notificationData.type) {
+    switch (notificationData.type) {
+      case 'direct_message':
+        urlToOpen = `/messages`;
+        break;
+      case 'community_post':
+        urlToOpen = `/community`;
+        break;
+      case 'emergency_alert':
+      case 'panic_alert':
+        urlToOpen = `/safety`;
+        break;
+      default:
+        urlToOpen = '/dashboard';
+    }
+  }
+
   if (event.action === 'view') {
-    // Open the app
+    // Open the app to specific URL
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow(urlToOpen)
     );
   } else if (event.action === 'dismiss') {
     // Just close the notification
     console.log('Service Worker: Notification dismissed');
   } else {
-    // Default action - open the app
+    // Default action - open the app to specific URL
     event.waitUntil(
-      clients.matchAll().then(function(clientList) {
-        for (let i = 0; i < clientList.length; i++) {
-          const client = clientList[i];
-          if (client.url === '/' && 'focus' in client) {
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+        // Check if there's already a window/tab open with the target URL
+        for (const client of clientList) {
+          if (client.url.includes(urlToOpen.split('?')[0]) && 'focus' in client) {
             return client.focus();
           }
         }
+        
+        // If no existing window/tab, open a new one
         if (clients.openWindow) {
-          return clients.openWindow('/');
+          return clients.openWindow(urlToOpen);
         }
       })
     );

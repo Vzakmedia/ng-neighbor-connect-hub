@@ -9,6 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
@@ -56,6 +57,9 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering, React:", React);
+  
+  // Initialize push notifications
+  usePushNotifications();
   
   return (
     <QueryClientProvider client={queryClient}>

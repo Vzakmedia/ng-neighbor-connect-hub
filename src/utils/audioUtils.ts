@@ -114,6 +114,64 @@ export const checkNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
+// Request push notification permission and register service worker
+export const requestPushNotificationPermission = async (): Promise<boolean> => {
+  try {
+    // Check if service worker and push manager are supported
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('Push messaging is not supported');
+      return false;
+    }
+
+    // Request notification permission first
+    const hasPermission = await checkNotificationPermission();
+    if (!hasPermission) {
+      return false;
+    }
+
+    // Register service worker
+    let registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('Service worker registered');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error requesting push notification permission:', error);
+    return false;
+  }
+};
+
+// Send browser push notification
+export const sendBrowserNotification = async (title: string, options: NotificationOptions = {}): Promise<void> => {
+  try {
+    const hasPermission = await checkNotificationPermission();
+    if (!hasPermission) {
+      console.log('No notification permission');
+      return;
+    }
+
+    // Create notification
+    const notification = new Notification(title, {
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: 'ng-neighbor-notification',
+      requireInteraction: false,
+      silent: false,
+      ...options
+    });
+
+    // Auto close after 5 seconds
+    setTimeout(() => {
+      notification.close();
+    }, 5000);
+
+  } catch (error) {
+    console.error('Error sending browser notification:', error);
+  }
+};
+
 // Check if user has enabled sound in settings
 export const isSoundEnabled = (): boolean => {
   try {
