@@ -813,18 +813,88 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   return (
     <div className="space-y-4">
       {/* Post Type Filter Buttons */}
-      {/* Desktop layout */}
-      <div className="hidden md:flex items-center justify-center">
-        <div className="flex gap-2">
+      {/* Desktop and Tablet layout */}
+      <div className="hidden sm:block">
+        <div className="flex items-center justify-center">
+          <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {postTypeFilters.map((filter) => {
+              const Icon = filter.icon;
+              return (
+                <DropdownMenu key={filter.key}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs px-2 lg:px-3 py-1 h-8 whitespace-nowrap flex-shrink-0"
+                    >
+                      <Icon className="h-3 w-3 mr-1" />
+                      <span className="hidden lg:inline">{filter.label}</span>
+                      <span className="lg:hidden">{filter.label.substring(0, 3)}</span>
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="bg-background border shadow-lg z-50 min-w-[180px]">
+                    <DropdownMenuLabel>Post Type</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setSelectedPostType(filter.key)}>
+                      <Icon className="h-4 w-4 mr-2" />
+                      {filter.label}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>View Scope</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      My Neighborhood
+                      {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('city')}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      My City
+                      {viewScope === 'city' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('state')}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Entire State
+                      {viewScope === 'state' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
+                      {showUnreadOnly ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {showUnreadOnly ? 'Show All' : 'Unread Only'}
+                      {showUnreadOnly && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={markAllCommunityPostsAsRead}
+                      disabled={unreadCounts.community === 0}
+                    >
+                      <CheckCheck className="h-4 w-4 mr-2" />
+                      Mark All Read
+                      {unreadCounts.community > 0 && (
+                        <Badge variant="secondary" className="text-xs ml-auto">
+                          {unreadCounts.community}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile layout - Horizontal scrollable filter tabs */}
+      <div className="sm:hidden">
+        <div className="flex items-center overflow-x-auto gap-2 pb-2 px-1 scrollbar-hide">
           {postTypeFilters.map((filter) => {
             const Icon = filter.icon;
+            const isSelected = selectedPostType === filter.key;
             return (
               <DropdownMenu key={filter.key}>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant={selectedPostType === filter.key ? 'default' : 'outline'}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
-                    className="text-xs px-2 py-1 h-8"
+                    className="flex-shrink-0 h-8 px-3 text-xs rounded-full border transition-all duration-200"
                   >
                     <Icon className="h-3 w-3 mr-1" />
                     {filter.label}
@@ -876,84 +946,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
               </DropdownMenu>
             );
           })}
-        </div>
-      </div>
-
-      {/* Mobile layout */}
-      <div className="md:hidden">
-        <div className="w-full">
-          <div className="flex justify-center gap-1 w-full flex-wrap">
-            {postTypeFilters.map((filter) => {
-              const Icon = filter.icon;
-              return (
-                <DropdownMenu key={filter.key}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant={selectedPostType === filter.key ? 'default' : 'outline'}
-                      size="sm"
-                      className={`transition-all duration-300 ease-in-out ${
-                        selectedPostType === filter.key 
-                          ? 'px-3 flex items-center gap-2 min-w-fit' 
-                          : 'px-0 w-8 h-8 justify-center'
-                      }`}
-                    >
-                      <Icon className="h-3 w-3 flex-shrink-0" />
-                      {selectedPostType === filter.key && (
-                        <span className="text-xs whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                          {filter.label}
-                        </span>
-                      )}
-                      {selectedPostType === filter.key && (
-                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="bg-background border shadow-lg z-50 min-w-[160px]">
-                    <DropdownMenuLabel>Post Type</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => setSelectedPostType(filter.key)}>
-                      <Icon className="h-4 w-4 mr-2" />
-                      {filter.label}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>View Scope</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      My Neighborhood
-                      {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setViewScope('city')}>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      My City
-                      {viewScope === 'city' && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setViewScope('state')}>
-                      <Globe className="h-4 w-4 mr-2" />
-                      Entire State
-                      {viewScope === 'state' && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
-                      {showUnreadOnly ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-                      {showUnreadOnly ? 'Show All' : 'Unread Only'}
-                      {showUnreadOnly && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={markAllCommunityPostsAsRead}
-                      disabled={unreadCounts.community === 0}
-                    >
-                      <CheckCheck className="h-4 w-4 mr-2" />
-                      Mark All Read
-                      {unreadCounts.community > 0 && (
-                        <Badge variant="secondary" className="text-xs ml-auto">
-                          {unreadCounts.community}
-                        </Badge>
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            })}
-          </div>
         </div>
       </div>
 
