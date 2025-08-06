@@ -13,7 +13,7 @@ import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/useSimpleNotifications';
 
 const Header = () => {
   const { user, signOut } = useAuth();

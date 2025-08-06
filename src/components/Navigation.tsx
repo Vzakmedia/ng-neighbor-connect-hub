@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import CreatePostDialog from './CreatePostDialog';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';

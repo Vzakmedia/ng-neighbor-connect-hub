@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, X, Bell, Users, Navigation } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/useSimpleNotifications';
 
 interface NeighborhoodEmergencyAlertProps {
   position?: 'top-center' | 'bottom-center';
