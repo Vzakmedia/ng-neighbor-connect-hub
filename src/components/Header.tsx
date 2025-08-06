@@ -13,170 +13,18 @@ import { useReadStatus } from "@/hooks/useReadStatus";
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { playNotification } from '@/utils/audioUtils';
-import { useBackgroundNotifications } from '@/hooks/useBackgroundNotifications';
-import NotificationPanel from '@/components/NotificationPanel';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const Header = () => {
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
-  const { showBackgroundNotification, isPageVisible } = useBackgroundNotifications();
+  const { notifications, unreadCount } = useNotifications();
 
-  useEffect(() => {
-    if (user) {
-      console.log('Header: Setting up subscriptions for user:', user.id);
-      loadNotificationCount();
-      subscribeToNotifications();
-      subscribeToMessages(); // Always listen for message notifications
-    }
-    
-    return () => {
-      console.log('Header: Cleaning up subscriptions');
-    };
-  }, [user]);
+  // Notification system is now handled by the unified hook
 
-  const loadNotificationCount = async () => {
-    if (!user) return;
-    
-    console.log('Header: Loading notification count...');
-    try {
-      const { data, error } = await supabase
-        .from('alert_notifications')
-        .select('id', { count: 'exact' })
-        .eq('recipient_id', user.id)
-        .eq('is_read', false);
-        
-      if (error) throw error;
-      setNotificationCount(data?.length || 0);
-    } catch (error) {
-      console.error('Error loading notification count:', error);
-    }
-  };
-
-  const subscribeToNotifications = () => {
-    console.log('Header: Starting safe subscription to notifications...');
-    
-    createSafeSubscription(
-      (channel) => channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'alert_notifications',
-            filter: `recipient_id=eq.${user?.id}`
-          },
-           async (payload) => {
-             console.log('Header: Received notification INSERT event');
-             loadNotificationCount();
-             
-              // Use background notification system
-              if (payload.new) {
-                const notification = payload.new as any;
-                try {
-                  let notificationType: 'emergency' | 'normal' | 'notification' = 'normal';
-                  let title = 'New Notification';
-                  let body = 'You have a new notification';
-                  
-                  if (notification.notification_type === 'panic_alert') {
-                    notificationType = 'emergency';
-                    title = '🚨 EMERGENCY ALERT';
-                    body = 'Emergency alert in your area - check immediately';
-                  } else if (notification.notification_type === 'contact_request') {
-                    notificationType = 'notification';
-                    title = 'Emergency Contact Request';
-                    body = `${notification.sender_name || 'Someone'} wants to add you as emergency contact`;
-                  } else {
-                    title = 'New Notification';
-                    body = notification.content || 'You have a new notification';
-                  }
-                  
-                  showBackgroundNotification({
-                    type: notificationType,
-                    title,
-                    body,
-                    tag: `notification-${notification.id}`,
-                    requireSound: notificationType === 'emergency'
-                  });
-                } catch (error) {
-                  console.error('Header: Error showing background notification:', error);
-                }
-              }
-           }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'alert_notifications',
-            filter: `recipient_id=eq.${user?.id}`
-          },
-          () => {
-            console.log('Header: Received notification UPDATE event');
-            loadNotificationCount();
-          }
-        ),
-      {
-        channelName: 'header-notifications',
-        onError: loadNotificationCount,
-        pollInterval: 30000,
-        debugName: 'Header'
-      }
-    );
-  };
-
-  const subscribeToMessages = () => {
-    if (!user) return;
-    
-    console.log('Header: Starting safe subscription to messages for user:', user.id);
-    
-    createSafeSubscription(
-      (channel) => channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: `recipient_id=eq.${user.id}`
-          },
-           async (payload) => {
-             console.log('Header: Received message INSERT event:', payload);
-             // Use background notification for messages
-             try {
-               showBackgroundNotification({
-                 type: 'notification',
-                 title: 'New Message',
-                 body: 'You have received a new message',
-                 tag: `message-${payload.new?.id}`,
-                 requireSound: false
-               });
-               console.log('Header: Showed background notification for message');
-             } catch (error) {
-               console.error('Header: Error showing background notification for message:', error);
-             }
-           }
-        ),
-      {
-        channelName: 'header-messages',
-        onError: () => {
-          // Silent error handling for header - don't spam logs since this is just for notifications
-          // The actual messaging pages will handle their own errors
-        },
-        pollInterval: 60000, // Reduced polling frequency for header
-        debugName: 'HeaderMessages'
-      }
-    );
-  };
-
-  const handleNotificationClick = () => {
-    setNotificationPanelOpen(!notificationPanelOpen);
-    console.log('Notification bell clicked - count:', notificationCount);
-  };
+  // Notification counts are now managed by the unified notification system
 
   const handleMessagesClick = () => {
     navigate('/messages');
@@ -234,14 +82,7 @@ const Header = () => {
               )}
             </Button>
             
-            <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationClick}>
-              <Bell className="h-5 w-5" />
-              {unreadCounts.notifications > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                  {unreadCounts.notifications}
-                </Badge>
-              )}
-            </Button>
+            {/* Notification bell removed - now handled by UnifiedNotificationSystem */}
             
             {user && (
               <DropdownMenu>
@@ -322,14 +163,7 @@ const Header = () => {
               )}
             </Button>
             
-            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleNotificationClick}>
-              <Bell className="h-4 w-4" />
-              {unreadCounts.notifications > 0 && (
-                <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs">
-                  {unreadCounts.notifications}
-                </Badge>
-              )}
-            </Button>
+            {/* Notification bell removed - now handled by UnifiedNotificationSystem */}
             
             {user && (
               <DropdownMenu>
@@ -386,12 +220,7 @@ const Header = () => {
       </div>
     </header>
     
-    {/* Notification Panel */}
-    <NotificationPanel 
-      isOpen={notificationPanelOpen}
-      onClose={() => setNotificationPanelOpen(false)}
-      position="top-right"
-    />
+    {/* Notifications now handled by UnifiedNotificationSystem */}
   </>
   );
 };

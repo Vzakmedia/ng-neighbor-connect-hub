@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import CreatePostDialog from './CreatePostDialog';
-import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,7 @@ const Navigation = () => {
   const location = useLocation();
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [hasStaffRole, setHasStaffRole] = useState(false);
-  const unreadMessagesCount = useUnreadMessages();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     const checkStaffRole = async () => {

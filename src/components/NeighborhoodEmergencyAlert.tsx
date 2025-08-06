@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, X, Bell, Users, Navigation } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
-import { useBackgroundNotifications } from '@/hooks/useBackgroundNotifications';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface NeighborhoodEmergencyAlertProps {
   position?: 'top-center' | 'bottom-center';
@@ -16,7 +16,7 @@ interface NeighborhoodEmergencyAlertProps {
 const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEmergencyAlertProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { showBackgroundNotification } = useBackgroundNotifications();
+  const { } = useNotifications(); // Emergency alerts now handled by unified system
   const [alerts, setAlerts] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
@@ -131,15 +131,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                 );
                 
                 if (distance <= (payload.new.radius_km || 5)) {
-                  // Use background notification system for emergency alerts
-                  showBackgroundNotification({
-                    type: 'emergency',
-                    title: '🚨 EMERGENCY ALERT IN YOUR AREA',
-                    body: `${payload.new.situation_type?.replace('_', ' ').toUpperCase()} reported nearby - ${distance.toFixed(1)}km away`,
-                    tag: 'emergency-alert',
-                    requireSound: true
-                  });
-                  
+                  // Emergency alert handling is now managed by the unified notification system
                   toast({
                     title: "🚨 EMERGENCY ALERT IN YOUR AREA",
                     description: `${payload.new.situation_type?.replace('_', ' ').toUpperCase()} reported nearby`,

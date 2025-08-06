@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useConversations, type Conversation } from '@/hooks/useConversations';
-import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +33,7 @@ const MessagingContent = () => {
     setConversations
   } = useConversations(user?.id);
 
-  const unreadCount = useUnreadMessages();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (user) {

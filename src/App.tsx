@@ -8,8 +8,7 @@ import { ThemeProvider } from "next-themes";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
-import NotificationInitializer from "@/components/NotificationInitializer";
-import { GlobalNotificationHandler } from "@/components/GlobalNotificationHandler";
+import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
@@ -72,8 +71,7 @@ const App = () => {
           <Toaster />
           <Sonner />
         <BrowserRouter>
-          <NotificationInitializer />
-          <GlobalNotificationHandler />
+          <UnifiedNotificationSystem position="top-right" />
           <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />
