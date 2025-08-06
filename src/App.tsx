@@ -10,6 +10,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { AudioInitializer } from "@/components/AudioInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
@@ -73,6 +74,7 @@ const App = () => {
         disableTransitionOnChange
       >
         <AuthProvider>
+          <AudioInitializer />
           <PushNotificationWrapper />
           <SecurityHeaders />
           <TooltipProvider>

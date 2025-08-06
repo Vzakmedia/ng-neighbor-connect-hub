@@ -1,17 +1,47 @@
 // Audio Context for sound generation
 let audioContext: AudioContext | null = null;
+let audioInitialized = false;
+let userInteracted = false;
 
-// Initialize audio context
+// Initialize audio context with mobile support
 const getAudioContext = async (): Promise<AudioContext> => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    // Resume audio context if suspended (required for modern browsers)
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
   }
+  
+  // Resume audio context if suspended (required for modern browsers and mobile)
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
+  
   return audioContext;
+};
+
+// Initialize audio on first user interaction (critical for mobile)
+export const initializeAudioOnInteraction = async (): Promise<void> => {
+  if (userInteracted) return;
+  
+  try {
+    const ctx = await getAudioContext();
+    
+    // Create a silent sound to unlock audio context on mobile
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+    oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.1);
+    
+    userInteracted = true;
+    audioInitialized = true;
+    console.log('Audio initialized for mobile compatibility');
+  } catch (error) {
+    console.error('Failed to initialize audio:', error);
+  }
 };
 
 // Generate a pleasant notification sound
@@ -207,6 +237,12 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
   try {
     console.log('playNotification called with type:', type, 'customVolume:', customVolume);
     
+    // For mobile compatibility, ensure audio is initialized
+    if (!userInteracted) {
+      console.log('Audio not initialized due to mobile restrictions, trying to initialize...');
+      await initializeAudioOnInteraction();
+    }
+    
     // Check if notifications are allowed
     const hasNotificationPermission = await checkNotificationPermission();
     if (!hasNotificationPermission) {
@@ -223,29 +259,58 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
     // Get volume from settings or use custom volume
     const volume = customVolume !== undefined ? customVolume : getSoundVolume();
     
-    if (type === 'emergency') {
-      await generateEmergencySound(volume);
-    } else {
-      await generateNotificationSound(volume);
+    try {
+      if (type === 'emergency') {
+        await generateEmergencySound(volume);
+      } else {
+        await generateNotificationSound(volume);
+      }
+      console.log('Notification sound played successfully');
+    } catch (audioError) {
+      console.error('Generated audio failed:', audioError);
+      throw audioError; // Let it fall through to fallbacks
     }
     
-    console.log('Notification sound played successfully');
   } catch (error) {
     console.error('Error playing notification sound:', error);
     
-    // Try to use the existing notification.mp3 file as fallback
+    // Enhanced fallback chain for mobile
     try {
+      console.log('Trying fallback with notification.mp3');
       const audio = new Audio('/notification.mp3');
       const volume = customVolume !== undefined ? customVolume : getSoundVolume();
-      audio.volume = volume;
-      await audio.play();
+      audio.volume = Math.min(volume, 1.0);
+      
+      // Add mobile-specific audio handling
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
+      
+      // For mobile, we need to handle play promise
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+      
       console.log('Fallback audio file played');
     } catch (fallbackError) {
       console.error('Fallback audio also failed:', fallbackError);
       
+      // Try vibration as final fallback on mobile
+      if ('vibrate' in navigator && isSoundEnabled()) {
+        if (type === 'emergency') {
+          navigator.vibrate([200, 100, 200, 100, 200]); // Emergency pattern
+        } else {
+          navigator.vibrate([100]); // Normal notification
+        }
+        console.log('Used vibration as audio fallback');
+      }
+      
       // Final fallback to system notification (but only if user has enabled sounds)
       if ('Notification' in window && isSoundEnabled()) {
-        new Notification('New alert', { silent: false });
+        new Notification('New alert', { 
+          silent: false,
+          tag: 'audio-fallback-notification'
+        });
       }
     }
   }
@@ -282,3 +347,19 @@ export const playEmergencyAlert = async (): Promise<void> => {
     console.error('Error playing emergency alert:', error);
   }
 };
+
+// Add global click handler to initialize audio on first user interaction
+if (typeof window !== 'undefined') {
+  const handleFirstInteraction = () => {
+    initializeAudioOnInteraction();
+    // Remove listeners after first interaction
+    document.removeEventListener('click', handleFirstInteraction);
+    document.removeEventListener('touchstart', handleFirstInteraction);
+    document.removeEventListener('keydown', handleFirstInteraction);
+  };
+
+  // Listen for various user interactions
+  document.addEventListener('click', handleFirstInteraction, { once: true, passive: true });
+  document.addEventListener('touchstart', handleFirstInteraction, { once: true, passive: true });
+  document.addEventListener('keydown', handleFirstInteraction, { once: true, passive: true });
+}
