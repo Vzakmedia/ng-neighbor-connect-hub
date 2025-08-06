@@ -57,7 +57,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log("App component rendering, React:", React);
-  
+  // Push notifications are now handled by PushNotificationInitializer
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
