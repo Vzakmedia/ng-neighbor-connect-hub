@@ -146,25 +146,6 @@ const HomeDashboard = () => {
                   <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
                     <CardTitle className="text-lg sm:text-xl md:text-xl">Community Updates</CardTitle>
                     
-                    {/* Desktop filter buttons */}
-                    <div className="hidden sm:flex space-x-2">
-                      {['all', 'safety', 'events', 'marketplace'].map((tab) => (
-                        <Button
-                          key={tab}
-                          variant={activeTab === tab ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setActiveTab(tab)}
-                          className="capitalize text-xs sm:text-sm"
-                        >
-                          {tab}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Mobile - No dropdowns needed anymore */}
-                    <div className="sm:hidden">
-                      {/* Space reserved for future mobile-specific controls if needed */}
-                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 md:px-6">
