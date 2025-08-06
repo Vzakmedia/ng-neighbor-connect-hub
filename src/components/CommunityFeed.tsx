@@ -840,7 +840,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   <Button
                     variant={selectedPostType === filter.key ? 'default' : 'outline'}
                     size="sm"
-                    className="text-xs"
+                    className="text-xs px-2 py-1 h-8"
                   >
                     <Icon className="h-3 w-3 mr-1" />
                     {filter.label}
