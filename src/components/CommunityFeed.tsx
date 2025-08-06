@@ -776,7 +776,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     setUserProfileOpen(true);
   };
 
-  // Filter feed items based on post type and filters
+  // Filter feed items based on post type and filters (updated)
   const filteredFeedItems = feedItems.filter(item => {
     // Skip ads when filtering - they should always be shown
     if (item.type === 'ad') return true;
