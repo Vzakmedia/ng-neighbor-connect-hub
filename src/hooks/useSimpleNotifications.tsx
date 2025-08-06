@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { playNotification, playEmergencyAlert } from '@/utils/audioUtils';
 
 export interface NotificationData {
   id: string;
@@ -20,10 +21,17 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Simple notification functions
+  // Simple notification functions with instant sound
   const showToastNotification = (notification: NotificationData) => {
     const variant = notification.priority === 'urgent' || notification.type === 'emergency' 
       ? 'destructive' : 'default';
+    
+    // Play sound instantly
+    if (notification.type === 'emergency' || notification.type === 'panic_alert') {
+      playEmergencyAlert();
+    } else {
+      playNotification('normal');
+    }
     
     toast({
       title: notification.title,
@@ -31,6 +39,13 @@ export const useNotifications = () => {
       variant,
       duration: notification.priority === 'urgent' ? 10000 : 5000,
     });
+  };
+
+  // Function to add new notification with instant sound
+  const addNotification = (notification: NotificationData) => {
+    setNotifications(prev => [notification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    showToastNotification(notification);
   };
 
   const markAsRead = (notificationId: string) => {
@@ -73,6 +88,8 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     refreshNotifications,
-    refreshUnreadCount
+    refreshUnreadCount,
+    addNotification,
+    showToastNotification
   };
 };
