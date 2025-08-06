@@ -8,7 +8,7 @@ import { ThemeProvider } from "next-themes";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
-import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
+
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AudioInitializer } from "@/components/AudioInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
@@ -81,7 +81,7 @@ const App = () => {
           <Toaster />
           <Sonner />
         <BrowserRouter>
-          <UnifiedNotificationSystem position="top-right" />
+          
           <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />

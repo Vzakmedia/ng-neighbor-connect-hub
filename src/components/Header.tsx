@@ -546,7 +546,7 @@ const Header = () => {
       </div>
     </header>
     
-    {/* Notifications now handled by UnifiedNotificationSystem */}
+    
   </>
   );
 };
