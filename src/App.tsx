@@ -9,7 +9,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
-import { PushNotificationInitializer } from "@/components/PushNotificationInitializer";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 import Index from "./pages/Index";
@@ -55,9 +55,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Component that initializes push notifications inside AuthProvider
+const PushNotificationWrapper = () => {
+  usePushNotifications();
+  return null;
+};
+
 const App = () => {
   console.log("App component rendering, React:", React);
-  // Push notifications are now handled by PushNotificationInitializer
+  // Push notifications are now handled by PushNotificationWrapper inside AuthProvider
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
@@ -67,7 +73,7 @@ const App = () => {
         disableTransitionOnChange
       >
         <AuthProvider>
-          <PushNotificationInitializer />
+          <PushNotificationWrapper />
           <SecurityHeaders />
           <TooltipProvider>
           <Toaster />
