@@ -133,7 +133,7 @@ const Advertising = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Advertising</h1>
@@ -204,7 +204,16 @@ const Advertising = () => {
 
         {/* Campaigns */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList>
+          {/* Mobile tab buttons */}
+          <div className="md:hidden flex items-center justify-center gap-1 mb-6 overflow-x-auto">
+            <Button variant="outline" size="sm" className="text-xs whitespace-nowrap">All</Button>
+            <Button variant="outline" size="sm" className="text-xs whitespace-nowrap">Active</Button>
+            <Button variant="outline" size="sm" className="text-xs whitespace-nowrap">Pending</Button>
+            <Button variant="outline" size="sm" className="text-xs whitespace-nowrap">Done</Button>
+          </div>
+          
+          {/* Desktop tabs */}
+          <TabsList className="hidden md:grid w-full grid-cols-4">
             <TabsTrigger value="all">All Campaigns</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>

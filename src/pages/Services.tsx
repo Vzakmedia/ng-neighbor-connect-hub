@@ -37,12 +37,43 @@ const Services = () => {
       <Navigation />
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
-        <div className="container px-3 sm:px-4 md:px-6 py-4 md:py-6">
+        <div className="container mx-auto px-4 py-6">
           <div className="text-center space-y-4">
             <h1 className="text-2xl md:text-3xl font-bold">My Services & Goods</h1>
             <p className="text-muted-foreground">Manage your services, goods, and bookings</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
+            {/* Mobile layout - stacked buttons */}
+            <div className="md:hidden space-y-3 max-w-sm mx-auto mt-8">
+              <Button 
+                onClick={() => navigate('/my-services')} 
+                variant="outline" 
+                className="w-full h-16 flex flex-col items-center gap-1"
+              >
+                <span className="font-semibold">My Services</span>
+                <span className="text-xs text-muted-foreground">Manage your services</span>
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/my-goods')} 
+                variant="outline" 
+                className="w-full h-16 flex flex-col items-center gap-1"
+              >
+                <span className="font-semibold">My Goods</span>
+                <span className="text-xs text-muted-foreground">Manage your goods</span>
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/my-bookings')} 
+                variant="outline" 
+                className="w-full h-16 flex flex-col items-center gap-1"
+              >
+                <span className="font-semibold">My Bookings</span>
+                <span className="text-xs text-muted-foreground">View your bookings</span>
+              </Button>
+            </div>
+
+            {/* Desktop layout - grid */}
+            <div className="hidden md:grid grid-cols-3 gap-4 max-w-2xl mx-auto mt-8">
               <Button 
                 onClick={() => navigate('/my-services')} 
                 variant="outline" 

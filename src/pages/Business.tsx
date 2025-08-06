@@ -33,7 +33,7 @@ const Business = () => {
       <Navigation />
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
-        <div className="container py-6">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h1 className="text-2xl font-bold">My Business</h1>
           </div>

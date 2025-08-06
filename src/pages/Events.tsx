@@ -52,40 +52,30 @@ const Events = () => {
             </Button>
           </div>
           
+          {/* Mobile tab buttons */}
+          <div className="md:hidden flex items-center justify-center gap-2 mb-6">
+            <Button
+              variant="outline"
+              onClick={() => {/* handled by Tabs component */}}
+              size="icon"
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {/* handled by Tabs component */}}
+              size="icon"
+            >
+              <Users className="h-4 w-4" />
+            </Button>
+          </div>
+
           <Tabs defaultValue="all" className="w-full">
-            {/* Desktop/Tablet tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2 h-12">
-              <TabsTrigger value="all" className="touch-manipulation text-sm">
-                <Calendar className="h-4 w-4 mr-2" />
-                All Events
-              </TabsTrigger>
-              <TabsTrigger value="my-events" className="touch-manipulation text-sm">
-                <Users className="h-4 w-4 mr-2" />
-                My Events
-              </TabsTrigger>
+            {/* Desktop tabs */}
+            <TabsList className="hidden md:grid w-full grid-cols-2">
+              <TabsTrigger value="all">All Events</TabsTrigger>
+              <TabsTrigger value="my-events">My Events</TabsTrigger>
             </TabsList>
-            
-            {/* Mobile tabs - improved touch targets */}
-            <div className="md:hidden w-full mb-4">
-              <div className="flex gap-2 w-full">
-                <Button
-                  variant="outline"
-                  className="flex-1 min-h-[44px] touch-manipulation text-sm"
-                  onClick={() => {/* handled by Tabs component */}}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  All Events
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 min-h-[44px] touch-manipulation text-sm"
-                  onClick={() => {/* handled by Tabs component */}}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  My Events
-                </Button>
-              </div>
-            </div>
             
             <TabsContent value="all">
               <EventFeed key={refreshKey} />
