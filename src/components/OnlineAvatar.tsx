@@ -62,8 +62,8 @@ export const OnlineAvatar: React.FC<OnlineAvatarProps> = ({
           className={cn(
             'absolute rounded-full border-2 border-background',
             isOnline 
-              ? 'bg-green-500 animate-pulse-online' 
-              : 'bg-gray-400',
+              ? 'bg-status-online animate-pulse-online' 
+              : 'bg-status-offline',
             dotSizeClasses[size]
           )}
         />

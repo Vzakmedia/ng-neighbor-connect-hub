@@ -61,6 +61,10 @@ export default {
 					light: 'hsl(var(--community-light))',
 					dark: 'hsl(var(--community-dark))'
 				},
+				status: {
+					online: 'hsl(var(--online-green))',
+					offline: 'hsl(var(--offline-grey))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
