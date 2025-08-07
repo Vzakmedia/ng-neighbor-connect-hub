@@ -44,6 +44,32 @@ export const initializeAudioOnInteraction = async (): Promise<void> => {
   }
 };
 
+// Available notification sound options
+export const NOTIFICATION_SOUNDS = {
+  generated: { name: 'Generated Bell', file: null },
+  classic: { name: 'Classic Notification', file: '/notification.mp3' },
+  bell: { name: 'Bell Ring', file: '/notification-bell.mp3' },
+  chime: { name: 'Soft Chime', file: '/notification-chime.mp3' },
+  ding: { name: 'Quick Ding', file: '/notification-ding.mp3' }
+} as const;
+
+export type NotificationSoundType = keyof typeof NOTIFICATION_SOUNDS;
+
+// Get user's selected notification sound preference
+export const getSelectedNotificationSound = (): NotificationSoundType => {
+  try {
+    const audioSettings = localStorage.getItem('audioSettings');
+    if (audioSettings) {
+      const settings = JSON.parse(audioSettings);
+      return settings.notificationSound || 'generated';
+    }
+    return 'generated'; // Default to generated sound
+  } catch (error) {
+    console.error('Error getting notification sound preference:', error);
+    return 'generated';
+  }
+};
+
 // Generate a pleasant notification sound
 export const generateNotificationSound = async (volume: number = 0.5): Promise<void> => {
   const ctx = await getAudioContext();
@@ -263,11 +289,33 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
       if (type === 'emergency') {
         await generateEmergencySound(volume);
       } else {
-        await generateNotificationSound(volume);
+        // Play user's preferred notification sound
+        const selectedSound = getSelectedNotificationSound();
+        
+        if (selectedSound === 'generated') {
+          await generateNotificationSound(volume);
+        } else {
+          // Use selected audio file
+          const soundConfig = NOTIFICATION_SOUNDS[selectedSound];
+          if (soundConfig.file) {
+            const audio = new Audio(soundConfig.file);
+            audio.volume = Math.min(volume, 1.0);
+            audio.crossOrigin = 'anonymous';
+            audio.preload = 'auto';
+            
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              await playPromise;
+            }
+          } else {
+            // Fallback to generated sound
+            await generateNotificationSound(volume);
+          }
+        }
       }
       console.log('Notification sound played successfully');
     } catch (audioError) {
-      console.error('Generated audio failed:', audioError);
+      console.error('Selected audio failed:', audioError);
       throw audioError; // Let it fall through to fallbacks
     }
     

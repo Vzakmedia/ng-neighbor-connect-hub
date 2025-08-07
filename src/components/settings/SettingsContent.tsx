@@ -22,9 +22,12 @@ import {
   Play,
   AlertTriangle,
   Users,
-  HelpCircle
+  HelpCircle,
+  Music
 } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
+import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
+import type { NotificationSoundType } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
 import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
@@ -62,7 +65,8 @@ const SettingsContent = () => {
   const [audioSettings, setAudioSettings] = useState({
     notificationVolume: [0.5],
     emergencyVolume: [0.8],
-    soundEnabled: true
+    soundEnabled: true,
+    notificationSound: 'generated' as NotificationSoundType
   });
 
   // Load audio settings from localStorage on component mount
@@ -71,7 +75,11 @@ const SettingsContent = () => {
     if (savedAudioSettings) {
       try {
         const parsed = JSON.parse(savedAudioSettings);
-        setAudioSettings(parsed);
+        setAudioSettings(prev => ({ 
+          ...prev, 
+          ...parsed,
+          notificationSound: parsed.notificationSound || 'generated'
+        }));
       } catch (error) {
         console.error('Error loading audio settings:', error);
       }
@@ -159,7 +167,12 @@ const SettingsContent = () => {
       : audioSettings.notificationVolume[0];
     
     if (audioSettings.soundEnabled) {
-      playNotification(type, volume);
+      if (type === 'emergency') {
+        playNotification('emergency', volume);
+      } else {
+        // Test the user's selected notification sound
+        testNotificationSound(audioSettings.notificationSound, volume);
+      }
     }
   };
 
@@ -384,6 +397,44 @@ const SettingsContent = () => {
                           Volume: {Math.round(audioSettings.notificationVolume[0] * 100)}%
                         </p>
                       </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="notification-sound" className="flex items-center gap-2">
+                          <Music className="h-4 w-4" />
+                          Notification Sound
+                        </Label>
+                        <div className="flex gap-2">
+                          <Select
+                            value={audioSettings.notificationSound}
+                            onValueChange={(value: NotificationSoundType) => 
+                              setAudioSettings(prev => ({ ...prev, notificationSound: value }))
+                            }
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select notification sound" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableNotificationSounds().map((sound) => (
+                                <SelectItem key={sound.id} value={sound.id}>
+                                  {sound.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => testNotificationSound(audioSettings.notificationSound, audioSettings.notificationVolume[0])}
+                          >
+                            <Play className="h-3 w-3 mr-1" />
+                            Test
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Choose your preferred notification sound from the available options
+                        </p>
+                      </div>
+
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
