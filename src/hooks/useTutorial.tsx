@@ -35,7 +35,7 @@ export const useTutorial = () => {
         .from('user_onboarding_preferences')
         .select('tutorial_completed')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const hasCompletedTutorial = data?.tutorial_completed || false;
       
