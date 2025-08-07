@@ -294,6 +294,66 @@ export type Database = {
           },
         ]
       }
+      alert_analytics: {
+        Row: {
+          alert_id: string
+          id: string
+          location: string | null
+          metadata: Json | null
+          metric_type: string
+          metric_value: number | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_id: string
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          metric_type: string
+          metric_value?: number | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_id?: string
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      alert_cache: {
+        Row: {
+          cache_data: Json
+          cache_key: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cache_data: Json
+          cache_key: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          cache_data?: Json
+          cache_key?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       alert_notifications: {
         Row: {
           alert_id: string | null
@@ -361,6 +421,45 @@ export type Database = {
           },
         ]
       }
+      alert_queue: {
+        Row: {
+          alert_id: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          max_retries: number | null
+          metadata: Json | null
+          priority: number
+          processing_started_at: string | null
+          retry_count: number | null
+          status: string
+        }
+        Insert: {
+          alert_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number
+          processing_started_at?: string | null
+          retry_count?: number | null
+          status?: string
+        }
+        Update: {
+          alert_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number
+          processing_started_at?: string | null
+          retry_count?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       alert_responses: {
         Row: {
           alert_id: string
@@ -395,6 +494,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      alert_targeting_rules: {
+        Row: {
+          alert_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          rule_criteria: Json
+          rule_type: string
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_criteria: Json
+          rule_type: string
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rule_criteria?: Json
+          rule_type?: string
+        }
+        Relationships: []
       }
       analytics_events: {
         Row: {
@@ -1950,6 +2076,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_delivery_log: {
+        Row: {
+          alert_id: string
+          created_at: string | null
+          delivered_at: string | null
+          delivery_channel: string
+          delivery_status: string
+          failure_reason: string | null
+          id: string
+          retry_count: number | null
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_channel: string
+          delivery_status?: string
+          failure_reason?: string | null
+          id?: string
+          retry_count?: number | null
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_channel?: string
+          delivery_status?: string
+          failure_reason?: string | null
+          id?: string
+          retry_count?: number | null
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       panic_alerts: {
         Row: {
           address: string | null
@@ -3443,6 +3608,10 @@ export type Database = {
         Args: { board_id: string; user_id: string }
         Returns: boolean
       }
+      clean_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_call_signals: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -3464,6 +3633,10 @@ export type Database = {
       delete_messages: {
         Args: { message_ids: string[] }
         Returns: boolean
+      }
+      enqueue_alert: {
+        Args: { _alert_id: string; _priority?: number }
+        Returns: string
       }
       generate_board_invite_code: {
         Args: Record<PropertyKey, never>
@@ -3555,6 +3728,10 @@ export type Database = {
           phone: string
           priority_score: number
         }[]
+      }
+      get_cached_alerts: {
+        Args: { _cache_key: string }
+        Returns: Json
       }
       get_content_moderation_stats: {
         Args: Record<PropertyKey, never>
@@ -3757,9 +3934,27 @@ export type Database = {
         Args: { recipient_user_id: string; sender_user_id: string }
         Returns: undefined
       }
+      process_alert_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      set_alert_cache: {
+        Args: { _cache_key: string; _cache_data: Json; _ttl_seconds?: number }
+        Returns: undefined
+      }
       soft_delete_messages: {
         Args: { message_ids: string[] }
         Returns: boolean
+      }
+      track_alert_metric: {
+        Args: {
+          _alert_id: string
+          _metric_type: string
+          _user_id?: string
+          _location?: string
+          _metadata?: Json
+        }
+        Returns: undefined
       }
       track_user_activity: {
         Args: {
