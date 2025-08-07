@@ -1,8 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SafetyAlert, PanicAlert, EmergencyFilters } from '@/types/emergency';
+
+// Create a hash function for comparing data
+const createDataHash = (data: any[]): string => {
+  return JSON.stringify(data.map(item => ({
+    id: item.id,
+    updated_at: item.updated_at,
+    status: item.status
+  }))).split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0).toString();
+};
 
 export const useEmergencyAlerts = () => {
   const { user } = useAuth();
@@ -10,224 +22,279 @@ export const useEmergencyAlerts = () => {
   
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [panicAlerts, setPanicAlerts] = useState<PanicAlert[]>([]);
-  const [loading, setLoading] = useState(false); // Changed from true to prevent initial loading
+  const [loading, setLoading] = useState(false);
+  
+  // Cache and comparison refs
+  const alertsHashRef = useRef<string>('');
+  const panicAlertsHashRef = useRef<string>('');
+  const lastFetchTimeRef = useRef<number>(0);
+  const profileCacheRef = useRef<{city: string; state: string; phone: string} | null>(null);
+  
+  // Debounce mechanism
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const fetchAlerts = useCallback(async (filters: EmergencyFilters) => {
+  const fetchAlerts = useCallback(async (filters: EmergencyFilters, forceRefresh = false) => {
     if (!user) return;
     
-    setLoading(true);
-    try {
-      // Add a short delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Get current user's profile for location filtering
-      const { data: currentUserProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('city, state')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        // Continue without location filtering if profile fetch fails
-      }
-
-      let query = supabase
-        .from('safety_alerts')
-        .select(`
-          *,
-          profiles (full_name, avatar_url, city, state)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50); // Add limit to improve performance
-
-      if (filters.severity !== 'all') {
-        query = query.eq('severity', filters.severity as any);
-      }
-
-      if (filters.type !== 'all') {
-        query = query.eq('alert_type', filters.type as any);
-      }
-
-      if (filters.status !== 'all') {
-        query = query.eq('status', filters.status as any);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching safety alerts:', error);
-        
-        // Check if it's a network error
-        if (error.message?.includes('Failed to fetch')) {
-          toast({
-            title: "Connection Issue",
-            description: "Unable to connect to the server. Please check your internet connection.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Failed to load safety alerts",
-            description: error.message || "Unknown error occurred",
-            variant: "destructive",
-          });
-        }
-        
-        // Don't clear existing alerts on error, just stop loading
-        setLoading(false);
-        return;
-      }
-
-      // Filter alerts by user's city and state if profile is available
-      let filteredAlerts = data || [];
-      if (currentUserProfile?.city && currentUserProfile?.state) {
-        filteredAlerts = (data || []).filter((alert: any) => {
-          if (!alert.profiles) return true; // Include alerts without profile data
-          return alert.profiles.city === currentUserProfile.city && 
-                 alert.profiles.state === currentUserProfile.state;
-        });
-      }
-      
-      console.log('Safety alerts fetched and filtered:', filteredAlerts.length, 'alerts');
-      setAlerts(filteredAlerts as SafetyAlert[] || []);
-    } catch (error: any) {
-      console.error('Error fetching safety alerts:', error);
-      
-      // Handle network errors gracefully
-      if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-        toast({
-          title: "Network Error",
-          description: "Please check your internet connection and try again.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Failed to load safety alerts",
-          description: "Unable to fetch the latest safety alerts. Please try refreshing.",
-          variant: "destructive"
-        });
-      }
-    } finally {
-      setLoading(false);
+    // Debounce rapid calls
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
+    
+    return new Promise<void>((resolve) => {
+      debounceTimeoutRef.current = setTimeout(async () => {
+        // Rate limiting: don't fetch more than once every 5 seconds unless forced
+        const now = Date.now();
+        if (!forceRefresh && now - lastFetchTimeRef.current < 5000) {
+          resolve();
+          return;
+        }
+        lastFetchTimeRef.current = now;
+        setLoading(true);
+        try {
+          // Use cached profile if available
+          let currentUserProfile = profileCacheRef.current;
+          
+          if (!currentUserProfile) {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('city, state, phone')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profileError) {
+              console.error('Error fetching user profile:', profileError);
+            } else if (profile) {
+              profileCacheRef.current = profile;
+              currentUserProfile = profile;
+            }
+          }
+
+          let query = supabase
+            .from('safety_alerts')
+            .select(`
+              *,
+              profiles (full_name, avatar_url, city, state)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          if (filters.severity !== 'all') {
+            query = query.eq('severity', filters.severity as any);
+          }
+
+          if (filters.type !== 'all') {
+            query = query.eq('alert_type', filters.type as any);
+          }
+
+          if (filters.status !== 'all') {
+            query = query.eq('status', filters.status as any);
+          }
+
+          const { data, error } = await query;
+
+          if (error) {
+            console.error('Error fetching safety alerts:', error);
+            
+            if (error.message?.includes('Failed to fetch')) {
+              toast({
+                title: "Connection Issue",
+                description: "Unable to connect to the server. Please check your internet connection.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Failed to load safety alerts",
+                description: error.message || "Unknown error occurred",
+                variant: "destructive",
+              });
+            }
+            
+            setLoading(false);
+            resolve();
+            return;
+          }
+
+          // Filter alerts by user's city and state if profile is available
+          let filteredAlerts = data || [];
+          if (currentUserProfile?.city && currentUserProfile?.state) {
+            filteredAlerts = (data || []).filter((alert: any) => {
+              if (!alert.profiles) return true;
+              return alert.profiles.city === currentUserProfile.city && 
+                     alert.profiles.state === currentUserProfile.state;
+            });
+          }
+          
+          // Compare with previous data using hash
+          const newHash = createDataHash(filteredAlerts);
+          if (newHash !== alertsHashRef.current) {
+            console.log('Safety alerts updated:', filteredAlerts.length, 'alerts');
+            alertsHashRef.current = newHash;
+            setAlerts(filteredAlerts as SafetyAlert[]);
+          } else {
+            console.log('Safety alerts unchanged, skipping UI update');
+          }
+          
+        } catch (error: any) {
+          console.error('Error fetching safety alerts:', error);
+          
+          if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+            toast({
+              title: "Network Error",
+              description: "Please check your internet connection and try again.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Failed to load safety alerts",
+              description: "Unable to fetch the latest safety alerts. Please try refreshing.",
+              variant: "destructive"
+            });
+          }
+        } finally {
+          setLoading(false);
+          resolve();
+        }
+      }, 300); // 300ms debounce
+    });
   }, [user, toast]);
 
-  const fetchPanicAlerts = useCallback(async () => {
+  const fetchPanicAlerts = useCallback(async (forceRefresh = false) => {
     if (!user) return;
     
-    try {
-      // Add a short delay to prevent rapid successive calls
-      await new Promise(resolve => setTimeout(resolve, 150));
+    // Use same debouncing mechanism
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    return new Promise<void>((resolve) => {
+      debounceTimeoutRef.current = setTimeout(async () => {
+        try {
+          // Use cached profile
+          let userProfile = profileCacheRef.current;
+          if (!userProfile) {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('phone, state, city')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profileError) {
+              console.error('Error fetching user profile for panic alerts:', profileError);
+            } else if (profile) {
+              profileCacheRef.current = profile;
+              userProfile = profile;
+            }
+          }
+
+          // Get panic alerts created by user
+          const { data: userPanicAlerts, error: userError } = await supabase
+            .from('panic_alerts')
+            .select('*')
+            .eq('user_id', user.id)
+            .limit(20);
+
+          if (userError) {
+            throw userError;
+          }
+
+          let contactPanicAlerts: any[] = [];
+          let areaPanicAlerts: any[] = [];
       
-      // Get current user's profile to filter by location
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('phone, state, city')
-        .eq('user_id', user.id)
-        .single();
+          // Only fetch contact and area alerts if we have profile data
+          if (userProfile) {
+            // Get panic alerts where user is an emergency contact
+            if (userProfile.phone) {
+              try {
+                const { data: emergencyContacts } = await supabase
+                  .from('emergency_contacts')
+                  .select('user_id')
+                  .eq('phone_number', userProfile.phone);
 
-      if (profileError) {
-        console.error('Error fetching user profile for panic alerts:', profileError);
-        // Continue with limited functionality if profile fetch fails
-      }
+                if (emergencyContacts && emergencyContacts.length > 0) {
+                  const contactUserIds = emergencyContacts.map(ec => ec.user_id);
+                  
+                  const { data: contactAlerts, error: contactError } = await supabase
+                    .from('panic_alerts')
+                    .select('*')
+                    .in('user_id', contactUserIds)
+                    .limit(10);
 
-      // Get panic alerts created by user
-      const { data: userPanicAlerts, error: userError } = await supabase
-        .from('panic_alerts')
-        .select('*')
-        .eq('user_id', user.id)
-        .limit(20); // Add limit for performance
-
-      if (userError) {
-        throw userError;
-      }
-
-      let contactPanicAlerts: any[] = [];
-      let areaPanicAlerts: any[] = [];
-      
-      // Only fetch contact and area alerts if we have profile data
-      if (userProfile) {
-        // Get panic alerts where user is an emergency contact
-        if (userProfile.phone) {
-          try {
-            const { data: emergencyContacts } = await supabase
-              .from('emergency_contacts')
-              .select('user_id')
-              .eq('phone_number', userProfile.phone);
-
-            if (emergencyContacts && emergencyContacts.length > 0) {
-              const contactUserIds = emergencyContacts.map(ec => ec.user_id);
-              
-              const { data: contactAlerts, error: contactError } = await supabase
-                .from('panic_alerts')
-                .select('*')
-                .in('user_id', contactUserIds)
-                .limit(10);
-
-              if (contactError) {
-                console.error('Error fetching contact panic alerts:', contactError);
-              } else {
-                contactPanicAlerts = contactAlerts || [];
+                  if (contactError) {
+                    console.error('Error fetching contact panic alerts:', contactError);
+                  } else {
+                    contactPanicAlerts = contactAlerts || [];
+                  }
+                }
+              } catch (contactError) {
+                console.error('Error processing emergency contacts:', contactError);
               }
             }
-          } catch (contactError) {
-            console.error('Error processing emergency contacts:', contactError);
-          }
-        }
 
-        // Get panic alerts in user's area (same state)
-        if (userProfile.state) {
-          try {
-            const { data: areaAlerts, error: areaError } = await supabase
-              .from('panic_alerts')
-              .select(`
-                *,
-                profiles (state, city, full_name, avatar_url)
-              `)
-              .neq('user_id', user.id) // Exclude user's own alerts
-              .order('created_at', { ascending: false })
-              .limit(15);
+            // Get panic alerts in user's area (same state)
+            if (userProfile.state) {
+              try {
+                const { data: areaAlerts, error: areaError } = await supabase
+                  .from('panic_alerts')
+                  .select(`
+                    *,
+                    profiles (state, city, full_name, avatar_url)
+                  `)
+                  .neq('user_id', user.id)
+                  .order('created_at', { ascending: false })
+                  .limit(15);
 
-            if (areaError) {
-              console.error('Error fetching area panic alerts:', areaError);
-            } else {
-              // Filter by state/city in the application
-              areaPanicAlerts = (areaAlerts || []).filter((alert: any) => 
-                alert.profiles?.state === userProfile.state ||
-                alert.profiles?.city === userProfile.city
-              );
+                if (areaError) {
+                  console.error('Error fetching area panic alerts:', areaError);
+                } else {
+                  areaPanicAlerts = (areaAlerts || []).filter((alert: any) => 
+                    alert.profiles?.state === userProfile.state ||
+                    alert.profiles?.city === userProfile.city
+                  );
+                }
+              } catch (areaError) {
+                console.error('Error processing area panic alerts:', areaError);
+              }
             }
-          } catch (areaError) {
-            console.error('Error processing area panic alerts:', areaError);
           }
+
+          // Combine and deduplicate alerts
+          const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts, ...areaPanicAlerts];
+          const uniqueAlerts = allPanicAlerts.filter((alert, index, self) => 
+            index === self.findIndex(a => a.id === alert.id)
+          );
+
+          // Compare with previous data using hash
+          const newHash = createDataHash(uniqueAlerts);
+          if (newHash !== panicAlertsHashRef.current) {
+            console.log('Panic alerts updated:', uniqueAlerts.length, 'alerts');
+            panicAlertsHashRef.current = newHash;
+            setPanicAlerts(uniqueAlerts as PanicAlert[]);
+          } else {
+            console.log('Panic alerts unchanged, skipping UI update');
+          }
+
+        } catch (error: any) {
+          console.error('Error fetching panic alerts:', error);
+          
+          if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+            toast({
+              title: "Network Error",
+              description: "Unable to load panic alerts. Please check your connection.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Failed to load panic alerts", 
+              description: "Unable to fetch panic alerts. Please try refreshing.",
+              variant: "destructive"
+            });
+          }
+        } finally {
+          resolve();
         }
-      }
-
-      // Combine and deduplicate alerts
-      const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts, ...areaPanicAlerts];
-      const uniqueAlerts = allPanicAlerts.filter((alert, index, self) => 
-        index === self.findIndex(a => a.id === alert.id)
-      );
-
-      setPanicAlerts(uniqueAlerts as PanicAlert[]);
-    } catch (error: any) {
-      console.error('Error fetching panic alerts:', error);
-      
-      // Handle network errors gracefully
-      if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-        toast({
-          title: "Network Error",
-          description: "Unable to load panic alerts. Please check your connection.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Failed to load panic alerts", 
-          description: "Unable to fetch panic alerts. Please try refreshing.",
-          variant: "destructive"
-        });
-      }
-    }
+      }, 300); // 300ms debounce
+    });
   }, [user, toast]);
 
   const updateAlertStatus = useCallback((alertId: string, newStatus: string) => {
@@ -261,7 +328,20 @@ export const useEmergencyAlerts = () => {
   }, []);
 
   const addNewAlert = useCallback((newAlert: SafetyAlert) => {
-    setAlerts(prev => [newAlert, ...prev]);
+    setAlerts(prev => {
+      const newList = [newAlert, ...prev];
+      const newHash = createDataHash(newList);
+      alertsHashRef.current = newHash;
+      return newList;
+    });
+  }, []);
+
+  // Clear cache when user changes
+  const clearCache = useCallback(() => {
+    profileCacheRef.current = null;
+    alertsHashRef.current = '';
+    panicAlertsHashRef.current = '';
+    lastFetchTimeRef.current = 0;
   }, []);
 
   return {
@@ -274,6 +354,7 @@ export const useEmergencyAlerts = () => {
     updatePanicAlertStatus,
     addNewAlert,
     setAlerts,
-    setPanicAlerts
+    setPanicAlerts,
+    clearCache
   };
 };

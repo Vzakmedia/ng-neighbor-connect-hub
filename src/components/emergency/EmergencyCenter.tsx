@@ -36,10 +36,11 @@ const EmergencyCenter = () => {
     updateAlertStatus,
     updatePanicAlertStatus,
     addNewAlert,
-    setAlerts
+    setAlerts,
+    clearCache
   } = useEmergencyAlerts();
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions with reduced frequency
   useEmergencySubscriptions({
     onNewAlert: addNewAlert,
     onAlertUpdate: (alertId, updates) => {
@@ -51,7 +52,6 @@ const EmergencyCenter = () => {
     },
     onRefreshNeeded: () => {
       console.log('Emergency subscription error - manual refresh needed');
-      // Only refresh on user action, not automatic
     },
     filters
   });
@@ -59,10 +59,11 @@ const EmergencyCenter = () => {
   useEffect(() => {
     if (user) {
       console.log('EmergencyCenter: Initial data fetch');
-      fetchAlerts(filters);
-      fetchPanicAlerts();
+      clearCache(); // Clear cache when user changes
+      fetchAlerts(filters, true); // Force initial fetch
+      fetchPanicAlerts(true);
     }
-  }, [user]); // Removed filters dependency to prevent constant re-fetching
+  }, [user, clearCache]); // Only depend on user, not filters
 
   const getTimeSince = (dateString: string) => {
     const date = new Date(dateString);
@@ -104,15 +105,15 @@ const EmergencyCenter = () => {
 
   const handleRefresh = () => {
     console.log('EmergencyCenter: Manual refresh triggered');
-    fetchAlerts(filters);
-    fetchPanicAlerts();
+    fetchAlerts(filters, true); // Force refresh
+    fetchPanicAlerts(true);
   };
 
   // Filter change handler that triggers refetch
   const handleFilterChange = (newFilters: EmergencyFilters) => {
     console.log('EmergencyCenter: Filters changed', newFilters);
     setFilters(newFilters);
-    fetchAlerts(newFilters);
+    fetchAlerts(newFilters, true); // Force refresh on filter change
   };
 
   return (
