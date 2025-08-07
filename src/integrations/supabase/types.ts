@@ -3459,6 +3459,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      bulk_moderate_content: {
+        Args: {
+          content_ids: string[]
+          content_type: string
+          action_type: string
+          rejection_reason?: string
+        }
+        Returns: {
+          processed_count: number
+          success_count: number
+          error_count: number
+          errors: Json
+        }[]
+      }
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
@@ -3536,6 +3550,21 @@ export type Database = {
           cost_per_click: number
         }[]
       }
+      get_admin_user_stats: {
+        Args: { start_date?: string; end_date?: string }
+        Returns: {
+          total_users: number
+          new_users_today: number
+          new_users_this_week: number
+          new_users_this_month: number
+          active_users_today: number
+          active_users_this_week: number
+          verified_users: number
+          pending_verification: number
+          banned_users: number
+          user_growth_rate: number
+        }[]
+      }
       get_analytics_summary: {
         Args: { start_date?: string; end_date?: string }
         Returns: {
@@ -3548,13 +3577,94 @@ export type Database = {
           avg_session_time: number
         }[]
       }
+      get_business_verification_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          business_id: string
+          business_name: string
+          user_id: string
+          category: string
+          verification_status: string
+          created_at: string
+          verification_documents: Json
+          business_license: string
+          tax_id_number: string
+          email: string
+          phone: string
+          priority_score: number
+        }[]
+      }
+      get_content_moderation_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          pending_posts: number
+          pending_services: number
+          pending_marketplace_items: number
+          pending_businesses: number
+          pending_advertisements: number
+          total_reports: number
+          pending_reports: number
+          resolved_reports_today: number
+          flagged_content_by_type: Json
+        }[]
+      }
+      get_emergency_alerts_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_alerts: number
+          resolved_alerts_today: number
+          total_panic_alerts: number
+          unresolved_panic_alerts: number
+          alerts_by_type: Json
+          recent_critical_alerts: Json
+          response_time_avg_minutes: number
+        }[]
+      }
       get_flagged_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_revenue_breakdown: {
+        Args: { start_date?: string; end_date?: string }
+        Returns: {
+          total_revenue: number
+          ad_campaign_revenue: number
+          promotion_revenue: number
+          service_booking_revenue: number
+          transaction_count: number
+          average_transaction_value: number
+          revenue_by_day: Json
+          top_revenue_sources: Json
+        }[]
+      }
       get_sponsored_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_staff_management_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_staff: number
+          active_staff_today: number
+          pending_invitations: number
+          staff_by_role: Json
+          recent_staff_activities: Json
+          top_staff_performers: Json
+        }[]
+      }
+      get_system_health_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_storage_used_mb: number
+          active_sessions: number
+          messages_last_hour: number
+          posts_last_hour: number
+          error_rate_last_hour: number
+          database_connections: number
+          api_requests_last_hour: number
+          emergency_alerts_active: number
+          system_status: string
+        }[]
       }
       get_top_content_by_engagement: {
         Args: {
