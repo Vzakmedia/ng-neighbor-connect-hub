@@ -21,85 +21,107 @@ interface AppTutorialProps {
   onComplete: () => void;
 }
 
-const tutorialSteps: TutorialStep[] = [
-  {
-    id: 'welcome',
-    title: 'Welcome to NeighborLink! 👋',
-    description: 'Let\'s take a quick tour to help you get started. You can skip this at any time.',
-    targetSelector: 'body',
-    placement: 'bottom',
-  },
-  {
-    id: 'navigation',
-    title: 'Navigation Sidebar',
-    description: 'Access all main features from here: Community, Messages, Marketplace, Safety, Events, and Services.',
-    targetSelector: '[data-tutorial="navigation"]',
-    placement: 'right',
-    highlight: true,
-  },
-  {
-    id: 'create-post',
-    title: 'Create Posts',
-    description: 'Share updates, ask questions, or start discussions with your neighbors using this button.',
-    targetSelector: '[data-tutorial="create-post"]',
-    placement: 'bottom',
-    highlight: true,
-    action: 'Click to create a post',
-  },
-  {
-    id: 'notifications',
-    title: 'Stay Updated',
-    description: 'Get notified about messages, safety alerts, and community updates. Check your notifications here.',
-    targetSelector: '[data-tutorial="notifications"]',
-    placement: 'bottom',
-    highlight: true,
-  },
-  {
-    id: 'messages',
-    title: 'Direct Messages',
-    description: 'Connect privately with neighbors. Your unread message count appears here.',
-    targetSelector: '[data-tutorial="messages"]',
-    placement: 'bottom',
-    highlight: true,
-  },
-  {
-    id: 'profile',
-    title: 'Your Profile',
-    description: 'Manage your account, settings, and create community ads from your profile menu.',
-    targetSelector: '[data-tutorial="profile"]',
-    placement: 'bottom',
-    highlight: true,
-  },
-  {
-    id: 'community-feed',
-    title: 'Community Feed',
-    description: 'This is where you\'ll see posts from your neighbors. Engage with likes, comments, and shares.',
-    targetSelector: '[data-tutorial="community-feed"]',
-    placement: 'left',
-    highlight: true,
-  },
-  {
-    id: 'safety-alerts',
-    title: 'Safety & Alerts',
-    description: 'Stay informed about safety updates and emergency alerts in your area.',
-    targetSelector: '[data-tutorial="safety-alerts"]',
-    placement: 'left',
-    highlight: true,
-  },
-  {
-    id: 'complete',
-    title: 'You\'re All Set! 🎉',
-    description: 'You\'re ready to connect with your neighbors. Remember, you can always find help in Settings > Help.',
-    targetSelector: 'body',
-    placement: 'bottom',
-  },
-];
+const getTutorialSteps = (): TutorialStep[] => {
+  const isMobile = window.innerWidth < 768;
+  const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+  
+  return [
+    {
+      id: 'welcome',
+      title: 'Welcome to NeighborLink! 👋',
+      description: 'Let\'s take a quick tour to help you get started. You can skip this at any time.',
+      targetSelector: 'body',
+      placement: 'bottom',
+    },
+    {
+      id: 'navigation',
+      title: isMobile ? 'Bottom Navigation' : 'Navigation Sidebar',
+      description: isMobile 
+        ? 'Access main features from the navigation bar at the bottom of your screen.'
+        : 'Access all main features from here: Community, Messages, Marketplace, Safety, Events, and Services.',
+      targetSelector: isMobile ? 'nav.md\\:hidden' : '[data-tutorial="navigation"]',
+      placement: isMobile ? 'top' : 'right',
+      highlight: true,
+    },
+    {
+      id: 'create-post',
+      title: 'Create Posts',
+      description: 'Share updates, ask questions, or start discussions with your neighbors using this button.',
+      targetSelector: (isMobile || isTablet) ? '[data-tutorial="create-post-mobile"]' : '[data-tutorial="create-post"]',
+      placement: 'bottom',
+      highlight: true,
+      action: 'Click to create a post',
+    },
+    {
+      id: 'notifications',
+      title: 'Stay Updated',
+      description: 'Get notified about messages, safety alerts, and community updates. Check your notifications here.',
+      targetSelector: '[data-tutorial="notifications"]',
+      placement: 'bottom',
+      highlight: true,
+    },
+    {
+      id: 'messages',
+      title: 'Direct Messages',
+      description: 'Connect privately with neighbors. Your unread message count appears here.',
+      targetSelector: '[data-tutorial="messages"]',
+      placement: 'bottom',
+      highlight: true,
+    },
+    {
+      id: 'profile',
+      title: 'Your Profile',
+      description: 'Manage your account, settings, and create community ads from your profile menu.',
+      targetSelector: '[data-tutorial="profile"]',
+      placement: 'bottom',
+      highlight: true,
+    },
+    ...(isMobile ? [] : [
+      {
+        id: 'community-feed',
+        title: 'Community Feed',
+        description: 'This is where you\'ll see posts from your neighbors. Engage with likes, comments, and shares.',
+        targetSelector: '[data-tutorial="community-feed"]',
+        placement: 'left' as const,
+        highlight: true,
+      },
+      {
+        id: 'safety-alerts',
+        title: 'Safety & Alerts',
+        description: 'Stay informed about safety updates and emergency alerts in your area.',
+        targetSelector: '[data-tutorial="safety-alerts"]',
+        placement: 'left' as const,
+        highlight: true,
+      }
+    ]),
+    {
+      id: 'complete',
+      title: 'You\'re All Set! 🎉',
+      description: 'You\'re ready to connect with your neighbors. Remember, you can always find help in Settings > Help.',
+      targetSelector: 'body',
+      placement: 'bottom',
+    },
+  ];
+};
 
 const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
+  const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Update tutorial steps on mount and resize
+  useEffect(() => {
+    const updateSteps = () => {
+      setTutorialSteps(getTutorialSteps());
+    };
+    
+    updateSteps();
+    window.addEventListener('resize', updateSteps);
+    
+    return () => window.removeEventListener('resize', updateSteps);
+  }, []);
 
   const currentStepData = tutorialSteps[currentStep];
 

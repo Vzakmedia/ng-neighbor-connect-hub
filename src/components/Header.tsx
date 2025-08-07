@@ -349,7 +349,7 @@ const Header = () => {
             
             <ThemeToggle />
             
-            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick}>
+            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick} data-tutorial="messages">
               <MessageCircle className="h-4 w-4" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
@@ -359,7 +359,7 @@ const Header = () => {
             </Button>
             
             <div className="relative">
-              <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
+              <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setIsNotificationOpen(!isNotificationOpen)} data-tutorial="notifications">
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-red-600">

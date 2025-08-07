@@ -238,6 +238,7 @@ const Navigation = () => {
                 <DropdownMenuItem 
                   onClick={() => setCreatePostOpen(true)}
                   className="flex items-center py-3 text-primary"
+                  data-tutorial="create-post-mobile"
                 >
                   <Plus className="mr-3 h-4 w-4" />
                   <span>Create Post</span>
