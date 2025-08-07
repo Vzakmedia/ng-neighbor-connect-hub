@@ -15,6 +15,7 @@ import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 import { OnboardingNotificationManager } from "@/components/OnboardingNotificationManager";
 import AppTutorial from "@/components/AppTutorial";
 import { useTutorial } from "@/hooks/useTutorial";
+import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -134,6 +135,7 @@ const App = () => {
               <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
+            <FloatingCreatePostButton />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
