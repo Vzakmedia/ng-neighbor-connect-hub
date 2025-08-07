@@ -12,7 +12,6 @@ const Admin = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is super admin
   useEffect(() => {
     const checkSuperAdminStatus = async () => {
       if (!user) {
