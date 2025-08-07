@@ -161,18 +161,42 @@ const SettingsContent = () => {
     }));
   };
 
-  const testSound = (type: 'normal' | 'emergency') => {
+  const testSound = async (type: 'normal' | 'emergency') => {
+    console.log('Test sound button clicked:', type);
     const volume = type === 'emergency' 
       ? audioSettings.emergencyVolume[0] 
       : audioSettings.notificationVolume[0];
     
-    if (audioSettings.soundEnabled) {
+    if (!audioSettings.soundEnabled) {
+      toast({
+        title: "Sound Disabled",
+        description: "Please enable notification sounds first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
       if (type === 'emergency') {
-        playNotification('emergency', volume);
+        console.log('Playing emergency notification test');
+        await playNotification('emergency', volume);
       } else {
+        console.log('Testing selected notification sound:', audioSettings.notificationSound);
         // Test the user's selected notification sound
-        testNotificationSound(audioSettings.notificationSound, volume);
+        await testNotificationSound(audioSettings.notificationSound, volume);
       }
+      
+      toast({
+        title: "Sound Test",
+        description: `${type === 'emergency' ? 'Emergency' : 'Notification'} sound played successfully`,
+      });
+    } catch (error) {
+      console.error('Error testing sound:', error);
+      toast({
+        title: "Sound Test Failed",
+        description: "Unable to play sound. Check your browser settings and try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -365,13 +389,35 @@ const SettingsContent = () => {
                     <Switch
                       id="sound-enabled"
                       checked={audioSettings.soundEnabled}
-                      onCheckedChange={(checked) => setAudioSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                      onCheckedChange={(checked) => {
+                        setAudioSettings(prev => ({ ...prev, soundEnabled: checked }));
+                        if (checked) {
+                          // Request permissions when enabling
+                          if ('Notification' in window && Notification.permission === 'default') {
+                            Notification.requestPermission().then(permission => {
+                              if (permission === 'granted') {
+                                toast({
+                                  title: "Permissions Granted",
+                                  description: "Audio notifications are now enabled!"
+                                });
+                              }
+                            });
+                          }
+                        }
+                      }}
                       className="shrink-0"
                     />
                   </div>
 
                   {audioSettings.soundEnabled && (
                     <>
+                      {('Notification' in window && Notification.permission === 'denied') && (
+                        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            <strong>Audio Blocked:</strong> Please enable notifications in your browser settings to hear sounds.
+                          </p>
+                        </div>
+                      )}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="notification-volume">Notification Volume</Label>
@@ -461,6 +507,7 @@ const SettingsContent = () => {
                           Volume: {Math.round(audioSettings.emergencyVolume[0] * 100)}%
                         </p>
                       </div>
+
                     </>
                   )}
                 </div>

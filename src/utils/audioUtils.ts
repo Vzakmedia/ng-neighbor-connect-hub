@@ -284,13 +284,19 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
 
     // Get volume from settings or use custom volume
     const volume = customVolume !== undefined ? customVolume : getSoundVolume();
+    console.log('Playing notification with volume:', volume, 'type:', type);
+    
+    // Ensure audio is initialized first
+    await initializeAudioOnInteraction();
     
     try {
       if (type === 'emergency') {
+        console.log('Playing emergency sound');
         await generateEmergencySound(volume);
       } else {
         // Play user's preferred notification sound
         const selectedSound = getSelectedNotificationSound();
+        console.log('Playing selected notification sound:', selectedSound);
         
         if (selectedSound === 'generated') {
           await generateNotificationSound(volume);
@@ -298,17 +304,36 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
           // Use selected audio file
           const soundConfig = NOTIFICATION_SOUNDS[selectedSound];
           if (soundConfig.file) {
+            console.log('Loading audio file:', soundConfig.file);
             const audio = new Audio(soundConfig.file);
             audio.volume = Math.min(volume, 1.0);
             audio.crossOrigin = 'anonymous';
             audio.preload = 'auto';
             
+            // Add error handling
+            audio.addEventListener('error', (e) => {
+              console.error('Audio file error:', e);
+            });
+            
+            // Wait for audio to be ready
+            await new Promise((resolve, reject) => {
+              if (audio.readyState >= 3) {
+                resolve(true);
+              } else {
+                audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
+                audio.addEventListener('error', reject, { once: true });
+                setTimeout(() => resolve(true), 2000); // Timeout
+              }
+            });
+            
             const playPromise = audio.play();
             if (playPromise !== undefined) {
               await playPromise;
             }
+            console.log('Audio file played successfully');
           } else {
             // Fallback to generated sound
+            console.log('No file found, using generated sound');
             await generateNotificationSound(volume);
           }
         }
