@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EmergencyFilters, EmergencyViewMode, SafetyAlert, PanicAlert } from '@/types/emergency';
 import { useEmergencyAlerts } from '@/hooks/emergency/useEmergencyAlerts';
 import { useEmergencySubscriptions } from '@/hooks/emergency/useEmergencySubscriptions';
+import { useAlertSystem } from '@/hooks/useAlertSystem';
 
 // Component imports
 import EmergencyHeader from './EmergencyHeader';
@@ -14,9 +15,11 @@ import PanicAlertManager from './PanicAlertManager';
 import SafetyMap from '../SafetyMap';
 import AlertStatusManager from '../AlertStatusManager';
 import RealTimeAlertFeed from '../RealTimeAlertFeed';
+import { AlertDashboard } from '../alert-system/AlertDashboard';
 
 const EmergencyCenter = () => {
   const { user } = useAuth();
+  const { processAlert } = useAlertSystem();
   const [selectedAlert, setSelectedAlert] = useState<SafetyAlert | null>(null);
   const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
   const [viewMode, setViewMode] = useState<EmergencyViewMode['mode']>('list');
@@ -42,7 +45,17 @@ const EmergencyCenter = () => {
 
   // Set up real-time subscriptions with reduced frequency
   useEmergencySubscriptions({
-    onNewAlert: addNewAlert,
+    onNewAlert: async (newAlert) => {
+      // Add to local state for immediate UI update
+      addNewAlert(newAlert);
+      
+      // Process through alert system for real-time delivery
+      try {
+        await processAlert(newAlert.id, getSeverityPriority(newAlert.severity));
+      } catch (error) {
+        console.error('Failed to process new alert:', error);
+      }
+    },
     onAlertUpdate: (alertId, updates) => {
       setAlerts(prev => 
         prev.map(alert => 
@@ -55,6 +68,16 @@ const EmergencyCenter = () => {
     },
     filters
   });
+
+  const getSeverityPriority = (severity: string): number => {
+    switch (severity) {
+      case 'critical': return 1;
+      case 'high': return 2;
+      case 'medium': return 3;
+      case 'low': return 4;
+      default: return 3;
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -141,10 +164,11 @@ const EmergencyCenter = () => {
 
       {/* Main Content */}
       <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as EmergencyViewMode['mode'])}>
-        <TabsList className="md:hidden grid w-full grid-cols-3">
+        <TabsList className="md:hidden grid w-full grid-cols-4">
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="feed">Feed</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
         {/* List View */}
@@ -175,6 +199,11 @@ const EmergencyCenter = () => {
               setSelectedAlert(null); // For now, just clear selection as RealTimeAlertFeed has different structure
             }}
           />
+          </TabsContent>
+
+        {/* System Dashboard */}
+        <TabsContent value="system" className="space-y-4">
+          <AlertDashboard />
         </TabsContent>
       </Tabs>
 

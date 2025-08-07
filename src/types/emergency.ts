@@ -51,7 +51,7 @@ export interface EmergencyFilters {
 }
 
 export interface EmergencyViewMode {
-  mode: 'list' | 'map' | 'feed';
+  mode: 'list' | 'map' | 'feed' | 'system';
 }
 
 export interface EmergencyStats {
