@@ -16,6 +16,7 @@ interface AlertRequest {
     address: string;
   };
   user_name: string;
+  user_id: string;
 }
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -30,37 +31,19 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { panic_alert_id, situation_type, location, user_name }: AlertRequest = await req.json();
+    const { panic_alert_id, situation_type, location, user_name, user_id }: AlertRequest = await req.json();
 
-    console.log(`Processing emergency alert for panic_alert_id: ${panic_alert_id}`);
+    console.log(`Processing emergency alert for panic_alert_id: ${panic_alert_id}, user_id: ${user_id}`);
 
-    // Get the authenticated user from the request
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header provided');
+    if (!user_id) {
+      throw new Error('User ID is required');
     }
-
-    // Create an authenticated supabase client
-    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: {
-        headers: { authorization: authHeader }
-      }
-    });
-
-    const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !userData.user) {
-      console.error('Authentication error:', userError);
-      throw new Error('User not authenticated');
-    }
-
-    const userId = userData.user.id;
-    console.log(`Processing alert for user: ${userId}`);
 
     // Get the user's emergency contacts
     const { data: contacts, error: contactsError } = await supabase
       .from('emergency_contacts')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', user_id);
 
     if (contactsError) {
       console.error('Error fetching emergency contacts:', contactsError);
@@ -71,7 +54,7 @@ serve(async (req) => {
      const { data: preferences, error: preferencesError } = await supabase
        .from('emergency_preferences')
        .select('*')
-       .eq('user_id', userId)
+       .eq('user_id', user_id)
        .single();
  
      if (preferencesError) {
@@ -136,7 +119,7 @@ serve(async (req) => {
         .from('public_emergency_alerts')
         .insert({
           panic_alert_id,
-          user_id: userId,
+          user_id: user_id,
           situation_type,
           latitude: location.latitude,
           longitude: location.longitude,
@@ -146,7 +129,7 @@ serve(async (req) => {
         });
 
       // Send community notifications to nearby users
-      await sendCommunityAlerts(location, situationLabel, userId);
+      await sendCommunityAlerts(location, situationLabel, user_id);
     }
 
     return new Response(JSON.stringify({ 

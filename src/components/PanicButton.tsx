@@ -251,7 +251,8 @@ const PanicButton = () => {
               longitude: location.longitude,
               address
             },
-            user_name: userName
+            user_name: userName,
+            user_id: user.id
           }
         });
 

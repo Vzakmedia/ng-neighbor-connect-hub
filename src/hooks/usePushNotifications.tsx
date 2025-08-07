@@ -103,9 +103,15 @@ export const usePushNotifications = () => {
         async (payload) => {
           const alert = payload.new;
           
-          // Only notify if it's not the user's own alert
-          if (alert.user_id === user.id) return;
+          console.log('🚨 NEW EMERGENCY ALERT received:', alert);
           
+          // Only notify if it's not the user's own alert
+          if (alert.user_id === user.id) {
+            console.log('⏭️ Skipping notification for own alert');
+            return;
+          }
+          
+          console.log('📢 Creating emergency notification for nearby user');
           addNotification({
             id: alert.id,
             type: 'emergency',
@@ -137,9 +143,15 @@ export const usePushNotifications = () => {
         async (payload) => {
           const alert = payload.new;
           
-          // Only notify if it's not the user's own alert
-          if (alert.user_id === user.id) return;
+          console.log('🆘 NEW PANIC ALERT received:', alert);
           
+          // Only notify if it's not the user's own alert
+          if (alert.user_id === user.id) {
+            console.log('⏭️ Skipping notification for own panic alert');
+            return;
+          }
+          
+          console.log('📢 Creating panic alert notification for nearby user');
           addNotification({
             id: alert.id,
             type: 'panic_alert',
