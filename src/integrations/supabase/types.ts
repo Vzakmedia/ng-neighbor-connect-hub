@@ -3384,6 +3384,7 @@ export type Database = {
           last_business_card_shown_at: string | null
           profile_completion_dismissed: boolean | null
           profile_completion_reminders: boolean | null
+          tutorial_completed: boolean | null
           updated_at: string
           user_id: string
         }
@@ -3395,6 +3396,7 @@ export type Database = {
           last_business_card_shown_at?: string | null
           profile_completion_dismissed?: boolean | null
           profile_completion_reminders?: boolean | null
+          tutorial_completed?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -3406,6 +3408,7 @@ export type Database = {
           last_business_card_shown_at?: string | null
           profile_completion_dismissed?: boolean | null
           profile_completion_reminders?: boolean | null
+          tutorial_completed?: boolean | null
           updated_at?: string
           user_id?: string
         }
