@@ -138,9 +138,10 @@ export const useEmergencyAlerts = () => {
         } catch (error: any) {
           console.error('Error fetching safety alerts:', error);
           
-          if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+          // Handle network errors gracefully
+          if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError' || !navigator.onLine) {
             toast({
-              title: "Network Error",
+              title: "Connection Issue",
               description: "Please check your internet connection and try again.",
               variant: "destructive"
             });
@@ -277,9 +278,10 @@ export const useEmergencyAlerts = () => {
         } catch (error: any) {
           console.error('Error fetching panic alerts:', error);
           
-          if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+          // Handle network errors gracefully
+          if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError' || !navigator.onLine) {
             toast({
-              title: "Network Error",
+              title: "Connection Issue",
               description: "Unable to load panic alerts. Please check your connection.",
               variant: "destructive"
             });
