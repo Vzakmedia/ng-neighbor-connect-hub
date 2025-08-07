@@ -8,7 +8,6 @@ import { ThemeProvider } from "next-themes";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
-import { UnifiedNotificationSystem } from "@/components/UnifiedNotificationSystem";
 
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AudioInitializer } from "@/components/AudioInitializer";
@@ -135,7 +134,6 @@ const App = () => {
               <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
-            <UnifiedNotificationSystem position="top-right" />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
