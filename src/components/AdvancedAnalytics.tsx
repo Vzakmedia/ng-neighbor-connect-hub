@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,12 +79,67 @@ export const AdvancedAnalytics = () => {
   });
   const [contentTypeFilter, setContentTypeFilter] = useState<string>('all');
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
     fetchAnalyticsData();
     fetchTopContent();
     fetchRevenueData();
     fetchSystemMetrics();
   }, [dateRange, contentTypeFilter]);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts'
+        }, () => {
+          console.log('Analytics: Community posts changed, refreshing data');
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*', 
+          schema: 'public',
+          table: 'profiles'
+        }, () => {
+          console.log('Analytics: Profiles changed, refreshing data');
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public', 
+          table: 'post_likes'
+        }, () => {
+          console.log('Analytics: Post likes changed, refreshing data');
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_items'
+        }, () => {
+          console.log('Analytics: Marketplace items changed, refreshing data');
+          refreshData();
+        }),
+      {
+        channelName: 'analytics_realtime',
+        onError: refreshData,
+        pollInterval: 30000, // Poll every 30 seconds for analytics data
+        debugName: 'AdvancedAnalytics'
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [user, refreshData]);
 
   const fetchAnalyticsData = async () => {
     try {
