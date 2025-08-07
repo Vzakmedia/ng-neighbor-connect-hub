@@ -234,7 +234,8 @@ export const isSoundEnabled = (): boolean => {
     const audioSettings = localStorage.getItem('audioSettings');
     if (audioSettings) {
       const settings = JSON.parse(audioSettings);
-      return settings.soundEnabled === true;
+      // Default to enabled unless explicitly set to false
+      return settings.soundEnabled !== false;
     }
     return true; // Default to enabled if no settings found
   } catch (error) {
@@ -269,12 +270,8 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
       await initializeAudioOnInteraction();
     }
     
-    // Check if notifications are allowed
-    const hasNotificationPermission = await checkNotificationPermission();
-    if (!hasNotificationPermission) {
-      console.log('Notification permission not granted, skipping sound');
-      return;
-    }
+    // Proceed without requiring Notification permission; sounds can play in-app
+    // (Browser push notifications are handled separately)
 
     // Check if sound is enabled in user settings
     if (!isSoundEnabled()) {
@@ -394,10 +391,9 @@ export const playEmergencyAlert = async (): Promise<void> => {
   try {
     console.log('Playing emergency alert sound');
     
-    // Check permissions and settings
-    const hasPermission = await checkNotificationPermission();
-    if (!hasPermission || !isSoundEnabled()) {
-      console.log('Cannot play emergency alert - permissions or settings');
+    // Check settings only (sound may play without Notification permission)
+    if (!isSoundEnabled()) {
+      console.log('Sound disabled in user settings, skipping emergency alert');
       return;
     }
 
@@ -405,8 +401,8 @@ export const playEmergencyAlert = async (): Promise<void> => {
     const volume = Math.min(getSoundVolume() * 1.5, 1.0); // Boost volume for emergencies but cap at 1.0
     await generateEmergencySound(volume);
     
-    // Also show a browser notification for emergencies
-    if ('Notification' in window) {
+    // Also show a browser notification for emergencies (only if permission granted)
+    if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('🚨 EMERGENCY ALERT', {
         body: 'Emergency alert in your area',
         icon: '/favicon.ico',
