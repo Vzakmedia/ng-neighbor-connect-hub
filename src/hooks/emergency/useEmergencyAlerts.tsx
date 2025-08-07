@@ -118,11 +118,25 @@ export const useEmergencyAlerts = () => {
           // Filter alerts by user's city and state if profile is available
           let filteredAlerts = data || [];
           if (currentUserProfile?.city && currentUserProfile?.state) {
+            console.log('Filtering alerts by location:', currentUserProfile.city, currentUserProfile.state);
+            console.log('Raw alerts data:', data?.length, 'alerts');
             filteredAlerts = (data || []).filter((alert: any) => {
-              if (!alert.profiles) return true;
-              return alert.profiles.city === currentUserProfile.city && 
-                     alert.profiles.state === currentUserProfile.state;
+              if (!alert.profiles) {
+                console.log('Alert without profile data:', alert.id);
+                return true; // Include alerts without profile data
+              }
+              // Check if the alert creator's location matches the user's location
+              const alertCity = alert.profiles.city;
+              const alertState = alert.profiles.state;
+              const matches = alertCity === currentUserProfile.city && 
+                     alertState === currentUserProfile.state;
+              console.log(`Alert ${alert.id} location check:`, 
+                         `Alert: (${alertCity}, ${alertState}) vs User: (${currentUserProfile.city}, ${currentUserProfile.state}) = ${matches}`);
+              return matches;
             });
+            console.log('Filtered alerts:', filteredAlerts.length, 'alerts');
+          } else {
+            console.log('No user location - showing all alerts:', data?.length);
           }
           
           // Compare with previous data using hash
