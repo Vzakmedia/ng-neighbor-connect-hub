@@ -69,6 +69,14 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     if (!user || !userLocation) return;
     
     try {
+      // Get dismissed alerts for this user
+      const { data: dismissedAlerts } = await supabase
+        .from('dismissed_alerts')
+        .select('alert_id')
+        .eq('user_id', user.id);
+      
+      const dismissedAlertIds = new Set(dismissedAlerts?.map(d => d.alert_id) || []);
+      
       // Query safety_alerts instead of public_emergency_alerts (which was removed)
       const { data: safetyAlerts, error } = await supabase
         .from('safety_alerts')
@@ -94,28 +102,31 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
         
       if (error) throw error;
       
-      // Filter alerts by distance (within 10km) and convert to expected format
-      const nearbyAlerts = (safetyAlerts || []).filter(alert => {
-        if (!alert.latitude || !alert.longitude) return false;
-        const distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          alert.latitude,
-          alert.longitude
-        );
-        return distance <= 10; // 10km radius
-      }).map(alert => ({
-        id: alert.id,
-        situation_type: alert.alert_type,
-        latitude: alert.latitude,
-        longitude: alert.longitude,
-        address: alert.address,
-        radius_km: 10, // Default radius
-        created_at: alert.created_at,
-        is_active: true,
-        user_id: alert.user_id,
-        profiles: alert.profiles
-      }));
+      // Filter alerts by distance (within 10km), exclude dismissed alerts, and convert to expected format
+      const nearbyAlerts = (safetyAlerts || [])
+        .filter(alert => {
+          if (!alert.latitude || !alert.longitude) return false;
+          if (dismissedAlertIds.has(alert.id)) return false; // Skip dismissed alerts
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            alert.latitude,
+            alert.longitude
+          );
+          return distance <= 10; // 10km radius
+        })
+        .map(alert => ({
+          id: alert.id,
+          situation_type: alert.alert_type,
+          latitude: alert.latitude,
+          longitude: alert.longitude,
+          address: alert.address,
+          radius_km: 10, // Default radius
+          created_at: alert.created_at,
+          is_active: true,
+          user_id: alert.user_id,
+          profiles: alert.profiles
+        }));
       
       setAlerts(nearbyAlerts);
     } catch (error) {
@@ -207,8 +218,25 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     return R * c; // Distance in kilometers
   };
 
-  const dismissAlert = (alertId: string) => {
-    setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  const dismissAlert = async (alertId: string) => {
+    if (!user) return;
+    
+    try {
+      // Store dismissal in database
+      await supabase
+        .from('dismissed_alerts')
+        .insert({
+          user_id: user.id,
+          alert_id: alertId
+        });
+      
+      // Remove from local state
+      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    } catch (error) {
+      console.error('Error dismissing alert:', error);
+      // Still remove from local state even if DB operation fails
+      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    }
   };
 
   const getDirections = (latitude: number, longitude: number) => {

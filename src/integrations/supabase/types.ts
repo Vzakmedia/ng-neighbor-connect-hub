@@ -1425,6 +1425,27 @@ export type Database = {
         }
         Relationships: []
       }
+      dismissed_alerts: {
+        Row: {
+          alert_id: string
+          dismissed_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          dismissed_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          dismissed_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       emergency_contact_requests: {
         Row: {
           created_at: string
