@@ -214,6 +214,21 @@ const Admin = () => {
         ...prev,
         googleMaps: mapsResponse.error ? 'error' : 'active'
       }));
+
+      // Check Stripe API
+      const stripeResponse = await supabase.functions.invoke('test-stripe-api');
+      setApiStatus(prev => ({
+        ...prev,
+        stripe: stripeResponse.error ? 'error' : 'active'
+      }));
+
+      // Check Mapbox API
+      const mapboxResponse = await supabase.functions.invoke('test-mapbox-api');
+      setApiStatus(prev => ({
+        ...prev,
+        mapbox: mapboxResponse.error ? 'error' : 'active'
+      }));
+
     } catch (error) {
       console.error('Error checking API status:', error);
     }
@@ -226,23 +241,76 @@ const Admin = () => {
         case 'googleMaps':
           const mapsResponse = await supabase.functions.invoke('get-google-maps-token');
           if (mapsResponse.error) throw new Error('Google Maps API test failed');
+          setApiStatus(prev => ({ ...prev, googleMaps: 'active' }));
           toast({
             title: "Google Maps API",
             description: "API is working correctly",
           });
           break;
         case 'stripe':
-          // Test Stripe connection
+          const stripeResponse = await supabase.functions.invoke('test-stripe-api');
+          if (stripeResponse.error) throw new Error('Stripe API test failed');
+          setApiStatus(prev => ({ ...prev, stripe: 'active' }));
           toast({
             title: "Stripe API",
-            description: "Stripe integration configured (test requires transaction)",
+            description: `Stripe connected: ${stripeResponse.data?.accountId}`,
           });
           break;
         case 'mapbox':
-          // Test Mapbox token
+          const mapboxResponse = await supabase.functions.invoke('test-mapbox-api');
+          if (mapboxResponse.error) throw new Error('Mapbox API test failed');
+          setApiStatus(prev => ({ ...prev, mapbox: 'active' }));
           toast({
             title: "Mapbox API", 
-            description: "Mapbox token is configured",
+            description: "Mapbox token is working correctly",
+          });
+          break;
+        case 'email':
+          const emailResponse = await supabase.functions.invoke('send-email-notification', {
+            body: {
+              to: user?.email || 'test@example.com',
+              subject: 'API Test Email',
+              body: 'This is a test email from the admin dashboard to verify email functionality.',
+              type: 'test',
+              userId: user?.id
+            }
+          });
+          if (emailResponse.error) throw new Error('Email API test failed');
+          setApiStatus(prev => ({ ...prev, email: 'active' }));
+          toast({
+            title: "Email Service",
+            description: "Test email sent successfully",
+          });
+          break;
+        case 'push':
+          const pushResponse = await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: user?.id,
+              title: 'API Test Notification',
+              message: 'This is a test push notification from the admin dashboard.',
+              type: 'test',
+              priority: 'normal'
+            }
+          });
+          if (pushResponse.error) throw new Error('Push notification test failed');
+          toast({
+            title: "Push Notifications",
+            description: "Test notification sent successfully",
+          });
+          break;
+        case 'webhook':
+          const webhookResponse = await supabase.functions.invoke('process-webhook', {
+            body: {
+              source: 'admin_test',
+              event: 'test_webhook',
+              data: { test: true, timestamp: new Date().toISOString() },
+              signature: 'test_signature'
+            }
+          });
+          if (webhookResponse.error) throw new Error('Webhook test failed');
+          toast({
+            title: "Webhook Processing",
+            description: "Test webhook processed successfully",
           });
           break;
         default:
@@ -253,6 +321,7 @@ const Admin = () => {
           });
       }
     } catch (error) {
+      console.error('API test error:', error);
       toast({
         title: "API Test Failed",
         description: error.message,
@@ -5954,6 +6023,16 @@ const Admin = () => {
                     />
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={testingApi === 'push'}
+                    onClick={() => testApiIntegration('push')}
+                  >
+                    {testingApi === 'push' ? 'Testing...' : 'Send Test Notification'}
+                  </Button>
+                </div>
               </div>
 
               {/* Email Service */}
@@ -5990,6 +6069,16 @@ const Admin = () => {
                       }
                     />
                   </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={testingApi === 'email'}
+                    onClick={() => testApiIntegration('email')}
+                  >
+                    {testingApi === 'email' ? 'Testing...' : 'Send Test Email'}
+                  </Button>
                 </div>
               </div>
 
@@ -6128,6 +6217,16 @@ const Admin = () => {
                       }
                     />
                   </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={testingApi === 'webhook'}
+                      onClick={() => testApiIntegration('webhook')}
+                    >
+                      {testingApi === 'webhook' ? 'Testing...' : 'Test Webhook'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -6145,12 +6244,16 @@ const Admin = () => {
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <span className="text-sm font-medium">Stripe</span>
-                    <Badge variant="default">Configured</Badge>
+                    <span className="text-sm font-medium">Mapbox</span>
+                    <Badge variant={apiStatus.mapbox === 'active' ? 'default' : 'destructive'}>
+                      {apiStatus.mapbox === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <span className="text-sm font-medium">Mapbox</span>
-                    <Badge variant="default">Configured</Badge>
+                    <span className="text-sm font-medium">Stripe</span>
+                    <Badge variant={apiStatus.stripe === 'active' ? 'default' : 'destructive'}>
+                      {apiStatus.stripe === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
