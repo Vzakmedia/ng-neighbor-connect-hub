@@ -13,6 +13,8 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AudioInitializer } from "@/components/AudioInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 import { OnboardingNotificationManager } from "@/components/OnboardingNotificationManager";
+import AppTutorial from "@/components/AppTutorial";
+import { useTutorial } from "@/hooks/useTutorial";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -63,6 +65,19 @@ const PushNotificationWrapper = () => {
   return null;
 };
 
+// Component that manages the tutorial system
+const TutorialWrapper = () => {
+  const { isOpen: tutorialOpen, closeTutorial, completeTutorial } = useTutorial();
+  
+  return (
+    <AppTutorial 
+      isOpen={tutorialOpen} 
+      onClose={closeTutorial} 
+      onComplete={completeTutorial} 
+    />
+  );
+};
+
 const App = () => {
   console.log("App component rendering, React:", React);
   // Push notifications are now handled by PushNotificationWrapper inside AuthProvider
@@ -83,6 +98,7 @@ const App = () => {
           <Sonner />
         <BrowserRouter>
           <OnboardingNotificationManager />
+          <TutorialWrapper />
           <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />

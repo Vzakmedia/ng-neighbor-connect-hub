@@ -79,13 +79,14 @@ const Navigation = () => {
   return (
     <>
       {/* Desktop Sidebar - Full width on desktop, icon-only on tablet */}
-      <aside className="hidden md:flex md:w-16 lg:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 bg-card border-r">
+      <aside className="hidden md:flex md:w-16 lg:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16 bg-card border-r" data-tutorial="navigation">
         <div className="flex-1 flex flex-col min-h-0 pt-4">
           {/* Create Post Button - hidden on tablet, full on desktop */}
           <div className="px-2 lg:px-4 mb-4">
             <Button 
               className="w-full bg-gradient-primary hover:opacity-90 transition-opacity lg:px-4 md:px-2"
               onClick={() => setCreatePostOpen(true)}
+              data-tutorial="create-post"
             >
               <Plus className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Create Post</span>

@@ -20,12 +20,14 @@ import {
   Volume2,
   Play,
   AlertTriangle,
-  Users
+  Users,
+  HelpCircle
 } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
 import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
+import { useTutorial } from '@/hooks/useTutorial';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +43,7 @@ import {
 const SettingsContent = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const { startTutorial, resetTutorial, hasCompletedTutorial } = useTutorial();
   
   // Notification Settings
   const [notificationSettings, setNotificationSettings] = useState({
@@ -564,6 +567,38 @@ const SettingsContent = () => {
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
                 </Button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  App Tutorial
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Take the app tour again to learn about features and navigation.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={startTutorial}
+                    className="w-full sm:w-auto"
+                  >
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Start Tutorial
+                  </Button>
+                  {hasCompletedTutorial && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={resetTutorial}
+                      className="w-full sm:w-auto text-muted-foreground"
+                      size="sm"
+                    >
+                      Reset Tutorial Progress
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <Separator />

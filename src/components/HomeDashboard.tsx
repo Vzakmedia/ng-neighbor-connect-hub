@@ -148,7 +148,7 @@ const HomeDashboard = () => {
                     
                   </div>
                 </CardHeader>
-                <CardContent className="px-3 sm:px-4 md:px-6">
+                <CardContent className="px-3 sm:px-4 md:px-6" data-tutorial="community-feed">
                   <CommunityFeed activeTab={activeTab} viewScope={viewScope} />
                 </CardContent>
               </Card>
@@ -253,7 +253,7 @@ const HomeDashboard = () => {
                     <span>Safety & Alerts</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-3 md:px-6">
+                <CardContent className="px-3 md:px-6" data-tutorial="safety-alerts">
                   {alertsLoading ? (
                     <div className="space-y-2">
                       {Array.from({ length: 2 }).map((_, index) => (

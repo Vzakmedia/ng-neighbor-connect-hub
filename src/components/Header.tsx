@@ -137,7 +137,7 @@ const Header = () => {
             
             <ThemeToggle />
             
-            <Button variant="ghost" size="icon" className="relative" onClick={handleMessagesClick}>
+            <Button variant="ghost" size="icon" className="relative" onClick={handleMessagesClick} data-tutorial="messages">
               <MessageCircle className="h-5 w-5" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
@@ -147,7 +147,7 @@ const Header = () => {
             </Button>
             
             <div className="relative">
-              <Button variant="ghost" size="icon" className="relative" onClick={() => setIsNotificationOpen(!isNotificationOpen)}>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => setIsNotificationOpen(!isNotificationOpen)} data-tutorial="notifications">
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-600">
@@ -282,7 +282,7 @@ const Header = () => {
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-tutorial="profile">
                     <OnlineAvatar
                       userId={user?.id}
                       src={profile?.avatar_url}
