@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -82,6 +82,10 @@ const Admin = () => {
     storage: 78,
     apiResponse: 180
   });
+
+  // Live monitoring intervals
+  const [monitoringActive, setMonitoringActive] = useState(false);
+  const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // State management, auth checks, data fetching functions
   const [loading, setLoading] = useState(true);
@@ -207,9 +211,11 @@ const Admin = () => {
 
   // API Integration handlers
   const checkApiStatus = async () => {
+    console.log('Checking API status...');
     try {
       // Check Google Maps API
       const mapsResponse = await supabase.functions.invoke('get-google-maps-token');
+      console.log('Google Maps response:', mapsResponse);
       setApiStatus(prev => ({
         ...prev,
         googleMaps: mapsResponse.error ? 'error' : 'active'
@@ -217,6 +223,7 @@ const Admin = () => {
 
       // Check Stripe API
       const stripeResponse = await supabase.functions.invoke('test-stripe-api');
+      console.log('Stripe response:', stripeResponse);
       setApiStatus(prev => ({
         ...prev,
         stripe: stripeResponse.error ? 'error' : 'active'
@@ -224,106 +231,186 @@ const Admin = () => {
 
       // Check Mapbox API
       const mapboxResponse = await supabase.functions.invoke('test-mapbox-api');
+      console.log('Mapbox response:', mapboxResponse);
       setApiStatus(prev => ({
         ...prev,
         mapbox: mapboxResponse.error ? 'error' : 'active'
       }));
 
+      console.log('API status check completed');
     } catch (error) {
       console.error('Error checking API status:', error);
     }
   };
 
+  // Start live monitoring
+  const startLiveMonitoring = () => {
+    console.log('Starting live API monitoring...');
+    setMonitoringActive(true);
+    
+    // Check APIs immediately
+    checkApiStatus();
+    
+    // Set up interval for continuous monitoring
+    const interval = setInterval(() => {
+      checkApiStatus();
+    }, 30000); // Check every 30 seconds
+
+    // Store interval ref for cleanup
+    monitoringIntervalRef.current = interval;
+  };
+
+  // Stop live monitoring
+  const stopLiveMonitoring = () => {
+    console.log('Stopping live API monitoring...');
+    setMonitoringActive(false);
+    
+    if (monitoringIntervalRef.current) {
+      clearInterval(monitoringIntervalRef.current);
+      monitoringIntervalRef.current = null;
+    }
+  };
+
   const testApiIntegration = async (apiType: string) => {
     setTestingApi(apiType);
+    console.log(`Testing ${apiType} API integration...`);
+    
     try {
       switch (apiType) {
         case 'googleMaps':
+          console.log('Invoking get-google-maps-token function...');
           const mapsResponse = await supabase.functions.invoke('get-google-maps-token');
-          if (mapsResponse.error) throw new Error('Google Maps API test failed');
+          console.log('Google Maps response:', mapsResponse);
+          
+          if (mapsResponse.error) {
+            throw new Error(`Google Maps API test failed: ${mapsResponse.error.message}`);
+          }
+          
           setApiStatus(prev => ({ ...prev, googleMaps: 'active' }));
           toast({
-            title: "Google Maps API",
-            description: "API is working correctly",
+            title: "Google Maps API ✅",
+            description: "API is working correctly and token is valid",
           });
           break;
+          
         case 'stripe':
+          console.log('Invoking test-stripe-api function...');
           const stripeResponse = await supabase.functions.invoke('test-stripe-api');
-          if (stripeResponse.error) throw new Error('Stripe API test failed');
+          console.log('Stripe response:', stripeResponse);
+          
+          if (stripeResponse.error) {
+            throw new Error(`Stripe API test failed: ${stripeResponse.error.message}`);
+          }
+          
           setApiStatus(prev => ({ ...prev, stripe: 'active' }));
+          const stripeData = stripeResponse.data;
           toast({
-            title: "Stripe API",
-            description: `Stripe connected: ${stripeResponse.data?.accountId}`,
+            title: "Stripe API ✅",
+            description: `Connected to account: ${stripeData?.accountId || 'Unknown'} (${stripeData?.country || 'N/A'})`,
           });
           break;
+          
         case 'mapbox':
+          console.log('Invoking test-mapbox-api function...');
           const mapboxResponse = await supabase.functions.invoke('test-mapbox-api');
-          if (mapboxResponse.error) throw new Error('Mapbox API test failed');
+          console.log('Mapbox response:', mapboxResponse);
+          
+          if (mapboxResponse.error) {
+            throw new Error(`Mapbox API test failed: ${mapboxResponse.error.message}`);
+          }
+          
           setApiStatus(prev => ({ ...prev, mapbox: 'active' }));
           toast({
-            title: "Mapbox API", 
-            description: "Mapbox token is working correctly",
+            title: "Mapbox API ✅", 
+            description: "Token is working correctly and maps are accessible",
           });
           break;
+          
         case 'email':
+          console.log('Testing email notification...');
           const emailResponse = await supabase.functions.invoke('send-email-notification', {
             body: {
-              to: user?.email || 'test@example.com',
-              subject: 'API Test Email',
-              body: 'This is a test email from the admin dashboard to verify email functionality.',
-              type: 'test',
+              to: user?.email || 'admin@example.com',
+              subject: '🔔 API Test Email from Admin Dashboard',
+              body: `This is a live test email sent at ${new Date().toLocaleString()} to verify email functionality is working correctly.`,
+              type: 'admin_test',
               userId: user?.id
             }
           });
-          if (emailResponse.error) throw new Error('Email API test failed');
+          console.log('Email response:', emailResponse);
+          
+          if (emailResponse.error) {
+            throw new Error(`Email test failed: ${emailResponse.error.message}`);
+          }
+          
           setApiStatus(prev => ({ ...prev, email: 'active' }));
           toast({
-            title: "Email Service",
-            description: "Test email sent successfully",
+            title: "Email Service ✅",
+            description: `Test email sent successfully to ${user?.email || 'admin@example.com'}`,
           });
           break;
+          
         case 'push':
+          console.log('Testing push notification...');
           const pushResponse = await supabase.functions.invoke('send-push-notification', {
             body: {
               userId: user?.id,
-              title: 'API Test Notification',
-              message: 'This is a test push notification from the admin dashboard.',
-              type: 'test',
+              title: '🔔 Admin Dashboard Test',
+              message: `Live push notification test sent at ${new Date().toLocaleString()}`,
+              type: 'admin_test',
               priority: 'normal'
             }
           });
-          if (pushResponse.error) throw new Error('Push notification test failed');
+          console.log('Push response:', pushResponse);
+          
+          if (pushResponse.error) {
+            throw new Error(`Push notification test failed: ${pushResponse.error.message}`);
+          }
+          
           toast({
-            title: "Push Notifications",
+            title: "Push Notifications ✅",
             description: "Test notification sent successfully",
           });
           break;
+          
         case 'webhook':
+          console.log('Testing webhook processing...');
           const webhookResponse = await supabase.functions.invoke('process-webhook', {
             body: {
-              source: 'admin_test',
-              event: 'test_webhook',
-              data: { test: true, timestamp: new Date().toISOString() },
-              signature: 'test_signature'
+              source: 'admin_dashboard',
+              event: 'live_test',
+              data: { 
+                test: true, 
+                timestamp: new Date().toISOString(),
+                adminUser: user?.id,
+                testType: 'api_integration_check'
+              },
+              signature: 'admin_test_signature'
             }
           });
-          if (webhookResponse.error) throw new Error('Webhook test failed');
+          console.log('Webhook response:', webhookResponse);
+          
+          if (webhookResponse.error) {
+            throw new Error(`Webhook test failed: ${webhookResponse.error.message}`);
+          }
+          
           toast({
-            title: "Webhook Processing",
+            title: "Webhook Processing ✅",
             description: "Test webhook processed successfully",
           });
           break;
+          
         default:
-          toast({
-            title: "API Test",
-            description: "API test not implemented yet",
-            variant: "destructive"
-          });
+          throw new Error(`API test not implemented for: ${apiType}`);
       }
+      
+      console.log(`${apiType} test completed successfully`);
+      
     } catch (error) {
-      console.error('API test error:', error);
+      console.error(`${apiType} API test error:`, error);
+      setApiStatus(prev => ({ ...prev, [apiType]: 'error' }));
       toast({
-        title: "API Test Failed",
+        title: `${apiType} API Test Failed ❌`,
         description: error.message,
         variant: "destructive"
       });
@@ -6232,9 +6319,34 @@ const Admin = () => {
 
               {/* API Status Overview */}
               <div className="border border-border rounded-lg p-4 space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium">API Status Overview</h3>
-                  <p className="text-sm text-muted-foreground">Real-time status of all configured APIs</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      API Status Overview
+                      {monitoringActive && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-green-600">Live</span>
+                        </div>
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {monitoringActive ? 'Real-time monitoring active - Updates every 30 seconds' : 'Real-time status of all configured APIs'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {monitoringActive ? (
+                      <Button variant="outline" size="sm" onClick={stopLiveMonitoring}>
+                        <Pause className="h-4 w-4 mr-2" />
+                        Stop Live Monitoring
+                      </Button>
+                    ) : (
+                      <Button variant="default" size="sm" onClick={startLiveMonitoring}>
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Live Monitoring
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
@@ -6257,9 +6369,13 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" onClick={checkApiStatus}>
+                  <Button 
+                    variant="outline" 
+                    onClick={checkApiStatus}
+                    disabled={monitoringActive}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
-                    Refresh Status
+                    {monitoringActive ? 'Auto-Refreshing...' : 'Manual Refresh'}
                   </Button>
                   <Button 
                     variant="outline" 
@@ -6270,21 +6386,35 @@ const Admin = () => {
                   </Button>
                   <Button variant="outline" onClick={() => {
                     const data = {
+                      timestamp: new Date().toISOString(),
+                      monitoringActive,
                       apiStatus,
-                      configurations: appConfigs.filter(config => config.config_key.includes('api_') || config.config_key.includes('_enabled')),
-                      exportedAt: new Date().toISOString()
+                      lastChecked: new Date().toLocaleString(),
+                      configurations: appConfigs.filter(config => 
+                        config.config_key.includes('api_') || 
+                        config.config_key.includes('_enabled') ||
+                        config.config_key.includes('google_') ||
+                        config.config_key.includes('stripe_') ||
+                        config.config_key.includes('mapbox_')
+                      ),
+                      systemHealth
                     };
                     const dataStr = JSON.stringify(data, null, 2);
                     const dataBlob = new Blob([dataStr], { type: 'application/json' });
                     const url = URL.createObjectURL(dataBlob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = 'api-status-report.json';
+                    link.download = `api-status-report-${new Date().getTime()}.json`;
                     link.click();
                     URL.revokeObjectURL(url);
+                    
+                    toast({
+                      title: "Report Exported",
+                      description: "Live API status report downloaded successfully",
+                    });
                   }}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export Report
+                    Export Live Report
                   </Button>
                 </div>
               </div>
