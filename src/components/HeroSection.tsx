@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +8,29 @@ import {
   ShoppingBag, 
   Calendar,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import communityHero from '@/assets/community-hero.jpg';
 import { useProfile } from '@/hooks/useProfile';
 
 const HeroSection = () => {
   const { profile, getLocation } = useProfile();
+  const [isVisible, setIsVisible] = useState(true);
   
+  useEffect(() => {
+    // Check if user has dismissed the hero before
+    const hasSeenHero = localStorage.getItem('hero-dismissed');
+    if (hasSeenHero === 'true') {
+      setIsVisible(false);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    localStorage.setItem('hero-dismissed', 'true');
+  };
+
   const getCommunityWelcome = () => {
     if (profile?.neighborhood) {
       return `Welcome to ${profile.neighborhood} Community`;
@@ -24,6 +40,10 @@ const HeroSection = () => {
     }
     return 'Welcome to Your Community';
   };
+
+  if (!isVisible) {
+    return null;
+  }
 
 
   return (
@@ -37,6 +57,17 @@ const HeroSection = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
         
+        {/* Close Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 z-10 h-8 w-8 text-white hover:bg-white/20 hover:text-white"
+          title="Dismiss welcome banner"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
         {/* Hero Content */}
         <div className="absolute inset-0 flex items-center py-12 sm:py-16 md:py-20">
           <div className="container px-6 sm:px-8 md:px-10 lg:px-12 xl:px-16">
