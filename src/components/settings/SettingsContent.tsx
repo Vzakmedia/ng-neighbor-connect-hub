@@ -582,7 +582,14 @@ const SettingsContent = () => {
                 <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
-                    onClick={startTutorial}
+                    onClick={() => {
+                      console.log('Start Tutorial button clicked');
+                      startTutorial();
+                      toast({
+                        title: "Tutorial Starting",
+                        description: "The app tutorial will begin shortly.",
+                      });
+                    }}
                     className="w-full sm:w-auto"
                   >
                     <HelpCircle className="h-4 w-4 mr-2" />
@@ -591,7 +598,10 @@ const SettingsContent = () => {
                   {hasCompletedTutorial && (
                     <Button 
                       variant="ghost" 
-                      onClick={resetTutorial}
+                      onClick={() => {
+                        console.log('Reset Tutorial button clicked');
+                        resetTutorial();
+                      }}
                       className="w-full sm:w-auto text-muted-foreground"
                       size="sm"
                     >
