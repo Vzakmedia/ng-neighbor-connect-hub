@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -1999,6 +1999,10 @@ const Admin = () => {
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
             Settings
+          </TabsTrigger>
+          <TabsTrigger value="api-integrations" className="w-full justify-start">
+            <Plug className="h-4 w-4 mr-2" />
+            API Integrations
           </TabsTrigger>
           <TabsTrigger value="analytics" className="w-full justify-start">
             <BarChart3 className="h-4 w-4 mr-2" />
@@ -5571,6 +5575,387 @@ const Admin = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="api-integrations" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Plug className="h-5 w-5" />
+                <span>API Integration Settings</span>
+              </CardTitle>
+              <CardDescription>Manage external API configurations and integrations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Google Maps API */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Google Maps API</h3>
+                    <p className="text-sm text-muted-foreground">Configure Google Maps integration for location services</p>
+                  </div>
+                  <Badge variant={getConfigValue('google_maps_enabled', false) ? 'default' : 'secondary'}>
+                    {getConfigValue('google_maps_enabled', false) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="google-maps-enabled">Enable Google Maps</Label>
+                    <Switch
+                      id="google-maps-enabled"
+                      checked={getConfigValue('google_maps_enabled', false)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('google_maps_enabled', checked, 'Enable/disable Google Maps integration')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maps-default-zoom">Default Zoom Level</Label>
+                    <Input
+                      id="maps-default-zoom"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={getConfigValue('maps_default_zoom', 12)}
+                      onChange={(e) => 
+                        handleConfigUpdate('maps_default_zoom', parseInt(e.target.value), 'Default zoom level for maps')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Stripe Payment API */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Stripe Payment Gateway</h3>
+                    <p className="text-sm text-muted-foreground">Configure payment processing for marketplace and services</p>
+                  </div>
+                  <Badge variant={getConfigValue('stripe_enabled', false) ? 'default' : 'secondary'}>
+                    {getConfigValue('stripe_enabled', false) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stripe-enabled">Enable Stripe Payments</Label>
+                    <Switch
+                      id="stripe-enabled"
+                      checked={getConfigValue('stripe_enabled', false)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('stripe_enabled', checked, 'Enable/disable Stripe payment processing')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stripe-currency">Default Currency</Label>
+                    <Select 
+                      value={getConfigValue('stripe_currency', 'NGN')}
+                      onValueChange={(value) => 
+                        handleConfigUpdate('stripe_currency', value, 'Default currency for payments')
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NGN">Nigerian Naira (NGN)</SelectItem>
+                        <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                        <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SMS/Messaging API */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">SMS & Messaging API</h3>
+                    <p className="text-sm text-muted-foreground">Configure SMS notifications and emergency alerts</p>
+                  </div>
+                  <Badge variant={getConfigValue('sms_enabled', false) ? 'default' : 'secondary'}>
+                    {getConfigValue('sms_enabled', false) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sms-enabled">Enable SMS Notifications</Label>
+                    <Switch
+                      id="sms-enabled"
+                      checked={getConfigValue('sms_enabled', false)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('sms_enabled', checked, 'Enable/disable SMS notifications')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sms-provider">SMS Provider</Label>
+                    <Select 
+                      value={getConfigValue('sms_provider', 'twilio')}
+                      onValueChange={(value) => 
+                        handleConfigUpdate('sms_provider', value, 'SMS service provider')
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="twilio">Twilio</SelectItem>
+                        <SelectItem value="nexmo">Vonage (Nexmo)</SelectItem>
+                        <SelectItem value="messagebird">MessageBird</SelectItem>
+                        <SelectItem value="africanstalking">African's Talking</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Push Notifications */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Push Notifications</h3>
+                    <p className="text-sm text-muted-foreground">Configure browser and mobile push notifications</p>
+                  </div>
+                  <Badge variant={getConfigValue('push_notifications_enabled', true) ? 'default' : 'secondary'}>
+                    {getConfigValue('push_notifications_enabled', true) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="push-enabled">Enable Push Notifications</Label>
+                    <Switch
+                      id="push-enabled"
+                      checked={getConfigValue('push_notifications_enabled', true)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('push_notifications_enabled', checked, 'Enable/disable push notifications')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency-push">Emergency Push Priority</Label>
+                    <Switch
+                      id="emergency-push"
+                      checked={getConfigValue('emergency_push_priority', true)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('emergency_push_priority', checked, 'High priority for emergency notifications')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Email Service */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Email Service</h3>
+                    <p className="text-sm text-muted-foreground">Configure email notifications and transactional emails</p>
+                  </div>
+                  <Badge variant={getConfigValue('email_enabled', true) ? 'default' : 'secondary'}>
+                    {getConfigValue('email_enabled', true) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email-enabled">Enable Email Notifications</Label>
+                    <Switch
+                      id="email-enabled"
+                      checked={getConfigValue('email_enabled', true)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('email_enabled', checked, 'Enable/disable email notifications')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email-from">From Email Address</Label>
+                    <Input
+                      id="email-from"
+                      type="email"
+                      placeholder="noreply@yourapp.com"
+                      value={getConfigValue('email_from_address', '')}
+                      onChange={(e) => 
+                        handleConfigUpdate('email_from_address', e.target.value, 'Default from email address')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* File Storage */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">File Storage & CDN</h3>
+                    <p className="text-sm text-muted-foreground">Configure file upload and storage settings</p>
+                  </div>
+                  <Badge variant="default">Supabase Storage</Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="max-file-size">Max File Size (MB)</Label>
+                    <Input
+                      id="max-file-size"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={getConfigValue('max_file_size_mb', 10)}
+                      onChange={(e) => 
+                        handleConfigUpdate('max_file_size_mb', parseInt(e.target.value), 'Maximum file upload size in MB')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="allowed-formats">Allowed File Formats</Label>
+                    <Input
+                      id="allowed-formats"
+                      placeholder="jpg,png,gif,pdf,doc"
+                      value={getConfigValue('allowed_file_formats', 'jpg,jpeg,png,gif,pdf,doc,docx')}
+                      onChange={(e) => 
+                        handleConfigUpdate('allowed_file_formats', e.target.value, 'Comma-separated list of allowed file extensions')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Rate Limiting */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">API Rate Limiting</h3>
+                    <p className="text-sm text-muted-foreground">Configure API request limits and throttling</p>
+                  </div>
+                  <Badge variant={getConfigValue('rate_limiting_enabled', true) ? 'default' : 'secondary'}>
+                    {getConfigValue('rate_limiting_enabled', true) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rate-limit-enabled">Enable Rate Limiting</Label>
+                    <Switch
+                      id="rate-limit-enabled"
+                      checked={getConfigValue('rate_limiting_enabled', true)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('rate_limiting_enabled', checked, 'Enable/disable API rate limiting')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="requests-per-minute">Requests per Minute</Label>
+                    <Input
+                      id="requests-per-minute"
+                      type="number"
+                      min="10"
+                      max="1000"
+                      value={getConfigValue('requests_per_minute', 100)}
+                      onChange={(e) => 
+                        handleConfigUpdate('requests_per_minute', parseInt(e.target.value), 'Maximum API requests per minute per user')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergency-rate-limit">Emergency API Limit</Label>
+                    <Input
+                      id="emergency-rate-limit"
+                      type="number"
+                      min="50"
+                      max="500"
+                      value={getConfigValue('emergency_api_limit', 200)}
+                      onChange={(e) => 
+                        handleConfigUpdate('emergency_api_limit', parseInt(e.target.value), 'Higher rate limit for emergency services')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Webhook Configuration */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Webhook Configuration</h3>
+                    <p className="text-sm text-muted-foreground">Configure webhooks for external integrations</p>
+                  </div>
+                  <Badge variant={getConfigValue('webhooks_enabled', false) ? 'default' : 'secondary'}>
+                    {getConfigValue('webhooks_enabled', false) ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="webhooks-enabled">Enable Webhooks</Label>
+                    <Switch
+                      id="webhooks-enabled"
+                      checked={getConfigValue('webhooks_enabled', false)}
+                      onCheckedChange={(checked) => 
+                        handleConfigUpdate('webhooks_enabled', checked, 'Enable/disable webhook functionality')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="webhook-secret">Webhook Secret Key</Label>
+                    <Input
+                      id="webhook-secret"
+                      type="password"
+                      placeholder="Enter webhook secret"
+                      value={getConfigValue('webhook_secret', '')}
+                      onChange={(e) => 
+                        handleConfigUpdate('webhook_secret', e.target.value, 'Secret key for webhook verification')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="webhook-timeout">Webhook Timeout (seconds)</Label>
+                    <Input
+                      id="webhook-timeout"
+                      type="number"
+                      min="5"
+                      max="60"
+                      value={getConfigValue('webhook_timeout', 30)}
+                      onChange={(e) => 
+                        handleConfigUpdate('webhook_timeout', parseInt(e.target.value), 'Webhook request timeout in seconds')
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* API Documentation */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium">API Documentation & Testing</h3>
+                  <p className="text-sm text-muted-foreground">Access API documentation and testing tools</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button variant="outline" onClick={() => window.open('/api/docs', '_blank')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    View API Docs
+                  </Button>
+                  <Button variant="outline" onClick={() => window.open('/api/test', '_blank')}>
+                    <Play className="h-4 w-4 mr-2" />
+                    API Testing Tool
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    const data = appConfigs.filter(config => config.config_type === 'api_settings');
+                    const dataStr = JSON.stringify(data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'api-configuration.json';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Config
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         </div>
       </Tabs>
