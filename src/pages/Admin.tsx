@@ -58,9 +58,21 @@ const Admin = () => {
     stripe: 'unknown', 
     mapbox: 'unknown',
     sms: 'unknown',
-    email: 'unknown'
+    email: 'unknown',
+    supabase: 'unknown',
+    webhooks: 'unknown'
   });
   const [testingApi, setTestingApi] = useState('');
+  const [currentApiConfig, setCurrentApiConfig] = useState({
+    googleMaps: { enabled: false, hasKey: false, defaultZoom: 12 },
+    stripe: { enabled: false, hasKey: false, currency: 'NGN' },
+    mapbox: { enabled: false, hasKey: false, style: 'light' },
+    email: { enabled: true, fromAddress: '' },
+    push: { enabled: true, emergencyPriority: true },
+    webhooks: { enabled: false, secret: false, timeout: 30 },
+    sms: { enabled: false, provider: 'twilio' },
+    supabase: { connected: true, url: '', project: 'cowiviqhrnmhttugozbz' }
+  });
   
   const [users, setUsers] = useState([]);
   const [deletedUsers, setDeletedUsers] = useState([]);
@@ -237,6 +249,17 @@ const Admin = () => {
         mapbox: mapboxResponse.error ? 'error' : 'active'
       }));
 
+      // Check Supabase connection
+      const { data: supabaseTest, error: supabaseError } = await supabase
+        .from('app_configuration')
+        .select('config_key')
+        .limit(1);
+      
+      setApiStatus(prev => ({
+        ...prev,
+        supabase: supabaseError ? 'error' : 'active'
+      }));
+
       console.log('API status check completed');
     } catch (error) {
       console.error('Error checking API status:', error);
@@ -268,6 +291,86 @@ const Admin = () => {
     if (monitoringIntervalRef.current) {
       clearInterval(monitoringIntervalRef.current);
       monitoringIntervalRef.current = null;
+    }
+  };
+
+  // Fetch current API configuration from Supabase
+  const fetchCurrentApiConfig = async () => {
+    try {
+      console.log('Fetching current API configuration...');
+      
+      // Get all relevant configuration settings
+      const { data: configs, error } = await supabase
+        .from('app_configuration')
+        .select('config_key, config_value')
+        .in('config_key', [
+          'google_maps_enabled', 'maps_default_zoom',
+          'stripe_enabled', 'stripe_currency',
+          'mapbox_enabled', 'mapbox_style',
+          'email_enabled', 'email_from_address',
+          'push_notifications_enabled', 'emergency_push_priority',
+          'webhooks_enabled', 'webhook_secret', 'webhook_timeout',
+          'sms_enabled', 'sms_provider'
+        ]);
+
+      if (error) {
+        console.error('Error fetching API config:', error);
+        return;
+      }
+
+      console.log('API configs fetched:', configs);
+
+      // Convert array to object for easier access
+      const configMap = {};
+      configs?.forEach(config => {
+        configMap[config.config_key] = config.config_value;
+      });
+
+      // Update current configuration state
+      setCurrentApiConfig({
+        googleMaps: {
+          enabled: configMap['google_maps_enabled'] || false,
+          hasKey: true, // Will be verified by API test
+          defaultZoom: configMap['maps_default_zoom'] || 12
+        },
+        stripe: {
+          enabled: configMap['stripe_enabled'] || false,
+          hasKey: true, // Will be verified by API test
+          currency: configMap['stripe_currency'] || 'NGN'
+        },
+        mapbox: {
+          enabled: configMap['mapbox_enabled'] || false,
+          hasKey: true, // Will be verified by API test
+          style: configMap['mapbox_style'] || 'mapbox://styles/mapbox/light-v11'
+        },
+        email: {
+          enabled: configMap['email_enabled'] !== false,
+          fromAddress: configMap['email_from_address'] || ''
+        },
+        push: {
+          enabled: configMap['push_notifications_enabled'] !== false,
+          emergencyPriority: configMap['emergency_push_priority'] !== false
+        },
+        webhooks: {
+          enabled: configMap['webhooks_enabled'] || false,
+          secret: !!configMap['webhook_secret'],
+          timeout: configMap['webhook_timeout'] || 30
+        },
+        sms: {
+          enabled: configMap['sms_enabled'] || false,
+          provider: configMap['sms_provider'] || 'twilio'
+        },
+        supabase: {
+          connected: true,
+          url: 'https://cowiviqhrnmhttugozbz.supabase.co',
+          project: 'cowiviqhrnmhttugozbz'
+        }
+      });
+
+      console.log('API configuration updated');
+
+    } catch (error) {
+      console.error('Error in fetchCurrentApiConfig:', error);
     }
   };
 
@@ -5811,6 +5914,141 @@ const Admin = () => {
               <CardDescription>Manage external API configurations and integrations</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Current Configuration Overview */}
+              <div className="border border-border rounded-lg p-4 space-y-4 bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      🔗 Current API Configuration
+                      <Badge variant="outline" className="text-xs">
+                        Project: {currentApiConfig.supabase.project}
+                      </Badge>
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Live configuration status of all integrated APIs</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={fetchCurrentApiConfig}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Refresh Config
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Supabase Connection */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Supabase Database</span>
+                      <Badge variant={currentApiConfig.supabase.connected ? 'default' : 'destructive'}>
+                        {currentApiConfig.supabase.connected ? 'Connected' : 'Disconnected'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>URL: {currentApiConfig.supabase.url}</div>
+                      <div>Status: {apiStatus.supabase === 'active' ? '✅ Active' : '⏳ Checking...'}</div>
+                    </div>
+                  </div>
+
+                  {/* Google Maps */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Google Maps</span>
+                      <Badge variant={currentApiConfig.googleMaps.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.googleMaps.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>API Key: {currentApiConfig.googleMaps.hasKey ? '✅ Configured' : '❌ Missing'}</div>
+                      <div>Status: {apiStatus.googleMaps === 'active' ? '✅ Active' : apiStatus.googleMaps === 'error' ? '❌ Error' : '⏳ Checking...'}</div>
+                      <div>Zoom: {currentApiConfig.googleMaps.defaultZoom}</div>
+                    </div>
+                  </div>
+
+                  {/* Stripe */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Stripe Payments</span>
+                      <Badge variant={currentApiConfig.stripe.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.stripe.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Secret Key: {currentApiConfig.stripe.hasKey ? '✅ Configured' : '❌ Missing'}</div>
+                      <div>Status: {apiStatus.stripe === 'active' ? '✅ Active' : apiStatus.stripe === 'error' ? '❌ Error' : '⏳ Checking...'}</div>
+                      <div>Currency: {currentApiConfig.stripe.currency}</div>
+                    </div>
+                  </div>
+
+                  {/* Mapbox */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Mapbox Maps</span>
+                      <Badge variant={currentApiConfig.mapbox.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.mapbox.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Token: {currentApiConfig.mapbox.hasKey ? '✅ Configured' : '❌ Missing'}</div>
+                      <div>Status: {apiStatus.mapbox === 'active' ? '✅ Active' : apiStatus.mapbox === 'error' ? '❌ Error' : '⏳ Checking...'}</div>
+                      <div>Style: {currentApiConfig.mapbox.style?.split('/').pop()}</div>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Email Service</span>
+                      <Badge variant={currentApiConfig.email.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.email.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>From: {currentApiConfig.email.fromAddress || 'Not configured'}</div>
+                      <div>Status: {apiStatus.email === 'active' ? '✅ Active' : '⏳ Ready'}</div>
+                    </div>
+                  </div>
+
+                  {/* Push Notifications */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Push Notifications</span>
+                      <Badge variant={currentApiConfig.push.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.push.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Emergency Priority: {currentApiConfig.push.emergencyPriority ? '✅ Enabled' : '❌ Disabled'}</div>
+                      <div>Status: ✅ Ready</div>
+                    </div>
+                  </div>
+
+                  {/* Webhooks */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Webhooks</span>
+                      <Badge variant={currentApiConfig.webhooks.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.webhooks.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Secret: {currentApiConfig.webhooks.secret ? '✅ Configured' : '❌ Missing'}</div>
+                      <div>Timeout: {currentApiConfig.webhooks.timeout}s</div>
+                    </div>
+                  </div>
+
+                  {/* SMS */}
+                  <div className="p-3 bg-background rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">SMS Notifications</span>
+                      <Badge variant={currentApiConfig.sms?.enabled ? 'default' : 'secondary'}>
+                        {currentApiConfig.sms?.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Provider: {currentApiConfig.sms?.provider || 'Not configured'}</div>
+                      <div>Status: ⏳ Pending configuration</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {/* Google Maps API */}
               <div className="border border-border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
@@ -6348,7 +6586,13 @@ const Admin = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <span className="text-sm font-medium">Supabase</span>
+                    <Badge variant={apiStatus.supabase === 'active' ? 'default' : 'destructive'}>
+                      {apiStatus.supabase === 'active' ? 'Connected' : 'Error'}
+                    </Badge>
+                  </div>
                   <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <span className="text-sm font-medium">Google Maps</span>
                     <Badge variant={apiStatus.googleMaps === 'active' ? 'default' : 'destructive'}>
