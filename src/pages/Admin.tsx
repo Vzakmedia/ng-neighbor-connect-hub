@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity, Search, Filter } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -114,12 +114,20 @@ const Admin = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [adminCheckComplete, setAdminCheckComplete] = useState(false);
   
-  // Filter states
+  // Filter states for emergency alerts
   const [alertTypeFilter, setAlertTypeFilter] = useState('all');
   const [alertStatusFilter, setAlertStatusFilter] = useState('all');
+  const [alertSearchQuery, setAlertSearchQuery] = useState('');
+  
+  // Filter states for marketplace
   const [marketplaceSearchQuery, setMarketplaceSearchQuery] = useState('');
   const [marketplaceCategoryFilter, setMarketplaceCategoryFilter] = useState('all');
   const [marketplaceStatusFilter, setMarketplaceStatusFilter] = useState('all');
+  
+  // Filter states for promotions
+  const [promotionsSearchQuery, setPromotionsSearchQuery] = useState('');
+  const [promotionsStatusFilter, setPromotionsStatusFilter] = useState('all');
+  const [promotionsTypeFilter, setPromotionsTypeFilter] = useState('all');
   
   // User grouping states
   const [groupedUsers, setGroupedUsers] = useState({});
@@ -4127,6 +4135,15 @@ const Admin = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
+                    <div className="relative">
+                      <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+                      <Input
+                        placeholder="Search alerts..."
+                        value={alertSearchQuery}
+                        onChange={(e) => setAlertSearchQuery(e.target.value)}
+                        className="pl-9 w-64"
+                      />
+                    </div>
                     <Select value={alertTypeFilter} onValueChange={setAlertTypeFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Alert Type" />
@@ -4172,10 +4189,16 @@ const Admin = () => {
                   </TableHeader>
                   <TableBody>
                     {emergencyAlerts
-                      .filter(alert => 
-                        (alertTypeFilter === 'all' || alert.alert_type === alertTypeFilter) &&
-                        (alertStatusFilter === 'all' || alert.status === alertStatusFilter)
-                      )
+                      .filter(alert => {
+                        const matchesSearch = !alertSearchQuery || 
+                          alert.title?.toLowerCase().includes(alertSearchQuery.toLowerCase()) ||
+                          alert.description?.toLowerCase().includes(alertSearchQuery.toLowerCase()) ||
+                          alert.profiles?.full_name?.toLowerCase().includes(alertSearchQuery.toLowerCase()) ||
+                          formatLocation(alert).toLowerCase().includes(alertSearchQuery.toLowerCase());
+                        const matchesType = alertTypeFilter === 'all' || alert.alert_type === alertTypeFilter;
+                        const matchesStatus = alertStatusFilter === 'all' || alert.status === alertStatusFilter;
+                        return matchesSearch && matchesType && matchesStatus;
+                      })
                       .map((alert) => (
                       <TableRow key={alert.id}>
                         <TableCell className="font-medium">{alert.title || alert.description || 'Safety Alert'}</TableCell>
@@ -4503,7 +4526,16 @@ const Admin = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Select>
+                    <div className="relative">
+                      <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+                      <Input
+                        placeholder="Search promotions..."
+                        value={promotionsSearchQuery}
+                        onChange={(e) => setPromotionsSearchQuery(e.target.value)}
+                        className="pl-9 w-64"
+                      />
+                    </div>
+                    <Select value={promotionsTypeFilter} onValueChange={setPromotionsTypeFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
@@ -4515,7 +4547,7 @@ const Admin = () => {
                         <SelectItem value="highlight">Highlight</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select>
+                    <Select value={promotionsStatusFilter} onValueChange={setPromotionsStatusFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
@@ -4543,7 +4575,16 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {promotions.map((promotion) => (
+                    {promotions
+                      .filter(promotion => {
+                        const matchesSearch = !promotionsSearchQuery || 
+                          promotion.content_title?.toLowerCase().includes(promotionsSearchQuery.toLowerCase()) ||
+                          promotion.advertiser_name?.toLowerCase().includes(promotionsSearchQuery.toLowerCase());
+                        const matchesType = promotionsTypeFilter === 'all' || promotion.promotion_type === promotionsTypeFilter;
+                        const matchesStatus = promotionsStatusFilter === 'all' || promotion.status === promotionsStatusFilter;
+                        return matchesSearch && matchesType && matchesStatus;
+                      })
+                      .map((promotion) => (
                       <TableRow key={promotion.id}>
                         <TableCell className="font-medium">{promotion.content_title}</TableCell>
                         <TableCell>{promotion.advertiser_name}</TableCell>

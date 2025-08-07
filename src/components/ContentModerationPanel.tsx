@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, CheckCircle, XCircle, Clock, Eye, User, MapPin, Calendar } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Eye, User, MapPin, Calendar, Search, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PendingService {
   id: string;
@@ -51,10 +53,18 @@ export default function ContentModerationPanel() {
   const { user } = useAuth();
   const [pendingServices, setPendingServices] = useState<PendingService[]>([]);
   const [pendingItems, setPendingItems] = useState<PendingMarketplaceItem[]>([]);
+  const [filteredServices, setFilteredServices] = useState<PendingService[]>([]);
+  const [filteredItems, setFilteredItems] = useState<PendingMarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'service' | 'item'>('service');
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
 
   useEffect(() => {
     if (user) {
@@ -114,6 +124,8 @@ export default function ContentModerationPanel() {
 
       setPendingServices(servicesWithProfiles);
       setPendingItems(itemsWithProfiles);
+      setFilteredServices(servicesWithProfiles);
+      setFilteredItems(itemsWithProfiles);
     } catch (error) {
       console.error('Error fetching pending content:', error);
       toast({
@@ -426,13 +438,64 @@ export default function ContentModerationPanel() {
         </div>
         <div className="flex gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{pendingServices.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{filteredServices.length}/{pendingServices.length}</div>
             <div className="text-sm text-muted-foreground">Pending Services</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{pendingItems.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{filteredItems.length}/{pendingItems.length}</div>
             <div className="text-sm text-muted-foreground">Pending Items</div>
           </div>
+        </div>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Filter className="h-4 w-4" />
+          Filters
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+            <Input
+              placeholder="Search content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="cleaning">Cleaning</SelectItem>
+              <SelectItem value="repairs">Repairs</SelectItem>
+              <SelectItem value="beauty">Beauty</SelectItem>
+              <SelectItem value="tutoring">Tutoring</SelectItem>
+              <SelectItem value="electronics">Electronics</SelectItem>
+              <SelectItem value="furniture">Furniture</SelectItem>
+              <SelectItem value="clothing">Clothing</SelectItem>
+              <SelectItem value="books">Books</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Filter by location..."
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+          />
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Date range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -440,16 +503,16 @@ export default function ContentModerationPanel() {
         <TabsList>
           <TabsTrigger value="services" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
-            Services ({pendingServices.length})
+            Services ({filteredServices.length})
           </TabsTrigger>
           <TabsTrigger value="items" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
-            Marketplace Items ({pendingItems.length})
+            Marketplace Items ({filteredItems.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="services" className="space-y-4">
-          {pendingServices.length === 0 ? (
+          {filteredServices.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
@@ -461,13 +524,13 @@ export default function ContentModerationPanel() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {pendingServices.map(renderServiceCard)}
+              {filteredServices.map(renderServiceCard)}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="items" className="space-y-4">
-          {pendingItems.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
@@ -479,7 +542,7 @@ export default function ContentModerationPanel() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {pendingItems.map(renderItemCard)}
+              {filteredItems.map(renderItemCard)}
             </div>
           )}
         </TabsContent>

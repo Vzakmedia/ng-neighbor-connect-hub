@@ -15,8 +15,12 @@ import {
   Eye, 
   Star,
   MessageCircle,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  Filter
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatTimeAgo } from '@/lib/utils';
 import {
   AlertDialog,
@@ -64,8 +68,16 @@ const AdminModerationPanel = () => {
   const { toast } = useToast();
   const [reports, setReports] = useState<Report[]>([]);
   const [flaggedContent, setFlaggedContent] = useState<FlaggedContent[]>([]);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [filteredFlaggedContent, setFilteredFlaggedContent] = useState<FlaggedContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('reports');
+  
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [contentTypeFilter, setContentTypeFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
   const fetchReports = async () => {
     try {
@@ -93,6 +105,7 @@ const AdminModerationPanel = () => {
       }));
 
       setReports(reportsWithProfiles);
+      setFilteredReports(reportsWithProfiles);
     } catch (error) {
       console.error('Error fetching reports:', error);
       toast({
@@ -185,9 +198,11 @@ const AdminModerationPanel = () => {
         }))
       ];
 
-      setFlaggedContent(allFlaggedContent.sort((a, b) => 
+      const sortedContent = allFlaggedContent.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ));
+      );
+      setFlaggedContent(sortedContent);
+      setFilteredFlaggedContent(sortedContent);
     } catch (error) {
       console.error('Error fetching flagged content:', error);
       toast({
@@ -207,6 +222,65 @@ const AdminModerationPanel = () => {
 
     loadData();
   }, []);
+
+  // Filter effects
+  useEffect(() => {
+    const filtered = reports.filter(report => {
+      const matchesSearch = !searchQuery || 
+        report.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.reporter_profile.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
+      const matchesContentType = contentTypeFilter === 'all' || report.content_type === contentTypeFilter;
+      
+      const matchesDate = dateFilter === 'all' || (() => {
+        const reportDate = new Date(report.created_at);
+        const now = new Date();
+        switch (dateFilter) {
+          case 'today':
+            return reportDate.toDateString() === now.toDateString();
+          case 'week':
+            return now.getTime() - reportDate.getTime() <= 7 * 24 * 60 * 60 * 1000;
+          case 'month':
+            return now.getTime() - reportDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
+          default:
+            return true;
+        }
+      })();
+      
+      return matchesSearch && matchesStatus && matchesContentType && matchesDate;
+    });
+    setFilteredReports(filtered);
+  }, [reports, searchQuery, statusFilter, contentTypeFilter, dateFilter]);
+
+  useEffect(() => {
+    const filtered = flaggedContent.filter(content => {
+      const matchesSearch = !searchQuery || 
+        content.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        content.author_profile.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesContentType = contentTypeFilter === 'all' || content.type === contentTypeFilter;
+      
+      const matchesDate = dateFilter === 'all' || (() => {
+        const contentDate = new Date(content.created_at);
+        const now = new Date();
+        switch (dateFilter) {
+          case 'today':
+            return contentDate.toDateString() === now.toDateString();
+          case 'week':
+            return now.getTime() - contentDate.getTime() <= 7 * 24 * 60 * 60 * 1000;
+          case 'month':
+            return now.getTime() - contentDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
+          default:
+            return true;
+        }
+      })();
+      
+      return matchesSearch && matchesContentType && matchesDate;
+    });
+    setFilteredFlaggedContent(filtered);
+  }, [flaggedContent, searchQuery, contentTypeFilter, dateFilter]);
 
   const handleReportAction = async (reportId: string, action: 'reviewed' | 'resolved' | 'dismissed') => {
     try {
@@ -334,25 +408,79 @@ const AdminModerationPanel = () => {
         <h2 className="text-2xl font-bold">Content Moderation</h2>
       </div>
 
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Filter className="h-4 w-4" />
+          Filters
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+            <Input
+              placeholder="Search reports..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+              <SelectItem value="dismissed">Dismissed</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={contentTypeFilter} onValueChange={setContentTypeFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Content Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="service_review">Service Review</SelectItem>
+              <SelectItem value="marketplace_review">Marketplace Review</SelectItem>
+              <SelectItem value="service_comment">Service Comment</SelectItem>
+              <SelectItem value="marketplace_comment">Marketplace Comment</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Date range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="reports">
-            Reports ({reports.filter(r => r.status === 'pending').length})
+            Reports ({filteredReports.filter(r => r.status === 'pending').length})
           </TabsTrigger>
           <TabsTrigger value="flagged">
-            Flagged Content ({flaggedContent.length})
+            Flagged Content ({filteredFlaggedContent.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="reports" className="space-y-4 mt-6">
-          {reports.length === 0 ? (
+          {filteredReports.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <p className="text-muted-foreground">No reports to review</p>
               </CardContent>
             </Card>
           ) : (
-            reports.map((report) => (
+            filteredReports.map((report) => (
               <Card key={report.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -429,14 +557,14 @@ const AdminModerationPanel = () => {
         </TabsContent>
 
         <TabsContent value="flagged" className="space-y-4 mt-6">
-          {flaggedContent.length === 0 ? (
+          {filteredFlaggedContent.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <p className="text-muted-foreground">No flagged content to review</p>
               </CardContent>
             </Card>
           ) : (
-            flaggedContent.map((content) => (
+            filteredFlaggedContent.map((content) => (
               <Card key={`${content.type}-${content.id}`} className="border-destructive/20">
                 <CardHeader>
                   <div className="flex items-start justify-between">
