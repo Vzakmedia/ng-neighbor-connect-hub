@@ -28,7 +28,7 @@ export const useEmergencyAlerts = () => {
   const alertsHashRef = useRef<string>('');
   const panicAlertsHashRef = useRef<string>('');
   const lastFetchTimeRef = useRef<number>(0);
-  const profileCacheRef = useRef<{city: string; state: string; phone: string} | null>(null);
+  const profileCacheRef = useRef<{neighborhood: string; phone: string} | null>(null);
   
   // Debounce mechanism
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
@@ -58,7 +58,7 @@ export const useEmergencyAlerts = () => {
           if (!currentUserProfile) {
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
-              .select('city, state, phone')
+              .select('neighborhood, phone')
               .eq('user_id', user.id)
               .single();
 
@@ -74,7 +74,7 @@ export const useEmergencyAlerts = () => {
             .from('safety_alerts')
             .select(`
               *,
-              profiles (full_name, avatar_url, city, state)
+              profiles (full_name, avatar_url, neighborhood)
             `)
             .order('created_at', { ascending: false })
             .limit(50);
@@ -115,28 +115,26 @@ export const useEmergencyAlerts = () => {
             return;
           }
 
-          // Filter alerts by user's city and state if profile is available
+          // Filter alerts by user's neighborhood if profile is available
           let filteredAlerts = data || [];
-          if (currentUserProfile?.city && currentUserProfile?.state) {
-            console.log('Filtering alerts by location:', currentUserProfile.city, currentUserProfile.state);
+          if (currentUserProfile?.neighborhood) {
+            console.log('Filtering alerts by neighborhood:', currentUserProfile.neighborhood);
             console.log('Raw alerts data:', data?.length, 'alerts');
             filteredAlerts = (data || []).filter((alert: any) => {
               if (!alert.profiles) {
                 console.log('Alert without profile data:', alert.id);
                 return true; // Include alerts without profile data
               }
-              // Check if the alert creator's location matches the user's location
-              const alertCity = alert.profiles.city;
-              const alertState = alert.profiles.state;
-              const matches = alertCity === currentUserProfile.city && 
-                     alertState === currentUserProfile.state;
-              console.log(`Alert ${alert.id} location check:`, 
-                         `Alert: (${alertCity}, ${alertState}) vs User: (${currentUserProfile.city}, ${currentUserProfile.state}) = ${matches}`);
+              // Check if the alert creator's neighborhood matches the user's neighborhood
+              const alertNeighborhood = alert.profiles.neighborhood;
+              const matches = alertNeighborhood === currentUserProfile.neighborhood;
+              console.log(`Alert ${alert.id} neighborhood check:`, 
+                         `Alert: ${alertNeighborhood} vs User: ${currentUserProfile.neighborhood} = ${matches}`);
               return matches;
             });
             console.log('Filtered alerts:', filteredAlerts.length, 'alerts');
           } else {
-            console.log('No user location - showing all alerts:', data?.length);
+            console.log('No user neighborhood - showing all alerts:', data?.length);
           }
           
           // Compare with previous data using hash
@@ -190,7 +188,7 @@ export const useEmergencyAlerts = () => {
           if (!userProfile) {
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
-              .select('phone, state, city')
+              .select('phone, neighborhood')
               .eq('user_id', user.id)
               .single();
 
@@ -246,14 +244,14 @@ export const useEmergencyAlerts = () => {
               }
             }
 
-            // Get panic alerts in user's area (same state)
-            if (userProfile.state) {
+            // Get panic alerts in user's neighborhood
+            if (userProfile.neighborhood) {
               try {
                 const { data: areaAlerts, error: areaError } = await supabase
                   .from('panic_alerts')
                   .select(`
                     *,
-                    profiles (state, city, full_name, avatar_url)
+                    profiles (neighborhood, full_name, avatar_url)
                   `)
                   .neq('user_id', user.id)
                   .order('created_at', { ascending: false })
@@ -263,8 +261,7 @@ export const useEmergencyAlerts = () => {
                   console.error('Error fetching area panic alerts:', areaError);
                 } else {
                   areaPanicAlerts = (areaAlerts || []).filter((alert: any) => 
-                    alert.profiles?.state === userProfile.state ||
-                    alert.profiles?.city === userProfile.city
+                    alert.profiles?.neighborhood === userProfile.neighborhood
                   );
                 }
               } catch (areaError) {
