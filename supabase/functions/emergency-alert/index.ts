@@ -170,35 +170,41 @@ serve(async (req) => {
 });
 
 async function sendSMSAlert(phoneNumber: string, message: string) {
-  // This would integrate with SMS service like Twilio
-  // For now, we'll log it
-  console.log(`SMS Alert to ${phoneNumber}: ${message}`);
-  
-  // Example Twilio integration (requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)
-  /*
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-  
-  if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.warn('Twilio SMS not configured. Missing TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER');
+    return;
+  }
+
+  try {
+    const body = new URLSearchParams({
+      From: fromNumber,
+      To: phoneNumber,
+      Body: message,
+    });
+
+    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        Authorization: 'Basic ' + btoa(`${accountSid}:${authToken}`),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        From: twilioPhoneNumber,
-        To: phoneNumber,
-        Body: message,
-      }),
+      body,
     });
-    
-    if (!response.ok) {
-      console.error('Failed to send SMS:', await response.text());
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error('Twilio SMS error:', text);
+    } else {
+      const json = await resp.json();
+      console.log('Twilio SMS sent:', json.sid);
     }
+  } catch (e) {
+    console.error('Error sending SMS via Twilio:', e);
   }
-  */
 }
 
 async function sendWhatsAppAlert(phoneNumber: string, message: string) {
@@ -233,34 +239,44 @@ async function sendWhatsAppAlert(phoneNumber: string, message: string) {
 }
 
 async function initiateEmergencyCall(phoneNumber: string, userName: string, situationType: string) {
-  // This would integrate with voice calling service like Twilio Voice
-  console.log(`Emergency call to ${phoneNumber} for ${userName} - ${situationType}`);
-  
-  // Example Twilio Voice integration
-  /*
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-  
-  if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`, {
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.warn('Twilio Voice not configured. Missing TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER');
+    return;
+  }
+
+  const voiceMessage = `Emergency alert for ${userName}. Situation: ${situationType}. Please check immediately or call local emergency services.`;
+  const twimletUrl = `https://twimlets.com/message?Message%5B0%5D=${encodeURIComponent(voiceMessage)}`;
+
+  try {
+    const body = new URLSearchParams({
+      From: fromNumber,
+      To: phoneNumber,
+      Url: twimletUrl,
+    });
+
+    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        Authorization: 'Basic ' + btoa(`${accountSid}:${authToken}`),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        From: twilioPhoneNumber,
-        To: phoneNumber,
-        Url: `https://your-domain.com/emergency-call-script?name=${userName}&situation=${situationType}`, // TwiML URL
-      }),
+      body,
     });
-    
-    if (!response.ok) {
-      console.error('Failed to initiate call:', await response.text());
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error('Twilio Voice error:', text);
+    } else {
+      const json = await resp.json();
+      console.log('Twilio call initiated:', json.sid);
     }
+  } catch (e) {
+    console.error('Error initiating Twilio call:', e);
   }
-  */
 }
 
 async function sendCommunityAlerts(location: { latitude: number; longitude: number; address: string }, situationType: string, userId: string) {
