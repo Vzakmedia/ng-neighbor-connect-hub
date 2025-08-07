@@ -45,10 +45,12 @@ const Header = () => {
 
   const handleContactRequest = async (requestId: string, notificationId: string) => {
     try {
-      await supabase
-        .from('emergency_contact_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
+      const { data, error } = await supabase.rpc('confirm_emergency_contact_request', {
+        _request_id: requestId,
+        _accept: true
+      });
+
+      if (error) throw error;
       
       await markAsRead(notificationId);
       

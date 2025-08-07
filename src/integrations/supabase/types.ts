@@ -3616,6 +3616,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      confirm_emergency_contact_request: {
+        Args: { _request_id: string; _accept?: boolean }
+        Returns: Json
+      }
       create_staff_invitation: {
         Args:
           | {

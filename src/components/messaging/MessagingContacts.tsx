@@ -373,54 +373,30 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
   // Accept contact request
   const handleAcceptRequest = async (requestId: string) => {
-    alert('Accept button clicked for request: ' + requestId); // Debug alert
     console.log('Accepting request:', requestId);
     const request = contactRequests.find(r => r.id === requestId);
     if (!request || !user) {
-      alert('Request not found or user not available'); // Debug alert
       console.log('Request not found or user not available:', { request, user });
       return;
     }
 
     try {
-      console.log('Updating request status to accepted...');
-      // First update the request status
-      const { error: updateError } = await supabase
-        .from('emergency_contact_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
+      console.log('Calling confirm_emergency_contact_request RPC...');
+      const { data, error } = await supabase.rpc('confirm_emergency_contact_request', {
+        _request_id: requestId,
+        _accept: true
+      });
 
-      if (updateError) {
-        console.error('Error updating request status:', updateError);
-        throw updateError;
-      }
+      if (error) throw error;
 
-      console.log('Creating emergency contact entry...');
-      // Create the emergency contact entry
-      const { error: contactError } = await supabase
-        .from('emergency_contacts')
-        .insert({
-          user_id: user.id,
-          contact_name: request.sender_profile?.full_name || 'Unknown',
-          phone_number: request.sender_profile?.phone || '',
-          relationship: 'contact',
-          is_confirmed: true,
-          is_primary: false
-        });
-
-      if (contactError) {
-        console.error('Error creating emergency contact:', contactError);
-        throw contactError;
-      }
-
-      console.log('Request accepted successfully');
+      console.log('Request accepted successfully:', data);
       
       // Immediately remove the request from local state
       setContactRequests(prev => prev.filter(req => req.id !== requestId));
       
       toast({
         title: "Request Accepted",
-        description: "Contact request has been accepted and added to your contacts.",
+        description: typeof data === 'object' && data && 'message' in data ? String(data.message) : "Contact request has been accepted and added to your contacts.",
       });
       
       // Refresh all contact data in background
@@ -444,10 +420,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
 
   // Decline contact request
   const handleDeclineRequest = async (requestId: string) => {
-    const { error } = await supabase
-      .from('emergency_contact_requests')
-      .update({ status: 'declined' })
-      .eq('id', requestId);
+    const { data, error } = await supabase.rpc('confirm_emergency_contact_request', {
+      _request_id: requestId,
+      _accept: false
+    });
 
     if (error) {
       console.error('Error declining request:', error);
