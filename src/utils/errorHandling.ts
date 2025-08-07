@@ -44,33 +44,28 @@ class ErrorHandler {
     return ErrorHandler.instance;
   }
 
-  // Log error to database and external services
+  // Log error to console and handle critical alerts
   async logError(errorInfo: ErrorInfo): Promise<void> {
     try {
-      // Log to database
-      await supabase
-        .from('error_logs')
-        .insert({
-          error_type: errorInfo.type,
-          severity: errorInfo.severity,
-          message: errorInfo.message,
-          user_message: errorInfo.userMessage,
-          error_code: errorInfo.code,
-          details: errorInfo.details,
-          user_id: errorInfo.userId,
-          route: errorInfo.route,
-          stack_trace: errorInfo.stack,
-          timestamp: errorInfo.timestamp
-        });
+      // Console log for monitoring (removed database logging)
+      console.error('Error logged:', {
+        type: errorInfo.type,
+        severity: errorInfo.severity,
+        message: errorInfo.message,
+        userMessage: errorInfo.userMessage,
+        route: errorInfo.route,
+        userId: errorInfo.userId,
+        timestamp: errorInfo.timestamp
+      });
 
       // Send critical errors to admin
       if (errorInfo.severity === ErrorSeverity.CRITICAL) {
         await this.sendCriticalAlert(errorInfo);
       }
 
-      // Console log in development
+      // Additional console log in development
       if (this.isDevelopment) {
-        console.error('Error logged:', errorInfo);
+        console.error('Development Error Details:', errorInfo);
       }
     } catch (logError) {
       console.error('Failed to log error:', logError);

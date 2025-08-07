@@ -69,39 +69,53 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     if (!user || !userLocation) return;
     
     try {
-      // Get public emergency alerts within 10km radius
-      const { data: publicAlerts, error } = await supabase
-        .from('public_emergency_alerts')
+      // Query safety_alerts instead of public_emergency_alerts (which was removed)
+      const { data: safetyAlerts, error } = await supabase
+        .from('safety_alerts')
         .select(`
           id,
-          situation_type,
+          alert_type,
           latitude,
           longitude,
           address,
-          radius_km,
+          severity,
           created_at,
-          is_active,
+          status,
           user_id,
+          title,
+          description,
           profiles:user_id (
             full_name
           )
         `)
-        .eq('is_active', true)
+        .eq('status', 'active')
         .neq('user_id', user.id) // Don't show user's own alerts
         .order('created_at', { ascending: false });
         
       if (error) throw error;
       
-      // Filter alerts by distance (within 10km)
-      const nearbyAlerts = (publicAlerts || []).filter(alert => {
+      // Filter alerts by distance (within 10km) and convert to expected format
+      const nearbyAlerts = (safetyAlerts || []).filter(alert => {
+        if (!alert.latitude || !alert.longitude) return false;
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
           alert.latitude,
           alert.longitude
         );
-        return distance <= (alert.radius_km || 5); // Use alert's radius or default 5km
-      });
+        return distance <= 10; // 10km radius
+      }).map(alert => ({
+        id: alert.id,
+        situation_type: alert.alert_type,
+        latitude: alert.latitude,
+        longitude: alert.longitude,
+        address: alert.address,
+        radius_km: 10, // Default radius
+        created_at: alert.created_at,
+        is_active: true,
+        user_id: alert.user_id,
+        profiles: alert.profiles
+      }));
       
       setAlerts(nearbyAlerts);
     } catch (error) {

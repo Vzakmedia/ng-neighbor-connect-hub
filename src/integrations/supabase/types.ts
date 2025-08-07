@@ -1569,51 +1569,6 @@ export type Database = {
         }
         Relationships: []
       }
-      error_logs: {
-        Row: {
-          created_at: string
-          details: Json | null
-          error_code: string | null
-          error_type: string
-          id: string
-          message: string
-          route: string | null
-          severity: string
-          stack_trace: string | null
-          timestamp: string
-          user_id: string | null
-          user_message: string
-        }
-        Insert: {
-          created_at?: string
-          details?: Json | null
-          error_code?: string | null
-          error_type: string
-          id?: string
-          message: string
-          route?: string | null
-          severity: string
-          stack_trace?: string | null
-          timestamp?: string
-          user_id?: string | null
-          user_message: string
-        }
-        Update: {
-          created_at?: string
-          details?: Json | null
-          error_code?: string | null
-          error_type?: string
-          id?: string
-          message?: string
-          route?: string | null
-          severity?: string
-          stack_trace?: string | null
-          timestamp?: string
-          user_id?: string | null
-          user_message?: string
-        }
-        Relationships: []
-      }
       event_rsvps: {
         Row: {
           created_at: string
@@ -2565,59 +2520,6 @@ export type Database = {
           website_url?: string | null
         }
         Relationships: []
-      }
-      public_emergency_alerts: {
-        Row: {
-          address: string | null
-          created_at: string
-          id: string
-          is_active: boolean | null
-          latitude: number
-          longitude: number
-          panic_alert_id: string
-          radius_km: number | null
-          resolved_at: string | null
-          situation_type: Database["public"]["Enums"]["emergency_situation_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          latitude: number
-          longitude: number
-          panic_alert_id: string
-          radius_km?: number | null
-          resolved_at?: string | null
-          situation_type: Database["public"]["Enums"]["emergency_situation_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          address?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          latitude?: number
-          longitude?: number
-          panic_alert_id?: string
-          radius_km?: number | null
-          resolved_at?: string | null
-          situation_type?: Database["public"]["Enums"]["emergency_situation_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_public_emergency_alerts_user_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
       }
       revenue_analytics: {
         Row: {

@@ -1562,18 +1562,18 @@ const Admin = () => {
       const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true }).limit(1);
       const responseTime = Date.now() - startTime;
 
-      // Check for any recent errors in system
-      const { data: recentErrors } = await supabase
-        .from('error_logs')
+      // Check system health by monitoring activity logs instead
+      const { data: recentActivity } = await supabase
+        .from('activity_logs')
         .select('count', { count: 'exact', head: true })
         .gte('created_at', new Date(Date.now() - 60000).toISOString()); // Last minute
 
-      const hasRecentErrors = (recentErrors?.length || 0) > 0;
+      const hasRecentActivity = (recentActivity?.length || 0) > 0;
 
       setSystemHealth({
         database: error ? 'unhealthy' : 'healthy',
         realtime: 'active', // This would come from actual realtime monitoring
-        emergency: hasRecentErrors ? 'warning' : 'operational',
+        emergency: hasRecentActivity ? 'operational' : 'warning',
         storage: Math.round(Math.random() * 20 + 60), // This would come from actual storage monitoring
         apiResponse: responseTime
       });
