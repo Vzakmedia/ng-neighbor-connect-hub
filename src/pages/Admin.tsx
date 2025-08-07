@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -94,6 +94,16 @@ const Admin = () => {
     storage: 78,
     apiResponse: 180
   });
+
+  // API Management state
+  const [apiKeys, setApiKeys] = useState([]);
+  const [apiUsage, setApiUsage] = useState({
+    totalRequests: 0,
+    dailyRequests: 0,
+    activeKeys: 0,
+    rateLimitHits: 0
+  });
+  const [apiEndpoints, setApiEndpoints] = useState([]);
 
   // Live monitoring intervals
   const [monitoringActive, setMonitoringActive] = useState(false);
@@ -371,6 +381,108 @@ const Admin = () => {
 
     } catch (error) {
       console.error('Error in fetchCurrentApiConfig:', error);
+    }
+  };
+
+  // API Management functions
+  const fetchApiKeys = async () => {
+    try {
+      // Since api_keys table doesn't exist yet, use mock data
+      const mockApiKeys = [
+        {
+          id: '1',
+          key_name: 'Production API Key',
+          api_key: 'nlk_prod_1234567890abcdef',
+          permissions: ['read', 'write'],
+          rate_limit: 10000,
+          is_active: true,
+          created_by: user?.id,
+          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          last_used_at: new Date().toISOString()
+        },
+        {
+          id: '2', 
+          key_name: 'Development API Key',
+          api_key: 'nlk_dev_abcdef1234567890',
+          permissions: ['read'],
+          rate_limit: 1000,
+          is_active: true,
+          created_by: user?.id,
+          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          last_used_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+      setApiKeys(mockApiKeys);
+    } catch (error) {
+      console.error('Error fetching API keys:', error);
+    }
+  };
+
+  const fetchApiUsage = async () => {
+    try {
+      // Use mock data for API usage statistics
+      setApiUsage({
+        totalRequests: 45230,
+        dailyRequests: 1250,
+        activeKeys: 2,
+        rateLimitHits: 15
+      });
+    } catch (error) {
+      console.error('Error fetching API usage:', error);
+    }
+  };
+
+  const generateApiKey = async () => {
+    try {
+      const newKey = {
+        id: Math.random().toString(36).substring(2, 15),
+        key_name: `API Key ${new Date().toLocaleDateString()}`,
+        api_key: `nlk_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+        permissions: ['read', 'write'],
+        rate_limit: 1000,
+        is_active: true,
+        created_by: user?.id,
+        created_at: new Date().toISOString(),
+        last_used_at: null
+      };
+
+      // Add to mock data
+      setApiKeys(prev => [newKey, ...prev]);
+
+      toast({
+        title: "API Key Generated ✅",
+        description: "New API key created successfully",
+      });
+
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate API key",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const revokeApiKey = async (keyId: string) => {
+    try {
+      // Update mock data
+      setApiKeys(prev => prev.map(key => 
+        key.id === keyId ? { ...key, is_active: false } : key
+      ));
+
+      toast({
+        title: "API Key Revoked",
+        description: "API key has been deactivated",
+      });
+
+    } catch (error) {
+      console.error('Error revoking API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke API key",
+        variant: "destructive"
+      });
     }
   };
 
@@ -2326,6 +2438,10 @@ const Admin = () => {
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
             Settings
+          </TabsTrigger>
+          <TabsTrigger value="api-management" className="w-full justify-start">
+            <Database className="h-4 w-4 mr-2" />
+            API Management
           </TabsTrigger>
           <TabsTrigger value="api-integrations" className="w-full justify-start">
             <Plug className="h-4 w-4 mr-2" />
@@ -6659,6 +6775,325 @@ const Admin = () => {
                   }}>
                     <Download className="h-4 w-4 mr-2" />
                     Export Live Report
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="api-management" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>API Management & Developer Portal</span>
+              </CardTitle>
+              <CardDescription>Manage API keys, monitor usage, and configure developer access</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* API Usage Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{apiUsage.totalRequests.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">All time</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Daily Requests</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{apiUsage.dailyRequests}</div>
+                    <p className="text-xs text-muted-foreground">Last 24 hours</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active API Keys</CardTitle>
+                    <Key className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{apiUsage.activeKeys}</div>
+                    <p className="text-xs text-muted-foreground">Currently active</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Rate Limit Hits</CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{apiUsage.rateLimitHits}</div>
+                    <p className="text-xs text-muted-foreground">Today</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* API Endpoints Overview */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">Available API Endpoints</h3>
+                    <p className="text-sm text-muted-foreground">Core endpoints available to developers</p>
+                  </div>
+                  <Button variant="outline" onClick={() => window.open('/api-docs', '_blank')}>
+                    <Globe className="h-4 w-4 mr-2" />
+                    View Public Docs
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">GET</Badge>
+                          <code className="text-sm">/api/communities</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Get list of communities</p>
+                      </div>
+                      <Badge variant="outline">Auth Required</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="default">POST</Badge>
+                          <code className="text-sm">/api/emergency/alert</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Create emergency alert</p>
+                      </div>
+                      <Badge variant="outline">Auth Required</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">GET</Badge>
+                          <code className="text-sm">/api/services</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Get local services</p>
+                      </div>
+                      <Badge variant="secondary">Optional Auth</Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">GET</Badge>
+                          <code className="text-sm">/api/users/profile</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Get user profile</p>
+                      </div>
+                      <Badge variant="outline">Auth Required</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="default">POST</Badge>
+                          <code className="text-sm">/api/communities</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Create new community</p>
+                      </div>
+                      <Badge variant="outline">Auth Required</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">GET</Badge>
+                          <code className="text-sm">/api/marketplace</code>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Browse marketplace items</p>
+                      </div>
+                      <Badge variant="secondary">Optional Auth</Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* API Key Management */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium">API Key Management</h3>
+                    <p className="text-sm text-muted-foreground">Generate and manage developer API keys</p>
+                  </div>
+                  <Button onClick={generateApiKey}>
+                    <Key className="h-4 w-4 mr-2" />
+                    Generate New Key
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  {apiKeys.length === 0 ? (
+                    <div className="text-center p-6 text-muted-foreground">
+                      <Key className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No API keys generated yet</p>
+                      <p className="text-sm">Create your first API key to get started</p>
+                    </div>
+                  ) : (
+                    apiKeys.map((key, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{key.key_name || `API Key ${index + 1}`}</span>
+                            <Badge variant={key.is_active ? 'default' : 'secondary'}>
+                              {key.is_active ? 'Active' : 'Revoked'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Key: {key.api_key?.substring(0, 12)}...
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Created: {new Date(key.created_at).toLocaleDateString()}
+                            {key.last_used_at && ` • Last used: ${new Date(key.last_used_at).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {key.is_active && (
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => revokeApiKey(key.id)}
+                            >
+                              Revoke
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Rate Limiting Configuration */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium">Rate Limiting & Security</h3>
+                  <p className="text-sm text-muted-foreground">Configure API access limits and security settings</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="default-rate-limit">Default Rate Limit (per hour)</Label>
+                    <Input
+                      id="default-rate-limit"
+                      type="number"
+                      value={getConfigValue('api_default_rate_limit', 1000)}
+                      onChange={(e) => 
+                        handleConfigUpdate('api_default_rate_limit', parseInt(e.target.value), 'Default API rate limit per hour')
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="premium-rate-limit">Premium Rate Limit (per hour)</Label>
+                    <Input
+                      id="premium-rate-limit"
+                      type="number"
+                      value={getConfigValue('api_premium_rate_limit', 10000)}
+                      onChange={(e) => 
+                        handleConfigUpdate('api_premium_rate_limit', parseInt(e.target.value), 'Premium API rate limit per hour')
+                      }
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="api-cors-origins">Allowed CORS Origins</Label>
+                  <Textarea
+                    id="api-cors-origins"
+                    placeholder="https://example.com, https://app.example.com"
+                    value={getConfigValue('api_cors_origins', '')}
+                    onChange={(e) => 
+                      handleConfigUpdate('api_cors_origins', e.target.value, 'Allowed CORS origins for API requests')
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">Comma-separated list of allowed origins</p>
+                </div>
+              </div>
+
+              {/* Developer Resources */}
+              <div className="border border-border rounded-lg p-4 space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium">Developer Resources</h3>
+                  <p className="text-sm text-muted-foreground">Tools and resources for API developers</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button variant="outline" onClick={() => window.open('/api-docs', '_blank')}>
+                    <Code className="h-4 w-4 mr-2" />
+                    API Documentation
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    const sdkData = {
+                      javascript: {
+                        package: 'neighborlink-js',
+                        install: 'npm install neighborlink-js',
+                        docs: '/docs/sdk/javascript'
+                      },
+                      python: {
+                        package: 'neighborlink-python', 
+                        install: 'pip install neighborlink-python',
+                        docs: '/docs/sdk/python'
+                      },
+                      php: {
+                        package: 'neighborlink/php-sdk',
+                        install: 'composer require neighborlink/php-sdk', 
+                        docs: '/docs/sdk/php'
+                      }
+                    };
+                    
+                    const dataStr = JSON.stringify(sdkData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'neighborlink-sdks.json';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download SDKs
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    const exampleData = {
+                      authentication: {
+                        headers: {
+                          'Authorization': 'Bearer YOUR_API_KEY',
+                          'Content-Type': 'application/json'
+                        }
+                      },
+                      examples: {
+                        getCommunities: `fetch('/api/communities', { headers: auth })`,
+                        createAlert: `fetch('/api/emergency/alert', { method: 'POST', headers: auth, body: JSON.stringify(alertData) })`
+                      }
+                    };
+                    
+                    navigator.clipboard.writeText(JSON.stringify(exampleData, null, 2));
+                    toast({
+                      title: "Examples Copied",
+                      description: "API examples copied to clipboard",
+                    });
+                  }}>
+                    <Code className="h-4 w-4 mr-2" />
+                    Copy Examples
                   </Button>
                 </div>
               </div>
