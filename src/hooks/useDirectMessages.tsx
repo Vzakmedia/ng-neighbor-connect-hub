@@ -80,16 +80,40 @@ export const useDirectMessages = (userId: string | undefined) => {
 
     try {
       setLoading(true);
-      const { error } = await supabase
+      const { data: message, error } = await supabase
         .from('direct_messages')
         .insert({
           content: content.trim(),
           sender_id: userId,
           recipient_id: recipientId,
           status: 'sent'
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Create notification for the recipient
+      if (message) {
+        try {
+          await supabase.functions.invoke('notification-service', {
+            body: {
+              userId: recipientId,
+              title: 'New Message',
+              body: `${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+              type: 'message',
+              data: {
+                messageId: message.id,
+                senderId: userId
+              }
+            }
+          });
+        } catch (notificationError) {
+          console.error('Error creating notification:', notificationError);
+          // Don't fail the message send if notification fails
+        }
+      }
+
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
