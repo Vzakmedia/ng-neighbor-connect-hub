@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 
 interface TutorialState {
@@ -11,6 +12,7 @@ interface TutorialState {
 
 export const useTutorial = () => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [tutorialState, setTutorialState] = useState<TutorialState>({
     isOpen: false,
@@ -19,13 +21,17 @@ export const useTutorial = () => {
   });
 
   useEffect(() => {
-    if (user) {
+    // Only check tutorial status when both user and profile are available
+    if (user && profile) {
       checkTutorialStatus();
+    } else if (user && !profile) {
+      // Reset loading state if user exists but profile is still loading
+      setTutorialState(prev => ({ ...prev, loading: false, isOpen: false }));
     }
-  }, [user]);
+  }, [user, profile]);
 
   const checkTutorialStatus = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     try {
       setTutorialState(prev => ({ ...prev, loading: true }));
@@ -47,10 +53,14 @@ export const useTutorial = () => {
 
       // Show tutorial for new users who haven't completed it
       if (!hasCompletedTutorial) {
+        console.log('Tutorial: User has not completed tutorial, will show after delay');
         // Small delay to ensure UI is ready
         setTimeout(() => {
+          console.log('Tutorial: Showing tutorial now');
           setTutorialState(prev => ({ ...prev, isOpen: true }));
-        }, 2000);
+        }, 3000); // Increased delay to ensure everything is loaded
+      } else {
+        console.log('Tutorial: User has already completed tutorial');
       }
     } catch (error) {
       console.error('Error checking tutorial status:', error);
@@ -63,6 +73,7 @@ export const useTutorial = () => {
   };
 
   const startTutorial = () => {
+    console.log('Tutorial: Manually starting tutorial');
     setTutorialState(prev => ({ ...prev, isOpen: true }));
   };
 

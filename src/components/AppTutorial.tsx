@@ -105,8 +105,10 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
 
   useEffect(() => {
     if (isOpen && currentStepData) {
-      updateTargetPosition();
-      setIsVisible(true);
+      const timer = setTimeout(() => {
+        updateTargetPosition();
+        setIsVisible(true);
+      }, 100); // Small delay to ensure DOM is ready
       
       // Add scroll listener to update position
       const handleScroll = () => updateTargetPosition();
@@ -116,24 +118,39 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
       window.addEventListener('resize', handleResize);
       
       return () => {
+        clearTimeout(timer);
         window.removeEventListener('scroll', handleScroll);
         window.removeEventListener('resize', handleResize);
       };
+    } else {
+      setIsVisible(false);
     }
   }, [isOpen, currentStep]);
 
   const updateTargetPosition = () => {
     if (!currentStepData?.targetSelector) return;
     
-    const element = document.querySelector(currentStepData.targetSelector) as HTMLElement;
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      setTargetPosition({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-        height: rect.height,
-      });
+    try {
+      const element = document.querySelector(currentStepData.targetSelector) as HTMLElement;
+      if (element && element.offsetParent !== null) { // Check if element is visible
+        const rect = element.getBoundingClientRect();
+        setTargetPosition({
+          top: rect.top + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+          height: rect.height,
+        });
+      } else {
+        // If element is not found or not visible, use fallback position
+        setTargetPosition({
+          top: window.innerHeight / 2,
+          left: window.innerWidth / 2,
+          width: 0,
+          height: 0,
+        });
+      }
+    } catch (error) {
+      console.warn('Tutorial: Could not find target element:', currentStepData.targetSelector);
     }
   };
 
@@ -141,13 +158,18 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
     const { placement } = currentStepData;
     const { top, left, width, height } = targetPosition;
     
+    // Fallback to center if no target position
+    if (width === 0 && height === 0) {
+      return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    }
+    
     switch (placement) {
       case 'top':
-        return { top: top - 10, left: left + width / 2, transform: 'translate(-50%, -100%)' };
+        return { top: Math.max(top - 10, 10), left: left + width / 2, transform: 'translate(-50%, -100%)' };
       case 'bottom':
         return { top: top + height + 10, left: left + width / 2, transform: 'translate(-50%, 0)' };
       case 'left':
-        return { top: top + height / 2, left: left - 10, transform: 'translate(-100%, -50%)' };
+        return { top: top + height / 2, left: Math.max(left - 10, 10), transform: 'translate(-100%, -50%)' };
       case 'right':
         return { top: top + height / 2, left: left + width + 10, transform: 'translate(0, -50%)' };
       default:
