@@ -50,18 +50,19 @@ const EmergencyCenter = () => {
       );
     },
     onRefreshNeeded: () => {
-      fetchAlerts(filters);
-      fetchPanicAlerts();
+      console.log('Emergency subscription error - manual refresh needed');
+      // Only refresh on user action, not automatic
     },
     filters
   });
 
   useEffect(() => {
     if (user) {
+      console.log('EmergencyCenter: Initial data fetch');
       fetchAlerts(filters);
       fetchPanicAlerts();
     }
-  }, [user, filters, fetchAlerts, fetchPanicAlerts]);
+  }, [user]); // Removed filters dependency to prevent constant re-fetching
 
   const getTimeSince = (dateString: string) => {
     const date = new Date(dateString);
@@ -102,8 +103,16 @@ const EmergencyCenter = () => {
   };
 
   const handleRefresh = () => {
+    console.log('EmergencyCenter: Manual refresh triggered');
     fetchAlerts(filters);
     fetchPanicAlerts();
+  };
+
+  // Filter change handler that triggers refetch
+  const handleFilterChange = (newFilters: EmergencyFilters) => {
+    console.log('EmergencyCenter: Filters changed', newFilters);
+    setFilters(newFilters);
+    fetchAlerts(newFilters);
   };
 
   return (
@@ -122,7 +131,7 @@ const EmergencyCenter = () => {
       <EmergencyFiltersComponent
         filters={filters}
         viewMode={viewMode}
-        onFilterChange={setFilters}
+        onFilterChange={handleFilterChange}
         onViewModeChange={setViewMode}
         onRefresh={handleRefresh}
         autoRefresh={autoRefresh}

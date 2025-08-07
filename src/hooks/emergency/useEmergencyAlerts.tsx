@@ -10,7 +10,7 @@ export const useEmergencyAlerts = () => {
   
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [panicAlerts, setPanicAlerts] = useState<PanicAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed from true to prevent initial loading
 
   const fetchAlerts = useCallback(async (filters: EmergencyFilters) => {
     if (!user) return;
