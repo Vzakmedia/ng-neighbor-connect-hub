@@ -77,18 +77,21 @@ class ErrorHandler {
     }
   }
 
-  // Send critical error alerts to admins
+  // Send critical error alerts to admins - simplified logging only
   private async sendCriticalAlert(errorInfo: ErrorInfo): Promise<void> {
     try {
-      // Call edge function to send email alert
-      await supabase.functions.invoke('send-error-alert', {
-        body: {
-          error: errorInfo,
-          timestamp: new Date().toISOString()
-        }
+      // Log critical errors for admin monitoring
+      console.error('CRITICAL ERROR ALERT:', {
+        type: errorInfo.type,
+        severity: errorInfo.severity,
+        message: errorInfo.message,
+        userMessage: errorInfo.userMessage,
+        route: errorInfo.route,
+        details: errorInfo.details,
+        timestamp: new Date().toISOString()
       });
     } catch (alertError) {
-      console.error('Failed to send critical error alert:', alertError);
+      console.error('Failed to log critical error alert:', alertError);
     }
   }
 
