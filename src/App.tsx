@@ -78,12 +78,11 @@ const App = () => {
           <AudioInitializer />
           <PushNotificationWrapper />
           <SecurityHeaders />
-          <OnboardingNotificationManager />
           <TooltipProvider>
           <Toaster />
           <Sonner />
         <BrowserRouter>
-          
+          <OnboardingNotificationManager />
           <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />
