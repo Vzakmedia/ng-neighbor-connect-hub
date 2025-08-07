@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ import {
 const SettingsContent = () => {
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { startTutorial, resetTutorial, hasCompletedTutorial } = useTutorial();
   
   // Notification Settings
@@ -583,12 +585,20 @@ const SettingsContent = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => {
-                      console.log('Start Tutorial button clicked');
-                      startTutorial();
+                      console.log('Start Tutorial button clicked - navigating to home');
                       toast({
-                        title: "Tutorial Starting",
-                        description: "The app tutorial will begin shortly.",
+                        title: "Starting Tutorial",
+                        description: "Navigating to home page to begin the tour...",
                       });
+                      
+                      // Navigate to home page first
+                      navigate('/dashboard');
+                      
+                      // Start tutorial after a short delay to ensure page is loaded
+                      setTimeout(() => {
+                        console.log('Starting tutorial now');
+                        startTutorial();
+                      }, 1000);
                     }}
                     className="w-full sm:w-auto"
                   >
