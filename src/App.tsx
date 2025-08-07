@@ -12,6 +12,7 @@ import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert"
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AudioInitializer } from "@/components/AudioInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
+import { OnboardingNotificationManager } from "@/components/OnboardingNotificationManager";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -77,6 +78,7 @@ const App = () => {
           <AudioInitializer />
           <PushNotificationWrapper />
           <SecurityHeaders />
+          <OnboardingNotificationManager />
           <TooltipProvider>
           <Toaster />
           <Sonner />

@@ -3375,6 +3375,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding_preferences: {
+        Row: {
+          business_card_permanently_dismissed: boolean | null
+          business_creation_reminders: boolean | null
+          created_at: string
+          id: string
+          last_business_card_shown_at: string | null
+          profile_completion_dismissed: boolean | null
+          profile_completion_reminders: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_card_permanently_dismissed?: boolean | null
+          business_creation_reminders?: boolean | null
+          created_at?: string
+          id?: string
+          last_business_card_shown_at?: string | null
+          profile_completion_dismissed?: boolean | null
+          profile_completion_reminders?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_card_permanently_dismissed?: boolean | null
+          business_creation_reminders?: boolean | null
+          created_at?: string
+          id?: string
+          last_business_card_shown_at?: string | null
+          profile_completion_dismissed?: boolean | null
+          profile_completion_reminders?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -3573,6 +3609,10 @@ export type Database = {
         Args: { board_id: string; user_id: string }
         Returns: boolean
       }
+      is_profile_complete: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       log_ad_interaction: {
         Args: {
           _campaign_id: string
@@ -3655,6 +3695,10 @@ export type Database = {
         Returns: undefined
       }
       user_allows_direct_messages: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
+      user_has_business: {
         Args: { target_user_id: string }
         Returns: boolean
       }
