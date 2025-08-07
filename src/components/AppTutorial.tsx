@@ -179,24 +179,68 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
   const getTooltipPosition = () => {
     const { placement } = currentStepData;
     const { top, left, width, height } = targetPosition;
+    const cardWidth = 320; // 80 * 4 = 320px (w-80)
+    const cardHeight = 300; // Estimated card height
+    const padding = 20; // Screen edge padding
     
     // Fallback to center if no target position
     if (width === 0 && height === 0) {
       return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     }
     
+    let position = { top: 0, left: 0, transform: '' };
+    
     switch (placement) {
       case 'top':
-        return { top: Math.max(top - 10, 10), left: left + width / 2, transform: 'translate(-50%, -100%)' };
+        position = { 
+          top: Math.max(top - 10, cardHeight + padding), 
+          left: left + width / 2, 
+          transform: 'translate(-50%, -100%)' 
+        };
+        break;
       case 'bottom':
-        return { top: top + height + 10, left: left + width / 2, transform: 'translate(-50%, 0)' };
+        position = { 
+          top: Math.min(top + height + 10, window.innerHeight - cardHeight - padding), 
+          left: left + width / 2, 
+          transform: 'translate(-50%, 0)' 
+        };
+        break;
       case 'left':
-        return { top: top + height / 2, left: Math.max(left - 10, 10), transform: 'translate(-100%, -50%)' };
+        position = { 
+          top: top + height / 2, 
+          left: Math.max(left - 10, cardWidth + padding), 
+          transform: 'translate(-100%, -50%)' 
+        };
+        break;
       case 'right':
-        return { top: top + height / 2, left: left + width + 10, transform: 'translate(0, -50%)' };
+        position = { 
+          top: top + height / 2, 
+          left: Math.min(left + width + 10, window.innerWidth - cardWidth - padding), 
+          transform: 'translate(0, -50%)' 
+        };
+        break;
       default:
-        return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+        position = { top: window.innerHeight / 2, left: window.innerWidth / 2, transform: 'translate(-50%, -50%)' };
     }
+    
+    // Ensure the card stays within screen bounds
+    if (position.transform.includes('translate(-50%')) {
+      // Centered horizontally
+      position.left = Math.max(cardWidth / 2 + padding, Math.min(position.left, window.innerWidth - cardWidth / 2 - padding));
+    } else if (position.transform.includes('translate(-100%')) {
+      // Right-aligned
+      position.left = Math.max(cardWidth + padding, position.left);
+    } else {
+      // Left-aligned
+      position.left = Math.min(position.left, window.innerWidth - cardWidth - padding);
+    }
+    
+    if (position.transform.includes('translate(-50%, -50%)') || position.transform.includes('translate(0, -50%)') || position.transform.includes('translate(-100%, -50%)')) {
+      // Centered vertically
+      position.top = Math.max(cardHeight / 2 + padding, Math.min(position.top, window.innerHeight - cardHeight / 2 - padding));
+    }
+    
+    return position;
   };
 
   const nextStep = () => {
@@ -214,7 +258,11 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
   };
 
   const skipTutorial = () => {
-    onClose();
+    console.log('Tutorial: Skip/Close button clicked');
+    setIsVisible(false);
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   const handleComplete = () => {
