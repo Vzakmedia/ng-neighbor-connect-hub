@@ -516,9 +516,9 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
             <CreateServiceDialog
               onServiceCreated={() => fetchServices()}
               trigger={
-                <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
+                <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
-                  <span className="hidden xs:inline md:inline">Create</span>
+                  Create Listing
                 </Button>
               }
             />
@@ -526,9 +526,9 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
             <CreateMarketplaceItemDialog
               onItemCreated={() => fetchItems()}
               trigger={
-                <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
+                <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
-                  <span className="hidden xs:inline md:inline">Create</span>
+                  Create Listing
                 </Button>
               }
             />
