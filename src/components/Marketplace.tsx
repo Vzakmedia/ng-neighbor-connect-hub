@@ -498,7 +498,7 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
       {/* Search and Filters */}
       <div className="flex flex-col gap-3 md:gap-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-1">
+          <div className="relative flex-1 sm:flex-[2]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder={`Search ${activeTab}...`}
@@ -512,7 +512,7 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
             <ToggleGroupItem value="state" className="h-10 text-sm">Entire State</ToggleGroupItem>
           </ToggleGroup>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full h-12 md:h-10">
+            <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-md">
