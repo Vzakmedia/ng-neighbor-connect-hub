@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
@@ -15,6 +15,7 @@ const MarketplacePage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("marketplace");
   const [marketSubTab, setMarketSubTab] = useState<'services' | 'goods'>('services');
+  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,6 +61,13 @@ const MarketplacePage = () => {
                 <DropdownMenuItem onClick={() => { setActiveTab("marketplace"); setMarketSubTab('goods'); }}>
                   Goods
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                  My City
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setViewScope('state')}>
+                  Entire State
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
@@ -90,6 +98,13 @@ const MarketplacePage = () => {
                       <DropdownMenuItem onClick={() => { setActiveTab('marketplace'); setMarketSubTab('goods'); }}>
                         Goods
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                        My City
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setViewScope('state')}>
+                        Entire State
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -98,7 +113,7 @@ const MarketplacePage = () => {
             </TabsList>
             
             <TabsContent value="marketplace" className="mt-6">
-              <Marketplace activeSubTab={marketSubTab} />
+              <Marketplace activeSubTab={marketSubTab} locationScope={viewScope} />
             </TabsContent>
             
             <TabsContent value="businesses" className="mt-6">

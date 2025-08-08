@@ -35,7 +35,7 @@ import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
 
 interface Service {
   id: string;
@@ -85,7 +85,7 @@ interface MarketplaceItem {
   is_liked_by_user?: boolean;
 }
 
-const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) => {
+const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services' | 'goods'; locationScope?: 'neighborhood' | 'state' }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -109,7 +109,14 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
     if (activeSubTab && activeSubTab !== activeTab) {
       setActiveTab(activeSubTab);
     }
-  }, [activeSubTab]);
+}, [activeSubTab]);
+
+  // Sync view scope from parent if provided
+  useEffect(() => {
+    if (locationScope && locationScope !== viewScope) {
+      setViewScope(locationScope);
+    }
+  }, [locationScope]);
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -488,10 +495,6 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
           <h1 className="text-2xl md:text-3xl font-bold">Marketplace</h1>
           <p className="text-sm md:text-base text-muted-foreground">Discover local services and goods in your neighborhood</p>
         </div>
-        <Button className="flex items-center gap-2 h-12 lg:h-10 w-full lg:w-auto">
-          <Plus className="h-4 w-4" />
-          Create Listing
-        </Button>
       </div>
 
       {/* Services/Goods selection controlled from parent dropdown on page header */}
@@ -507,10 +510,10 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
               className="pl-10 h-12 md:h-10 w-full"
             />
           </div>
-          <ToggleGroup type="single" value={viewScope} onValueChange={(v) => v && setViewScope(v as 'neighborhood' | 'state')} className="w-full sm:w-auto">
-            <ToggleGroupItem value="neighborhood" className="h-10 text-sm">My City</ToggleGroupItem>
-            <ToggleGroupItem value="state" className="h-10 text-sm">Entire State</ToggleGroupItem>
-          </ToggleGroup>
+          <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Create Listing
+          </Button>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
               <SelectValue placeholder="Category" />
