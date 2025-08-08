@@ -551,7 +551,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               })}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
+          <Button variant="outline" className="hidden sm:flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">More Filters</span>
             <span className="sm:hidden">Filters</span>
