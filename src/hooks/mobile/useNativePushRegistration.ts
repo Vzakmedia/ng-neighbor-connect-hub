@@ -35,7 +35,7 @@ export const useNativePushRegistration = () => {
         // Registration success
         const regListener = await PushNotifications.addListener('registration', async (token) => {
           try {
-            await supabase.rpc('register_user_device', {
+            await (supabase as any).rpc('register_user_device', {
               platform: platformToLabel(platform),
               fcm_token: platform === 'android' ? token.value : null,
               apns_token: platform === 'ios' ? token.value : null,

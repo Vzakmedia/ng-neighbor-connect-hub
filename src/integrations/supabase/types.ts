@@ -3926,6 +3926,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_old_call_signals: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -3933,6 +3937,21 @@ export type Database = {
       confirm_emergency_contact_request: {
         Args: { _request_id: string; _accept?: boolean }
         Returns: Json
+      }
+      create_notification: {
+        Args: {
+          _user_id: string
+          _title: string
+          _body: string
+          _type?: string
+          _priority?: string
+          _channels?: string[]
+          _data?: Json
+          _source_id?: string
+          _source_type?: string
+          _scheduled_for?: string
+        }
+        Returns: string
       }
       create_staff_invitation: {
         Args:
@@ -4152,6 +4171,27 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_user_notifications: {
+        Args: {
+          _user_id: string
+          _limit?: number
+          _offset?: number
+          _status?: string
+          _type?: string
+        }
+        Returns: {
+          id: string
+          title: string
+          body: string
+          type: string
+          priority: string
+          status: string
+          data: Json
+          created_at: string
+          read_at: string
+          delivery_status: Json
+        }[]
+      }
       get_user_staff_role: {
         Args: { _user_id?: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -4252,9 +4292,39 @@ export type Database = {
         Args: { recipient_user_id: string; sender_user_id: string }
         Returns: undefined
       }
+      mark_notification_delivered: {
+        Args: {
+          _notification_id: string
+          _channel: string
+          _provider?: string
+          _provider_id?: string
+        }
+        Returns: boolean
+      }
+      mark_notification_read: {
+        Args: { _notification_id: string; _user_id: string }
+        Returns: boolean
+      }
       process_alert_queue: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      register_user_device: {
+        Args:
+          | {
+              _user_id: string
+              _device_token: string
+              _platform: string
+              _app_version?: string
+              _os_version?: string
+            }
+          | {
+              platform: string
+              fcm_token: string
+              apns_token: string
+              device_model: string
+            }
+        Returns: string
       }
       set_alert_cache: {
         Args: { _cache_key: string; _cache_data: Json; _ttl_seconds?: number }
