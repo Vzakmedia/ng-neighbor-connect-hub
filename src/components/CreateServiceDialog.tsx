@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,9 +15,10 @@ import { Plus, Camera, X } from 'lucide-react';
 
 interface CreateServiceDialogProps {
   onServiceCreated: () => void;
+  trigger?: ReactNode;
 }
 
-const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => {
+const CreateServiceDialog = ({ onServiceCreated, trigger }: CreateServiceDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -231,10 +232,14 @@ const CreateServiceDialog = ({ onServiceCreated }: CreateServiceDialogProps) => 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Offer Service
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Offer Service
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
