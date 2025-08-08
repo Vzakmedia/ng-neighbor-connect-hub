@@ -3746,6 +3746,7 @@ const Admin = () => {
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-lg z-50">
                         <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="investigating">Investigating</SelectItem>
                         <SelectItem value="resolved">Resolved</SelectItem>
                         <SelectItem value="false_alarm">False Alarm</SelectItem>
                       </SelectContent>
@@ -7147,77 +7148,7 @@ const Admin = () => {
 
       {/* Global Dialogs - Outside of Tabs */}
 
-      {/* Emergency Alert Modal */}
-      <SimpleModal
-        isOpen={alertDialogOpen}
-        onClose={() => setAlertDialogOpen(false)}
-        title="Emergency Alert Details"
-      >
-        {selectedAlert ? (
-          <div>
-            <h3>Alert ID: {selectedAlert.id}</h3>
-            <p>Status: {selectedAlert.status}</p>
-            <p>Type: {getEmergencyTypeLabel(selectedAlert)}</p>
-            <p>Location: {formatLocation(selectedAlert)}</p>
-            <p>Reporter: {selectedAlert.profiles?.full_name || 'Unknown'}</p>
-            <button 
-              onClick={() => setAlertDialogOpen(false)}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-            >
-              Close
-            </button>
-          </div>
-        ) : (
-          <div>No alert selected</div>
-        )}
-      </SimpleModal>
 
-      {/* Edit Alert Modal */}
-      <SimpleModal
-        isOpen={editAlertDialogOpen}
-        onClose={() => setEditAlertDialogOpen(false)}
-        title="Edit Alert Status"
-        maxWidth="max-w-md"
-      >
-        {selectedAlert ? (
-          <div>
-            <h3>Edit Alert: {selectedAlert.id}</h3>
-            <p>Current Status: {selectedAlert.status}</p>
-            <label className="block mt-4">
-              New Status:
-              <select 
-                value={editingAlertStatus} 
-                onChange={(e) => setEditingAlertStatus(e.target.value)}
-                className="mt-1 block w-full p-2 border rounded"
-              >
-                <option value="active">Active</option>
-                <option value="resolved">Resolved</option>
-                <option value="false_alarm">False Alarm</option>
-                <option value="investigating">Investigating</option>
-              </select>
-            </label>
-            <div className="flex gap-2 mt-4">
-              <button 
-                onClick={() => setEditAlertDialogOpen(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  console.log('Save status:', editingAlertStatus);
-                  setEditAlertDialogOpen(false);
-                }}
-                className="px-4 py-2 bg-blue-500 text-white rounded"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>No alert selected</div>
-        )}
-      </SimpleModal>
 
       {/* Create Automation Dialog */}
       <CreateAutomationDialog
