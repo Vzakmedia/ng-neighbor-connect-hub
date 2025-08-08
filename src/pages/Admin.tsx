@@ -1712,7 +1712,6 @@ const Admin = () => {
   };
 
   const fetchEmergencyAlerts = async () => {
-    if (!isSuperAdmin) return;
     
     try {
       const { data: alerts, error } = await supabase
@@ -2174,12 +2173,13 @@ const Admin = () => {
   // Load all data when admin status is confirmed
   useEffect(() => {
     console.log('Data loading effect triggered, isSuperAdmin:', isSuperAdmin);
+    // Always load emergency alerts for admin view
+    fetchEmergencyAlerts();
     if (isSuperAdmin) {
       console.log('Loading admin data...');
       fetchStats();
       fetchUsers();
       fetchDeletedUsers();
-      fetchEmergencyAlerts();
       fetchMarketplaceItems();
       fetchPromotions();
       fetchSponsoredContent();
@@ -2199,14 +2199,12 @@ const Admin = () => {
       
       return () => intervals.forEach(clearInterval);
     } else {
-      console.log('Not super admin, not loading data');
+      console.log('Not super admin, loaded emergency alerts only');
     }
   }, [isSuperAdmin]);
 
   // Set up real-time subscriptions for emergency alerts
   useEffect(() => {
-    if (!isSuperAdmin) return;
-
     console.log('Setting up real-time subscriptions for emergency alerts...');
 
     const alertsChannel = supabase
