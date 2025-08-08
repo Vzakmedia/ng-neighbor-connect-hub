@@ -113,6 +113,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [adminCheckComplete, setAdminCheckComplete] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Filter states for emergency alerts
   const [alertTypeFilter, setAlertTypeFilter] = useState('all');
@@ -2397,7 +2398,7 @@ const Admin = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="flex gap-6" orientation="vertical">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-6" orientation="vertical">
         <TabsList className="flex flex-col h-fit w-48 space-y-1">
           <TabsTrigger value="overview" className="w-full justify-start">
             <BarChart3 className="h-4 w-4 mr-2" />
@@ -2764,7 +2765,7 @@ const Admin = () => {
                         <p className="text-xs text-red-700">Requires immediate attention</p>
                       </div>
                     </div>
-                    <Button variant="destructive" size="sm">
+                    <Button variant="destructive" size="sm" onClick={() => setActiveTab('emergency')}>
                       View Alerts
                     </Button>
                   </div>
