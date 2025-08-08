@@ -512,45 +512,47 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               className="pl-10 h-12 md:h-10 w-full"
             />
           </div>
-          {activeTab === 'services' ? (
-            <CreateServiceDialog
-              onServiceCreated={() => fetchServices()}
-              trigger={
-                <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
-                  <Plus className="h-4 w-4" />
-                  Create Listing
-                </Button>
-              }
-            />
-          ) : (
-            <CreateMarketplaceItemDialog
-              onItemCreated={() => fetchItems()}
-              trigger={
-                <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
-                  <Plus className="h-4 w-4" />
-                  Create Listing
-                </Button>
-              }
-            />
-          )}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-md">
-              {currentCategories.map((category) => {
-                const Icon = category.icon;
-                return (
-                  <SelectItem key={category.value} value={category.value} className="py-3">
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
-                      {category.label}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-md">
+                {currentCategories.map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <SelectItem key={category.value} value={category.value} className="py-3">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {category.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {activeTab === 'services' ? (
+              <CreateServiceDialog
+                onServiceCreated={() => fetchServices()}
+                trigger={
+                  <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden xs:inline md:inline">Create</span>
+                  </Button>
+                }
+              />
+            ) : (
+              <CreateMarketplaceItemDialog
+                onItemCreated={() => fetchItems()}
+                trigger={
+                  <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden xs:inline md:inline">Create</span>
+                  </Button>
+                }
+              />
+            )}
+          </div>
           <Button variant="outline" className="hidden sm:flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
             <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">More Filters</span>
