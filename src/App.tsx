@@ -64,6 +64,13 @@ const queryClient = new QueryClient({
 // Component that initializes push notifications inside AuthProvider
 const PushNotificationWrapper = () => {
   usePushNotifications();
+  // Native push registration (iOS/Android)
+  try {
+    const { useNativePushRegistration } = require('@/hooks/mobile/useNativePushRegistration');
+    useNativePushRegistration();
+  } catch (e) {
+    // no-op on web build
+  }
   return null;
 };
 
