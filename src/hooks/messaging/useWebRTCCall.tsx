@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToastNotifications } from '@/hooks/common/useToastNotifications';
 import { WebRTCManager } from '@/utils/webrtc';
@@ -19,6 +19,8 @@ export const useWebRTCCall = (conversationId: string) => {
     callType: 'audio' | 'video';
     fromUserId: string;
   } | null>(null);
+
+  const webrtcRef = useRef<WebRTCManager | null>(null);
 
   // Initialize WebRTC manager
   const initializeManager = useCallback(() => {
@@ -52,6 +54,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
       const stream = await manager.startCall(false);
       setWebrtcManager(manager);
+      webrtcRef.current = manager;
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(false);
@@ -71,6 +74,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
       const stream = await manager.startCall(true);
       setWebrtcManager(manager);
+      webrtcRef.current = manager;
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(true);
@@ -94,6 +98,7 @@ export const useWebRTCCall = (conversationId: string) => {
       manager.markCallAsAnswered();
       
       setWebrtcManager(manager);
+      webrtcRef.current = manager;
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(acceptVideo);
@@ -125,6 +130,7 @@ export const useWebRTCCall = (conversationId: string) => {
     setLocalStream(null);
     setRemoteStream(null);
     setWebrtcManager(null);
+    webrtcRef.current = null;
   }, [webrtcManager]);
 
   // Toggle audio
@@ -167,23 +173,35 @@ export const useWebRTCCall = (conversationId: string) => {
         });
       } else if (message.message.type === 'answer') {
         console.log('Call answer received');
-        if (webrtcManager) {
-          webrtcManager.markCallAsAnswered();
-          await webrtcManager.handleSignalingMessage(message.message);
+        {
+          const mgr = webrtcRef.current;
+          if (mgr) {
+            mgr.markCallAsAnswered();
+            await mgr.handleSignalingMessage(message.message);
+          }
         }
       } else if (message.message.type === 'ice-candidate') {
         console.log('ICE candidate received');
-        if (webrtcManager) {
-          await webrtcManager.handleSignalingMessage(message.message);
+        {
+          const mgr = webrtcRef.current;
+          if (mgr) {
+            await mgr.handleSignalingMessage(message.message);
+          }
         }
       } else if (message.message.type === 'call-end') {
         console.log('Call end signal received');
-        if (webrtcManager) {
-          await webrtcManager.handleSignalingMessage(message.message);
+        {
+          const mgr = webrtcRef.current;
+          if (mgr) {
+            await mgr.handleSignalingMessage(message.message);
+          }
         }
-      } else if (webrtcManager) {
-        console.log('Other signaling message:', message.message.type);
-        await webrtcManager.handleSignalingMessage(message.message);
+      } else {
+        const mgr = webrtcRef.current;
+        if (mgr) {
+          console.log('Other signaling message:', message.message.type);
+          await mgr.handleSignalingMessage(message.message);
+        }
       }
     };
 
