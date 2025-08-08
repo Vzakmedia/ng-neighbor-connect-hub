@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useConversations } from '@/hooks/useConversations';
 import { toast } from '@/components/ui/use-toast';
 import { playMessagingChime, sendBrowserNotification } from '@/utils/audioUtils';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const MessagingNotificationProvider = () => {
   const { user } = useAuth();
@@ -50,6 +51,86 @@ const MessagingNotificationProvider = () => {
     onMessageUpdate: () => {},
     onConversationUpdate: () => {},
   });
+
+// Polling fallback for new messages when realtime is unavailable
+  const lastCheckedRef = useRef<string | null>(null);
+  const notifiedIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const since = lastCheckedRef.current;
+        let query = supabase
+          .from('direct_messages')
+          .select('id, content, sender_id, recipient_id, created_at')
+          .eq('recipient_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (since) {
+          query = query.gt('created_at', since);
+        }
+
+        const { data, error } = await query;
+        if (!active) return;
+        if (error) {
+          console.error('Notification poll error', error);
+          return;
+        }
+
+        if (data && data.length) {
+          let maxCreatedAt: string | null = since;
+          // Oldest first to keep order
+          for (const msg of [...data].reverse()) {
+            if (msg.sender_id !== user.id && !notifiedIdsRef.current.has(msg.id)) {
+              await playMessagingChime();
+              toast({
+                title: 'New message',
+                description: msg.content?.slice(0, 120) || 'You have a new message.',
+                action: (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const convId = await createOrFindConversation(msg.sender_id);
+                        if (convId) navigate(`/chat/${convId}`);
+                      } catch (e) {
+                        navigate('/messages');
+                      }
+                    }}
+                    className="px-3 py-1 rounded-md bg-primary text-primary-foreground"
+                  >
+                    Open Chat
+                  </button>
+                ) as any,
+              });
+
+              await sendBrowserNotification('New message', {
+                body: msg.content || 'You have a new message.',
+              });
+              notifiedIdsRef.current.add(msg.id);
+            }
+            if (!maxCreatedAt || msg.created_at > maxCreatedAt) {
+              maxCreatedAt = msg.created_at;
+            }
+          }
+          lastCheckedRef.current = maxCreatedAt || since;
+        }
+      } catch (err) {
+        console.error('Notification polling unexpected error', err);
+      }
+    };
+
+    // initial check and interval
+    poll();
+    const interval = window.setInterval(poll, 10000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [user, navigate, createOrFindConversation]);
 
   // No UI required
   useEffect(() => {}, []);
