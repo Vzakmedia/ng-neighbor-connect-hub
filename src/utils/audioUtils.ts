@@ -417,6 +417,95 @@ export const playEmergencyAlert = async (): Promise<void> => {
   }
 };
 
+// New: Play a beautiful, melodic messaging chime
+export const playMessagingChime = async (volume: number = 0.6): Promise<void> => {
+  const ctx = await getAudioContext();
+  const baseTime = ctx.currentTime + 0.05;
+
+  const notes = [
+    { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
+    { freq: 783.99, dur: 0.14, offset: 0.16 }, // G5
+    { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
+    { freq: 1174.66, dur: 0.22, offset: 0.56 }, // D6
+  ];
+
+  notes.forEach(({ freq, dur, offset }) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, baseTime + offset);
+
+    gain.gain.setValueAtTime(0, baseTime + offset);
+    gain.gain.linearRampToValueAtTime(volume * 0.35, baseTime + offset + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(baseTime + offset);
+    osc.stop(baseTime + offset + dur + 0.02);
+  });
+};
+
+// New: Ringtone player for incoming calls (melodious loop)
+export const createRingtonePlayer = () => {
+  let timer: number | null = null;
+  let active = false;
+
+  const scheduleCycle = async () => {
+    const ctx = await getAudioContext();
+    const t0 = ctx.currentTime + 0.05;
+    const pattern = [
+      // A gentle arpeggio in A major
+      { f: 440.0, d: 0.25, o: 0.00 }, // A4
+      { f: 554.37, d: 0.22, o: 0.28 }, // C#5
+      { f: 659.25, d: 0.22, o: 0.52 }, // E5
+      { f: 880.0, d: 0.35, o: 0.78 },  // A5
+    ];
+
+    const volume = Math.min(getSoundVolume() * 0.9, 0.9);
+
+    pattern.forEach(({ f, d, o }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t0 + o);
+
+      gain.gain.setValueAtTime(0, t0 + o);
+      gain.gain.linearRampToValueAtTime(volume * 0.4, t0 + o + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + o + d);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(t0 + o);
+      osc.stop(t0 + o + d + 0.05);
+    });
+  };
+
+  return {
+    start: async () => {
+      if (active) return;
+      active = true;
+      await initializeAudioOnInteraction();
+      const loop = async () => {
+        if (!active) return;
+        await scheduleCycle();
+        timer = window.setTimeout(loop, 2200);
+      };
+      loop();
+    },
+    stop: () => {
+      active = false;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    },
+  } as const;
+};
+
 // Add global click handler to initialize audio on first user interaction
 if (typeof window !== 'undefined') {
   const handleFirstInteraction = () => {

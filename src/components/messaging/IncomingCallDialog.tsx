@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Phone, PhoneOff, VideoIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { createRingtonePlayer, initializeAudioOnInteraction } from '@/utils/audioUtils';
 
 interface IncomingCallDialogProps {
   open: boolean;
@@ -21,6 +22,29 @@ export const IncomingCallDialog: React.FC<IncomingCallDialogProps> = ({
   onAccept,
   onDecline
 }) => {
+  const ringtoneRef = useRef<ReturnType<typeof createRingtonePlayer> | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      ringtoneRef.current = createRingtonePlayer();
+      (async () => {
+        try {
+          await initializeAudioOnInteraction();
+          await ringtoneRef.current?.start();
+        } catch (e) {
+          console.error('Failed to start ringtone:', e);
+        }
+      })();
+    } else {
+      ringtoneRef.current?.stop();
+      ringtoneRef.current = null;
+    }
+    return () => {
+      ringtoneRef.current?.stop();
+      ringtoneRef.current = null;
+    };
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md">

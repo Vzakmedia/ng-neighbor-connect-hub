@@ -16,6 +16,7 @@ import { OnboardingNotificationManager } from "@/components/OnboardingNotificati
 import AppTutorial from "@/components/AppTutorial";
 import { useTutorial } from "@/hooks/useTutorial";
 import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
+import MessagingNotificationProvider from "@/components/messaging/MessagingNotificationProvider";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -99,6 +100,7 @@ const App = () => {
           <Sonner />
         <BrowserRouter>
           <OnboardingNotificationManager />
+          <MessagingNotificationProvider />
           <TutorialWrapper />
           <Routes>
               <Route path="/" element={<Landing />} />
