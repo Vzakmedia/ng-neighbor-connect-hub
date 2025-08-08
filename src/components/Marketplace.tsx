@@ -497,16 +497,16 @@ const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) 
       {/* Services/Goods selection controlled from parent dropdown on page header */}
       {/* Search and Filters */}
       <div className="flex flex-col gap-3 md:gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={`Search ${activeTab}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12 md:h-10"
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={`Search ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12 md:h-10 w-full"
+            />
+          </div>
           <ToggleGroup type="single" value={viewScope} onValueChange={(v) => v && setViewScope(v as 'neighborhood' | 'state')} className="w-full sm:w-auto">
             <ToggleGroupItem value="neighborhood" className="h-10 text-sm">My City</ToggleGroupItem>
             <ToggleGroupItem value="state" className="h-10 text-sm">Entire State</ToggleGroupItem>
