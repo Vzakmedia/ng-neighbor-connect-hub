@@ -20,6 +20,7 @@ import { useFileUpload, type Attachment } from '@/hooks/useFileUpload';
 import MessageSelectionToolbar from './MessageSelectionToolbar';
 import AttachmentButton from './AttachmentButton';
 import AttachmentDisplay from './AttachmentDisplay';
+import { useTypingIndicator } from '@/hooks/messaging/useTypingIndicator';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -54,10 +55,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
   const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
+  const { isOtherTyping, notifyTypingStart, notifyTypingStop } = useTypingIndicator(
+    conversation.id,
+    currentUserId,
+    conversation.other_user_id
+  );
 
   const handleSendMessage = async () => {
     if (newMessage.trim() || pendingAttachments.length > 0) {
       await onSendMessage(newMessage, pendingAttachments);
+      notifyTypingStop();
       setNewMessage('');
       setPendingAttachments([]);
     }
@@ -288,7 +295,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             </div>
           </div>
         )}
-        
+        {isOtherTyping && (
+          <div className="mb-1 text-xs text-muted-foreground animate-pulse">
+            {(conversation.other_user_name || 'User')} is typing…
+          </div>
+        )}
         <div className="flex space-x-1 md:space-x-2">
           <AttachmentButton 
             onFileSelect={handleFileSelect}
@@ -297,7 +308,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           <Textarea
             ref={textareaRef}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              notifyTypingStart();
+            }}
+            onBlur={notifyTypingStop}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             className="flex-1 min-h-[36px] md:min-h-[40px] max-h-[120px] resize-none text-sm md:text-base"
