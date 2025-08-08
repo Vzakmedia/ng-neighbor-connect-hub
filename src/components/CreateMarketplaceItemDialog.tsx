@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,9 +14,10 @@ import { Plus, Camera, X } from 'lucide-react';
 
 interface CreateMarketplaceItemDialogProps {
   onItemCreated: () => void;
+  trigger?: ReactNode;
 }
 
-const CreateMarketplaceItemDialog = ({ onItemCreated }: CreateMarketplaceItemDialogProps) => {
+const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketplaceItemDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -165,10 +166,14 @@ const CreateMarketplaceItemDialog = ({ onItemCreated }: CreateMarketplaceItemDia
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          List Goods
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            List Goods
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>

@@ -35,6 +35,7 @@ import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
+import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 
 
 interface Service {
@@ -510,10 +511,15 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               className="pl-10 h-12 md:h-10 w-full"
             />
           </div>
-          <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Create Listing
-          </Button>
+          <CreateMarketplaceItemDialog
+            onItemCreated={() => { setActiveTab('goods'); fetchItems(); }}
+            trigger={
+              <Button className="flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Create Listing
+              </Button>
+            }
+          />
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
               <SelectValue placeholder="Category" />
@@ -803,10 +809,15 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               ? `Try adjusting your search or filters`
               : `Be the first to list a ${activeTab.slice(0, -1)} in your area`}
           </p>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Listing
-          </Button>
+          <CreateMarketplaceItemDialog
+            onItemCreated={() => { setActiveTab('goods'); fetchItems(); }}
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Listing
+              </Button>
+            }
+          />
          </div>
        )}
 
