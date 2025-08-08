@@ -25,7 +25,8 @@ import {
   Camera,
   Gamepad2,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +36,8 @@ import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Service {
   id: string;
@@ -488,23 +491,30 @@ const Marketplace = () => {
 
       {/* Tabs */}
       <div className="flex flex-col gap-4">
-        <div className="flex bg-muted p-1 rounded-lg w-full">
-          <Button
-            variant={activeTab === 'services' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('services')}
-            className="flex items-center gap-2 flex-1 h-12 md:h-10"
-          >
-            <Users className="h-4 w-4" />
-            Services
-          </Button>
-          <Button
-            variant={activeTab === 'goods' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('goods')}
-            className="flex items-center gap-2 flex-1 h-12 md:h-10"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Goods
-          </Button>
+        <div className="w-full">
+          <div className="flex">
+            <div className="w-full sm:w-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center justify-between sm:justify-center gap-2 h-12 md:h-10 w-full sm:w-auto">
+                    <span className="flex items-center gap-2">
+                      {activeTab === 'services' ? <Users className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+                      Services & Goods
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="z-50 bg-background">
+                  <DropdownMenuItem onClick={() => setActiveTab('services')}>
+                    <Users className="h-4 w-4 mr-2" /> Services
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('goods')}>
+                    <ShoppingBag className="h-4 w-4 mr-2" /> Goods
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -520,22 +530,10 @@ const Marketplace = () => {
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex bg-muted p-1 rounded-lg w-full sm:w-auto">
-            <Button
-              variant={viewScope === 'neighborhood' ? 'default' : 'ghost'}
-              onClick={() => setViewScope('neighborhood')}
-              className="flex-1 h-10 text-sm"
-            >
-              My City
-            </Button>
-            <Button
-              variant={viewScope === 'state' ? 'default' : 'ghost'}
-              onClick={() => setViewScope('state')}
-              className="flex-1 h-10 text-sm"
-            >
-              Entire State
-            </Button>
-          </div>
+          <ToggleGroup type="single" value={viewScope} onValueChange={(v) => v && setViewScope(v as 'neighborhood' | 'state')} className="w-full sm:w-auto">
+            <ToggleGroupItem value="neighborhood" className="h-10 text-sm">My City</ToggleGroupItem>
+            <ToggleGroupItem value="state" className="h-10 text-sm">Entire State</ToggleGroupItem>
+          </ToggleGroup>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full h-12 md:h-10">
               <SelectValue placeholder="Category" />
