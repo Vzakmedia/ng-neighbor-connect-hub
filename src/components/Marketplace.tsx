@@ -25,8 +25,7 @@ import {
   Camera,
   Gamepad2,
   Calendar,
-  MessageSquare,
-  ChevronDown
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,7 +35,6 @@ import BookServiceDialog from './BookServiceDialog';
 import { ImageGalleryDialog } from './ImageGalleryDialog';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface Service {
@@ -87,7 +85,7 @@ interface MarketplaceItem {
   is_liked_by_user?: boolean;
 }
 
-const Marketplace = () => {
+const Marketplace = ({ activeSubTab }: { activeSubTab?: 'services' | 'goods' }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -105,6 +103,13 @@ const Marketplace = () => {
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceItem | null>(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+
+  // Sync sub-selection from parent
+  useEffect(() => {
+    if (activeSubTab && activeSubTab !== activeTab) {
+      setActiveTab(activeSubTab);
+    }
+  }, [activeSubTab]);
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -489,35 +494,7 @@ const Marketplace = () => {
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-col gap-4">
-        <div className="w-full">
-          <div className="flex">
-            <div className="w-full sm:w-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center justify-between sm:justify-center gap-2 h-12 md:h-10 w-full sm:w-auto">
-                    <span className="flex items-center gap-2">
-                      {activeTab === 'services' ? <Users className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-                      Services & Goods
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="z-50 bg-background">
-                  <DropdownMenuItem onClick={() => setActiveTab('services')}>
-                    <Users className="h-4 w-4 mr-2" /> Services
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab('goods')}>
-                    <ShoppingBag className="h-4 w-4 mr-2" /> Goods
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Services/Goods selection controlled from parent dropdown on page header */}
       {/* Search and Filters */}
       <div className="flex flex-col gap-3 md:gap-4">
         <div className="relative">
