@@ -25,6 +25,7 @@ import ContentManagementPanel from '@/components/ContentManagementPanel';
 import CreateAutomationDialog from '@/components/CreateAutomationDialog';
 import ConfigureAutomationDialog from '@/components/ConfigureAutomationDialog';
 import AutomationLogsDialog from '@/components/AutomationLogsDialog';
+import { AdCampaignCard } from '@/components/advertising/AdCampaignCard';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -83,10 +84,12 @@ const Admin = () => {
   const [marketplaceItems, setMarketplaceItems] = useState([]);
   const [flaggedReports, setFlaggedReports] = useState([]);
   const [sponsoredContent, setSponsoredContent] = useState([]);
+  const [pendingAdCampaigns, setPendingAdCampaigns] = useState<any[]>([]);
   const [automations, setAutomations] = useState([]);
   const [appConfigs, setAppConfigs] = useState([]);
   const [automationLogs, setAutomationLogs] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+
   const [systemHealth, setSystemHealth] = useState({
     database: 'healthy',
     realtime: 'active', 
@@ -1905,6 +1908,23 @@ const Admin = () => {
     }
   };
 
+  const fetchPendingAdCampaigns = async () => {
+    if (!isSuperAdmin) return;
+    try {
+      const { data, error } = await supabase
+        .from('advertisement_campaigns')
+        .select('id, campaign_name, campaign_type, status, approval_status, target_geographic_scope, daily_budget, total_budget, total_spent, total_impressions, total_clicks, start_date, end_date, created_at, ad_title, ad_description')
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      setPendingAdCampaigns(data || []);
+    } catch (err) {
+      console.error('Error fetching pending ad campaigns:', err);
+      setPendingAdCampaigns([]);
+    }
+  };
+
   const fetchAutomations = async () => {
     if (!isSuperAdmin) {
       console.log('fetchAutomations: Not super admin, skipping');
@@ -2182,6 +2202,7 @@ const Admin = () => {
       fetchDeletedUsers();
       fetchMarketplaceItems();
       fetchPromotions();
+      fetchPendingAdCampaigns();
       fetchSponsoredContent();
       fetchContentReports();
       fetchAutomations();
@@ -4562,6 +4583,19 @@ const Admin = () => {
                   <Button onClick={handleGenerateRevenueReport}>Revenue Report</Button>
                 </div>
                 
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">Pending Ad Campaigns</h3>
+                  {pendingAdCampaigns.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No promotions waiting for review.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {pendingAdCampaigns.map((campaign: any) => (
+                        <AdCampaignCard key={campaign.id} campaign={campaign} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <Table>
                   <TableHeader>
                     <TableRow>
