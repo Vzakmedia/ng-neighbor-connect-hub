@@ -27,12 +27,15 @@ export class WebRTCManager {
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
-        // Add TURN server for better reliability (you'll need to replace with your own)
-        // { 
-        //   urls: 'turn:your-turn-server.com:3478',
-        //   username: 'username',
-        //   credential: 'password'
-        // }
+        {
+          urls: [
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:443',
+            'turns:openrelay.metered.ca:443',
+          ],
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
       ]
     });
 
