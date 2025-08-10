@@ -26,6 +26,7 @@ import CreateAutomationDialog from '@/components/CreateAutomationDialog';
 import ConfigureAutomationDialog from '@/components/ConfigureAutomationDialog';
 import AutomationLogsDialog from '@/components/AutomationLogsDialog';
 import { AdCampaignCard } from '@/components/advertising/AdCampaignCard';
+import AdsSettingsPanel from '@/components/advertising/AdsSettingsPanel';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -4689,6 +4690,12 @@ const Admin = () => {
                     ))}
                   </TableBody>
                 </Table>
+
+                {/* Ad Settings Panel */}
+                <div className="mt-10">
+                  <h3 className="text-sm font-medium mb-3">Ad Settings</h3>
+                  <AdsSettingsPanel />
+                </div>
               </div>
             </CardContent>
           </Card>
