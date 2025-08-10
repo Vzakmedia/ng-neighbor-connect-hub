@@ -58,7 +58,7 @@ const Navigation = () => {
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
-    { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
+    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
   ];
 
   // Mobile-specific order with services and messages swapped
