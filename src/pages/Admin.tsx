@@ -27,6 +27,9 @@ import ConfigureAutomationDialog from '@/components/ConfigureAutomationDialog';
 import AutomationLogsDialog from '@/components/AutomationLogsDialog';
 import { AdCampaignCard } from '@/components/advertising/AdCampaignCard';
 import AdsSettingsPanel from '@/components/advertising/AdsSettingsPanel';
+import { DirectMessageDialog } from '@/components/DirectMessageDialog';
+import { UserProfileDialog } from '@/components/UserProfileDialog';
+import ReportIncidentDialog from '@/components/ReportIncidentDialog';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -142,8 +145,10 @@ const Admin = () => {
   
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+const [selectedUser, setSelectedUser] = useState<any>(null);
+const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+const [showDMDialog, setShowDMDialog] = useState(false);
+const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
@@ -1059,10 +1064,9 @@ const Admin = () => {
   };
 
   const handleCreateAlert = () => {
-    toast({
-      title: "Create Alert",
-      description: "Alert creation functionality coming soon",
-    });
+    setShowProfileDialog(false);
+    setShowDMDialog(false);
+    toast({ title: 'Create Alert', description: 'Opening alert form...' });
   };
 
   const handleResolveAlert = async (alert: any) => {
@@ -1244,21 +1248,28 @@ const Admin = () => {
   
 
   const handleSuspendUser = async (user: any) => {
-    const confirm = window.confirm(`Are you sure you want to suspend ${user.full_name}?`);
-    if (!confirm) return;
+    const confirmSuspend = window.confirm(`Are you sure you want to suspend ${user.full_name}?`);
+    if (!confirmSuspend) return;
 
     try {
-      // Add suspension logic here - could be a flag in profiles table
+      // Remove existing roles and assign 'banned'
+      const { error: delErr } = await supabase.from('user_roles').delete().eq('user_id', user.user_id);
+      if (delErr) throw delErr;
+
+      const { error: insErr } = await supabase.from('user_roles').insert({ user_id: user.user_id, role: 'banned' as any });
+      if (insErr) throw insErr;
+
       toast({
-        title: "User Suspended",
-        description: `${user.full_name} has been suspended`,
+        title: 'User Suspended',
+        description: `${user.full_name} has been suspended (role set to banned)`,
       });
+      fetchUsers?.();
     } catch (error) {
       console.error('Error suspending user:', error);
       toast({
-        title: "Error",
-        description: "Failed to suspend user",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to suspend user',
+        variant: 'destructive',
       });
     }
   };
@@ -3465,19 +3476,19 @@ const Admin = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" onClick={() => setShowDMDialog(true)}>
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Send Message
                         </Button>
-                        <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" onClick={() => setShowProfileDialog(true)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
                         </Button>
-                        <Button variant="outline" className="w-full">
+                        <Button variant="outline" className="w-full" onClick={() => selectedUser && handleEditUserRole(selectedUser)}>
                           <Shield className="mr-2 h-4 w-4" />
                           Change Permissions
                         </Button>
-                        <Button variant="destructive" className="w-full">
+                        <Button variant="destructive" className="w-full" onClick={() => selectedUser && handleSuspendUser(selectedUser)}>
                           <AlertTriangle className="mr-2 h-4 w-4" />
                           Suspend Account
                         </Button>
@@ -3534,6 +3545,24 @@ const Admin = () => {
               )}
             </DialogContent>
           </Dialog>
+
+          {selectedUser && (
+            <>
+              <DirectMessageDialog
+                isOpen={showDMDialog}
+                onClose={() => setShowDMDialog(false)}
+                recipientId={selectedUser.user_id}
+                recipientName={selectedUser.full_name || 'User'}
+                recipientAvatar={selectedUser.avatar_url}
+              />
+              <UserProfileDialog
+                isOpen={showProfileDialog}
+                onClose={() => setShowProfileDialog(false)}
+                userName={selectedUser.full_name || ''}
+                userAvatar={selectedUser.avatar_url}
+              />
+            </>
+          )}
 
           
           {/* Debug Info moved to global scope */}
@@ -4232,7 +4261,7 @@ const Admin = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleCreateAlert}>Create Alert</Button>
+                  <ReportIncidentDialog trigger={<Button>Create Alert</Button>} />
                 </div>
                 
                 <Table>
