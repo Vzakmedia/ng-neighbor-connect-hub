@@ -144,22 +144,22 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
   return (
     <Card className="w-full mb-4 border-l-4 border-l-primary/20 bg-gradient-to-r from-muted/30 to-transparent">
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {board.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">{board.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
+              <CardTitle className="text-base sm:text-lg">{board.name}</CardTitle>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant={getScopeBadgeVariant(board.location_scope)}>
                   {getScopeIcon(board.location_scope)}
                   <span className="ml-1">{getScopeLabel(board.location_scope)}</span>
                 </Badge>
                 {board.location && (
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {board.location}
                   </span>
@@ -173,6 +173,7 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
               disabled={isJoining}
               variant="outline"
               size="sm"
+              className="self-start sm:self-auto"
             >
               {isJoining ? (
                 <>
@@ -186,8 +187,8 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
               )}
             </Button>
           )}
-          {board.user_role && (
-            <Badge variant="secondary" className="flex items-center gap-1">
+          {!canJoin && board.user_role && (
+            <Badge variant="secondary" className="flex items-center gap-1 self-start sm:self-auto">
               <CheckCircle className="h-3 w-3" />
               {board.user_role === 'admin' ? 'Admin' : 'Member'}
             </Badge>
@@ -200,8 +201,8 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
           <p className="text-sm text-muted-foreground mb-3">{board.description}</p>
         )}
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-3 sm:gap-4 text-sm text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
               {board.member_count} member{board.member_count !== 1 ? 's' : ''}
@@ -216,8 +217,7 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
               </span>
             )}
           </div>
-          
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs self-start sm:self-auto">
             Suggested for you
           </Badge>
         </div>

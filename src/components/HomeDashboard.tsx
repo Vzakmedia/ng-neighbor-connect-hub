@@ -114,8 +114,33 @@ const HomeDashboard = () => {
         </div>
       </div>
 
-      {/* Nextdoor-Style Dashboard Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+        {/* Mobile Sponsored Section */}
+        <div className="lg:hidden">
+          <Card className="shadow-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
+                <TrendingUp className="h-4 w-4 mr-2 text-primary" />
+                <span>Sponsored</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3">
+              {adsLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-40 bg-muted rounded-lg"></div>
+                </div>
+              ) : currentAds.length > 0 ? (
+                <AdCarousel ads={currentAds} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No sponsored content available
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Nextdoor-Style Dashboard Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
         {/* Desktop Tabs */}
         <TabsList className="hidden md:grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center">
