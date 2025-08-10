@@ -37,6 +37,7 @@ interface PricingTier {
   base_price_per_day: number;
   impressions_included: number;
   priority_level: number;
+  max_duration_days?: number;
   features: any;
 }
 
@@ -110,10 +111,12 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
       
       // Auto-select first tier if available
       if (data && data.length > 0 && !formData.pricingTierId) {
+        const first = data[0] as any;
         setFormData(prev => ({ 
           ...prev, 
-          pricingTierId: data[0].id,
-          dailyBudget: data[0].base_price_per_day 
+          pricingTierId: first.id,
+          dailyBudget: first.base_price_per_day,
+          duration: Math.min(prev.duration, first.max_duration_days ?? prev.duration)
         }));
       }
     } catch (error) {
@@ -171,12 +174,43 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
   const handleSubmit = async () => {
     if (!user) return;
 
-    setLoading(true);
-    try {
-      const endDate = new Date(formData.startDate);
-      endDate.setDate(endDate.getDate() + formData.duration);
+  setLoading(true);
+  try {
+    const endDate = new Date(formData.startDate);
+    endDate.setDate(endDate.getDate() + formData.duration);
 
-      const campaignData = {
+    const tier = getSelectedTier();
+    if (!tier) {
+      toast({
+        title: "Select a pricing plan",
+        description: "Please choose a pricing tier before continuing",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    const maxDays = tier.max_duration_days ?? 90;
+    if (formData.duration > maxDays) {
+      toast({
+        title: "Duration too long",
+        description: `Max duration for ${tier.name} is ${maxDays} days.`,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    const minBudget = tier.base_price_per_day;
+    if (formData.dailyBudget < minBudget) {
+      toast({
+        title: "Daily budget too low",
+        description: `Minimum is $${minBudget}/day for this tier.`,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const campaignData = {
         user_id: user.id,
         campaign_name: formData.campaignName,
         campaign_type: formData.campaignType,
@@ -469,11 +503,18 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                   <Input
                     id="duration"
                     type="number"
-                    min="1"
-                    max="90"
+                    min={1}
+                    max={getSelectedTier()?.max_duration_days ?? 90}
                     value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      const max = getSelectedTier()?.max_duration_days ?? 90;
+                      setFormData({ ...formData, duration: Math.min(Math.max(val, 1), max) });
+                    }}
                   />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Max for selected tier: {getSelectedTier()?.max_duration_days ?? 90} days
+                  </p>
                 </div>
               </div>
             </div>
@@ -494,11 +535,15 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                         "cursor-pointer transition-all",
                         formData.pricingTierId === tier.id && "ring-2 ring-primary"
                       )}
-                      onClick={() => setFormData({ 
-                        ...formData, 
-                        pricingTierId: tier.id,
-                        dailyBudget: tier.base_price_per_day 
-                      })}
+                      onClick={() => {
+                        const max = (tier as any).max_duration_days ?? formData.duration;
+                        setFormData({ 
+                          ...formData, 
+                          pricingTierId: tier.id,
+                          dailyBudget: tier.base_price_per_day,
+                          duration: Math.min(formData.duration, max)
+                        })
+                      }}
                     >
                       <CardHeader>
                         <div className="flex justify-between items-start">
@@ -532,10 +577,14 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                 <Input
                   id="dailyBudget"
                   type="number"
-                  min="1"
+                  min={getSelectedTier()?.base_price_per_day ?? 1}
                   step="0.01"
                   value={formData.dailyBudget}
-                  onChange={(e) => setFormData({ ...formData, dailyBudget: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const min = getSelectedTier()?.base_price_per_day ?? 1;
+                    const val = parseFloat(e.target.value) || 0;
+                    setFormData({ ...formData, dailyBudget: Math.max(val, min) });
+                  }}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
                   Minimum: ${getSelectedTier()?.base_price_per_day || 0}/day
