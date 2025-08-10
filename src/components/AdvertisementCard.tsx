@@ -28,8 +28,8 @@ const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
   };
 
   return (
-    <Card className="shadow-card hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-community-yellow">
-      <CardContent className="p-4" onClick={handleAdClick}>
+    <Card role="article" aria-label={`Promoted post: ${ad.title}`} className="shadow-card hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-community-yellow">
+      <CardContent className="p-3 sm:p-4" onClick={handleAdClick}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
             <Badge variant="secondary" className="text-xs bg-community-yellow/20 text-community-yellow">
@@ -45,20 +45,26 @@ const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
         </div>
 
         {ad.image && (
-          <div className="mb-3 h-32 rounded-lg bg-muted bg-cover bg-center" 
-               style={{ backgroundImage: `url(${ad.image})` }} />
+          <div className="mb-3 rounded-lg overflow-hidden">
+            <img
+              src={ad.image}
+              alt={ad.title}
+              loading="lazy"
+              className="w-full h-28 sm:h-40 object-cover"
+            />
+          </div>
         )}
 
-        <h4 className="font-semibold mb-2 text-foreground hover:text-primary transition-colors">
+        <h4 className="font-semibold mb-2 text-foreground hover:text-primary transition-colors text-base sm:text-lg">
           {ad.title}
         </h4>
         
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+        <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
           {ad.description}
         </p>
 
         {ad.price && (
-          <p className="text-lg font-bold text-primary mb-2">{ad.price}</p>
+          <p className="text-base sm:text-lg font-bold text-primary mb-2">{ad.price}</p>
         )}
 
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -73,7 +79,7 @@ const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
         </div>
 
         {ad.url && (
-          <Button variant="outline" className="w-full mt-3" onClick={handleAdClick}>
+          <Button variant="outline" className="w-full mt-3 h-10 sm:h-11 text-sm" aria-label={`Learn more about ${ad.title}`} onClick={handleAdClick}>
             Learn More
           </Button>
         )}
