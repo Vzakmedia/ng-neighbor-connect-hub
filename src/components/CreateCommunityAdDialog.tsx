@@ -117,17 +117,20 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
     try {
       const totalCost = calculateTotalCost();
       
-      // Get pricing tier first
+      // Determine pricing tier mapping
+      const tierType = formData.ad_type === 'direct_ad' ? 'advertisement' : 'promotion';
+      const geoScope = (formData.target_states && formData.target_states.length > 0) ? 'state' : 'nationwide';
+
       const { data: pricingTier, error: tierError } = await supabase
         .from('ad_pricing_tiers')
         .select('id')
-        .eq('ad_type', formData.ad_type)
-        .eq('geographic_scope', formData.target_audience)
+        .eq('ad_type', tierType)
+        .eq('geographic_scope', geoScope)
         .eq('is_active', true)
         .single();
 
       if (tierError || !pricingTier) {
-        throw new Error(`No pricing tier found for ${formData.ad_type} with ${formData.target_audience} scope`);
+        throw new Error(`No pricing tier found for ${tierType} with ${geoScope} scope`);
       }
 
       // Create advertisement campaign
@@ -138,7 +141,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
           campaign_name: formData.title,
           ad_title: formData.title,
           ad_description: formData.description,
-          campaign_type: formData.ad_type,
+          campaign_type: tierType,
           total_budget: totalCost,
           daily_budget: totalCost / parseInt(formData.duration_days),
           start_date: new Date().toISOString(),
@@ -146,7 +149,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
           status: 'draft',
           payment_status: 'pending',
           approval_status: 'pending',
-          target_geographic_scope: formData.target_audience,
+          target_geographic_scope: geoScope,
           target_states: formData.target_states,
           ad_url: formData.website_url,
           ad_call_to_action: formData.call_to_action,
@@ -175,12 +178,12 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
 
   const initiatePayment = async (campaignId: string, amount: number) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-ad-payment', {
+      const { data, error } = await supabase.functions.invoke('create-ad-campaign-payment', {
         body: {
-          campaign_id: campaignId,
-          amount: amount,
-          currency: 'NGN',
-          description: `Advertisement: ${formData.title}`
+          campaignId: campaignId,
+          totalAmount: amount,
+          campaignName: formData.title,
+          duration: parseInt(formData.duration_days)
         }
       });
 

@@ -101,7 +101,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
       const { data, error } = await supabase
         .from('ad_pricing_tiers')
         .select('*')
-        .eq('ad_type', formData.campaignType)
+        .eq('ad_type', 'advertisement')
         .eq('geographic_scope', formData.geographicScope)
         .eq('is_active', true)
         .order('priority_level', { ascending: false });
@@ -213,7 +213,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
     const campaignData = {
         user_id: user.id,
         campaign_name: formData.campaignName,
-        campaign_type: formData.campaignType,
+        campaign_type: 'advertisement',
         pricing_tier_id: formData.pricingTierId,
         target_geographic_scope: formData.geographicScope,
         target_cities: formData.targetCities,
