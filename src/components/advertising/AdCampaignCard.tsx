@@ -39,9 +39,11 @@ interface AdCampaignCardProps {
   campaign: AdCampaign;
   onStatusChange?: (campaignId: string, newStatus: string) => void;
   onViewAnalytics?: (campaignId: string) => void;
+  onApprove?: (campaignId: string) => void;
+  onReject?: (campaignId: string) => void;
 }
 
-export const AdCampaignCard = ({ campaign, onStatusChange, onViewAnalytics }: AdCampaignCardProps) => {
+export const AdCampaignCard = ({ campaign, onStatusChange, onViewAnalytics, onApprove, onReject }: AdCampaignCardProps) => {
   const getStatusColor = (status: string, approvalStatus: string) => {
     if (approvalStatus === 'rejected') return 'destructive';
     if (approvalStatus === 'pending') return 'secondary';
@@ -183,36 +185,58 @@ export const AdCampaignCard = ({ campaign, onStatusChange, onViewAnalytics }: Ad
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
-          {canPauseResume() && !isExpired() && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStatusChange?.(campaign.id, campaign.status === 'active' ? 'paused' : 'active')}
-              className="flex-1"
-            >
-              {campaign.status === 'active' ? (
-                <>
-                  <Pause className="h-3 w-3 mr-1" />
-                  Pause
-                </>
-              ) : (
-                <>
-                  <Play className="h-3 w-3 mr-1" />
-                  Resume
-                </>
+          {campaign.approval_status === 'pending' ? (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onApprove?.(campaign.id)}
+                className="flex-1"
+              >
+                Approve
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onReject?.(campaign.id)}
+                className="flex-1"
+              >
+                Reject
+              </Button>
+            </>
+          ) : (
+            <>
+              {canPauseResume() && !isExpired() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onStatusChange?.(campaign.id, campaign.status === 'active' ? 'paused' : 'active')}
+                  className="flex-1"
+                >
+                  {campaign.status === 'active' ? (
+                    <>
+                      <Pause className="h-3 w-3 mr-1" />
+                      Pause
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-3 w-3 mr-1" />
+                      Resume
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onViewAnalytics?.(campaign.id)}
+                className="flex-1"
+              >
+                <BarChart3 className="h-3 w-3 mr-1" />
+                Analytics
+              </Button>
+            </>
           )}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewAnalytics?.(campaign.id)}
-            className="flex-1"
-          >
-            <BarChart3 className="h-3 w-3 mr-1" />
-            Analytics
-          </Button>
         </div>
       </CardContent>
     </Card>

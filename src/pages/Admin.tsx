@@ -1925,6 +1925,44 @@ const Admin = () => {
     }
   };
 
+  const handleApproveCampaign = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('advertisement_campaigns')
+        .update({
+          approval_status: 'approved',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+          status: 'active'
+        })
+        .eq('id', campaignId);
+      if (error) throw error;
+      toast({ title: 'Campaign approved', description: 'The ad is now active.' });
+      setPendingAdCampaigns(prev => prev.filter(c => c.id !== campaignId));
+    } catch (e) {
+      console.error('Approve campaign error', e);
+      toast({ title: 'Error', description: 'Failed to approve campaign', variant: 'destructive' });
+    }
+  };
+
+  const handleRejectCampaign = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('advertisement_campaigns')
+        .update({
+          approval_status: 'rejected',
+          status: 'rejected'
+        })
+        .eq('id', campaignId);
+      if (error) throw error;
+      toast({ title: 'Campaign rejected', description: 'The ad has been rejected.' });
+      setPendingAdCampaigns(prev => prev.filter(c => c.id !== campaignId));
+    } catch (e) {
+      console.error('Reject campaign error', e);
+      toast({ title: 'Error', description: 'Failed to reject campaign', variant: 'destructive' });
+    }
+  };
+
   const fetchAutomations = async () => {
     if (!isSuperAdmin) {
       console.log('fetchAutomations: Not super admin, skipping');
@@ -4590,7 +4628,12 @@ const Admin = () => {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {pendingAdCampaigns.map((campaign: any) => (
-                        <AdCampaignCard key={campaign.id} campaign={campaign} />
+                        <AdCampaignCard 
+                          key={campaign.id} 
+                          campaign={campaign}
+                          onApprove={handleApproveCampaign}
+                          onReject={handleRejectCampaign}
+                        />
                       ))}
                     </div>
                   )}

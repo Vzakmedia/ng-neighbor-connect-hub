@@ -49,9 +49,9 @@ serve(async (req) => {
 
       // Find the campaign by payment session ID
       const { data: campaign, error: campaignError } = await supabaseService
-        .from("promotion_campaigns")
+        .from("advertisement_campaigns")
         .select("*")
-        .eq("payment_session_id", session.id)
+        .eq("stripe_session_id", session.id)
         .single();
 
       if (campaignError) {
@@ -61,11 +61,11 @@ serve(async (req) => {
 
       console.log('Found campaign:', campaign.id);
 
-      // Update campaign status to active and mark payment as completed
+      // Update campaign status to pending approval and mark payment as completed
       const { error: updateError } = await supabaseService
-        .from("promotion_campaigns")
+        .from("advertisement_campaigns")
         .update({
-          payment_status: 'completed',
+          payment_status: 'paid',
           payment_completed_at: new Date().toISOString(),
           status: 'pending_approval', // Requires admin approval
           updated_at: new Date().toISOString()
@@ -77,25 +77,12 @@ serve(async (req) => {
         throw updateError;
       }
 
-      // Activate promoted posts for this campaign
-      const { error: postUpdateError } = await supabaseService
-        .from("promoted_posts")
-        .update({
-          is_active: false // Keep inactive until admin approval
-        })
-        .eq("campaign_id", campaign.id);
-
-      if (postUpdateError) {
-        console.error('Error updating promoted posts:', postUpdateError);
-        throw postUpdateError;
-      }
-
       // Create notification for admins about new ad awaiting approval
       const { error: notificationError } = await supabaseService
         .from("alert_notifications")
         .insert({
           notification_type: 'ad_approval_needed',
-          content: `New advertisement "${campaign.title}" is awaiting approval`,
+          content: `New advertisement campaign "${campaign.campaign_name}" is awaiting approval`,
           sender_name: 'System',
           created_at: new Date().toISOString()
         });
