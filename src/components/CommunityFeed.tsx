@@ -976,7 +976,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {filteredFeedItems.map((item, index) => {
             if (item.type === 'ad') {
               return (
@@ -1014,7 +1014,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   }`}
                   onClick={(e) => handlePostClick(post.id, e)}
             >
-              <CardHeader className="pb-3">
+              <CardHeader className="px-3 py-2 md:px-6 md:py-4">
                 <div className="flex items-start justify-between">
                   <div 
                     className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1027,11 +1027,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       userId={post.user_id}
                       src={post.author.avatar}
                       fallback={post.author.name.split(' ').map(n => n[0]).join('')}
-                      size="lg"
+                      size="md"
+                      className="md:h-10 md:w-10"
                     />
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">
+                        <h4 className="font-medium text-sm md:text-base">
                           {post.author.name}
                         </h4>
                         <Badge variant={typeBadge.variant} className="text-xs">
@@ -1044,7 +1045,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-2 text-xs md:text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />
                         <span>{post.author.location}</span>
                         <Clock className="h-3 w-3 ml-2" />
@@ -1093,12 +1094,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
               </CardHeader>
               
               <CardContent className="pt-0 px-3 md:px-6">
-                <ScrollArea className="max-h-60 overflow-auto">
+                <ScrollArea className="max-h-48 md:max-h-60 overflow-auto">
                   <div className="pr-4">
                     {post.title && (
-                      <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{post.title}</h3>
+                      <h3 className="font-semibold text-sm md:text-base mb-1 md:mb-2 line-clamp-2">{post.title}</h3>
                     )}
-                    <p className="text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{post.content}</p>
+                    <p className="text-xs md:text-sm leading-relaxed mb-2 md:mb-4">{post.content}</p>
                     
                     {/* Display tags if any */}
                     {post.tags && post.tags.length > 0 && (
@@ -1128,7 +1129,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                             key={index}
                             src={imageUrl}
                             alt="Post image"
-                            className="w-full h-24 md:h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                            className="w-full h-20 md:h-32 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={(e) => handleImageClick(post.images!, index, e)}
                           />
                         ))}
@@ -1143,7 +1144,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleLike(post.id)}
-                      className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive px-2 md:px-3 h-8 md:h-9`}
+                      className={`${post.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive px-2 md:px-3 h-7 md:h-9`}
                     >
                       <Heart className={`h-3 w-3 md:h-4 md:w-4 mr-1 ${post.isLiked ? 'fill-current' : ''}`} />
                       <span className="text-xs md:text-sm">{post.likes}</span>
@@ -1152,7 +1153,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleComments(post.id)}
-                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
+                       className="text-muted-foreground hover:text-primary px-2 md:px-3 h-7 md:h-9"
                     >
                       <MessageCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                       <span className="text-xs md:text-sm">{post.comments}</span>
@@ -1163,7 +1164,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       variant="ghost" 
                       size="sm"
                       onClick={() => toggleSave(post.id)}
-                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-8 md:h-9`}
+                      className={`${post.isSaved ? 'text-primary' : 'text-muted-foreground'} hover:text-primary px-2 md:px-3 h-7 md:h-9`}
                     >
                       <Bookmark className={`h-3 w-3 md:h-4 md:w-4 ${post.isSaved ? 'fill-current' : ''}`} />
                     </Button>
@@ -1171,7 +1172,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                       variant="ghost" 
                       size="sm" 
                       onClick={() => handleShare(post)}
-                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-8 md:h-9"
+                      className="text-muted-foreground hover:text-primary px-2 md:px-3 h-7 md:h-9"
                     >
                       <Share2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
