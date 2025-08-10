@@ -65,7 +65,7 @@ const Navigation = () => {
   const mobileNavItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
     { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
-    { id: 'services', icon: Users, label: 'Services', count: 0, path: '/services' },
+    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
