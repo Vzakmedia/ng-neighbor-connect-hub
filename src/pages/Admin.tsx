@@ -29,7 +29,7 @@ import { AdCampaignCard } from '@/components/advertising/AdCampaignCard';
 import AdsSettingsPanel from '@/components/advertising/AdsSettingsPanel';
 import { DirectMessageDialog } from '@/components/DirectMessageDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
-import ReportIncidentDialog from '@/components/ReportIncidentDialog';
+import ReportIncidentDialog from '../components/ReportIncidentDialog';
 
 const Admin = () => {
   const { user } = useAuth();
