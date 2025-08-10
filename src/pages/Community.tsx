@@ -71,11 +71,16 @@ const Community = () => {
               <TabsTrigger value="boards">Discussion Boards</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="feed" className="mt-6">
+            <TabsContent value="feed" className="mt-6 space-y-6">
+              {/* Sponsored ads in feed */}
+              <AdvertisementDisplay placement="banner" maxAds={1} />
               <CommunityFeed />
+              {/* Additional ads below feed */}
+              <AdvertisementDisplay placement="feed" maxAds={3} />
             </TabsContent>
             
-            <TabsContent value="boards" className="mt-6">
+            <TabsContent value="boards" className="mt-6 space-y-6">
+              <AdvertisementDisplay placement="sidebar" maxAds={2} />
               <CommunityBoards />
             </TabsContent>
           </Tabs>

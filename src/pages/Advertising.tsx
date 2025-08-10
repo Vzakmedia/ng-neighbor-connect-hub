@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Target, BarChart3, DollarSign, TrendingUp, Users, Eye } from 'lucide-react';
 import { CreateAdCampaignDialog } from '@/components/advertising/CreateAdCampaignDialog';
 import { AdCampaignCard } from '@/components/advertising/AdCampaignCard';
+import PaymentStatusHandler from '@/components/PaymentStatusHandler';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -134,6 +135,7 @@ const Advertising = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6">
+        <PaymentStatusHandler />
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Advertising</h1>

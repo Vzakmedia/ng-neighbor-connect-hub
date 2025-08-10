@@ -114,6 +114,7 @@ export const AdvertisementDisplay = ({ maxAds = 3, className = '', placement = '
     advertisements.forEach(ad => {
       logInteraction(ad.campaign_id, 'impression');
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advertisements]);
 
   const renderAdContent = (ad: Advertisement) => {

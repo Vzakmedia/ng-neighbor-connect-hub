@@ -12,62 +12,74 @@ const PaymentStatusHandler = () => {
   useEffect(() => {
     const payment = searchParams.get('payment');
     const campaignId = searchParams.get('campaign_id');
+    const sessionId = searchParams.get('session_id');
 
-    if (payment === 'success' && campaignId) {
-      handlePaymentSuccess(campaignId);
+    if (payment === 'success' && (campaignId || sessionId)) {
+      handlePaymentSuccess(campaignId, sessionId);
     } else if (payment === 'cancelled' && campaignId) {
       handlePaymentCancelled(campaignId);
     }
   }, [searchParams]);
 
-  const handlePaymentSuccess = async (campaignId: string) => {
+  const handlePaymentSuccess = async (campaignId?: string, sessionId?: string) => {
     try {
-      // Check campaign status
-      const { data: campaign, error } = await supabase
-        .from('promotion_campaigns')
-        .select('title, payment_status')
-        .eq('id', campaignId)
-        .single();
+      let campaign: any = null;
 
-      if (error) throw error;
+      if (campaignId) {
+        const { data, error } = await supabase
+          .from('advertisement_campaigns')
+          .select('campaign_name, payment_status, status, approval_status')
+          .eq('id', campaignId)
+          .maybeSingle();
+        if (error) throw error;
+        campaign = data;
+      } else if (sessionId) {
+        const { data, error } = await supabase
+          .from('advertisement_campaigns')
+          .select('campaign_name, payment_status, status, approval_status')
+          .eq('stripe_session_id', sessionId)
+          .maybeSingle();
+        if (error) throw error;
+        campaign = data;
+      }
 
       toast({
-        title: "Payment Successful! 🎉",
-        description: `Your advertisement "${campaign.title}" has been submitted for admin approval. You'll be notified once it's approved and goes live.`,
+        title: 'Payment Successful',
+        description: campaign
+          ? `"${campaign.campaign_name}" is paid and pending admin approval.`
+          : 'Your payment was successful. Your ad is being processed.',
       });
 
-      // Clear URL parameters
-      window.history.replaceState({}, '', '/community');
+      // Clear URL parameters and keep user on advertising page
+      window.history.replaceState({}, '', '/advertising/campaigns');
     } catch (error) {
       console.error('Error checking payment status:', error);
       toast({
-        title: "Payment Received",
-        description: "Your payment was successful. Your ad is being processed.",
+        title: 'Payment Received',
+        description: 'Your payment was successful. Your ad is being processed.',
       });
     }
   };
 
-  const handlePaymentCancelled = async (campaignId: string) => {
+  const handlePaymentCancelled = async (campaignId?: string) => {
     try {
-      // Optionally clean up cancelled campaigns
-      const { error } = await supabase
-        .from('promotion_campaigns')
-        .delete()
-        .eq('id', campaignId)
-        .eq('payment_status', 'pending');
-
-      if (error) {
-        console.error('Error cleaning up cancelled campaign:', error);
+      if (campaignId) {
+        // Optionally clean up cancelled campaigns that never paid
+        await supabase
+          .from('advertisement_campaigns')
+          .delete()
+          .eq('id', campaignId)
+          .eq('payment_status', 'pending');
       }
 
       toast({
-        title: "Payment Cancelled",
-        description: "Your advertisement was not created. You can try again anytime.",
-        variant: "destructive",
+        title: 'Payment Cancelled',
+        description: 'Your advertisement was not created. You can try again anytime.',
+        variant: 'destructive',
       });
 
       // Clear URL parameters
-      window.history.replaceState({}, '', '/community');
+      window.history.replaceState({}, '', '/advertising/campaigns');
     } catch (error) {
       console.error('Error handling cancelled payment:', error);
     }
