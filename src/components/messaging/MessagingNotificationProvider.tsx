@@ -21,7 +21,7 @@ const MessagingNotificationProvider = () => {
       // Only notify for messages received by current user
       if (message.recipient_id === user.id && message.sender_id !== user.id) {
         // Sound (foreground)
-        await playMessagingChime();
+        await playMessagingChime(undefined, 'single');
 
         if (!isChatOpen) {
           // In-app toast
@@ -95,7 +95,7 @@ const MessagingNotificationProvider = () => {
           // Oldest first to keep order
           for (const msg of [...data].reverse()) {
             if (msg.sender_id !== user.id && !notifiedIdsRef.current.has(msg.id)) {
-              await playMessagingChime();
+              await playMessagingChime(undefined, 'single');
               if (!isChatOpen) {
                 toast({
                   title: 'New message',

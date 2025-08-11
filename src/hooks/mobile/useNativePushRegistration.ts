@@ -49,7 +49,7 @@ export const useNativePushRegistration = () => {
 
         // Foreground notifications
         const recvListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          playMessagingChime();
+          playMessagingChime(undefined, 'single');
           const title = notification.title || 'New notification';
           const body = notification.body || '';
           toast({ title, description: body });
