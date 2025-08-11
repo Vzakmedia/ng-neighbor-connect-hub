@@ -78,15 +78,27 @@ serve(async (req) => {
     const user = userResponse.data;
 
     // Load user notification preferences and optional templates
-    const [{ data: prefs }, templatesRes] = await Promise.all([
+    const [{ data: prefs }, templateSingle] = await Promise.all([
       supabase.from('notification_preferences').select('*').eq('user_id', userId).maybeSingle(),
       templateKey
-        ? supabase.from('notification_templates').select('*').eq('template_key', templateKey).eq('is_active', true)
-        : Promise.resolve({ data: [] as any[], error: null })
+        ? supabase.from('notification_templates').select('*').eq('name', templateKey).eq('is_active', true).maybeSingle()
+        : Promise.resolve({ data: null, error: null })
     ]);
 
     const templateByChannel: Record<string, any> = {};
-    (templatesRes as any).data?.forEach((t: any) => { templateByChannel[t.channel] = t; });
+    const templateRow: any = (templateSingle as any).data;
+    if (templateRow) {
+      templateByChannel['email'] = {
+        subject: templateRow.title_template,
+        body_html: templateRow.email_template || templateRow.body_template,
+      };
+      templateByChannel['sms'] = {
+        body_text: templateRow.sms_template || templateRow.body_template,
+      };
+      if (templateRow.push_template) {
+        templateByChannel['push'] = templateRow.push_template;
+      }
+    }
 
     const baseVars = {
       title: alert.title ?? 'Safety Alert',
@@ -106,9 +118,9 @@ serve(async (req) => {
       websocket: true,
     } as Record<string, boolean>;
 
-    const quietNow = isWithinQuietHours(prefs?.quiet_start, prefs?.quiet_end, prefs?.timezone);
+    const quietNow = isWithinQuietHours(prefs?.quiet_hours_start, prefs?.quiet_hours_end, prefs?.timezone);
     const sevRank = severityRank[String(alert.severity || 'low').toLowerCase()] || 1;
-    const minRank = severityRank[String(prefs?.min_severity || 'low').toLowerCase()] || 1;
+    const minRank = severityRank[String(prefs?.priority_filter || 'low').toLowerCase()] || 1;
 
     let allowedChannels = channels.filter((c) => prefEnabled[c] !== false);
 
@@ -122,10 +134,8 @@ serve(async (req) => {
       allowedChannels = allowedChannels.filter((c) => c === 'websocket');
     }
 
-    // Respect preferred order when provided
-    const preferred = Array.isArray(prefs?.preferred_channels) && prefs?.preferred_channels.length
-      ? (prefs!.preferred_channels as string[])
-      : allowedChannels;
+    // Preferred order: fallback to requested order
+    const preferred = allowedChannels;
 
     // Deduplicate and keep order
     const orderedAllowed = preferred.filter((c) => allowedChannels.includes(c)).concat(
