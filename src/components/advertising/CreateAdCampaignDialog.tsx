@@ -125,6 +125,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
   };
 
   const fetchPromotableContent = async () => {
+    if (preSelectedContent) return;
     if (formData.campaignType === 'direct_ad') return;
     
     try {
@@ -333,39 +334,62 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                 />
               </div>
 
-              <div>
-                <Label htmlFor="campaignType">What do you want to promote?</Label>
-                <Select value={formData.campaignType} onValueChange={(value: any) => setFormData({ ...formData, campaignType: value, contentId: '' })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="service">My Service</SelectItem>
-                    <SelectItem value="marketplace_item">My Marketplace Item</SelectItem>
-                    <SelectItem value="business">My Business</SelectItem>
-                    <SelectItem value="community_post">My Community Post</SelectItem>
-                    <SelectItem value="event">My Event</SelectItem>
-                    <SelectItem value="direct_ad">Create Custom Ad</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {preSelectedContent ? (
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <Label>Promoting</Label>
+                        <div className="mt-1 font-medium">{preSelectedContent.title}</div>
+                        {preSelectedContent.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {preSelectedContent.description}
+                          </p>
+                        )}
+                        <div className="mt-2">
+                          <Badge variant="outline" className="capitalize">{preSelectedContent.type.replace('_', ' ')}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor="campaignType">What do you want to promote?</Label>
+                    <Select value={formData.campaignType} onValueChange={(value: any) => setFormData({ ...formData, campaignType: value, contentId: '' })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="service">My Service</SelectItem>
+                        <SelectItem value="marketplace_item">My Marketplace Item</SelectItem>
+                        <SelectItem value="business">My Business</SelectItem>
+                        <SelectItem value="community_post">My Community Post</SelectItem>
+                        <SelectItem value="event">My Event</SelectItem>
+                        <SelectItem value="direct_ad">Create Custom Ad</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {formData.campaignType !== 'direct_ad' && (
-                <div>
-                  <Label htmlFor="contentId">Select Content to Promote</Label>
-                  <Select value={formData.contentId} onValueChange={(value) => setFormData({ ...formData, contentId: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select content" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {promotableContent.map((content) => (
-                        <SelectItem key={content.id} value={content.id}>
-                          {content.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {formData.campaignType !== 'direct_ad' && (
+                    <div>
+                      <Label htmlFor="contentId">Select Content to Promote</Label>
+                      <Select value={formData.contentId} onValueChange={(value) => setFormData({ ...formData, contentId: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select content" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {promotableContent.map((content) => (
+                            <SelectItem key={content.id} value={content.id}>
+                              {content.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
               )}
 
               {formData.campaignType === 'direct_ad' && (
