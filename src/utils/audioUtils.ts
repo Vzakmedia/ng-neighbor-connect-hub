@@ -419,32 +419,56 @@ export const playEmergencyAlert = async (): Promise<void> => {
 
 // New: Play a beautiful, melodic messaging chime
 export const playMessagingChime = async (volume: number = 0.6): Promise<void> => {
-  const ctx = await getAudioContext();
-  const baseTime = ctx.currentTime + 0.05;
+  try {
+    await initializeAudioOnInteraction();
+    const audio = new Audio('/notification-chime.mp3');
+    audio.volume = Math.min(volume, 1.0);
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
 
-  const notes = [
-    { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
-    { freq: 783.99, dur: 0.14, offset: 0.16 }, // G5
-    { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
-    { freq: 1174.66, dur: 0.22, offset: 0.56 }, // D6
-  ];
+    await new Promise((resolve, reject) => {
+      if (audio.readyState >= 3) {
+        resolve(true);
+      } else {
+        audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
+        audio.addEventListener('error', reject, { once: true });
+        setTimeout(() => resolve(true), 1500);
+      }
+    });
 
-  notes.forEach(({ freq, dur, offset }) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, baseTime + offset);
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      await playPromise;
+    }
+  } catch (err) {
+    console.error('playMessagingChime: audio file failed, falling back to generated chime', err);
 
-    gain.gain.setValueAtTime(0, baseTime + offset);
-    gain.gain.linearRampToValueAtTime(volume * 0.35, baseTime + offset + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
+    const ctx = await getAudioContext();
+    const baseTime = ctx.currentTime + 0.05;
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    const notes = [
+      { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
+      { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
+      { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
+    ];
 
-    osc.start(baseTime + offset);
-    osc.stop(baseTime + offset + dur + 0.02);
-  });
+    notes.forEach(({ freq, dur, offset }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, baseTime + offset);
+
+      gain.gain.setValueAtTime(0, baseTime + offset);
+      gain.gain.linearRampToValueAtTime(Math.min(volume * 0.35, 0.6), baseTime + offset + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(baseTime + offset);
+      osc.stop(baseTime + offset + dur + 0.02);
+    });
+  }
 };
 
 // New: Ringtone player for incoming calls (melodious loop)
