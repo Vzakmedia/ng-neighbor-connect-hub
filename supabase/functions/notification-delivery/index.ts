@@ -6,11 +6,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helpers
+const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+
+function timeToMinutes(t?: string | null): number | null {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function isWithinQuietHours(quietStart?: string | null, quietEnd?: string | null, tz?: string | null): boolean {
+  if (!quietStart || !quietEnd || !tz) return false;
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', { hour12: false, timeZone: tz, hour: '2-digit', minute: '2-digit' });
+  const parts = formatter.formatToParts(now);
+  const hh = Number(parts.find(p => p.type === 'hour')?.value || '0');
+  const mm = Number(parts.find(p => p.type === 'minute')?.value || '0');
+  const current = hh * 60 + mm;
+  const start = timeToMinutes(quietStart)!;
+  const end = timeToMinutes(quietEnd)!;
+  if (start <= end) return current >= start && current <= end;
+  // overnight window
+  return current >= start || current <= end;
+}
+
+function renderTemplate(str: string | null | undefined, vars: Record<string, unknown>): string | undefined {
+  if (!str) return undefined;
+  return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key) => String((vars as any)[key] ?? ''));
+}
+
 interface DeliveryRequest {
   alertId: string;
   userId: string;
   channels: string[]; // ['websocket', 'push', 'sms', 'email']
   priority?: number;
+  templateKey?: string;
+  variables?: Record<string, unknown>;
 }
 
 serve(async (req) => {
@@ -25,7 +56,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { alertId, userId, channels, priority = 3 } = await req.json() as DeliveryRequest;
+    const { alertId, userId, channels, priority = 3, templateKey, variables = {} } = await req.json() as DeliveryRequest;
 
     console.log(`Delivering alert ${alertId} to user ${userId} via channels: ${channels.join(', ')}`);
 
@@ -46,10 +77,65 @@ serve(async (req) => {
     const alert = alertResponse.data;
     const user = userResponse.data;
 
+    // Load user notification preferences and optional templates
+    const [{ data: prefs }, templatesRes] = await Promise.all([
+      supabase.from('notification_preferences').select('*').eq('user_id', userId).maybeSingle(),
+      templateKey
+        ? supabase.from('notification_templates').select('*').eq('template_key', templateKey).eq('is_active', true)
+        : Promise.resolve({ data: [] as any[], error: null })
+    ]);
+
+    const templateByChannel: Record<string, any> = {};
+    (templatesRes as any).data?.forEach((t: any) => { templateByChannel[t.channel] = t; });
+
+    const baseVars = {
+      title: alert.title ?? 'Safety Alert',
+      description: alert.description ?? '',
+      severity: alert.severity ?? 'info',
+      address: alert.address ?? '',
+      user_name: user.full_name || user.email || '',
+      timestamp: new Date().toISOString(),
+      ...variables,
+    };
+
+    // Determine allowed channels by preferences, quiet hours, and severity threshold
+    const prefEnabled = {
+      email: prefs?.email_enabled ?? true,
+      sms: prefs?.sms_enabled ?? false,
+      push: prefs?.push_enabled ?? true,
+      websocket: true,
+    } as Record<string, boolean>;
+
+    const quietNow = isWithinQuietHours(prefs?.quiet_start, prefs?.quiet_end, prefs?.timezone);
+    const sevRank = severityRank[String(alert.severity || 'low').toLowerCase()] || 1;
+    const minRank = severityRank[String(prefs?.min_severity || 'low').toLowerCase()] || 1;
+
+    let allowedChannels = channels.filter((c) => prefEnabled[c] !== false);
+
+    // Enforce minimum severity
+    if (sevRank < minRank) {
+      allowedChannels = allowedChannels.filter((c) => c === 'websocket');
+    }
+
+    // Respect quiet hours (allow websocket always; allow others if critical)
+    if (quietNow && (String(alert.severity || '').toLowerCase() !== 'critical')) {
+      allowedChannels = allowedChannels.filter((c) => c === 'websocket');
+    }
+
+    // Respect preferred order when provided
+    const preferred = Array.isArray(prefs?.preferred_channels) && prefs?.preferred_channels.length
+      ? (prefs!.preferred_channels as string[])
+      : allowedChannels;
+
+    // Deduplicate and keep order
+    const orderedAllowed = preferred.filter((c) => allowedChannels.includes(c)).concat(
+      allowedChannels.filter((c) => !preferred.includes(c))
+    );
+
     const deliveryResults: any[] = [];
 
     // WebSocket delivery (via Supabase Realtime)
-    if (channels.includes('websocket')) {
+    if (orderedAllowed.includes('websocket')) {
       try {
         const channel = supabase.channel(`user_${userId}`);
         await channel.send({
@@ -78,14 +164,14 @@ serve(async (req) => {
         deliveryResults.push({
           channel: 'websocket',
           status: 'failed',
-          error: error.message,
+          error: (error as any).message,
           timestamp: new Date().toISOString()
         });
       }
     }
 
     // Push notification delivery (requires FCM setup)
-    if (channels.includes('push')) {
+    if (orderedAllowed.includes('push')) {
       try {
         // This would require FCM implementation
         // For now, we'll simulate success
@@ -102,14 +188,14 @@ serve(async (req) => {
         deliveryResults.push({
           channel: 'push',
           status: 'failed',
-          error: error.message,
+          error: (error as any).message,
           timestamp: new Date().toISOString()
         });
       }
     }
 
     // SMS delivery via Twilio REST API
-    if (channels.includes('sms') && user.phone) {
+    if (orderedAllowed.includes('sms') && user.phone) {
       try {
         const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
         const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
@@ -119,7 +205,11 @@ serve(async (req) => {
           throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER)');
         }
 
-        const smsBody = `[${(alert.severity || 'info').toUpperCase()}] ${alert.title || 'Safety Alert'} - ${alert.description || ''}`.slice(0, 140);
+        const smsTpl = templateByChannel['sms'];
+        const fallbackSms = `[{{severity}}] {{title}} - {{description}}`;
+        const smsBodyFull = renderTemplate(smsTpl?.body_text || fallbackSms, baseVars) || '';
+        const smsBody = smsBodyFull.slice(0, 140);
+
         const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
 
         const params = new URLSearchParams({
@@ -158,14 +248,14 @@ serve(async (req) => {
         deliveryResults.push({
           channel: 'sms',
           status: 'failed',
-          error: error.message,
+          error: (error as any).message,
           timestamp: new Date().toISOString()
         });
       }
     }
 
     // Email delivery via Resend
-    if (channels.includes('email') && user.email) {
+    if (orderedAllowed.includes('email') && user.email) {
       try {
         const apiKey = Deno.env.get('RESEND_API_KEY');
         if (!apiKey) {
@@ -173,14 +263,18 @@ serve(async (req) => {
         }
 
         const resend = new Resend(apiKey);
-        const subject = alert.title || 'Safety Alert';
-        const html = `
-          <h2>${subject}</h2>
-          <p><strong>Severity:</strong> ${alert.severity}</p>
-          ${alert.description ? `<p>${alert.description}</p>` : ''}
-          ${alert.address ? `<p><strong>Location:</strong> ${alert.address}</p>` : ''}
-          <p style="color:#888">Sent at ${new Date().toLocaleString()}</p>
-        `;
+        const emailTpl = templateByChannel['email'];
+        const subject = renderTemplate(emailTpl?.subject || (alert.title || 'Safety Alert'), baseVars) as string;
+        const html = renderTemplate(
+          emailTpl?.body_html || `
+            <h2>{{title}}</h2>
+            <p><strong>Severity:</strong> {{severity}}</p>
+            {{#if description}}<p>{{description}}</p>{{/if}}
+            {{#if address}}<p><strong>Location:</strong> {{address}}</p>{{/if}}
+            <p style="color:#888">Sent at {{timestamp}}</p>
+          `,
+          baseVars
+        ) as string;
 
         const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
 
@@ -205,7 +299,7 @@ serve(async (req) => {
         deliveryResults.push({
           channel: 'email',
           status: 'failed',
-          error: error.message,
+          error: (error as any).message,
           timestamp: new Date().toISOString()
         });
       }
