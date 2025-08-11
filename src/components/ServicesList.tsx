@@ -11,7 +11,7 @@ import { MapPin, Star, Edit, Trash2, Calendar, Clock, ShoppingBag, Megaphone } f
 import ManageAvailabilityDialog from './ManageAvailabilityDialog';
 import EditServiceDialog from './EditServiceDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
-import CreatePromotionDialog from './CreatePromotionDialog';
+
 import { CreateAdCampaignDialog } from '@/components/advertising/CreateAdCampaignDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -499,17 +499,20 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <CreatePromotionDialog 
-                        itemId={item.id} 
-                        itemType="item" 
-                        itemTitle={item.title}
-                        onPromotionCreated={fetchMyItems}
+                      <CreateAdCampaignDialog 
+                        onCampaignCreated={fetchMyItems}
+                        preSelectedContent={{
+                          id: item.id,
+                          type: 'marketplace_item',
+                          title: item.title,
+                          description: item.description
+                        }}
                       >
                         <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20 h-10 text-sm">
                           <Megaphone className="h-4 w-4 mr-1" />
                           <span className="hidden sm:inline">Promote</span>
                         </Button>
-                      </CreatePromotionDialog>
+                      </CreateAdCampaignDialog>
                       <Button
                         variant="outline"
                         size="sm"
@@ -798,17 +801,20 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      <CreatePromotionDialog 
-                        itemId={item.id} 
-                        itemType="item" 
-                        itemTitle={item.title}
-                        onPromotionCreated={fetchMyItems}
+                      <CreateAdCampaignDialog 
+                        onCampaignCreated={fetchMyItems}
+                        preSelectedContent={{
+                          id: item.id,
+                          type: 'marketplace_item',
+                          title: item.title,
+                          description: item.description
+                        }}
                       >
                         <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
                           <Megaphone className="h-4 w-4 mr-1" />
                           Promote
                         </Button>
-                      </CreatePromotionDialog>
+                      </CreateAdCampaignDialog>
                       <Button
                         variant="outline"
                         size="sm"

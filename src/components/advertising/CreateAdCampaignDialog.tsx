@@ -203,7 +203,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
     if (formData.dailyBudget < minBudget) {
       toast({
         title: "Daily budget too low",
-        description: `Minimum is $${minBudget}/day for this tier.`,
+        description: `Minimum is ₦${minBudget}/day for this tier.`,
         variant: "destructive",
       });
       setLoading(false);
@@ -550,7 +550,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                           <div>
                             <CardTitle className="text-lg">{tier.name}</CardTitle>
                             <CardDescription>
-                              ${tier.base_price_per_day}/day • {tier.impressions_included.toLocaleString()} impressions
+                              ₦{tier.base_price_per_day}/day • {tier.impressions_included.toLocaleString()} impressions
                             </CardDescription>
                           </div>
                           <Badge variant={tier.priority_level > 1 ? "default" : "secondary"}>
@@ -573,12 +573,12 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
               </div>
 
               <div>
-                <Label htmlFor="dailyBudget">Daily Budget ($)</Label>
+                <Label htmlFor="dailyBudget">Daily Budget (₦)</Label>
                 <Input
                   id="dailyBudget"
                   type="number"
                   min={getSelectedTier()?.base_price_per_day ?? 1}
-                  step="0.01"
+                  step="1"
                   value={formData.dailyBudget}
                   onChange={(e) => {
                     const min = getSelectedTier()?.base_price_per_day ?? 1;
@@ -587,7 +587,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                   }}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Minimum: ${getSelectedTier()?.base_price_per_day || 0}/day
+                  Minimum: ₦{getSelectedTier()?.base_price_per_day || 0}/day
                 </p>
               </div>
             </div>
@@ -622,11 +622,11 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                     </div>
                     <div>
                       <span className="font-medium">Daily Budget:</span>
-                      <p>${formData.dailyBudget}</p>
+                      <p>₦{formData.dailyBudget}</p>
                     </div>
                     <div>
                       <span className="font-medium">Total Cost:</span>
-                      <p className="font-bold text-lg">${calculateTotalCost()}</p>
+                      <p className="font-bold text-lg">₦{calculateTotalCost()}</p>
                     </div>
                   </div>
                   
@@ -651,7 +651,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                   disabled={loading || !formData.campaignName || !formData.pricingTierId}
                   className="flex-1"
                 >
-                  {loading ? "Creating..." : `Create Campaign & Pay $${calculateTotalCost()}`}
+                  {loading ? "Creating..." : `Create Campaign & Pay ₦${calculateTotalCost()}`}
                 </Button>
               </div>
             </div>
