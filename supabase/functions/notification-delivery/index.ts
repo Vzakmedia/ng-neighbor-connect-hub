@@ -35,6 +35,23 @@ function renderTemplate(str: string | null | undefined, vars: Record<string, unk
   return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key) => String((vars as any)[key] ?? ''));
 }
 
+async function retry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 800): Promise<T> {
+  let lastErr: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        const delay = baseDelayMs * Math.pow(2, i);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+
 interface DeliveryRequest {
   alertId: string;
   userId: string;
@@ -228,14 +245,14 @@ serve(async (req) => {
           Body: smsBody,
         });
 
-        const resp = await fetch(twilioUrl, {
+        const resp = await retry(async () => await fetch(twilioUrl, {
           method: 'POST',
           headers: {
             'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: params.toString(),
-        });
+        }));
 
         if (!resp.ok) {
           const errText = await resp.text();
@@ -288,12 +305,12 @@ serve(async (req) => {
 
         const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
 
-        const emailRes = await resend.emails.send({
+        const emailRes = await retry(async () => await resend.emails.send({
           from,
           to: [user.email],
           subject,
           html,
-        });
+        }));
 
         deliveryResults.push({
           channel: 'email',
@@ -313,6 +330,57 @@ serve(async (req) => {
           timestamp: new Date().toISOString()
         });
       }
+    }
+
+    // Fallback: if email/push failed and SMS allowed, attempt SMS fallback once
+    try {
+      const hasSmsSent = deliveryResults.some((r) => r.channel === 'sms' && r.status === 'sent');
+      const emailFailed = deliveryResults.some((r) => r.channel === 'email' && r.status === 'failed');
+      const pushFailed = deliveryResults.some((r) => r.channel === 'push' && r.status === 'failed');
+      const canSms = prefEnabled.sms && !!user.phone;
+
+      if (!hasSmsSent && canSms && (emailFailed || pushFailed)) {
+        const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+        const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+        if (!accountSid || !authToken || !fromNumber) throw new Error('Missing Twilio configuration');
+
+        const smsTpl = templateByChannel['sms'];
+        const fallbackSms = `[{{severity}}] {{title}} - {{description}}`;
+        const smsBodyFull = renderTemplate(smsTpl?.body_text || fallbackSms, baseVars) || '';
+        const smsBody = smsBodyFull.slice(0, 140);
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+        const params = new URLSearchParams({ To: user.phone, From: fromNumber, Body: smsBody });
+        const resp = await retry(async () => await fetch(twilioUrl, {
+          method: 'POST',
+          headers: { 'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`), 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString(),
+        }));
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(`Twilio fallback error ${resp.status}: ${errText}`);
+        }
+        const twilioResult = await resp.json();
+        deliveryResults.push({ channel: 'sms', status: 'sent', timestamp: new Date().toISOString(), provider: 'twilio', provider_message_sid: twilioResult.sid, fallback: true });
+        await supabase.rpc('track_alert_metric', { _alert_id: alertId, _metric_type: 'fallback_used', _user_id: userId, _metadata: { from: emailFailed ? 'email' : 'push', to: 'sms' } });
+      }
+    } catch (e) {
+      console.error('Fallback SMS error:', e);
+      deliveryResults.push({ channel: 'sms', status: 'failed', error: (e as any).message, timestamp: new Date().toISOString(), fallback: true });
+    }
+
+    // Schedule escalation if unread
+    try {
+      const escalateMinutes = Number(prefs?.escalate_if_unread_minutes ?? 0);
+      const escalateMin = severityRank[String(prefs?.escalate_min_severity || 'high').toLowerCase()] || 3;
+      const allowSms = prefEnabled.sms && !!user.phone;
+      if (escalateMinutes > 0 && sevRank >= escalateMin && allowSms) {
+        const dueAt = new Date(Date.now() + escalateMinutes * 60_000).toISOString();
+        await supabase.from('notification_escalations').insert({ alert_id: alertId, user_id: userId, due_at: dueAt });
+        await supabase.rpc('track_alert_metric', { _alert_id: alertId, _metric_type: 'escalation_scheduled', _user_id: userId, _metadata: { minutes: escalateMinutes } });
+      }
+    } catch (e) {
+      console.error('Escalation schedule error:', e);
     }
 
     // Update delivery log

@@ -2177,6 +2177,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_escalations: {
+        Row: {
+          alert_id: string
+          attempts: number
+          created_at: string
+          due_at: string
+          id: string
+          last_error: string | null
+          processed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          attempts?: number
+          created_at?: string
+          due_at: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          attempts?: number
+          created_at?: string
+          due_at?: string
+          id?: string
+          last_error?: string | null
+          processed_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_metrics: {
         Row: {
           avg_delivery_time_ms: number | null
@@ -2232,6 +2268,8 @@ export type Database = {
           email_digest: boolean | null
           email_digest_frequency: string | null
           email_enabled: boolean | null
+          escalate_if_unread_minutes: number
+          escalate_min_severity: string
           id: string
           in_app_enabled: boolean | null
           priority_filter: string | null
@@ -2249,6 +2287,8 @@ export type Database = {
           email_digest?: boolean | null
           email_digest_frequency?: string | null
           email_enabled?: boolean | null
+          escalate_if_unread_minutes?: number
+          escalate_min_severity?: string
           id?: string
           in_app_enabled?: boolean | null
           priority_filter?: string | null
@@ -2266,6 +2306,8 @@ export type Database = {
           email_digest?: boolean | null
           email_digest_frequency?: string | null
           email_enabled?: boolean | null
+          escalate_if_unread_minutes?: number
+          escalate_min_severity?: string
           id?: string
           in_app_enabled?: boolean | null
           priority_filter?: string | null
