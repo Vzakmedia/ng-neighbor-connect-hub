@@ -11,6 +11,8 @@ import MessageThread from '@/components/messaging/MessageThread';
 import { Input } from '@/components/ui/input';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import RealtimeDebugPanel from '@/components/messaging/RealtimeDebugPanel';
 
 const UnifiedMessaging = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const UnifiedMessaging = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (user) fetchConversations();
@@ -232,6 +235,14 @@ const UnifiedMessaging = () => {
           </div>
         )}
       </div>
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button variant="secondary" size="sm" onClick={() => setShowDebug(true)}>
+          Debug
+        </Button>
+      </div>
+      {showDebug && (
+        <RealtimeDebugPanel open={showDebug} onClose={() => setShowDebug(false)} />
+      )}
     </div>
   );
 };
