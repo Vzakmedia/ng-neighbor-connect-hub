@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Megaphone, Target, Clock, DollarSign } from 'lucide-react';
 import { PromotionImageUpload } from '@/components/PromotionImageUpload';
+
+interface PricingTier {
+  id?: string;
+  name: string;
+  ad_type: string;
+  geographic_scope: string;
+  base_price_per_day: number;
+  impressions_included?: number;
+  click_rate_multiplier?: number;
+  priority_level?: number;
+  max_duration_days?: number;
+  is_active?: boolean;
+}
 
 interface CreatePromotionDialogProps {
   children: React.ReactNode;
@@ -51,6 +64,53 @@ const CreatePromotionDialog = ({
     images: [] as string[]
   });
 
+// Pricing tiers state and logic
+  const [tiers, setTiers] = useState<PricingTier[]>([]);
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const durationOptionsBase = [3, 7, 14, 30];
+  const scopeMap: Record<string, string> = { local: 'city', city: 'city', state: 'state', national: 'nationwide' };
+
+  useEffect(() => {
+    if (!open) return;
+    const loadTiers = async () => {
+      try {
+        const scope = scopeMap[formData.target_audience] || 'city';
+        const { data, error } = await supabase
+          .from('ad_pricing_tiers')
+          .select('*')
+          .eq('is_active', true)
+          .eq('ad_type', 'promotion')
+          .eq('geographic_scope', scope)
+          .order('priority_level', { ascending: false });
+        if (error) throw error;
+        const list = (data as PricingTier[]) || [];
+        setTiers(list);
+        if (list.length > 0 && (!selectedTierId || !list.some((t) => t.id === selectedTierId))) {
+          setSelectedTierId(list[0].id!);
+        }
+      } catch (err) {
+        console.error('Failed to load pricing tiers', err);
+      }
+    };
+    loadTiers();
+  }, [open, formData.target_audience]);
+
+  const selectedTier = tiers.find((t) => t.id === selectedTierId) || null;
+  const maxDays = selectedTier?.max_duration_days ?? 30;
+  const allowedDurations = durationOptionsBase.filter((d) => d <= maxDays);
+
+  useEffect(() => {
+    if (!selectedTier) return;
+    const current = parseInt(formData.duration_days || '0');
+    if (!allowedDurations.includes(current)) {
+      const fallback = allowedDurations[allowedDurations.length - 1] || 7;
+      setFormData((prev) => ({ ...prev, duration_days: String(fallback) }));
+    }
+  }, [selectedTier]);
+
+  const dailyPrice = selectedTier?.base_price_per_day ?? 0;
+  const totalPrice = dailyPrice * (parseInt(formData.duration_days || '0') || 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -64,7 +124,7 @@ const CreatePromotionDialog = ({
         title: formData.title || `Promote ${itemTitle}`,
         description: formData.description,
         duration_days: parseInt(formData.duration_days),
-        budget: parseFloat(formData.budget),
+        budget: selectedTier ? totalPrice : parseFloat(formData.budget),
         target_audience: formData.target_audience,
         promotion_type: formData.promotion_type,
         website_url: formData.website_url,
@@ -147,6 +207,27 @@ const CreatePromotionDialog = ({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="pricing_tier">Pricing Tier</Label>
+            <Select value={selectedTierId ?? ''} onValueChange={(value) => setSelectedTierId(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={tiers.length ? 'Select tier' : 'No tiers available'} />
+              </SelectTrigger>
+              <SelectContent>
+                {tiers.map((t) => (
+                  <SelectItem key={t.id!} value={t.id!}>
+                    {t.name} — ₦{Number(t.base_price_per_day).toLocaleString()}/day ({t.geographic_scope})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedTier && (
+              <p className="text-xs text-muted-foreground">
+                Includes ~{selectedTier.impressions_included} impressions/day, priority {selectedTier.priority_level}. Max {selectedTier.max_duration_days} days.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
@@ -155,26 +236,38 @@ const CreatePromotionDialog = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">3 Days</SelectItem>
-                  <SelectItem value="7">7 Days</SelectItem>
-                  <SelectItem value="14">14 Days</SelectItem>
-                  <SelectItem value="30">30 Days</SelectItem>
+                  {allowedDurations.map((d) => (
+                    <SelectItem key={d} value={String(d)}>{d} Days</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget (₦)</Label>
-              <Input
-                id="budget"
-                type="number"
-                value={formData.budget}
-                onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
-                placeholder="1000"
-                min="500"
-                step="100"
-                required
-              />
+              <Label htmlFor="budget">{selectedTier ? 'Total Cost (₦)' : 'Budget (₦)'}</Label>
+              {selectedTier ? (
+                <>
+                  <Input
+                    id="budget"
+                    value={totalPrice ? `₦${Number(totalPrice).toLocaleString()}` : '₦0'}
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ₦{Number(dailyPrice).toLocaleString()} per day × {formData.duration_days} days
+                  </p>
+                </>
+              ) : (
+                <Input
+                  id="budget"
+                  type="number"
+                  value={formData.budget}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, budget: e.target.value }))}
+                  placeholder="1000"
+                  min="500"
+                  step="100"
+                  required
+                />
+              )}
             </div>
           </div>
 
@@ -259,7 +352,7 @@ const CreatePromotionDialog = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
-                  ₦{formData.budget || '0'}
+                  ₦{selectedTier ? Number(totalPrice).toLocaleString() : (formData.budget || '0')}
                 </div>
               </div>
             </CardContent>
@@ -269,7 +362,7 @@ const CreatePromotionDialog = ({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !formData.budget}>
+            <Button type="submit" disabled={loading || (selectedTier ? totalPrice <= 0 : !formData.budget)}>
               {loading ? "Creating..." : "Create Campaign"}
             </Button>
           </DialogFooter>
