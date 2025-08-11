@@ -4238,6 +4238,12 @@ export type Database = {
         Args: { _user_id?: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_users_who_listed_my_phone: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string

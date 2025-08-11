@@ -219,13 +219,13 @@ export const useEmergencyAlerts = () => {
             // Get panic alerts where user is an emergency contact
             if (userProfile.phone) {
               try {
-                const { data: emergencyContacts } = await supabase
-                  .from('emergency_contacts')
-                  .select('user_id')
-                  .eq('phone_number', userProfile.phone);
+                const { data: listedByUsers, error: listedByError } = await supabase
+                  .rpc('get_users_who_listed_my_phone');
 
-                if (emergencyContacts && emergencyContacts.length > 0) {
-                  const contactUserIds = emergencyContacts.map(ec => ec.user_id);
+                if (listedByError) {
+                  console.error('Error fetching users who listed my phone:', listedByError);
+                } else if (listedByUsers && listedByUsers.length > 0) {
+                  const contactUserIds = listedByUsers.map((u: { user_id: string }) => u.user_id);
                   
                   const { data: contactAlerts, error: contactError } = await supabase
                     .from('panic_alerts')
