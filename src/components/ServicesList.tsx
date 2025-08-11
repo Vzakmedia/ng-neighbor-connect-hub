@@ -12,6 +12,7 @@ import ManageAvailabilityDialog from './ManageAvailabilityDialog';
 import EditServiceDialog from './EditServiceDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 import CreatePromotionDialog from './CreatePromotionDialog';
+import { CreateAdCampaignDialog } from '@/components/advertising/CreateAdCampaignDialog';
 import { formatTimeAgo } from '@/lib/utils';
 
 interface Service {
@@ -378,17 +379,20 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                           <span className="hidden sm:inline">Availability</span>
                         </Button>
                       </ManageAvailabilityDialog>
-                      <CreatePromotionDialog 
-                        itemId={service.id} 
-                        itemType="service" 
-                        itemTitle={service.title}
-                        onPromotionCreated={fetchMyServices}
+                      <CreateAdCampaignDialog
+                        onCampaignCreated={fetchMyServices}
+                        preSelectedContent={{
+                          id: service.id,
+                          type: 'service',
+                          title: service.title,
+                          description: service.description
+                        }}
                       >
                         <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20 h-10 text-sm">
                           <Megaphone className="h-4 w-4 mr-1" />
                           <span className="hidden sm:inline">Promote</span>
                         </Button>
-                      </CreatePromotionDialog>
+                      </CreateAdCampaignDialog>
                       <Button
                         variant="outline"
                         size="sm"
@@ -682,17 +686,20 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
                           Availability
                         </Button>
                       </ManageAvailabilityDialog>
-                      <CreatePromotionDialog 
-                        itemId={service.id} 
-                        itemType="service" 
-                        itemTitle={service.title}
-                        onPromotionCreated={fetchMyServices}
+                      <CreateAdCampaignDialog 
+                        onCampaignCreated={fetchMyServices}
+                        preSelectedContent={{
+                          id: service.id,
+                          type: 'service',
+                          title: service.title,
+                          description: service.description
+                        }}
                       >
                         <Button variant="outline" size="sm" className="bg-primary/5 hover:bg-primary/10 border-primary/20">
                           <Megaphone className="h-4 w-4 mr-1" />
                           Promote
                         </Button>
-                      </CreatePromotionDialog>
+                      </CreateAdCampaignDialog>
                       <Button
                         variant="outline"
                         size="sm"
