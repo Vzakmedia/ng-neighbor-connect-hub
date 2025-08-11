@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import SettingsContent from '@/components/settings/SettingsContent';
+import TestNotificationButton from '@/components/admin/TestNotificationButton';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -35,6 +36,12 @@ const Settings = () => {
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0 min-w-0">
         <div className="container py-4 px-4 max-w-4xl mx-auto overflow-x-hidden">
           <SettingsContent />
+          {/* Notifications test */}
+          <div aria-label="notifications-test" className="mt-6">
+            {/* Lightweight test trigger for email/SMS */}
+            {/* Uses semantic tokens from the design system via Button */}
+            <TestNotificationButton />
+          </div>
         </div>
       </main>
     </div>
