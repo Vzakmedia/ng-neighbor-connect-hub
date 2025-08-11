@@ -119,37 +119,25 @@ export const AdvertisementDisplay = ({ maxAds = 3, className = '', placement = '
 
   const renderAdContent = (ad: Advertisement) => {
     const getTypeIcon = () => {
-      switch (ad.campaign_type) {
-        case 'service':
-          return <Briefcase className="h-4 w-4" />;
-        case 'marketplace_item':
-          return <ShoppingCart className="h-4 w-4" />;
-        case 'business':
-          return <Building2 className="h-4 w-4" />;
-        case 'community_post':
-          return <MessageSquare className="h-4 w-4" />;
-        case 'event':
-          return <Calendar className="h-4 w-4" />;
-        default:
-          return null;
-      }
+      // Determine icon by available linked content, not campaign_type string
+      if (ad.service_data) return <Briefcase className="h-4 w-4" />;
+      if (ad.marketplace_data) return <ShoppingCart className="h-4 w-4" />;
+      if (ad.business_data) return <Building2 className="h-4 w-4" />;
+      if (ad.community_post_data) return <MessageSquare className="h-4 w-4" />;
+      if (ad.event_data) return <Calendar className="h-4 w-4" />;
+      return null;
     };
 
     const getContentData = () => {
-      switch (ad.campaign_type) {
-        case 'service':
-          return ad.service_data;
-        case 'marketplace_item':
-          return ad.marketplace_data;
-        case 'business':
-          return ad.business_data;
-        case 'community_post':
-          return ad.community_post_data;
-        case 'event':
-          return ad.event_data;
-        default:
-          return null;
-      }
+      // Prefer whichever linked content payload is present
+      return (
+        ad.service_data ??
+        ad.marketplace_data ??
+        ad.business_data ??
+        ad.community_post_data ??
+        ad.event_data ??
+        null
+      );
     };
 
     const contentData = getContentData();
