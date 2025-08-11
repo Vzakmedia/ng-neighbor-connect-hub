@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
+import { Resend } from "npm:resend@2.0.0";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -108,16 +108,48 @@ serve(async (req) => {
       }
     }
 
-    // SMS delivery (requires Twilio setup)
+    // SMS delivery via Twilio REST API
     if (channels.includes('sms') && user.phone) {
       try {
-        // This would require Twilio implementation
-        // For now, we'll simulate success
+        const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+        const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+
+        if (!accountSid || !authToken || !fromNumber) {
+          throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER)');
+        }
+
+        const smsBody = `[${(alert.severity || 'info').toUpperCase()}] ${alert.title || 'Safety Alert'} - ${alert.description || ''}`.slice(0, 140);
+        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+
+        const params = new URLSearchParams({
+          To: user.phone,
+          From: fromNumber,
+          Body: smsBody,
+        });
+
+        const resp = await fetch(twilioUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString(),
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(`Twilio error ${resp.status}: ${errText}`);
+        }
+
+        const twilioResult = await resp.json();
+
         deliveryResults.push({
           channel: 'sms',
           status: 'sent',
           timestamp: new Date().toISOString(),
-          note: 'SMS delivery simulated'
+          provider: 'twilio',
+          provider_message_sid: twilioResult.sid,
         });
 
         console.log(`SMS sent to user ${userId} at ${user.phone}`);
@@ -132,16 +164,39 @@ serve(async (req) => {
       }
     }
 
-    // Email delivery (requires email service setup)
+    // Email delivery via Resend
     if (channels.includes('email') && user.email) {
       try {
-        // This would require email service implementation
-        // For now, we'll simulate success
+        const apiKey = Deno.env.get('RESEND_API_KEY');
+        if (!apiKey) {
+          throw new Error('Missing RESEND_API_KEY');
+        }
+
+        const resend = new Resend(apiKey);
+        const subject = alert.title || 'Safety Alert';
+        const html = `
+          <h2>${subject}</h2>
+          <p><strong>Severity:</strong> ${alert.severity}</p>
+          ${alert.description ? `<p>${alert.description}</p>` : ''}
+          ${alert.address ? `<p><strong>Location:</strong> ${alert.address}</p>` : ''}
+          <p style="color:#888">Sent at ${new Date().toLocaleString()}</p>
+        `;
+
+        const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
+
+        const emailRes = await resend.emails.send({
+          from,
+          to: [user.email],
+          subject,
+          html,
+        });
+
         deliveryResults.push({
           channel: 'email',
           status: 'sent',
           timestamp: new Date().toISOString(),
-          note: 'Email delivery simulated'
+          provider: 'resend',
+          provider_id: (emailRes as any)?.data?.id ?? null,
         });
 
         console.log(`Email sent to user ${userId} at ${user.email}`);

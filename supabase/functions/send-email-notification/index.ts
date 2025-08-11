@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,10 +59,31 @@ serve(async (req) => {
       );
     }
 
-    // For now, we'll use a placeholder email service
-    // In a real implementation, you would integrate with SendGrid, Resend, or similar
-    console.log('Simulating email send...');
-    
+    // Initialize Resend and send the email
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'RESEND_API_KEY is not configured',
+          status: 'error'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
+    const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
+
+    const emailResponse = await resend.emails.send({
+      from,
+      to: [to],
+      subject,
+      html: typeof body === 'string' ? body : JSON.stringify(body),
+    });
+
     // Log the email for audit purposes
     const { error: logError } = await supabase
       .from('email_logs')
@@ -79,10 +101,7 @@ serve(async (req) => {
       console.error('Error logging email:', logError);
     }
 
-    // Simulate email delivery (replace with actual email service)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    console.log('Email notification sent successfully');
+    console.log('Email notification sent successfully via Resend');
 
     return new Response(
       JSON.stringify({ 
@@ -91,6 +110,8 @@ serve(async (req) => {
         recipient: to,
         subject: subject,
         type: type,
+        provider: 'resend',
+        provider_id: (emailResponse as any)?.data?.id ?? null,
         sentAt: new Date().toISOString()
       }),
       { 
