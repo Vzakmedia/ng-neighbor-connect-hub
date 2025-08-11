@@ -25,7 +25,7 @@ import {
   HelpCircle,
   Music
 } from 'lucide-react';
-import { playNotification } from '@/utils/audioUtils';
+import { playNotification, playMessagingChime } from '@/utils/audioUtils';
 import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
 import type { NotificationSoundType } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -62,11 +62,13 @@ const SettingsContent = () => {
   });
 
   // Audio Settings
-  const [audioSettings, setAudioSettings] = useState({
+const [audioSettings, setAudioSettings] = useState({
     notificationVolume: [0.5],
     emergencyVolume: [0.8],
     soundEnabled: true,
-    notificationSound: 'generated' as NotificationSoundType
+    notificationSound: 'generated' as NotificationSoundType,
+    messageChimeMode: 'single' as 'single' | 'double',
+    messageChimeVolume: [0.7],
   });
 
   // Load audio settings from localStorage on component mount
@@ -481,6 +483,58 @@ const SettingsContent = () => {
                         </p>
                       </div>
 
+                      {/* Message Chime Settings */}
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Message Chime</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0">
+                            <Label htmlFor="message-chime-mode" className="text-sm font-medium">Chime Mode</Label>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                              Choose single or double chime for new messages
+                            </p>
+                          </div>
+                          <Select
+                            value={audioSettings.messageChimeMode}
+                            onValueChange={(value: 'single' | 'double') =>
+                              setAudioSettings(prev => ({ ...prev, messageChimeMode: value }))
+                            }
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Select mode" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="single">Single</SelectItem>
+                              <SelectItem value="double">Double</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="message-chime-volume">Message Chime Volume</Label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => playMessagingChime()}
+                            >
+                              <Play className="h-3 w-3 mr-1" />
+                              Test
+                            </Button>
+                          </div>
+                          <Slider
+                            id="message-chime-volume"
+                            value={audioSettings.messageChimeVolume}
+                            onValueChange={(value) => setAudioSettings(prev => ({ ...prev, messageChimeVolume: value }))}
+                            max={1}
+                            min={0}
+                            step={0.05}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Volume: {Math.round((audioSettings.messageChimeVolume?.[0] ?? 0.7) * 100)}%
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">

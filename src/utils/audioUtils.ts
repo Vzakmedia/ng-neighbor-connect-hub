@@ -259,6 +259,25 @@ export const getSoundVolume = (): number => {
   }
 };
 
+// Message chime settings (mode + volume) from user settings
+export const getMessageChimeSettings = (): { mode: 'single' | 'double'; volume: number } => {
+  try {
+    const raw = localStorage.getItem('audioSettings');
+    const defaults = { mode: 'single' as 'single' | 'double', volume: 0.7 };
+    if (!raw) return defaults;
+    const s = JSON.parse(raw);
+    const volRaw = s.messageChimeVolume ?? s.notificationVolume ?? 0.7;
+    const volume = Array.isArray(volRaw)
+      ? (typeof volRaw[0] === 'number' ? volRaw[0] : 0.7)
+      : (typeof volRaw === 'number' ? volRaw : 0.7);
+    const mode: 'single' | 'double' = s.messageChimeMode === 'double' ? 'double' : 'single';
+    return { mode, volume: Math.max(0, Math.min(1, volume)) };
+  } catch (error) {
+    console.error('Error getting message chime settings:', error);
+    return { mode: 'single', volume: 0.7 };
+  }
+};
+
 // Enhanced play notification with permission and settings check
 export const playNotification = async (type: 'normal' | 'emergency' | 'notification', customVolume?: number): Promise<void> => {
   try {
@@ -418,56 +437,78 @@ export const playEmergencyAlert = async (): Promise<void> => {
 };
 
 // New: Play a beautiful, melodic messaging chime
-export const playMessagingChime = async (volume: number = 0.6): Promise<void> => {
+export const playMessagingChime = async (
+  volumeOverride?: number,
+  modeOverride?: 'single' | 'double'
+): Promise<void> => {
   try {
+    // Respect global sound toggle
+    if (!isSoundEnabled()) return;
+
     await initializeAudioOnInteraction();
-    const audio = new Audio('/notification-chime.mp3');
-    audio.volume = Math.min(volume, 1.0);
-    audio.preload = 'auto';
-    audio.crossOrigin = 'anonymous';
 
-    await new Promise((resolve, reject) => {
-      if (audio.readyState >= 3) {
-        resolve(true);
-      } else {
-        audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
-        audio.addEventListener('error', reject, { once: true });
-        setTimeout(() => resolve(true), 1500);
+    const { mode, volume } = getMessageChimeSettings();
+    const vol = Math.min(volumeOverride ?? volume ?? 0.7, 1.0);
+    const modeToUse: 'single' | 'double' = modeOverride ?? mode ?? 'single';
+
+    const playOnce = async (): Promise<void> => {
+      try {
+        const audio = new Audio('/notification-chime.mp3');
+        audio.volume = vol;
+        audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
+
+        await new Promise((resolve, reject) => {
+          if (audio.readyState >= 3) {
+            resolve(true);
+          } else {
+            audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
+            audio.addEventListener('error', reject, { once: true });
+            setTimeout(() => resolve(true), 1500);
+          }
+        });
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
+      } catch (fileErr) {
+        // Fallback to generated chime
+        const ctx = await getAudioContext();
+        const baseTime = ctx.currentTime + 0.05;
+
+        const notes = [
+          { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
+          { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
+          { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
+        ];
+
+        notes.forEach(({ freq, dur, offset }) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, baseTime + offset);
+
+          gain.gain.setValueAtTime(0, baseTime + offset);
+          gain.gain.linearRampToValueAtTime(Math.min(vol * 0.35, 0.6), baseTime + offset + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(baseTime + offset);
+          osc.stop(baseTime + offset + dur + 0.02);
+        });
       }
-    });
+    };
 
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      await playPromise;
+    await playOnce();
+    if (modeToUse === 'double') {
+      await new Promise((r) => setTimeout(r, 120));
+      await playOnce();
     }
   } catch (err) {
-    console.error('playMessagingChime: audio file failed, falling back to generated chime', err);
-
-    const ctx = await getAudioContext();
-    const baseTime = ctx.currentTime + 0.05;
-
-    const notes = [
-      { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
-      { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
-      { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
-    ];
-
-    notes.forEach(({ freq, dur, offset }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, baseTime + offset);
-
-      gain.gain.setValueAtTime(0, baseTime + offset);
-      gain.gain.linearRampToValueAtTime(Math.min(volume * 0.35, 0.6), baseTime + offset + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(baseTime + offset);
-      osc.stop(baseTime + offset + dur + 0.02);
-    });
+    console.error('playMessagingChime failed', err);
   }
 };
 
