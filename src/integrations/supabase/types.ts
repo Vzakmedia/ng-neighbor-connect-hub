@@ -3027,25 +3027,37 @@ export type Database = {
       public_profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
+          city: string | null
           created_at: string | null
           display_name: string | null
           is_verified: boolean | null
+          neighborhood: string | null
+          state: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
           created_at?: string | null
           display_name?: string | null
           is_verified?: boolean | null
+          neighborhood?: string | null
+          state?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
           created_at?: string | null
           display_name?: string | null
           is_verified?: boolean | null
+          neighborhood?: string | null
+          state?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -4165,9 +4177,30 @@ export type Database = {
           response_time_avg_minutes: number
         }[]
       }
+      get_event_rsvp_counts: {
+        Args: { _event_id: string }
+        Returns: {
+          going: number
+          interested: number
+          not_going: number
+        }[]
+      }
       get_flagged_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_public_safety_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          alert_type: string
+          severity: string
+          status: string
+          latitude: number
+          longitude: number
+          address: string
+          created_at: string
+        }[]
       }
       get_revenue_breakdown: {
         Args: { start_date?: string; end_date?: string }
