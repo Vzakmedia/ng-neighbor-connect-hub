@@ -88,9 +88,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       // Get user IDs and fetch profiles separately
       const userIds = [...new Set(commentsData?.map(comment => comment.user_id) || [])];
       
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url')
+      const { data: profilesDataRaw, error: profilesError } = await supabase
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 
       if (profilesError) {
@@ -110,10 +110,13 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
         console.error('Error fetching comment likes:', likesError);
       }
 
-      // Create profiles map
-      const profilesMap = new Map(
-        (profilesData || []).map(profile => [profile.user_id, profile])
-      );
+      // Create profiles map (transform public_profiles to expected shape)
+      const profilesData = (profilesDataRaw || []).map((p: any) => ({
+        user_id: p.user_id,
+        full_name: p.display_name ?? null,
+        avatar_url: p.avatar_url ?? null,
+      }));
+      const profilesMap = new Map(profilesData.map((profile: any) => [profile.user_id, profile]));
 
       // Process comments with like information and profiles
       const processedComments = commentsData?.map(comment => ({
@@ -400,9 +403,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   const fetchAvailableUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url')
-        .not('full_name', 'is', null)
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url')
+        
         .limit(50);
 
       if (error) {
@@ -410,7 +413,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
         return;
       }
 
-      setAvailableUsers(data || []);
+      setAvailableUsers((data || []).map((u: any) => ({ user_id: u.user_id, full_name: u.display_name, avatar_url: u.avatar_url })));
     } catch (error) {
       console.error('Error fetching users:', error);
     }

@@ -69,14 +69,21 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       // Get user IDs and fetch profiles separately
       const userIds = [...new Set(commentsData?.map(comment => comment.user_id) || [])];
       
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url')
+      const { data: profilesDataRaw, error: profilesError } = await supabase
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
       }
+
+      // Transform to expected shape
+      const profilesData = (profilesDataRaw || []).map((p: any) => ({
+        user_id: p.user_id,
+        full_name: p.display_name ?? null,
+        avatar_url: p.avatar_url ?? null,
+      }));
 
       // Get comment IDs for like counting
       const commentIds = commentsData?.map(comment => comment.id) || [];
