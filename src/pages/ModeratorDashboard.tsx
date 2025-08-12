@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import ContentModerationPanel from "@/components/ContentModerationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import UserModerationPanel from "@/components/moderation/UserModerationPanel";
 
 const ModeratorDashboard = () => {
   const { user } = useAuth();
@@ -473,19 +474,7 @@ const ModeratorDashboard = () => {
 
           {/* User Moderation Tab */}
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Moderation</CardTitle>
-                <CardDescription>Manage user accounts and violations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">User Moderation</h3>
-                  <p className="text-muted-foreground">Advanced user moderation features coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
+            <UserModerationPanel />
           </TabsContent>
         </div>
       </Tabs>
