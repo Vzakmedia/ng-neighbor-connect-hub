@@ -120,20 +120,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Authorization passed: isCreator=${isCreator}, isEmergencyContact=${isEmergencyContact}, isModerator=${isModerator}`);
 
-    // Update panic alert status
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
+    // Build update object only with existing columns to avoid schema cache errors
+    const updateData: Record<string, any> = {};
+
+    // Check column presence by inspecting fetched row keys
+    const panicKeys = Object.keys(panicAlert || {});
 
     if (new_status === 'resolved') {
       updateData.is_resolved = true;
-      updateData.resolved_at = new Date().toISOString();
-      updateData.resolved_by = user.id;
+      if (panicKeys.includes('resolved_at')) updateData.resolved_at = new Date().toISOString();
+      if (panicKeys.includes('resolved_by')) updateData.resolved_by = user.id;
     } else {
       updateData.is_resolved = false;
-      updateData.resolved_at = null;
-      updateData.resolved_by = null;
+      if (panicKeys.includes('resolved_at')) updateData.resolved_at = null;
+      if (panicKeys.includes('resolved_by')) updateData.resolved_by = null;
     }
+
+    console.log('update-panic-alert-status: updating panic_alerts with keys:', Object.keys(updateData));
 
     const { error: updateError } = await supabase
       .from('panic_alerts')
