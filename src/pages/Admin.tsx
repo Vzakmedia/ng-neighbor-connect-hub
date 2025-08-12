@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity, Search, Filter } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity, Search, Filter, CheckCircle, XCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -844,6 +844,84 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
     }
   };
   
+  // Map a safety_alert to its corresponding panic_alert (by user and time proximity)
+  const findPanicAlertIdForSafetyAlert = async (alert: any): Promise<string | null> => {
+    try {
+      // Try to find by close created_at window first
+      const createdAt = new Date(alert.created_at);
+      const start = new Date(createdAt.getTime() - 2 * 60 * 1000).toISOString(); // -2 min
+      const end = new Date(createdAt.getTime() + 2 * 60 * 1000).toISOString();   // +2 min
+      const { data: nearby, error: nearbyErr } = await supabase
+        .from('panic_alerts')
+        .select('id, user_id, created_at')
+        .eq('user_id', alert.user_id)
+        .gte('created_at', start)
+        .lte('created_at', end)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!nearbyErr && nearby?.id) return nearby.id;
+
+      // Fallback: last panic alert by this user
+      const { data: latest, error: latestErr } = await supabase
+        .from('panic_alerts')
+        .select('id')
+        .eq('user_id', alert.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!latestErr && latest?.id) return latest.id;
+    } catch (e) {
+      console.error('findPanicAlertIdForSafetyAlert error:', e);
+    }
+    return null;
+  };
+
+  const optimisticallyUpdateSafetyAlert = (alertId: string, newStatus: 'active' | 'investigating' | 'resolved' | 'false_alarm') => {
+    setEmergencyAlerts(prev => prev.map((a: any) => a.id === alertId ? {
+      ...a,
+      status: newStatus,
+      verified_at: newStatus === 'resolved' ? new Date().toISOString() : a.verified_at,
+      verified_by: newStatus === 'resolved' ? user?.id : a.verified_by
+    } : a));
+  };
+
+  const handleEmergencyAction = async (alert: any, newStatus: 'active' | 'investigating' | 'resolved' | 'false_alarm') => {
+    try {
+      const panicId = await findPanicAlertIdForSafetyAlert(alert);
+      if (!panicId) {
+        toast({ title: 'Not linked', description: 'Could not find linked panic alert for this safety alert', variant: 'destructive' });
+        return;
+      }
+
+      // Optimistic UI update
+      const prev = emergencyAlerts;
+      optimisticallyUpdateSafetyAlert(alert.id, newStatus);
+
+      const note = newStatus === 'investigating'
+        ? 'Investigation started by super admin'
+        : newStatus === 'resolved'
+          ? 'Resolved by super admin'
+          : newStatus === 'false_alarm'
+            ? 'Marked false alarm by super admin'
+            : undefined;
+
+      const { data, error } = await supabase.functions.invoke('update-panic-alert-status', {
+        body: { panic_alert_id: panicId, new_status: newStatus, update_note: note }
+      });
+
+      if (error) throw error;
+
+      toast({ title: 'Updated', description: data?.message || `Status changed to ${newStatus.replace('_',' ')}` });
+    } catch (e: any) {
+      console.error('Emergency action failed', e);
+      // Revert optimistic update on error
+      setEmergencyAlerts(prev => prev.map((a: any) => a.id === alert.id ? alert : a));
+      toast({ title: 'Update failed', description: e?.message || 'Could not update alert status', variant: 'destructive' });
+    }
+  };
   // Marketplace management handlers
   const handleViewMarketplaceItem = (item: any) => {
     console.log('View marketplace item clicked:', item);
@@ -4326,6 +4404,34 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {isSuperAdmin && (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEmergencyAction(alert, 'investigating')}
+                                  title="Investigate"
+                                >
+                                  <Search className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEmergencyAction(alert, 'resolved')}
+                                  title="Resolve"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEmergencyAction(alert, 'false_alarm')}
+                                  title="False Alarm"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                             <Button 
                               variant="outline" 
                               size="sm"
