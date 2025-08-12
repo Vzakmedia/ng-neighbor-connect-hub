@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import ContentModerationPanel from "@/components/ContentModerationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UserModerationPanel from "@/components/moderation/UserModerationPanel";
-import EmergencyCenter from "@/components/emergency/EmergencyCenter";
 
 const ModeratorDashboard = () => {
   const { user } = useAuth();
@@ -430,7 +429,47 @@ const ModeratorDashboard = () => {
 
           {/* Emergency Alerts Tab */}
           <TabsContent value="emergency">
-            <EmergencyCenter />
+            <Card>
+              <CardHeader>
+                <CardTitle>Emergency Alert Management</CardTitle>
+                <CardDescription>Monitor and respond to emergency situations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {emergencyAlerts.map((alert) => (
+                      <TableRow key={alert.id}>
+                        <TableCell>
+                          <Badge variant="destructive">{alert.situation_type}</Badge>
+                        </TableCell>
+                        <TableCell>{alert.address || 'Location not provided'}</TableCell>
+                        <TableCell>{new Date(alert.created_at).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={alert.is_resolved ? "secondary" : "destructive"}>
+                            {alert.is_resolved ? "Resolved" : "Active"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* User Moderation Tab */}
