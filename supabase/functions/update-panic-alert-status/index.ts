@@ -71,7 +71,25 @@ const handler = async (req: Request): Promise<Response> => {
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id);
-    const isModerator = (roles || []).some((r: any) => ['moderator', 'super_admin', 'admin', 'manager'].includes(r.role));
+    let isModerator = (roles || []).some((r: any) => ['moderator', 'super_admin', 'admin', 'manager'].includes(r.role));
+
+    // Fallback to explicit permission checks via RPC
+    if (!isModerator) {
+      const { data: hasContentMod } = await supabase.rpc('has_staff_permission', {
+        _user_id: user.id,
+        _permission: 'content_moderation',
+        _access_type: 'write'
+      });
+      if (hasContentMod === true) isModerator = true;
+    }
+    if (!isModerator) {
+      const { data: hasEmergencyMgmt } = await supabase.rpc('has_staff_permission', {
+        _user_id: user.id,
+        _permission: 'emergency_management',
+        _access_type: 'write'
+      });
+      if (hasEmergencyMgmt === true) isModerator = true;
+    }
 
     // Check if user is an emergency contact
     if (!isCreator && !isModerator) {

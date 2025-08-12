@@ -182,17 +182,24 @@ const ModeratorDashboard = () => {
 
   const handlePanicAction = async (alertId: string, newStatus: 'active' | 'investigating' | 'resolved' | 'false_alarm') => {
     try {
+      const note = newStatus === 'investigating'
+        ? 'Moderator started investigation'
+        : newStatus === 'resolved'
+          ? 'Resolved by moderator'
+          : newStatus === 'false_alarm'
+            ? 'Marked as false alarm by moderator'
+            : undefined;
       const { data, error } = await supabase.functions.invoke('update-panic-alert-status', {
-        body: { panic_alert_id: alertId, new_status: newStatus }
+        body: { panic_alert_id: alertId, new_status: newStatus, update_note: note }
       });
       if (error) throw error;
       handlePanicStatusUpdate(alertId, newStatus);
       toast({ title: 'Updated', description: data?.message || `Status changed to ${newStatus.replace('_',' ')}` });
     } catch (e: any) {
-      toast({ title: 'Update failed', description: e.message || 'Could not update alert status', variant: 'destructive' });
+      console.error('Panic action failed', e);
+      toast({ title: 'Update failed', description: e?.message || 'Could not update alert status', variant: 'destructive' });
     }
   };
-
   // Action handlers
   const handleReportAction = async (reportId, action) => {
     try {
@@ -241,7 +248,6 @@ const ModeratorDashboard = () => {
       });
     }
   };
-
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
