@@ -62,12 +62,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is the creator
+    // Check if user is the creator or has elevated permissions
     const isCreator = panicAlert.user_id === user.id;
     let isEmergencyContact = false;
 
+    // Determine if user is a moderator/admin/manager
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    const isModerator = (roles || []).some((r: any) => ['moderator', 'super_admin', 'admin', 'manager'].includes(r.role));
+
     // Check if user is an emergency contact
-    if (!isCreator) {
+    if (!isCreator && !isModerator) {
       const { data: userProfile } = await supabase
         .from('profiles')
         .select('phone, full_name')
@@ -81,19 +88,19 @@ const handler = async (req: Request): Promise<Response> => {
           .eq('user_id', panicAlert.user_id)
           .eq('phone_number', userProfile.phone);
 
-        isEmergencyContact = emergencyContacts && emergencyContacts.length > 0;
+        isEmergencyContact = !!(emergencyContacts && emergencyContacts.length > 0);
       }
     }
 
     // Authorization check
-    if (!isCreator && !isEmergencyContact) {
+    if (!isCreator && !isEmergencyContact && !isModerator) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized: Only the alert creator or emergency contacts can update status' }),
+        JSON.stringify({ error: 'Unauthorized: Only the alert creator, emergency contacts, or moderators can update status' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Authorization passed: isCreator=${isCreator}, isEmergencyContact=${isEmergencyContact}`);
+    console.log(`Authorization passed: isCreator=${isCreator}, isEmergencyContact=${isEmergencyContact}, isModerator=${isModerator}`);
 
     // Update panic alert status
     const updateData: any = {

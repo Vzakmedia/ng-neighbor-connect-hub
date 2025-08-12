@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Shield, Users, MessageSquare, Flag, AlertTriangle, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Shield, Users, MessageSquare, Flag, AlertTriangle, Eye, CheckCircle, XCircle, Clock, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import ContentModerationPanel from "@/components/ContentModerationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UserModerationPanel from "@/components/moderation/UserModerationPanel";
+import PanicAlertManager from "@/components/emergency/PanicAlertManager";
+import type { PanicAlert } from "@/types/emergency";
 
 const ModeratorDashboard = () => {
   const { user } = useAuth();
@@ -28,6 +30,8 @@ const ModeratorDashboard = () => {
   const [flaggedContent, setFlaggedContent] = useState([]);
   const [emergencyAlerts, setEmergencyAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
+  const [isPanicDialogOpen, setIsPanicDialogOpen] = useState(false);
 
   // Check if user has moderator role
   const [userRole, setUserRole] = useState(null);
@@ -157,6 +161,37 @@ const ModeratorDashboard = () => {
       supabase.removeChannel(moderatorChannel);
     };
   }, [user, userRole, toast]);
+
+  const getTimeSince = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
+  const handlePanicStatusUpdate = (alertId: string, newStatus: string) => {
+    setEmergencyAlerts(prev => prev.map((a: any) => a.id === alertId ? {
+      ...a,
+      is_resolved: newStatus === 'resolved',
+      resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString()
+    } : a));
+  };
+
+  const handlePanicAction = async (alertId: string, newStatus: 'active' | 'investigating' | 'resolved' | 'false_alarm') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('update-panic-alert-status', {
+        body: { panic_alert_id: alertId, new_status: newStatus }
+      });
+      if (error) throw error;
+      handlePanicStatusUpdate(alertId, newStatus);
+      toast({ title: 'Updated', description: data?.message || `Status changed to ${newStatus.replace('_',' ')}` });
+    } catch (e: any) {
+      toast({ title: 'Update failed', description: e.message || 'Could not update alert status', variant: 'destructive' });
+    }
+  };
 
   // Action handlers
   const handleReportAction = async (reportId, action) => {
@@ -459,10 +494,24 @@ const ModeratorDashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                            View Details
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => { setSelectedPanicAlert(alert as PanicAlert); setIsPanicDialogOpen(true); }}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handlePanicAction(alert.id, 'investigating')}>
+                              <Search className="h-4 w-4 mr-1" />
+                              Investigate
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handlePanicAction(alert.id, 'resolved')}>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Resolve
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handlePanicAction(alert.id, 'false_alarm')}>
+                              <XCircle className="h-4 w-4 mr-1" />
+                              False Alarm
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -470,6 +519,13 @@ const ModeratorDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+            <PanicAlertManager
+              panicAlert={selectedPanicAlert}
+              isOpen={isPanicDialogOpen}
+              onClose={() => setIsPanicDialogOpen(false)}
+              onStatusUpdate={handlePanicStatusUpdate}
+              getTimeSince={getTimeSince}
+            />
           </TabsContent>
 
           {/* User Moderation Tab */}
