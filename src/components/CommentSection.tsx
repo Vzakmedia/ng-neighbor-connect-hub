@@ -100,11 +100,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       // Get comment IDs for like counting
       const commentIds = commentsData?.map(comment => comment.id) || [];
       
-      // Fetch like counts for each comment
-      const { data: likesData, error: likesError } = await supabase
-        .from('comment_likes')
-        .select('comment_id, user_id')
-        .in('comment_id', commentIds);
+      // Fetch like counts and user-like flags via secure RPC
+      const { data: likesSummary, error: likesError }: { data: any[]; error: any } = await (supabase as any)
+        .rpc('get_comment_likes', { _comment_ids: commentIds });
 
       if (likesError) {
         console.error('Error fetching comment likes:', likesError);
@@ -122,8 +120,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       const processedComments = commentsData?.map(comment => ({
         ...comment,
         profiles: profilesMap.get(comment.user_id) || null,
-        likes_count: likesData?.filter(like => like.comment_id === comment.id).length || 0,
-        is_liked_by_user: likesData?.some(like => like.comment_id === comment.id && like.user_id === user.id) || false
+        likes_count: likesSummary?.find((l: any) => l.comment_id === comment.id)?.likes_count || 0,
+        is_liked_by_user: likesSummary?.find((l: any) => l.comment_id === comment.id)?.liked_by_user || false
       })) || [];
 
       // Organize comments with replies
