@@ -36,9 +36,9 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id, full_name, avatar_url')
-        .or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`)
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url')
+        .or(`display_name.ilike.%${term}%`)
         .neq('user_id', user.id)
         .limit(10);
 
@@ -47,7 +47,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
         return;
       }
 
-      setSearchResults(data || []);
+      setSearchResults((data || []).map((d: any) => ({ id: d.user_id, user_id: d.user_id, full_name: d.display_name ?? null, avatar_url: d.avatar_url ?? null })));
     } catch (error) {
       console.error('Search error:', error);
     } finally {

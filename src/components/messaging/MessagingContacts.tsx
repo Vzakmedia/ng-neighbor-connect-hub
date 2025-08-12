@@ -267,10 +267,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, phone, avatar_url')
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url')
         .neq('user_id', user?.id)
-        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .or(`display_name.ilike.%${query}%`)
         .limit(10);
 
       if (error) throw error;
@@ -279,11 +279,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       const existingContactIds = userContacts.map(contact => contact.user_id);
       const filteredUsers = (data || []).filter(user => !existingContactIds.includes(user.user_id));
 
-      setSuggestedUsers(filteredUsers.map(user => ({
+      setSuggestedUsers(filteredUsers.map((user: any) => ({
         id: user.user_id,
         user_id: user.user_id,
-        full_name: user.full_name || '',
-        phone: user.phone,
+        full_name: user.display_name || '',
         avatar_url: user.avatar_url
       })));
     } catch (error) {

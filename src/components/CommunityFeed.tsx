@@ -235,19 +235,26 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       // Get all unique user IDs from posts
       const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
 
-      // Fetch profiles for all users
+      // Fetch profiles for all users from public_profiles (safe, non-sensitive)
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, neighborhood, city, state')
-        .in('user_id', userIds);
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url, neighborhood, city, state')
+        .in('user_id', userIds)
+        .returns<{ user_id: string; display_name: string | null; avatar_url: string | null; neighborhood: string | null; city: string | null; state: string | null; }[]>();
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
       }
 
-      // Create a map of user_id to profile for easy lookup
+      // Create a map of user_id to profile for easy lookup (normalized keys)
       const profilesMap = new Map(
-        (profilesData || []).map(profile => [profile.user_id, profile])
+        (profilesData || []).map(p => [p.user_id, {
+          full_name: p.display_name,
+          avatar_url: p.avatar_url,
+          neighborhood: p.neighborhood,
+          city: p.city,
+          state: p.state,
+        }])
       );
 
       // Filter posts based on location and transform them
