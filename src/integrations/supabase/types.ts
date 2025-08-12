@@ -4151,6 +4151,14 @@ export type Database = {
         Args: { _cache_key: string }
         Returns: Json
       }
+      get_comment_likes: {
+        Args: { _comment_ids: string[] }
+        Returns: {
+          comment_id: string
+          likes_count: number
+          liked_by_user: boolean
+        }[]
+      }
       get_content_moderation_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
