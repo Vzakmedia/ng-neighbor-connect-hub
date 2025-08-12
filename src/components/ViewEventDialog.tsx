@@ -70,59 +70,100 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
   const [showRsvpDialog, setShowRsvpDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
+  const isOrganizer = !!(user && event && user.id === event.user_id);
 
   const fetchRsvps = async () => {
     if (!event || !event.rsvp_enabled) return;
 
     try {
       setLoading(true);
-      // First get RSVPs without the profiles join
-      const { data: rsvpData, error } = await supabase
-        .from('event_rsvps')
-        .select(`
-          id,
-          user_id,
-          status,
-          message,
-          created_at,
-          full_name,
-          phone_number,
-          email_address
-        `)
-        .eq('event_id', event.id)
-        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (isOrganizer) {
+        // Organizer can view full RSVP details
+        const { data: rsvpData, error } = await supabase
+          .from('event_rsvps')
+          .select(`
+            id,
+            user_id,
+            status,
+            message,
+            created_at,
+            full_name,
+            phone_number,
+            email_address
+          `)
+          .eq('event_id', event.id)
+          .order('created_at', { ascending: false });
 
-      // Then get profile data for each user separately
-      const rsvpsWithProfiles = await Promise.all(
-        (rsvpData || []).map(async (rsvp) => {
+        if (error) throw error;
+
+        const rsvpsWithProfiles = await Promise.all(
+          (rsvpData || []).map(async (rsvp) => {
+            const { data: profileData } = await supabase
+              .from('public_profiles')
+              .select('display_name, avatar_url')
+              .eq('user_id', rsvp.user_id)
+              .single();
+
+            return {
+              ...rsvp,
+              profiles: { full_name: profileData?.display_name || 'Anonymous', avatar_url: profileData?.avatar_url || '' }
+            } as RSVP;
+          })
+        );
+
+        setRsvps(rsvpsWithProfiles);
+
+        // Calculate counts
+        const going = rsvpsWithProfiles.filter(r => r.status === 'going').length;
+        const interested = rsvpsWithProfiles.filter(r => r.status === 'interested').length;
+        const not_going = rsvpsWithProfiles.filter(r => r.status === 'not_going').length;
+        setRsvpCounts({ going, interested, not_going });
+
+        // Find user's RSVP
+        const currentUserRsvp = rsvpsWithProfiles.find(r => r.user_id === user?.id) || null;
+        setUserRsvp(currentUserRsvp);
+      } else {
+        // Non-organizers: show aggregate counts and user's own RSVP only
+        const { data: countsData, error: countsError } = await (supabase as any).rpc('get_event_rsvp_counts', { _event_id: event.id });
+        if (countsError) throw countsError;
+        const countsRow: any = Array.isArray(countsData) ? countsData?.[0] : countsData;
+        setRsvpCounts({
+          going: countsRow?.going ?? 0,
+          interested: countsRow?.interested ?? 0,
+          not_going: countsRow?.not_going ?? 0,
+        });
+
+        // Fetch only current user's RSVP (allowed by RLS)
+        const { data: myRsvp } = await supabase
+          .from('event_rsvps')
+          .select('id, user_id, status, message, created_at')
+          .eq('event_id', event.id)
+          .eq('user_id', user?.id || '')
+          .maybeSingle();
+
+        if (myRsvp) {
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', rsvp.user_id)
+            .from('public_profiles')
+            .select('display_name, avatar_url')
+            .eq('user_id', myRsvp.user_id)
             .single();
 
-          return {
-            ...rsvp,
-            profiles: profileData || { full_name: 'Anonymous', avatar_url: '' }
+          const mapped: RSVP = {
+            ...myRsvp,
+            full_name: undefined,
+            phone_number: undefined,
+            email_address: undefined,
+            profiles: { full_name: profileData?.display_name || 'You', avatar_url: profileData?.avatar_url || '' }
           } as RSVP;
-        })
-      );
 
-      setRsvps(rsvpsWithProfiles);
-
-      // Calculate counts
-      const going = rsvpsWithProfiles.filter(r => r.status === 'going').length;
-      const interested = rsvpsWithProfiles.filter(r => r.status === 'interested').length;
-      const not_going = rsvpsWithProfiles.filter(r => r.status === 'not_going').length;
-      
-      setRsvpCounts({ going, interested, not_going });
-
-      // Find user's RSVP
-      const currentUserRsvp = rsvpsWithProfiles.find(r => r.user_id === user?.id);
-      setUserRsvp(currentUserRsvp || null);
-
+          setUserRsvp(mapped);
+          setRsvps([mapped]);
+        } else {
+          setUserRsvp(null);
+          setRsvps([]);
+        }
+      }
     } catch (error) {
       console.error('Error fetching RSVPs:', error);
       toast({

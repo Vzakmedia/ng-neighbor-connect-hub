@@ -127,14 +127,14 @@ const MyEventsPanel = () => {
       const rsvpsWithProfiles = await Promise.all(
         (rsvpData || []).map(async (rsvp) => {
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
+            .from('public_profiles')
+            .select('display_name, avatar_url')
             .eq('user_id', rsvp.user_id)
             .single();
 
           return {
             ...rsvp,
-            profiles: profileData || { full_name: 'Anonymous', avatar_url: '' }
+            profiles: { full_name: profileData?.display_name || 'Anonymous', avatar_url: profileData?.avatar_url || '' }
           } as RSVP;
         })
       );
@@ -169,14 +169,14 @@ const MyEventsPanel = () => {
           const rsvpsWithProfiles = await Promise.all(
             (rsvpData || []).map(async (rsvp) => {
               const { data: profileData } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url')
+                .from('public_profiles')
+                .select('display_name, avatar_url')
                 .eq('user_id', rsvp.user_id)
                 .single();
 
               return {
                 ...rsvp,
-                profiles: profileData || { full_name: 'Anonymous', avatar_url: '' }
+                profiles: { full_name: profileData?.display_name || 'Anonymous', avatar_url: profileData?.avatar_url || '' }
               } as RSVP;
             })
           );
