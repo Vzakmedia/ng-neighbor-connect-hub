@@ -205,6 +205,27 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Log staff activity for audit
+    try {
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: user.id,
+          action_type: 'update_panic_alert_status',
+          resource_type: 'panic_alert',
+          resource_id: panic_alert_id,
+          details: {
+            new_status,
+            update_note: update_note || null,
+            alert_user_id: panicAlert.user_id,
+            panic_created_at: panicAlert.created_at
+          },
+          user_agent: req.headers.get('user-agent') || null,
+        });
+    } catch (logErr) {
+      console.warn('Failed to log staff activity:', logErr);
+    }
+
     // Get updated panic alert data
     const { data: updatedAlert } = await supabase
       .from('panic_alerts')

@@ -36,6 +36,21 @@ export const SecureRoleGuard: React.FC<SecureRoleGuardProps> = ({
       }
 
       try {
+        // Super admin bypass: grant access to everything
+        const { data: userStaffRole, error: roleFetchError } = await supabase.rpc('get_user_staff_role', {
+          _user_id: user.id
+        });
+
+        if (roleFetchError) {
+          console.error('Error fetching user staff role:', roleFetchError);
+        }
+
+        if (userStaffRole === 'super_admin') {
+          setHasAccess(true);
+          setChecking(false);
+          return;
+        }
+
         // Check roles if specified
         if (requiredRoles.length > 0) {
           const { data: userRoles, error: roleError } = await supabase
