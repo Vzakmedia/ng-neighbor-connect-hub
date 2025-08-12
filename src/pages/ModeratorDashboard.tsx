@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import ContentModerationPanel from "@/components/ContentModerationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ModeratorDashboard = () => {
@@ -244,6 +245,10 @@ const ModeratorDashboard = () => {
             <Flag className="h-4 w-4 mr-2" />
             Content Reports
           </TabsTrigger>
+          <TabsTrigger value="approvals" className="w-full justify-start">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Approvals
+          </TabsTrigger>
           <TabsTrigger value="emergency" className="w-full justify-start">
             <AlertTriangle className="h-4 w-4 mr-2" />
             Emergency Alerts
@@ -414,6 +419,11 @@ const ModeratorDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Approvals Tab */}
+          <TabsContent value="approvals">
+            <ContentModerationPanel />
           </TabsContent>
 
           {/* Emergency Alerts Tab */}

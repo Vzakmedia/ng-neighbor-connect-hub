@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
+import StaffInvitationManager from "@/components/StaffInvitationManager";
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -209,6 +210,10 @@ const ManagerDashboard = () => {
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </TabsTrigger>
+          <TabsTrigger value="team" className="w-full justify-start">
+            <Users className="h-4 w-4 mr-2" />
+            Team
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1">
@@ -395,6 +400,11 @@ const ManagerDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Team Tab */}
+          <TabsContent value="team">
+            <StaffInvitationManager />
           </TabsContent>
         </div>
       </Tabs>

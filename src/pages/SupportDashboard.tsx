@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDashboard } from "@/components/alert-system/AlertDashboard";
 import { Textarea } from "@/components/ui/textarea";
 
 const SupportDashboard = () => {
@@ -206,6 +207,10 @@ const SupportDashboard = () => {
             <AlertTriangle className="h-4 w-4 mr-2" />
             Emergency
           </TabsTrigger>
+          <TabsTrigger value="alerts" className="w-full justify-start">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Alert System
+          </TabsTrigger>
           <TabsTrigger value="tickets" className="w-full justify-start">
             <MessageSquare className="h-4 w-4 mr-2" />
             Support Tickets
@@ -371,6 +376,11 @@ const SupportDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Alert System Tab */}
+          <TabsContent value="alerts">
+            <AlertDashboard />
           </TabsContent>
 
           {/* Support Tickets Tab */}
