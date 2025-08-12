@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
-import { HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 const SupportDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [stats, setStats] = useState({
     openTickets: 0,
@@ -188,13 +189,23 @@ const SupportDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Support Dashboard</h1>
-        <p className="text-muted-foreground">User assistance and emergency response center</p>
-        <div className="flex items-center mt-2">
-          <div className="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
-          <span className="text-sm text-muted-foreground">Live support active</span>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Support Dashboard</h1>
+          <p className="text-muted-foreground">User assistance and emergency response center</p>
+          <div className="flex items-center mt-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
+            <span className="text-sm text-muted-foreground">Live support active</span>
+          </div>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/landing')}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Landing
+        </Button>
       </div>
 
       <Tabs defaultValue="overview" className="flex gap-6" orientation="vertical">
