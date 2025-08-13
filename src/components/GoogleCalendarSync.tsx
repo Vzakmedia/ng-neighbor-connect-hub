@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Link, Unlink, Settings } from 'lucide-react';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 declare global {
   interface Window {
@@ -13,12 +14,12 @@ declare global {
   }
 }
 
-const GOOGLE_CALENDAR_CONFIG = {
-  apiKey: 'YOUR_GOOGLE_API_KEY', // This should be from env
-  clientId: 'YOUR_GOOGLE_CLIENT_ID', // This should be from env
-  discoveryDoc: 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest',
-  scopes: 'https://www.googleapis.com/auth/calendar.events'
-};
+interface GoogleCalendarConfig {
+  apiKey: string;
+  clientId: string;
+  discoveryDoc: string;
+  scopes: string;
+}
 
 interface GoogleCalendarSyncProps {
   onSyncEnabledChange?: (enabled: boolean) => void;
@@ -27,18 +28,48 @@ interface GoogleCalendarSyncProps {
 const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) => {
   const [apiLoaded, setApiLoaded] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
+  const [config, setConfig] = useState<GoogleCalendarConfig | null>(null);
   const { isSignedIn, isLoading, signIn, signOut } = useGoogleCalendar();
   const { toast } = useToast();
 
   useEffect(() => {
-    loadGoogleAPI();
+    loadGoogleCalendarConfig();
   }, []);
 
   useEffect(() => {
     onSyncEnabledChange?.(isSignedIn && autoSync);
   }, [isSignedIn, autoSync, onSyncEnabledChange]);
 
+  const loadGoogleCalendarConfig = async () => {
+    try {
+      // Fetch Google Calendar configuration from edge function
+      const { data, error } = await supabase.functions.invoke('get-google-calendar-config');
+      
+      if (error) {
+        console.error('Failed to load Google Calendar config:', error);
+        toast({
+          title: "Configuration Required",
+          description: "Google Calendar integration needs to be configured by an administrator",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setConfig(data);
+      loadGoogleAPI();
+    } catch (error) {
+      console.error('Failed to load Google Calendar config:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load Google Calendar configuration",
+        variant: "destructive",
+      });
+    }
+  };
+
   const loadGoogleAPI = async () => {
+    if (!config) return;
+    
     try {
       // Load Google API script
       if (!window.gapi) {
@@ -60,16 +91,18 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
   };
 
   const initializeGapi = async () => {
+    if (!config) return;
+    
     try {
       await new Promise((resolve) => {
         window.gapi.load('client:auth2', resolve);
       });
 
       await window.gapi.client.init({
-        apiKey: GOOGLE_CALENDAR_CONFIG.apiKey,
-        clientId: GOOGLE_CALENDAR_CONFIG.clientId,
-        discoveryDocs: [GOOGLE_CALENDAR_CONFIG.discoveryDoc],
-        scope: GOOGLE_CALENDAR_CONFIG.scopes
+        apiKey: config.apiKey,
+        clientId: config.clientId,
+        discoveryDocs: [config.discoveryDoc],
+        scope: config.scopes
       });
 
       setApiLoaded(true);
@@ -168,7 +201,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
           </div>
         )}
 
-        {!apiLoaded && (
+        {!config && (
           <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
             <div className="flex items-center gap-2">
               <Settings className="h-4 w-4 text-yellow-600" />
