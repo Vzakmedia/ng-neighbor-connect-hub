@@ -30,6 +30,7 @@ const ManagerDashboard = () => {
   
   const [businesses, setBusinesses] = useState([]);
   const [promotions, setPromotions] = useState([]);
+  const [pendingAdCampaigns, setPendingAdCampaigns] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPromotion, setSelectedPromotion] = useState<any | null>(null);
@@ -109,8 +110,17 @@ const ManagerDashboard = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
+        // Fetch pending advertisement campaigns (admin feature parity)
+        const { data: adCampaignsData } = await supabase
+          .from('advertisement_campaigns')
+          .select('id, campaign_name, campaign_type, status, approval_status, target_geographic_scope, daily_budget, total_budget, total_spent, total_impressions, total_clicks, start_date, end_date, created_at, ad_title, ad_description')
+          .eq('approval_status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
         setBusinesses(businessesData || []);
         setPromotions(promotionsData || []);
+        setPendingAdCampaigns(adCampaignsData || []);
 
       } catch (error) {
         console.error('Error fetching manager data:', error);
@@ -168,12 +178,78 @@ const ManagerDashboard = () => {
       }
     );
 
+    // Pending ad campaigns subscription
+    managerChannel.on('postgres_changes',
+      { event: '*', schema: 'public', table: 'advertisement_campaigns' },
+      (payload) => {
+        console.log('Ad campaigns change:', payload);
+        setPendingAdCampaigns((prev) => {
+          const oldRow: any = (payload as any).old || {};
+          const newRow: any = (payload as any).new || {};
+          const wasPending = oldRow.approval_status === 'pending';
+          const isPending = newRow.approval_status === 'pending';
+          // INSERT
+          if (payload.eventType === 'INSERT' && isPending) {
+            return [newRow, ...prev.filter(c => c.id !== newRow.id)].slice(0, 50);
+          }
+          // UPDATE transitions
+          if (payload.eventType === 'UPDATE') {
+            if (wasPending && !isPending) {
+              return prev.filter(c => c.id !== newRow.id);
+            }
+            if (isPending) {
+              return prev.map(c => c.id === newRow.id ? newRow : c);
+            }
+          }
+          return prev;
+        });
+      }
+    );
+
     managerChannel.subscribe();
 
     return () => {
       supabase.removeChannel(managerChannel);
     };
   }, [user, userRole, toast]);
+
+  const handleApproveCampaign = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('advertisement_campaigns')
+        .update({
+          approval_status: 'approved',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+          status: 'active'
+        })
+        .eq('id', campaignId);
+      if (error) throw error;
+      toast({ title: 'Campaign approved', description: 'The ad is now active.' });
+      setPendingAdCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
+    } catch (e) {
+      console.error('Approve campaign error', e);
+      toast({ title: 'Error', description: 'Failed to approve campaign', variant: 'destructive' });
+    }
+  };
+
+  const handleRejectCampaign = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('advertisement_campaigns')
+        .update({
+          approval_status: 'rejected',
+          status: 'rejected'
+        })
+        .eq('id', campaignId);
+      if (error) throw error;
+      toast({ title: 'Campaign rejected', description: 'The ad has been rejected.' });
+      setPendingAdCampaigns((prev) => prev.filter((c) => c.id !== campaignId));
+    } catch (e) {
+      console.error('Reject campaign error', e);
+      toast({ title: 'Error', description: 'Failed to reject campaign', variant: 'destructive' });
+    }
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -227,6 +303,10 @@ const ManagerDashboard = () => {
           <TabsTrigger value="promotions" className="w-full justify-start">
             <TrendingUp className="h-4 w-4 mr-2" />
             Promotions
+          </TabsTrigger>
+          <TabsTrigger value="ad-campaigns" className="w-full justify-start">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Ad Campaigns
           </TabsTrigger>
           <TabsTrigger value="analytics" className="w-full justify-start">
             <BarChart3 className="h-4 w-4 mr-2" />
@@ -404,6 +484,48 @@ const ManagerDashboard = () => {
                           >
                             Manage
                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Ad Campaigns Tab */}
+          <TabsContent value="ad-campaigns">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ad Campaign Approvals</CardTitle>
+                <CardDescription>Review and approve pending advertisement campaigns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Campaign</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Budget</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingAdCampaigns.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">No pending campaigns</TableCell>
+                      </TableRow>
+                    )}
+                    {pendingAdCampaigns.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell>{c.ad_title || c.campaign_name || 'Untitled'}</TableCell>
+                        <TableCell>{c.campaign_type}</TableCell>
+                        <TableCell>₦{(c.total_budget || 0).toLocaleString()}</TableCell>
+                        <TableCell>{new Date(c.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="space-x-2">
+                          <Button size="sm" onClick={() => handleApproveCampaign(c.id)}>Approve</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleRejectCampaign(c.id)}>Reject</Button>
                         </TableCell>
                       </TableRow>
                     ))}
