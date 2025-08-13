@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 import StaffInvitationManager from "@/components/StaffInvitationManager";
+import ManagePromotionDialog from "@/components/ManagePromotionDialog";
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -30,6 +31,8 @@ const ManagerDashboard = () => {
   const [promotions, setPromotions] = useState([]);
   const [analytics, setAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPromotion, setSelectedPromotion] = useState<any | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
 
   // Check if user has manager role
   const [userRole, setUserRole] = useState(null);
@@ -153,6 +156,13 @@ const ManagerDashboard = () => {
           setPromotions(prev => prev.map(promo => 
             promo.id === payload.new.id ? payload.new : promo
           ));
+          // Adjust active count when status changes
+          if (payload.old.status !== payload.new.status) {
+            setStats(prev => ({
+              ...prev,
+              activePromotions: prev.activePromotions + (payload.new.status === 'active' ? 1 : 0) - (payload.old.status === 'active' ? 1 : 0)
+            }));
+          }
         }
       }
     );
@@ -384,7 +394,11 @@ const ManagerDashboard = () => {
                         </TableCell>
                         <TableCell>{new Date(promotion.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => { setSelectedPromotion(promotion); setManageOpen(true); }}
+                          >
                             Manage
                           </Button>
                         </TableCell>
@@ -419,6 +433,16 @@ const ManagerDashboard = () => {
           </TabsContent>
         </div>
       </Tabs>
+
+      <ManagePromotionDialog 
+        open={manageOpen} 
+        onOpenChange={setManageOpen} 
+        promotion={selectedPromotion}
+        onUpdated={(updated) => {
+          if (!updated) return;
+          setPromotions((prev: any[]) => prev.map((p) => p.id === updated.id ? updated : p));
+        }}
+      />
     </div>
   );
 };
