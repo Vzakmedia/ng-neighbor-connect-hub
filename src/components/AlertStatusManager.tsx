@@ -75,40 +75,86 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
 
     setIsUpdating(true);
     try {
-      const updateData: any = {
-        status: selectedStatus,
-        updated_at: new Date().toISOString()
-      };
+      // Try to find a matching panic_alert and route through edge function for full sync
+      let usedEdgeFunction = false;
 
-      // Add resolution timestamp if resolving
-      if (selectedStatus === 'resolved' && alert.status !== 'resolved') {
-        updateData.verified_at = new Date().toISOString();
-        updateData.verified_by = user?.id;
+      // Fetch the full safety alert to get created_at for correlation
+      const { data: safetyDetails } = await supabase
+        .from('safety_alerts')
+        .select('id, user_id, severity, created_at')
+        .eq('id', alert.id)
+        .maybeSingle();
+
+      if (safetyDetails) {
+        // Look for a panic_alert by same user around the same time window
+        const { data: candidatePanicAlerts } = await supabase
+          .from('panic_alerts')
+          .select('id, created_at, user_id')
+          .eq('user_id', safetyDetails.user_id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (candidatePanicAlerts && candidatePanicAlerts.length > 0) {
+          const safetyTime = new Date(safetyDetails.created_at).getTime();
+          const windowMs = 5 * 60 * 1000; // 5 minutes window
+          const match = candidatePanicAlerts.find((p) => {
+            const t = new Date(p.created_at).getTime();
+            return Math.abs(t - safetyTime) <= windowMs;
+          });
+
+          if (match?.id) {
+            const { error: fnError } = await supabase.functions.invoke('update-panic-alert-status', {
+              body: {
+                panic_alert_id: match.id,
+                new_status: selectedStatus,
+                update_note: statusNote?.trim() || undefined,
+              },
+            });
+
+            if (!fnError) {
+              usedEdgeFunction = true;
+            } else {
+              console.warn('Edge function update failed, falling back to direct safety update:', fnError);
+            }
+          }
+        }
       }
 
-      const { error } = await supabase
-        .from('safety_alerts')
-        .update(updateData)
-        .eq('id', alert.id);
+      if (!usedEdgeFunction) {
+        // Fallback: direct safety_alerts update
+        const updateData: any = {
+          status: selectedStatus,
+          updated_at: new Date().toISOString(),
+        };
 
-      if (error) throw error;
+        if (selectedStatus === 'resolved' && alert.status !== 'resolved') {
+          updateData.verified_at = new Date().toISOString();
+          updateData.verified_by = user?.id;
+        }
 
-      // Add status update note if provided
-      if (statusNote.trim()) {
-        await supabase
-          .from('alert_responses')
-          .insert({
-            alert_id: alert.id,
-            user_id: user?.id,
-            response_type: 'status_update',
-            comment: `Status changed to ${selectedStatus}: ${statusNote.trim()}`
-          });
+        const { error } = await supabase
+          .from('safety_alerts')
+          .update(updateData)
+          .eq('id', alert.id);
+
+        if (error) throw error;
+
+        if (statusNote.trim()) {
+          await supabase
+            .from('alert_responses')
+            .insert({
+              alert_id: alert.id,
+              user_id: user?.id,
+              response_type: 'status_update',
+              comment: `Status changed to ${selectedStatus}: ${statusNote.trim()}`,
+            });
+        }
       }
 
       onStatusUpdate(alert.id, selectedStatus, statusNote);
-      
+
       toast({
-        title: "Status Updated",
+        title: 'Status Updated',
         description: `Alert status changed to ${statusConfig[selectedStatus].label}`,
       });
 
@@ -116,9 +162,9 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
     } catch (error) {
       console.error('Error updating alert status:', error);
       toast({
-        title: "Update Failed",
-        description: "Failed to update alert status. Please try again.",
-        variant: "destructive",
+        title: 'Update Failed',
+        description: 'Failed to update alert status. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsUpdating(false);

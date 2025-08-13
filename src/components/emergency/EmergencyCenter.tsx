@@ -124,6 +124,9 @@ const EmergencyCenter = () => {
     if (selectedAlert?.id === alertId) {
       setSelectedAlert(prev => prev ? { ...prev, status: newStatus as any } : null);
     }
+
+    // Also refresh panic alerts to keep both views in sync
+    fetchPanicAlerts(true);
   };
 
   const handleRefresh = () => {
