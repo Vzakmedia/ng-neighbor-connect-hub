@@ -5,13 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarChart3, Building, TrendingUp, DollarSign, ShoppingCart, Users, Calendar, Settings, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import BusinessVerificationAdmin from "@/components/BusinessVerificationAdmin";
 import StaffInvitationManager from "@/components/StaffInvitationManager";
 import ManagePromotionDialog from "@/components/ManagePromotionDialog";
+
+const BusinessVerificationAdmin = lazy(() => import("@/components/BusinessVerificationAdmin"));
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -361,7 +362,9 @@ const ManagerDashboard = () => {
 
           {/* Businesses Tab */}
           <TabsContent value="businesses">
-            <BusinessVerificationAdmin />
+            <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading business tools...</div>}>
+              <BusinessVerificationAdmin />
+            </Suspense>
           </TabsContent>
 
           {/* Promotions Tab */}
