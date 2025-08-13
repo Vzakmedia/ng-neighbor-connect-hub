@@ -23,12 +23,12 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
   useEffect(() => {
     if (user) {
       getUserLocation();
-      subscribeToPublicAlerts();
+      subscribeToSafetyAlerts();
     }
     
     return () => {
       try {
-        const subscription = supabase.channel('public-emergency-alerts');
+        const subscription = supabase.channel('safety-alerts-public');
         supabase.removeChannel(subscription);
         
         // Clear polling fallback if it exists
@@ -37,7 +37,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           delete (window as any).publicAlertsPoll;
         }
       } catch (error) {
-        console.error('Error cleaning up public alerts subscriptions:', error);
+        console.error('Error cleaning up safety alerts subscriptions:', error);
       }
     };
   }, [user]);
@@ -134,19 +134,18 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
   };
 
-  const subscribeToPublicAlerts = () => {
+  const subscribeToSafetyAlerts = () => {
     try {
-      const subscription = supabase.channel('public-emergency-alerts')
+      const subscription = supabase.channel('safety-alerts-public')
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'public_emergency_alerts'
+            table: 'safety_alerts'
           },
           (payload) => {
             if (payload.new && payload.new.user_id !== user?.id) {
-              // Check if this alert is nearby
               if (userLocation) {
                 const distance = calculateDistance(
                   userLocation.latitude,
@@ -154,16 +153,12 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                   payload.new.latitude,
                   payload.new.longitude
                 );
-                
-                if (distance <= (payload.new.radius_km || 5)) {
-                  // Emergency alert handling is now managed by the unified notification system
+                if (distance <= 10) {
                   toast({
-                    title: "🚨 EMERGENCY ALERT IN YOUR AREA",
-                    description: `${payload.new.situation_type?.replace('_', ' ').toUpperCase()} reported nearby`,
-                    variant: "destructive",
+                    title: 'Emergency alert near you',
+                    description: `${(payload.new.alert_type || 'alert').replace('_', ' ')} • ${payload.new.severity}`,
+                    variant: 'destructive',
                   });
-                  
-                  // Reload alerts
                   loadNearbyAlerts();
                 }
               }
@@ -175,33 +170,27 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'public_emergency_alerts'
+            table: 'safety_alerts'
           },
           () => {
             loadNearbyAlerts();
           }
         )
         .subscribe((status) => {
-          console.log('Public alerts subscription status:', status);
+          console.log('Safety alerts subscription status:', status);
           if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to public alerts - falling back to polling');
-            // Fallback to polling every 60 seconds for public alerts
+            console.error('Failed to subscribe to safety alerts - falling back to polling');
             const pollInterval = setInterval(() => {
               loadNearbyAlerts();
             }, 60000);
-            
-            // Store interval for cleanup
             (window as any).publicAlertsPoll = pollInterval;
           }
         });
     } catch (error) {
-      console.error('Error subscribing to public alerts:', error);
-      // Fallback to polling every 60 seconds
+      console.error('Error subscribing to safety alerts:', error);
       const pollInterval = setInterval(() => {
         loadNearbyAlerts();
       }, 60000);
-      
-      // Store interval for cleanup
       (window as any).publicAlertsPoll = pollInterval;
     }
   };
