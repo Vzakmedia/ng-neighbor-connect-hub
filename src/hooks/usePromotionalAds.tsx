@@ -30,53 +30,60 @@ export const usePromotionalAds = (maxAds: number = 3) => {
     if (!user || !profile) return;
 
     try {
-      // Fetch active promoted posts with campaign and user profile data
-      const { data: promotedPostsData, error } = await supabase
-        .from('promoted_posts')
-        .select(`
-          *,
-          promotion_campaigns!inner (
-            user_id,
-            status,
-            start_date,
-            end_date
-          )
-        `)
-        .eq('is_active', true)
-        .eq('promotion_campaigns.status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(maxAds);
+      const nowIso = new Date().toISOString();
 
-      if (error) throw error;
+      // Fetch two sources in parallel: promoted_posts (campaign-based) and simple promotions
+      const [promotedPostsRes, simplePromotionsRes] = await Promise.all([
+        supabase
+          .from('promoted_posts')
+          .select(`
+            *,
+            promotion_campaigns!inner (
+              user_id,
+              status,
+              start_date,
+              end_date
+            )
+          `)
+          .eq('is_active', true)
+          .eq('promotion_campaigns.status', 'active')
+          .lte('promotion_campaigns.start_date', nowIso)
+          .gte('promotion_campaigns.end_date', nowIso)
+          .order('created_at', { ascending: false })
+          .limit(maxAds),
+        supabase
+          .from('promotions')
+          .select('*')
+          .eq('status', 'active')
+          .lte('start_date', nowIso)
+          .gte('end_date', nowIso)
+          .order('created_at', { ascending: false })
+          .limit(maxAds)
+      ]);
 
-      // Enrich promotions with user profile data and format for ads
-      const enrichedAds = await Promise.all(
+      const promotedPostsData = promotedPostsRes.data as any[] | null;
+      const simplePromotions = simplePromotionsRes.data as any[] | null;
+
+      // Enrich promotions from promoted_posts with user profile data and format for ads
+      const enrichedFromPromoted = await Promise.all(
         (promotedPostsData || []).map(async (promotedPost) => {
-          // Get user profile data
           const { data: profileData } = await supabase
             .from('profiles')
             .select('full_name, avatar_url, neighborhood, city, state')
             .eq('user_id', promotedPost.promotion_campaigns.user_id)
-            .single();
+            .maybeSingle();
 
-          // Calculate time posted
           const createdDate = new Date(promotedPost.created_at);
           const now = new Date();
           const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
-          
-          let timePosted = '';
-          if (diffInHours < 1) {
-            timePosted = 'Just now';
-          } else if (diffInHours < 24) {
-            timePosted = `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-          } else {
-            const diffInDays = Math.floor(diffInHours / 24);
-            timePosted = `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-          }
+          let timePosted = diffInHours < 1
+            ? 'Just now'
+            : diffInHours < 24
+              ? `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+              : `${Math.floor(diffInHours / 24)} day${Math.floor(diffInHours / 24) > 1 ? 's' : ''} ago`;
 
-          // Extract data from post_content JSON
           const postContent = promotedPost.post_content as any;
-          
+
           const ad: PromotionalAd = {
             id: promotedPost.id,
             title: postContent.title || 'Advertisement',
@@ -85,7 +92,7 @@ export const usePromotionalAds = (maxAds: number = 3) => {
             images: postContent.images || [],
             location: profileData?.neighborhood || profileData?.city || 'Location not specified',
             category: postContent.business_category || promotedPost.post_type,
-            price: `₦${promotedPost.daily_budget}/day`,
+            price: postContent.price ? `₦${postContent.price}` : `₦${promotedPost.daily_budget || ''}/day`,
             url: postContent.website_url || undefined,
             sponsored: true,
             timePosted,
@@ -97,7 +104,52 @@ export const usePromotionalAds = (maxAds: number = 3) => {
         })
       );
 
-      setAds(enrichedAds);
+      // Map simple promotions table rows into the same ad shape
+      const mappedSimplePromotions = await Promise.all(
+        (simplePromotions || []).map(async (p) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('neighborhood, city')
+            .eq('user_id', p.user_id)
+            .maybeSingle();
+
+          const createdDate = new Date(p.created_at);
+          const now = new Date();
+          const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
+          const timePosted = diffInHours < 1
+            ? 'Just now'
+            : diffInHours < 24
+              ? `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+              : `${Math.floor(diffInHours / 24)} day${Math.floor(diffInHours / 24) > 1 ? 's' : ''} ago`;
+
+          const ad: PromotionalAd = {
+            id: p.id,
+            title: p.title || 'Advertisement',
+            description: p.description || '',
+            image: Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : undefined,
+            images: p.images || [],
+            location: profileData?.neighborhood || profileData?.city || 'Location not specified',
+            category: p.promotion_type,
+            price: p.budget ? `₦${Number(p.budget).toLocaleString()}` : undefined,
+            url: p.website_url || undefined,
+            sponsored: true,
+            timePosted,
+            promotion_type: p.promotion_type,
+            contact_info: p.contact_info || undefined,
+          };
+          return ad;
+        })
+      );
+
+      // Combine, de-duplicate by id, and limit
+      const combined = [...enrichedFromPromoted, ...mappedSimplePromotions]
+        .reduce<PromotionalAd[]>((acc, curr) => {
+          if (!acc.find(a => a.id === curr.id)) acc.push(curr);
+          return acc;
+        }, [])
+        .slice(0, maxAds);
+
+      setAds(combined);
     } catch (error) {
       console.error('Error fetching promotional ads:', error);
     } finally {
@@ -121,7 +173,14 @@ export const usePromotionalAds = (maxAds: number = 3) => {
            table: 'promoted_posts'
          }, () => {
            fetchPromotionalAds();
-        }),
+         })
+         .on('postgres_changes', {
+           event: '*',
+           schema: 'public',
+           table: 'promotions'
+         }, () => {
+           fetchPromotionalAds();
+         }),
       {
         channelName: 'promotional_ads_changes',
         onError: fetchPromotionalAds,
