@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
-import { AlertCircle, CheckCircle, Clock, XCircle, Activity, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AlertCircle, CheckCircle, Clock, XCircle, Activity, Zap, Wifi, WifiOff } from 'lucide-react';
 
 interface AlertDashboardProps {
   className?: string;
@@ -14,17 +15,45 @@ interface AlertDashboardProps {
 export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => {
   const { metrics, getQueueStatus, processQueue, isProcessing } = useAlertSystem();
   const [refreshing, setRefreshing] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
     // Load initial metrics
     getQueueStatus();
     
-    // Set up auto-refresh every 30 seconds
+    // Set up real-time subscription for queue updates
+    const channel = supabase.channel('alert-queue-updates');
+    
+    channel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'alert_queue' }, 
+      () => {
+        console.log('Alert queue updated, refreshing metrics');
+        getQueueStatus();
+      }
+    );
+
+    channel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'alert_analytics' }, 
+      () => {
+        console.log('Alert analytics updated, refreshing metrics');
+        getQueueStatus();
+      }
+    );
+
+    channel.subscribe((status) => {
+      console.log('Alert dashboard subscription status:', status);
+      setIsConnected(status === 'SUBSCRIBED');
+    });
+    
+    // Set up auto-refresh every 30 seconds as fallback
     const interval = setInterval(() => {
       getQueueStatus();
     }, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, [getQueueStatus]);
 
   const handleRefresh = async () => {
@@ -55,7 +84,17 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
           <h2 className="text-2xl font-bold">Alert System Dashboard</h2>
           <p className="text-muted-foreground">Monitor and manage real-time alert processing</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2 mr-4">
+            {isConnected ? (
+              <Wifi className="h-4 w-4 text-green-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isConnected ? 'Real-time Connected' : 'Offline Mode'}
+            </span>
+          </div>
           <Button 
             variant="outline" 
             onClick={handleRefresh}
