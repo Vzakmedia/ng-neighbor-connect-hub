@@ -143,17 +143,18 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
     try {
       const { error } = await supabase
-        .from('community_posts')
+        .from('events')
         .insert({
           user_id: user.id,
-          post_type: 'event',
           title: title.trim(),
           content: content.trim(),
           location: location.trim() || null,
           tags: tags,
           image_urls: uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
           file_urls: uploadedFiles,
-          rsvp_enabled: rsvpEnabled
+          rsvp_enabled: rsvpEnabled,
+          event_date: new Date().toISOString(), // TODO: Add date picker
+          is_public: true
         });
 
       if (error) {

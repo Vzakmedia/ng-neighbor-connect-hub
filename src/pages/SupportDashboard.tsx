@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDashboard } from "@/components/alert-system/AlertDashboard";
 import { Textarea } from "@/components/ui/textarea";
+import SupportTicketSystem from '@/components/SupportTicketSystem';
 
 const SupportDashboard = () => {
   const { user } = useAuth();
@@ -402,12 +403,7 @@ const SupportDashboard = () => {
                 <CardDescription>Handle user support requests and inquiries</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Support Ticket System</h3>
-                  <p className="text-muted-foreground">Advanced ticketing system coming soon</p>
-                  <Button className="mt-4">Create New Ticket</Button>
-                </div>
+                 <SupportTicketSystem />
               </CardContent>
             </Card>
           </TabsContent>

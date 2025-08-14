@@ -110,20 +110,21 @@ const EventFeed = () => {
       setLoading(true);
       
       let query = supabase
-        .from('community_posts')
+        .from('events')
         .select(`
           id,
           user_id,
-          post_type,
           title,
           content,
           location,
           image_urls,
           tags,
           created_at,
-          rsvp_enabled
+          event_date,
+          rsvp_enabled,
+          file_urls
         `)
-        .eq('post_type', 'event')
+        .order('event_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       const { data: postsData, error } = await query;

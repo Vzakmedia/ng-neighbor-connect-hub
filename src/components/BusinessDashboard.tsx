@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import BusinessPromotionDialog from './BusinessPromotionDialog';
 import { formatTimeAgo } from '@/lib/utils';
+import BusinessAnalyticsDashboard from '@/components/BusinessAnalyticsDashboard';
 
 interface Business {
   id: string;
@@ -375,19 +376,7 @@ const BusinessDashboard = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Business Analytics</CardTitle>
-              <CardDescription>Track your business performance and customer engagement</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4" />
-                <p>Analytics Coming Soon</p>
-                <p className="text-sm">Detailed analytics will be available once your business is verified</p>
-              </div>
-            </CardContent>
-          </Card>
+          <BusinessAnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="promotions" className="space-y-6">

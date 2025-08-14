@@ -1755,6 +1755,63 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          content: string | null
+          created_at: string
+          end_date: string | null
+          event_date: string | null
+          file_urls: Json | null
+          id: string
+          image_urls: string[] | null
+          is_public: boolean | null
+          location: string | null
+          max_attendees: number | null
+          price: number | null
+          rsvp_enabled: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          end_date?: string | null
+          event_date?: string | null
+          file_urls?: Json | null
+          id?: string
+          image_urls?: string[] | null
+          is_public?: boolean | null
+          location?: string | null
+          max_attendees?: number | null
+          price?: number | null
+          rsvp_enabled?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          end_date?: string | null
+          event_date?: string | null
+          file_urls?: Json | null
+          id?: string
+          image_urls?: string[] | null
+          is_public?: boolean | null
+          location?: string | null
+          max_attendees?: number | null
+          price?: number | null
+          rsvp_enabled?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_postings: {
         Row: {
           benefits: string | null
