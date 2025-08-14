@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle, CheckCircle, Clock, XCircle, Activity, Zap, Wifi, WifiOff } from 'lucide-react';
 
@@ -14,6 +15,7 @@ interface AlertDashboardProps {
 
 export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => {
   const { metrics, getQueueStatus, processQueue, isProcessing } = useAlertSystem();
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
 
@@ -70,6 +72,42 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
       await processQueue();
     } catch (error) {
       console.error('Failed to process queue:', error);
+    }
+  };
+
+  const handleCreateTestAlert = async () => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      // Create a test safety alert that will trigger the queue
+      const { data, error } = await supabase
+        .from('safety_alerts')
+        .insert({
+          user_id: user.id,
+          title: 'Test Alert',
+          description: 'This is a test alert for system verification',
+          alert_type: 'other' as const,
+          severity: 'medium' as const,
+          status: 'active' as const,
+          latitude: 39.7817,
+          longitude: -89.6501,
+          address: '123 Test Street, Springfield, IL',
+          images: []
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('Test alert created:', data);
+      
+      // Refresh metrics to show the new alert in queue
+      await getQueueStatus();
+    } catch (error) {
+      console.error('Failed to create test alert:', error);
     }
   };
 
@@ -254,16 +292,23 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Queue Processing</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Alerts are processed automatically based on priority
-                  </p>
-                  <Button onClick={handleProcessQueue} disabled={isProcessing}>
-                    {isProcessing ? 'Processing...' : 'Process Next Alert'}
-                  </Button>
-                </div>
+                  <div className="space-y-4">
+                    <Button 
+                      onClick={handleProcessQueue} 
+                      disabled={isProcessing}
+                      className="w-full"
+                    >
+                      {isProcessing ? 'Processing...' : 'Process Next Alert'}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCreateTestAlert}
+                      className="w-full"
+                    >
+                      Create Test Alert
+                    </Button>
+                  </div>
               </div>
             </CardContent>
           </Card>
