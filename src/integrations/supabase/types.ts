@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -3967,36 +3967,36 @@ export type Database = {
       }
       approve_marketplace_item: {
         Args: {
-          _item_id: string
           _approval_status: string
+          _item_id: string
           _rejection_reason?: string
         }
         Returns: boolean
       }
       approve_service: {
         Args: {
-          _service_id: string
           _approval_status: string
           _rejection_reason?: string
+          _service_id: string
         }
         Returns: boolean
       }
       bulk_moderate_content: {
         Args: {
+          action_type: string
           content_ids: string[]
           content_type: string
-          action_type: string
           rejection_reason?: string
         }
         Returns: {
-          processed_count: number
-          success_count: number
           error_count: number
           errors: Json
+          processed_count: number
+          success_count: number
         }[]
       }
       calculate_distance: {
-        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
       can_moderate_board_posts: {
@@ -4016,21 +4016,21 @@ export type Database = {
         Returns: undefined
       }
       confirm_emergency_contact_request: {
-        Args: { _request_id: string; _accept?: boolean }
+        Args: { _accept?: boolean; _request_id: string }
         Returns: Json
       }
       create_notification: {
         Args: {
-          _user_id: string
-          _title: string
           _body: string
-          _type?: string
-          _priority?: string
           _channels?: string[]
           _data?: Json
+          _priority?: string
+          _scheduled_for?: string
           _source_id?: string
           _source_type?: string
-          _scheduled_for?: string
+          _title: string
+          _type?: string
+          _user_id: string
         }
         Returns: string
       }
@@ -4038,8 +4038,8 @@ export type Database = {
         Args:
           | {
               _email: string
-              _role: Database["public"]["Enums"]["app_role"]
               _invited_by: string
+              _role: Database["public"]["Enums"]["app_role"]
             }
           | { invitation_email: string; invitation_role: string }
         Returns: string
@@ -4070,81 +4070,81 @@ export type Database = {
       }
       get_active_advertisements: {
         Args: {
-          user_location?: string
-          user_city?: string
-          user_state?: string
           content_limit?: number
+          user_city?: string
+          user_location?: string
+          user_state?: string
         }
         Returns: {
-          campaign_id: string
-          campaign_type: string
-          ad_title: string
+          ad_call_to_action: string
           ad_description: string
           ad_images: Json
+          ad_title: string
           ad_url: string
-          ad_call_to_action: string
-          service_data: Json
-          marketplace_data: Json
           business_data: Json
+          campaign_id: string
+          campaign_type: string
           community_post_data: Json
-          event_data: Json
-          priority_level: number
           daily_budget: number
+          event_data: Json
+          marketplace_data: Json
+          priority_level: number
+          service_data: Json
         }[]
       }
       get_active_promoted_content: {
-        Args: { user_location?: string; content_limit?: number }
+        Args: { content_limit?: number; user_location?: string }
         Returns: {
-          promoted_post_id: string
           campaign_id: string
-          post_type: string
-          post_content: Json
-          priority: number
           cost_per_click: number
+          post_content: Json
+          post_type: string
+          priority: number
+          promoted_post_id: string
         }[]
       }
       get_admin_user_stats: {
-        Args: { start_date?: string; end_date?: string }
+        Args: { end_date?: string; start_date?: string }
         Returns: {
-          total_users: number
-          new_users_today: number
-          new_users_this_week: number
-          new_users_this_month: number
-          active_users_today: number
           active_users_this_week: number
-          verified_users: number
-          pending_verification: number
+          active_users_today: number
           banned_users: number
+          new_users_this_month: number
+          new_users_this_week: number
+          new_users_today: number
+          pending_verification: number
+          total_users: number
           user_growth_rate: number
+          verified_users: number
         }[]
       }
       get_analytics_summary: {
-        Args: { start_date?: string; end_date?: string }
+        Args: { end_date?: string; start_date?: string }
         Returns: {
-          total_users: number
-          new_users: number
           active_users: number
-          total_posts: number
-          total_engagement: number
-          total_revenue: number
           avg_session_time: number
+          new_users: number
+          total_engagement: number
+          total_posts: number
+          total_revenue: number
+          total_users: number
         }[]
       }
       get_business_verification_queue: {
         Args: Record<PropertyKey, never>
         Returns: {
           business_id: string
-          business_name: string
-          user_id: string
-          category: string
-          verification_status: string
-          created_at: string
-          verification_documents: Json
           business_license: string
-          tax_id_number: string
+          business_name: string
+          category: string
+          created_at: string
           email: string
           phone: string
           priority_score: number
+          tax_id_number: string
+          user_id: string
+          verification_documents: Json
+          verification_status: string
         }[]
       }
       get_cached_alerts: {
@@ -4155,34 +4155,34 @@ export type Database = {
         Args: { _comment_ids: string[] }
         Returns: {
           comment_id: string
-          likes_count: number
           liked_by_user: boolean
+          likes_count: number
         }[]
       }
       get_content_moderation_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          pending_posts: number
-          pending_services: number
-          pending_marketplace_items: number
-          pending_businesses: number
-          pending_advertisements: number
-          total_reports: number
-          pending_reports: number
-          resolved_reports_today: number
           flagged_content_by_type: Json
+          pending_advertisements: number
+          pending_businesses: number
+          pending_marketplace_items: number
+          pending_posts: number
+          pending_reports: number
+          pending_services: number
+          resolved_reports_today: number
+          total_reports: number
         }[]
       }
       get_emergency_alerts_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
           active_alerts: number
-          resolved_alerts_today: number
-          total_panic_alerts: number
-          unresolved_panic_alerts: number
           alerts_by_type: Json
           recent_critical_alerts: Json
+          resolved_alerts_today: number
           response_time_avg_minutes: number
+          total_panic_alerts: number
+          unresolved_panic_alerts: number
         }[]
       }
       get_event_rsvp_counts: {
@@ -4200,27 +4200,27 @@ export type Database = {
       get_public_safety_alerts: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
+          address: string
           alert_type: string
-          severity: string
-          status: string
+          created_at: string
+          id: string
           latitude: number
           longitude: number
-          address: string
-          created_at: string
+          severity: string
+          status: string
         }[]
       }
       get_revenue_breakdown: {
-        Args: { start_date?: string; end_date?: string }
+        Args: { end_date?: string; start_date?: string }
         Returns: {
-          total_revenue: number
           ad_campaign_revenue: number
-          promotion_revenue: number
-          service_booking_revenue: number
-          transaction_count: number
           average_transaction_value: number
+          promotion_revenue: number
           revenue_by_day: Json
+          service_booking_revenue: number
           top_revenue_sources: Json
+          total_revenue: number
+          transaction_count: number
         }[]
       }
       get_sponsored_content_count: {
@@ -4230,43 +4230,43 @@ export type Database = {
       get_staff_management_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_staff: number
           active_staff_today: number
           pending_invitations: number
-          staff_by_role: Json
           recent_staff_activities: Json
+          staff_by_role: Json
           top_staff_performers: Json
+          total_staff: number
         }[]
       }
       get_system_health_metrics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_storage_used_mb: number
           active_sessions: number
+          api_requests_last_hour: number
+          database_connections: number
+          emergency_alerts_active: number
+          error_rate_last_hour: number
           messages_last_hour: number
           posts_last_hour: number
-          error_rate_last_hour: number
-          database_connections: number
-          api_requests_last_hour: number
-          emergency_alerts_active: number
           system_status: string
+          total_storage_used_mb: number
         }[]
       }
       get_top_content_by_engagement: {
         Args: {
           content_type_filter?: string
-          start_date?: string
           end_date?: string
           limit_count?: number
+          start_date?: string
         }
         Returns: {
           content_id: string
           content_type: string
-          total_views: number
+          engagement_score: number
+          total_comments: number
           total_likes: number
           total_shares: number
-          total_comments: number
-          engagement_score: number
+          total_views: number
         }[]
       }
       get_unread_community_posts_count: {
@@ -4283,23 +4283,23 @@ export type Database = {
       }
       get_user_notifications: {
         Args: {
-          _user_id: string
           _limit?: number
           _offset?: number
           _status?: string
           _type?: string
+          _user_id: string
         }
         Returns: {
-          id: string
-          title: string
           body: string
-          type: string
-          priority: string
-          status: string
-          data: Json
           created_at: string
-          read_at: string
+          data: Json
           delivery_status: Json
+          id: string
+          priority: string
+          read_at: string
+          status: string
+          title: string
+          type: string
         }[]
       }
       get_user_staff_role: {
@@ -4314,13 +4314,13 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
       has_staff_permission: {
-        Args: { _user_id: string; _permission: string; _access_type?: string }
+        Args: { _access_type?: string; _permission: string; _user_id: string }
         Returns: boolean
       }
       is_board_admin: {
@@ -4342,41 +4342,41 @@ export type Database = {
       log_ad_interaction: {
         Args: {
           _campaign_id: string
+          _device_type?: string
           _interaction_type: string
+          _ip_address?: unknown
+          _referrer?: string
+          _user_agent?: string
           _user_id?: string
           _user_location?: string
-          _device_type?: string
-          _referrer?: string
-          _ip_address?: unknown
-          _user_agent?: string
         }
         Returns: undefined
       }
       log_promotion_impression: {
         Args: {
+          _impression_type?: string
           _promoted_post_id: string
           _user_id?: string
           _user_location?: string
-          _impression_type?: string
         }
         Returns: undefined
       }
       log_security_event: {
         Args: {
           _action_type: string
-          _resource_type: string
-          _resource_id?: string
-          _risk_level?: string
           _details?: Json
+          _resource_id?: string
+          _resource_type: string
+          _risk_level?: string
         }
         Returns: undefined
       }
       log_staff_activity: {
         Args: {
           _action_type: string
-          _resource_type: string
-          _resource_id?: string
           _details?: Json
+          _resource_id?: string
+          _resource_type: string
         }
         Returns: undefined
       }
@@ -4410,8 +4410,8 @@ export type Database = {
       }
       mark_notification_delivered: {
         Args: {
-          _notification_id: string
           _channel: string
+          _notification_id: string
           _provider?: string
           _provider_id?: string
         }
@@ -4428,22 +4428,22 @@ export type Database = {
       register_user_device: {
         Args:
           | {
-              _user_id: string
-              _device_token: string
-              _platform: string
               _app_version?: string
+              _device_token: string
               _os_version?: string
+              _platform: string
+              _user_id: string
             }
           | {
-              platform: string
-              fcm_token: string
               apns_token: string
               device_model: string
+              fcm_token: string
+              platform: string
             }
         Returns: string
       }
       set_alert_cache: {
-        Args: { _cache_key: string; _cache_data: Json; _ttl_seconds?: number }
+        Args: { _cache_data: Json; _cache_key: string; _ttl_seconds?: number }
         Returns: undefined
       }
       soft_delete_messages: {
@@ -4453,18 +4453,18 @@ export type Database = {
       track_alert_metric: {
         Args: {
           _alert_id: string
-          _metric_type: string
-          _user_id?: string
           _location?: string
           _metadata?: Json
+          _metric_type: string
+          _user_id?: string
         }
         Returns: undefined
       }
       track_user_activity: {
         Args: {
-          _user_id: string
-          _activity_type: string
           _activity_data?: Json
+          _activity_type: string
+          _user_id: string
         }
         Returns: undefined
       }
