@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDashboard } from "@/components/alert-system/AlertDashboard";
 import { Textarea } from "@/components/ui/textarea";
-import SupportTicketSystem from '@/components/SupportTicketSystem';
+import { EnhancedSupportTicketSystem } from '@/components/support/EnhancedSupportTicketSystem';
 
 const SupportDashboard = () => {
   const { user } = useAuth();
@@ -397,15 +397,7 @@ const SupportDashboard = () => {
 
           {/* Support Tickets Tab */}
           <TabsContent value="tickets">
-            <Card>
-              <CardHeader>
-                <CardTitle>Support Ticket Management</CardTitle>
-                <CardDescription>Handle user support requests and inquiries</CardDescription>
-              </CardHeader>
-              <CardContent>
-                 <SupportTicketSystem />
-              </CardContent>
-            </Card>
+            <EnhancedSupportTicketSystem />
           </TabsContent>
 
           {/* User Assistance Tab */}

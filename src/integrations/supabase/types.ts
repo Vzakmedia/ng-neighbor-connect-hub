@@ -3822,6 +3822,172 @@ export type Database = {
         }
         Relationships: []
       }
+      support_email_inbox: {
+        Row: {
+          assigned_to: string | null
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          from_email: string
+          id: string
+          is_read: boolean | null
+          is_replied: boolean | null
+          labels: string[] | null
+          message_id: string | null
+          metadata: Json | null
+          processed_at: string | null
+          received_at: string
+          subject: string
+          thread_id: string | null
+          ticket_id: string | null
+          to_email: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          from_email: string
+          id?: string
+          is_read?: boolean | null
+          is_replied?: boolean | null
+          labels?: string[] | null
+          message_id?: string | null
+          metadata?: Json | null
+          processed_at?: string | null
+          received_at?: string
+          subject: string
+          thread_id?: string | null
+          ticket_id?: string | null
+          to_email: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          from_email?: string
+          id?: string
+          is_read?: boolean | null
+          is_replied?: boolean | null
+          labels?: string[] | null
+          message_id?: string | null
+          metadata?: Json | null
+          processed_at?: string | null
+          received_at?: string
+          subject?: string
+          thread_id?: string | null
+          ticket_id?: string | null
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_email_inbox_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_responses: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          email_message_id: string | null
+          id: string
+          is_internal_note: boolean | null
+          is_staff_response: boolean | null
+          response_text: string
+          response_type: string | null
+          ticket_id: string
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          email_message_id?: string | null
+          id?: string
+          is_internal_note?: boolean | null
+          is_staff_response?: boolean | null
+          response_text: string
+          response_type?: string | null
+          ticket_id: string
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          email_message_id?: string | null
+          id?: string
+          is_internal_note?: boolean | null
+          is_staff_response?: boolean | null
+          response_text?: string
+          response_type?: string | null
+          ticket_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          last_response_at: string | null
+          metadata: Json | null
+          priority: string | null
+          resolved_at: string | null
+          status: string | null
+          subject: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          last_response_at?: string | null
+          metadata?: Json | null
+          priority?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          last_response_at?: string | null
+          metadata?: Json | null
+          priority?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_performance: {
         Row: {
           additional_data: Json | null
