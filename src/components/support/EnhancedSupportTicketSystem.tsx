@@ -76,8 +76,8 @@ export const EnhancedSupportTicketSystem = () => {
         .from('support_tickets')
         .select(`
           *,
-          profiles!support_tickets_user_id_fkey(full_name, email),
-          assigned_profile:profiles!support_tickets_assigned_to_fkey(full_name)
+          profiles!user_id(full_name, email),
+          assigned_profile:profiles!assigned_to(full_name)
         `)
         .order('created_at', { ascending: false });
 
