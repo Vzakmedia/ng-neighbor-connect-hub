@@ -11,10 +11,13 @@ const FloatingCreatePostButton = () => {
   const { user } = useAuth();
   const location = useLocation();
 
+  
   // Only show on dashboard-related routes and for authenticated users
+  // Explicitly exclude landing and auth pages
+  const isLandingRoute = ['/', '/landing', '/auth', '/about', '/privacy', '/terms', '/community-guidelines', '/press', '/careers', '/api-docs'].includes(location.pathname);
   const isDashboardRoute = ['/dashboard', '/community', '/marketplace', '/safety', '/profile', '/settings', '/services', '/events', '/my-services', '/my-goods', '/my-bookings'].includes(location.pathname);
   
-  if (!user || !isDashboardRoute) {
+  if (!user || !isDashboardRoute || isLandingRoute) {
     return null;
   }
 
