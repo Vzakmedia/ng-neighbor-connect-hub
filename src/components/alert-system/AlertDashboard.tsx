@@ -117,30 +117,13 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold break-words">Alert System Dashboard</h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">Monitor and manage real-time alert processing</p>
-          </div>
-          
-          {/* Connection Status - Mobile friendly */}
-          <div className="flex items-center gap-2 sm:hidden">
-            {isConnected ? (
-              <Wifi className="h-4 w-4 text-green-500 flex-shrink-0" />
-            ) : (
-              <WifiOff className="h-4 w-4 text-red-500 flex-shrink-0" />
-            )}
-            <span className="text-sm text-muted-foreground">
-              {isConnected ? 'Real-time Connected' : 'Offline Mode'}
-            </span>
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Alert System Dashboard</h2>
+          <p className="text-muted-foreground">Monitor and manage real-time alert processing</p>
         </div>
-        
-        {/* Controls Section */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          {/* Connection Status - Desktop */}
-          <div className="hidden sm:flex items-center gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2 mr-4">
             {isConnected ? (
               <Wifi className="h-4 w-4 text-green-500" />
             ) : (
@@ -150,31 +133,23 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
               {isConnected ? 'Real-time Connected' : 'Offline Mode'}
             </span>
           </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-              size="sm"
-              className="flex-1 sm:flex-initial"
-            >
-              <Activity className="h-4 w-4 mr-2" />
-              <span className="hidden xs:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
-              <span className="xs:hidden">Refresh</span>
-            </Button>
-            <Button 
-              onClick={handleProcessQueue}
-              disabled={isProcessing}
-              size="sm"
-              className="flex-1 sm:flex-initial"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              <span className="hidden xs:inline">Process Queue</span>
-              <span className="xs:hidden">Process</span>
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            size="sm"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button 
+            onClick={handleProcessQueue}
+            disabled={isProcessing}
+            size="sm"
+          >
+            <Zap className="h-4 w-4 mr-2" />
+            Process Queue
+          </Button>
         </div>
       </div>
 
@@ -276,11 +251,11 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
 
       {/* Detailed Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
-          <TabsTrigger value="queue" className="text-xs sm:text-sm">Queue</TabsTrigger>
-          <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
-          <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="queue">Queue Management</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
