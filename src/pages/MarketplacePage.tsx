@@ -44,40 +44,56 @@ const MarketplacePage = () => {
         <div className="container mx-auto px-4 py-6">
           {/* Mobile tab buttons */}
           <div className="md:hidden flex items-center justify-center gap-2 mb-6">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={activeTab === "marketplace" ? "default" : "outline"}
-                  onClick={() => setActiveTab("marketplace")}
-                  size="icon"
-                >
-                  <span className="text-xs">S&G</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="z-50 bg-background">
-                <DropdownMenuItem onClick={() => { setActiveTab("marketplace"); setMarketSubTab('services'); }}>
-                  Services
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setActiveTab("marketplace"); setMarketSubTab('goods'); }}>
-                  Goods
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                  My City
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setViewScope('state')}>
-                  Entire State
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant={activeTab === "marketplace" && marketSubTab === "services" ? "default" : "outline"}
+              onClick={() => { setActiveTab("marketplace"); setMarketSubTab("services"); }}
+              size={activeTab === "marketplace" && marketSubTab === "services" ? "default" : "icon"}
+              className="transition-all duration-200"
+            >
+              <span className="text-xs">📋</span>
+              {activeTab === "marketplace" && marketSubTab === "services" && <span className="ml-2">Services</span>}
+            </Button>
+            <Button
+              variant={activeTab === "marketplace" && marketSubTab === "goods" ? "default" : "outline"}
+              onClick={() => { setActiveTab("marketplace"); setMarketSubTab("goods"); }}
+              size={activeTab === "marketplace" && marketSubTab === "goods" ? "default" : "icon"}
+              className="transition-all duration-200"
+            >
+              <span className="text-xs">🛍️</span>
+              {activeTab === "marketplace" && marketSubTab === "goods" && <span className="ml-2">Goods</span>}
+            </Button>
             <Button
               variant={activeTab === "businesses" ? "default" : "outline"}
               onClick={() => setActiveTab("businesses")}
-              size="icon"
+              size={activeTab === "businesses" ? "default" : "icon"}
+              className="transition-all duration-200"
             >
-              <span className="text-xs">BIZ</span>
+              <span className="text-xs">🏢</span>
+              {activeTab === "businesses" && <span className="ml-2">Local Businesses</span>}
             </Button>
           </div>
+          
+          {/* Scope selector for mobile - only show when marketplace is active */}
+          {activeTab === "marketplace" && (
+            <div className="md:hidden flex items-center justify-center mb-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    {viewScope === 'neighborhood' ? 'My City' : 'Entire State'}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="z-50 bg-background">
+                  <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                    My City
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewScope('state')}>
+                    Entire State
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Desktop tabs */}
