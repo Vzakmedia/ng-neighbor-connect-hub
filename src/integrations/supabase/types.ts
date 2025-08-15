@@ -4177,6 +4177,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          audio_settings: Json | null
+          created_at: string
+          id: string
+          messaging_preferences: Json | null
+          notification_settings: Json | null
+          privacy_settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_settings?: Json | null
+          created_at?: string
+          id?: string
+          messaging_preferences?: Json | null
+          notification_settings?: Json | null
+          privacy_settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_settings?: Json | null
+          created_at?: string
+          id?: string
+          messaging_preferences?: Json | null
+          notification_settings?: Json | null
+          privacy_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -4,11 +4,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserSettings {
+  id: string;
   user_id: string;
   notification_settings: any;
   audio_settings: any;
   privacy_settings: any;
   messaging_preferences: any;
+  created_at: string;
   updated_at: string;
 }
 
@@ -58,7 +60,7 @@ export const useRealtimeSettings = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_settings')
         .select('*')
         .eq('user_id', user.id)
@@ -68,7 +70,7 @@ export const useRealtimeSettings = () => {
         throw error;
       }
 
-      setSettings(data);
+      setSettings(data as UserSettings | null);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -80,7 +82,7 @@ export const useRealtimeSettings = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_settings')
         .upsert({
           user_id: user.id,
