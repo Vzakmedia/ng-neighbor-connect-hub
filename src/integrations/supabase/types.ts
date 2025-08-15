@@ -4257,6 +4257,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_consents: {
+        Row: {
+          communication_accepted: boolean
+          consent_given_at: string
+          consent_version: string | null
+          created_at: string
+          data_processing_accepted: boolean
+          id: string
+          ip_address: unknown | null
+          location_sharing_accepted: boolean
+          privacy_accepted: boolean
+          terms_accepted: boolean
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          communication_accepted?: boolean
+          consent_given_at?: string
+          consent_version?: string | null
+          created_at?: string
+          data_processing_accepted?: boolean
+          id?: string
+          ip_address?: unknown | null
+          location_sharing_accepted?: boolean
+          privacy_accepted?: boolean
+          terms_accepted?: boolean
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          communication_accepted?: boolean
+          consent_given_at?: string
+          consent_version?: string | null
+          created_at?: string
+          data_processing_accepted?: boolean
+          id?: string
+          ip_address?: unknown | null
+          location_sharing_accepted?: boolean
+          privacy_accepted?: boolean
+          terms_accepted?: boolean
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           app_version: string | null
