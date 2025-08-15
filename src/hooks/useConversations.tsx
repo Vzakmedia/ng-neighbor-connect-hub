@@ -80,13 +80,14 @@ export const useConversations = (userId: string | undefined) => {
       });
 
       setConversations(formattedConversations);
+      console.log('Conversations loaded:', formattedConversations.length);
     } catch (error) {
       console.error('Error fetching conversations:', error);
       setConversations([]); // Set empty array on error to prevent infinite loading
-      // Only show toast if it's not a network timeout or similar
+      // Only show toast for actual errors, not connection issues
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as any).message;
-        if (!errorMessage.includes('timeout') && !errorMessage.includes('network')) {
+        if (!errorMessage.includes('timeout') && !errorMessage.includes('network') && !errorMessage.includes('Failed to fetch')) {
           toast({
             title: "Error",
             description: "Could not load conversations.",

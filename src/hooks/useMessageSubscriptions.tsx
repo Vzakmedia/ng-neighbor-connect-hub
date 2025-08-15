@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
+import { supabase } from '@/integrations/supabase/client';
 import type { Message } from './useDirectMessages';
 
 interface UseMessageSubscriptionsProps {
@@ -19,11 +19,11 @@ export const useMessageSubscriptions = ({
   recipientId,
   activeConversationId
 }: UseMessageSubscriptionsProps) => {
-  const messageSubscriptionRef = useRef<any>(null);
-  const conversationSubscriptionRef = useRef<any>(null);
+  const messageChannelRef = useRef<any>(null);
+  const conversationChannelRef = useRef<any>(null);
 
   const setupMessageSubscription = useCallback(() => {
-    if (!userId || messageSubscriptionRef.current) return;
+    if (!userId || messageChannelRef.current) return;
 
     console.log('Setting up message subscription for user:', userId, 'recipient:', recipientId);
 
@@ -33,8 +33,9 @@ export const useMessageSubscriptions = ({
 
     console.log('Subscription filter:', filter);
 
-    messageSubscriptionRef.current = createSafeSubscription(
-      (channel) => channel
+    try {
+      const channel = supabase
+        .channel(`messages:${userId}:${recipientId || 'all'}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -72,33 +73,31 @@ export const useMessageSubscriptions = ({
             }
           }
           onMessageUpdate(updatedMessage);
-        }),
-      {
-        channelName: recipientId 
-          ? `direct-messages-${userId}-${recipientId}`
-          : `user-messages-${userId}`,
-        onError: () => {
-          console.log('Message subscription error - triggering message fetch');
-          // Immediately try to fetch new messages when real-time fails
-          if (recipientId) {
-            // For direct messages, we could trigger a specific fetch here
-            console.log('Polling for direct messages between', userId, 'and', recipientId);
-          } else {
-            // For general messaging, trigger conversation refresh
-            onConversationUpdate?.();
+        })
+        .subscribe((status) => {
+          console.log('Message subscription status:', status);
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.log('Message subscription error - triggering message fetch');
+            if (onConversationUpdate) {
+              onConversationUpdate();
+            }
           }
-        },
-        pollInterval: 5000, // Poll every 5 seconds for messages
-        debugName: recipientId ? 'DirectMessageDialog-messages' : 'MessagingContent-messages'
-      }
-    );
+        });
+
+      messageChannelRef.current = channel;
+    } catch (error) {
+      console.error('Error setting up message subscription:', error);
+    }
   }, [userId, recipientId, onNewMessage, onMessageUpdate, onConversationUpdate]);
 
   const setupConversationSubscription = useCallback(() => {
-    if (!userId || !onConversationUpdate || conversationSubscriptionRef.current) return;
+    if (!userId || !onConversationUpdate || conversationChannelRef.current) return;
 
-    conversationSubscriptionRef.current = createSafeSubscription(
-      (channel) => channel
+    console.log('Setting up conversation subscription for user:', userId);
+
+    try {
+      const channel = supabase
+        .channel(`conversations:${userId}`)
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
@@ -116,27 +115,29 @@ export const useMessageSubscriptions = ({
         }, () => {
           console.log('New conversation created via subscription');
           onConversationUpdate();
-        }),
-      {
-        channelName: `conversations-${userId}`,
-        onError: () => {
-          console.log('Conversation subscription error - triggering conversation refresh');
-          onConversationUpdate();
-        },
-        pollInterval: 10000, // Poll every 10 seconds for conversations
-        debugName: 'MessagingContent-conversations'
-      }
-    );
+        })
+        .subscribe((status) => {
+          console.log('Conversation subscription status:', status);
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.log('Conversation subscription error - triggering conversation refresh');
+            onConversationUpdate();
+          }
+        });
+
+      conversationChannelRef.current = channel;
+    } catch (error) {
+      console.error('Error setting up conversation subscription:', error);
+    }
   }, [userId, onConversationUpdate]);
 
   const cleanup = useCallback(() => {
-    if (messageSubscriptionRef.current) {
-      cleanupSafeSubscription(messageSubscriptionRef.current);
-      messageSubscriptionRef.current = null;
+    if (messageChannelRef.current) {
+      supabase.removeChannel(messageChannelRef.current);
+      messageChannelRef.current = null;
     }
-    if (conversationSubscriptionRef.current) {
-      cleanupSafeSubscription(conversationSubscriptionRef.current);
-      conversationSubscriptionRef.current = null;
+    if (conversationChannelRef.current) {
+      supabase.removeChannel(conversationChannelRef.current);
+      conversationChannelRef.current = null;
     }
   }, []);
 
