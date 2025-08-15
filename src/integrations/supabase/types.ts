@@ -2854,6 +2854,7 @@ export type Database = {
           is_verified: boolean | null
           neighborhood: string | null
           phone: string | null
+          staff_id: number
           state: string | null
           updated_at: string
           user_id: string
@@ -2870,6 +2871,7 @@ export type Database = {
           is_verified?: boolean | null
           neighborhood?: string | null
           phone?: string | null
+          staff_id?: number
           state?: string | null
           updated_at?: string
           user_id: string
@@ -2886,6 +2888,7 @@ export type Database = {
           is_verified?: boolean | null
           neighborhood?: string | null
           phone?: string | null
+          staff_id?: number
           state?: string | null
           updated_at?: string
           user_id?: string
@@ -4676,6 +4679,21 @@ export type Database = {
       get_flagged_content_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_profile_by_staff_id: {
+        Args: { target_staff_id: number }
+        Returns: {
+          city: string
+          created_at: string
+          email: string
+          full_name: string
+          is_verified: boolean
+          neighborhood: string
+          phone: string
+          staff_id: number
+          state: string
+          user_id: string
+        }[]
       }
       get_profile_for_moderation: {
         Args: { target_user_id: string }
