@@ -25,7 +25,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -39,11 +39,27 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "You've been successfully logged in.",
-        });
+      } else if (data.user) {
+        // Check if 2FA is enabled for this user
+        const { data: user2fa } = await supabase
+          .from('user_2fa')
+          .select('is_enabled')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (user2fa?.is_enabled) {
+          // Store user ID temporarily for 2FA verification
+          sessionStorage.setItem('pending2FA', data.user.id);
+          // Sign out temporarily until 2FA is verified
+          await supabase.auth.signOut();
+          // Redirect to 2FA verification
+          window.location.href = `/auth/2fa-verify?userId=${data.user.id}`;
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You've been successfully logged in.",
+          });
+        }
       }
     } catch (error) {
       // Record failed attempt for rate limiting

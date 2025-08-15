@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Users,
   HelpCircle,
-  Music
+  Music,
+  Lock
 } from 'lucide-react';
 import { playNotification, playMessagingChime } from '@/utils/audioUtils';
 import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
@@ -33,7 +34,10 @@ import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
 import SupportTicketForm from './SupportTicketForm';
 import UserSupportTickets from './UserSupportTickets';
+import { TwoFactorSetup } from '@/components/security/TwoFactorSetup';
+import { SuperAdminSecurityPanel } from '@/components/security/SuperAdminSecurityPanel';
 import { useTutorial } from '@/hooks/useTutorial';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,10 +51,27 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const SettingsContent = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { startTutorial, resetTutorial, hasCompletedTutorial } = useTutorial();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        setUserRole(data?.role || null);
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
   
   // Notification Settings
   const [notificationSettings, setNotificationSettings] = useState({
@@ -230,6 +251,16 @@ const [audioSettings, setAudioSettings] = useState({
               <Shield className="h-3 w-3 mr-1" />
               Privacy
             </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Lock className="h-3 w-3 mr-1" />
+              Security
+            </TabsTrigger>
+            {userRole === 'super_admin' && (
+              <TabsTrigger value="admin-security" className="text-xs px-2 py-2 whitespace-nowrap">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin Security
+              </TabsTrigger>
+            )}
             <TabsTrigger value="account" className="text-xs px-2 py-2 whitespace-nowrap">
               <User className="h-3 w-3 mr-1" />
               Account
@@ -849,6 +880,18 @@ const [audioSettings, setAudioSettings] = useState({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security" className="w-full max-w-full">
+          <TwoFactorSetup />
+        </TabsContent>
+
+        {/* Admin Security Tab */}
+        {userRole === 'super_admin' && (
+          <TabsContent value="admin-security" className="w-full max-w-full">
+            <SuperAdminSecurityPanel />
+          </TabsContent>
+        )}
 
         {/* Support Tab */}
         <TabsContent value="support" className="w-full max-w-full">

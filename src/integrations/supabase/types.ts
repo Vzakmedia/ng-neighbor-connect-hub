@@ -145,6 +145,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_action_logs: {
+        Row: {
+          action_details: Json
+          action_type: string
+          admin_user_id: string
+          confirmation_method: string | null
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          requires_confirmation: boolean
+          target_resource_id: string | null
+          target_resource_type: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_details?: Json
+          action_type: string
+          admin_user_id: string
+          confirmation_method?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          requires_confirmation?: boolean
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_details?: Json
+          action_type?: string
+          admin_user_id?: string
+          confirmation_method?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          requires_confirmation?: boolean
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       advertisement_campaigns: {
         Row: {
           ad_call_to_action: string | null
@@ -4019,6 +4067,57 @@ export type Database = {
         }
         Relationships: []
       }
+      super_admin_security: {
+        Row: {
+          allowed_ip_addresses: string[]
+          created_at: string
+          failed_security_attempts: number
+          id: string
+          is_locked: boolean
+          last_failed_attempt: string | null
+          last_security_check: string | null
+          locked_until: string | null
+          max_session_duration_hours: number
+          reauth_interval_minutes: number
+          require_periodic_reauth: boolean
+          require_session_confirmation: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed_ip_addresses?: string[]
+          created_at?: string
+          failed_security_attempts?: number
+          id?: string
+          is_locked?: boolean
+          last_failed_attempt?: string | null
+          last_security_check?: string | null
+          locked_until?: string | null
+          max_session_duration_hours?: number
+          reauth_interval_minutes?: number
+          require_periodic_reauth?: boolean
+          require_session_confirmation?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed_ip_addresses?: string[]
+          created_at?: string
+          failed_security_attempts?: number
+          id?: string
+          is_locked?: boolean
+          last_failed_attempt?: string | null
+          last_security_check?: string | null
+          locked_until?: string | null
+          max_session_duration_hours?: number
+          reauth_interval_minutes?: number
+          require_periodic_reauth?: boolean
+          require_session_confirmation?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_email_inbox: {
         Row: {
           assigned_to: string | null
@@ -4212,6 +4311,72 @@ export type Database = {
           metric_unit?: string | null
           metric_value?: number
           timestamp?: string
+        }
+        Relationships: []
+      }
+      two_fa_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa: {
+        Row: {
+          backup_codes: string[]
+          created_at: string
+          enabled_at: string | null
+          id: string
+          is_enabled: boolean
+          last_used_at: string | null
+          secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[]
+          created_at?: string
+          enabled_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[]
+          created_at?: string
+          enabled_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          secret?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -4569,6 +4734,10 @@ export type Database = {
       can_moderate_board_posts: {
         Args: { board_id: string; user_id: string }
         Returns: boolean
+      }
+      check_super_admin_security: {
+        Args: { _ip_address?: unknown; _user_id: string }
+        Returns: Json
       }
       clean_expired_cache: {
         Args: Record<PropertyKey, never>
@@ -4974,6 +5143,16 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      log_2fa_attempt: {
+        Args: {
+          _attempt_type: string
+          _ip_address?: unknown
+          _success: boolean
+          _user_agent?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       log_ad_interaction: {
         Args: {
           _campaign_id: string
@@ -5103,6 +5282,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_super_admin_security_check: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       user_allows_direct_messages: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -5113,6 +5296,14 @@ export type Database = {
       }
       validate_content_input: {
         Args: { content_text: string; max_length?: number }
+        Returns: boolean
+      }
+      verify_backup_code: {
+        Args: { _backup_code: string; _user_id: string }
+        Returns: boolean
+      }
+      verify_totp_code: {
+        Args: { _totp_code: string; _user_id: string }
         Returns: boolean
       }
     }
