@@ -4753,7 +4753,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      business_directory: {
+        Row: {
+          business_name: string | null
+          category: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_verified: boolean | null
+          logo_url: string | null
+          operating_hours: Json | null
+          rating: number | null
+          state: string | null
+          total_reviews: number | null
+        }
+        Insert: {
+          business_name?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+        }
+        Update: {
+          business_name?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_staff_invitation: {
@@ -4941,6 +4985,17 @@ export type Database = {
           total_users: number
         }[]
       }
+      get_business_contact_info: {
+        Args: { business_id: string }
+        Returns: {
+          business_name: string
+          email: string
+          id: string
+          phone: string
+          physical_address: string
+          website_url: string
+        }[]
+      }
       get_business_verification_queue: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -5057,15 +5112,13 @@ export type Database = {
           category: string
           city: string
           description: string
-          email: string
           id: string
           is_verified: boolean
           logo_url: string
-          phone: string
+          operating_hours: Json
           rating: number
           state: string
           total_reviews: number
-          website_url: string
         }[]
       }
       get_public_profile_info: {

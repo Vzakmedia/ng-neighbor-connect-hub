@@ -19,20 +19,22 @@ interface Business {
   business_name: string;
   description: string;
   category: string;
-  phone: string | null;
-  email: string | null;
-  physical_address: string | null;
   city: string | null;
   state: string | null;
   logo_url: string | null;
   operating_hours: any;
   is_verified: boolean;
-  verification_status: string;
   rating: number | null;
   total_reviews: number | null;
   created_at: string;
-  user_id: string;
-  profiles: {
+  // Contact info will be loaded separately for authenticated users
+  contactInfo?: {
+    phone: string | null;
+    email: string | null;
+    physical_address: string | null;
+    website_url: string | null;
+  };
+  profiles?: {
     full_name: string;
     avatar_url: string;
   };
@@ -111,45 +113,22 @@ const BusinessListings = () => {
   const fetchBusinesses = async () => {
     try {
       const { data: businessData, error } = await supabase
-        .from('businesses')
-        .select(`
-          id,
-          business_name,
-          description,
-          category,
-          phone,
-          email,
-          website_url,
-          physical_address,
-          city,
-          state,
-          logo_url,
-          operating_hours,
-          is_verified,
-          rating,
-          total_reviews,
-          created_at,
-          updated_at
-        `)
-        .eq('verification_status', 'verified')
+        .from('business_directory')
+        .select('*')
         .order('is_verified', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
 
-      // Fetch profiles separately for each business
+      // For authenticated users, we can load contact info separately if needed
       const businessesWithProfiles = await Promise.all(
         (businessData || []).map(async (business: any) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', business.user_id)
-            .single();
-
+          // Note: We no longer have user_id in the directory view for privacy
+          // Contact info will be loaded on-demand when user clicks contact buttons
           return {
             ...business,
-            profiles: profile || { full_name: 'Business Owner', avatar_url: '' }
+            profiles: { full_name: 'Business Owner', avatar_url: '' }
           };
         })
       );
@@ -170,16 +149,12 @@ const BusinessListings = () => {
 
       if (selectedCity !== 'all') {
         filteredBusinesses = filteredBusinesses.filter(b => 
-          b.city?.toLowerCase().includes(selectedCity.toLowerCase()) ||
-          b.physical_address?.toLowerCase().includes(selectedCity.toLowerCase())
+          b.city?.toLowerCase().includes(selectedCity.toLowerCase())
         );
       }
 
-      if (selectedNeighborhood !== 'all') {
-        filteredBusinesses = filteredBusinesses.filter(b => 
-          b.physical_address?.toLowerCase().includes(selectedNeighborhood.toLowerCase())
-        );
-      }
+      // Note: physical_address is no longer available in the public directory
+      // for privacy reasons - only general city/state location is shown
 
       if (searchTerm.trim()) {
         const searchLower = searchTerm.toLowerCase();
@@ -639,13 +614,6 @@ const BusinessListings = () => {
                   {renderStars(business.rating)}
                 </div>
 
-                {business.physical_address && (
-                  <div className="flex items-start gap-2 text-xs md:text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0" />
-                    <span className="line-clamp-2 break-words">{business.physical_address}</span>
-                  </div>
-                )}
-
                 {(business.city || business.state) && (
                   <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                     <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
@@ -660,21 +628,70 @@ const BusinessListings = () => {
                   </div>
                 )}
 
-                {/* Action buttons - responsive layout */}
+                {/* Action buttons - Contact info available to authenticated users only */}
                 <div className="flex gap-2 pt-2">
-                  {business.phone && (
-                    <Button variant="outline" size="sm" className="flex-1 h-10 text-xs md:text-sm">
-                      <Phone className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                      <span className="hidden sm:inline">Call</span>
-                      <span className="sm:hidden">Call</span>
-                    </Button>
-                  )}
-                  {business.email && (
-                    <Button variant="outline" size="sm" className="flex-1 h-10 text-xs md:text-sm">
-                      <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                      <span className="hidden sm:inline">Email</span>
-                      <span className="sm:hidden">Email</span>
-                    </Button>
+                  {user ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1 h-10 text-xs md:text-sm"
+                        onClick={async () => {
+                          // Load contact info on-demand for authenticated users
+                          try {
+                            const { data } = await supabase.rpc('get_business_contact_info', { business_id: business.id });
+                            if (data && data[0]?.phone) {
+                              window.location.href = `tel:${data[0].phone}`;
+                            } else {
+                              toast({
+                                title: "Contact unavailable",
+                                description: "Phone number not available for this business",
+                              });
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Could not load contact information",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        <Phone className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                        Call
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1 h-10 text-xs md:text-sm"
+                        onClick={async () => {
+                          try {
+                            const { data } = await supabase.rpc('get_business_contact_info', { business_id: business.id });
+                            if (data && data[0]?.email) {
+                              window.location.href = `mailto:${data[0].email}`;
+                            } else {
+                              toast({
+                                title: "Contact unavailable",
+                                description: "Email address not available for this business",
+                              });
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Error",
+                              description: "Could not load contact information",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                        Email
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Log in to view contact information
+                    </p>
                   )}
                 </div>
 
