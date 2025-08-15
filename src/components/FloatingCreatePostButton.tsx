@@ -1,11 +1,22 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import CreatePostDialog from '@/components/CreatePostDialog';
 import { Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-// Floating Create Post button shown across the app on mobile
+// Floating Create Post button shown only on dashboard routes for authenticated users
 const FloatingCreatePostButton = () => {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Only show on dashboard-related routes and for authenticated users
+  const isDashboardRoute = ['/dashboard', '/community', '/marketplace', '/safety', '/profile', '/settings', '/services', '/events', '/my-services', '/my-goods', '/my-bookings'].includes(location.pathname);
+  
+  if (!user || !isDashboardRoute) {
+    return null;
+  }
 
   return (
     <>
