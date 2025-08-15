@@ -84,13 +84,19 @@ export const supabaseOperations = {
         supabase.from('direct_messages').delete().eq('id', messageId),
     },
 
-    // Profiles
+    // Profiles - using secure access functions
     profiles: {
       getById: (userId: string) =>
-        supabase.from('profiles').select('*').eq('user_id', userId).single(),
+        supabase.rpc('get_public_profile_info', { target_user_id: userId }),
 
       getByIds: (userIds: string[]) =>
-        supabase.from('profiles').select('*').in('user_id', userIds),
+        // For multiple users, we'll need to call the function for each
+        Promise.all(userIds.map(id => 
+          supabase.rpc('get_public_profile_info', { target_user_id: id })
+        )).then(results => ({ 
+          data: results.map(r => r.data).filter(Boolean), 
+          error: results.find(r => r.error)?.error || null 
+        })),
 
       count: () =>
         supabase.from('profiles').select('*', { count: 'exact', head: true }),

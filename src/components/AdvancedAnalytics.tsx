@@ -145,7 +145,7 @@ export const AdvancedAnalytics = () => {
     try {
       // Fetch real data from existing tables
       const [usersResult, postsResult, servicesResult, itemsResult, likesResult] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.length || 0 })),
         supabase.from('community_posts').select('*', { count: 'exact', head: true }).gte('created_at', dateRange.start).lte('created_at', dateRange.end + 'T23:59:59'),
         supabase.from('services').select('*', { count: 'exact', head: true }),
         supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),

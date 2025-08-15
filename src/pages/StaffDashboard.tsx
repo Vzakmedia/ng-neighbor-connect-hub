@@ -67,9 +67,8 @@ const StaffDashboard = () => {
           { count: activeMarketplaceCount },
           { count: postsCount }
         ] = await Promise.all([
-          supabase.from('profiles').select('*', { count: 'exact', head: true }),
-          supabase.from('profiles').select('*', { count: 'exact', head: true })
-            .gte('created_at', new Date().toISOString().split('T')[0]),
+          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.length || 0 })),
+          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.filter(p => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
           supabase.from('content_reports').select('*', { count: 'exact', head: true })
             .eq('status', 'pending'),
           supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),

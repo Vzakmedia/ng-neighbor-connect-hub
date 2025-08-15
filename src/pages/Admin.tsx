@@ -1529,7 +1529,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         { count: autoFlagged },
         { count: dailyActiveUsers }
       ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.length || 0 })),
         supabase.from('community_posts').select('*', { count: 'exact', head: true }),
         supabase.from('community_posts').select('*', { count: 'exact', head: true }).eq('post_type', 'event').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
         supabase.from('safety_alerts').select('*', { count: 'exact', head: true }).eq('status', 'active'),
@@ -1539,7 +1539,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         supabase.from('promoted_posts').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'resolved').gte('updated_at', new Date().toISOString().split('T')[0]),
         supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending').like('reason', '%auto%'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('updated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.filter(p => new Date(p.updated_at) >= new Date(Date.now() - 24 * 60 * 60 * 1000)).length || 0 })),
       ]);
 
       // Calculate derived metrics
@@ -1584,7 +1584,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         { data: recentAlerts },
         { data: recentMarketplace }
       ] = await Promise.all([
-        supabase.from('profiles').select('full_name, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.rpc('get_profiles_analytics').then(result => ({ data: result.data?.slice(0, 5).map(p => ({ full_name: p.has_name ? 'User' : 'Anonymous', created_at: p.created_at })) || [] })),
         supabase.from('community_posts').select('title, post_type, created_at, profiles!community_posts_user_id_fkey(full_name)').order('created_at', { ascending: false }).limit(5),
         supabase.from('safety_alerts').select('title, status, updated_at, profiles!safety_alerts_user_id_fkey(full_name)').order('updated_at', { ascending: false }).limit(5),
         supabase.from('marketplace_items').select('title, status, updated_at, profiles!marketplace_items_user_id_fkey(full_name)').order('updated_at', { ascending: false }).limit(5)

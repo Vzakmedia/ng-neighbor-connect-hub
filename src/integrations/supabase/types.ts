@@ -2114,13 +2114,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "marketplace_items_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_analytics"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       marketplace_reviews: {
@@ -2632,13 +2625,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "fk_panic_alerts_user_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_analytics"
             referencedColumns: ["user_id"]
           },
         ]
@@ -3464,13 +3450,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "fk_safety_alerts_user_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_analytics"
             referencedColumns: ["user_id"]
           },
         ]
@@ -4409,45 +4388,7 @@ export type Database = {
       }
     }
     Views: {
-      profiles_analytics: {
-        Row: {
-          city: string | null
-          created_at: string | null
-          has_address: boolean | null
-          has_email: boolean | null
-          has_name: boolean | null
-          has_phone: boolean | null
-          is_verified: boolean | null
-          state: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          city?: string | null
-          created_at?: string | null
-          has_address?: never
-          has_email?: never
-          has_name?: never
-          has_phone?: never
-          is_verified?: boolean | null
-          state?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          city?: string | null
-          created_at?: string | null
-          has_address?: never
-          has_email?: never
-          has_name?: never
-          has_phone?: never
-          is_verified?: boolean | null
-          state?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_staff_invitation: {
@@ -4703,16 +4644,16 @@ export type Database = {
       get_profiles_analytics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          city: string | null
-          created_at: string | null
-          has_address: boolean | null
-          has_email: boolean | null
-          has_name: boolean | null
-          has_phone: boolean | null
-          is_verified: boolean | null
-          state: string | null
-          updated_at: string | null
-          user_id: string | null
+          city: string
+          created_at: string
+          has_address: boolean
+          has_email: boolean
+          has_name: boolean
+          has_phone: boolean
+          is_verified: boolean
+          state: string
+          updated_at: string
+          user_id: string
         }[]
       }
       get_public_profile_info: {
