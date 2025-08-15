@@ -22,8 +22,8 @@ import {
   Play,
   AlertTriangle,
   Users,
-  HelpCircle,
-  Music
+  Music,
+  HelpCircle
 } from 'lucide-react';
 import { playNotification, playMessagingChime } from '@/utils/audioUtils';
 import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
@@ -31,6 +31,8 @@ import type { NotificationSoundType } from '@/utils/audioUtils';
 import { useToast } from '@/hooks/use-toast';
 import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
+import SupportTicketForm from './SupportTicketForm';
+import UserSupportTickets from './UserSupportTickets';
 import { useTutorial } from '@/hooks/useTutorial';
 import {
   AlertDialog,
@@ -235,6 +237,10 @@ const [audioSettings, setAudioSettings] = useState({
             <TabsTrigger value="data" className="text-xs px-2 py-2 whitespace-nowrap">
               <Download className="h-3 w-3 mr-1" />
               Data
+            </TabsTrigger>
+            <TabsTrigger value="support" className="text-xs px-2 py-2 whitespace-nowrap">
+              <HelpCircle className="h-3 w-3 mr-1" />
+              Support
             </TabsTrigger>
           </TabsList>
         </div>
@@ -842,6 +848,14 @@ const [audioSettings, setAudioSettings] = useState({
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Support Tab */}
+        <TabsContent value="support" className="w-full max-w-full">
+          <div className="space-y-6 w-full max-w-full overflow-hidden">
+            <SupportTicketForm />
+            <UserSupportTickets />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
