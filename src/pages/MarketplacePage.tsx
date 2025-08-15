@@ -73,27 +73,6 @@ const MarketplacePage = () => {
             </Button>
           </div>
           
-          {/* Scope selector for mobile - only show when marketplace is active */}
-          {activeTab === "marketplace" && (
-            <div className="md:hidden flex items-center justify-center mb-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    {viewScope === 'neighborhood' ? 'My City' : 'Entire State'}
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="z-50 bg-background">
-                  <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                    My City
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setViewScope('state')}>
-                    Entire State
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Desktop tabs */}
