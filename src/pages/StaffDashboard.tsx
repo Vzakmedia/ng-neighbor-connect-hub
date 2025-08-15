@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, Flag, ShoppingCart, Eye, FileText, Clock, CheckCircle, ArrowLeft } from "lucide-react";
+import { Users, Flag, ShoppingCart, Eye, FileText, Clock, CheckCircle, ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 const StaffDashboard = () => {
   const { user } = useAuth();
@@ -17,15 +18,20 @@ const StaffDashboard = () => {
   
   const [stats, setStats] = useState({
     totalUsers: 0,
+    newUsersToday: 0,
     flaggedContent: 0,
     marketplaceItems: 0,
+    activeMarketplaceItems: 0,
+    totalPosts: 0,
     tasksCompleted: 0
   });
   
   const [recentUsers, setRecentUsers] = useState([]);
   const [flaggedContent, setFlaggedContent] = useState([]);
   const [marketplaceItems, setMarketplaceItems] = useState([]);
+  const [communityPosts, setCommunityPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Check if user has staff role
   const [userRole, setUserRole] = useState(null);
@@ -52,52 +58,81 @@ const StaffDashboard = () => {
 
     const fetchStaffData = async () => {
       try {
-        // Fetch basic statistics
-        const { count: usersCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-
-        const { count: flaggedCount } = await supabase
-          .from('content_reports')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
-
-        const { count: marketplaceCount } = await supabase
-          .from('marketplace_items')
-          .select('*', { count: 'exact', head: true });
+        // Fetch comprehensive statistics
+        const [
+          { count: usersCount },
+          { count: newUsersCount },
+          { count: flaggedCount },
+          { count: marketplaceCount },
+          { count: activeMarketplaceCount },
+          { count: postsCount }
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('profiles').select('*', { count: 'exact', head: true })
+            .gte('created_at', new Date().toISOString().split('T')[0]),
+          supabase.from('content_reports').select('*', { count: 'exact', head: true })
+            .eq('status', 'pending'),
+          supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
+          supabase.from('marketplace_items').select('*', { count: 'exact', head: true })
+            .eq('status', 'active'),
+          supabase.from('community_posts').select('*', { count: 'exact', head: true })
+        ]);
 
         setStats({
           totalUsers: usersCount || 0,
+          newUsersToday: newUsersCount || 0,
           flaggedContent: flaggedCount || 0,
           marketplaceItems: marketplaceCount || 0,
-          tasksCompleted: 0 // Track daily completed tasks
+          activeMarketplaceItems: activeMarketplaceCount || 0,
+          totalPosts: postsCount || 0,
+          tasksCompleted: 0
         });
 
-        // Fetch recent users (limited view for staff)
+        // Fetch recent users with more details
         const { data: usersData } = await supabase
           .from('profiles')
-          .select('user_id, full_name, city, created_at')
+          .select('user_id, full_name, email, city, state, created_at, email_verified')
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(20);
 
-        // Fetch flagged content (read-only for staff)
+        // Fetch flagged content with more context
         const { data: flaggedData } = await supabase
           .from('content_reports')
-          .select('id, content_type, reason, created_at, status')
+          .select(`
+            id, content_type, reason, description, created_at, status,
+            reporter_id,
+            profiles!content_reports_reporter_id_fkey(full_name)
+          `)
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(20);
 
-        // Fetch marketplace items (monitoring view)
+        // Fetch marketplace items with seller info
         const { data: marketplaceData } = await supabase
           .from('marketplace_items')
-          .select('id, title, price, status, created_at')
+          .select(`
+            id, title, price, status, created_at, category,
+            user_id,
+            profiles!marketplace_items_user_id_fkey(full_name)
+          `)
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(20);
+
+        // Fetch recent community posts
+        const { data: postsData } = await supabase
+          .from('community_posts')
+          .select(`
+            id, title, content, created_at, post_type,
+            user_id,
+            profiles!community_posts_user_id_fkey(full_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
         setRecentUsers(usersData || []);
         setFlaggedContent(flaggedData || []);
         setMarketplaceItems(marketplaceData || []);
+        setCommunityPosts(postsData || []);
 
       } catch (error) {
         console.error('Error fetching staff data:', error);
@@ -108,6 +143,7 @@ const StaffDashboard = () => {
         });
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
@@ -179,6 +215,34 @@ const StaffDashboard = () => {
     };
   }, [user, userRole, toast]);
 
+  const refreshData = async () => {
+    setRefreshing(true);
+    // Re-trigger the useEffect by toggling a dependency
+    const event = new CustomEvent('refreshStaffData');
+    window.dispatchEvent(event);
+  };
+
+  const handleViewUser = (userId) => {
+    toast({
+      title: "User Details",
+      description: `Viewing details for user: ${userId}`,
+    });
+  };
+
+  const handleViewContent = (contentId) => {
+    toast({
+      title: "Content Details", 
+      description: `Viewing content: ${contentId}`,
+    });
+  };
+
+  const handleViewMarketplaceItem = (itemId) => {
+    toast({
+      title: "Marketplace Item",
+      description: `Viewing marketplace item: ${itemId}`,
+    });
+  };
+
   const handleFlagContent = async (contentId, contentType) => {
     try {
       // Staff can flag content for review
@@ -244,20 +308,31 @@ const StaffDashboard = () => {
             <span className="text-sm text-muted-foreground">Monitoring active</span>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/landing')}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Landing
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={refreshData}
+            disabled={refreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/staff-portal')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Portal
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="flex gap-6" orientation="vertical">
         <TabsList className="flex flex-col h-fit w-48 space-y-1">
           <TabsTrigger value="overview" className="w-full justify-start">
-            <FileText className="h-4 w-4 mr-2" />
+            <Activity className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="users" className="w-full justify-start">
@@ -291,34 +366,49 @@ const StaffDashboard = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">New Users Today</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{loading ? '...' : stats.newUsersToday}</div>
+                  <p className="text-xs text-muted-foreground">Registered today</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Flagged Content</CardTitle>
                   <Flag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{loading ? '...' : stats.flaggedContent}</div>
+                  <div className="text-2xl font-bold text-destructive">{loading ? '...' : stats.flaggedContent}</div>
                   <p className="text-xs text-muted-foreground">Pending review</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Marketplace Items</CardTitle>
+                  <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
                   <ShoppingCart className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{loading ? '...' : stats.marketplaceItems}</div>
-                  <p className="text-xs text-muted-foreground">Active listings</p>
+                  <div className="text-2xl font-bold">{loading ? '...' : stats.activeMarketplaceItems}</div>
+                  <p className="text-xs text-muted-foreground">of {stats.marketplaceItems} total</p>
+                  <Progress 
+                    value={stats.marketplaceItems > 0 ? (stats.activeMarketplaceItems / stats.marketplaceItems) * 100 : 0} 
+                    className="h-1 mt-2" 
+                  />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Community Posts</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.tasksCompleted}</div>
-                  <p className="text-xs text-muted-foreground">Today</p>
+                  <div className="text-2xl font-bold">{loading ? '...' : stats.totalPosts}</div>
+                  <p className="text-xs text-muted-foreground">Total posts</p>
                 </CardContent>
               </Card>
             </div>
@@ -374,15 +464,17 @@ const StaffDashboard = () => {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>User Information</CardTitle>
-                <CardDescription>View basic user information and activity</CardDescription>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Monitor user accounts and activity ({recentUsers.length} users shown)</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -391,10 +483,22 @@ const StaffDashboard = () => {
                     {recentUsers.map((user) => (
                       <TableRow key={user.user_id}>
                         <TableCell>{user.full_name || 'Unknown'}</TableCell>
-                        <TableCell>{user.city || 'Not specified'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {user.email || 'Not provided'}
+                        </TableCell>
+                        <TableCell>{[user.city, user.state].filter(Boolean).join(', ') || 'Not specified'}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.email_verified ? "default" : "secondary"}>
+                            {user.email_verified ? 'Verified' : 'Unverified'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewUser(user.user_id)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -411,45 +515,94 @@ const StaffDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Content Monitoring</CardTitle>
-                <CardDescription>Monitor and flag inappropriate content</CardDescription>
+                <CardDescription>Monitor flagged content and community posts ({flaggedContent.length} pending reports)</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {flaggedContent.map((content) => (
-                      <TableRow key={content.id}>
-                        <TableCell>
-                          <Badge variant="outline">{content.content_type}</Badge>
-                        </TableCell>
-                        <TableCell>{content.reason}</TableCell>
-                        <TableCell>
-                          <Badge variant={content.status === 'pending' ? "destructive" : "secondary"}>
-                            {content.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(content.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleFlagContent(content.id, content.content_type)}
-                          >
-                            <Flag className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Flagged Content</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Reason</TableHead>
+                          <TableHead>Reporter</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {flaggedContent.map((content) => (
+                          <TableRow key={content.id}>
+                            <TableCell>
+                              <Badge variant="outline">{content.content_type}</Badge>
+                            </TableCell>
+                            <TableCell>{content.reason}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {content.profiles?.full_name || 'Anonymous'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={content.status === 'pending' ? "destructive" : "secondary"}>
+                                {content.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{new Date(content.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewContent(content.id)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Recent Community Posts</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Author</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {communityPosts.slice(0, 5).map((post) => (
+                          <TableRow key={post.id}>
+                            <TableCell className="max-w-xs truncate">
+                              {post.title || post.content?.substring(0, 50) + '...' || 'Untitled'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {post.profiles?.full_name || 'Unknown'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{post.post_type}</Badge>
+                            </TableCell>
+                            <TableCell>{new Date(post.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleFlagContent(post.id, 'community_post')}
+                              >
+                                <Flag className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -459,14 +612,16 @@ const StaffDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Marketplace Monitoring</CardTitle>
-                <CardDescription>Monitor marketplace activity and listings</CardDescription>
+                <CardDescription>Monitor marketplace activity and listings ({marketplaceItems.length} recent items)</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Title</TableHead>
+                      <TableHead>Seller</TableHead>
                       <TableHead>Price</TableHead>
+                      <TableHead>Category</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Actions</TableHead>
@@ -475,8 +630,14 @@ const StaffDashboard = () => {
                   <TableBody>
                     {marketplaceItems.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.title}</TableCell>
+                        <TableCell className="max-w-xs truncate">{item.title}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {item.profiles?.full_name || 'Unknown'}
+                        </TableCell>
                         <TableCell>₦{(item.price || 0).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{item.category || 'Uncategorized'}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={item.status === 'active' ? "default" : "secondary"}>
                             {item.status}
@@ -484,9 +645,22 @@ const StaffDashboard = () => {
                         </TableCell>
                         <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewMarketplaceItem(item.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleFlagContent(item.id, 'marketplace_item')}
+                            >
+                              <Flag className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
