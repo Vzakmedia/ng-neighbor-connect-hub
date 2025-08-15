@@ -8,9 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ConversationList from '@/components/messaging/ConversationList';
 import MessageThread from '@/components/messaging/MessageThread';
+import { MessageRequestsList } from '@/components/messaging/MessageRequestsList';
+import { MarketplaceMessaging } from '@/components/messaging/MarketplaceMessaging';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
-import { Search } from 'lucide-react';
+import { Search, MessageCircle, ShoppingBag, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RealtimeDebugPanel from '@/components/messaging/RealtimeDebugPanel';
 
@@ -28,10 +32,32 @@ const UnifiedMessaging = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [activeTab, setActiveTab] = useState('direct');
+  const [requestCount, setRequestCount] = useState(0);
 
   useEffect(() => {
-    if (user) fetchConversations();
+    if (user) {
+      fetchConversations();
+      fetchRequestCount();
+    }
   }, [user, fetchConversations]);
+
+  const fetchRequestCount = async () => {
+    if (!user) return;
+    
+    try {
+      const { count } = await supabase
+        .from('direct_conversations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user2_id', user.id)
+        .eq('request_status', 'pending')
+        .eq('conversation_type', 'direct_message');
+      
+      setRequestCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching request count:', error);
+    }
+  };
 
   // Keep activeConversation in sync if list updates
   useEffect(() => {
@@ -159,83 +185,126 @@ const UnifiedMessaging = () => {
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
+  const handleRequestAccepted = (conversationId: string) => {
+    fetchConversations();
+    fetchRequestCount();
+  };
+
   useEffect(() => {
     document.title = 'Messages | Conversations';
   }, []);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-5 h-[calc(100vh-8rem)]">
-      {/* Left: conversations + search */}
-      <div className="xl:col-span-2 border-r flex flex-col min-h-0">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search people by name or phone"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value.trim()) performUserSearch(e.target.value);
-                else setSearchResults([]);
-              }}
-              className="pl-10"
-            />
-          </div>
-          {searchQuery && (
-            <div className="mt-2 bg-background border rounded-lg shadow-sm max-h-56 overflow-y-auto">
-              {isSearching ? (
-                <div className="p-3 text-xs text-muted-foreground">Searching…</div>
-              ) : searchResults.length > 0 ? (
-                <div className="divide-y">
-                  {searchResults.map((u) => (
-                    <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
-                      <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
-                      <div className="text-left">
-                        <div className="text-sm font-medium">{u.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{u.phone}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-3 text-xs text-muted-foreground">No results</div>
+    <div className="h-[calc(100vh-8rem)]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        <div className="px-4 py-2 border-b">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="direct" className="flex items-center space-x-2">
+              <MessageCircle className="w-4 h-4" />
+              <span>Messages</span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center space-x-2">
+              <UserPlus className="w-4 h-4" />
+              <span>Requests</span>
+              {requestCount > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {requestCount}
+                </Badge>
               )}
-            </div>
-          )}
+            </TabsTrigger>
+            <TabsTrigger value="marketplace" className="flex items-center space-x-2">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Marketplace</span>
+            </TabsTrigger>
+          </TabsList>
         </div>
-        <div className="flex-1 min-h-0">
-          <ConversationList
-            conversations={conversations}
-            loading={conversationsLoading}
-            activeConversationId={activeConversation?.id}
-            currentUserId={user?.id}
-            onConversationSelect={selectConversation}
-          />
-        </div>
-      </div>
 
-      {/* Right: thread (xl and up) */}
-      <div className="hidden xl:flex xl:col-span-3 min-h-0">
-        {activeConversation ? (
-          <MessageThread
-            conversation={activeConversation}
-            messages={messages}
-            currentUserId={user?.id}
-            onSendMessage={handleSendMessage}
-            showReadReceipts={true}
-            messagesEndRef={messagesEndRef}
-            onMessageDeleted={() => {
-              if (otherUserId) fetchMessages(otherUserId);
-            }}
-          />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <p className="text-sm">Select a conversation to start chatting</p>
+        <div className="flex-1 min-h-0">
+          <TabsContent value="direct" className="h-full m-0">
+            <div className="grid grid-cols-1 xl:grid-cols-5 h-full">
+              {/* Left: conversations + search */}
+              <div className="xl:col-span-2 border-r flex flex-col min-h-0">
+                <div className="p-4 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search people by name or phone"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (e.target.value.trim()) performUserSearch(e.target.value);
+                        else setSearchResults([]);
+                      }}
+                      className="pl-10"
+                    />
+                  </div>
+                  {searchQuery && (
+                    <div className="mt-2 bg-background border rounded-lg shadow-sm max-h-56 overflow-y-auto">
+                      {isSearching ? (
+                        <div className="p-3 text-xs text-muted-foreground">Searching…</div>
+                      ) : searchResults.length > 0 ? (
+                        <div className="divide-y">
+                          {searchResults.map((u) => (
+                            <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
+                              <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
+                              <div className="text-left">
+                                <div className="text-sm font-medium">{u.full_name}</div>
+                                <div className="text-xs text-muted-foreground">{u.phone}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-3 text-xs text-muted-foreground">No results</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ConversationList
+                    conversations={conversations}
+                    loading={conversationsLoading}
+                    activeConversationId={activeConversation?.id}
+                    currentUserId={user?.id}
+                    onConversationSelect={selectConversation}
+                  />
+                </div>
+              </div>
+
+              {/* Right: thread (xl and up) */}
+              <div className="hidden xl:flex xl:col-span-3 min-h-0">
+                {activeConversation ? (
+                  <MessageThread
+                    conversation={activeConversation}
+                    messages={messages}
+                    currentUserId={user?.id}
+                    onSendMessage={handleSendMessage}
+                    showReadReceipts={true}
+                    messagesEndRef={messagesEndRef}
+                    onMessageDeleted={() => {
+                      if (otherUserId) fetchMessages(otherUserId);
+                    }}
+                  />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <p className="text-sm">Select a conversation to start chatting</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          </TabsContent>
+
+          <TabsContent value="requests" className="h-full m-0">
+            <MessageRequestsList onRequestAccepted={handleRequestAccepted} />
+          </TabsContent>
+
+          <TabsContent value="marketplace" className="h-full m-0">
+            <MarketplaceMessaging />
+          </TabsContent>
+        </div>
+      </Tabs>
       <div className="fixed bottom-4 right-4 z-50">
         <Button variant="secondary" size="sm" onClick={() => setShowDebug(true)}>
           Debug

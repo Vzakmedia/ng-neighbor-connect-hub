@@ -1436,9 +1436,15 @@ export type Database = {
       }
       direct_conversations: {
         Row: {
+          conversation_type: string | null
           created_at: string
           id: string
           last_message_at: string
+          marketplace_item_id: string | null
+          marketplace_service_id: string | null
+          request_status: string | null
+          requested_at: string | null
+          responded_at: string | null
           updated_at: string
           user1_has_unread: boolean | null
           user1_id: string
@@ -1446,9 +1452,15 @@ export type Database = {
           user2_id: string
         }
         Insert: {
+          conversation_type?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
+          marketplace_item_id?: string | null
+          marketplace_service_id?: string | null
+          request_status?: string | null
+          requested_at?: string | null
+          responded_at?: string | null
           updated_at?: string
           user1_has_unread?: boolean | null
           user1_id: string
@@ -1456,9 +1468,15 @@ export type Database = {
           user2_id: string
         }
         Update: {
+          conversation_type?: string | null
           created_at?: string
           id?: string
           last_message_at?: string
+          marketplace_item_id?: string | null
+          marketplace_service_id?: string | null
+          request_status?: string | null
+          requested_at?: string | null
+          responded_at?: string | null
           updated_at?: string
           user1_has_unread?: boolean | null
           user1_id?: string
@@ -4502,6 +4520,16 @@ export type Database = {
         Args: { _accept?: boolean; _request_id: string }
         Returns: Json
       }
+      create_conversation_with_request_check: {
+        Args: {
+          conversation_type?: string
+          marketplace_item_id?: string
+          marketplace_service_id?: string
+          recipient_id: string
+          sender_id: string
+        }
+        Returns: string
+      }
       create_notification: {
         Args: {
           _body: string
@@ -4848,6 +4876,10 @@ export type Database = {
         Returns: {
           user_id: string
         }[]
+      }
+      handle_message_request: {
+        Args: { action: string; conversation_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
