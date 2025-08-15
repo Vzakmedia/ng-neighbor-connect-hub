@@ -21,10 +21,7 @@ import {
   Mail, 
   FileText,
   Shield,
-  AlertTriangle,
-  Trash2,
-  CheckSquare,
-  Square
+  AlertTriangle
 } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -64,8 +61,6 @@ const BusinessVerificationAdmin = () => {
   const [selectedApplication, setSelectedApplication] = useState<BusinessApplication | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [selectedBusinesses, setSelectedBusinesses] = useState<string[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchApplications = async () => {
     try {
@@ -102,100 +97,6 @@ const BusinessVerificationAdmin = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const deleteMockBusinesses = async () => {
-    setIsDeleting(true);
-    try {
-      // Delete all businesses that appear to be mock/test data
-      // You can customize these criteria based on what you consider "mock"
-      const { data: mockBusinesses, error: fetchError } = await supabase
-        .from('businesses')
-        .select('id, business_name, email, description')
-        .or('business_name.ilike.%test%,business_name.ilike.%demo%,business_name.ilike.%mock%,business_name.ilike.%sample%,email.ilike.%test%,email.ilike.%demo%,description.ilike.%test%,description.ilike.%demo%');
-
-      if (fetchError) throw fetchError;
-
-      if (mockBusinesses && mockBusinesses.length > 0) {
-        const mockBusinessIds = mockBusinesses.map(b => b.id);
-        
-        const { error: deleteError } = await supabase
-          .from('businesses')
-          .delete()
-          .in('id', mockBusinessIds);
-
-        if (deleteError) throw deleteError;
-
-        toast({
-          title: "Mock Businesses Removed",
-          description: `Successfully removed ${mockBusinesses.length} mock/test businesses.`,
-        });
-
-        // Refresh the list
-        await fetchApplications();
-      } else {
-        toast({
-          title: "No Mock Businesses Found",
-          description: "No businesses matching mock/test criteria were found.",
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting mock businesses:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete mock businesses",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const deleteSelectedBusinesses = async () => {
-    if (selectedBusinesses.length === 0) return;
-
-    setIsDeleting(true);
-    try {
-      const { error } = await supabase
-        .from('businesses')
-        .delete()
-        .in('id', selectedBusinesses);
-
-      if (error) throw error;
-
-      toast({
-        title: "Businesses Deleted",
-        description: `Successfully deleted ${selectedBusinesses.length} businesses.`,
-      });
-
-      setSelectedBusinesses([]);
-      await fetchApplications();
-    } catch (error) {
-      console.error('Error deleting selected businesses:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete selected businesses",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const toggleBusinessSelection = (businessId: string) => {
-    setSelectedBusinesses(prev => 
-      prev.includes(businessId) 
-        ? prev.filter(id => id !== businessId)
-        : [...prev, businessId]
-    );
-  };
-
-  const selectAllBusinesses = () => {
-    if (selectedBusinesses.length === applications.length) {
-      setSelectedBusinesses([]);
-    } else {
-      setSelectedBusinesses(applications.map(app => app.id));
     }
   };
 
@@ -347,55 +248,6 @@ const BusinessVerificationAdmin = () => {
         </Card>
       </div>
 
-      {/* Bulk Actions */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectAllBusinesses}
-              >
-                {selectedBusinesses.length === applications.length ? (
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                ) : (
-                  <Square className="h-4 w-4 mr-2" />
-                )}
-                {selectedBusinesses.length === applications.length ? 'Deselect All' : 'Select All'}
-              </Button>
-              {selectedBusinesses.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {selectedBusinesses.length} selected
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={deleteMockBusinesses}
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isDeleting ? 'Removing...' : 'Remove Mock Businesses'}
-              </Button>
-              {selectedBusinesses.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={deleteSelectedBusinesses}
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {isDeleting ? 'Deleting...' : `Delete Selected (${selectedBusinesses.length})`}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pending">Pending ({pendingApplications.length})</TabsTrigger>
@@ -418,24 +270,12 @@ const BusinessVerificationAdmin = () => {
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => toggleBusinessSelection(application.id)}
-                              className="p-1 hover:bg-gray-100 rounded"
-                            >
-                              {selectedBusinesses.includes(application.id) ? (
-                                <CheckSquare className="h-4 w-4 text-blue-600" />
-                              ) : (
-                                <Square className="h-4 w-4 text-gray-400" />
-                              )}
-                            </button>
-                            <Avatar className="h-12 w-12">
+                          <Avatar className="h-12 w-12">
                             <AvatarImage src={application.logo_url || application.profiles?.avatar_url} />
                             <AvatarFallback>
                               {getBusinessInitials(application.business_name)}
                             </AvatarFallback>
                           </Avatar>
-                          </div>
                           <div>
                           <CardTitle className="text-lg">{application.business_name}</CardTitle>
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
@@ -634,24 +474,12 @@ const BusinessVerificationAdmin = () => {
                 <Card key={business.id} className="border-green-200">
                   <CardContent className="pt-4">
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleBusinessSelection(business.id)}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          {selectedBusinesses.includes(business.id) ? (
-                            <CheckSquare className="h-4 w-4 text-blue-600" />
-                          ) : (
-                            <Square className="h-4 w-4 text-gray-400" />
-                          )}
-                        </button>
-                        <Avatar className="h-10 w-10">
+                      <Avatar className="h-10 w-10">
                         <AvatarImage src={business.logo_url || business.profiles?.avatar_url} />
                         <AvatarFallback>
                           {getBusinessInitials(business.business_name)}
                         </AvatarFallback>
                       </Avatar>
-                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold truncate">{business.business_name}</h3>
@@ -685,24 +513,12 @@ const BusinessVerificationAdmin = () => {
                   <CardContent className="pt-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => toggleBusinessSelection(application.id)}
-                            className="p-1 hover:bg-gray-100 rounded"
-                          >
-                            {selectedBusinesses.includes(application.id) ? (
-                              <CheckSquare className="h-4 w-4 text-blue-600" />
-                            ) : (
-                              <Square className="h-4 w-4 text-gray-400" />
-                            )}
-                          </button>
-                          <Avatar className="h-10 w-10">
+                        <Avatar className="h-10 w-10">
                           <AvatarImage src={application.logo_url || application.profiles?.avatar_url} />
                           <AvatarFallback>
                             {getBusinessInitials(application.business_name)}
                           </AvatarFallback>
                         </Avatar>
-                        </div>
                         <div>
                           <h3 className="font-semibold">{application.business_name}</h3>
                           <p className="text-sm text-muted-foreground">{formatCategory(application.category)}</p>
