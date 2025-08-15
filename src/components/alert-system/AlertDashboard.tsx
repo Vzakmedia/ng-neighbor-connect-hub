@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,62 +18,45 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
-  const [realtimeChannel, setRealtimeChannel] = useState<any>(null);
 
   useEffect(() => {
     // Load initial metrics
     getQueueStatus();
     
-    // Only set up real-time subscription if not in offline mode
-    if (!offlineMode) {
-      const channel = supabase.channel('alert-queue-updates');
-      setRealtimeChannel(channel);
-      
-      channel.on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'alert_queue' }, 
-        () => {
-          if (!offlineMode) {
-            console.log('Alert queue updated, refreshing metrics');
-            getQueueStatus();
-          }
-        }
-      );
-
-      channel.on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'alert_analytics' }, 
-        () => {
-          if (!offlineMode) {
-            console.log('Alert analytics updated, refreshing metrics');
-            getQueueStatus();
-          }
-        }
-      );
-
-      channel.subscribe((status) => {
-        console.log('Alert dashboard subscription status:', status);
-        if (!offlineMode) {
-          setIsConnected(status === 'SUBSCRIBED');
-        }
-      });
-    } else {
-      // In offline mode, force disconnected state
-      setIsConnected(false);
-    }
+    // Set up real-time subscription for queue updates
+    const channel = supabase.channel('alert-queue-updates');
     
-    // Set up auto-refresh with longer interval in offline mode
-    const refreshInterval = offlineMode ? 60000 : 30000; // 60s offline, 30s online
+    channel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'alert_queue' }, 
+      () => {
+        console.log('Alert queue updated, refreshing metrics');
+        getQueueStatus();
+      }
+    );
+
+    channel.on('postgres_changes', 
+      { event: '*', schema: 'public', table: 'alert_analytics' }, 
+      () => {
+        console.log('Alert analytics updated, refreshing metrics');
+        getQueueStatus();
+      }
+    );
+
+    channel.subscribe((status) => {
+      console.log('Alert dashboard subscription status:', status);
+      setIsConnected(status === 'SUBSCRIBED');
+    });
+    
+    // Set up auto-refresh every 30 seconds as fallback
     const interval = setInterval(() => {
       getQueueStatus();
-    }, refreshInterval);
+    }, 30000);
     
     return () => {
-      if (realtimeChannel) {
-        supabase.removeChannel(realtimeChannel);
-      }
+      supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [getQueueStatus, offlineMode, realtimeChannel]);
+  }, [getQueueStatus]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -129,21 +111,6 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
     }
   };
 
-  const handleOfflineModeToggle = (enabled: boolean) => {
-    setOfflineMode(enabled);
-    if (enabled) {
-      // Force offline state
-      setIsConnected(false);
-      // Remove current real-time subscription
-      if (realtimeChannel) {
-        supabase.removeChannel(realtimeChannel);
-        setRealtimeChannel(null);
-      }
-    }
-  };
-
-  const isActuallyOffline = offlineMode || !isConnected;
-
   const totalAlerts = metrics.processed + metrics.pending + metrics.failed;
   const successRate = totalAlerts > 0 ? (metrics.processed / totalAlerts) * 100 : 0;
 
@@ -157,49 +124,31 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
             <p className="text-sm sm:text-base text-muted-foreground mt-1">Monitor and manage real-time alert processing</p>
           </div>
           
-          {/* Connection Status & Offline Toggle - Mobile friendly */}
-          <div className="flex flex-col gap-2 sm:hidden">
-            <div className="flex items-center gap-2">
-              {isActuallyOffline ? (
-                <WifiOff className="h-4 w-4 text-red-500 flex-shrink-0" />
-              ) : (
-                <Wifi className="h-4 w-4 text-green-500 flex-shrink-0" />
-              )}
-              <span className="text-sm text-muted-foreground">
-                {isActuallyOffline ? 'Offline Mode' : 'Real-time Connected'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch 
-                checked={offlineMode} 
-                onCheckedChange={handleOfflineModeToggle}
-              />
-              <span className="text-xs text-muted-foreground">Force Offline</span>
-            </div>
+          {/* Connection Status - Mobile friendly */}
+          <div className="flex items-center gap-2 sm:hidden">
+            {isConnected ? (
+              <Wifi className="h-4 w-4 text-green-500 flex-shrink-0" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500 flex-shrink-0" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isConnected ? 'Real-time Connected' : 'Offline Mode'}
+            </span>
           </div>
         </div>
         
         {/* Controls Section */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-          {/* Connection Status & Offline Toggle - Desktop */}
-          <div className="hidden sm:flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              {isActuallyOffline ? (
-                <WifiOff className="h-4 w-4 text-red-500" />
-              ) : (
-                <Wifi className="h-4 w-4 text-green-500" />
-              )}
-              <span className="text-sm text-muted-foreground">
-                {isActuallyOffline ? 'Offline Mode' : 'Real-time Connected'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch 
-                checked={offlineMode} 
-                onCheckedChange={handleOfflineModeToggle}
-              />
-              <span className="text-sm text-muted-foreground">Force Offline</span>
-            </div>
+          {/* Connection Status - Desktop */}
+          <div className="hidden sm:flex items-center gap-2">
+            {isConnected ? (
+              <Wifi className="h-4 w-4 text-green-500" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-500" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isConnected ? 'Real-time Connected' : 'Offline Mode'}
+            </span>
           </div>
           
           {/* Action Buttons */}
@@ -217,17 +166,13 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
             </Button>
             <Button 
               onClick={handleProcessQueue}
-              disabled={isProcessing || offlineMode}
+              disabled={isProcessing}
               size="sm"
               className="flex-1 sm:flex-initial"
             >
               <Zap className="h-4 w-4 mr-2" />
-              <span className="hidden xs:inline">
-                {offlineMode ? 'Offline' : isProcessing ? 'Processing...' : 'Process Queue'}
-              </span>
-              <span className="xs:hidden">
-                {offlineMode ? 'Offline' : 'Process'}
-              </span>
+              <span className="hidden xs:inline">Process Queue</span>
+              <span className="xs:hidden">Process</span>
             </Button>
           </div>
         </div>
@@ -353,9 +298,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
                 </div>
                 <div className="flex justify-between">
                   <span>Real-time Delivery</span>
-                  <Badge variant={isActuallyOffline ? "secondary" : "default"}>
-                    {isActuallyOffline ? "Offline" : "Online"}
-                  </Badge>
+                  <Badge variant="default">Online</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span>Cache System</span>
@@ -377,28 +320,19 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
                   <div className="space-y-4">
                     <Button 
                       onClick={handleProcessQueue} 
-                      disabled={isProcessing || offlineMode}
+                      disabled={isProcessing}
                       className="w-full"
                     >
-                      {offlineMode ? 'Offline Mode Active' : isProcessing ? 'Processing...' : 'Process Next Alert'}
+                      {isProcessing ? 'Processing...' : 'Process Next Alert'}
                     </Button>
                     
                     <Button 
                       variant="outline" 
                       onClick={handleCreateTestAlert}
-                      disabled={offlineMode}
                       className="w-full"
                     >
-                      {offlineMode ? 'Offline Mode' : 'Create Test Alert'}
+                      Create Test Alert
                     </Button>
-                    
-                    {offlineMode && (
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                        <p className="text-sm text-yellow-800">
-                          Offline mode is active. Real-time features are disabled. Use manual refresh to update data.
-                        </p>
-                      </div>
-                    )}
                   </div>
               </div>
             </CardContent>
