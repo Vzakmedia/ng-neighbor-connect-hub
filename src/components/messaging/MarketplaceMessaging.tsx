@@ -29,6 +29,7 @@ export const MarketplaceMessaging: React.FC = () => {
   const [conversations, setConversations] = useState<MarketplaceConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showMessageThread, setShowMessageThread] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -145,6 +146,7 @@ export const MarketplaceMessaging: React.FC = () => {
 
   const handleConversationSelect = (conversationId: string) => {
     setSelectedConversation(conversationId);
+    setShowMessageThread(true); // Show message thread on mobile
     
     // Mark conversation as read
     const conversation = conversations.find(c => c.id === conversationId);
@@ -176,10 +178,15 @@ export const MarketplaceMessaging: React.FC = () => {
     }
   };
 
+  const handleBackToConversations = () => {
+    setShowMessageThread(false);
+    setSelectedConversation(null);
+  };
+
   if (loading) {
     return (
-      <div className="h-full flex">
-        <div className="w-1/3 border-r">
+      <div className="h-full flex flex-col lg:flex-row">
+        <div className="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r">
           <div className="p-4 animate-pulse">
             <div className="h-6 bg-muted rounded mb-4"></div>
             {[1, 2, 3].map((i) => (
@@ -207,9 +214,11 @@ export const MarketplaceMessaging: React.FC = () => {
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   return (
-    <div className="h-full flex">
-      {/* Conversations List */}
-      <div className="w-1/3 border-r bg-background">
+    <div className="h-full flex flex-col lg:flex-row">
+      {/* Conversations List - Hidden on mobile when thread is open */}
+      <div className={`w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r bg-background ${
+        showMessageThread ? 'hidden lg:block' : 'block'
+      }`}>
         <div className="p-4 border-b">
           <div className="flex items-center space-x-2 mb-2">
             <ShoppingBag className="w-5 h-5 text-primary" />
@@ -288,8 +297,10 @@ export const MarketplaceMessaging: React.FC = () => {
         </div>
       </div>
 
-      {/* Message Thread */}
-      <div className="flex-1">
+      {/* Message Thread - Full width on mobile when open */}
+      <div className={`flex-1 ${
+        !showMessageThread ? 'hidden lg:flex' : 'flex'
+      }`}>
         {selectedConversation && selectedConv ? (
           <MarketplaceMessageThread
             conversationId={selectedConversation}
@@ -297,6 +308,7 @@ export const MarketplaceMessaging: React.FC = () => {
             otherUserAvatar={selectedConv.other_user_avatar}
             otherUserId={selectedConv.other_user_id}
             conversationType="marketplace"
+            onBack={handleBackToConversations}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

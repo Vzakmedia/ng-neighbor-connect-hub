@@ -184,7 +184,7 @@ const MarketplaceMessageThread: React.FC<MarketplaceMessageThreadProps> = ({
       {/* Header */}
       <div className="flex items-center space-x-3 p-4 border-b bg-background">
         {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="ghost" size="sm" onClick={onBack} className="lg:hidden">
             <ArrowLeft className="w-4 h-4" />
           </Button>
         )}
