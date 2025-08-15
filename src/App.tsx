@@ -133,7 +133,9 @@ const App = () => {
           <Route path="/moderator" element={<ModeratorDashboard />} />
           <Route path="/manager" element={<ManagerDashboard />} />
           <Route path="/support" element={<SupportDashboard />} />
-          <Route path="/staff" element={<StaffNavigation />} />
+          <Route path="/staff-portal" element={<StaffNavigation />} />
+          <Route path="/staff" element={<StaffDashboard />} />
+          <Route path="/staff-dashboard" element={<StaffDashboard />} />
           <Route path="/business" element={<Business />} />
           <Route path="/staff-login" element={<StaffLogin />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
