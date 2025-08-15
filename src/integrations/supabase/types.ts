@@ -4280,49 +4280,115 @@ export type Database = {
       }
       user_consents: {
         Row: {
+          analytics_accepted: boolean
+          background_location_accepted: boolean
+          business_verification_accepted: boolean
+          camera_access_accepted: boolean
           communication_accepted: boolean
           consent_given_at: string
           consent_version: string | null
+          content_moderation_accepted: boolean
+          content_processing_accepted: boolean
+          crash_reporting_accepted: boolean
           created_at: string
+          cross_platform_sync_accepted: boolean
           data_processing_accepted: boolean
+          device_storage_accepted: boolean
+          emergency_contacts_accepted: boolean
+          external_apis_accepted: boolean
+          external_integrations_accepted: boolean
+          file_access_accepted: boolean
+          google_services_accepted: boolean
           id: string
           ip_address: unknown | null
+          location_history_accepted: boolean
           location_sharing_accepted: boolean
+          marketplace_transactions_accepted: boolean
+          microphone_access_accepted: boolean
+          payment_processing_accepted: boolean
+          precise_location_accepted: boolean
           privacy_accepted: boolean
+          push_notifications_accepted: boolean
+          recommendations_accepted: boolean
           terms_accepted: boolean
           updated_at: string
           user_agent: string | null
           user_id: string
+          voice_video_calls_accepted: boolean
         }
         Insert: {
+          analytics_accepted?: boolean
+          background_location_accepted?: boolean
+          business_verification_accepted?: boolean
+          camera_access_accepted?: boolean
           communication_accepted?: boolean
           consent_given_at?: string
           consent_version?: string | null
+          content_moderation_accepted?: boolean
+          content_processing_accepted?: boolean
+          crash_reporting_accepted?: boolean
           created_at?: string
+          cross_platform_sync_accepted?: boolean
           data_processing_accepted?: boolean
+          device_storage_accepted?: boolean
+          emergency_contacts_accepted?: boolean
+          external_apis_accepted?: boolean
+          external_integrations_accepted?: boolean
+          file_access_accepted?: boolean
+          google_services_accepted?: boolean
           id?: string
           ip_address?: unknown | null
+          location_history_accepted?: boolean
           location_sharing_accepted?: boolean
+          marketplace_transactions_accepted?: boolean
+          microphone_access_accepted?: boolean
+          payment_processing_accepted?: boolean
+          precise_location_accepted?: boolean
           privacy_accepted?: boolean
+          push_notifications_accepted?: boolean
+          recommendations_accepted?: boolean
           terms_accepted?: boolean
           updated_at?: string
           user_agent?: string | null
           user_id: string
+          voice_video_calls_accepted?: boolean
         }
         Update: {
+          analytics_accepted?: boolean
+          background_location_accepted?: boolean
+          business_verification_accepted?: boolean
+          camera_access_accepted?: boolean
           communication_accepted?: boolean
           consent_given_at?: string
           consent_version?: string | null
+          content_moderation_accepted?: boolean
+          content_processing_accepted?: boolean
+          crash_reporting_accepted?: boolean
           created_at?: string
+          cross_platform_sync_accepted?: boolean
           data_processing_accepted?: boolean
+          device_storage_accepted?: boolean
+          emergency_contacts_accepted?: boolean
+          external_apis_accepted?: boolean
+          external_integrations_accepted?: boolean
+          file_access_accepted?: boolean
+          google_services_accepted?: boolean
           id?: string
           ip_address?: unknown | null
+          location_history_accepted?: boolean
           location_sharing_accepted?: boolean
+          marketplace_transactions_accepted?: boolean
+          microphone_access_accepted?: boolean
+          payment_processing_accepted?: boolean
+          precise_location_accepted?: boolean
           privacy_accepted?: boolean
+          push_notifications_accepted?: boolean
+          recommendations_accepted?: boolean
           terms_accepted?: boolean
           updated_at?: string
           user_agent?: string | null
           user_id?: string
+          voice_video_calls_accepted?: boolean
         }
         Relationships: []
       }

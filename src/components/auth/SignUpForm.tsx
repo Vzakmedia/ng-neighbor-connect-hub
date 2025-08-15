@@ -253,9 +253,46 @@ export const SignUpForm = () => {
             data_processing_accepted: userConsents.dataProcessingAccepted,
             location_sharing_accepted: userConsents.locationSharingAccepted,
             communication_accepted: userConsents.communicationAccepted,
+            
+            // Device Permissions
+            camera_access_accepted: userConsents.cameraAccessAccepted,
+            microphone_access_accepted: userConsents.microphoneAccessAccepted,
+            push_notifications_accepted: userConsents.pushNotificationsAccepted,
+            file_access_accepted: userConsents.fileAccessAccepted,
+            
+            // Security & Analytics
+            device_storage_accepted: userConsents.deviceStorageAccepted,
+            analytics_accepted: userConsents.analyticsAccepted,
+            crash_reporting_accepted: userConsents.crashReportingAccepted,
+            
+            // Enhanced Location
+            precise_location_accepted: userConsents.preciseLocationAccepted,
+            background_location_accepted: userConsents.backgroundLocationAccepted,
+            location_history_accepted: userConsents.locationHistoryAccepted,
+            
+            // Advanced Features
+            voice_video_calls_accepted: userConsents.voiceVideoCallsAccepted,
+            emergency_contacts_accepted: userConsents.emergencyContactsAccepted,
+            external_integrations_accepted: userConsents.externalIntegrationsAccepted,
+            
+            // Commercial/Business
+            marketplace_transactions_accepted: userConsents.marketplaceTransactionsAccepted,
+            business_verification_accepted: userConsents.businessVerificationAccepted,
+            payment_processing_accepted: userConsents.paymentProcessingAccepted,
+            
+            // Content & AI
+            content_processing_accepted: userConsents.contentProcessingAccepted,
+            content_moderation_accepted: userConsents.contentModerationAccepted,
+            recommendations_accepted: userConsents.recommendationsAccepted,
+            
+            // Third-Party Integration
+            google_services_accepted: userConsents.googleServicesAccepted,
+            external_apis_accepted: userConsents.externalApisAccepted,
+            cross_platform_sync_accepted: userConsents.crossPlatformSyncAccepted,
+            
             ip_address: null, // Could be captured server-side
             user_agent: navigator.userAgent,
-            consent_version: '1.0'
+            consent_version: '2.0'
           });
         } catch (consentError) {
           console.error('Failed to store consent record:', consentError);
