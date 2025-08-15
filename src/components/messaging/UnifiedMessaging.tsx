@@ -125,10 +125,11 @@ const UnifiedMessaging = () => {
     }
     setIsSearching(true);
     try {
+      // Use secure function for user search
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, full_name, avatar_url, phone')
-        .or(`full_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .select('user_id, full_name, avatar_url')
+        .or(`full_name.ilike.%${query}%`)
         .neq('user_id', user.id)
         .limit(5);
       if (error) throw error;

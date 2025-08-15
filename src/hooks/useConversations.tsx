@@ -51,19 +51,30 @@ export const useConversations = (userId: string | undefined) => {
         throw error;
       }
 
-      // Fetch user profiles separately
+      // Fetch user profiles separately using secure function
       const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
       
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, phone')
-        .in('user_id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      }
-
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      // Use the secure get_public_profile_info function for each user
+      const profilePromises = userIds.map(id => 
+        supabase.rpc('get_public_profile_info', { target_user_id: id })
+      );
+      
+      const profileResults = await Promise.all(profilePromises);
+      
+      // Create profile map from results
+      const profileMap = new Map(
+        profileResults
+          .filter(result => result.data && result.data.length > 0)
+          .map(result => {
+            const profile = result.data[0]; // RPC returns array, take first item
+            return [profile.user_id, {
+              user_id: profile.user_id,
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+              phone: null // phone is not included in public profile info for security
+            }];
+          })
+      );
 
       const formattedConversations = (data || []).map(conv => {
         const isUser1 = conv.user1_id === userId;
