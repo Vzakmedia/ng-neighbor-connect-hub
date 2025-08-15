@@ -4380,6 +4380,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_2fa_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa_backup_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_used: boolean
+          used_at: string | null
+          user_2fa_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          used_at?: string | null
+          user_2fa_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_used?: boolean
+          used_at?: string | null
+          user_2fa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_2fa_backup_codes_user_2fa_id_fkey"
+            columns: ["user_2fa_id"]
+            isOneToOne: false
+            referencedRelation: "user_2fa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_analytics: {
         Row: {
           comments_made: number | null
