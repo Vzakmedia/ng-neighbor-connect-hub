@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload } from "lucide-react";
 import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
+import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -34,6 +35,8 @@ export const SignUpForm = () => {
   const [uploadingAvatar, setUploadingAvatar] = useSignupState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [userConsents, setUserConsents] = useState<ConsentState | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -131,8 +134,19 @@ export const SignUpForm = () => {
     }
   };
 
+  const handleConsentGiven = (consents: ConsentState) => {
+    setUserConsents(consents);
+    setShowConsentDialog(false);
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // First, validate basic form data
+    if (!userConsents) {
+      setShowConsentDialog(true);
+      return;
+    }
     
     // Validate required location fields
     if (!formData.state) {
@@ -229,7 +243,25 @@ export const SignUpForm = () => {
             variant: "destructive",
           });
         }
-      } else {
+      } else if (data.user) {
+        // Store consent record
+        try {
+          await supabase.from('user_consents').insert({
+            user_id: data.user.id,
+            terms_accepted: userConsents.termsAccepted,
+            privacy_accepted: userConsents.privacyAccepted,
+            data_processing_accepted: userConsents.dataProcessingAccepted,
+            location_sharing_accepted: userConsents.locationSharingAccepted,
+            communication_accepted: userConsents.communicationAccepted,
+            ip_address: null, // Could be captured server-side
+            user_agent: navigator.userAgent,
+            consent_version: '1.0'
+          });
+        } catch (consentError) {
+          console.error('Failed to store consent record:', consentError);
+          // Don't block signup for this, but log the error
+        }
+
         toast({
           title: "Check Your Email",
           description: "Please check your email and click the confirmation link to complete your account setup.",
@@ -395,6 +427,13 @@ export const SignUpForm = () => {
         {isLoading ? "Creating account..." : "Create Account"}
       </Button>
     </form>
+
+    {/* Consent Dialog */}
+    <ConsentDialog
+      open={showConsentDialog}
+      onConsentGiven={handleConsentGiven}
+      onCancel={() => setShowConsentDialog(false)}
+    />
 
     {/* Avatar Cropper Dialog */}
     <AvatarCropper
