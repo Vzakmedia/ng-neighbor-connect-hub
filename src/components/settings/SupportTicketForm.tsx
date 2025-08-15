@@ -6,13 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, Send, Ticket } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeSupportTickets } from '@/hooks/useRealtimeSupportTickets';
 
 const SupportTicketForm = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { createTicket } = useRealtimeSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     subject: '',
@@ -23,36 +20,19 @@ const SupportTicketForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
 
     if (!formData.subject.trim() || !formData.category || !formData.description.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: user.id,
-          subject: formData.subject.trim(),
-          category: formData.category,
-          priority: formData.priority,
-          description: formData.description.trim(),
-          status: 'open'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Support Ticket Created",
-        description: "Your support ticket has been submitted successfully. You'll receive a response soon.",
+      await createTicket({
+        subject: formData.subject.trim(),
+        category: formData.category,
+        priority: formData.priority,
+        description: formData.description.trim()
       });
 
       // Reset form
@@ -65,11 +45,6 @@ const SupportTicketForm = () => {
 
     } catch (error) {
       console.error('Error creating support ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit support ticket. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }

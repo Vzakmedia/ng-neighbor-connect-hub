@@ -1,133 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Ticket, MessageSquare, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useRealtimeSupportTickets } from '@/hooks/useRealtimeSupportTickets';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-interface SupportTicket {
-  id: string;
-  subject: string;
-  category: string;
-  priority: string;
-  status: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface TicketResponse {
-  id: string;
-  response_text: string;
-  is_staff_response: boolean;
-  created_at: string;
-  user_id?: string;
-}
-
 const UserSupportTickets = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [responses, setResponses] = useState<{ [key: string]: TicketResponse[] }>({});
-  const [loading, setLoading] = useState(true);
+  const { tickets, responses, loading, addResponse } = useRealtimeSupportTickets();
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [newResponse, setNewResponse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      fetchTickets();
-    }
-  }, [user]);
-
-  const fetchTickets = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTickets(data || []);
-
-      // Fetch responses for all tickets
-      if (data && data.length > 0) {
-        const ticketIds = data.map(ticket => ticket.id);
-        const { data: responsesData, error: responsesError } = await supabase
-          .from('support_ticket_responses')
-          .select('*')
-          .in('ticket_id', ticketIds)
-          .order('created_at', { ascending: true });
-
-        if (responsesError) throw responsesError;
-
-        // Group responses by ticket_id
-        const groupedResponses: { [key: string]: TicketResponse[] } = {};
-        responsesData?.forEach(response => {
-          if (!groupedResponses[response.ticket_id]) {
-            groupedResponses[response.ticket_id] = [];
-          }
-          groupedResponses[response.ticket_id].push({
-            id: response.id,
-            response_text: response.response_text,
-            is_staff_response: response.is_staff_response,
-            created_at: response.created_at,
-            user_id: response.user_id
-          });
-        });
-
-        setResponses(groupedResponses);
-      }
-    } catch (error) {
-      console.error('Error fetching support tickets:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load support tickets.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const submitResponse = async () => {
     if (!selectedTicket || !newResponse.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('support_ticket_responses')
-        .insert({
-          ticket_id: selectedTicket,
-          response_text: newResponse.trim(),
-          is_staff_response: false
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Response Sent",
-        description: "Your response has been sent to support."
-      });
-
+      await addResponse(selectedTicket, newResponse.trim());
       setNewResponse('');
-      fetchTickets(); // Refresh to get new responses
     } catch (error) {
       console.error('Error submitting response:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send response.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
