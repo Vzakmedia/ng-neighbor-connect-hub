@@ -22,8 +22,8 @@ import {
   Play,
   AlertTriangle,
   Users,
-  Music,
-  HelpCircle
+  HelpCircle,
+  Music
 } from 'lucide-react';
 import { playNotification, playMessagingChime } from '@/utils/audioUtils';
 import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
