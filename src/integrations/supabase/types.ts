@@ -4753,69 +4753,7 @@ export type Database = {
       }
     }
     Views: {
-      public_businesses: {
-        Row: {
-          business_name: string | null
-          category: string | null
-          city: string | null
-          created_at: string | null
-          description: string | null
-          email: string | null
-          id: string | null
-          is_verified: boolean | null
-          logo_url: string | null
-          operating_hours: Json | null
-          phone: string | null
-          physical_address: string | null
-          rating: number | null
-          state: string | null
-          total_reviews: number | null
-          updated_at: string | null
-          user_id: string | null
-          website_url: string | null
-        }
-        Insert: {
-          business_name?: string | null
-          category?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          operating_hours?: Json | null
-          phone?: string | null
-          physical_address?: string | null
-          rating?: number | null
-          state?: string | null
-          total_reviews?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-          website_url?: string | null
-        }
-        Update: {
-          business_name?: string | null
-          category?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          email?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          operating_hours?: Json | null
-          phone?: string | null
-          physical_address?: string | null
-          rating?: number | null
-          state?: string | null
-          total_reviews?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-          website_url?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_staff_invitation: {

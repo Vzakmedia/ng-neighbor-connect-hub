@@ -111,8 +111,27 @@ const BusinessListings = () => {
   const fetchBusinesses = async () => {
     try {
       const { data: businessData, error } = await supabase
-        .from('public_businesses')
-        .select('*')
+        .from('businesses')
+        .select(`
+          id,
+          business_name,
+          description,
+          category,
+          phone,
+          email,
+          website_url,
+          physical_address,
+          city,
+          state,
+          logo_url,
+          operating_hours,
+          is_verified,
+          rating,
+          total_reviews,
+          created_at,
+          updated_at
+        `)
+        .eq('verification_status', 'verified')
         .order('is_verified', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(50);
