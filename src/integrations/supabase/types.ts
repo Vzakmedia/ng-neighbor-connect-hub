@@ -1572,6 +1572,45 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_automation_rules: {
+        Row: {
+          actions: Json
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          rule_type: string
+          trigger_conditions: Json
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          rule_type: string
+          trigger_conditions?: Json
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          rule_type?: string
+          trigger_conditions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       emergency_contact_requests: {
         Row: {
           created_at: string
@@ -1617,6 +1656,7 @@ export type Database = {
           is_confirmed: boolean | null
           is_primary: boolean | null
           is_primary_contact: boolean | null
+          notification_enabled: boolean | null
           phone_number: string
           preferred_methods:
             | Database["public"]["Enums"]["contact_method"][]
@@ -1638,6 +1678,7 @@ export type Database = {
           is_confirmed?: boolean | null
           is_primary?: boolean | null
           is_primary_contact?: boolean | null
+          notification_enabled?: boolean | null
           phone_number: string
           preferred_methods?:
             | Database["public"]["Enums"]["contact_method"][]
@@ -1659,6 +1700,7 @@ export type Database = {
           is_confirmed?: boolean | null
           is_primary?: boolean | null
           is_primary_contact?: boolean | null
+          notification_enabled?: boolean | null
           phone_number?: string
           preferred_methods?:
             | Database["public"]["Enums"]["contact_method"][]
@@ -1668,6 +1710,42 @@ export type Database = {
           search_query?: string | null
           search_type?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      emergency_escalation_log: {
+        Row: {
+          action_taken: string | null
+          alert_id: string
+          escalation_level: number
+          escalation_type: string
+          id: string
+          metadata: Json | null
+          success: boolean | null
+          triggered_at: string
+          triggered_by: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          alert_id: string
+          escalation_level?: number
+          escalation_type: string
+          id?: string
+          metadata?: Json | null
+          success?: boolean | null
+          triggered_at?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          alert_id?: string
+          escalation_level?: number
+          escalation_type?: string
+          id?: string
+          metadata?: Json | null
+          success?: boolean | null
+          triggered_at?: string
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -2493,8 +2571,10 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          escalation_count: number | null
           id: string
           is_resolved: boolean | null
+          last_escalated_at: string | null
           latitude: number
           longitude: number
           message: string | null
@@ -2508,8 +2588,10 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          escalation_count?: number | null
           id?: string
           is_resolved?: boolean | null
+          last_escalated_at?: string | null
           latitude: number
           longitude: number
           message?: string | null
@@ -2523,8 +2605,10 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          escalation_count?: number | null
           id?: string
           is_resolved?: boolean | null
+          last_escalated_at?: string | null
           latitude?: number
           longitude?: number
           message?: string | null
@@ -3081,6 +3165,59 @@ export type Database = {
         }
         Relationships: []
       }
+      public_emergency_alerts: {
+        Row: {
+          address: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          panic_alert_id: string | null
+          radius_km: number | null
+          situation_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          panic_alert_id?: string | null
+          radius_km?: number | null
+          situation_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          panic_alert_id?: string | null
+          radius_km?: number | null
+          situation_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_emergency_alerts_panic_alert_id_fkey"
+            columns: ["panic_alert_id"]
+            isOneToOne: false
+            referencedRelation: "panic_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -3260,6 +3397,7 @@ export type Database = {
           is_verified: boolean | null
           latitude: number | null
           longitude: number | null
+          priority_level: number | null
           severity: Database["public"]["Enums"]["alert_severity"] | null
           status: Database["public"]["Enums"]["alert_status"] | null
           title: string
@@ -3278,6 +3416,7 @@ export type Database = {
           is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
+          priority_level?: number | null
           severity?: Database["public"]["Enums"]["alert_severity"] | null
           status?: Database["public"]["Enums"]["alert_status"] | null
           title: string
@@ -3296,6 +3435,7 @@ export type Database = {
           is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
+          priority_level?: number | null
           severity?: Database["public"]["Enums"]["alert_severity"] | null
           status?: Database["public"]["Enums"]["alert_status"] | null
           title?: string
@@ -3313,6 +3453,42 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      safety_center_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key: string
+          setting_type: string
+          setting_value: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key?: string
+          setting_type?: string
+          setting_value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       saved_posts: {
         Row: {
