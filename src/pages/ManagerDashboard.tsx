@@ -99,7 +99,7 @@ const ManagerDashboard = () => {
         // Fetch detailed business data
         const { data: businessesData } = await supabase
           .from('businesses')
-          .select('*')
+          .select('id, business_name, description, category, city, state, is_verified, verification_status, created_at, updated_at')
           .order('created_at', { ascending: false })
           .limit(20);
 

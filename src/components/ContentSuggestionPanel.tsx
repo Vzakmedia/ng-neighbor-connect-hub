@@ -119,7 +119,6 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
             .from('businesses')
             .select('*')
             .eq('user_id', user.id)
-            .eq('verification_status', 'verified')
             .order('created_at', { ascending: false });
           
           if (businessError) throw businessError;

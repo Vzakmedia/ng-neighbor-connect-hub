@@ -111,9 +111,8 @@ const BusinessListings = () => {
   const fetchBusinesses = async () => {
     try {
       const { data: businessData, error } = await supabase
-        .from('businesses')
+        .from('public_businesses')
         .select('*')
-        .eq('verification_status', 'verified')
         .order('is_verified', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(50);

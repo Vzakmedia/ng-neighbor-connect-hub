@@ -4753,7 +4753,69 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_businesses: {
+        Row: {
+          business_name: string | null
+          category: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          id: string | null
+          is_verified: boolean | null
+          logo_url: string | null
+          operating_hours: Json | null
+          phone: string | null
+          physical_address: string | null
+          rating: number | null
+          state: string | null
+          total_reviews: number | null
+          updated_at: string | null
+          user_id: string | null
+          website_url: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          phone?: string | null
+          physical_address?: string | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          phone?: string | null
+          physical_address?: string | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_staff_invitation: {
@@ -5048,6 +5110,24 @@ export type Database = {
           state: string
           updated_at: string
           user_id: string
+        }[]
+      }
+      get_public_business_info: {
+        Args: { business_id: string }
+        Returns: {
+          business_name: string
+          category: string
+          city: string
+          description: string
+          email: string
+          id: string
+          is_verified: boolean
+          logo_url: string
+          phone: string
+          rating: number
+          state: string
+          total_reviews: number
+          website_url: string
         }[]
       }
       get_public_profile_info: {
