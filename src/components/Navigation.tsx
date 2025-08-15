@@ -61,13 +61,13 @@ const Navigation = () => {
     { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
   ];
 
-  // Mobile-specific order with services and messages swapped
+  // Mobile-specific order with marketplace beside community and safety in first 4
   const mobileNavItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
     { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
-    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
+    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
   ];
