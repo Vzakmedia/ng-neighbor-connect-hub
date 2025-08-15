@@ -49,16 +49,20 @@ const Community = () => {
             <Button
               variant={activeTab === "feed" ? "default" : "outline"}
               onClick={() => setActiveTab("feed")}
-              size="icon"
+              size={activeTab === "feed" ? "default" : "icon"}
+              className="transition-all duration-200"
             >
               <MessageCircle className="h-4 w-4" />
+              {activeTab === "feed" && <span className="ml-2">Community Feed</span>}
             </Button>
             <Button
               variant={activeTab === "boards" ? "default" : "outline"}
               onClick={() => setActiveTab("boards")}
-              size="icon"
+              size={activeTab === "boards" ? "default" : "icon"}
+              className="transition-all duration-200"
             >
               <Users className="h-4 w-4" />
+              {activeTab === "boards" && <span className="ml-2">Discussion Boards</span>}
             </Button>
           </div>
 
