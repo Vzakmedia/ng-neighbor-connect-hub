@@ -4629,6 +4629,30 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_profile_for_moderation: {
+        Args: { target_user_id: string }
+        Returns: {
+          city: string
+          created_at: string
+          email: string
+          full_name: string
+          is_verified: boolean
+          state: string
+          user_id: string
+        }[]
+      }
+      get_public_profile_info: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          city: string
+          full_name: string
+          is_verified: boolean
+          state: string
+          user_id: string
+        }[]
+      }
       get_public_safety_alerts: {
         Args: Record<PropertyKey, never>
         Returns: {
