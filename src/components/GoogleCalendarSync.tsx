@@ -47,9 +47,29 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
       
       if (error) {
         console.error('Failed to load Google Calendar config:', error);
+        
+        // Check if it's a configuration issue vs authentication issue
+        if (error.message?.includes('configuration') || error.message?.includes('API')) {
+          toast({
+            title: "Configuration Required",
+            description: "Google Calendar API keys need to be configured in Supabase Edge Function secrets",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Configuration Required", 
+            description: "Google Calendar integration needs to be configured by an administrator",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      // Check if we got valid configuration data
+      if (!data || !data.apiKey || !data.clientId) {
         toast({
-          title: "Configuration Required",
-          description: "Google Calendar integration needs to be configured by an administrator",
+          title: "Configuration Incomplete",
+          description: "Google Calendar API configuration is missing required values",
           variant: "destructive",
         });
         return;
