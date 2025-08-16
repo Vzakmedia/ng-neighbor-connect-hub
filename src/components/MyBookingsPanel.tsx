@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, MapPin, Clock, User, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { useBookingSync } from '@/hooks/useBookingSync';
 
 interface Booking {
   id: string;
@@ -33,12 +34,6 @@ const MyBookingsPanel = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      fetchBookings();
-    }
-  }, [user]);
 
   const fetchBookings = async () => {
     try {
@@ -81,6 +76,19 @@ const MyBookingsPanel = () => {
       setLoading(false);
     }
   };
+
+  // Use real-time booking sync
+  useBookingSync({ 
+    onBookingUpdated: fetchBookings, 
+    userId: user?.id 
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchBookings();
+    }
+  }, [user]);
+
 
   const handleCancelBooking = async (bookingId: string) => {
     setCancelling(bookingId);

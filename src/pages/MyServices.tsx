@@ -5,7 +5,8 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
 import CreateServiceDialog from '@/components/CreateServiceDialog';
-
+import ProviderBookingRequests from '@/components/ProviderBookingRequests';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft } from 'lucide-react';
 
@@ -51,7 +52,7 @@ const MyServices = () => {
             
             <div className="flex-1 min-w-0">
               <h1 className="text-xl md:text-2xl font-bold break-words">My Services</h1>
-              <p className="text-sm md:text-base text-muted-foreground">Manage your service offerings</p>
+              <p className="text-sm md:text-base text-muted-foreground">Manage your services and booking requests</p>
             </div>
             
             <div className="w-full sm:w-auto">
@@ -59,7 +60,20 @@ const MyServices = () => {
             </div>
           </div>
 
-          <ServicesList onRefresh={refreshTrigger} showOnlyServices={true} />
+          <Tabs defaultValue="services" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="services">My Services</TabsTrigger>
+              <TabsTrigger value="requests">Booking Requests</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="services">
+              <ServicesList onRefresh={refreshTrigger} showOnlyServices={true} />
+            </TabsContent>
+            
+            <TabsContent value="requests">
+              <ProviderBookingRequests />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
