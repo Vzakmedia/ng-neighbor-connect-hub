@@ -20,6 +20,7 @@ import {
   Share2,
   ChevronLeft,
   ChevronRight,
+  CheckCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
@@ -44,8 +45,12 @@ interface MarketplaceItem {
     user_id: string;
     full_name: string;
     avatar_url?: string;
-    phone?: string;
-    email?: string;
+    city?: string;
+    state?: string;
+    neighborhood?: string;
+    is_verified?: boolean;
+    bio?: string;
+    // Note: phone, email, address excluded for security
   };
 }
 
@@ -400,20 +405,21 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                       <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="font-medium">{product.profiles?.full_name || 'Anonymous'}</p>
-                    {product.profiles?.phone && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Phone className="h-3 w-3" />
-                        <span>{product.profiles.phone}</span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span>{product.profiles?.city || 'Location not specified'}</span>
+                    </div>
+                    {product.profiles?.is_verified && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="h-3 w-3" />
+                        <span>Verified Seller</span>
                       </div>
                     )}
-                    {product.profiles?.email && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        <span>{product.profiles.email}</span>
-                      </div>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Contact details available after inquiry
+                    </p>
                   </div>
                 </div>
               </div>

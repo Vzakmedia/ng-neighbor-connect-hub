@@ -4834,6 +4834,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      audit_profile_access: {
+        Args: { _access_reason?: string; _accessed_user_id: string }
+        Returns: undefined
+      }
       bulk_moderate_content: {
         Args: {
           action_type: string
@@ -5186,6 +5190,20 @@ export type Database = {
           top_revenue_sources: Json
           total_revenue: number
           transaction_count: number
+        }[]
+      }
+      get_safe_profile_for_interaction: {
+        Args: { _user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          city: string
+          created_at: string
+          full_name: string
+          is_verified: boolean
+          neighborhood: string
+          state: string
+          user_id: string
         }[]
       }
       get_sponsored_content_count: {
