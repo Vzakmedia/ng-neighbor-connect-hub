@@ -239,7 +239,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
 
       // Filter services by user's location based on view scope
       const filteredServices = servicesWithProfilesAndLikes.filter(service => {
-      if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
+        if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
         
         if (viewScope === 'state') {
           // For entire state view, show services from the same state only
@@ -249,9 +249,14 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
           return serviceState === userState;
         } else {
           // For neighborhood view, show services from same city and state
-          const sameCity = service.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
-          const sameState = service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
-          return sameCity && sameState && currentUserProfile.city;
+          const serviceCity = service.profiles.city?.trim().toLowerCase();
+          const userCity = currentUserProfile.city?.trim().toLowerCase();
+          const serviceState = service.profiles.state?.trim().toLowerCase();
+          const userState = currentUserProfile.state?.trim().toLowerCase();
+          const sameCity = serviceCity === userCity;
+          const sameState = serviceState === userState;
+          console.log('Neighborhood filtering service:', { serviceCity, userCity, serviceState, userState, sameCity, sameState });
+          return sameCity && sameState;
         }
       });
 
@@ -329,9 +334,14 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
           return itemState === userState;
         } else {
           // For neighborhood view, show items from same city and state
-          const sameCity = item.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
-          const sameState = item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
-          return sameCity && sameState && currentUserProfile.city;
+          const itemCity = item.profiles.city?.trim().toLowerCase();
+          const userCity = currentUserProfile.city?.trim().toLowerCase();
+          const itemState = item.profiles.state?.trim().toLowerCase();
+          const userState = currentUserProfile.state?.trim().toLowerCase();
+          const sameCity = itemCity === userCity;
+          const sameState = itemState === userState;
+          console.log('Neighborhood filtering item:', { itemCity, userCity, itemState, userState, sameCity, sameState });
+          return sameCity && sameState;
         }
       });
 
