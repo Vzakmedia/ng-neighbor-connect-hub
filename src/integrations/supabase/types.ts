@@ -4753,51 +4753,7 @@ export type Database = {
       }
     }
     Views: {
-      business_directory: {
-        Row: {
-          business_name: string | null
-          category: string | null
-          city: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          is_verified: boolean | null
-          logo_url: string | null
-          operating_hours: Json | null
-          rating: number | null
-          state: string | null
-          total_reviews: number | null
-        }
-        Insert: {
-          business_name?: string | null
-          category?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          operating_hours?: Json | null
-          rating?: number | null
-          state?: string | null
-          total_reviews?: number | null
-        }
-        Update: {
-          business_name?: string | null
-          category?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          operating_hours?: Json | null
-          rating?: number | null
-          state?: string | null
-          total_reviews?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_staff_invitation: {
@@ -4994,6 +4950,23 @@ export type Database = {
           phone: string
           physical_address: string
           website_url: string
+        }[]
+      }
+      get_business_directory: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          business_name: string
+          category: string
+          city: string
+          created_at: string
+          description: string
+          id: string
+          is_verified: boolean
+          logo_url: string
+          operating_hours: Json
+          rating: number
+          state: string
+          total_reviews: number
         }[]
       }
       get_business_verification_queue: {

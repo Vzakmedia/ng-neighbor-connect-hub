@@ -113,11 +113,7 @@ const BusinessListings = () => {
   const fetchBusinesses = async () => {
     try {
       const { data: businessData, error } = await supabase
-        .from('business_directory')
-        .select('*')
-        .order('is_verified', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_business_directory');
 
       if (error) throw error;
 
