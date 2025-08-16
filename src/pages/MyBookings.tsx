@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import ServicesList from '@/components/ServicesList';
+import MyBookingsPanel from '@/components/MyBookingsPanel';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const MyBookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   if (loading) {
     return (
@@ -49,7 +47,7 @@ const MyBookings = () => {
             </div>
           </div>
 
-          <ServicesList onRefresh={refreshTrigger} showOnlyBookings={true} />
+          <MyBookingsPanel />
         </div>
       </main>
     </div>
