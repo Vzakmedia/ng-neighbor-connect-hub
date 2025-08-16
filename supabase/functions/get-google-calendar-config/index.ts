@@ -6,6 +6,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Google Calendar config function called');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -14,8 +16,16 @@ serve(async (req) => {
     // Get Google Calendar configuration from environment variables
     const googleApiKey = Deno.env.get('GOOGLE_CALENDAR_API_KEY');
     const googleClientId = Deno.env.get('GOOGLE_CALENDAR_CLIENT_ID');
+    
+    console.log('Environment check:', {
+      hasApiKey: !!googleApiKey,
+      hasClientId: !!googleClientId,
+      apiKeyLength: googleApiKey?.length || 0,
+      clientIdLength: googleClientId?.length || 0
+    });
 
     if (!googleApiKey || !googleClientId) {
+      console.error('Missing Google Calendar configuration');
       return new Response(
         JSON.stringify({ 
           error: 'Google Calendar API configuration not found. Please configure GOOGLE_CALENDAR_API_KEY and GOOGLE_CALENDAR_CLIENT_ID in Supabase Edge Functions secrets.' 
@@ -27,9 +37,12 @@ serve(async (req) => {
       );
     }
 
-    // Only return the configuration to authenticated users
+    // Check authentication
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
+      console.error('No authorization header found');
       return new Response(
         JSON.stringify({ error: 'Authentication required' }),
         { 
@@ -39,6 +52,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Returning Google Calendar configuration successfully');
     return new Response(
       JSON.stringify({
         apiKey: googleApiKey,
