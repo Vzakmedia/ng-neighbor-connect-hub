@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import BookServiceDialog from './BookServiceDialog';
@@ -39,6 +40,7 @@ import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 import CreateServiceDialog from './CreateServiceDialog';
+import { SponsoredContent } from './SponsoredContent';
 
 
 interface Service {
@@ -91,6 +93,7 @@ interface MarketplaceItem {
 
 const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services' | 'goods'; locationScope?: 'neighborhood' | 'state' }) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -236,11 +239,14 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
 
       // Filter services by user's location based on view scope
       const filteredServices = servicesWithProfilesAndLikes.filter(service => {
-        if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
+      if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
         
         if (viewScope === 'state') {
           // For entire state view, show services from the same state only
-          return service.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+          const serviceState = service.profiles.state?.trim().toLowerCase();
+          const userState = currentUserProfile.state?.trim().toLowerCase();
+          console.log('State filtering service:', { serviceState, userState, match: serviceState === userState });
+          return serviceState === userState;
         } else {
           // For neighborhood view, show services from same city and state
           const sameCity = service.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
@@ -313,11 +319,14 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
 
       // Filter items by user's location based on view scope
       const filteredItems = itemsWithProfilesAndLikes.filter(item => {
-        if (!currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
+      if (!currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
         
         if (viewScope === 'state') {
           // For entire state view, show items from the same state only
-          return item.profiles.state?.trim().toLowerCase() === currentUserProfile.state?.trim().toLowerCase();
+          const itemState = item.profiles.state?.trim().toLowerCase();
+          const userState = currentUserProfile.state?.trim().toLowerCase();
+          console.log('State filtering item:', { itemState, userState, match: itemState === userState });
+          return itemState === userState;
         } else {
           // For neighborhood view, show items from same city and state
           const sameCity = item.profiles.city?.trim().toLowerCase() === currentUserProfile.city?.trim().toLowerCase();
@@ -617,7 +626,18 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <>
+          {/* Sponsored Content */}
+          {currentItems.length > 0 && (
+            <div className="mb-8">
+              <SponsoredContent 
+                userLocation={`${profile?.city || ''}, ${profile?.state || ''}`}
+                limit={2}
+              />
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentItems.map((item) => (
             <Card 
               key={item.id} 
@@ -825,7 +845,8 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Empty State */}
