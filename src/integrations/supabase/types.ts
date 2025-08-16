@@ -5331,6 +5331,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_promotion_access: {
+        Args: { _access_type: string; _record_id: string; _table_name: string }
+        Returns: undefined
+      }
       log_promotion_impression: {
         Args: {
           _impression_type?: string
