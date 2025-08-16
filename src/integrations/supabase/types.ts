@@ -974,6 +974,62 @@ export type Database = {
           },
         ]
       }
+      business_public_info: {
+        Row: {
+          business_name: string
+          category: string
+          city: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          operating_hours: Json | null
+          rating: number | null
+          state: string | null
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_name: string
+          category: string
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          id: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_name?: string
+          category?: string
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          operating_hours?: Json | null
+          rating?: number | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_public_info_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           business_license: string | null
