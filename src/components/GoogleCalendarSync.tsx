@@ -42,17 +42,27 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
   const loadGoogleCalendarConfig = async () => {
     try {
+      console.log('Loading Google Calendar config...');
+      
       // Fetch Google Calendar configuration from edge function
       const { data, error } = await supabase.functions.invoke('get-google-calendar-config');
+      
+      console.log('Google Calendar config response:', { data, error });
       
       if (error) {
         console.error('Failed to load Google Calendar config:', error);
         
-        // Check if it's a configuration issue vs authentication issue
-        if (error.message?.includes('configuration') || error.message?.includes('API')) {
+        // More specific error handling
+        if (error.message?.includes('Authentication required')) {
           toast({
-            title: "Configuration Required",
-            description: "Google Calendar API keys need to be configured in Supabase Edge Function secrets",
+            title: "Authentication Error",
+            description: "Please log in to access Google Calendar integration",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes('configuration not found')) {
+          toast({
+            title: "Configuration Missing",
+            description: "Google Calendar API keys are not configured. Please contact an administrator.",
             variant: "destructive",
           });
         } else {
@@ -67,6 +77,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
       // Check if we got valid configuration data
       if (!data || !data.apiKey || !data.clientId) {
+        console.error('Invalid Google Calendar config data:', data);
         toast({
           title: "Configuration Incomplete",
           description: "Google Calendar API configuration is missing required values",
@@ -75,6 +86,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
         return;
       }
 
+      console.log('Google Calendar config loaded successfully');
       setConfig(data);
       loadGoogleAPI();
     } catch (error) {
