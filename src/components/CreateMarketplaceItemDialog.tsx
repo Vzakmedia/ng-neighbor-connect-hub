@@ -123,7 +123,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
           title: formData.title,
           description: formData.description,
           category: formData.category as any,
-          price: parseInt(formData.price) * 100, // Convert to cents
+          price: parseInt(formData.price), // Store as entered
           location: formData.location,
           condition: formData.condition,
           is_negotiable: formData.is_negotiable,
