@@ -124,6 +124,8 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
   const initializeGapi = async (configData: GoogleCalendarConfig) => {
     try {
+      console.log('Initializing Google API with config:', configData);
+      
       await new Promise((resolve) => {
         window.gapi.load('client:auth2', resolve);
       });
@@ -136,7 +138,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
       });
 
       setApiLoaded(true);
-      console.log('Google API initialized successfully');
+      console.log('Google API initialized successfully, apiLoaded set to true');
     } catch (error) {
       console.error('Failed to initialize Google API:', error);
       toast({
@@ -148,7 +150,10 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
   };
 
   const handleConnect = async () => {
+    console.log('Connect button clicked', { apiLoaded, isSignedIn, isLoading });
+    
     if (!apiLoaded) {
+      console.log('API not loaded yet');
       toast({
         title: "Not Ready",
         description: "Google Calendar API is still loading",
@@ -156,6 +161,8 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
       });
       return;
     }
+    
+    console.log('Attempting to sign in...');
     await signIn();
   };
 
@@ -198,7 +205,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
           <Button
             variant={isSignedIn ? "outline" : "default"}
             onClick={isSignedIn ? handleDisconnect : handleConnect}
-            disabled={isLoading || !apiLoaded}
+            disabled={isLoading}
           >
             {isLoading ? (
               'Loading...'
