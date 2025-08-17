@@ -116,15 +116,42 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
 
       if (error) throw error;
       
-      // Convert weekly availability to available slots for this specific date
-      const slots = (data || []).map(slot => ({
-        id: `${slot.id}-${bookingDate.toISOString().split('T')[0]}`,
-        date: bookingDate.toISOString().split('T')[0],
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        max_bookings: slot.max_bookings,
-        current_bookings: 0, // We'll need to check existing bookings
-      }));
+      // Generate one-hour time slots from availability windows
+      const slots: AvailabilitySlot[] = [];
+      
+      (data || []).forEach(availabilityWindow => {
+        const startTime = availabilityWindow.start_time;
+        const endTime = availabilityWindow.end_time;
+        
+        // Parse start and end times
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        // Generate one-hour slots
+        let currentHour = startHour;
+        const startMinutes = startMinute;
+        const endTotalMinutes = endHour * 60 + endMinute;
+        
+        while ((currentHour * 60 + startMinutes) < endTotalMinutes) {
+          const slotStart = `${String(currentHour).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`;
+          const nextHour = currentHour + 1;
+          const slotEnd = `${String(nextHour).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`;
+          
+          // Only add slot if it doesn't exceed the availability window
+          if ((nextHour * 60 + startMinutes) <= endTotalMinutes) {
+            slots.push({
+              id: `${availabilityWindow.id}-${bookingDate.toISOString().split('T')[0]}-${slotStart}`,
+              date: bookingDate.toISOString().split('T')[0],
+              start_time: slotStart,
+              end_time: slotEnd,
+              max_bookings: availabilityWindow.max_bookings,
+              current_bookings: 0,
+            });
+          }
+          
+          currentHour++;
+        }
+      });
 
       // Check existing bookings for this date and update current_bookings
       if (slots.length > 0) {
@@ -149,8 +176,11 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         }
       }
 
-      // Filter slots where current_bookings < max_bookings
-      const availableSlots = slots.filter(slot => slot.current_bookings < slot.max_bookings);
+      // Filter slots where current_bookings < max_bookings and sort by time
+      const availableSlots = slots
+        .filter(slot => slot.current_bookings < slot.max_bookings)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time));
+      
       setAvailableSlots(availableSlots);
     } catch (error) {
       console.error('Error fetching available slots:', error);
