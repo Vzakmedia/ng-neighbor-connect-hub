@@ -88,7 +88,9 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
       console.log('Google Calendar config loaded successfully');
       setConfig(data);
-      loadGoogleAPI();
+      
+      // Load Google API after config is set
+      await loadGoogleAPIWithConfig(data);
     } catch (error) {
       console.error('Failed to load Google Calendar config:', error);
       toast({
@@ -99,18 +101,16 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
     }
   };
 
-  const loadGoogleAPI = async () => {
-    if (!config) return;
-    
+  const loadGoogleAPIWithConfig = async (configData: GoogleCalendarConfig) => {
     try {
       // Load Google API script
       if (!window.gapi) {
         const script = document.createElement('script');
         script.src = 'https://apis.google.com/js/api.js';
-        script.onload = initializeGapi;
+        script.onload = () => initializeGapi(configData);
         document.head.appendChild(script);
       } else {
-        initializeGapi();
+        initializeGapi(configData);
       }
     } catch (error) {
       console.error('Failed to load Google API:', error);
@@ -122,22 +122,21 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
     }
   };
 
-  const initializeGapi = async () => {
-    if (!config) return;
-    
+  const initializeGapi = async (configData: GoogleCalendarConfig) => {
     try {
       await new Promise((resolve) => {
         window.gapi.load('client:auth2', resolve);
       });
 
       await window.gapi.client.init({
-        apiKey: config.apiKey,
-        clientId: config.clientId,
-        discoveryDocs: [config.discoveryDoc],
-        scope: config.scopes
+        apiKey: configData.apiKey,
+        clientId: configData.clientId,
+        discoveryDocs: [configData.discoveryDoc],
+        scope: configData.scopes
       });
 
       setApiLoaded(true);
+      console.log('Google API initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Google API:', error);
       toast({
