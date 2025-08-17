@@ -172,14 +172,15 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const slot = availableSlots.find(s => s.id === selectedSlot);
       if (!slot) throw new Error('Invalid time slot selected');
 
-      // Create the booking
+      // Create the booking - fix timestamp format
+      const bookingDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
       const { error: bookingError } = await supabase
         .from('service_bookings')
         .insert({
           client_id: user.id,
           provider_id: service.user_id,
           service_id: service.id,
-          booking_date: `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}:00`,
+          booking_date: bookingDateTime,
           message: message || null,
           status: 'pending'
         });
@@ -191,8 +192,8 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
 
       // Sync to Google Calendar if enabled
       if (enableCalendarSync) {
-        const startDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}:00`;
-        const endDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.end_time}:00`;
+        const startDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
+        const endDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.end_time}`;
         
         await syncBookingToCalendar({
           title: service.title,
