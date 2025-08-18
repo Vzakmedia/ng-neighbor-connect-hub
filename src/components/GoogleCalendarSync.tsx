@@ -105,24 +105,58 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
     try {
       console.log('Loading Google API with config:', configData);
       
-      // Load Google API script
+      // Load Google API script using Promise wrapper for better error handling
       if (!window.gapi) {
         console.log('Loading Google API script...');
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => {
-          console.log('Google API script loaded, initializing...');
-          initializeGapi(configData);
-        };
-        script.onerror = (error) => {
-          console.error('Failed to load Google API script:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load Google Calendar script",
-            variant: "destructive",
-          });
-        };
-        document.head.appendChild(script);
+        
+        await new Promise<void>((resolve, reject) => {
+          // Check if script already exists
+          const existingScript = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
+          if (existingScript) {
+            console.log('Google API script already in DOM, waiting for load...');
+            existingScript.addEventListener('load', () => resolve());
+            existingScript.addEventListener('error', reject);
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = 'https://apis.google.com/js/api.js';
+          script.async = true;
+          script.defer = true;
+          
+          script.onload = () => {
+            console.log('Google API script loaded successfully');
+            resolve();
+          };
+          
+          script.onerror = (error) => {
+            console.error('Failed to load Google API script:', error);
+            reject(new Error('Failed to load Google API script'));
+          };
+          
+          // Add timeout to prevent hanging
+          const timeout = setTimeout(() => {
+            reject(new Error('Google API script loading timeout'));
+          }, 10000);
+          
+          script.onload = () => {
+            clearTimeout(timeout);
+            console.log('Google API script loaded successfully');
+            resolve();
+          };
+          
+          document.head.appendChild(script);
+        });
+        
+        // Wait a bit for gapi to be available
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (!window.gapi) {
+          throw new Error('Google API not available after script load');
+        }
+        
+        console.log('Google API script loaded, initializing...');
+        await initializeGapi(configData);
       } else {
         console.log('Google API already loaded, initializing...');
         await initializeGapi(configData);
@@ -130,8 +164,8 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
     } catch (error) {
       console.error('Failed to load Google API:', error);
       toast({
-        title: "Error",
-        description: "Failed to load Google Calendar integration",
+        title: "Setup Required",
+        description: "Google Calendar integration needs to be configured or network connection is required",
         variant: "destructive",
       });
     }
