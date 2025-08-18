@@ -12,8 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import GoogleCalendarSync from './GoogleCalendarSync';
 
 interface Service {
   id: string;
@@ -43,7 +41,7 @@ interface BookServiceDialogProps {
 const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { syncBookingToCalendar } = useGoogleCalendar();
+  
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
@@ -51,7 +49,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [message, setMessage] = useState('');
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [enableCalendarSync, setEnableCalendarSync] = useState(false);
+  
 
   // Fetch weekly availability when dialog opens
   useEffect(() => {
@@ -220,19 +218,6 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       // Note: We don't need to update booking count in weekly availability table
       // since current_bookings is calculated dynamically from service_bookings table
 
-      // Sync to Google Calendar if enabled
-      if (enableCalendarSync) {
-        const startDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
-        const endDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.end_time}`;
-        
-        await syncBookingToCalendar({
-          title: service.title,
-          description: service.description + (message ? `\n\nMessage: ${message}` : ''),
-          startDateTime,
-          endDateTime,
-          location: service.location || undefined,
-        });
-      }
 
       toast({
         title: "Booking request sent",
@@ -346,7 +331,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
             />
           </div>
 
-          <GoogleCalendarSync onSyncEnabledChange={setEnableCalendarSync} />
+          
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={loading || !bookingDate || !selectedSlot} className="flex-1">
