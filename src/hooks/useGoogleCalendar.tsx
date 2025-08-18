@@ -25,36 +25,50 @@ export const useGoogleCalendar = () => {
   }, []);
 
   const checkSignInStatus = () => {
-    if (typeof window !== 'undefined' && window.gapi) {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      if (authInstance) {
-        setIsSignedIn(authInstance.isSignedIn.get());
+    try {
+      if (typeof window !== 'undefined' && window.gapi?.auth2) {
+        const authInstance = window.gapi.auth2.getAuthInstance();
+        if (authInstance && authInstance.isSignedIn) {
+          setIsSignedIn(authInstance.isSignedIn.get());
+        }
       }
+    } catch (error) {
+      console.error('Error checking sign-in status:', error);
+      setIsSignedIn(false);
     }
   };
 
   const signIn = async () => {
     setIsLoading(true);
     try {
-      if (!window.gapi) {
-        throw new Error('Google API not loaded');
+      if (!window.gapi?.auth2) {
+        throw new Error('Google Auth API not properly initialized');
       }
 
       const authInstance = window.gapi.auth2.getAuthInstance();
-      await authInstance.signIn();
-      setIsSignedIn(true);
-      
-      toast({
-        title: "Connected to Google Calendar",
-        description: "You can now sync your bookings with Google Calendar",
-      });
+      if (!authInstance) {
+        throw new Error('Google Auth instance not available');
+      }
+
+      const user = await authInstance.signIn();
+      if (user && authInstance.isSignedIn.get()) {
+        setIsSignedIn(true);
+        toast({
+          title: "Connected to Google Calendar",
+          description: "You can now sync your bookings with Google Calendar",
+        });
+      } else {
+        throw new Error('Sign-in was not successful');
+      }
     } catch (error) {
       console.error('Google Calendar sign-in error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
-        title: "Error",
-        description: "Failed to connect to Google Calendar",
+        title: "Connection Failed",
+        description: `Failed to connect to Google Calendar: ${errorMessage}`,
         variant: "destructive",
       });
+      setIsSignedIn(false);
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +76,12 @@ export const useGoogleCalendar = () => {
 
   const signOut = async () => {
     try {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
+      if (window.gapi?.auth2) {
+        const authInstance = window.gapi.auth2.getAuthInstance();
+        if (authInstance) {
+          await authInstance.signOut();
+        }
+      }
       setIsSignedIn(false);
       
       toast({
@@ -72,6 +90,7 @@ export const useGoogleCalendar = () => {
       });
     } catch (error) {
       console.error('Google Calendar sign-out error:', error);
+      setIsSignedIn(false);
     }
   };
 

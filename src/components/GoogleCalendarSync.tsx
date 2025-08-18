@@ -18,6 +18,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
   // Initialize API when config is loaded
   useEffect(() => {
     if (config && !apiLoaded && !isInitializing) {
+      console.log('Starting Google Calendar API initialization...');
       initializeAPI(config);
     }
   }, [config, apiLoaded, isInitializing, initializeAPI]);
