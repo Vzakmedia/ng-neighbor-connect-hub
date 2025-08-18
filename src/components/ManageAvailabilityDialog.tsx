@@ -9,8 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
-import GoogleCalendarSync from './GoogleCalendarSync';
 
 interface Service {
   id: string;
@@ -44,11 +42,11 @@ const DAYS_OF_WEEK = [
 const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { syncBookingToCalendar } = useGoogleCalendar();
+  
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [weeklyAvailability, setWeeklyAvailability] = useState<WeeklyAvailability[]>([]);
-  const [enableCalendarSync, setEnableCalendarSync] = useState(false);
+  
 
   // Fetch existing weekly availability when dialog opens
   useEffect(() => {
@@ -224,7 +222,7 @@ const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialo
             })}
           </div>
 
-          <GoogleCalendarSync onSyncEnabledChange={setEnableCalendarSync} />
+          
 
           <div className="flex gap-2 pt-4">
             <Button 
