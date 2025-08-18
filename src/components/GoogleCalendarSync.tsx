@@ -59,6 +59,7 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
           isSignedIn={isSignedIn}
           isLoading={isLoading}
           apiLoaded={apiLoaded}
+          isInitializing={isInitializing}
           onConnect={handleConnect}
           onDisconnect={handleDisconnect}
         />
