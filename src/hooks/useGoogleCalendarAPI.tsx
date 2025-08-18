@@ -56,12 +56,18 @@ export const useGoogleCalendarAPI = () => {
     console.log('Loading gapi client and auth2...');
     
     await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Timeout loading Google API client'));
+      }, 10000);
+
       window.gapi.load('client:auth2', {
         callback: () => {
+          clearTimeout(timeout);
           console.log('GAPI client:auth2 loaded successfully');
           resolve();
         },
         onerror: (error: any) => {
+          clearTimeout(timeout);
           console.error('Failed to load GAPI client:auth2:', error);
           reject(new Error('Failed to load Google API client'));
         }
@@ -70,14 +76,25 @@ export const useGoogleCalendarAPI = () => {
 
     console.log('Initializing GAPI client with configuration...');
 
-    await window.gapi.client.init({
-      apiKey: config.apiKey,
-      clientId: config.clientId,
-      discoveryDocs: [config.discoveryDoc],
-      scope: config.scopes
-    });
+    try {
+      await window.gapi.client.init({
+        apiKey: config.apiKey,
+        clientId: config.clientId,
+        discoveryDocs: [config.discoveryDoc],
+        scope: config.scopes
+      });
 
-    console.log('Google API client initialized successfully');
+      // Verify the auth instance is properly initialized
+      const authInstance = window.gapi.auth2.getAuthInstance();
+      if (!authInstance) {
+        throw new Error('Auth instance not created after initialization');
+      }
+
+      console.log('Google API client initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Google API client:', error);
+      throw new Error(`Initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const resetAPI = useCallback(() => {
