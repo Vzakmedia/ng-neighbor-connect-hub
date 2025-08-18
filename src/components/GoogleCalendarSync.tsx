@@ -103,14 +103,29 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
   const loadGoogleAPIWithConfig = async (configData: GoogleCalendarConfig) => {
     try {
+      console.log('Loading Google API with config:', configData);
+      
       // Load Google API script
       if (!window.gapi) {
+        console.log('Loading Google API script...');
         const script = document.createElement('script');
         script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => initializeGapi(configData);
+        script.onload = () => {
+          console.log('Google API script loaded, initializing...');
+          initializeGapi(configData);
+        };
+        script.onerror = (error) => {
+          console.error('Failed to load Google API script:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load Google Calendar script",
+            variant: "destructive",
+          });
+        };
         document.head.appendChild(script);
       } else {
-        initializeGapi(configData);
+        console.log('Google API already loaded, initializing...');
+        await initializeGapi(configData);
       }
     } catch (error) {
       console.error('Failed to load Google API:', error);
@@ -126,9 +141,14 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
     try {
       console.log('Initializing Google API with config:', configData);
       
-      await new Promise((resolve) => {
-        window.gapi.load('client:auth2', resolve);
+      await new Promise((resolve, reject) => {
+        window.gapi.load('client:auth2', {
+          callback: resolve,
+          onerror: reject
+        });
       });
+
+      console.log('GAPI client:auth2 loaded, initializing client...');
 
       await window.gapi.client.init({
         apiKey: configData.apiKey,
@@ -139,8 +159,14 @@ const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) =>
 
       setApiLoaded(true);
       console.log('Google API initialized successfully, apiLoaded set to true');
+      
+      toast({
+        title: "Google Calendar Ready",
+        description: "Google Calendar integration is now ready to use",
+      });
     } catch (error) {
       console.error('Failed to initialize Google API:', error);
+      setApiLoaded(false);
       toast({
         title: "Setup Required",
         description: "Google Calendar integration needs to be configured with API keys",
