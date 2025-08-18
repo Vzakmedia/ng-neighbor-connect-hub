@@ -12,23 +12,27 @@ export const useGoogleCalendarAPI = () => {
   const initializeAPI = useCallback(async (config: GoogleCalendarConfig) => {
     // Prevent multiple initialization attempts
     if (isInitializing || initializationRef.current || apiLoaded) {
-      console.log('API initialization already in progress or completed');
+      console.log('GoogleCalendarAPI: Initialization already in progress or completed');
       return;
     }
     
     try {
       setIsInitializing(true);
       initializationRef.current = true;
-      console.log('Starting Google Calendar API initialization with config:', config);
+      console.log('GoogleCalendarAPI: Starting initialization with config:', config);
       
-      // Load the Google API script
+      // Load the Google API script with better error handling
+      console.log('GoogleCalendarAPI: Loading Google API script...');
       await GoogleCalendarLoader.loadGoogleAPI();
+      console.log('GoogleCalendarAPI: Google API script loaded successfully');
       
       // Initialize gapi client
+      console.log('GoogleCalendarAPI: Initializing GAPI client...');
       await initializeGapi(config);
+      console.log('GoogleCalendarAPI: GAPI client initialized successfully');
       
       setApiLoaded(true);
-      console.log('Google Calendar API initialization completed successfully');
+      console.log('GoogleCalendarAPI: Full initialization completed successfully');
       
       toast({
         title: "Google Calendar Ready",
@@ -36,15 +40,15 @@ export const useGoogleCalendarAPI = () => {
       });
       
     } catch (error) {
-      console.error('Failed to initialize Google Calendar API:', error);
+      console.error('GoogleCalendarAPI: Failed to initialize:', error);
       setApiLoaded(false);
       initializationRef.current = false;
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       toast({
-        title: "Connection Issue",
-        description: `Unable to connect to Google Calendar: ${errorMessage}`,
+        title: "Calendar Setup Failed",
+        description: `Unable to initialize Google Calendar: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
