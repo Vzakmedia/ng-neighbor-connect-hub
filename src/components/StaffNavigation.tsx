@@ -13,15 +13,29 @@ import {
   AlertCircle,
   Settings,
   BarChart3,
-  ArrowLeft
+  ArrowLeft,
+  Flag,
+  ShoppingCart,
+  TrendingUp,
+  Activity
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
 
 const StaffNavigation = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    newUsersToday: 0,
+    flaggedContent: 0,
+    marketplaceItems: 0,
+    activeMarketplaceItems: 0,
+    totalPosts: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -44,6 +58,47 @@ const StaffNavigation = () => {
     };
     
     checkUserRole();
+  }, [user]);
+
+  useEffect(() => {
+    if (!userRole) return;
+
+    const fetchStats = async () => {
+      try {
+        const [
+          { count: usersCount },
+          { count: newUsersCount },
+          { count: flaggedCount },
+          { count: marketplaceCount },
+          { count: activeMarketplaceCount },
+          { count: postsCount }
+        ] = await Promise.all([
+          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.length || 0 })),
+          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.filter(p => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
+          supabase.from('content_reports').select('*', { count: 'exact', head: true })
+            .eq('status', 'pending'),
+          supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
+          supabase.from('marketplace_items').select('*', { count: 'exact', head: true })
+            .eq('status', 'active'),
+          supabase.from('community_posts').select('*', { count: 'exact', head: true })
+        ]);
+
+        setStats({
+          totalUsers: usersCount || 0,
+          newUsersToday: newUsersCount || 0,
+          flaggedContent: flaggedCount || 0,
+          marketplaceItems: marketplaceCount || 0,
+          activeMarketplaceItems: activeMarketplaceCount || 0,
+          totalPosts: postsCount || 0
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
   }, [user]);
 
   if (loading) {
@@ -222,10 +277,65 @@ const StaffNavigation = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                Live statistics will appear here based on your role permissions
-              </p>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Platform Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statsLoading ? '...' : stats.totalUsers}</div>
+                  <p className="text-xs text-muted-foreground">Total registered</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">New Users Today</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statsLoading ? '...' : stats.newUsersToday}</div>
+                  <p className="text-xs text-muted-foreground">Registered today</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Flagged Content</CardTitle>
+                  <Flag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">{statsLoading ? '...' : stats.flaggedContent}</div>
+                  <p className="text-xs text-muted-foreground">Pending review</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Listings</CardTitle>
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statsLoading ? '...' : stats.activeMarketplaceItems}</div>
+                  <p className="text-xs text-muted-foreground">of {stats.marketplaceItems} total</p>
+                  <Progress 
+                    value={stats.marketplaceItems > 0 ? (stats.activeMarketplaceItems / stats.marketplaceItems) * 100 : 0} 
+                    className="h-1 mt-2" 
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Community Posts</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statsLoading ? '...' : stats.totalPosts}</div>
+                  <p className="text-xs text-muted-foreground">Total posts</p>
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>
