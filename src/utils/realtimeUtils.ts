@@ -82,7 +82,7 @@ export const createSafeSubscription = (
         }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         isRealTimeConnected = false;
-        console.log(`${debugName}: Real-time error, falling back to polling`);
+        console.info(`${debugName}: Real-time connection ${status.toLowerCase()}, using polling mode`);
         startPolling();
       }
     });
