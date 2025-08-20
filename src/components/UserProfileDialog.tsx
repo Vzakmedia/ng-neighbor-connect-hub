@@ -76,13 +76,22 @@ export const UserProfileDialog = ({
         .from('profiles')
         .select('*')
         .eq('full_name', userName)
-        .single();
+        .maybeSingle();
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileError);
         toast({
-          title: "Profile not found",
+          title: "Error loading profile",
           description: "Could not load user profile.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!profileData) {
+        toast({
+          title: "Profile not found",
+          description: "Could not find a profile with that name.",
           variant: "destructive",
         });
         return;
