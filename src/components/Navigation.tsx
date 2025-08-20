@@ -18,7 +18,9 @@ import {
   Users,
   Building,
   Plus,
-  Settings
+  Settings,
+  Building2,
+  Briefcase
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -56,9 +58,10 @@ const Navigation = () => {
     { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
-    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
+    { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
   ];
 
   // Mobile-specific order with marketplace beside community and safety in first 4
@@ -67,7 +70,8 @@ const Navigation = () => {
     { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
-    { id: 'services', icon: Users, label: 'Businesses', count: 0, path: '/services' },
+    { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
+    { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
   ];

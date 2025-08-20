@@ -27,6 +27,7 @@ import Chat from "./pages/Chat";
 import MarketplacePage from "./pages/MarketplacePage";
 import Safety from "./pages/Safety";
 import Profile from "./pages/Profile";
+import UserDirectory from "./pages/UserDirectory";
 import Settings from "./pages/Settings";
 import Services from "./pages/Services";
 import Events from "./pages/Events";
@@ -122,6 +123,7 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/users" element={<UserDirectory />} />
               <Route path="/my-services" element={<MyServices />} />
               <Route path="/my-goods" element={<MyGoods />} />
               <Route path="/my-bookings" element={<MyBookings />} />

@@ -72,10 +72,11 @@ export const UserProfileDialog = ({
     setLoading(true);
     try {
       // First find the user by name
+      // Search for user by display name in public_profiles (allows viewing all users)
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('full_name', userName)
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url, bio, city, state, neighborhood, phone_masked, is_verified, created_at')
+        .eq('display_name', userName)
         .maybeSingle();
 
       if (profileError && profileError.code !== 'PGRST116') {
@@ -97,7 +98,25 @@ export const UserProfileDialog = ({
         return;
       }
 
-      setProfile(profileData);
+      // Transform public profile data to match expected profile structure
+      const transformedProfile = {
+        id: profileData.user_id, // Add missing id field
+        user_id: profileData.user_id,
+        full_name: profileData.display_name,
+        avatar_url: profileData.avatar_url,
+        bio: profileData.bio,
+        city: profileData.city,
+        state: profileData.state,
+        neighborhood: profileData.neighborhood,
+        phone: profileData.phone_masked, // Use masked phone for privacy
+        email: '', // Add missing email field (empty for privacy)
+        is_verified: profileData.is_verified,
+        created_at: profileData.created_at,
+        updated_at: profileData.created_at, // Use created_at as fallback
+        address: '', // Add missing address field
+      };
+
+      setProfile(transformedProfile);
 
       // Fetch user's recent posts
       const { data: postsData, error: postsError } = await supabase
