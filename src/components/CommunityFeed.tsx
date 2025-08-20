@@ -53,6 +53,8 @@ import FeedAdCard from '@/components/FeedAdCard';
 import BoardSuggestionCard from '@/components/BoardSuggestionCard';
 import { usePromotionalAds } from '@/hooks/usePromotionalAds';
 import { useBoardSuggestions } from '@/hooks/useBoardSuggestions';
+import { PromotionalFeedIntegration } from '@/components/promotional/PromotionalFeedIntegration';
+import { usePromotionalContent } from '@/hooks/promotional/usePromotionalContent';
 
 
 interface DatabasePost {
@@ -94,7 +96,7 @@ interface Post {
   isSaved: boolean;
 }
 
-type FeedItem = Post | { type: 'ad'; ad: any } | { type: 'board_suggestion'; board: any };
+type FeedItem = Post | { type: 'ad'; ad: any } | { type: 'board_suggestion'; board: any } | { type: 'sponsored_content'; content: any };
 
 interface CommunityFeedProps {
   activeTab?: string;
@@ -109,6 +111,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
   const { ads: promotionalAds } = usePromotionalAds(5);
+  const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
   const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -355,48 +358,57 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     checkReadStatuses();
   }, [posts.map(p => p.id).join(','), user?.id]); // Use stable dependency
 
-  // Create combined feed with ads interspersed between posts
+  // Create combined feed with all content types interspersed
   useEffect(() => {
-    const createFeedWithAds = () => {
+    const createFeedWithContent = () => {
       if (posts.length === 0) {
         setFeedItems([]);
         return;
       }
 
       const combinedFeed: FeedItem[] = [];
+      const allPromotionalAds = [...promotionalAds, ...newPromotionalAds];
+      
       posts.forEach((post, index) => {
         combinedFeed.push(post);
         
-        // Insert board suggestions every 4 posts (higher priority than ads)
-        if ((index + 1) % 4 === 0 && boardSuggestions.length > 0 && index < posts.length - 1) {
-          const suggestionIndex = Math.floor(index / 4) % boardSuggestions.length;
+        // Insert board suggestions every 6 posts (highest priority)
+        if ((index + 1) % 6 === 0 && boardSuggestions.length > 0 && index < posts.length - 1) {
+          const suggestionIndex = Math.floor(index / 6) % boardSuggestions.length;
           const boardData = boardSuggestions[suggestionIndex];
           combinedFeed.push({ type: 'board_suggestion', board: boardData });
         }
         
-        // Insert ads every 5 posts, but not after the last post
-        else if ((index + 1) % 5 === 0 && index < posts.length - 1 && promotionalAds.length > 0) {
-          const adIndex = Math.floor(index / 5) % promotionalAds.length;
-          const adData = promotionalAds[adIndex];
+        // Insert sponsored content every 4 posts
+        else if ((index + 1) % 4 === 0 && index < posts.length - 1 && sponsoredContent.length > 0) {
+          const contentIndex = Math.floor(index / 4) % sponsoredContent.length;
+          const sponsoredData = sponsoredContent[contentIndex];
+          combinedFeed.push({ type: 'sponsored_content', content: sponsoredData });
+        }
+        
+        // Insert promotional ads every 5 posts
+        else if ((index + 1) % 5 === 0 && index < posts.length - 1 && allPromotionalAds.length > 0) {
+          const adIndex = Math.floor(index / 5) % allPromotionalAds.length;
+          const adData = allPromotionalAds[adIndex];
           
           // Transform promotional ad to match FeedAdCard format
           const feedAd = {
             id: adData.id,
             business: {
-              name: adData.location.split(',')[0] || 'Local Business',
+              name: adData.location?.split(',')[0] || 'Local Business',
               logo: undefined,
-              location: adData.location,
+              location: adData.location || 'Local Area',
               verified: true
             },
             title: adData.title,
             description: adData.description,
-            category: adData.category,
+            category: adData.category || 'General',
             image: adData.image,
-            images: adData.images,
+            images: adData.images || [],
             cta: 'Learn More',
             url: adData.url,
             promoted: true,
-            timePosted: adData.timePosted,
+            timePosted: adData.timePosted || 'Recently',
             likes: Math.floor(Math.random() * 50) + 10,
             comments: Math.floor(Math.random() * 20) + 5,
             rating: 4.5,
@@ -411,8 +423,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       setFeedItems(combinedFeed);
     };
 
-    createFeedWithAds();
-  }, [posts, promotionalAds, boardSuggestions]);
+    createFeedWithContent();
+  }, [posts, promotionalAds, newPromotionalAds, sponsoredContent, boardSuggestions]);
 
   useEffect(() => {
     if (propViewScope) {
@@ -785,8 +797,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   // Filter feed items based on post type and filters (updated)
   const filteredFeedItems = feedItems.filter(item => {
-    // Skip ads when filtering - they should always be shown
-    if (item.type === 'ad') return true;
+    // Skip ads and sponsored content when filtering - they should always be shown
+    if (item.type === 'ad' || item.type === 'sponsored_content' || item.type === 'board_suggestion') return true;
     
     const post = item as Post;
 
@@ -1001,6 +1013,36 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   board={item.board}
                   onJoin={refreshSuggestions}
                 />
+              );
+            }
+            
+            if (item.type === 'sponsored_content') {
+              const content = item.content;
+              return (
+                <Card key={`sponsored-${content.id}-${index}`} className="relative shadow-card">
+                  <Badge className="absolute top-2 right-2 z-10 bg-primary text-primary-foreground text-xs">
+                    Sponsored
+                  </Badge>
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-semibold text-primary">AD</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{content.title || 'Sponsored Content'}</h3>
+                        <p className="text-xs text-muted-foreground">Promoted</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">{content.description}</p>
+                    <Button
+                      size="sm"
+                      onClick={() => logInteraction(content.id, 'click')}
+                      className="w-full"
+                    >
+                      Learn More
+                    </Button>
+                  </CardContent>
+                </Card>
               );
             }
             
