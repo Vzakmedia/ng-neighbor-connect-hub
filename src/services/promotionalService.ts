@@ -34,9 +34,13 @@ export class PromotionalService {
         location: item.location,
         price: item.price,
         url: item.url,
-        sponsored: true,
-        timePosted: item.time_posted,
-        business: item.business,
+        sponsored: item.sponsored,
+        time_posted: item.time_posted,
+        business: typeof item.business === 'object' ? item.business : {
+          name: 'Business',
+          location: 'Local Area',
+          verified: false
+        },
         cta: item.cta,
         likes: item.likes || 0,
         comments: item.comments || 0,
