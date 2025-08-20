@@ -118,7 +118,11 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [hasNewContent, setHasNewContent] = useState(false);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
-  const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
+  const [viewScope, setViewScope] = useState<ViewScope>(() => {
+    // Restore user's preference from localStorage or use prop/default
+    const saved = localStorage.getItem('communityFeedViewScope') as ViewScope;
+    return propViewScope || saved || 'neighborhood';
+  });
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [openComments, setOpenComments] = useState<Set<string>>(new Set());
@@ -677,7 +681,17 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       console.log('CommunityFeed: Cleaning up real-time subscriptions');
       subscription?.unsubscribe();
     };
-  }, [user, profile, viewScope]);
+  }, [user?.id]); // Remove profile and viewScope dependencies
+
+  // Handle viewScope changes separately to prevent flickering
+  useEffect(() => {
+    if (user && viewScope) {
+      // Store current filter preference
+      localStorage.setItem('communityFeedViewScope', viewScope);
+      // Fetch posts with new filter
+      fetchPosts(true);
+    }
+  }, [viewScope]);
 
 
   const getPostTypeIcon = (type: string) => {
