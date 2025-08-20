@@ -204,12 +204,17 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   };
 
   const fetchPosts = async (isInitialLoad = false) => {
-    if (!user || !profile) {
-      console.log('CommunityFeed: Missing user or profile', { user: !!user, profile: !!profile });
+    if (!user) {
+      console.log('CommunityFeed: No user found, skipping fetch');
       return;
     }
     
-    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id, isInitialLoad });
+    // Allow posts to load even without complete profile, with fallback behavior
+    if (!profile) {
+      console.log('CommunityFeed: Profile still loading, will show all posts for now');
+    }
+    
+    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id, isInitialLoad, hasProfile: !!profile });
     
     if (isInitialLoad) {
       setLoading(true);
@@ -273,18 +278,31 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           // Apply location filtering based on user's registered city and state
           if (!post.profiles) return false; // Skip posts without profile data
           
+          // If user profile is not loaded yet, show all posts as fallback
+          if (!profile || !profile.city || !profile.state) {
+            console.log('CommunityFeed: Profile incomplete, showing all posts');
+            return true;
+          }
+          
           if (viewScope === 'state') {
             // For entire state view, show posts from the same state only
-            return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase() && profile.state;
+            return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else if (viewScope === 'city') {
             // For city view, show posts from same city only
-            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && profile.city;
+            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
+                   post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else {
             // For neighborhood view, show posts from same neighborhood, city and state
             const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
             const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
             const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-            return sameNeighborhood && sameCity && sameState && profile.neighborhood && profile.city && profile.state;
+            
+            // If user doesn't have neighborhood set, fall back to city-level filtering
+            if (!profile.neighborhood) {
+              return sameCity && sameState;
+            }
+            
+            return sameNeighborhood && sameCity && sameState;
           }
         });
 
@@ -311,7 +329,9 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   };
 
   const autoRefreshPosts = async () => {
-    if (!user || !profile || !lastFetchTime) return;
+    if (!user || !lastFetchTime) return;
+    
+    // Don't depend on profile for auto-refresh
 
     try {
       const { data: newPostsData } = await supabase
@@ -433,8 +453,19 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   }, [propViewScope]);
 
   useEffect(() => {
-    fetchPosts(true);
-  }, [user, profile, viewScope]);
+    // Allow initial fetch with just user, don't wait for profile
+    if (user) {
+      fetchPosts(true);
+    }
+  }, [user, viewScope]);
+  
+  // Separate effect to refetch when profile becomes available
+  useEffect(() => {
+    if (user && profile) {
+      console.log('CommunityFeed: Profile loaded, refetching posts with location filter');
+      fetchPosts(false);
+    }
+  }, [profile]);
 
   // Enhanced real-time system for comprehensive updates
   useEffect(() => {
