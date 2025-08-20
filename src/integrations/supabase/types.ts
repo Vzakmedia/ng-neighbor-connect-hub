@@ -3352,6 +3352,7 @@ export type Database = {
           display_name: string | null
           is_verified: boolean | null
           neighborhood: string | null
+          phone_masked: string | null
           state: string | null
           updated_at: string | null
           user_id: string
@@ -3364,6 +3365,7 @@ export type Database = {
           display_name?: string | null
           is_verified?: boolean | null
           neighborhood?: string | null
+          phone_masked?: string | null
           state?: string | null
           updated_at?: string | null
           user_id: string
@@ -3376,6 +3378,7 @@ export type Database = {
           display_name?: string | null
           is_verified?: boolean | null
           neighborhood?: string | null
+          phone_masked?: string | null
           state?: string | null
           updated_at?: string | null
           user_id?: string
@@ -5202,6 +5205,7 @@ export type Database = {
           full_name: string
           is_verified: boolean
           neighborhood: string
+          phone_masked: string
           state: string
           user_id: string
         }[]
@@ -5421,6 +5425,10 @@ export type Database = {
       mark_notification_read: {
         Args: { _notification_id: string; _user_id: string }
         Returns: boolean
+      }
+      mask_phone_number: {
+        Args: { phone_number: string }
+        Returns: string
       }
       process_alert_queue: {
         Args: Record<PropertyKey, never>
