@@ -245,9 +245,8 @@ const UnifiedMessaging = () => {
                           {searchResults.map((u) => (
                             <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
                               <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
-                              <div className="text-left">
+                               <div className="text-left">
                                 <div className="text-sm font-medium">{u.full_name}</div>
-                                <div className="text-xs text-muted-foreground">{u.phone}</div>
                               </div>
                             </button>
                           ))}
