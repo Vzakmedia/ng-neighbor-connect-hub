@@ -41,12 +41,26 @@ export interface PromotionalCampaign extends BasePromotionalContent {
 }
 
 export interface SponsoredContent {
-  promoted_post_id: string;
-  campaign_id: string;
-  post_type: string;
-  post_content: any;
-  priority: number;
-  cost_per_click: number;
+  id: string;
+  title: string;
+  description: string;
+  images: string[];
+  category: string;
+  location: string;
+  price: string;
+  url: string;
+  sponsored: boolean;
+  time_posted: string;
+  business: {
+    name: string;
+    logo?: string;
+    location: string;
+    verified: boolean;
+  };
+  cta: string;
+  likes: number;
+  comments: number;
+  type: string;
 }
 
 export interface PromotionalAd {

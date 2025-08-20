@@ -477,54 +477,56 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       const combinedFeed: FeedItem[] = [];
       const allPromotionalAds = [...promotionalAds, ...newPromotionalAds];
       
+      // Add promotional content after every 3rd post for better visibility
       posts.forEach((post, index) => {
         combinedFeed.push(post);
         
-        // Insert board suggestions every 6 posts (highest priority)
-        if ((index + 1) % 6 === 0 && boardSuggestions.length > 0 && index < posts.length - 1) {
-          const suggestionIndex = Math.floor(index / 6) % boardSuggestions.length;
-          const boardData = boardSuggestions[suggestionIndex];
-          combinedFeed.push({ type: 'board_suggestion', board: boardData });
-        }
-        
-        // Insert sponsored content every 4 posts
-        else if ((index + 1) % 4 === 0 && index < posts.length - 1 && sponsoredContent.length > 0) {
-          const contentIndex = Math.floor(index / 4) % sponsoredContent.length;
+        // Strategic placement: Higher frequency promotional content
+        // Insert sponsored content every 3 posts (high priority)
+        if ((index + 1) % 3 === 0 && sponsoredContent.length > 0) {
+          const contentIndex = Math.floor(index / 3) % sponsoredContent.length;
           const sponsoredData = sponsoredContent[contentIndex];
           combinedFeed.push({ type: 'sponsored_content', content: sponsoredData });
         }
         
-        // Insert promotional ads every 5 posts
-        else if ((index + 1) % 5 === 0 && index < posts.length - 1 && allPromotionalAds.length > 0) {
-          const adIndex = Math.floor(index / 5) % allPromotionalAds.length;
+        // Insert promotional ads every 4 posts 
+        else if ((index + 1) % 4 === 0 && allPromotionalAds.length > 0) {
+          const adIndex = Math.floor(index / 4) % allPromotionalAds.length;
           const adData = allPromotionalAds[adIndex];
           
           // Transform promotional ad to match FeedAdCard format
           const feedAd = {
             id: adData.id,
             business: {
-              name: adData.location?.split(',')[0] || 'Local Business',
-              logo: undefined,
-              location: adData.location || 'Local Area',
-              verified: true
-            },
-            title: adData.title,
-            description: adData.description,
-            category: adData.category || 'General',
-            image: adData.image,
-            images: adData.images || [],
-            cta: 'Learn More',
-            url: adData.url,
-            promoted: true,
-            timePosted: adData.timePosted || 'Recently',
-            likes: Math.floor(Math.random() * 50) + 10,
-            comments: Math.floor(Math.random() * 20) + 5,
-            rating: 4.5,
-            price: adData.price,
-            type: 'general' as const
+               name: adData.business?.name || adData.location?.split(',')[0] || 'Local Business',
+               logo: adData.business?.logo,
+               location: adData.business?.location || adData.location || 'Local Area',
+               verified: adData.business?.verified || false
+             },
+             title: adData.title || 'Advertisement',
+             description: adData.description || '',
+             category: adData.category || 'General',
+             image: adData.images && adData.images.length > 0 ? adData.images[0] : undefined,
+             images: adData.images || [],
+             cta: adData.cta || 'Learn More',
+             url: adData.url,
+             promoted: true,
+             timePosted: adData.timePosted || 'Recently',
+             likes: Math.floor(Math.random() * 50) + 10,
+             comments: Math.floor(Math.random() * 20) + 5,
+             rating: 4.5,
+             price: adData.price,
+             type: adData.type || 'general'
           };
           
           combinedFeed.push({ type: 'ad', ad: feedAd });
+        }
+        
+        // Insert board suggestions every 6 posts (lower priority)
+        else if ((index + 1) % 6 === 0 && boardSuggestions.length > 0) {
+          const suggestionIndex = Math.floor(index / 6) % boardSuggestions.length;
+          const boardData = boardSuggestions[suggestionIndex];
+          combinedFeed.push({ type: 'board_suggestion', board: boardData });
         }
       });
       
