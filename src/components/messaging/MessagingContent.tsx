@@ -170,7 +170,6 @@ const MessagingContent = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{user.full_name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user.phone}</p>
                       </div>
                     </div>
                   ))}
@@ -224,9 +223,6 @@ const MessagingContent = () => {
                         </span>
                       </div>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-muted-foreground truncate">
-                          {conversation.other_user_phone || 'No phone'}
-                        </span>
                         {hasUnread && (
                           <Badge variant="secondary" className="text-xs">
                             New
