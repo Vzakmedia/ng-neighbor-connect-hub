@@ -24,7 +24,9 @@ import {
   EyeOff,
   CheckCheck,
   X,
-  ChevronDown
+  ChevronDown,
+  Home,
+  Building
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -895,19 +897,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>View Scope</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                    <MapPin className="h-4 w-4 mr-2" />
+                    <Home className="h-4 w-4 mr-2" />
                     My Neighborhood
                     {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setViewScope('city')}>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    My City
+                    <Building className="h-4 w-4 mr-2" />
+                    Entire City
                     {viewScope === 'city' && <span className="ml-auto">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setViewScope('state')}>
-                    <Globe className="h-4 w-4 mr-2" />
-                    Entire State
-                    {viewScope === 'state' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
@@ -972,19 +969,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>View Scope</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                      <MapPin className="h-4 w-4 mr-2" />
+                      <Home className="h-4 w-4 mr-2" />
                       My Neighborhood
                       {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setViewScope('city')}>
-                      <MapPin className="h-4 w-4 mr-2" />
-                      My City
+                      <Building className="h-4 w-4 mr-2" />
+                      Entire City
                       {viewScope === 'city' && <span className="ml-auto">✓</span>}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setViewScope('state')}>
-                      <Globe className="h-4 w-4 mr-2" />
-                      Entire State
-                      {viewScope === 'state' && <span className="ml-auto">✓</span>}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
