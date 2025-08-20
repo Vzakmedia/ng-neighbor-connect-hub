@@ -48,7 +48,7 @@ const HomeDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
-  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
+  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('state'); // Default to state for better content visibility
   const dashboardStats = useDashboardStats();
   const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(8);
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);

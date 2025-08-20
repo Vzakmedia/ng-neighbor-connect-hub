@@ -288,21 +288,26 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
             // For entire state view, show posts from the same state only
             return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else if (viewScope === 'city') {
-            // For city view, show posts from same city only
+            // For city view, show posts from same city AND state
             return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
                    post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else {
-            // For neighborhood view, show posts from same neighborhood, city and state
+            // For neighborhood view, be more inclusive - show posts from same city if neighborhood doesn't match
             const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
             const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
             const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
             
-            // If user doesn't have neighborhood set, fall back to city-level filtering
-            if (!profile.neighborhood) {
-              return sameCity && sameState;
+            // If same neighborhood, definitely show
+            if (sameNeighborhood && sameCity && sameState) {
+              return true;
             }
             
-            return sameNeighborhood && sameCity && sameState;
+            // If no neighborhood match but same city and state, still show (be more inclusive)
+            if (sameCity && sameState) {
+              return true;
+            }
+            
+            return false;
           }
         });
 
