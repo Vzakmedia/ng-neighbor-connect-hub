@@ -23,7 +23,25 @@ export class PromotionalService {
       });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the RPC result to SponsoredContent format
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        images: Array.isArray(item.images) ? item.images : [],
+        category: item.category,
+        location: item.location,
+        price: item.price,
+        url: item.url,
+        sponsored: true,
+        timePosted: item.time_posted,
+        business: item.business,
+        cta: item.cta,
+        likes: item.likes || 0,
+        comments: item.comments || 0,
+        type: item.type
+      }));
     } catch (error) {
       console.error('Error fetching sponsored content:', error);
       return [];

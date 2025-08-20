@@ -4969,12 +4969,21 @@ export type Database = {
       get_active_promoted_content: {
         Args: { content_limit?: number; user_location?: string }
         Returns: {
-          campaign_id: string
-          cost_per_click: number
-          post_content: Json
-          post_type: string
-          priority: number
-          promoted_post_id: string
+          business: Json
+          category: string
+          comments: number
+          cta: string
+          description: string
+          id: string
+          images: Json
+          likes: number
+          location: string
+          price: string
+          sponsored: boolean
+          time_posted: string
+          title: string
+          type: string
+          url: string
         }[]
       }
       get_admin_user_stats: {
