@@ -26,7 +26,8 @@ import {
   X,
   ChevronDown,
   Home,
-  Building
+  Building,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -111,7 +112,10 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
+  const [backgroundPosts, setBackgroundPosts] = useState<Post[]>([]);
+  const [hasNewContent, setHasNewContent] = useState(false);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
   const [viewScope, setViewScope] = useState<ViewScope>(propViewScope || 'neighborhood');
@@ -335,11 +339,9 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
   };
 
-  const autoRefreshPosts = async () => {
+  const backgroundRefresh = async () => {
     if (!user || !lastFetchTime) return;
     
-    // Don't depend on profile for auto-refresh
-
     try {
       const { data: newPostsData } = await supabase
         .from('community_posts')
@@ -348,16 +350,91 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         .order('created_at', { ascending: false });
 
       if (newPostsData && newPostsData.length > 0) {
-        // Automatically refresh posts when new ones are found
-        await fetchPosts(false);
-        toast({
-          title: "New posts loaded",
-          description: `${newPostsData.length} new post${newPostsData.length > 1 ? 's' : ''} loaded automatically.`,
-        });
+        // Prepare new posts in background but don't update UI
+        await fetchPostsToBackground();
+        setHasNewContent(true);
       }
     } catch (error) {
       console.error('Error checking for new posts:', error);
     }
+  };
+
+  const fetchPostsToBackground = async () => {
+    if (!user) return;
+    
+    try {
+      // Same logic as fetchPosts but store in backgroundPosts
+      let postsQuery = supabase
+        .from('community_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const { data: postsData, error: postsError } = await postsQuery;
+      if (postsError) return;
+
+      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      const { data: profilesData } = await supabase
+        .from('public_profiles')
+        .select('user_id, display_name, avatar_url, neighborhood, city, state')
+        .in('user_id', userIds);
+
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.user_id, {
+          full_name: p.display_name,
+          avatar_url: p.avatar_url,
+          neighborhood: p.neighborhood,
+          city: p.city,
+          state: p.state,
+        }])
+      );
+
+      const filteredAndTransformed = (postsData || [])
+        .map(post => ({
+          ...post,
+          profiles: profilesMap.get(post.user_id) || null
+        }))
+        .filter(post => {
+          if (!post.profiles) return false;
+          if (!profile || !profile.city || !profile.state) return true;
+          
+          if (viewScope === 'state') {
+            return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
+          } else if (viewScope === 'city') {
+            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
+                   post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
+          } else {
+            const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
+            const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
+            const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
+            
+            if (sameNeighborhood && sameCity && sameState) return true;
+            if (sameCity && sameState) return true;
+            return false;
+          }
+        });
+
+      const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
+      setBackgroundPosts(processedPosts);
+    } catch (error) {
+      console.error('Error preparing background posts:', error);
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    if (hasNewContent && backgroundPosts.length > 0) {
+      // Use prepared background posts
+      setPosts(backgroundPosts);
+      setHasNewContent(false);
+      toast({
+        title: "Feed refreshed",
+        description: "Showing latest posts from your area.",
+      });
+    } else {
+      // Fetch fresh if no background data
+      await fetchPosts(false);
+    }
+    setRefreshing(false);
   };
 
   // Check read statuses for posts with memoization to prevent infinite loops
@@ -869,6 +946,48 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   return (
     <div className="space-y-4">
+      {/* Header with location filter and refresh button */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card p-4 rounded-lg">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">Community Feed</h2>
+          
+          {/* Current location scope indicator */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            {viewScope === 'neighborhood' && <Home className="h-4 w-4" />}
+            {viewScope === 'city' && <Building className="h-4 w-4" />}
+            {viewScope === 'state' && <Globe className="h-4 w-4" />}
+            <span>
+              {viewScope === 'neighborhood' ? 'My Neighbourhood' : 
+               viewScope === 'city' ? 'My City' : 'Entire State'}
+            </span>
+          </div>
+          
+          {unreadCounts.community > 0 && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              {unreadCounts.community} new
+            </Badge>
+          )}
+          
+          {hasNewContent && (
+            <Badge variant="default" className="bg-green-100 text-green-800">
+              New content available
+            </Badge>
+          )}
+        </div>
+        
+        {/* Refresh button */}
+        <Button
+          onClick={handleManualRefresh}
+          disabled={refreshing}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </div>
+
       {/* Post Type Filter Buttons */}
       {/* Desktop layout */}
       <div className="hidden md:flex items-center justify-center">
@@ -898,13 +1017,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                   <DropdownMenuLabel>View Scope</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
                     <Home className="h-4 w-4 mr-2" />
-                    My Neighborhood
+                    My Neighbourhood
                     {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setViewScope('city')}>
                     <Building className="h-4 w-4 mr-2" />
-                    Entire City
+                    My City
                     {viewScope === 'city' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewScope('state')}>
+                    <Globe className="h-4 w-4 mr-2" />
+                    Entire State
+                    {viewScope === 'state' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
@@ -970,13 +1094,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
                     <DropdownMenuLabel>View Scope</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
                       <Home className="h-4 w-4 mr-2" />
-                      My Neighborhood
+                      My Neighbourhood
                       {viewScope === 'neighborhood' && <span className="ml-auto">✓</span>}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setViewScope('city')}>
                       <Building className="h-4 w-4 mr-2" />
-                      Entire City
+                      My City
                       {viewScope === 'city' && <span className="ml-auto">✓</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('state')}>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Entire State
+                      {viewScope === 'state' && <span className="ml-auto">✓</span>}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowUnreadOnly(!showUnreadOnly)}>
