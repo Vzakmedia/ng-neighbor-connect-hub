@@ -185,10 +185,9 @@ export const UserDirectory = () => {
                     <div className="flex items-center space-x-2">
                       <h3 className="text-lg font-semibold">{profile.display_name || 'Anonymous User'}</h3>
                       {profile.is_verified && (
-                        <Badge variant="default" className="bg-blue-500">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Verified
-                        </Badge>
+                        <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
+                          <Shield className="h-3 w-3 text-white" />
+                        </div>
                       )}
                     </div>
                     
