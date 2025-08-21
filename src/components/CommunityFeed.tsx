@@ -122,7 +122,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [viewScope, setViewScope] = useState<ViewScope>(() => {
-    // Restore user's preference from localStorage or use prop/default
+    // Default to neighborhood
     const saved = localStorage.getItem('communityFeedViewScope') as ViewScope;
     return propViewScope || saved || 'neighborhood';
   });
@@ -1035,13 +1035,17 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           
           {/* Current location scope indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            {viewScope === 'neighborhood' && <Home className="h-4 w-4" />}
-            {viewScope === 'city' && <Building className="h-4 w-4" />}
-            {viewScope === 'state' && <Globe className="h-4 w-4" />}
-            <span>
-              {viewScope === 'neighborhood' ? 'My Neighbourhood' : 
-               viewScope === 'city' ? 'My City' : 'Entire State'}
-            </span>
+            {showAllPosts ? (
+              <>
+                <Globe className="h-4 w-4" />
+                <span>All Posts</span>
+              </>
+            ) : (
+              <>
+                <Home className="h-4 w-4" />
+                <span>My Neighbourhood</span>
+              </>
+            )}
           </div>
           
           {unreadCounts.community > 0 && (
@@ -1057,17 +1061,31 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           )}
         </div>
         
-        {/* Refresh button */}
-        <Button
-          onClick={handleManualRefresh}
-          disabled={refreshing}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        {/* Toggle between neighborhood and all posts */}
+        <div className="flex items-center gap-2">
+          <Tabs value={showAllPosts ? "all" : "local"} onValueChange={(value) => setShowAllPosts(value === "all")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="local" className="text-xs">
+                My Neighbourhood
+              </TabsTrigger>
+              <TabsTrigger value="all" className="text-xs">
+                All Posts
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {/* Refresh button */}
+          <Button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Post Type Filter Buttons */}
