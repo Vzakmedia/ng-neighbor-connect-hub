@@ -217,7 +217,7 @@ export const CommunityPostCard = ({
 
         {showComments && (
           <div className="pt-3 border-t animate-fade-in">
-            <CommentSection postId={event.id} />
+            <CommentSection postId={event.id} commentCount={event.comments_count || 0} />
           </div>
         )}
       </CardContent>

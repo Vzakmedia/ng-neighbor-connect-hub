@@ -70,10 +70,20 @@ export const useCommunityFeed = () => {
       };
 
       // Try to get from cache first
-      const cachedPosts = postCache.get(userLocation.city, userLocation.state);
+      const cachedPosts = postCache.getCachedPosts(userLocation, 'city');
       if (cachedPosts && cachedPosts.length > 0) {
         console.log('Using cached posts:', cachedPosts.length);
-        setEvents(cachedPosts);
+        // Convert cached posts to Event format
+        const eventPosts = cachedPosts.map(post => ({
+          ...post,
+          created_at: post.timestamp,
+          author: {
+            user_id: post.user_id,
+            full_name: post.author.name,
+            avatar_url: post.author.avatar
+          }
+        })) as Event[];
+        setEvents(eventPosts);
         setLoading(false);
         
         // Refresh cache in background
@@ -133,7 +143,19 @@ export const useCommunityFeed = () => {
       setEvents(enrichedPosts);
       
       // Cache the enriched posts
-      postCache.set(userLocation.city, userLocation.state, enrichedPosts);
+      const cacheablePosts = enrichedPosts.map(post => ({
+        ...post,
+        timestamp: post.created_at,
+        type: 'general' as const,
+        likes: post.likes_count || 0,
+        comments: post.comments_count || 0,
+        author: {
+          name: post.author?.full_name || 'Anonymous',
+          avatar: post.author?.avatar_url,
+          location: post.location || ''
+        }
+      }));
+      postCache.setCachedPosts(cacheablePosts, userLocation, 'city');
     }
   };
 
@@ -295,7 +317,7 @@ export const useCommunityFeed = () => {
           city: profile.city,
           state: profile.state
         };
-        postCache.invalidateLocation(userLocation.city, userLocation.state);
+        postCache.invalidateAll();
       }
       
       await fetchPosts();

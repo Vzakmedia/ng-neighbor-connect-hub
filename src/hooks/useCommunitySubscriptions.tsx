@@ -70,7 +70,7 @@ export const useCommunitySubscriptions = ({
                   city: profile.city,
                   state: profile.state
                 };
-                postCache.invalidateLocation(userLocation.city, userLocation.state);
+                postCache.invalidateAll();
               }
               
               if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
