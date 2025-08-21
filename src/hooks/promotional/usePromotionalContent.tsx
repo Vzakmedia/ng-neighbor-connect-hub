@@ -48,8 +48,11 @@ export const usePromotionalContent = (limit: number = 3) => {
   };
 
   useEffect(() => {
-    fetchContent();
-  }, [user, userLocation, limit]);
+    // Only fetch when we have user and location data, and limit frequency
+    if (user && userLocation && userLocation !== ', ') {
+      fetchContent();
+    }
+  }, [user?.id, userLocation]);
 
   return {
     sponsoredContent,

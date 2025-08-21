@@ -566,138 +566,66 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
 
   useEffect(() => {
     // Allow initial fetch with just user, don't wait for profile
-    if (user) {
+    if (user && !loading) {
       fetchPosts(true);
     }
-  }, [user, viewScope]);
+  }, [user]); // Remove viewScope dependency to prevent repeated fetches
   
-  // Separate effect to refetch when profile becomes available
+  // Separate effect to refetch when profile becomes available (only once)
   useEffect(() => {
-    if (user && profile) {
+    if (user && profile && posts.length === 0) {
       console.log('CommunityFeed: Profile loaded, refetching posts with location filter');
       fetchPosts(false);
     }
-  }, [profile]);
+  }, [profile]); // Only depend on profile, not user
 
-  // Enhanced real-time system for comprehensive updates
+  // Enhanced real-time system with debouncing
   useEffect(() => {
     if (!user) return;
 
-    console.log('CommunityFeed: Setting up comprehensive real-time subscriptions');
+    let debounceTimeout: NodeJS.Timeout;
+    const debouncedFetch = () => {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => fetchPosts(false), 2000);
+    };
+
+    console.log('CommunityFeed: Setting up optimized real-time subscriptions');
 
     const subscription = createSafeSubscription(
       (channel) => channel
-        // Listen to all community posts changes
+        // Listen to all community posts changes with reduced frequency
         .on('postgres_changes', {
-          event: '*', // INSERT, UPDATE, DELETE
+          event: 'INSERT',
           schema: 'public',
           table: 'community_posts'
         }, (payload) => {
-          console.log('CommunityFeed: Community post change detected:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            // New post added - just set flag for user to refresh manually
-            setHasNewPosts(true);
-          } else if (payload.eventType === 'UPDATE') {
-            // Post updated - update in place if exists
-            setPosts(prev => prev.map(post => 
-              post.id === payload.new.id ? { ...post } : post
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            // Post deleted - remove from state
-            setPosts(prev => prev.filter(post => post.id !== payload.old.id));
-            toast({
-              title: "Post removed",
-              description: "A post has been removed from your feed.",
-            });
-          }
+          console.log('CommunityFeed: New post detected');
+          setHasNewPosts(true); // Just show indicator, don't auto-fetch
         })
-        // Listen to post likes changes
         .on('postgres_changes', {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'post_likes'
+          table: 'community_posts'
         }, (payload) => {
-          console.log('CommunityFeed: Post like change detected:', payload);
-          
-          const postId = payload.new?.post_id || payload.old?.post_id;
-          if (!postId) return;
-
-          // Update like count and status in real-time
-          setPosts(prev => prev.map(post => {
-            if (post.id === postId) {
-              if (payload.eventType === 'INSERT') {
-                return {
-                  ...post,
-                  likes: post.likes + 1,
-                  isLiked: payload.new.user_id === user.id ? true : post.isLiked
-                };
-              } else if (payload.eventType === 'DELETE') {
-                return {
-                  ...post,
-                  likes: Math.max(0, post.likes - 1),
-                  isLiked: payload.old.user_id === user.id ? false : post.isLiked
-                };
-              }
-            }
-            return post;
-          }));
+          console.log('CommunityFeed: Post updated');
+          // Update in place if exists
+          setPosts(prev => prev.map(post => 
+            post.id === payload.new.id ? { ...post } : post
+          ));
         })
-        // Listen to post comments changes
         .on('postgres_changes', {
-          event: '*',
+          event: 'DELETE',
           schema: 'public',
-          table: 'post_comments'
+          table: 'community_posts'
         }, (payload) => {
-          console.log('CommunityFeed: Comment change detected:', payload);
-          
-          const postId = payload.new?.post_id || payload.old?.post_id;
-          if (!postId) return;
-
-          // Update comment count in real-time
-          setPosts(prev => prev.map(post => {
-            if (post.id === postId) {
-              if (payload.eventType === 'INSERT') {
-                return { ...post, comments: post.comments + 1 };
-              } else if (payload.eventType === 'DELETE') {
-                return { ...post, comments: Math.max(0, post.comments - 1) };
-              }
-            }
-            return post;
-          }));
-        })
-        // Listen to saved posts changes
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'saved_posts',
-          filter: `user_id=eq.${user.id}`
-        }, (payload) => {
-          console.log('CommunityFeed: Saved post change detected:', payload);
-          
-          const postId = payload.new?.post_id || payload.old?.post_id;
-          if (!postId) return;
-
-          // Update saved status in real-time
-          setPosts(prev => prev.map(post => {
-            if (post.id === postId) {
-              if (payload.eventType === 'INSERT') {
-                return { ...post, isSaved: true };
-              } else if (payload.eventType === 'DELETE') {
-                return { ...post, isSaved: false };
-              }
-            }
-            return post;
-          }));
+          console.log('CommunityFeed: Post deleted');
+          setPosts(prev => prev.filter(post => post.id !== payload.old.id));
         }),
       {
-        channelName: 'community_feed_comprehensive',
-        onError: () => {
-          console.log('CommunityFeed: Real-time error, falling back to polling');
-          fetchPosts(false);
-        },
-        pollInterval: 30000, // Poll every 30 seconds as fallback
-        debugName: 'CommunityFeedComprehensive'
+        channelName: `community_feed_${user.id}`, // User-specific channel
+        onError: debouncedFetch, // Use debounced fetch for error recovery
+        pollInterval: 120000, // Poll every 2 minutes instead of 30 seconds
+        debugName: 'CommunityFeedOptimized'
       }
     );
 
