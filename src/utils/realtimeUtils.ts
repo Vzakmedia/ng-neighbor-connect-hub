@@ -79,12 +79,40 @@ export const createSafeSubscription = (
   
   try {
     channel = supabase.channel(channelName);
+    
+    // Enhanced error handling to prevent console errors
+    if (channel.conn?.conn) {
+      const originalOnError = channel.conn.conn.onerror;
+      channel.conn.conn.onerror = (event: Event) => {
+        // Prevent the error from propagating to console
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        
+        console.debug(`${debugName}: WebSocket connection error (handled gracefully)`);
+        
+        // Only call custom error handler if provided
+        if (options.onError) {
+          options.onError();
+        }
+        
+        // Start polling as fallback
+        if (!pollingInterval) {
+          startPolling();
+        }
+        
+        // Call original handler if it exists
+        if (originalOnError) {
+          originalOnError.call(this, event);
+        }
+      };
+    }
+    
     subscription = channelBuilder(channel).subscribe((status: string) => {
-      console.log(`${debugName}: Subscription status:`, status);
+      console.debug(`${debugName}: Subscription status:`, status);
       
       if (status === 'SUBSCRIBED') {
         isRealTimeConnected = true;
-        console.log(`${debugName}: Real-time connected, stopping polling`);
+        console.debug(`${debugName}: Real-time connected, stopping polling`);
         if (pollingInterval) {
           clearInterval(pollingInterval);
           pollingInterval = null;
@@ -96,7 +124,7 @@ export const createSafeSubscription = (
       }
     });
   } catch (error) {
-    console.error(`${debugName}: Real-time setup failed, using polling only:`, error);
+    console.debug(`${debugName}: Real-time setup failed, using polling only:`, error);
     isRealTimeConnected = false;
   }
   
