@@ -148,192 +148,179 @@ export const CommunityFeedFilters = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent 
-            className="w-80 sm:w-96 p-0 max-h-[75vh] overflow-hidden bg-popover border shadow-lg z-50" 
+            className="w-72 sm:w-80 p-0 bg-popover border shadow-lg z-50" 
             align="start"
           >
-            <div className="flex flex-col h-full max-h-[75vh]">
-              {/* Sticky Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-popover sticky top-0 z-10">
+            <div className="p-3 space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <h4 className="font-semibold text-base">Filters</h4>
+                  <h4 className="font-semibold text-sm">Filters</h4>
                 </div>
                 {activeFiltersCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearAllFilters}
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors h-8 px-2"
+                    className="text-xs text-muted-foreground hover:text-destructive h-6 px-2"
                   >
-                    Reset All
+                    Reset
                   </Button>
                 )}
               </div>
               
-              {/* Scrollable Content */}
-              <div className="overflow-y-auto flex-1 p-4 space-y-4">
-
-                {/* Quick Sort & Time - Compact Mobile Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold flex items-center gap-2">
-                      <Calendar className="h-3 w-3 text-primary" />
-                      Sort
-                    </Label>
-                    <Select
-                      value={filters.sortBy}
-                      onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
-                    >
-                      <SelectTrigger className="h-8 bg-background/50 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover">
-                        {sortOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value} className="text-xs">
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold flex items-center gap-2">
-                      <Calendar className="h-3 w-3 text-primary" />
-                      Period
-                    </Label>
-                    <Select
-                      value={filters.dateRange}
-                      onValueChange={(value) => onFiltersChange({ ...filters, dateRange: value })}
-                    >
-                      <SelectTrigger className="h-8 bg-background/50 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover">
-                        {dateRangeOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value} className="text-xs">
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Content Types - Compact */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold flex items-center gap-2">
-                    <Users className="h-3 w-3 text-primary" />
-                    Content Types
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {postTypeOptions.map(type => (
-                      <div 
-                        key={type.value} 
-                        className={`flex items-center space-x-2 p-2 rounded-md border transition-all cursor-pointer hover:bg-accent/50 ${
-                          filters.postTypes.includes(type.value) 
-                            ? 'bg-primary/10 border-primary/50' 
-                            : 'bg-background/50 border-border/50'
-                        }`}
-                        onClick={() => handlePostTypeToggle(type.value)}
-                      >
-                        <Checkbox
-                          id={`post-type-${type.value}`}
-                          checked={filters.postTypes.includes(type.value)}
-                          onCheckedChange={() => handlePostTypeToggle(type.value)}
-                          className="h-3 w-3"
-                        />
-                        <Label
-                          htmlFor={`post-type-${type.value}`}
-                          className="text-xs font-medium flex items-center gap-1 cursor-pointer"
-                        >
-                          <type.icon className="h-3 w-3" />
-                          <span className="hidden sm:inline">{type.label}</span>
-                          <span className="sm:hidden">{type.label.split(' ')[0]}</span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Location Scope - Compact */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-primary" />
-                    Location Range
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {locationScopeOptions.map(scope => (
-                      <div 
-                        key={scope.value} 
-                        className={`flex items-center space-x-2 p-2 rounded-md border transition-all cursor-pointer hover:bg-accent/50 ${
-                          filters.locationScope.includes(scope.value) 
-                            ? 'bg-primary/10 border-primary/50' 
-                            : 'bg-background/50 border-border/50'
-                        }`}
-                        onClick={() => handleLocationScopeToggle(scope.value)}
-                      >
-                        <Checkbox
-                          id={`location-${scope.value}`}
-                          checked={filters.locationScope.includes(scope.value)}
-                          onCheckedChange={() => handleLocationScopeToggle(scope.value)}
-                          className="h-3 w-3"
-                        />
-                        <Label
-                          htmlFor={`location-${scope.value}`}
-                          className="text-xs font-medium flex items-center gap-1 cursor-pointer"
-                        >
-                          <scope.icon className="h-3 w-3" />
-                          <span className="hidden sm:inline">{scope.label}</span>
-                          <span className="sm:hidden">{scope.label.split(' ')[0]}</span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tags - Compact */}
-                {availableTags.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold flex items-center gap-2">
-                      <Tag className="h-3 w-3 text-primary" />
-                      Tags ({availableTags.length})
-                    </Label>
-                    <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
-                      {availableTags.slice(0, 8).map(tag => (
-                        <div 
-                          key={tag} 
-                          className={`flex items-center space-x-2 p-1.5 rounded-sm border transition-all cursor-pointer hover:bg-accent/50 ${
-                            filters.tags.includes(tag) 
-                              ? 'bg-primary/10 border-primary/50' 
-                              : 'bg-background/30 border-border/30'
-                          }`}
-                          onClick={() => handleTagToggle(tag)}
-                        >
-                          <Checkbox
-                            id={`tag-${tag}`}
-                            checked={filters.tags.includes(tag)}
-                            onCheckedChange={() => handleTagToggle(tag)}
-                            className="h-3 w-3"
-                          />
-                          <Label
-                            htmlFor={`tag-${tag}`}
-                            className="text-xs font-medium flex items-center gap-1 cursor-pointer"
-                          >
-                            <Tag className="h-2 w-2" />
-                            #{tag}
-                          </Label>
-                        </div>
+              {/* Compact Grid Layout */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Sort */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Sort</Label>
+                  <Select
+                    value={filters.sortBy}
+                    onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
+                  >
+                    <SelectTrigger className="h-7 text-xs bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {sortOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+                          {option.label}
+                        </SelectItem>
                       ))}
-                      {availableTags.length > 8 && (
-                        <p className="text-xs text-muted-foreground text-center py-1">
-                          +{availableTags.length - 8} more
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Period */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Period</Label>
+                  <Select
+                    value={filters.dateRange}
+                    onValueChange={(value) => onFiltersChange({ ...filters, dateRange: value })}
+                  >
+                    <SelectTrigger className="h-7 text-xs bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {dateRangeOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* Content Types */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Content
+                </Label>
+                <div className="grid grid-cols-2 gap-1">
+                  {postTypeOptions.map(type => (
+                    <div 
+                      key={type.value} 
+                      className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                        filters.postTypes.includes(type.value) 
+                          ? 'bg-primary/10 border-primary/30' 
+                          : 'bg-background border-border/50 hover:bg-accent/30'
+                      }`}
+                      onClick={() => handlePostTypeToggle(type.value)}
+                    >
+                      <Checkbox
+                        id={`post-type-${type.value}`}
+                        checked={filters.postTypes.includes(type.value)}
+                        onCheckedChange={() => handlePostTypeToggle(type.value)}
+                        className="h-3 w-3"
+                      />
+                      <Label
+                        htmlFor={`post-type-${type.value}`}
+                        className="text-xs font-medium cursor-pointer truncate"
+                      >
+                        {type.label.split(' ')[0]}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Location Range */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Location
+                </Label>
+                <div className="grid grid-cols-2 gap-1">
+                  {locationScopeOptions.map(scope => (
+                    <div 
+                      key={scope.value} 
+                      className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                        filters.locationScope.includes(scope.value) 
+                          ? 'bg-primary/10 border-primary/30' 
+                          : 'bg-background border-border/50 hover:bg-accent/30'
+                      }`}
+                      onClick={() => handleLocationScopeToggle(scope.value)}
+                    >
+                      <Checkbox
+                        id={`location-${scope.value}`}
+                        checked={filters.locationScope.includes(scope.value)}
+                        onCheckedChange={() => handleLocationScopeToggle(scope.value)}
+                        className="h-3 w-3"
+                      />
+                      <Label
+                        htmlFor={`location-${scope.value}`}
+                        className="text-xs font-medium cursor-pointer truncate"
+                      >
+                        {scope.label.split(' ')[0]}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags */}
+              {availableTags.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    Tags
+                  </Label>
+                  <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto">
+                    {availableTags.slice(0, 6).map(tag => (
+                      <div 
+                        key={tag} 
+                        className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                          filters.tags.includes(tag) 
+                            ? 'bg-primary/10 border-primary/30' 
+                            : 'bg-background border-border/50 hover:bg-accent/30'
+                        }`}
+                        onClick={() => handleTagToggle(tag)}
+                      >
+                        <Checkbox
+                          id={`tag-${tag}`}
+                          checked={filters.tags.includes(tag)}
+                          onCheckedChange={() => handleTagToggle(tag)}
+                          className="h-3 w-3"
+                        />
+                        <Label
+                          htmlFor={`tag-${tag}`}
+                          className="text-xs font-medium cursor-pointer truncate"
+                        >
+                          #{tag.length > 8 ? tag.substring(0, 8) + '...' : tag}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {availableTags.length > 6 && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      +{availableTags.length - 6} more
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </PopoverContent>
         </Popover>
