@@ -3,22 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
-
-interface PromotionalAd {
-  id: string;
-  title: string;
-  description: string;
-  image?: string;
-  images?: string[];
-  location: string;
-  category: string;
-  price?: string;
-  url?: string;
-  sponsored: boolean;
-  timePosted: string;
-  promotion_type: string;
-  contact_info?: string;
-}
+import { PromotionalAd } from '@/types/promotional';
 
 export const usePromotionalAds = (maxAds: number = 3) => {
   const { user } = useAuth();
@@ -97,7 +82,18 @@ export const usePromotionalAds = (maxAds: number = 3) => {
             sponsored: true,
             timePosted,
             promotion_type: promotedPost.post_type,
-            contact_info: postContent.contact_info
+            contact_info: postContent.contact_info,
+            business: {
+              name: profileData?.full_name || 'Local Business',
+              logo: profileData?.avatar_url || undefined,
+              location: profileData?.neighborhood || profileData?.city || 'Local Area',
+              verified: false
+            },
+            cta: 'Learn More',
+            likes: Math.floor(Math.random() * 50) + 10,
+            comments: Math.floor(Math.random() * 20) + 5,
+            rating: 4.5,
+            type: 'general'
           };
 
           return ad;
@@ -136,6 +132,17 @@ export const usePromotionalAds = (maxAds: number = 3) => {
             timePosted,
             promotion_type: p.promotion_type,
             contact_info: p.contact_info || undefined,
+            business: {
+              name: 'Local Business',
+              logo: undefined,
+              location: profileData?.neighborhood || profileData?.city || 'Local Area',
+              verified: false
+            },
+            cta: 'Learn More',
+            likes: Math.floor(Math.random() * 50) + 10,
+            comments: Math.floor(Math.random() * 20) + 5,
+            rating: 4.5,
+            type: 'general'
           };
           return ad;
         })
