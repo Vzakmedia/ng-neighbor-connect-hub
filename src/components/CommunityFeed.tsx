@@ -269,35 +269,50 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       return;
     }
     
-    // Allow posts to load even without complete profile, with fallback behavior
+    
+    // Wait for profile to load for proper location filtering
     if (!profile) {
-      console.log('CommunityFeed: Profile still loading, will show all posts for now');
+      console.log('CommunityFeed: Profile still loading, waiting for profile data...');
+      return;
     }
     
-    console.log('CommunityFeed: Starting optimized fetch posts', { viewScope, user: user.id, isInitialLoad, hasProfile: !!profile });
+    console.log('CommunityFeed: Starting location-filtered fetch posts', { 
+      viewScope, 
+      user: user.id, 
+      isInitialLoad, 
+      profile: {
+        neighborhood: profile.neighborhood,
+        city: profile.city,
+        state: profile.state
+      }
+    });
     
     if (isInitialLoad) {
       setLoading(true);
     }
     
     try {
-      // Use the new location filtering function based on exact view scope
-      console.log('CommunityFeed: Fetching posts with params:', {
-        viewScope,
-        user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood : null,
-        user_city: viewScope === 'city' ? profile?.city : null,
-        user_state: viewScope === 'state' ? profile?.state : null,
-        profile: profile
-      });
-      
-      const response = await supabase.rpc('get_location_filtered_posts', {
-        user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood || null : null,
-        user_city: viewScope === 'city' ? profile?.city || null : null,
-        user_state: viewScope === 'state' ? profile?.state || null : null,
-        show_all_posts: false, // Always show location filtered posts
+      // Use location filtering based on view scope and profile data
+      const filterParams = {
+        user_neighborhood: viewScope === 'neighborhood' ? profile.neighborhood : null,
+        user_city: viewScope === 'city' ? profile.city : null,
+        user_state: viewScope === 'state' ? profile.state : null,
+        show_all_posts: false,
         post_limit: 50,
         post_offset: 0
+      };
+
+      console.log('CommunityFeed: Fetching posts with location filter:', {
+        viewScope,
+        filterParams,
+        profileLocation: {
+          neighborhood: profile.neighborhood,
+          city: profile.city,
+          state: profile.state
+        }
       });
+      
+      const response = await supabase.rpc('get_location_filtered_posts', filterParams);
       
       console.log('CommunityFeed: Database response:', response);
       
@@ -607,13 +622,13 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
   }, [user]); // Remove viewScope dependency to prevent repeated fetches
   
-  // Separate effect to refetch when profile becomes available (only once)
+  // Separate effect to refetch when profile becomes available with location data
   useEffect(() => {
-    if (user && profile && posts.length === 0) {
-      console.log('CommunityFeed: Profile loaded, refetching posts with location filter');
+    if (user && profile && profile.city && profile.state) {
+      console.log('CommunityFeed: Profile with location data loaded, refetching posts with location filter');
       fetchPosts(false);
     }
-  }, [profile]); // Only depend on profile, not user
+  }, [user?.id, profile?.city, profile?.state, profile?.neighborhood]); // Re-fetch when profile location data changes
 
   // Enhanced real-time system with debouncing
   useEffect(() => {
