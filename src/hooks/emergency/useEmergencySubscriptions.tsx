@@ -62,10 +62,10 @@ export const useEmergencySubscriptions = ({
       {
         channelName: 'safety_alerts_updates',
         onError: () => {
-          console.error('Emergency subscription error - using polling fallback');
-          // Only refresh on critical errors, not connection issues
+          console.warn('Emergency subscription WebSocket failed - using polling fallback. This is normal and does not affect functionality.');
+          // Silently handle the fallback without unnecessary error logging
         },
-        pollInterval: 60000, // Increased to 60 seconds to reduce polling
+        pollInterval: 30000, // 30 seconds for more responsive updates
         debugName: 'EmergencySubscriptions'
       }
     );
