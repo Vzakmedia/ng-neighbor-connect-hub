@@ -120,7 +120,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [hasNewContent, setHasNewContent] = useState(false);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
-  const [showAllPosts, setShowAllPosts] = useState(false);
   const [viewScope, setViewScope] = useState<ViewScope>(() => {
     // Default to neighborhood
     const saved = localStorage.getItem('communityFeedViewScope') as ViewScope;
@@ -282,35 +281,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
     
     try {
-      // Use the new location filtering function
-      let postsData;
-      let postsError;
-
-      if (showAllPosts) {
-        // Show all posts regardless of location
-        const response = await supabase.rpc('get_location_filtered_posts', {
-          user_neighborhood: null,
-          user_city: null,
-          user_state: null,
-          show_all_posts: true,
-          post_limit: 50,
-          post_offset: 0
-        });
-        postsData = response.data;
-        postsError = response.error;
-      } else {
-        // Filter posts based on user location
-        const response = await supabase.rpc('get_location_filtered_posts', {
-          user_neighborhood: profile?.neighborhood || null,
-          user_city: profile?.city || null,
-          user_state: profile?.state || null,
-          show_all_posts: false,
-          post_limit: 50,
-          post_offset: 0
-        });
-        postsData = response.data;
-        postsError = response.error;
-      }
+      // Use the new location filtering function based on exact view scope
+      const response = await supabase.rpc('get_location_filtered_posts', {
+        user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood || null : null,
+        user_city: viewScope === 'city' ? profile?.city || null : null,
+        user_state: viewScope === 'state' ? profile?.state || null : null,
+        show_all_posts: false, // Never show all posts - always filter by location
+        post_limit: 50,
+        post_offset: 0
+      });
+      
+      const postsData = response.data;
+      const postsError = response.error;
 
       if (postsError) {
         console.error('Error fetching posts:', postsError);
@@ -1035,17 +1017,13 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           
           {/* Current location scope indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            {showAllPosts ? (
-              <>
-                <Globe className="h-4 w-4" />
-                <span>All Posts</span>
-              </>
-            ) : (
-              <>
-                <Home className="h-4 w-4" />
-                <span>My Neighbourhood</span>
-              </>
-            )}
+            {viewScope === 'neighborhood' && <Home className="h-4 w-4" />}
+            {viewScope === 'city' && <Building className="h-4 w-4" />}
+            {viewScope === 'state' && <Globe className="h-4 w-4" />}
+            <span>
+              {viewScope === 'neighborhood' ? 'My Neighbourhood' : 
+               viewScope === 'city' ? 'My City' : 'Entire State'}
+            </span>
           </div>
           
           {unreadCounts.community > 0 && (
@@ -1061,15 +1039,21 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           )}
         </div>
         
-        {/* Toggle between neighborhood and all posts */}
+        {/* Location scope selector */}
         <div className="flex items-center gap-2">
-          <Tabs value={showAllPosts ? "all" : "local"} onValueChange={(value) => setShowAllPosts(value === "all")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="local" className="text-xs">
-                My Neighbourhood
+          <Tabs value={viewScope} onValueChange={(value: ViewScope) => setViewScope(value)}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="neighborhood" className="text-xs flex items-center gap-1">
+                <Home className="h-3 w-3" />
+                Neighbourhood
               </TabsTrigger>
-              <TabsTrigger value="all" className="text-xs">
-                All Posts
+              <TabsTrigger value="city" className="text-xs flex items-center gap-1">
+                <Building className="h-3 w-3" />
+                City
+              </TabsTrigger>
+              <TabsTrigger value="state" className="text-xs flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                State
               </TabsTrigger>
             </TabsList>
           </Tabs>
