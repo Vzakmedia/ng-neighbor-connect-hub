@@ -16,6 +16,9 @@ interface Event {
   tags?: string[];
   location?: string;
   location_scope?: string;
+  target_neighborhood?: string;
+  target_city?: string;
+  target_state?: string;
   rsvp_enabled?: boolean;
   created_at: string;
   author?: {
@@ -88,18 +91,52 @@ export const useCommunityFeed = () => {
     }
 
     // Apply location scope filters
-    if (filters.locationScope.length > 0) {
+    if (filters.locationScope.length > 0 && profile) {
       result = result.filter(event => {
-        // Handle 'all' filter
+        // Handle 'all' filter - show everything
         if (filters.locationScope.includes('all')) return true;
         
-        // Check if event has location_scope and it matches filter
-        if (event.location_scope) {
-          return filters.locationScope.includes(event.location_scope);
+        // Get user's location from profile
+        const userLocation = {
+          neighborhood: profile.neighborhood,
+          city: profile.city,
+          state: profile.state
+        };
+        
+        // Check each selected location scope
+        for (const scope of filters.locationScope) {
+          switch (scope) {
+            case 'neighborhood':
+              // Show posts targeted to user's neighborhood
+              if (event.location_scope === 'neighborhood' && 
+                  event.target_neighborhood === userLocation.neighborhood &&
+                  event.target_city === userLocation.city &&
+                  event.target_state === userLocation.state) {
+                return true;
+              }
+              break;
+              
+            case 'city':
+              // Show posts targeted to user's city
+              if (event.location_scope === 'city' && 
+                  event.target_city === userLocation.city &&
+                  event.target_state === userLocation.state) {
+                return true;
+              }
+              break;
+              
+            case 'state':
+              // Show posts targeted to user's state
+              if (event.location_scope === 'state' && 
+                  event.target_state === userLocation.state) {
+                return true;
+              }
+              break;
+          }
         }
         
-        // If no location_scope on event, check if 'all' is included in filter
-        return filters.locationScope.includes('all');
+        // If none of the location scopes match, don't show the post
+        return false;
       });
     }
 
