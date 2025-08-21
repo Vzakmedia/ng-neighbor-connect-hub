@@ -47,17 +47,33 @@ export const SponsoredContent = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPromotedContent();
-  }, [userLocation]);
+    // Only fetch if we have a user - this prevents null parameter errors
+    if (user) {
+      fetchPromotedContent();
+    } else {
+      setLoading(false);
+      setPromotedContent([]);
+    }
+  }, [userLocation, user]);
 
   const fetchPromotedContent = async () => {
     try {
+      console.log('Fetching promoted content with params:', {
+        user_location: userLocation || null,
+        content_limit: limit
+      });
+      
       const { data, error } = await supabase.rpc('get_active_promoted_content', {
         user_location: userLocation || null,
         content_limit: limit
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Promoted content RPC error:', error);
+        // Silently handle the error since this function may not exist
+        setPromotedContent([]);
+        return;
+      }
       setPromotedContent((data || []).map((item: any) => ({
         id: item.id,
         title: item.title,
