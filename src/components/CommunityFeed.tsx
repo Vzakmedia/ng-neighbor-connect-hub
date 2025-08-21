@@ -247,6 +247,7 @@ const CommunityFeed = () => {
             }
           )
           .subscribe()
+      )
     ];
 
     return () => {
