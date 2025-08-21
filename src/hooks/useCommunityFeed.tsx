@@ -90,8 +90,16 @@ export const useCommunityFeed = () => {
     // Apply location scope filters
     if (filters.locationScope.length > 0) {
       result = result.filter(event => {
-        if (!event.location_scope) return filters.locationScope.includes('all');
-        return filters.locationScope.includes(event.location_scope);
+        // Handle 'all' filter
+        if (filters.locationScope.includes('all')) return true;
+        
+        // Check if event has location_scope and it matches filter
+        if (event.location_scope) {
+          return filters.locationScope.includes(event.location_scope);
+        }
+        
+        // If no location_scope on event, check if 'all' is included in filter
+        return filters.locationScope.includes('all');
       });
     }
 
