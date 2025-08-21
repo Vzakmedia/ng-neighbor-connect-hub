@@ -122,25 +122,25 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
+      <DialogContent className="max-w-4xl max-h-[95vh] sm:max-h-[90vh] w-[95vw] sm:w-full overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
             Privacy Consent & Terms Agreement
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Please review and consent to our data collection and usage practices before creating your account.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Consent Overview</TabsTrigger>
-            <TabsTrigger value="terms">Terms & Conditions</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy Policy</TabsTrigger>
+        <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0 text-xs sm:text-sm">
+            <TabsTrigger value="overview" className="px-2 sm:px-4">Consent Overview</TabsTrigger>
+            <TabsTrigger value="terms" className="px-2 sm:px-4">Terms & Conditions</TabsTrigger>
+            <TabsTrigger value="privacy" className="px-2 sm:px-4">Privacy Policy</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6 mt-4">
+          <TabsContent value="overview" className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 mt-4 pr-2">
             <div className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg">
                 <h3 className="font-semibold mb-2 flex items-center gap-2">
@@ -484,34 +484,36 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
             </div>
           </TabsContent>
 
-          <TabsContent value="terms" className="mt-4">
+          <TabsContent value="terms" className="flex-1 overflow-y-auto mt-4 pr-2">
             <TermsAndConditions />
           </TabsContent>
 
-          <TabsContent value="privacy" className="mt-4">
+          <TabsContent value="privacy" className="flex-1 overflow-y-auto mt-4 pr-2">
             <PrivacyPolicy />
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-between pt-4 border-t">
-          <Button variant="outline" onClick={onCancel}>
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-4 border-t flex-shrink-0">
+          <Button variant="outline" onClick={onCancel} className="order-1 sm:order-none">
             Cancel
           </Button>
-          <div className="space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 order-2">
             {currentTab === "overview" && (
               <>
                 <Button
                   variant="outline"
                   onClick={() => setCurrentTab("terms")}
+                  className="text-xs sm:text-sm"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   View Terms
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setCurrentTab("privacy")}
+                  className="text-xs sm:text-sm"
                 >
-                  <Eye className="h-4 w-4 mr-2" />
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   View Privacy Policy
                 </Button>
               </>
@@ -520,6 +522,7 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
               <Button
                 variant="outline"
                 onClick={() => setCurrentTab("overview")}
+                className="text-xs sm:text-sm"
               >
                 Back to Consent
               </Button>
@@ -528,7 +531,7 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
               <Button
                 onClick={handleProceed}
                 disabled={!allRequiredConsentsGiven}
-                className="min-w-[120px]"
+                className="min-w-[120px] text-xs sm:text-sm"
               >
                 {allRequiredConsentsGiven ? "Continue Signup" : "Please Accept Required Terms"}
               </Button>
