@@ -4930,6 +4930,22 @@ export type Database = {
           | { invitation_email: string; invitation_role: string }
         Returns: string
       }
+      debug_posts_for_user: {
+        Args: { _user_id: string }
+        Returns: {
+          post_id: string
+          post_location_scope: Database["public"]["Enums"]["location_scope"]
+          post_target_city: string
+          post_target_neighborhood: string
+          post_target_state: string
+          should_show_city: boolean
+          should_show_neighborhood: boolean
+          should_show_state: boolean
+          user_city: string
+          user_neighborhood: string
+          user_state: string
+        }[]
+      }
       delete_conversation: {
         Args: { conversation_id: string }
         Returns: boolean
