@@ -282,6 +282,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     
     try {
       // Use the new location filtering function based on exact view scope
+      console.log('CommunityFeed: Fetching posts with params:', {
+        viewScope,
+        user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood : null,
+        user_city: viewScope === 'city' ? profile?.city : null,
+        user_state: viewScope === 'state' ? profile?.state : null,
+        profile: profile
+      });
+      
       const response = await supabase.rpc('get_location_filtered_posts', {
         user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood || null : null,
         user_city: viewScope === 'city' ? profile?.city || null : null,
@@ -290,6 +298,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         post_limit: 50,
         post_offset: 0
       });
+      
+      console.log('CommunityFeed: Database response:', response);
       
       const postsData = response.data;
       const postsError = response.error;
