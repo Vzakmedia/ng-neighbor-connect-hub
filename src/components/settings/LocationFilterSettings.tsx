@@ -1,25 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Settings } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-
-export type LocationFilterScope = 'neighborhood' | 'city' | 'state' | 'all';
-
-interface LocationPreferences {
-  default_location_filter: LocationFilterScope;
-}
+import { useLocationPreferences, LocationFilterScope } from '@/hooks/useLocationPreferences';
 
 export const LocationFilterSettings = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [preferences, setPreferences] = useState<LocationPreferences>({
-    default_location_filter: 'neighborhood'
-  });
-  const [loading, setLoading] = useState(true);
+  const { preferences, loading, updateLocationFilter } = useLocationPreferences();
   const [saving, setSaving] = useState(false);
 
   const locationOptions = [
@@ -45,110 +34,24 @@ export const LocationFilterSettings = () => {
     }
   ];
 
-  useEffect(() => {
-    if (user) {
-      fetchPreferences();
-    }
-  }, [user]);
-
-  const fetchPreferences = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      
-      // First check if preferences exist
-      const { data: existingPrefs, error: fetchError } = await supabase
-        .from('user_onboarding_preferences')
-        .select('default_location_filter')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching location preferences:', fetchError);
-        return;
-      }
-
-      if (existingPrefs) {
-        setPreferences({
-          default_location_filter: (existingPrefs.default_location_filter as LocationFilterScope) || 'neighborhood'
-        });
-      } else {
-        // Create default preferences if they don't exist
-        await createDefaultPreferences();
-      }
-    } catch (error) {
-      console.error('Error fetching location preferences:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createDefaultPreferences = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('user_onboarding_preferences')
-        .upsert(
-          {
-            user_id: user.id,
-            default_location_filter: 'neighborhood'
-          },
-          {
-            onConflict: 'user_id'
-          }
-        );
-
-      if (error) {
-        console.error('Error creating default preferences:', error);
-      }
-    } catch (error) {
-      console.error('Error creating default preferences:', error);
-    }
-  };
-
-  const updateLocationFilter = async (filterScope: LocationFilterScope) => {
-    if (!user) return;
-
+  const handleLocationFilterUpdate = async (filterScope: LocationFilterScope) => {
     try {
       setSaving(true);
       
-      const { error } = await supabase
-        .from('user_onboarding_preferences')
-        .upsert(
-          {
-            user_id: user.id,
-            default_location_filter: filterScope,
-            updated_at: new Date().toISOString()
-          },
-          {
-            onConflict: 'user_id'
-          }
-        );
-
-      if (error) {
-        console.error('Error updating location filter:', error);
+      const success = await updateLocationFilter(filterScope);
+      
+      if (success) {
+        toast({
+          title: "Settings Updated",
+          description: `Default location filter set to ${locationOptions.find(opt => opt.value === filterScope)?.label}`,
+        });
+      } else {
         toast({
           title: "Error",
           description: "Failed to update location filter preference.",
           variant: "destructive",
         });
-        return;
       }
-
-      setPreferences({ default_location_filter: filterScope });
-      
-      toast({
-        title: "Settings Updated",
-        description: `Default location filter set to ${locationOptions.find(opt => opt.value === filterScope)?.label}`,
-      });
-
-      // Trigger a custom event to notify other components of the change
-      window.dispatchEvent(new CustomEvent('locationFilterPreferenceChanged', {
-        detail: { defaultFilter: filterScope }
-      }));
-
     } catch (error) {
       console.error('Error updating location filter:', error);
       toast({
@@ -193,7 +96,7 @@ export const LocationFilterSettings = () => {
           <Label htmlFor="default-location-filter">Default Location Filter</Label>
           <Select
             value={preferences.default_location_filter}
-            onValueChange={updateLocationFilter}
+            onValueChange={handleLocationFilterUpdate}
             disabled={saving}
           >
             <SelectTrigger id="default-location-filter">

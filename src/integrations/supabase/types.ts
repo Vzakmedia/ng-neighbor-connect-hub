@@ -4737,6 +4737,7 @@ export type Database = {
           business_card_permanently_dismissed: boolean | null
           business_creation_reminders: boolean | null
           created_at: string
+          default_location_filter: string | null
           id: string
           last_business_card_shown_at: string | null
           profile_completion_dismissed: boolean | null
@@ -4749,6 +4750,7 @@ export type Database = {
           business_card_permanently_dismissed?: boolean | null
           business_creation_reminders?: boolean | null
           created_at?: string
+          default_location_filter?: string | null
           id?: string
           last_business_card_shown_at?: string | null
           profile_completion_dismissed?: boolean | null
@@ -4761,6 +4763,7 @@ export type Database = {
           business_card_permanently_dismissed?: boolean | null
           business_creation_reminders?: boolean | null
           created_at?: string
+          default_location_filter?: string | null
           id?: string
           last_business_card_shown_at?: string | null
           profile_completion_dismissed?: boolean | null

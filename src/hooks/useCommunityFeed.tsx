@@ -5,6 +5,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import { postCache } from "@/services/postCache";
 import { CommunityFilters } from "@/components/CommunityFeedFilters";
+import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 
 interface Event {
   id: string;
@@ -34,6 +35,7 @@ export const useCommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { preferences: locationPreferences, loading: locationLoading } = useLocationPreferences();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +44,22 @@ export const useCommunityFeed = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CommunityFilters>({
     tags: [],
-    locationScope: [],
+    locationScope: [], // Will be set based on user preference
     postTypes: [],
     dateRange: 'all',
     sortBy: 'newest'
   });
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  // Initialize location filter based on user preference
+  useEffect(() => {
+    if (!locationLoading && locationPreferences.default_location_filter) {
+      setFilters(prev => ({
+        ...prev,
+        locationScope: [locationPreferences.default_location_filter]
+      }));
+    }
+  }, [locationPreferences.default_location_filter, locationLoading]);
   const [unreadCounts, setUnreadCounts] = useState({
     community: 0,
     messages: 0,
