@@ -47,11 +47,17 @@ export const AdvertisementDisplay = ({ maxAds = 3, className = '', placement = '
   const { profile } = useProfile();
 
   useEffect(() => {
-    fetchAdvertisements();
+    // Only fetch advertisements when user is available
+    // Profile can be null initially, which is fine
+    if (user) {
+      fetchAdvertisements();
+    }
   }, [user, profile]);
 
   const fetchAdvertisements = async () => {
     try {
+      console.log('AdvertisementDisplay: Fetching ads with profile:', profile);
+      
       const { data, error } = await supabase.rpc('get_active_advertisements', {
         user_location: profile?.city || null,
         user_city: profile?.city || null,
@@ -59,7 +65,12 @@ export const AdvertisementDisplay = ({ maxAds = 3, className = '', placement = '
         content_limit: maxAds
       });
 
-      if (error) throw error;
+      console.log('AdvertisementDisplay: API response:', { data, error });
+
+      if (error) {
+        console.error('AdvertisementDisplay: RPC error:', error);
+        throw error;
+      }
       setAdvertisements(data || []);
     } catch (error) {
       console.error('Error fetching advertisements:', error);
