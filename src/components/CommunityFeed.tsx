@@ -282,12 +282,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     
     try {
       // Use the new location filtering function based on exact view scope
-      // Don't fetch if profile is not loaded yet
-      if (!profile) {
-        console.log('CommunityFeed: Profile not loaded yet, skipping fetch');
-        return;
-      }
-
       console.log('CommunityFeed: Fetching posts with params:', {
         viewScope,
         user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood : null,
@@ -300,7 +294,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood || null : null,
         user_city: viewScope === 'city' ? profile?.city || null : null,
         user_state: viewScope === 'state' ? profile?.state || null : null,
-        show_all_posts: false, // Never show all posts - always filter by location
+        show_all_posts: !profile, // Show all posts if profile not loaded yet
         post_limit: 50,
         post_offset: 0
       });
