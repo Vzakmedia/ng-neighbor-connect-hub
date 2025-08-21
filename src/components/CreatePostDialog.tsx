@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   AlertTriangle,
   ShoppingCart,
@@ -30,7 +31,10 @@ import {
   MapPin,
   ImagePlus,
   X,
-  Navigation
+  Navigation,
+  Building,
+  Home,
+  Globe
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +58,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
+  const [locationScope, setLocationScope] = useState<'neighborhood' | 'city' | 'state' | 'all'>('all');
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -145,7 +150,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           location: location || null,
           image_urls: imageUrls,
           tags: tags,
-          rsvp_enabled: postType === 'event' ? rsvpEnabled : false
+          rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
+          location_scope: locationScope,
+          target_neighborhood: locationScope === 'neighborhood' ? profile?.neighborhood : null,
+          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? profile?.city : null,
+          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? profile?.state : null
         });
 
       if (error) {
@@ -172,6 +181,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       setCurrentTag('');
       setPostType('general');
       setRsvpEnabled(false);
+      setLocationScope('all');
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -259,16 +269,73 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               />
             </div>
 
+            {/* Post Visibility */}
+            <div className="space-y-3">
+              <Label>Who can see this post?</Label>
+              <RadioGroup value={locationScope} onValueChange={(value: 'neighborhood' | 'city' | 'state' | 'all') => setLocationScope(value)}>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="neighborhood" id="neighborhood" />
+                    <Label htmlFor="neighborhood" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <div>
+                        <div>My neighborhood only</div>
+                        <div className="text-xs text-muted-foreground">
+                          {profile?.neighborhood || 'Set your neighborhood in profile'}
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="city" id="city" />
+                    <Label htmlFor="city" className="flex items-center gap-2">
+                      <Building className="h-4 w-4" />
+                      <div>
+                        <div>My city</div>
+                        <div className="text-xs text-muted-foreground">
+                          {profile?.city || 'Set your city in profile'}
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="state" id="state" />
+                    <Label htmlFor="state" className="flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      <div>
+                        <div>My state</div>
+                        <div className="text-xs text-muted-foreground">
+                          {profile?.state || 'Set your state in profile'}
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all" id="all" />
+                    <Label htmlFor="all" className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <div>
+                        <div>Everyone</div>
+                        <div className="text-xs text-muted-foreground">
+                          Visible to all users on the platform
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
             {/* Location */}
             <div className="space-y-2">
-              <Label>Location (Optional)</Label>
+              <Label>Specific Location (Optional)</Label>
               <div className="space-y-2">
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Add specific location..."
+                    placeholder="Add specific location details..."
                     className="pl-10"
                   />
                 </div>
