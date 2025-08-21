@@ -17,7 +17,11 @@ export const CommunityFeed = () => {
     hasNewContent,
     searchQuery,
     unreadCounts,
+    filters,
+    availableTags,
+    activeFiltersCount,
     setSearchQuery,
+    setFilters,
     setHasNewContent,
     setUnreadCounts,
     handleLike,
@@ -48,6 +52,10 @@ export const CommunityFeed = () => {
         onRefresh={handleRefresh}
         refreshing={refreshing}
         unreadCount={unreadCounts.community}
+        filters={filters}
+        onFiltersChange={setFilters}
+        availableTags={availableTags}
+        activeFiltersCount={activeFiltersCount}
       />
       
       <div className="p-4">

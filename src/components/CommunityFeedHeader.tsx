@@ -2,6 +2,7 @@ import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CommunityFeedFilters, CommunityFilters } from "./CommunityFeedFilters";
 
 interface CommunityFeedHeaderProps {
   searchQuery: string;
@@ -10,6 +11,10 @@ interface CommunityFeedHeaderProps {
   onRefresh: () => void;
   refreshing: boolean;
   unreadCount: number;
+  filters: CommunityFilters;
+  onFiltersChange: (filters: CommunityFilters) => void;
+  availableTags: string[];
+  activeFiltersCount: number;
 }
 
 export const CommunityFeedHeader = ({
@@ -18,7 +23,11 @@ export const CommunityFeedHeader = ({
   hasNewContent,
   onRefresh,
   refreshing,
-  unreadCount
+  unreadCount,
+  filters,
+  onFiltersChange,
+  availableTags,
+  activeFiltersCount
 }: CommunityFeedHeaderProps) => {
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4">
@@ -53,6 +62,15 @@ export const CommunityFeedHeader = ({
             className="pl-10"
           />
         </div>
+
+        
+        {/* Filters */}
+        <CommunityFeedFilters
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          availableTags={availableTags}
+          activeFiltersCount={activeFiltersCount}
+        />
 
         {hasNewContent && (
           <div className="flex justify-center">
