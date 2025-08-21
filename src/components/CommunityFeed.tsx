@@ -131,6 +131,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [selectedPostType, setSelectedPostType] = useState<string>('all');
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [readStatuses, setReadStatuses] = useState<Record<string, boolean>>({});
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -467,10 +468,30 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     checkReadStatuses();
   }, [posts.map(p => p.id).join(','), user?.id]); // Use stable dependency
 
+  // Apply filters to posts and update filteredPosts state
+  useEffect(() => {
+    const applyFilters = () => {
+      const filtered = posts.filter(post => {
+        // Filter by post type
+        const matchesType = selectedPostType === 'all' || post.type === selectedPostType;
+
+        // Filter by read status
+        const isRead = readStatuses[post.id] || false;
+        const matchesReadStatus = !showUnreadOnly || !isRead;
+
+        return matchesType && matchesReadStatus;
+      });
+      
+      setFilteredPosts(filtered);
+    };
+
+    applyFilters();
+  }, [posts, selectedPostType, showUnreadOnly, readStatuses]);
+
   // Create combined feed with all content types interspersed
   useEffect(() => {
     const createFeedWithContent = () => {
-      if (posts.length === 0) {
+      if (filteredPosts.length === 0) {
         setFeedItems([]);
         return;
       }
@@ -479,7 +500,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       const allPromotionalAds = [...promotionalAds, ...newPromotionalAds];
       
       // Add promotional content after every 3rd post for better visibility
-      posts.forEach((post, index) => {
+      filteredPosts.forEach((post, index) => {
         combinedFeed.push(post);
         
         // Strategic placement: Higher frequency promotional content
@@ -535,7 +556,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     };
 
     createFeedWithContent();
-  }, [posts, promotionalAds, newPromotionalAds, sponsoredContent, boardSuggestions]);
+  }, [filteredPosts, promotionalAds, newPromotionalAds, sponsoredContent, boardSuggestions]);
 
   useEffect(() => {
     if (propViewScope) {
@@ -927,30 +948,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     setUserProfileOpen(true);
   };
 
-  // Filter feed items based on post type and filters (updated)
-  const filteredFeedItems = feedItems.filter(item => {
-    // Skip ads and sponsored content when filtering - they should always be shown
-    if (item.type === 'ad' || item.type === 'sponsored_content' || item.type === 'board_suggestion') return true;
-    
-    const post = item as Post;
-
-    // Filter by post type
-    const matchesType = selectedPostType === 'all' || post.type === selectedPostType;
-
-    // Filter by read status
-    const matchesReadFilter = !showUnreadOnly || !readStatuses[post.id];
-
-    // Filter by active tab (for backward compatibility)
-    let matchesTab = true;
-    if (activeTab !== 'all') {
-      if (activeTab === 'events') matchesTab = post.type === 'event';
-      else if (activeTab === 'safety') matchesTab = post.type === 'safety';
-      else if (activeTab === 'marketplace') matchesTab = post.type === 'marketplace';
-      else matchesTab = post.type === activeTab;
-    }
-
-    return matchesType && matchesTab && matchesReadFilter;
-  });
+  // Feed items are already filtered through filteredPosts, no need to filter again
+  const filteredFeedItems = feedItems;
 
   const postTypeFilters = [
     { key: 'all', label: 'All Posts', icon: Users },
