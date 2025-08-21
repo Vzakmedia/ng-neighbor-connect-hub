@@ -174,7 +174,7 @@ const HomeDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 md:px-6" data-tutorial="community-feed">
-                  <CommunityFeed activeTab={activeTab} viewScope={viewScope} />
+                  <CommunityFeed />
                 </CardContent>
               </Card>
             </div>

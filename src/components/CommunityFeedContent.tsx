@@ -124,26 +124,29 @@ export const CommunityFeedContent = ({
       <ShareDialog
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
-        postTitle={selectedEvent?.title || 'Community Post'}
+        postId={selectedEvent?.id || ''}
+        postTitle={selectedEvent?.title}
         postContent={selectedEvent?.content || ''}
+        postAuthor={selectedEvent?.author?.full_name || 'Anonymous'}
       />
 
       <RSVPDialog
         open={rsvpDialogOpen}
         onOpenChange={setRsvpDialogOpen}
         eventId={selectedEvent?.id || ''}
+        eventTitle={selectedEvent?.title || 'Community Event'}
       />
 
       <ViewEventDialog
         open={viewEventDialogOpen}
         onOpenChange={setViewEventDialogOpen}
-        eventId={selectedEvent?.id || ''}
+        event={selectedEvent as any}
       />
 
       <UserProfileDialog
         isOpen={userProfileDialogOpen}
         onClose={() => setUserProfileDialogOpen(false)}
-        userId={selectedUserId}
+        userName={selectedUserId}
       />
     </>
   );
