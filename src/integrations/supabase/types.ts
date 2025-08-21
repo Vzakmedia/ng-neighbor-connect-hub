@@ -5153,7 +5153,6 @@ export type Database = {
           image_urls: string[]
           location: string
           location_scope: Database["public"]["Enums"]["location_scope"]
-          post_type: string
           rsvp_enabled: boolean
           tags: string[]
           target_city: string
