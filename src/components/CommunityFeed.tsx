@@ -294,7 +294,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         user_neighborhood: viewScope === 'neighborhood' ? profile?.neighborhood || null : null,
         user_city: viewScope === 'city' ? profile?.city || null : null,
         user_state: viewScope === 'state' ? profile?.state || null : null,
-        show_all_posts: !profile, // Show all posts if profile not loaded yet
+        show_all_posts: false, // Always show location filtered posts
         post_limit: 50,
         post_offset: 0
       });
