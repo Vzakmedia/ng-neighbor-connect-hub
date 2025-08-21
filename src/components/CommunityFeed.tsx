@@ -294,10 +294,10 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     try {
       // Use location filtering based on view scope and profile data
       const filterParams = {
-        user_neighborhood: viewScope === 'neighborhood' ? profile.neighborhood : null,
-        user_city: viewScope === 'city' ? profile.city : null,
-        user_state: viewScope === 'state' ? profile.state : null,
-        show_all_posts: false,
+        user_neighborhood: profile.neighborhood,
+        user_city: profile.city,
+        user_state: profile.state,
+        show_all_posts: viewScope === 'state' ? false : false, // Always use location filtering
         post_limit: 50,
         post_offset: 0
       };
@@ -413,24 +413,35 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   };
 
   const fetchPostsToBackground = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
     
     try {
-      // Use the same optimized pattern for background fetch
-      let postsQuery = supabase
-        .from('community_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the same location filtering RPC for background fetch
+      const filterParams = {
+        user_neighborhood: profile.neighborhood,
+        user_city: profile.city,
+        user_state: profile.state,
+        show_all_posts: false,
+        post_limit: 50,
+        post_offset: 0
+      };
 
-      const { data: postsData, error: postsError } = await postsQuery;
-      if (postsError) return;
+      const response = await supabase.rpc('get_location_filtered_posts', filterParams);
+      const postsData = response.data;
+      
+      if (response.error) {
+        console.error('Error fetching background posts:', response.error);
+        return;
+      }
 
-      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      // Get user profiles for post authors (batch query)
+      const userIds = [...new Set(postsData?.map((post: any) => post.user_id) || [])].filter(Boolean) as string[];
       const { data: profilesData } = await supabase
         .from('public_profiles')
         .select('user_id, display_name, avatar_url, neighborhood, city, state')
         .in('user_id', userIds);
 
+      // Create profile map and transform posts
       const profilesMap = new Map(
         (profilesData || []).map(p => [p.user_id, {
           full_name: p.display_name,
@@ -442,29 +453,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       );
 
       const filteredAndTransformed = (postsData || [])
-        .map(post => ({
-          ...post,
-          profiles: profilesMap.get(post.user_id) || null
-        }))
-        .filter(post => {
-          if (!post.profiles) return false;
-          if (!profile || !profile.city || !profile.state) return true;
-          
-          if (viewScope === 'state') {
-            return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-          } else if (viewScope === 'city') {
-            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
-                   post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-          } else {
-            const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
-            const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
-            const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-            
-            if (sameNeighborhood && sameCity && sameState) return true;
-            if (sameCity && sameState) return true;
-            return false;
-          }
-        });
+        .map((post: any) => {
+          const userProfile = profilesMap.get(post.user_id);
+          return {
+            ...post,
+            profiles: userProfile || null
+          };
+        })
+        .filter((post: any) => post.profiles !== null);
 
       // Transform posts without dependencies first
       const transformedPosts = filteredAndTransformed.map(transformDatabasePost);
