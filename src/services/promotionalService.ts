@@ -115,6 +115,18 @@ export class PromotionalService {
    */
   static async logInteraction(interaction: Omit<PromotionalInteraction, 'id' | 'created_at'>): Promise<void> {
     try {
+      // First verify that the campaign exists to avoid foreign key violations
+      const { data: campaignExists } = await supabase
+        .from('advertisement_campaigns')
+        .select('id')
+        .eq('id', interaction.campaign_id)
+        .maybeSingle();
+      
+      if (!campaignExists) {
+        console.warn('Campaign not found, skipping interaction log:', interaction.campaign_id);
+        return;
+      }
+
       await supabase.rpc('log_ad_interaction', {
         _campaign_id: interaction.campaign_id,
         _interaction_type: interaction.interaction_type,

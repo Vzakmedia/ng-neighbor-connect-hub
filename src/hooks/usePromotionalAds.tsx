@@ -165,10 +165,13 @@ export const usePromotionalAds = (maxAds: number = 3) => {
   };
 
   useEffect(() => {
-    fetchPromotionalAds();
-  }, [user, profile, maxAds]);
+    // Only fetch when we have both user and profile
+    if (user && profile) {
+      fetchPromotionalAds();
+    }
+  }, [user?.id, profile?.city]); // Only depend on user ID and city changes
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions with reduced frequency
   useEffect(() => {
     if (!user) return;
 
@@ -179,19 +182,20 @@ export const usePromotionalAds = (maxAds: number = 3) => {
            schema: 'public',
            table: 'promoted_posts'
          }, () => {
-           fetchPromotionalAds();
+           // Debounce the fetch to avoid too frequent updates
+           setTimeout(() => fetchPromotionalAds(), 1000);
          })
          .on('postgres_changes', {
            event: '*',
            schema: 'public',
            table: 'promotions'
          }, () => {
-           fetchPromotionalAds();
+           setTimeout(() => fetchPromotionalAds(), 1000);
          }),
       {
-        channelName: 'promotional_ads_changes',
+        channelName: `promotional_ads_${user.id}`, // User-specific channel
         onError: fetchPromotionalAds,
-        pollInterval: 120000, // Poll every 2 minutes for ads
+        pollInterval: 300000, // Poll every 5 minutes for ads
         debugName: 'PromotionalAds'
       }
     );
@@ -199,7 +203,7 @@ export const usePromotionalAds = (maxAds: number = 3) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, maxAds]);
+  }, [user?.id]); // Only depend on user ID
 
   return { ads, loading, refetch: fetchPromotionalAds };
 };
