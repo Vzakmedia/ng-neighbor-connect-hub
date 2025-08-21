@@ -5,6 +5,8 @@ import RSVPDialog from "./RSVPDialog";
 import ViewEventDialog from "./ViewEventDialog";
 import { UserProfileDialog } from "./UserProfileDialog";
 import { LoadingSpinner } from "./common/LoadingSpinner";
+import { ImageGalleryDialog } from "./ImageGalleryDialog";
+import { PostFullScreenDialog } from "./PostFullScreenDialog";
 
 interface Event {
   id: string;
@@ -49,6 +51,9 @@ export const CommunityFeedContent = ({
   const [userProfileDialogOpen, setUserProfileDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [visibleComments, setVisibleComments] = useState<Set<string>>(new Set());
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [postFullScreenOpen, setPostFullScreenOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const handleShare = (event: Event) => {
     setSelectedEvent(event);
@@ -82,6 +87,17 @@ export const CommunityFeedContent = ({
     });
   };
 
+  const handleImageClick = (event: Event, imageIndex: number = 0) => {
+    setSelectedEvent(event);
+    setSelectedImageIndex(imageIndex);
+    setImageGalleryOpen(true);
+  };
+
+  const handlePostClick = (event: Event) => {
+    setSelectedEvent(event);
+    setPostFullScreenOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -103,7 +119,7 @@ export const CommunityFeedContent = ({
 
   return (
     <>
-      <div className="space-y-6 pb-6">
+      <div className="space-y-4 sm:space-y-6 pb-6">{/* Mobile responsive spacing */}
         {events.map((event) => (
           <CommunityPostCard
             key={event.id}
@@ -114,6 +130,8 @@ export const CommunityFeedContent = ({
             onRSVP={handleRSVP}
             onViewEvent={handleViewEvent}
             onAvatarClick={handleAvatarClick}
+            onImageClick={handleImageClick}
+            onPostClick={handlePostClick}
             showComments={visibleComments.has(event.id)}
             onToggleComments={() => toggleComments(event.id)}
           />
@@ -147,6 +165,50 @@ export const CommunityFeedContent = ({
         isOpen={userProfileDialogOpen}
         onClose={() => setUserProfileDialogOpen(false)}
         userName={selectedUserId}
+      />
+
+      {/* Image Gallery Dialog */}
+      <ImageGalleryDialog
+        isOpen={imageGalleryOpen}
+        onClose={() => setImageGalleryOpen(false)}
+        images={selectedEvent?.image_urls || []}
+        title={selectedEvent?.title || 'Post Images'}
+        initialIndex={selectedImageIndex}
+      />
+
+      {/* Post Full Screen Dialog */}
+      <PostFullScreenDialog
+        isOpen={postFullScreenOpen}
+        onClose={() => setPostFullScreenOpen(false)}
+        post={selectedEvent ? {
+          id: selectedEvent.id,
+          user_id: selectedEvent.user_id,
+          author: {
+            name: selectedEvent.author?.full_name || 'Anonymous',
+            avatar: selectedEvent.author?.avatar_url,
+            location: selectedEvent.location || 'Unknown location'
+          },
+          content: selectedEvent.content,
+          title: selectedEvent.title,
+          type: selectedEvent.rsvp_enabled ? 'event' : 'general',
+          timestamp: new Date(selectedEvent.created_at).toLocaleDateString(),
+          likes: selectedEvent.likes_count || 0,
+          comments: selectedEvent.comments_count || 0,
+          images: selectedEvent.image_urls,
+          tags: selectedEvent.tags,
+          isLiked: selectedEvent.isLiked || false,
+          isSaved: selectedEvent.isSaved || false
+        } : null}
+        onLike={onLike}
+        onSave={onSave}
+        onShare={(post) => {
+          const event = events.find(e => e.id === post.id);
+          if (event) handleShare(event);
+        }}
+        onProfileClick={(name) => {
+          const event = events.find(e => e.author?.full_name === name);
+          if (event) handleAvatarClick(event.author?.user_id || event.user_id);
+        }}
       />
     </>
   );

@@ -38,6 +38,8 @@ interface CommunityPostCardProps {
   onRSVP: (event: Event) => void;
   onViewEvent: (event: Event) => void;
   onAvatarClick: (userId: string) => void;
+  onImageClick: (event: Event, imageIndex?: number) => void;
+  onPostClick: (event: Event) => void;
   showComments: boolean;
   onToggleComments: () => void;
 }
@@ -50,6 +52,8 @@ export const CommunityPostCard = ({
   onRSVP,
   onViewEvent,
   onAvatarClick,
+  onImageClick,
+  onPostClick,
   showComments,
   onToggleComments
 }: CommunityPostCardProps) => {
@@ -61,8 +65,8 @@ export const CommunityPostCard = ({
 
   return (
     <Card className="w-full animate-fade-in hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-3">
+      <CardHeader className="pb-2 px-3 sm:px-6 py-3 sm:py-6">{/* Mobile responsive padding */}
+        <div className="flex items-center gap-2 sm:gap-3">{/* Mobile responsive gap */}
           <div 
             className="cursor-pointer"
             onClick={() => onAvatarClick(event.author?.user_id || event.user_id)}
@@ -71,7 +75,7 @@ export const CommunityPostCard = ({
               userId={event.author?.user_id || event.user_id}
               src={event.author?.avatar_url}
               fallback={event.author?.full_name?.[0] || "U"}
-              className="h-10 w-10"
+              className="h-8 w-8 sm:h-10 sm:w-10"
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -83,22 +87,37 @@ export const CommunityPostCard = ({
             </p>
           </div>
           {event.rsvp_enabled && (
-            <Badge variant="secondary" className="gap-1">
+            <Badge variant="secondary" className="gap-1 text-xs">{/* Mobile responsive badge */}
               <Calendar className="h-3 w-3" />
-              Event
+              <span className="hidden sm:inline">Event</span>{/* Hide text on mobile */}
             </Badge>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">{/* Mobile responsive padding */}
         {event.title && (
-          <h3 className="font-semibold text-lg leading-tight">{event.title}</h3>
+          <h3 
+            className="font-semibold text-base sm:text-lg leading-tight cursor-pointer hover:text-primary transition-colors"
+            onClick={() => onPostClick(event)}
+          >
+            {event.title}
+          </h3>
         )}
         
-        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-          {event.content}
-        </p>
+        <div 
+          className="text-sm leading-relaxed whitespace-pre-wrap break-words cursor-pointer hover:text-muted-foreground transition-colors"
+          onClick={() => onPostClick(event)}
+        >
+          {event.content.length > 150 ? (
+            <>
+              {event.content.substring(0, 150)}...
+              <span className="text-primary ml-1 font-medium">Read more</span>
+            </>
+          ) : (
+            event.content
+          )}
+        </div>
 
         {event.location && (
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -108,21 +127,24 @@ export const CommunityPostCard = ({
         )}
 
         {event.image_urls && event.image_urls.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{/* Mobile responsive grid */}
             {event.image_urls.slice(0, 4).map((url, index) => (
               !imageError[index] && (
                 <div key={index} className="relative group">
                   <img
                     src={url}
                     alt={`Post image ${index + 1}`}
-                    className="w-full h-48 object-cover rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                    className="w-full h-40 sm:h-48 object-cover rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     onError={() => handleImageError(index)}
-                    onClick={() => onViewEvent(event)}
+                    onClick={() => onImageClick(event, index)}
                   />
-                  {event.image_urls.length > 4 && index === 3 && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                      <span className="text-white font-medium">
-                        +{event.image_urls.length - 4} more
+                  {event.image_urls!.length > 4 && index === 3 && (
+                    <div 
+                      className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg cursor-pointer"
+                      onClick={() => onImageClick(event, index)}
+                    >
+                      <span className="text-white font-medium text-sm sm:text-base">
+                        +{event.image_urls!.length - 4} more
                       </span>
                     </div>
                   )}
@@ -143,54 +165,55 @@ export const CommunityPostCard = ({
         )}
 
         <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">{/* Mobile responsive gap */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onLike(event.id)}
-              className={`gap-1 hover-scale ${event.isLiked ? 'text-red-500' : ''}`}
+              className={`gap-1 hover-scale text-xs sm:text-sm ${event.isLiked ? 'text-red-500' : ''}`}
             >
-              <Heart className={`h-4 w-4 ${event.isLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs">{event.likes_count || 0}</span>
+              <Heart className={`h-3 w-3 sm:h-4 sm:w-4 ${event.isLiked ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">{event.likes_count || 0}</span>{/* Hide count on mobile */}
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggleComments}
-              className="gap-1 hover-scale"
+              className="gap-1 hover-scale text-xs sm:text-sm"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span className="text-xs">{event.comments_count || 0}</span>
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{event.comments_count || 0}</span>{/* Hide count on mobile */}
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onShare(event)}
-              className="gap-1 hover-scale"
+              className="gap-1 hover-scale text-xs sm:text-sm"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Share</span>{/* Hide text on mobile */}
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1"
+              className="gap-1 text-xs sm:text-sm"
             >
-              <Eye className="h-4 w-4" />
-              <span className="text-xs">{event.views_count || 0}</span>
+              <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{event.views_count || 0}</span>{/* Hide count on mobile */}
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">{/* Mobile responsive gap */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onSave(event.id)}
               className={`hover-scale ${event.isSaved ? 'text-primary' : ''}`}
             >
-              <Bookmark className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
+              <Bookmark className={`h-3 w-3 sm:h-4 sm:w-4 ${event.isSaved ? 'fill-current' : ''}`} />
             </Button>
 
             {event.rsvp_enabled && (
@@ -198,19 +221,21 @@ export const CommunityPostCard = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onRSVP(event)}
-                className="hover-scale"
+                className="hover-scale text-xs sm:text-sm px-2 sm:px-3"
               >
-                RSVP
+                <span className="hidden sm:inline">RSVP</span>
+                <Calendar className="h-3 w-3 sm:hidden" />{/* Show icon only on mobile */}
               </Button>
             )}
 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onViewEvent(event)}
-              className="hover-scale"
+              onClick={() => onPostClick(event)}
+              className="hover-scale text-xs sm:text-sm px-2 sm:px-3"
             >
-              View
+              <span className="hidden sm:inline">View</span>
+              <Eye className="h-3 w-3 sm:hidden" />{/* Show icon only on mobile */}
             </Button>
           </div>
         </div>
