@@ -638,10 +638,10 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
       ) : (
         <>
           {/* Sponsored Content */}
-          {currentItems.length > 0 && (
+          {currentItems.length > 0 && user && profile && (
             <div className="mb-8">
               <SponsoredContent 
-                userLocation={`${profile?.city || ''}, ${profile?.state || ''}`}
+                userLocation={`${profile.city || ''}, ${profile.state || ''}`}
                 limit={2}
               />
             </div>
