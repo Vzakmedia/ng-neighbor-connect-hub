@@ -14,6 +14,10 @@ export interface UserProfile {
   address: string | null;
   bio: string | null;
   is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  email: string | null;
+  staff_id: number;
 }
 
 export function useProfile() {
