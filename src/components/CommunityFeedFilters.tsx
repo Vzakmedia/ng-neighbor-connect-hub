@@ -126,8 +126,8 @@ export const CommunityFeedFilters = ({
 
   return (
     <div className="space-y-3">
-      {/* Filter Toggle Button */}
-      <div className="flex items-center justify-between">
+      {/* Filter Button and Active Filters in same line */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button 
@@ -337,104 +337,108 @@ export const CommunityFeedFilters = ({
             </div>
           </PopoverContent>
         </Popover>
-      </div>
 
-      {/* Active Filters Display - Compact */}
-      {activeFiltersCount > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Active ({activeFiltersCount}):</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearAllFilters}
-              className="text-xs text-destructive hover:text-destructive/80 h-6 py-0 px-2"
-            >
-              Clear All
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {/* Tags */}
-            {filters.tags.map(tag => (
-              <Badge
-                key={`tag-${tag}`}
-                variant="default"
-                className="gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
-              >
-                <Tag className="h-2 w-2" />
-                #{tag.length > 8 ? tag.substring(0, 8) + '...' : tag}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 ml-1 hover:bg-primary/20 text-primary hover:text-primary/80"
-                  onClick={() => clearFilter('tags', tag)}
+        {/* Active Filters Display - Inline */}
+        {activeFiltersCount > 0 && (
+          <>
+            <div className="flex items-center gap-1 flex-wrap">
+              {/* Tags */}
+              {filters.tags.map(tag => (
+                <Badge
+                  key={`tag-${tag}`}
+                  variant="default"
+                  className="gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
                 >
-                  <X className="h-2 w-2" />
-                </Button>
-              </Badge>
-            ))}
+                  <Tag className="h-2 w-2" />
+                  #{tag.length > 6 ? tag.substring(0, 6) + '...' : tag}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1 hover:bg-primary/20 text-primary hover:text-primary/80"
+                    onClick={() => clearFilter('tags', tag)}
+                  >
+                    <X className="h-2 w-2" />
+                  </Button>
+                </Badge>
+              ))}
 
-            {/* Location Scopes */}
-            {filters.locationScope.map(scope => (
-              <Badge
-                key={`scope-${scope}`}
-                variant="default"
-                className="gap-1 px-2 py-0.5 text-xs bg-accent/20 text-accent-foreground border-accent/30 hover:bg-accent/30 transition-colors"
-              >
-                <MapPin className="h-2 w-2" />
-                {locationScopeOptions.find(opt => opt.value === scope)?.label}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 ml-1 hover:bg-accent/30"
-                  onClick={() => clearFilter('locationScope', scope)}
+              {/* Location Scopes */}
+              {filters.locationScope.map(scope => (
+                <Badge
+                  key={`scope-${scope}`}
+                  variant="default"
+                  className="gap-1 px-2 py-0.5 text-xs bg-accent/20 text-accent-foreground border-accent/30 hover:bg-accent/30 transition-colors"
                 >
-                  <X className="h-2 w-2" />
-                </Button>
-              </Badge>
-            ))}
+                  <MapPin className="h-2 w-2" />
+                  <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === scope)?.label}</span>
+                  <span className="sm:hidden">{scope}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1 hover:bg-accent/30"
+                    onClick={() => clearFilter('locationScope', scope)}
+                  >
+                    <X className="h-2 w-2" />
+                  </Button>
+                </Badge>
+              ))}
 
-            {/* Post Types */}
-            {filters.postTypes.map(type => (
-              <Badge
-                key={`type-${type}`}
-                variant="default"
-                className="gap-1 px-2 py-0.5 text-xs bg-secondary/50 text-secondary-foreground border-secondary/30 hover:bg-secondary/70 transition-colors"
-              >
-                <Users className="h-2 w-2" />
-                {postTypeOptions.find(opt => opt.value === type)?.label}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 ml-1 hover:bg-secondary/70"
-                  onClick={() => clearFilter('postTypes', type)}
+              {/* Post Types */}
+              {filters.postTypes.map(type => (
+                <Badge
+                  key={`type-${type}`}
+                  variant="default"
+                  className="gap-1 px-2 py-0.5 text-xs bg-secondary/50 text-secondary-foreground border-secondary/30 hover:bg-secondary/70 transition-colors"
                 >
-                  <X className="h-2 w-2" />
-                </Button>
-              </Badge>
-            ))}
+                  <Users className="h-2 w-2" />
+                  <span className="hidden sm:inline">{postTypeOptions.find(opt => opt.value === type)?.label}</span>
+                  <span className="sm:hidden">{type}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1 hover:bg-secondary/70"
+                    onClick={() => clearFilter('postTypes', type)}
+                  >
+                    <X className="h-2 w-2" />
+                  </Button>
+                </Badge>
+              ))}
 
-            {/* Date Range */}
-            {filters.dateRange !== 'all' && (
-              <Badge 
-                variant="default" 
-                className="gap-1 px-2 py-0.5 text-xs bg-muted/50 text-muted-foreground border-muted/30 hover:bg-muted/70 transition-colors"
-              >
-                <Calendar className="h-2 w-2" />
-                {dateRangeOptions.find(opt => opt.value === filters.dateRange)?.label}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 ml-1 hover:bg-muted/70"
-                  onClick={() => clearFilter('dateRange')}
+              {/* Date Range */}
+              {filters.dateRange !== 'all' && (
+                <Badge 
+                  variant="default" 
+                  className="gap-1 px-2 py-0.5 text-xs bg-muted/50 text-muted-foreground border-muted/30 hover:bg-muted/70 transition-colors"
                 >
-                  <X className="h-2 w-2" />
-                </Button>
-              </Badge>
+                  <Calendar className="h-2 w-2" />
+                  <span className="hidden sm:inline">{dateRangeOptions.find(opt => opt.value === filters.dateRange)?.label}</span>
+                  <span className="sm:hidden">{filters.dateRange}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1 hover:bg-muted/70"
+                    onClick={() => clearFilter('dateRange')}
+                  >
+                    <X className="h-2 w-2" />
+                  </Button>
+                </Badge>
+              )}
+            </div>
+
+            {/* Clear All Button - Only show if many filters */}
+            {activeFiltersCount > 2 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-xs text-destructive hover:text-destructive/80 h-6 py-0 px-2 flex-shrink-0"
+              >
+                Clear All
+              </Button>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
