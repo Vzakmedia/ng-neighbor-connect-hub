@@ -1298,9 +1298,13 @@ export type Database = {
           id: string
           image_urls: string[] | null
           location: string | null
+          location_scope: Database["public"]["Enums"]["location_scope"] | null
           post_type: string
           rsvp_enabled: boolean | null
           tags: string[] | null
+          target_city: string | null
+          target_neighborhood: string | null
+          target_state: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -1312,9 +1316,13 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           location?: string | null
+          location_scope?: Database["public"]["Enums"]["location_scope"] | null
           post_type: string
           rsvp_enabled?: boolean | null
           tags?: string[] | null
+          target_city?: string | null
+          target_neighborhood?: string | null
+          target_state?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -1326,9 +1334,13 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           location?: string | null
+          location_scope?: Database["public"]["Enums"]["location_scope"] | null
           post_type?: string
           rsvp_enabled?: boolean | null
           tags?: string[] | null
+          target_city?: string | null
+          target_neighborhood?: string | null
+          target_state?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -5108,6 +5120,34 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_location_filtered_posts: {
+        Args: {
+          post_limit?: number
+          post_offset?: number
+          show_all_posts?: boolean
+          user_city?: string
+          user_neighborhood?: string
+          user_state?: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          file_urls: Json
+          id: string
+          image_urls: string[]
+          location: string
+          location_scope: Database["public"]["Enums"]["location_scope"]
+          post_type: string
+          rsvp_enabled: boolean
+          tags: string[]
+          target_city: string
+          target_neighborhood: string
+          target_state: string
+          title: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_profile_by_staff_id: {
         Args: { target_staff_id: number }
         Returns: {
@@ -5549,6 +5589,7 @@ export type Database = {
         | "tools"
         | "other"
       listing_status: "active" | "sold" | "pending" | "cancelled"
+      location_scope: "neighborhood" | "city" | "state" | "all"
       safety_alert_type:
         | "break_in"
         | "theft"
@@ -5739,6 +5780,7 @@ export const Constants = {
         "other",
       ],
       listing_status: ["active", "sold", "pending", "cancelled"],
+      location_scope: ["neighborhood", "city", "state", "all"],
       safety_alert_type: [
         "break_in",
         "theft",
