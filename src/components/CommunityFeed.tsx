@@ -58,6 +58,7 @@ import { usePromotionalAds } from '@/hooks/usePromotionalAds';
 import { useBoardSuggestions } from '@/hooks/useBoardSuggestions';
 import { PromotionalFeedIntegration } from '@/components/promotional/PromotionalFeedIntegration';
 import { usePromotionalContent } from '@/hooks/promotional/usePromotionalContent';
+import { PromotionalAd } from '@/types/promotional';
 
 
 interface DatabasePost {
