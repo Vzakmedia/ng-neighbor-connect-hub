@@ -100,15 +100,19 @@ const EmergencyContacts = () => {
 
   useEffect(() => {
     if (user) {
-      loadProfile();
-      loadContacts();
-      subscribeToContacts();
+      // Add a small delay to ensure user is fully loaded
+      const timeoutId = setTimeout(() => {
+        loadProfile();
+        loadContacts();
+        subscribeToContacts();
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        const subscription = supabase.channel('emergency-contacts');
+        supabase.removeChannel(subscription);
+      };
     }
-    
-    return () => {
-      const subscription = supabase.channel('emergency-contacts');
-      supabase.removeChannel(subscription);
-    };
   }, [user]);
 
   const searchUsersByPhone = async (query: string) => {
@@ -164,19 +168,27 @@ const EmergencyContacts = () => {
   };
 
   const loadProfile = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     
     try {
+      console.log('EmergencyContacts: Loading profile for user:', user.id);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('EmergencyContacts: Profile load error:', error);
+        throw error;
+      }
+      
+      console.log('EmergencyContacts: Profile loaded successfully');
       setProfile(data);
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('EmergencyContacts: Error loading profile:', error);
+      // Don't show toast for profile errors to reduce noise
     }
   };
 
@@ -208,21 +220,27 @@ const EmergencyContacts = () => {
     
     try {
       setLoading(true);
+      console.log('EmergencyContacts: Loading contacts for user:', user.id);
+      
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        console.error('EmergencyContacts: Database error:', error);
+        throw error;
+      }
+      
+      console.log('EmergencyContacts: Loaded contacts:', data?.length || 0);
       setContacts(data || []);
     } catch (error) {
-      console.error('Error loading emergency contacts:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load emergency contacts.",
-        variant: "destructive"
-      });
+      console.error('EmergencyContacts: Error loading emergency contacts:', error);
+      // Don't show toast for expected errors to reduce noise
+      if (error && typeof error === 'object' && 'code' in error) {
+        console.debug('EmergencyContacts: Database error code:', error.code);
+      }
     } finally {
       setLoading(false);
     }
