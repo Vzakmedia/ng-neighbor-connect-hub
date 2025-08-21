@@ -29,6 +29,7 @@ import {
   Building,
   RefreshCw
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -119,6 +120,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [hasNewContent, setHasNewContent] = useState(false);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
+  const [showAllPosts, setShowAllPosts] = useState(false);
   const [viewScope, setViewScope] = useState<ViewScope>(() => {
     // Restore user's preference from localStorage or use prop/default
     const saved = localStorage.getItem('communityFeedViewScope') as ViewScope;
@@ -280,13 +282,35 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
     
     try {
-      // Step 1: Get basic post data only (fast query)
-      let postsQuery = supabase
-        .from('community_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the new location filtering function
+      let postsData;
+      let postsError;
 
-      const { data: postsData, error: postsError } = await postsQuery;
+      if (showAllPosts) {
+        // Show all posts regardless of location
+        const response = await supabase.rpc('get_location_filtered_posts', {
+          user_neighborhood: null,
+          user_city: null,
+          user_state: null,
+          show_all_posts: true,
+          post_limit: 50,
+          post_offset: 0
+        });
+        postsData = response.data;
+        postsError = response.error;
+      } else {
+        // Filter posts based on user location
+        const response = await supabase.rpc('get_location_filtered_posts', {
+          user_neighborhood: profile?.neighborhood || null,
+          user_city: profile?.city || null,
+          user_state: profile?.state || null,
+          show_all_posts: false,
+          post_limit: 50,
+          post_offset: 0
+        });
+        postsData = response.data;
+        postsError = response.error;
+      }
 
       if (postsError) {
         console.error('Error fetching posts:', postsError);
@@ -300,7 +324,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       }
 
       // Step 2: Get user profiles for post authors (batch query)
-      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      const userIds = [...new Set(postsData?.map((post: any) => post.user_id) || [])].filter(Boolean) as string[];
       const { data: profilesData, error: profilesError } = await supabase
         .from('public_profiles')
         .select('user_id, display_name, avatar_url, neighborhood, city, state')
@@ -310,7 +334,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         console.error('Error fetching profiles:', profilesError);
       }
 
-      // Step 3: Create profile map and apply location filtering
+      // Step 3: Create profile map and transform posts
       const profilesMap = new Map(
         (profilesData || []).map(p => [p.user_id, {
           full_name: p.display_name,
@@ -321,38 +345,16 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         }])
       );
 
-      // Filter posts based on location and transform them (fast, no DB queries)
+      // Transform posts with profile data (location filtering already done by the function)
       const filteredAndTransformed = (postsData || [])
-        .map(post => {
+        .map((post: any) => {
           const userProfile = profilesMap.get(post.user_id);
           return {
             ...post,
             profiles: userProfile || null
           };
         })
-        .filter(post => {
-          if (!post.profiles) return false;
-          
-          if (!profile || !profile.city || !profile.state) {
-            console.log('CommunityFeed: Profile incomplete, showing all posts');
-            return true;
-          }
-          
-          if (viewScope === 'state') {
-            return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-          } else if (viewScope === 'city') {
-            return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
-                   post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-          } else {
-            const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
-            const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
-            const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
-            
-            if (sameNeighborhood && sameCity && sameState) return true;
-            if (sameCity && sameState) return true;
-            return false;
-          }
-        });
+        .filter((post: any) => post.profiles !== null);
 
       // Step 4: Transform to Post objects (fast, no DB queries)
       const transformedPosts = filteredAndTransformed.map(transformDatabasePost);
