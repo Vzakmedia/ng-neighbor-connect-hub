@@ -147,10 +147,10 @@ export const CommunityFeedFilters = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-96 p-0" align="start">
-            <div className="p-6 space-y-6">
+          <PopoverContent className="w-96 p-0 max-h-[80vh] overflow-y-auto" align="start">
+            <div className="p-6 space-y-6 max-h-[calc(80vh-48px)] overflow-y-auto">
               {/* Header */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between sticky top-0 bg-popover z-10 pb-2">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-5 w-5 text-primary" />
                   <h4 className="font-semibold text-lg">Filter Posts</h4>

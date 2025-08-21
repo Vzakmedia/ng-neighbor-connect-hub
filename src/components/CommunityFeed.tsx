@@ -44,7 +44,7 @@ export const CommunityFeed = () => {
   });
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto px-2 sm:px-4">{/* Mobile responsive padding */}
       <CommunityFeedHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -58,7 +58,7 @@ export const CommunityFeed = () => {
         activeFiltersCount={activeFiltersCount}
       />
       
-      <div className="p-4">
+      <div className="p-2 sm:p-4">{/* Mobile responsive padding */}
         <CommunityFeedContent
           events={events}
           loading={loading}
