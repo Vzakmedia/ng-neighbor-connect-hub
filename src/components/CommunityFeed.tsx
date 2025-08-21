@@ -27,7 +27,8 @@ import {
   ChevronDown,
   Home,
   Building,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +61,7 @@ import { useBoardSuggestions } from '@/hooks/useBoardSuggestions';
 import { PromotionalFeedIntegration } from '@/components/promotional/PromotionalFeedIntegration';
 import { usePromotionalContent } from '@/hooks/promotional/usePromotionalContent';
 import { PromotionalAd } from '@/types/promotional';
+import { postCache, CachedPost, CacheStats } from '@/services/postCache';
 
 
 interface DatabasePost {
@@ -118,6 +120,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
   const [backgroundPosts, setBackgroundPosts] = useState<Post[]>([]);
   const [hasNewContent, setHasNewContent] = useState(false);
+  const [cacheStats, setCacheStats] = useState<CacheStats & { cacheSize: number; activeTimers: number } | null>(null);
+  const [cacheHit, setCacheHit] = useState(false);
   const { ads: promotionalAds } = usePromotionalAds(5);
   const { sponsoredContent, promotionalAds: newPromotionalAds, loading: promotionalLoading, logInteraction } = usePromotionalContent(5);
   const [viewScope, setViewScope] = useState<ViewScope>(() => {
@@ -269,22 +273,40 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       return;
     }
     
-    
     // Wait for profile to load for proper location filtering
     if (!profile) {
       console.log('CommunityFeed: Profile still loading, waiting for profile data...');
       return;
     }
-    
-    console.log('CommunityFeed: Starting location-filtered fetch posts', { 
+
+    const userLocation = {
+      neighborhood: profile.neighborhood,
+      city: profile.city,
+      state: profile.state
+    };
+
+    // Try to get posts from cache first
+    const cachedPosts = postCache.getCachedPosts(userLocation, viewScope);
+    if (cachedPosts && !isInitialLoad) {
+      console.log('CommunityFeed: Using cached posts', { count: cachedPosts.length, viewScope });
+      setPosts(cachedPosts);
+      setCacheHit(true);
+      setCacheStats(postCache.getStats());
+      
+      // Mark activity for this location
+      postCache.markActivity(userLocation, viewScope);
+      
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+      return;
+    }
+
+    console.log('CommunityFeed: Cache miss, fetching from database', { 
       viewScope, 
       user: user.id, 
       isInitialLoad, 
-      profile: {
-        neighborhood: profile.neighborhood,
-        city: profile.city,
-        state: profile.state
-      }
+      profile: userLocation
     });
     
     if (isInitialLoad) {
@@ -292,12 +314,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     }
     
     try {
+      setCacheHit(false);
+      
       // Use location filtering based on view scope and profile data
       const filterParams = {
         user_neighborhood: profile.neighborhood,
         user_city: profile.city,
         user_state: profile.state,
-        show_all_posts: viewScope === 'state' ? false : false, // Always use location filtering
+        show_all_posts: false,
         post_limit: 50,
         post_offset: 0
       };
@@ -305,11 +329,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       console.log('CommunityFeed: Fetching posts with location filter:', {
         viewScope,
         filterParams,
-        profileLocation: {
-          neighborhood: profile.neighborhood,
-          city: profile.city,
-          state: profile.state
-        }
+        profileLocation: userLocation
       });
       
       const response = await supabase.rpc('get_location_filtered_posts', filterParams);
@@ -366,19 +386,30 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       // Step 4: Transform to Post objects (fast, no DB queries)
       const transformedPosts = filteredAndTransformed.map(transformDatabasePost);
       
-      // Step 5: Set basic posts immediately for fast UI update
-      console.log('CommunityFeed: Setting basic posts', { count: transformedPosts.length, viewScope });
-      setPosts(transformedPosts);
+      // Step 5: Load dependencies asynchronously (likes, comments, saved status)
+      const postsWithDependencies = await loadPostDependencies(transformedPosts);
+      
+      // Convert to CachedPost format and store in cache
+      const cachedPostsData: CachedPost[] = postsWithDependencies.map(post => ({
+        ...post,
+        location_scope: viewScope,
+        target_neighborhood: profile.neighborhood,
+        target_city: profile.city,
+        target_state: profile.state
+      }));
+
+      // Store in cache
+      postCache.setCachedPosts(cachedPostsData, userLocation, viewScope);
+      setCacheStats(postCache.getStats());
+      
+      // Set posts immediately for fast UI update
+      console.log('CommunityFeed: Setting posts from database', { count: postsWithDependencies.length, viewScope });
+      setPosts(postsWithDependencies);
       setLastFetchTime(new Date());
       
       if (isInitialLoad) {
         setLoading(false);
       }
-
-      // Step 6: Load dependencies asynchronously (likes, comments, saved status)
-      const postsWithDependencies = await loadPostDependencies(transformedPosts);
-      console.log('CommunityFeed: Updated posts with dependencies');
-      setPosts(postsWithDependencies);
 
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -1044,6 +1075,35 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
             <span>
               {viewScope === 'neighborhood' ? 'My Neighbourhood' : 
                viewScope === 'city' ? 'My City' : 'Entire State'}
+            </span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">{hasNewContent && (
+            <Button 
+              onClick={handleManualRefresh}
+              variant="default"
+              size="sm"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Show New Posts
+            </Button>
+          )}
+          
+          <Button 
+            onClick={handleManualRefresh}
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            className="transition-all duration-200"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
+      </div>
             </span>
           </div>
           
