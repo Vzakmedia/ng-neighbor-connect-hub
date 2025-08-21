@@ -164,32 +164,8 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  const transformDatabasePost = async (dbPost: DatabasePost): Promise<Post> => {
-    // Get like count and user's like status for this post
-    const { data: likesData } = await supabase
-      .from('post_likes')
-      .select('user_id')
-      .eq('post_id', dbPost.id);
-
-    // Get comment count for this post
-    const { data: commentsData } = await supabase
-      .from('post_comments')
-      .select('id')
-      .eq('post_id', dbPost.id);
-
-    // Get saved status for this post
-    const { data: savedData } = await supabase
-      .from('saved_posts')
-      .select('id')
-      .eq('post_id', dbPost.id)
-      .eq('user_id', user?.id || '');
-
-    const likesCount = likesData?.length || 0;
-    const commentsCount = commentsData?.length || 0;
-    const isLikedByUser = user ? likesData?.some(like => like.user_id === user.id) || false : false;
-    const isSavedByUser = user ? (savedData?.length || 0) > 0 : false;
-
-    // Ensure author object is always properly formed
+  const transformDatabasePost = (dbPost: DatabasePost): Post => {
+    // Basic transformation without expensive queries
     const authorName = dbPost.profiles?.full_name || 'Anonymous User';
     const authorAvatar = dbPost.profiles?.avatar_url || undefined;
     const authorLocation = dbPost.profiles?.neighborhood || dbPost.profiles?.city || dbPost.profiles?.state || 'Unknown Location';
@@ -206,13 +182,84 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       title: dbPost.title || undefined,
       type: dbPost.post_type as Post['type'],
       timestamp: formatTimeAgo(dbPost.created_at),
-      likes: likesCount,
-      comments: commentsCount,
+      likes: 0, // Will be loaded separately
+      comments: 0, // Will be loaded separately
       images: dbPost.image_urls || [],
       tags: dbPost.tags || [],
-      isLiked: isLikedByUser,
-      isSaved: isSavedByUser
+      isLiked: false, // Will be loaded separately
+      isSaved: false // Will be loaded separately
     };
+  };
+
+  // Separate function to load post dependencies (likes, comments, saved status)
+  const loadPostDependencies = async (posts: Post[]) => {
+    if (!user || posts.length === 0) return posts;
+
+    console.log('CommunityFeed: Loading post dependencies for', posts.length, 'posts');
+
+    const postIds = posts.map(p => p.id);
+
+    try {
+      // Batch load all dependencies in parallel
+      const [likesData, commentsData, savedData] = await Promise.all([
+        // Get like counts and user's like status
+        supabase
+          .from('post_likes')
+          .select('post_id, user_id')
+          .in('post_id', postIds),
+        
+        // Get comment counts
+        supabase
+          .from('post_comments')
+          .select('post_id, id')
+          .in('post_id', postIds),
+        
+        // Get user's saved status
+        supabase
+          .from('saved_posts')
+          .select('post_id, id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds)
+      ]);
+
+      // Process the data into maps for efficient lookup
+      const likesMap = new Map<string, { count: number; isLiked: boolean }>();
+      const commentsMap = new Map<string, number>();
+      const savedMap = new Set<string>();
+
+      // Process likes data
+      likesData.data?.forEach(like => {
+        const current = likesMap.get(like.post_id) || { count: 0, isLiked: false };
+        current.count += 1;
+        if (like.user_id === user.id) {
+          current.isLiked = true;
+        }
+        likesMap.set(like.post_id, current);
+      });
+
+      // Process comments data
+      commentsData.data?.forEach(comment => {
+        commentsMap.set(comment.post_id, (commentsMap.get(comment.post_id) || 0) + 1);
+      });
+
+      // Process saved data
+      savedData.data?.forEach(saved => {
+        savedMap.add(saved.post_id);
+      });
+
+      // Update posts with dependency data
+      return posts.map(post => ({
+        ...post,
+        likes: likesMap.get(post.id)?.count || 0,
+        isLiked: likesMap.get(post.id)?.isLiked || false,
+        comments: commentsMap.get(post.id) || 0,
+        isSaved: savedMap.has(post.id)
+      }));
+
+    } catch (error) {
+      console.error('Error loading post dependencies:', error);
+      return posts; // Return posts without dependencies if error
+    }
   };
 
   const fetchPosts = async (isInitialLoad = false) => {
@@ -226,14 +273,14 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
       console.log('CommunityFeed: Profile still loading, will show all posts for now');
     }
     
-    console.log('CommunityFeed: Starting fetch posts', { viewScope, user: user.id, isInitialLoad, hasProfile: !!profile });
+    console.log('CommunityFeed: Starting optimized fetch posts', { viewScope, user: user.id, isInitialLoad, hasProfile: !!profile });
     
     if (isInitialLoad) {
       setLoading(true);
     }
     
     try {
-      // First, get all posts
+      // Step 1: Get basic post data only (fast query)
       let postsQuery = supabase
         .from('community_posts')
         .select('*')
@@ -252,21 +299,18 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         return;
       }
 
-      // Get all unique user IDs from posts
+      // Step 2: Get user profiles for post authors (batch query)
       const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
-
-      // Fetch profiles for all users from public_profiles (safe, non-sensitive)
       const { data: profilesData, error: profilesError } = await supabase
         .from('public_profiles')
         .select('user_id, display_name, avatar_url, neighborhood, city, state')
-        .in('user_id', userIds)
-        .returns<{ user_id: string; display_name: string | null; avatar_url: string | null; neighborhood: string | null; city: string | null; state: string | null; }[]>();
+        .in('user_id', userIds);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
       }
 
-      // Create a map of user_id to profile for easy lookup (normalized keys)
+      // Step 3: Create profile map and apply location filtering
       const profilesMap = new Map(
         (profilesData || []).map(p => [p.user_id, {
           full_name: p.display_name,
@@ -277,7 +321,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         }])
       );
 
-      // Filter posts based on location and transform them
+      // Filter posts based on location and transform them (fast, no DB queries)
       const filteredAndTransformed = (postsData || [])
         .map(post => {
           const userProfile = profilesMap.get(post.user_id);
@@ -287,47 +331,46 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           };
         })
         .filter(post => {
-          // Apply location filtering based on user's registered city and state
-          if (!post.profiles) return false; // Skip posts without profile data
+          if (!post.profiles) return false;
           
-          // If user profile is not loaded yet, show all posts as fallback
           if (!profile || !profile.city || !profile.state) {
             console.log('CommunityFeed: Profile incomplete, showing all posts');
             return true;
           }
           
           if (viewScope === 'state') {
-            // For entire state view, show posts from the same state only
             return post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else if (viewScope === 'city') {
-            // For city view, show posts from same city AND state
             return post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase() && 
                    post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
           } else {
-            // For neighborhood view, be more inclusive - show posts from same city if neighborhood doesn't match
             const sameNeighborhood = post.profiles.neighborhood?.trim().toLowerCase() === profile.neighborhood?.trim().toLowerCase();
             const sameCity = post.profiles.city?.trim().toLowerCase() === profile.city?.trim().toLowerCase();
             const sameState = post.profiles.state?.trim().toLowerCase() === profile.state?.trim().toLowerCase();
             
-            // If same neighborhood, definitely show
-            if (sameNeighborhood && sameCity && sameState) {
-              return true;
-            }
-            
-            // If no neighborhood match but same city and state, still show (be more inclusive)
-            if (sameCity && sameState) {
-              return true;
-            }
-            
+            if (sameNeighborhood && sameCity && sameState) return true;
+            if (sameCity && sameState) return true;
             return false;
           }
         });
 
-      // Process all posts with their like/comment counts
-      const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
-      console.log('CommunityFeed: Processed posts', { count: processedPosts.length, viewScope });
-      setPosts(processedPosts);
+      // Step 4: Transform to Post objects (fast, no DB queries)
+      const transformedPosts = filteredAndTransformed.map(transformDatabasePost);
+      
+      // Step 5: Set basic posts immediately for fast UI update
+      console.log('CommunityFeed: Setting basic posts', { count: transformedPosts.length, viewScope });
+      setPosts(transformedPosts);
       setLastFetchTime(new Date());
+      
+      if (isInitialLoad) {
+        setLoading(false);
+      }
+
+      // Step 6: Load dependencies asynchronously (likes, comments, saved status)
+      const postsWithDependencies = await loadPostDependencies(transformedPosts);
+      console.log('CommunityFeed: Updated posts with dependencies');
+      setPosts(postsWithDependencies);
+
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
@@ -335,10 +378,6 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         description: "Unable to load posts. Please check your internet connection.",
         variant: "destructive",
       });
-      if (isInitialLoad) {
-        setLoading(false);
-      }
-    } finally {
       if (isInitialLoad) {
         setLoading(false);
       }
@@ -356,8 +395,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
         .order('created_at', { ascending: false });
 
       if (newPostsData && newPostsData.length > 0) {
-        // Prepare new posts in background but don't update UI
-        await fetchPostsToBackground();
+        console.log('CommunityFeed: Found', newPostsData.length, 'new posts');
         setHasNewContent(true);
       }
     } catch (error) {
@@ -369,7 +407,7 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
     if (!user) return;
     
     try {
-      // Same logic as fetchPosts but store in backgroundPosts
+      // Use the same optimized pattern for background fetch
       let postsQuery = supabase
         .from('community_posts')
         .select('*')
@@ -419,8 +457,12 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           }
         });
 
-      const processedPosts = await Promise.all(filteredAndTransformed.map(transformDatabasePost));
-      setBackgroundPosts(processedPosts);
+      // Transform posts without dependencies first
+      const transformedPosts = filteredAndTransformed.map(transformDatabasePost);
+      
+      // Load dependencies for background posts
+      const postsWithDependencies = await loadPostDependencies(transformedPosts);
+      setBackgroundPosts(postsWithDependencies);
     } catch (error) {
       console.error('Error preparing background posts:', error);
     }
@@ -603,23 +645,117 @@ const CommunityFeed = ({ activeTab = 'all', viewScope: propViewScope }: Communit
           setHasNewPosts(true); // Just show indicator, don't auto-fetch
         })
         .on('postgres_changes', {
-          event: 'UPDATE',
+          event: 'INSERT',
           schema: 'public',
-          table: 'community_posts'
-        }, (payload) => {
-          console.log('CommunityFeed: Post updated');
-          // Update in place if exists
-          setPosts(prev => prev.map(post => 
-            post.id === payload.new.id ? { ...post } : post
-          ));
+          table: 'post_likes'
+        }, async (payload) => {
+          console.log('CommunityFeed: Post like added');
+          
+          const postId = payload.new?.post_id;
+          if (!postId) return;
+
+          // Update like count and status efficiently
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                likes: post.likes + 1,
+                isLiked: payload.new.user_id === user.id ? true : post.isLiked
+              };
+            }
+            return post;
+          }));
         })
         .on('postgres_changes', {
           event: 'DELETE',
           schema: 'public',
-          table: 'community_posts'
-        }, (payload) => {
-          console.log('CommunityFeed: Post deleted');
-          setPosts(prev => prev.filter(post => post.id !== payload.old.id));
+          table: 'post_likes'
+        }, async (payload) => {
+          console.log('CommunityFeed: Post like removed');
+          
+          const postId = payload.old?.post_id;
+          if (!postId) return;
+
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                likes: Math.max(0, post.likes - 1),
+                isLiked: payload.old.user_id === user.id ? false : post.isLiked
+              };
+            }
+            return post;
+          }));
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'post_comments'
+        }, async (payload) => {
+          console.log('CommunityFeed: Comment added');
+          
+          const postId = payload.new?.post_id;
+          if (!postId) return;
+
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return { ...post, comments: post.comments + 1 };
+            }
+            return post;
+          }));
+        })
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'post_comments'
+        }, async (payload) => {
+          console.log('CommunityFeed: Comment removed');
+          
+          const postId = payload.old?.post_id;
+          if (!postId) return;
+
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return { ...post, comments: Math.max(0, post.comments - 1) };
+            }
+            return post;
+          }));
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'saved_posts',
+          filter: `user_id=eq.${user.id}`
+        }, async (payload) => {
+          console.log('CommunityFeed: Post saved');
+          
+          const postId = payload.new?.post_id;
+          if (!postId) return;
+
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return { ...post, isSaved: true };
+            }
+            return post;
+          }));
+        })
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'saved_posts',
+          filter: `user_id=eq.${user.id}`
+        }, async (payload) => {
+          console.log('CommunityFeed: Post unsaved');
+          
+          const postId = payload.old?.post_id;
+          if (!postId) return;
+
+          setPosts(prev => prev.map(post => {
+            if (post.id === postId) {
+              return { ...post, isSaved: false };
+            }
+            return post;
+          }));
         }),
       {
         channelName: `community_feed_${user.id}`, // User-specific channel
