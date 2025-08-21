@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import { postCache } from "@/services/postCache";
+import { CommunityFilters } from "@/components/CommunityFeedFilters";
 
 interface Event {
   id: string;
@@ -13,6 +14,7 @@ interface Event {
   image_urls?: string[];
   tags?: string[];
   location?: string;
+  location_scope?: string;
   rsvp_enabled?: boolean;
   created_at: string;
   author?: {
@@ -38,23 +40,120 @@ export const useCommunityFeed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [hasNewContent, setHasNewContent] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<CommunityFilters>({
+    tags: [],
+    locationScope: [],
+    postTypes: [],
+    dateRange: 'all',
+    sortBy: 'newest'
+  });
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [unreadCounts, setUnreadCounts] = useState({
     community: 0,
     messages: 0,
     notifications: 0
   });
 
-  const filteredEvents = useMemo(() => {
-    if (!searchQuery.trim()) return events;
+  const filteredAndSortedEvents = useMemo(() => {
+    let result = [...events];
     
-    const query = searchQuery.toLowerCase();
-    return events.filter(event => 
-      event.content?.toLowerCase().includes(query) ||
-      event.title?.toLowerCase().includes(query) ||
-      event.author?.full_name?.toLowerCase().includes(query) ||
-      event.tags?.some(tag => tag.toLowerCase().includes(query))
-    );
-  }, [events, searchQuery]);
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(event => 
+        event.content?.toLowerCase().includes(query) ||
+        event.title?.toLowerCase().includes(query) ||
+        event.author?.full_name?.toLowerCase().includes(query) ||
+        event.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply tag filters
+    if (filters.tags.length > 0) {
+      result = result.filter(event => 
+        event.tags?.some(tag => filters.tags.includes(tag))
+      );
+    }
+
+    // Apply location scope filters
+    if (filters.locationScope.length > 0) {
+      result = result.filter(event => {
+        if (!event.location_scope) return filters.locationScope.includes('all');
+        return filters.locationScope.includes(event.location_scope);
+      });
+    }
+
+    // Apply post type filters
+    if (filters.postTypes.length > 0 && !filters.postTypes.includes('all')) {
+      result = result.filter(event => {
+        if (filters.postTypes.includes('events') && event.rsvp_enabled) return true;
+        if (filters.postTypes.includes('general') && !event.rsvp_enabled) return true;
+        return false;
+      });
+    }
+
+    // Apply date range filter
+    if (filters.dateRange !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (filters.dateRange) {
+        case 'today':
+          filterDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+      }
+      
+      result = result.filter(event => 
+        new Date(event.created_at) >= filterDate
+      );
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'most_liked':
+          return (b.likes_count || 0) - (a.likes_count || 0);
+        case 'most_commented':
+          return (b.comments_count || 0) - (a.comments_count || 0);
+        case 'newest':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [events, searchQuery, filters]);
+
+  // Extract available tags from events
+  useEffect(() => {
+    const allTags = events.reduce((tags: string[], event) => {
+      if (event.tags) {
+        tags.push(...event.tags);
+      }
+      return tags;
+    }, []);
+    
+    const uniqueTags = Array.from(new Set(allTags)).sort();
+    setAvailableTags(uniqueTags);
+  }, [events]);
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.tags.length > 0) count += filters.tags.length;
+    if (filters.locationScope.length > 0) count += filters.locationScope.length;
+    if (filters.postTypes.length > 0) count += filters.postTypes.length;
+    if (filters.dateRange !== 'all') count += 1;
+    return count;
+  }, [filters]);
 
   const fetchPosts = async () => {
     if (!user || !profile) return;
@@ -354,13 +453,17 @@ export const useCommunityFeed = () => {
   }, [user, profile, refreshing]);
 
   return {
-    events: filteredEvents,
+    events: filteredAndSortedEvents,
     loading,
     refreshing,
     hasNewContent,
     searchQuery,
     unreadCounts,
+    filters,
+    availableTags,
+    activeFiltersCount,
     setSearchQuery,
+    setFilters,
     setHasNewContent,
     setUnreadCounts,
     handleLike,
