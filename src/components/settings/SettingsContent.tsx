@@ -34,6 +34,7 @@ import EmergencySettings from './EmergencySettings';
 import EmergencyContacts from './EmergencyContacts';
 import SupportTicketForm from './SupportTicketForm';
 import UserSupportTickets from './UserSupportTickets';
+import { LocationFilterSettings } from './LocationFilterSettings';
 import { TwoFactorSetup } from '@/components/security/TwoFactorSetup';
 import { SuperAdminSecurityPanel } from '@/components/security/SuperAdminSecurityPanel';
 import { useTutorial } from '@/hooks/useTutorial';
@@ -631,13 +632,17 @@ const [audioSettings, setAudioSettings] = useState({
 
         {/* Privacy Tab */}
         <TabsContent value="privacy" className="w-full max-w-full">
-          <Card className="w-full max-w-full overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Shield className="h-5 w-5" />
-                Privacy & Security
-              </CardTitle>
-            </CardHeader>
+          <div className="space-y-6 w-full max-w-full overflow-hidden">
+            {/* Location Filter Settings */}
+            <LocationFilterSettings />
+            
+            <Card className="w-full max-w-full overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Shield className="h-5 w-5" />
+                  Privacy & Security
+                </CardTitle>
+              </CardHeader>
             <CardContent className="space-y-6 overflow-x-hidden">
               <div className="space-y-4">
                 <h3 className="font-medium">Profile Visibility</h3>
@@ -737,6 +742,7 @@ const [audioSettings, setAudioSettings] = useState({
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Account Tab */}
