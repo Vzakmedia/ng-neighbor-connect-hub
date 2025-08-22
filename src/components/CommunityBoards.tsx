@@ -552,6 +552,22 @@ const CommunityBoards = () => {
     if (!user) return;
 
     try {
+      // First check if user already has this reaction
+      const { data: existingReaction } = await supabase
+        .from('board_post_reactions')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', user.id)
+        .eq('reaction', reaction)
+        .single();
+
+      if (existingReaction) {
+        // If reaction exists, remove it instead
+        await removeReaction(postId, reaction);
+        return;
+      }
+
+      // Insert new reaction
       const { error } = await supabase
         .from('board_post_reactions')
         .insert({
