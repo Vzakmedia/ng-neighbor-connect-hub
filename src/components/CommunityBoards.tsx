@@ -167,6 +167,7 @@ interface BoardPost {
     reaction: string;
     created_at: string;
   }>;
+  tagged_members?: string[];
 }
 
 const CommunityBoards = () => {
@@ -469,7 +470,8 @@ const CommunityBoards = () => {
         board_id: selectedBoard,
         user_id: user.id,
         content: newMessage.trim(),
-        post_type: 'message'
+        post_type: 'message',
+        tagged_members: taggedMembers
       };
 
       // Add attachments if there are any
@@ -485,6 +487,7 @@ const CommunityBoards = () => {
 
       setNewMessage('');
       setPendingAttachments([]);
+      setTaggedMembers([]);
       fetchPosts();
       scrollToBottom();
     } catch (error) {
@@ -1028,6 +1031,27 @@ const CommunityBoards = () => {
     }
   };
 
+  // Render message content with highlighted mentions
+  const renderMessageWithMentions = (content: string) => {
+    // Split content by @ mentions and render them differently
+    const parts = content.split(/(@[^@\s]+)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        const mentionName = part.substring(1).trim();
+        return (
+          <span
+            key={index}
+            className="inline-flex items-center px-1 py-0.5 rounded bg-primary/10 text-primary font-medium text-sm"
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   // Fetch join requests
   const fetchJoinRequests = async () => {
     if (!selectedBoard) return;
@@ -1467,7 +1491,9 @@ const CommunityBoards = () => {
                         </div>
                         
                         {post.content && (
-                          <p className="text-sm mt-1 break-words">{post.content}</p>
+                          <div className="text-sm mt-1 break-words">
+                            {renderMessageWithMentions(post.content)}
+                          </div>
                         )}
                         
                         {/* Attachments */}
@@ -1489,6 +1515,24 @@ const CommunityBoards = () => {
                                 </span>
                               </div>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Tagged Members */}
+                        {post.tagged_members && post.tagged_members.length > 0 && (
+                          <div className="mt-2">
+                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              <span>Mentioned:</span>
+                              {post.tagged_members.map((memberId, index) => {
+                                const member = boardMembers.find(m => m.user_id === memberId);
+                                return member ? (
+                                  <Badge key={memberId} variant="secondary" className="text-xs">
+                                    {member.profiles?.full_name || 'Unknown User'}
+                                  </Badge>
+                                ) : null;
+                              })}
+                            </div>
                           </div>
                         )}
 
@@ -1581,38 +1625,74 @@ const CommunityBoards = () => {
                 </div>
               )}
               
-              <div className="flex space-x-2">
-                {/* File attachment input */}
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-input"
-                  accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('file-input')?.click()}
-                  disabled={uploading}
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                 
-                <Input
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={sendMessage} 
-                  disabled={!newMessage.trim() && pendingAttachments.length === 0}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="relative">
+                <div className="flex space-x-2">
+                  {/* File attachment input */}
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-input"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('file-input')?.click()}
+                    disabled={uploading}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                   
+                  <div className="relative flex-1">
+                    <Textarea
+                      ref={messageInputRef}
+                      placeholder="Type your message... Use @ to mention members"
+                      value={newMessage}
+                      onChange={handleMessageInputChange}
+                      onKeyDown={handleKeyDown}
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                      className="min-h-[40px] max-h-32 resize-none"
+                      rows={1}
+                    />
+                    
+                    {/* Mention Dropdown */}
+                    {showMentionDropdown && mentionSuggestions.length > 0 && (
+                      <div className="absolute bottom-full left-0 right-0 mb-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto z-50">
+                        {mentionSuggestions.map((member) => (
+                          <button
+                            key={member.id}
+                            onClick={() => insertMention(member)}
+                            className="w-full flex items-center space-x-2 px-3 py-2 hover:bg-accent text-left transition-colors"
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={member.profiles?.avatar_url || ''} />
+                              <AvatarFallback className="text-xs">
+                                {member.profiles?.full_name?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {member.profiles?.full_name || 'Unknown User'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {member.role} • {member.profiles?.city}, {member.profiles?.state}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    onClick={sendMessage} 
+                    disabled={!newMessage.trim() && pendingAttachments.length === 0}
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </>
