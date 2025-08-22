@@ -1205,39 +1205,7 @@ const CommunityBoards = () => {
       <div className={`w-full md:w-80 border-b md:border-r md:border-b-0 bg-card flex-shrink-0 ${
         isMobile && showMobileConversation ? 'hidden' : ''
       }`}>
-        <div className="p-4 space-y-4">
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button 
-              variant={showingDiscoveredBoards ? "outline" : "default"}
-              size="sm"
-              onClick={() => {
-                if (!showingDiscoveredBoards) {
-                  setShowingDiscoveredBoards(false);
-                } else {
-                  setShowingDiscoveredBoards(false);
-                }
-              }}
-              className="flex-1"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              My Boards
-            </Button>
-            <Button 
-              variant={showingDiscoveredBoards ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                if (!showingDiscoveredBoards) {
-                  fetchPublicBoards();
-                }
-                setShowingDiscoveredBoards(true);
-              }}
-              className="flex-1"
-            >
-              <Globe className="h-4 w-4 mr-2" />
-              Discover
-            </Button>
-          </div>
+        <div className="p-2 space-y-2">
 
           {/* Create Board Button */}
           <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
@@ -1355,9 +1323,9 @@ const CommunityBoards = () => {
       }`}>
         {selectedBoard && currentBoard ? (
           <>
-            {/* Enhanced Board Conversation Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
-              <div className="p-4">
+            {/* Compact Mobile-Optimized Board Header */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+              <div className="p-2 sm:p-3">
                 <div className="flex items-center justify-between">
                   {/* Mobile back button and board info */}
                   <div className="flex items-center flex-1 min-w-0">
@@ -1366,54 +1334,55 @@ const CommunityBoards = () => {
                         variant="ghost"
                         size="sm"
                         onClick={handleMobileBack}
-                        className="mr-3 flex-shrink-0"
+                        className="mr-2 flex-shrink-0 h-8 w-8 p-0"
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
                     )}
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      {/* Board Avatar */}
-                      <Avatar className="h-10 w-10 flex-shrink-0">
+                    <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                      {/* Board Avatar - smaller on mobile */}
+                      <Avatar className="h-7 w-7 sm:h-9 sm:w-9 flex-shrink-0">
                         <AvatarImage src={currentBoard.avatar_url || ''} />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
                           {currentBoard.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       
-                      {/* Board Details */}
+                      {/* Board Details - compact mobile layout */}
                       <div className="flex-1 min-w-0">
-                        <h1 className="text-xl font-bold truncate">{currentBoard.name}</h1>
-                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                          <Badge variant="secondary" className="text-xs">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {currentBoard.location_scope}
+                        <h1 className="text-base sm:text-lg font-bold truncate leading-tight">{currentBoard.name}</h1>
+                        <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-muted-foreground">
+                          <Badge variant="secondary" className="text-xs px-1 py-0 h-5">
+                            <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                            <span className="hidden sm:inline">{currentBoard.location_scope}</span>
+                            <span className="sm:hidden">{currentBoard.location_scope.charAt(0).toUpperCase()}</span>
                           </Badge>
                           <Badge 
                             variant="outline" 
-                            className={`text-xs ${currentBoard.allow_member_list || isAdminOrModerator(currentBoard) ? "cursor-pointer hover:bg-accent" : ""}`}
+                            className={`text-xs px-1 py-0 h-5 ${currentBoard.allow_member_list || isAdminOrModerator(currentBoard) ? "cursor-pointer hover:bg-accent" : ""}`}
                             onClick={() => {
                               if (currentBoard.allow_member_list || isAdminOrModerator(currentBoard)) {
                                 setShowMembersList(true);
                               }
                             }}
                           >
-                            <Users className="h-3 w-3 mr-1" />
-                            {currentBoard.member_count} members
+                            <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5" />
+                            {currentBoard.member_count}
                           </Badge>
                           {currentBoard.is_public ? (
-                            <Badge variant="outline" className="text-xs">
-                              <Globe className="h-3 w-3 mr-1" />
-                              Public
+                            <Badge variant="outline" className="text-xs px-1 py-0 h-5 hidden sm:flex">
+                              <Globe className="h-2.5 w-2.5 mr-0.5" />
+                              <span className="hidden md:inline">Public</span>
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Private
+                            <Badge variant="outline" className="text-xs px-1 py-0 h-5 hidden sm:flex">
+                              <Shield className="h-2.5 w-2.5 mr-0.5" />
+                              <span className="hidden md:inline">Private</span>
                             </Badge>
                           )}
                         </div>
                         {currentBoard.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-1 hidden sm:block">
                             {currentBoard.description}
                           </p>
                         )}
@@ -1421,12 +1390,12 @@ const CommunityBoards = () => {
                     </div>
                   </div>
                   
-                  {/* Board Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Board Actions - compact */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {isAdminOrModerator(currentBoard) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
