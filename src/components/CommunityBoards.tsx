@@ -37,7 +37,11 @@ import {
   RefreshCw,
   Trash2,
   CheckCircle,
-  Check
+  Check,
+  Link,
+  Calendar,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,6 +85,18 @@ interface BoardMember {
   } | null;
 }
 
+interface InviteLink {
+  id: string;
+  board_id: string;
+  token: string;
+  expires_at: string | null;
+  max_uses: number | null;
+  uses: number;
+  created_by: string;
+  created_at: string;
+  is_active: boolean;
+}
+
 interface BoardPost {
   id: string;
   board_id: string;
@@ -122,6 +138,10 @@ const CommunityBoards = () => {
   const [showBoardSettings, setShowBoardSettings] = useState(false);
   const [showMembersList, setShowMembersList] = useState(false);
   const [boardMembers, setBoardMembers] = useState<BoardMember[]>([]);
+  const [inviteLinks, setInviteLinks] = useState<InviteLink[]>([]);
+  const [showInviteLinks, setShowInviteLinks] = useState(false);
+  const [newInviteExpiry, setNewInviteExpiry] = useState<string>('');
+  const [newInviteMaxUses, setNewInviteMaxUses] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
@@ -468,6 +488,117 @@ const CommunityBoards = () => {
     }
   };
 
+  // Fetch invite links
+  const fetchInviteLinks = async () => {
+    if (!selectedBoard) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('group_invites')
+        .select('*')
+        .eq('board_id', selectedBoard)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInviteLinks(data || []);
+    } catch (error) {
+      console.error('Error fetching invite links:', error);
+    }
+  };
+
+  // Create invite link
+  const createInviteLink = async () => {
+    if (!selectedBoard || !user) return;
+
+    try {
+      const insertData: any = {
+        board_id: selectedBoard,
+        created_by: user.id,
+      };
+
+      if (newInviteExpiry) {
+        const expiryDate = new Date();
+        const days = parseInt(newInviteExpiry);
+        expiryDate.setDate(expiryDate.getDate() + days);
+        insertData.expires_at = expiryDate.toISOString();
+      }
+
+      if (newInviteMaxUses) {
+        insertData.max_uses = parseInt(newInviteMaxUses);
+      }
+
+      const { data, error } = await supabase
+        .from('group_invites')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Invite link created",
+        description: "A new invite link has been generated.",
+      });
+
+      setNewInviteExpiry('');
+      setNewInviteMaxUses('');
+      fetchInviteLinks();
+    } catch (error) {
+      console.error('Error creating invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create invite link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Deactivate invite link
+  const deactivateInviteLink = async (inviteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('group_invites')
+        .update({ is_active: false })
+        .eq('id', inviteId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Invite link deactivated",
+        description: "The invite link has been deactivated.",
+      });
+
+      fetchInviteLinks();
+    } catch (error) {
+      console.error('Error deactivating invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate invite link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Copy invite link to clipboard
+  const copyInviteLink = async (token: string) => {
+    const inviteUrl = `${window.location.origin}/community?invite=${token}`;
+    
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast({
+        title: "Link copied",
+        description: "Invite link has been copied to clipboard.",
+      });
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -712,6 +843,13 @@ const CommunityBoards = () => {
                           <Users className="h-4 w-4 mr-2" />
                           Manage Members
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setShowInviteLinks(true);
+                          fetchInviteLinks();
+                        }}>
+                          <Link className="h-4 w-4 mr-2" />
+                          Invite Links
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -897,6 +1035,107 @@ const CommunityBoards = () => {
               ))}
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Links Dialog */}
+      <Dialog open={showInviteLinks} onOpenChange={setShowInviteLinks}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Invite Links</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Create New Invite */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h3 className="font-medium">Create New Invite Link</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="invite-expiry">Expires in (days)</Label>
+                  <Input
+                    id="invite-expiry"
+                    type="number"
+                    placeholder="Leave empty for no expiry"
+                    value={newInviteExpiry}
+                    onChange={(e) => setNewInviteExpiry(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="invite-max-uses">Max uses</Label>
+                  <Input
+                    id="invite-max-uses"
+                    type="number"
+                    placeholder="Leave empty for unlimited"
+                    value={newInviteMaxUses}
+                    onChange={(e) => setNewInviteMaxUses(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button onClick={createInviteLink} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Invite Link
+              </Button>
+            </div>
+
+            {/* Existing Invites */}
+            <div className="space-y-3">
+              <h3 className="font-medium">Active Invite Links</h3>
+              {inviteLinks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Link className="h-8 w-8 mx-auto mb-2" />
+                  <p>No invite links created yet</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-60">
+                  <div className="space-y-3">
+                    {inviteLinks.map((invite) => (
+                      <div key={invite.id} className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={invite.is_active ? "default" : "secondary"}>
+                              {invite.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Uses: {invite.uses}/{invite.max_uses || '∞'}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyInviteLink(invite.token)}
+                              disabled={!invite.is_active}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            {invite.is_active && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deactivateInviteLink(invite.id)}
+                              >
+                                <EyeOff className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p>Created: {new Date(invite.created_at).toLocaleDateString()}</p>
+                          {invite.expires_at && (
+                            <p>Expires: {new Date(invite.expires_at).toLocaleDateString()}</p>
+                          )}
+                          <div className="font-mono text-xs bg-muted p-2 rounded break-all">
+                            {window.location.origin}/community?invite={invite.token}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
