@@ -1142,7 +1142,8 @@ const CommunityBoards = () => {
   };
 
   // Check if user is admin or moderator
-  const isAdminOrModerator = (board: DiscussionBoard) => {
+  const isAdminOrModerator = (board: DiscussionBoard | null | undefined) => {
+    if (!board) return false;
     return board.user_role === 'admin' || board.user_role === 'moderator' || board.creator_id === user?.id;
   };
 
@@ -2065,7 +2066,7 @@ const CommunityBoards = () => {
                     </Badge>
                     
                     {/* Admin Controls */}
-                    {isAdminOrModerator(currentBoard!) && member.user_id !== currentBoard?.creator_id && (
+                    {isAdminOrModerator(currentBoard) && member.user_id !== currentBoard?.creator_id && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
