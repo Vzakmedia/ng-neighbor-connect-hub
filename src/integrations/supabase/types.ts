@@ -887,6 +887,38 @@ export type Database = {
           },
         ]
       }
+      board_post_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "board_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_post_read_status: {
         Row: {
           created_at: string
@@ -922,6 +954,7 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_pinned: boolean | null
+          parent_message_id: string | null
           post_type: string | null
           reply_to_id: string | null
           updated_at: string
@@ -937,6 +970,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_pinned?: boolean | null
+          parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
           updated_at?: string
@@ -952,6 +986,7 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_pinned?: boolean | null
+          parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
           updated_at?: string
@@ -963,6 +998,13 @@ export type Database = {
             columns: ["board_id"]
             isOneToOne: false
             referencedRelation: "discussion_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_posts_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "board_posts"
             referencedColumns: ["id"]
           },
           {
@@ -1644,9 +1686,12 @@ export type Database = {
           created_at: string
           creator_id: string
           description: string | null
+          discoverable: boolean | null
           id: string
+          is_private: boolean | null
           is_public: boolean | null
           location: string | null
+          location_name: string | null
           location_scope: string | null
           member_limit: number | null
           name: string
@@ -1659,9 +1704,12 @@ export type Database = {
           created_at?: string
           creator_id: string
           description?: string | null
+          discoverable?: boolean | null
           id?: string
+          is_private?: boolean | null
           is_public?: boolean | null
           location?: string | null
+          location_name?: string | null
           location_scope?: string | null
           member_limit?: number | null
           name: string
@@ -1674,9 +1722,12 @@ export type Database = {
           created_at?: string
           creator_id?: string
           description?: string | null
+          discoverable?: boolean | null
           id?: string
+          is_private?: boolean | null
           is_public?: boolean | null
           location?: string | null
+          location_name?: string | null
           location_scope?: string | null
           member_limit?: number | null
           name?: string
@@ -2023,6 +2074,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      group_invites: {
+        Row: {
+          board_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          token: string
+          uses: number | null
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          token?: string
+          uses?: number | null
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          token?: string
+          uses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invites_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "discussion_boards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_postings: {
         Row: {
@@ -5161,6 +5256,10 @@ export type Database = {
       confirm_emergency_contact_request: {
         Args: { _accept?: boolean; _request_id: string }
         Returns: Json
+      }
+      consume_invite_link: {
+        Args: { invite_token: string; joining_user_id: string }
+        Returns: boolean
       }
       create_conversation_with_request_check: {
         Args: {
