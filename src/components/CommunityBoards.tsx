@@ -365,7 +365,6 @@ const CommunityBoards = () => {
 
   // Fetch posts for selected board
   const fetchPosts = async () => {
-    console.log('fetchPosts called with selectedBoard:', selectedBoard);
     if (!selectedBoard) return;
 
     try {
@@ -1012,7 +1011,6 @@ const CommunityBoards = () => {
                   selectedBoard === board.id ? 'bg-accent border-primary' : ''
                 }`}
                 onClick={() => {
-                  console.log('Board clicked:', board.id, 'User role:', board.user_role);
                   if (board.user_role) {
                     setSelectedBoard(board.id);
                   }
