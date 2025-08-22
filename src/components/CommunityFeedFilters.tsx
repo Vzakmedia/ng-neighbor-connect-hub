@@ -223,7 +223,7 @@ export const CommunityFeedFilters = ({
                   {postTypeOptions.map(type => (
                     <div 
                       key={type.value} 
-                      className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
                         filters.postTypes.includes(type.value) 
                           ? 'bg-primary/10 border-primary/30' 
                           : 'bg-background border-border/50 hover:bg-accent/30'
@@ -257,7 +257,7 @@ export const CommunityFeedFilters = ({
                   {locationScopeOptions.map(scope => (
                     <div 
                       key={scope.value} 
-                      className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
                         filters.locationScope.includes(scope.value) 
                           ? 'bg-primary/10 border-primary/30' 
                           : 'bg-background border-border/50 hover:bg-accent/30'
@@ -292,7 +292,7 @@ export const CommunityFeedFilters = ({
                     {availableTags.slice(0, 6).map(tag => (
                       <div 
                         key={tag} 
-                        className={`flex items-center space-x-1.5 p-1.5 rounded border text-xs cursor-pointer transition-all ${
+                        className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
                           filters.tags.includes(tag) 
                             ? 'bg-primary/10 border-primary/30' 
                             : 'bg-background border-border/50 hover:bg-accent/30'
