@@ -1681,6 +1681,8 @@ export type Database = {
       }
       discussion_boards: {
         Row: {
+          allow_member_invites: boolean | null
+          allow_member_list: boolean | null
           auto_approve_members: boolean | null
           avatar_url: string | null
           created_at: string
@@ -1699,6 +1701,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_member_invites?: boolean | null
+          allow_member_list?: boolean | null
           auto_approve_members?: boolean | null
           avatar_url?: string | null
           created_at?: string
@@ -1717,6 +1721,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_member_invites?: boolean | null
+          allow_member_list?: boolean | null
           auto_approve_members?: boolean | null
           avatar_url?: string | null
           created_at?: string
