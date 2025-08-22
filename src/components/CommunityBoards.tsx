@@ -469,8 +469,10 @@ const CommunityBoards = () => {
         post_type: 'message'
       };
 
+      // Only add attachments if there are any and if the column exists
       if (pendingAttachments.length > 0) {
-        insertData.attachments = pendingAttachments;
+        // For now, let's store attachments as JSON in the content field until the column is properly added
+        insertData.content = newMessage.trim() + (pendingAttachments.length > 0 ? `\n\n[Attachments: ${pendingAttachments.map(a => a.name).join(', ')}]` : '');
       }
 
       const { error } = await supabase
@@ -1420,7 +1422,7 @@ const CommunityBoards = () => {
 
             {/* Message Input */}
             <div className="p-4 border-t bg-card">
-              {/* Pending attachments preview */}
+              {/* Temporarily disable attachment preview until column is added
               {pendingAttachments.length > 0 && (
                 <div className="mb-3 space-y-2">
                   <p className="text-sm font-medium">Attachments:</p>
@@ -1442,10 +1444,10 @@ const CommunityBoards = () => {
                     </div>
                   ))}
                 </div>
-              )}
+              )} */}
               
               <div className="flex space-x-2">
-                {/* File attachment input */}
+                {/* Temporarily disable file attachment
                 <input
                   type="file"
                   multiple
@@ -1461,7 +1463,7 @@ const CommunityBoards = () => {
                   disabled={uploading}
                 >
                   <Paperclip className="h-4 w-4" />
-                </Button>
+                </Button> */}
                 
                 <Input
                   placeholder="Type your message..."
@@ -1472,7 +1474,7 @@ const CommunityBoards = () => {
                 />
                 <Button 
                   onClick={sendMessage} 
-                  disabled={!newMessage.trim() && pendingAttachments.length === 0}
+                  disabled={!newMessage.trim()}
                 >
                   <Send className="h-4 w-4" />
                 </Button>
