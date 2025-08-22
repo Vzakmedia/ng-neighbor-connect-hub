@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal } from "lucide-react";
+import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
 export interface CommunityFilters {
@@ -30,6 +31,7 @@ export const CommunityFeedFilters = ({
   activeFiltersCount
 }: CommunityFeedFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
 
   const locationScopeOptions = [
     { value: 'neighborhood', label: 'Neighborhood', icon: MapPin },
@@ -58,13 +60,24 @@ export const CommunityFeedFilters = ({
     { value: 'most_commented', label: 'Most Commented' }
   ];
 
-  const handleTagToggle = (tag: string) => {
-    const newTags = filters.tags.includes(tag)
-      ? filters.tags.filter(t => t !== tag)
-      : [...filters.tags, tag];
-    
-    onFiltersChange({ ...filters, tags: newTags });
+  const handleTagAdd = (tag: string) => {
+    if (tag.trim() && !filters.tags.includes(tag.trim())) {
+      onFiltersChange({ ...filters, tags: [...filters.tags, tag.trim()] });
+      setTagSearch("");
+    }
   };
+
+  const handleTagRemove = (tag: string) => {
+    onFiltersChange({ 
+      ...filters, 
+      tags: filters.tags.filter(t => t !== tag) 
+    });
+  };
+
+  const filteredAvailableTags = availableTags.filter(tag => 
+    tag.toLowerCase().includes(tagSearch.toLowerCase()) && 
+    !filters.tags.includes(tag)
+  );
 
   const handleLocationScopeToggle = (scope: string) => {
     const newScopes = filters.locationScope.includes(scope)
@@ -223,7 +236,7 @@ export const CommunityFeedFilters = ({
                   {postTypeOptions.map(type => (
                     <div 
                       key={type.value} 
-                      className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center space-x-1 py-0.5 px-1 rounded border text-xs cursor-pointer transition-all ${
                         filters.postTypes.includes(type.value) 
                           ? 'bg-primary/10 border-primary/30' 
                           : 'bg-background border-border/50 hover:bg-accent/30'
@@ -257,7 +270,7 @@ export const CommunityFeedFilters = ({
                   {locationScopeOptions.map(scope => (
                     <div 
                       key={scope.value} 
-                      className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
+                      className={`flex items-center space-x-1 py-0.5 px-1 rounded border text-xs cursor-pointer transition-all ${
                         filters.locationScope.includes(scope.value) 
                           ? 'bg-primary/10 border-primary/30' 
                           : 'bg-background border-border/50 hover:bg-accent/30'
@@ -281,46 +294,67 @@ export const CommunityFeedFilters = ({
                 </div>
               </div>
 
-              {/* Tags */}
-              {availableTags.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium flex items-center gap-1">
-                    <Tag className="h-3 w-3" />
-                    Tags
-                  </Label>
-                  <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto">
-                    {availableTags.slice(0, 6).map(tag => (
-                      <div 
-                        key={tag} 
-                        className={`flex items-center space-x-1.5 p-1 rounded border text-xs cursor-pointer transition-all ${
-                          filters.tags.includes(tag) 
-                            ? 'bg-primary/10 border-primary/30' 
-                            : 'bg-background border-border/50 hover:bg-accent/30'
-                        }`}
-                        onClick={() => handleTagToggle(tag)}
+              {/* Tags Search */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Tags
+                </Label>
+                
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Search or add tags..."
+                    value={tagSearch}
+                    onChange={(e) => setTagSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && tagSearch.trim()) {
+                        handleTagAdd(tagSearch);
+                      }
+                    }}
+                    className="h-7 pl-7 text-xs bg-background"
+                  />
+                </div>
+
+                {/* Selected Tags */}
+                {filters.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {filters.tags.map(tag => (
+                      <Badge
+                        key={tag}
+                        variant="default"
+                        className="gap-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary border-primary/20"
                       >
-                        <Checkbox
-                          id={`tag-${tag}`}
-                          checked={filters.tags.includes(tag)}
-                          onCheckedChange={() => handleTagToggle(tag)}
-                          className="h-3 w-3"
-                        />
-                        <Label
-                          htmlFor={`tag-${tag}`}
-                          className="text-xs font-medium cursor-pointer truncate"
+                        #{tag}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 ml-1 hover:bg-primary/20 text-primary"
+                          onClick={() => handleTagRemove(tag)}
                         >
-                          #{tag.length > 8 ? tag.substring(0, 8) + '...' : tag}
-                        </Label>
+                          <X className="h-2 w-2" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Available Tags Suggestions */}
+                {tagSearch && filteredAvailableTags.length > 0 && (
+                  <div className="max-h-16 overflow-y-auto space-y-0.5">
+                    {filteredAvailableTags.slice(0, 4).map(tag => (
+                      <div
+                        key={tag}
+                        onClick={() => handleTagAdd(tag)}
+                        className="text-xs p-1 hover:bg-accent/50 rounded cursor-pointer transition-colors"
+                      >
+                        #{tag}
                       </div>
                     ))}
                   </div>
-                  {availableTags.length > 6 && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      +{availableTags.length - 6} more
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </PopoverContent>
         </Popover>
