@@ -41,7 +41,11 @@ import {
   Link,
   Calendar,
   Eye,
-  EyeOff
+  EyeOff,
+  UserPlus,
+  UserCheck,
+  UserX,
+  Ban
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -68,6 +72,32 @@ interface DiscussionBoard {
   auto_approve_members: boolean;
   member_count: number;
   user_role: string | null;
+}
+
+interface JoinRequest {
+  id: string;
+  board_id: string;
+  user_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  profiles?: {
+    full_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
+    state: string | null;
+  } | null;
+}
+
+interface UserSearchResult {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  city: string | null;
+  state: string | null;
 }
 
 interface BoardMember {
@@ -142,6 +172,11 @@ const CommunityBoards = () => {
   const [showInviteLinks, setShowInviteLinks] = useState(false);
   const [newInviteExpiry, setNewInviteExpiry] = useState<string>('');
   const [newInviteMaxUses, setNewInviteMaxUses] = useState<string>('');
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [showJoinRequests, setShowJoinRequests] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
@@ -599,6 +634,226 @@ const CommunityBoards = () => {
     }
   };
 
+  // Search for users to add
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, city, state')
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+      setUserSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    }
+  };
+
+  // Add member directly
+  const addMemberDirectly = async (userId: string) => {
+    if (!selectedBoard || !user) return;
+
+    try {
+      // Check if user is already a member
+      const { data: existingMember } = await supabase
+        .from('board_members')
+        .select('id')
+        .eq('board_id', selectedBoard)
+        .eq('user_id', userId)
+        .single();
+
+      if (existingMember) {
+        toast({
+          title: "Error",
+          description: "User is already a member of this board.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('board_members')
+        .insert({
+          board_id: selectedBoard,
+          user_id: userId,
+          role: 'member'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Member added",
+        description: "User has been added to the board successfully.",
+      });
+
+      setShowAddMember(false);
+      setUserSearchQuery('');
+      setUserSearchResults([]);
+      fetchBoardMembers();
+      fetchBoards(); // Refresh to update member count
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add member to board.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Remove member
+  const removeMember = async (memberId: string, memberUserId: string) => {
+    if (!selectedBoard || !user) return;
+
+    // Don't allow removing the board creator
+    if (currentBoard?.creator_id === memberUserId) {
+      toast({
+        title: "Cannot remove creator",
+        description: "The board creator cannot be removed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member removed",
+        description: "Member has been removed from the board.",
+      });
+
+      fetchBoardMembers();
+      fetchBoards(); // Refresh to update member count
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove member.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update member role
+  const updateMemberRole = async (memberId: string, newRole: 'admin' | 'moderator' | 'member') => {
+    if (!selectedBoard || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role updated",
+        description: "Member role has been updated successfully.",
+      });
+
+      fetchBoardMembers();
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member role.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fetch join requests
+  const fetchJoinRequests = async () => {
+    if (!selectedBoard) return;
+
+    try {
+      // Fetch join requests first
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('board_join_requests')
+        .select('*')
+        .eq('board_id', selectedBoard)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requestsError) throw requestsError;
+
+      if (!requestsData || requestsData.length === 0) {
+        setJoinRequests([]);
+        return;
+      }
+
+      // Get user IDs for profile lookup
+      const userIds = requestsData.map(request => request.user_id);
+
+      // Fetch profiles separately
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, city, state')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const joinRequestsWithProfiles = requestsData.map(request => ({
+        ...request,
+        status: request.status as 'pending' | 'approved' | 'rejected',
+        profiles: profilesData?.find(profile => profile.user_id === request.user_id) || null
+      }));
+
+      setJoinRequests(joinRequestsWithProfiles);
+    } catch (error) {
+      console.error('Error fetching join requests:', error);
+    }
+  };
+
+  // Handle join request
+  const handleJoinRequest = async (requestId: string, action: 'approve' | 'reject') => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_join_requests')
+        .update({
+          status: action === 'approve' ? 'approved' : 'rejected',
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: action === 'approve' ? "Request approved" : "Request rejected",
+        description: `Join request has been ${action}d.`,
+      });
+
+      fetchJoinRequests();
+      if (action === 'approve') {
+        fetchBoardMembers();
+        fetchBoards(); // Refresh to update member count
+      }
+    } catch (error) {
+      console.error('Error handling join request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process join request.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -644,6 +899,7 @@ const CommunityBoards = () => {
     if (selectedBoard) {
       fetchPosts();
       fetchBoardMembers();
+      fetchJoinRequests();
       scrollToBottom();
     }
   }, [selectedBoard]);
@@ -839,17 +1095,28 @@ const CommunityBoards = () => {
                           <Settings className="h-4 w-4 mr-2" />
                           Board Settings
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowMembersList(true)}>
-                          <Users className="h-4 w-4 mr-2" />
-                          Manage Members
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setShowInviteLinks(true);
-                          fetchInviteLinks();
-                        }}>
-                          <Link className="h-4 w-4 mr-2" />
-                          Invite Links
-                        </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setShowMembersList(true)}>
+                           <Users className="h-4 w-4 mr-2" />
+                           Manage Members
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => setShowAddMember(true)}>
+                           <UserPlus className="h-4 w-4 mr-2" />
+                           Add Members
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => {
+                           setShowJoinRequests(true);
+                           fetchJoinRequests();
+                         }}>
+                           <UserCheck className="h-4 w-4 mr-2" />
+                           Join Requests
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => {
+                           setShowInviteLinks(true);
+                           fetchInviteLinks();
+                         }}>
+                           <Link className="h-4 w-4 mr-2" />
+                           Invite Links
+                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -1030,6 +1297,227 @@ const CommunityBoards = () => {
                       {member.role === 'moderator' && <Shield className="h-3 w-3 mr-1" />}
                       {member.role}
                     </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMember} onOpenChange={setShowAddMember}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Members</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="user-search">Search Users</Label>
+              <Input
+                id="user-search"
+                placeholder="Search by name or email..."
+                value={userSearchQuery}
+                onChange={(e) => {
+                  setUserSearchQuery(e.target.value);
+                  searchUsers(e.target.value);
+                }}
+              />
+            </div>
+            
+            {/* Search Results */}
+            {userSearchResults.length > 0 && (
+              <ScrollArea className="h-60">
+                <div className="space-y-2">
+                  {userSearchResults.map((user) => (
+                    <div key={user.user_id} className="flex items-center justify-between p-3 rounded-lg border">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar_url || ''} />
+                          <AvatarFallback>
+                            {user.full_name?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {user.full_name || 'Unknown User'}
+                          </p>
+                          {user.city && (
+                            <p className="text-xs text-muted-foreground">
+                              {user.city}, {user.state}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => addMemberDirectly(user.user_id)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+            
+            {userSearchQuery.length >= 2 && userSearchResults.length === 0 && (
+              <div className="text-center py-4 text-muted-foreground">
+                <p>No users found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Join Requests Dialog */}
+      <Dialog open={showJoinRequests} onOpenChange={setShowJoinRequests}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Join Requests</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-96">
+            <div className="space-y-3">
+              {joinRequests.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <UserCheck className="h-8 w-8 mx-auto mb-2" />
+                  <p>No pending join requests</p>
+                </div>
+              ) : (
+                joinRequests.map((request) => (
+                  <div key={request.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={request.profiles?.avatar_url || ''} />
+                          <AvatarFallback>
+                            {request.profiles?.full_name?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {request.profiles?.full_name || 'Unknown User'}
+                          </p>
+                          {request.profiles?.city && (
+                            <p className="text-xs text-muted-foreground">
+                              {request.profiles.city}, {request.profiles.state}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Requested: {new Date(request.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleJoinRequest(request.id, 'reject')}
+                        >
+                          <UserX className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleJoinRequest(request.id, 'approve')}
+                        >
+                          <UserCheck className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                      </div>
+                    </div>
+                    {request.message && (
+                      <div className="mt-3 p-2 bg-muted rounded text-sm">
+                        <p className="font-medium">Message:</p>
+                        <p>{request.message}</p>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enhanced Members List Dialog with Admin Controls */}
+      <Dialog open={showMembersList} onOpenChange={setShowMembersList}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {currentBoard?.name} Members ({boardMembers.length})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-80">
+            <div className="space-y-3">
+              {boardMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={member.profiles?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {member.profiles?.full_name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {member.profiles?.full_name || 'Unknown User'}
+                      </p>
+                      {member.profiles?.city && (
+                        <p className="text-xs text-muted-foreground">
+                          {member.profiles.city}, {member.profiles.state}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge
+                      variant={
+                        member.role === 'admin' ? 'default' : 
+                        member.role === 'moderator' ? 'secondary' : 'outline'
+                      }
+                      className="capitalize"
+                    >
+                      {member.role === 'admin' && <Crown className="h-3 w-3 mr-1" />}
+                      {member.role === 'moderator' && <Shield className="h-3 w-3 mr-1" />}
+                      {member.role}
+                    </Badge>
+                    
+                    {/* Admin Controls */}
+                    {isAdminOrModerator(currentBoard!) && member.user_id !== currentBoard?.creator_id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'member')}>
+                            <Users className="h-4 w-4 mr-2" />
+                            Make Member
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'moderator')}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            Make Moderator
+                          </DropdownMenuItem>
+                          {currentBoard?.creator_id === user?.id && (
+                            <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'admin')}>
+                              <Crown className="h-4 w-4 mr-2" />
+                              Make Admin
+                            </DropdownMenuItem>
+                          )}
+                          <Separator />
+                          <DropdownMenuItem 
+                            onClick={() => removeMember(member.id, member.user_id)}
+                            className="text-destructive"
+                          >
+                            <Ban className="h-4 w-4 mr-2" />
+                            Remove Member
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
               ))}
