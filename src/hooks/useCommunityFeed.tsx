@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
-import { postCache } from "@/services/postCache";
+
 import { CommunityFilters } from "@/components/CommunityFeedFilters";
 import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 
@@ -90,39 +90,8 @@ export const useCommunityFeed = () => {
       );
     }
 
-    // Apply location scope filters
-    if (filters.locationScope !== 'all' && profile) {
-      const userLocation = {
-        neighborhood: profile.neighborhood,
-        city: profile.city,
-        state: profile.state
-      };
-      
-      result = result.filter(event => {
-        switch (filters.locationScope) {
-          case 'neighborhood':
-            // Show posts targeted to user's neighborhood
-            return event.location_scope === 'neighborhood' && 
-                   event.target_neighborhood === userLocation.neighborhood &&
-                   event.target_city === userLocation.city &&
-                   event.target_state === userLocation.state;
-                   
-          case 'city':
-            // Show posts targeted to user's city
-            return event.location_scope === 'city' && 
-                   event.target_city === userLocation.city &&
-                   event.target_state === userLocation.state;
-                   
-          case 'state':
-            // Show posts targeted to user's state
-            return event.location_scope === 'state' && 
-                   event.target_state === userLocation.state;
-                   
-          default:
-            return true;
-        }
-      });
-    }
+    // Location filtering is now handled by PostGIS get_feed function
+    // No client-side location filtering needed
 
     // Apply post type filters
     if (filters.postTypes !== 'all') {
@@ -201,38 +170,55 @@ export const useCommunityFeed = () => {
 
     try {
       setLoading(true);
-      console.log('Fetching community posts...');
+      console.log('Fetching community posts with PostGIS...');
 
-      const userLocation = {
-        neighborhood: profile.neighborhood,
-        city: profile.city,
-        state: profile.state
-      };
+      // Use the new PostGIS get_feed function
+      const { data: posts, error } = await supabase.rpc('get_feed', {
+        target_user_id: user.id,
+        filter_level: filters.locationScope,
+        limit_count: 50,
+        cursor: null
+      });
 
-      // Try to get from cache first
-      const cachedPosts = postCache.getCachedPosts(userLocation, 'city');
-      if (cachedPosts && cachedPosts.length > 0) {
-        console.log('Using cached posts:', cachedPosts.length);
-        // Convert cached posts to Event format
-        const eventPosts = cachedPosts.map(post => ({
-          ...post,
-          created_at: post.timestamp,
-          author: {
-            user_id: post.user_id,
-            full_name: post.author.name,
-            avatar_url: post.author.avatar
-          }
-        })) as Event[];
-        setEvents(eventPosts);
-        setLoading(false);
-        
-        // Refresh cache in background
-        setTimeout(() => fetchAndCachePosts(userLocation), 1000);
-        return;
+      if (error) {
+        console.error('Error fetching posts with PostGIS:', error);
+        throw error;
       }
 
-      // Fetch fresh data
-      await fetchAndCachePosts(userLocation);
+      if (posts) {
+        console.log('Fetched posts from PostGIS:', posts.length);
+        
+        // Transform PostGIS results to Event format
+        const transformedPosts = posts.map((post: any) => ({
+          id: post.id,
+          user_id: post.user_id,
+          content: post.content,
+          title: post.title,
+          image_urls: post.image_urls,
+          tags: post.tags,
+          location: post.location,
+          location_scope: post.location_scope,
+          target_neighborhood: post.target_neighborhood,
+          target_city: post.target_city,
+          target_state: post.target_state,
+          rsvp_enabled: post.rsvp_enabled,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          author: {
+            user_id: post.user_id,
+            full_name: post.author_name,
+            avatar_url: post.author_avatar
+          },
+          likes_count: parseInt(post.likes_count),
+          comments_count: parseInt(post.comments_count),
+          saves_count: 0,
+          views_count: 0,
+          isLiked: false,
+          isSaved: false
+        })) as Event[];
+
+        setEvents(transformedPosts);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
@@ -242,75 +228,6 @@ export const useCommunityFeed = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAndCachePosts = async (userLocation: any) => {
-    const { data: posts, error } = await supabase
-      .rpc('get_location_filtered_posts', {
-        user_neighborhood: userLocation.neighborhood,
-        user_city: userLocation.city,
-        user_state: userLocation.state,
-        show_all_posts: false,
-        post_limit: 50,
-        post_offset: 0
-      });
-
-    if (error) {
-      console.error('Error fetching posts:', error);
-      return;
-    }
-
-    if (posts) {
-      console.log('Fetched posts from database:', posts.length);
-      
-      // Enrich posts with author info and engagement data
-      const enrichedPosts = await Promise.all(
-        posts.map(async (post: any) => {
-          const [authorData, engagementData] = await Promise.all([
-            fetchAuthorInfo(post.user_id),
-            fetchEngagementData(post.id)
-          ]);
-
-          return {
-            ...post,
-            author: authorData,
-            ...engagementData
-          };
-        })
-      );
-
-      setEvents(enrichedPosts);
-      
-      // Cache the enriched posts
-      const cacheablePosts = enrichedPosts.map(post => ({
-        ...post,
-        timestamp: post.created_at,
-        type: 'general' as const,
-        likes: post.likes_count || 0,
-        comments: post.comments_count || 0,
-        author: {
-          name: post.author?.full_name || 'Anonymous',
-          avatar: post.author?.avatar_url,
-          location: post.location || ''
-        }
-      }));
-      postCache.setCachedPosts(cacheablePosts, userLocation, 'city');
-    }
-  };
-
-  const fetchAuthorInfo = async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url')
-        .eq('user_id', userId)
-        .single();
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching author info:', error);
-      return null;
     }
   };
 
@@ -450,16 +367,7 @@ export const useCommunityFeed = () => {
     setUnreadCounts(prev => ({ ...prev, community: 0 }));
     
     try {
-      // Clear cache and fetch fresh data
-      if (profile) {
-        const userLocation = {
-          neighborhood: profile.neighborhood,
-          city: profile.city,
-          state: profile.state
-        };
-        postCache.invalidateAll();
-      }
-      
+      // Fetch fresh data using PostGIS
       await fetchPosts();
       toast({
         title: "Refreshed",
@@ -477,10 +385,10 @@ export const useCommunityFeed = () => {
     }
   };
 
-  // Initial fetch
+  // Initial fetch and re-fetch when location filter changes
   useEffect(() => {
     fetchPosts();
-  }, [user, profile]);
+  }, [user, profile, filters.locationScope]);
 
   // Auto-refresh every minute
   useEffect(() => {

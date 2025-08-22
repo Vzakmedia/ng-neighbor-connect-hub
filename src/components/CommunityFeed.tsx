@@ -36,6 +36,7 @@ export const CommunityFeed = () => {
   useCommunitySubscriptions({
     user,
     profile,
+    currentLocationFilter: filters.locationScope,
     onNewContent: () => setHasNewContent(true),
     onUpdateUnreadCounts: setUnreadCounts,
     onRefreshPosts: fetchPosts,
