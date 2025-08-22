@@ -12,6 +12,7 @@ interface Profile {
 interface UseCommunitySubscriptionsProps {
   user: User | null;
   profile: Profile | null;
+  currentLocationFilter: string;
   onNewContent: () => void;
   onUpdateUnreadCounts: (updater: (prev: any) => any) => void;
   onRefreshPosts: () => void;
@@ -22,6 +23,7 @@ interface UseCommunitySubscriptionsProps {
 export const useCommunitySubscriptions = ({
   user,
   profile,
+  currentLocationFilter,
   onNewContent,
   onUpdateUnreadCounts,
   onRefreshPosts,
@@ -54,23 +56,33 @@ export const useCommunitySubscriptions = ({
               table: 'community_posts',
               filter: `post_type=neq.private_message`
             }, 
-            (payload) => {
+            async (payload) => {
               console.log('Community posts change:', payload);
               
               if (payload.eventType === 'INSERT') {
-                onNewContent();
-                onUpdateUnreadCounts(prev => ({
-                  ...prev,
-                  community: prev.community + 1
-                }));
-                
-                // Invalidate cache for new content
-                const userLocation = {
-                  neighborhood: profile.neighborhood,
-                  city: profile.city,
-                  state: profile.state
-                };
-                postCache.invalidateAll();
+                // Check if the new post matches user's current location filter
+                const newPost = payload.new as any;
+                if (newPost?.user_id) {
+                  try {
+                    const { data: matches } = await supabase.rpc('post_matches_user_filter', {
+                      post_user_id: newPost.user_id,
+                      target_user_id: user.id,
+                      filter_level: currentLocationFilter
+                    });
+                    
+                    if (matches) {
+                      onNewContent();
+                      onUpdateUnreadCounts(prev => ({
+                        ...prev,
+                        community: prev.community + 1
+                      }));
+                    }
+                  } catch (error) {
+                    console.error('Error checking post location match:', error);
+                    // Fallback to showing notification anyway
+                    onNewContent();
+                  }
+                }
               }
               
               if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
@@ -120,5 +132,5 @@ export const useCommunitySubscriptions = ({
     return () => {
       subscriptions.forEach(cleanup => cleanup());
     };
-  }, [user, profile, onNewContent, onUpdateUnreadCounts, onRefreshPosts, onUpdatePostLikes, onUpdatePostComments]);
+  }, [user, profile, currentLocationFilter, onNewContent, onUpdateUnreadCounts, onRefreshPosts, onUpdatePostLikes, onUpdatePostComments]);
 };
