@@ -47,8 +47,8 @@ export const useCommunityFeed = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CommunityFilters>({
     tags: [],
-    locationScope: [], // Will be set based on user preference
-    postTypes: [],
+    locationScope: 'all', // Will be set based on user preference
+    postTypes: 'all',
     dateRange: 'all',
     sortBy: 'newest'
   });
@@ -59,7 +59,7 @@ export const useCommunityFeed = () => {
     if (!locationLoading && locationPreferences.default_location_filter) {
       setFilters(prev => ({
         ...prev,
-        locationScope: [locationPreferences.default_location_filter]
+        locationScope: locationPreferences.default_location_filter
       }));
     }
   }, [locationPreferences.default_location_filter, locationLoading]);
@@ -91,61 +91,45 @@ export const useCommunityFeed = () => {
     }
 
     // Apply location scope filters
-    if (filters.locationScope.length > 0 && profile) {
+    if (filters.locationScope !== 'all' && profile) {
+      const userLocation = {
+        neighborhood: profile.neighborhood,
+        city: profile.city,
+        state: profile.state
+      };
+      
       result = result.filter(event => {
-        // Handle 'all' filter - show everything
-        if (filters.locationScope.includes('all')) return true;
-        
-        // Get user's location from profile
-        const userLocation = {
-          neighborhood: profile.neighborhood,
-          city: profile.city,
-          state: profile.state
-        };
-        
-        // Check each selected location scope
-        for (const scope of filters.locationScope) {
-          switch (scope) {
-            case 'neighborhood':
-              // Show posts targeted to user's neighborhood
-              if (event.location_scope === 'neighborhood' && 
-                  event.target_neighborhood === userLocation.neighborhood &&
-                  event.target_city === userLocation.city &&
-                  event.target_state === userLocation.state) {
-                return true;
-              }
-              break;
-              
-            case 'city':
-              // Show posts targeted to user's city
-              if (event.location_scope === 'city' && 
-                  event.target_city === userLocation.city &&
-                  event.target_state === userLocation.state) {
-                return true;
-              }
-              break;
-              
-            case 'state':
-              // Show posts targeted to user's state
-              if (event.location_scope === 'state' && 
-                  event.target_state === userLocation.state) {
-                return true;
-              }
-              break;
-          }
+        switch (filters.locationScope) {
+          case 'neighborhood':
+            // Show posts targeted to user's neighborhood
+            return event.location_scope === 'neighborhood' && 
+                   event.target_neighborhood === userLocation.neighborhood &&
+                   event.target_city === userLocation.city &&
+                   event.target_state === userLocation.state;
+                   
+          case 'city':
+            // Show posts targeted to user's city
+            return event.location_scope === 'city' && 
+                   event.target_city === userLocation.city &&
+                   event.target_state === userLocation.state;
+                   
+          case 'state':
+            // Show posts targeted to user's state
+            return event.location_scope === 'state' && 
+                   event.target_state === userLocation.state;
+                   
+          default:
+            return true;
         }
-        
-        // If none of the location scopes match, don't show the post
-        return false;
       });
     }
 
     // Apply post type filters
-    if (filters.postTypes.length > 0 && !filters.postTypes.includes('all')) {
+    if (filters.postTypes !== 'all') {
       result = result.filter(event => {
-        if (filters.postTypes.includes('events') && event.rsvp_enabled) return true;
-        if (filters.postTypes.includes('general') && !event.rsvp_enabled) return true;
-        return false;
+        if (filters.postTypes === 'events') return event.rsvp_enabled;
+        if (filters.postTypes === 'general') return !event.rsvp_enabled;
+        return true;
       });
     }
 
@@ -206,8 +190,8 @@ export const useCommunityFeed = () => {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (filters.tags.length > 0) count += filters.tags.length;
-    if (filters.locationScope.length > 0) count += filters.locationScope.length;
-    if (filters.postTypes.length > 0) count += filters.postTypes.length;
+    if (filters.locationScope !== 'all') count += 1;
+    if (filters.postTypes !== 'all') count += 1;
     if (filters.dateRange !== 'all') count += 1;
     return count;
   }, [filters]);

@@ -11,8 +11,8 @@ import { Separator } from "@/components/ui/separator";
 
 export interface CommunityFilters {
   tags: string[];
-  locationScope: string[];
-  postTypes: string[];
+  locationScope: string;
+  postTypes: string;
   dateRange: string;
   sortBy: string;
 }
@@ -34,23 +34,23 @@ export const CommunityFeedFilters = ({
   const [tagSearch, setTagSearch] = useState("");
 
   const locationScopeOptions = [
+    { value: 'all', label: 'All Areas', shortLabel: 'All', icon: MapPin },
     { value: 'neighborhood', label: 'Neighborhood', shortLabel: 'Near', icon: MapPin },
     { value: 'city', label: 'City', shortLabel: 'City', icon: MapPin },
-    { value: 'state', label: 'State', shortLabel: 'State', icon: MapPin },
-    { value: 'all', label: 'All Areas', shortLabel: 'All', icon: MapPin }
+    { value: 'state', label: 'State', shortLabel: 'State', icon: MapPin }
   ];
 
   const postTypeOptions = [
+    { value: 'all', label: 'All Types', shortLabel: 'All', icon: Users },
     { value: 'events', label: 'Events', shortLabel: 'Events', icon: Calendar },
-    { value: 'general', label: 'General Posts', shortLabel: 'Posts', icon: Users },
-    { value: 'all', label: 'All Types', shortLabel: 'All', icon: Users }
+    { value: 'general', label: 'General Posts', shortLabel: 'Posts', icon: Users }
   ];
 
   const dateRangeOptions = [
+    { value: 'all', label: 'All Time' },
     { value: 'today', label: 'Today' },
     { value: 'week', label: 'This Week' },
-    { value: 'month', label: 'This Month' },
-    { value: 'all', label: 'All Time' }
+    { value: 'month', label: 'This Month' }
   ];
 
   const sortOptions = [
@@ -79,27 +79,11 @@ export const CommunityFeedFilters = ({
     !filters.tags.includes(tag)
   );
 
-  const handleLocationScopeToggle = (scope: string) => {
-    const newScopes = filters.locationScope.includes(scope)
-      ? filters.locationScope.filter(s => s !== scope)
-      : [...filters.locationScope, scope];
-    
-    onFiltersChange({ ...filters, locationScope: newScopes });
-  };
-
-  const handlePostTypeToggle = (type: string) => {
-    const newTypes = filters.postTypes.includes(type)
-      ? filters.postTypes.filter(t => t !== type)
-      : [...filters.postTypes, type];
-    
-    onFiltersChange({ ...filters, postTypes: newTypes });
-  };
-
   const clearAllFilters = () => {
     onFiltersChange({
       tags: [],
-      locationScope: [],
-      postTypes: [],
+      locationScope: 'all',
+      postTypes: 'all',
       dateRange: 'all',
       sortBy: 'newest'
     });
@@ -116,20 +100,10 @@ export const CommunityFeedFilters = ({
         }
         break;
       case 'locationScope':
-        if (value) {
-          onFiltersChange({ 
-            ...filters, 
-            locationScope: filters.locationScope.filter(s => s !== value) 
-          });
-        }
+        onFiltersChange({ ...filters, locationScope: 'all' });
         break;
       case 'postTypes':
-        if (value) {
-          onFiltersChange({ 
-            ...filters, 
-            postTypes: filters.postTypes.filter(t => t !== value) 
-          });
-        }
+        onFiltersChange({ ...filters, postTypes: 'all' });
         break;
       case 'dateRange':
         onFiltersChange({ ...filters, dateRange: 'all' });
@@ -224,58 +198,56 @@ export const CommunityFeedFilters = ({
                 </div>
               </div>
 
-              {/* Content Types - Mobile Button Layout */}
+              {/* Content Types - Dropdown */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <Users className="h-3 w-3" />
-                  Content Types
+                  Content Type
                 </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                  {postTypeOptions.map(type => (
-                    <Button
-                      key={type.value}
-                      variant={filters.postTypes.includes(type.value) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePostTypeToggle(type.value)}
-                      className={`h-8 px-2 text-xs justify-start transition-all ${
-                        filters.postTypes.includes(type.value) 
-                          ? 'bg-primary text-primary-foreground shadow-sm' 
-                          : 'bg-background hover:bg-accent hover:scale-[1.02]'
-                      }`}
-                    >
-                      <type.icon className="h-3 w-3 mr-1 flex-shrink-0" />
-                      <span className="truncate hidden sm:inline">{type.label}</span>
-                      <span className="truncate sm:hidden">{type.shortLabel}</span>
-                    </Button>
-                  ))}
-                </div>
+                <Select
+                  value={filters.postTypes}
+                  onValueChange={(value) => onFiltersChange({ ...filters, postTypes: value })}
+                >
+                  <SelectTrigger className="h-8 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {postTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+                        <div className="flex items-center gap-2">
+                          <option.icon className="h-3 w-3" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Location Scope - Mobile Button Layout */}
+              {/* Location Scope - Dropdown */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   Location Range
                 </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {locationScopeOptions.map(scope => (
-                    <Button
-                      key={scope.value}
-                      variant={filters.locationScope.includes(scope.value) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleLocationScopeToggle(scope.value)}
-                      className={`h-8 px-2 text-xs justify-center transition-all ${
-                        filters.locationScope.includes(scope.value) 
-                          ? 'bg-primary text-primary-foreground shadow-sm' 
-                          : 'bg-background hover:bg-accent hover:scale-[1.02]'
-                      }`}
-                    >
-                      <scope.icon className="h-3 w-3 mr-1 flex-shrink-0" />
-                      <span className="truncate hidden sm:inline">{scope.label}</span>
-                      <span className="truncate sm:hidden">{scope.shortLabel}</span>
-                    </Button>
-                  ))}
-                </div>
+                <Select
+                  value={filters.locationScope}
+                  onValueChange={(value) => onFiltersChange({ ...filters, locationScope: value })}
+                >
+                  <SelectTrigger className="h-8 text-xs bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {locationScopeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+                        <div className="flex items-center gap-2">
+                          <option.icon className="h-3 w-3" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Tags Search */}
@@ -367,47 +339,45 @@ export const CommunityFeedFilters = ({
                 </Badge>
               ))}
 
-              {/* Location Scopes */}
-              {filters.locationScope.map(scope => (
+              {/* Location Scope */}
+              {filters.locationScope !== 'all' && (
                 <Badge
-                  key={`scope-${scope}`}
                   variant="default"
                   className="gap-1 px-2 py-0.5 text-xs bg-accent/20 text-accent-foreground border-accent/30 hover:bg-accent/30 transition-colors"
                 >
                   <MapPin className="h-2 w-2" />
-                  <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === scope)?.label}</span>
-                  <span className="sm:hidden">{locationScopeOptions.find(opt => opt.value === scope)?.shortLabel}</span>
+                  <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.label}</span>
+                  <span className="sm:hidden">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.shortLabel}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-auto p-0 ml-1 hover:bg-accent/30"
-                    onClick={() => clearFilter('locationScope', scope)}
+                    onClick={() => clearFilter('locationScope')}
                   >
                     <X className="h-2 w-2" />
                   </Button>
                 </Badge>
-              ))}
+              )}
 
               {/* Post Types */}
-              {filters.postTypes.map(type => (
+              {filters.postTypes !== 'all' && (
                 <Badge
-                  key={`type-${type}`}
                   variant="default"
                   className="gap-1 px-2 py-0.5 text-xs bg-secondary/50 text-secondary-foreground border-secondary/30 hover:bg-secondary/70 transition-colors"
                 >
                   <Users className="h-2 w-2" />
-                  <span className="hidden sm:inline">{postTypeOptions.find(opt => opt.value === type)?.label}</span>
-                  <span className="sm:hidden">{postTypeOptions.find(opt => opt.value === type)?.shortLabel}</span>
+                  <span className="hidden sm:inline">{postTypeOptions.find(opt => opt.value === filters.postTypes)?.label}</span>
+                  <span className="sm:hidden">{postTypeOptions.find(opt => opt.value === filters.postTypes)?.shortLabel}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-auto p-0 ml-1 hover:bg-secondary/70"
-                    onClick={() => clearFilter('postTypes', type)}
+                    onClick={() => clearFilter('postTypes')}
                   >
                     <X className="h-2 w-2" />
                   </Button>
                 </Badge>
-              ))}
+              )}
 
               {/* Date Range */}
               {filters.dateRange !== 'all' && (
