@@ -202,7 +202,13 @@ const CommunityBoards = () => {
   const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [showJoinRequests, setShowJoinRequests] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<BoardMember[]>([]);
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [taggedMembers, setTaggedMembers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -935,6 +941,90 @@ const CommunityBoards = () => {
         description: "Failed to update member role.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Handle mention input detection
+  const handleMentionInput = (value: string, position: number) => {
+    const beforeCursor = value.substring(0, position);
+    const mentionMatch = beforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      const query = mentionMatch[1];
+      setMentionQuery(query);
+      setCursorPosition(position);
+      setShowMentionDropdown(true);
+      searchBoardMembersForMention(query);
+    } else {
+      setShowMentionDropdown(false);
+      setMentionSuggestions([]);
+    }
+  };
+
+  // Search board members for mentions
+  const searchBoardMembersForMention = (query: string) => {
+    if (!selectedBoard) return;
+    
+    const filteredMembers = boardMembers.filter(member => 
+      member.profiles?.full_name?.toLowerCase().includes(query.toLowerCase()) ||
+      member.profiles?.full_name?.toLowerCase().startsWith(query.toLowerCase())
+    );
+    
+    setMentionSuggestions(filteredMembers.slice(0, 5)); // Limit to 5 suggestions
+  };
+
+  // Insert mention into message
+  const insertMention = (member: BoardMember) => {
+    if (!messageInputRef.current) return;
+    
+    const beforeCursor = newMessage.substring(0, cursorPosition);
+    const afterCursor = newMessage.substring(cursorPosition);
+    const beforeMention = beforeCursor.replace(/@\w*$/, '');
+    const mentionText = `@${member.profiles?.full_name} `;
+    
+    const newMessageText = beforeMention + mentionText + afterCursor;
+    setNewMessage(newMessageText);
+    
+    // Add to tagged members
+    if (!taggedMembers.includes(member.user_id)) {
+      setTaggedMembers([...taggedMembers, member.user_id]);
+    }
+    
+    setShowMentionDropdown(false);
+    setMentionSuggestions([]);
+    
+    // Focus back to input and set cursor position
+    setTimeout(() => {
+      if (messageInputRef.current) {
+        const newPosition = beforeMention.length + mentionText.length;
+        messageInputRef.current.focus();
+        messageInputRef.current.setSelectionRange(newPosition, newPosition);
+      }
+    }, 0);
+  };
+
+  // Handle input change for mentions
+  const handleMessageInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart;
+    
+    setNewMessage(value);
+    handleMentionInput(value, position);
+  };
+
+  // Handle key events for mention dropdown
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showMentionDropdown && mentionSuggestions.length > 0) {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter') {
+        e.preventDefault();
+        // For simplicity, auto-select first suggestion on Enter
+        if (e.key === 'Enter') {
+          insertMention(mentionSuggestions[0]);
+        }
+      }
+      if (e.key === 'Escape') {
+        setShowMentionDropdown(false);
+      }
     }
   };
 
