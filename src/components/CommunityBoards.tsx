@@ -1355,77 +1355,112 @@ const CommunityBoards = () => {
       }`}>
         {selectedBoard && currentBoard ? (
           <>
-            {/* Chat Header */}
-            <div className="p-4 border-b bg-card">
-              <div className="flex items-center justify-between">
-                {/* Mobile back button */}
-                {isMobile && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleMobileBack}
-                    className="mr-3"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                )}
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold">{currentBoard.name}</h2>
-                  {currentBoard.description && (
-                    <p className="text-sm text-muted-foreground">{currentBoard.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant="outline"
-                    className={currentBoard.allow_member_list || isAdminOrModerator(currentBoard) ? "cursor-pointer hover:bg-accent" : ""}
-                    onClick={() => {
-                      if (currentBoard.allow_member_list || isAdminOrModerator(currentBoard)) {
-                        setShowMembersList(true);
-                      }
-                    }}
-                  >
-                    <Users className="h-3 w-3 mr-1" />
-                    {currentBoard.member_count} members
-                  </Badge>
+            {/* Enhanced Board Conversation Header */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  {/* Mobile back button and board info */}
+                  <div className="flex items-center flex-1 min-w-0">
+                    {isMobile && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleMobileBack}
+                        className="mr-3 flex-shrink-0"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      {/* Board Avatar */}
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={currentBoard.avatar_url || ''} />
+                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                          {currentBoard.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Board Details */}
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-xl font-bold truncate">{currentBoard.name}</h1>
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <Badge variant="secondary" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {currentBoard.location_scope}
+                          </Badge>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${currentBoard.allow_member_list || isAdminOrModerator(currentBoard) ? "cursor-pointer hover:bg-accent" : ""}`}
+                            onClick={() => {
+                              if (currentBoard.allow_member_list || isAdminOrModerator(currentBoard)) {
+                                setShowMembersList(true);
+                              }
+                            }}
+                          >
+                            <Users className="h-3 w-3 mr-1" />
+                            {currentBoard.member_count} members
+                          </Badge>
+                          {currentBoard.is_public ? (
+                            <Badge variant="outline" className="text-xs">
+                              <Globe className="h-3 w-3 mr-1" />
+                              Public
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Private
+                            </Badge>
+                          )}
+                        </div>
+                        {currentBoard.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                            {currentBoard.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   
-                  {isAdminOrModerator(currentBoard) && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setShowBoardSettings(true)}>
-                          <Settings className="h-4 w-4 mr-2" />
-                          Board Settings
-                        </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setShowMembersList(true)}>
-                           <Users className="h-4 w-4 mr-2" />
-                           Manage Members
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => setShowAddMember(true)}>
-                           <UserPlus className="h-4 w-4 mr-2" />
-                           Add Members
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => {
-                           setShowJoinRequests(true);
-                           fetchJoinRequests();
-                         }}>
-                           <UserCheck className="h-4 w-4 mr-2" />
-                           Join Requests
-                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => {
-                           setShowInviteLinks(true);
-                           fetchInviteLinks();
-                         }}>
-                           <Link className="h-4 w-4 mr-2" />
-                           Invite Links
-                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                  {/* Board Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isAdminOrModerator(currentBoard) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setShowBoardSettings(true)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Board Settings
+                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => setShowMembersList(true)}>
+                             <Users className="h-4 w-4 mr-2" />
+                             Manage Members
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => setShowAddMember(true)}>
+                             <UserPlus className="h-4 w-4 mr-2" />
+                             Add Members
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => {
+                             setShowJoinRequests(true);
+                             fetchJoinRequests();
+                           }}>
+                             <UserCheck className="h-4 w-4 mr-2" />
+                             Join Requests
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => {
+                             setShowInviteLinks(true);
+                             fetchInviteLinks();
+                           }}>
+                             <Link className="h-4 w-4 mr-2" />
+                             Invite Links
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
