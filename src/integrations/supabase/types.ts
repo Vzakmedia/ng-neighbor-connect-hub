@@ -960,6 +960,7 @@ export type Database = {
           parent_message_id: string | null
           post_type: string | null
           reply_to_id: string | null
+          tagged_members: string[] | null
           thread_id: string | null
           updated_at: string
           user_id: string
@@ -980,6 +981,7 @@ export type Database = {
           parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
+          tagged_members?: string[] | null
           thread_id?: string | null
           updated_at?: string
           user_id: string
@@ -1000,6 +1002,7 @@ export type Database = {
           parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
+          tagged_members?: string[] | null
           thread_id?: string | null
           updated_at?: string
           user_id?: string
