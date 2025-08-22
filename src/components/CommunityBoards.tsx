@@ -401,7 +401,7 @@ const CommunityBoards = () => {
         .from('board_posts')
         .select(`
           *,
-          profiles!board_posts_user_id_fkey (
+          profiles!user_id (
             full_name,
             avatar_url,
             neighborhood,
