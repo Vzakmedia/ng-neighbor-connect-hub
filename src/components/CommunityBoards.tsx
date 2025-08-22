@@ -51,6 +51,7 @@ import {
   Ban
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useFileUpload } from '@/hooks/useFileUpload';
@@ -140,14 +141,7 @@ interface BoardPost {
   content: string;
   post_type: string;
   image_urls: string[];
-  attachments?: Array<{
-    id: string;
-    type: 'image' | 'video' | 'file';
-    name: string;
-    url: string;
-    size: number;
-    mimeType: string;
-  }>;
+  attachments?: Json; // Store as JSON from database
   reply_to_id: string | null;
   is_pinned: boolean;
   approval_status: 'pending' | 'approved' | 'rejected';
@@ -155,6 +149,9 @@ interface BoardPost {
   approved_at: string | null;
   created_at: string;
   updated_at: string;
+  edited_at?: string;
+  message_type?: string;
+  thread_id?: string;
   profiles: {
     full_name: string | null;
     avatar_url: string | null;
@@ -469,10 +466,9 @@ const CommunityBoards = () => {
         post_type: 'message'
       };
 
-      // Only add attachments if there are any and if the column exists
+      // Add attachments if there are any
       if (pendingAttachments.length > 0) {
-        // For now, let's store attachments as JSON in the content field until the column is properly added
-        insertData.content = newMessage.trim() + (pendingAttachments.length > 0 ? `\n\n[Attachments: ${pendingAttachments.map(a => a.name).join(', ')}]` : '');
+        insertData.attachments = pendingAttachments;
       }
 
       const { error } = await supabase
@@ -1336,10 +1332,10 @@ const CommunityBoards = () => {
                         )}
                         
                         {/* Attachments */}
-                        {post.attachments && post.attachments.length > 0 && (
+                        {post.attachments && Array.isArray(post.attachments) && post.attachments.length > 0 && (
                           <div className="mt-2 space-y-2">
-                            {post.attachments.map((attachment) => (
-                              <div key={attachment.id} className="flex items-center space-x-2 p-2 border rounded">
+                            {(post.attachments as any[]).map((attachment: any, index: number) => (
+                              <div key={attachment.id || index} className="flex items-center space-x-2 p-2 border rounded">
                                 <Paperclip className="h-4 w-4 text-muted-foreground" />
                                 <a 
                                   href={attachment.url} 
@@ -1347,10 +1343,10 @@ const CommunityBoards = () => {
                                   rel="noopener noreferrer"
                                   className="text-sm text-primary hover:underline flex-1 truncate"
                                 >
-                                  {attachment.name}
+                                  {attachment.name || 'File'}
                                 </a>
                                 <span className="text-xs text-muted-foreground">
-                                  {(attachment.size / 1024 / 1024).toFixed(1)}MB
+                                  {attachment.size ? (attachment.size / 1024 / 1024).toFixed(1) + 'MB' : ''}
                                 </span>
                               </div>
                             ))}
@@ -1422,7 +1418,7 @@ const CommunityBoards = () => {
 
             {/* Message Input */}
             <div className="p-4 border-t bg-card">
-              {/* Temporarily disable attachment preview until column is added
+              {/* Pending attachments preview */}
               {pendingAttachments.length > 0 && (
                 <div className="mb-3 space-y-2">
                   <p className="text-sm font-medium">Attachments:</p>
@@ -1444,10 +1440,10 @@ const CommunityBoards = () => {
                     </div>
                   ))}
                 </div>
-              )} */}
+              )}
               
               <div className="flex space-x-2">
-                {/* Temporarily disable file attachment
+                {/* File attachment input */}
                 <input
                   type="file"
                   multiple
@@ -1463,8 +1459,8 @@ const CommunityBoards = () => {
                   disabled={uploading}
                 >
                   <Paperclip className="h-4 w-4" />
-                </Button> */}
-                
+                </Button>
+                 
                 <Input
                   placeholder="Type your message..."
                   value={newMessage}
@@ -1474,7 +1470,7 @@ const CommunityBoards = () => {
                 />
                 <Button 
                   onClick={sendMessage} 
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() && pendingAttachments.length === 0}
                 >
                   <Send className="h-4 w-4" />
                 </Button>
