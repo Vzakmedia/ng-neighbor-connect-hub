@@ -948,15 +948,19 @@ export type Database = {
           approval_status: string | null
           approved_at: string | null
           approved_by: string | null
+          attachments: Json | null
           board_id: string
           content: string
           created_at: string
+          edited_at: string | null
           id: string
           image_urls: string[] | null
           is_pinned: boolean | null
+          message_type: string | null
           parent_message_id: string | null
           post_type: string | null
           reply_to_id: string | null
+          thread_id: string | null
           updated_at: string
           user_id: string
         }
@@ -964,15 +968,19 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          attachments?: Json | null
           board_id: string
           content: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_urls?: string[] | null
           is_pinned?: boolean | null
+          message_type?: string | null
           parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
+          thread_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -980,15 +988,19 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          attachments?: Json | null
           board_id?: string
           content?: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_urls?: string[] | null
           is_pinned?: boolean | null
+          message_type?: string | null
           parent_message_id?: string | null
           post_type?: string | null
           reply_to_id?: string | null
+          thread_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1013,6 +1025,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "board_posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_posts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "board_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
