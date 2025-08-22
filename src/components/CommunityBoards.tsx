@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { 
   MessageSquare,
   Send,
@@ -49,6 +50,10 @@ interface DiscussionBoard {
   description: string | null;
   creator_id: string;
   is_public: boolean;
+  is_private: boolean;
+  discoverable: boolean;
+  allow_member_list: boolean;
+  allow_member_invites: boolean;
   member_limit: number | null;
   created_at: string;
   updated_at: string;
@@ -59,6 +64,21 @@ interface DiscussionBoard {
   auto_approve_members: boolean;
   member_count: number;
   user_role: string | null;
+}
+
+interface BoardMember {
+  id: string;
+  board_id: string;
+  user_id: string;
+  role: 'admin' | 'moderator' | 'member';
+  status: string;
+  joined_at: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
+    state: string | null;
+  } | null;
 }
 
 interface BoardPost {
@@ -99,6 +119,10 @@ const CommunityBoards = () => {
   const [newBoardDescription, setNewBoardDescription] = useState('');
   const [newBoardIsPublic, setNewBoardIsPublic] = useState(true);
   const [showingDiscoveredBoards, setShowingDiscoveredBoards] = useState(false);
+  const [showBoardSettings, setShowBoardSettings] = useState(false);
+  const [showMembersList, setShowMembersList] = useState(false);
+  const [boardMembers, setBoardMembers] = useState<BoardMember[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -360,6 +384,7 @@ const CommunityBoards = () => {
 
       setNewMessage('');
       fetchPosts();
+      scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -370,6 +395,114 @@ const CommunityBoards = () => {
     }
   };
 
+  // Fetch board members
+  const fetchBoardMembers = async () => {
+    if (!selectedBoard) return;
+
+    try {
+      // Fetch board members with basic info first
+      const { data: memberData, error: memberError } = await supabase
+        .from('board_members')
+        .select('*')
+        .eq('board_id', selectedBoard)
+        .eq('status', 'active')
+        .order('role', { ascending: true })
+        .order('joined_at', { ascending: true });
+
+      if (memberError) throw memberError;
+
+      if (!memberData) {
+        setBoardMembers([]);
+        return;
+      }
+
+      // Fetch profile data separately
+      const userIds = memberData.map(m => m.user_id);
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, city, state')
+        .in('user_id', userIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+      }
+
+      // Combine the data
+      const formattedMembers: BoardMember[] = memberData.map(member => ({
+        ...member,
+        role: member.role as 'admin' | 'moderator' | 'member',
+        profiles: profileData?.find(p => p.user_id === member.user_id) || null
+      }));
+      
+      setBoardMembers(formattedMembers);
+    } catch (error) {
+      console.error('Error fetching board members:', error);
+    }
+  };
+
+  // Update board settings
+  const updateBoardSettings = async (settings: Partial<DiscussionBoard>) => {
+    if (!selectedBoard) return;
+
+    try {
+      const { error } = await supabase
+        .from('discussion_boards')
+        .update(settings)
+        .eq('id', selectedBoard);
+
+      if (error) throw error;
+
+      toast({
+        title: "Settings updated",
+        description: "Board settings have been updated successfully.",
+      });
+      
+      fetchBoards();
+    } catch (error) {
+      console.error('Error updating board settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update board settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Check if user is admin or moderator
+  const isAdminOrModerator = (board: DiscussionBoard) => {
+    return board.user_role === 'admin' || board.user_role === 'moderator' || board.creator_id === user?.id;
+  };
+
+  // Real-time setup
+  useEffect(() => {
+    if (!selectedBoard) return;
+
+    const channel = supabase
+      .channel(`board_posts_${selectedBoard}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'board_posts',
+          filter: `board_id=eq.${selectedBoard}`,
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedBoard]);
+
   useEffect(() => {
     if (user) {
       fetchBoards();
@@ -379,8 +512,14 @@ const CommunityBoards = () => {
   useEffect(() => {
     if (selectedBoard) {
       fetchPosts();
+      fetchBoardMembers();
+      scrollToBottom();
     }
   }, [selectedBoard]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [posts]);
 
   const currentBoard = boards.find(b => b.id === selectedBoard);
   const displayBoards = showingDiscoveredBoards ? publicBoards : boards;
@@ -544,10 +683,38 @@ const CommunityBoards = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">
+                  <Badge 
+                    variant="outline"
+                    className={currentBoard.allow_member_list || isAdminOrModerator(currentBoard) ? "cursor-pointer hover:bg-accent" : ""}
+                    onClick={() => {
+                      if (currentBoard.allow_member_list || isAdminOrModerator(currentBoard)) {
+                        setShowMembersList(true);
+                      }
+                    }}
+                  >
                     <Users className="h-3 w-3 mr-1" />
                     {currentBoard.member_count} members
                   </Badge>
+                  
+                  {isAdminOrModerator(currentBoard) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setShowBoardSettings(true)}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          Board Settings
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowMembersList(true)}>
+                          <Users className="h-4 w-4 mr-2" />
+                          Manage Members
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             </div>
@@ -555,35 +722,47 @@ const CommunityBoards = () => {
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
-                {posts.map((post) => (
-                  <div key={post.id} className="flex items-start space-x-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={post.profiles?.avatar_url || ''} />
-                      <AvatarFallback>
-                        {post.profiles?.full_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium">
-                          {post.profiles?.full_name || 'Unknown User'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(post.created_at).toLocaleTimeString()}
-                        </p>
-                      </div>
-                      <p className="text-sm mt-1">{post.content}</p>
-                      {post.likes_count > 0 && (
-                        <div className="flex items-center space-x-1 mt-2">
-                          <Heart className="h-3 w-3 text-red-500" />
-                          <span className="text-xs text-muted-foreground">
-                            {post.likes_count}
-                          </span>
-                        </div>
-                      )}
+                {posts.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-center">
+                    <div className="space-y-2">
+                      <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        No messages yet. Start the conversation!
+                      </p>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  posts.map((post) => (
+                    <div key={post.id} className="flex items-start space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={post.profiles?.avatar_url || ''} />
+                        <AvatarFallback>
+                          {post.profiles?.full_name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-medium">
+                            {post.profiles?.full_name || 'Unknown User'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(post.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <p className="text-sm mt-1 break-words">{post.content}</p>
+                        {post.likes_count > 0 && (
+                          <div className="flex items-center space-x-1 mt-2">
+                            <Heart className="h-3 w-3 text-red-500" />
+                            <span className="text-xs text-muted-foreground">
+                              {post.likes_count}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
@@ -617,6 +796,109 @@ const CommunityBoards = () => {
           </div>
         )}
       </div>
+
+      {/* Board Settings Dialog */}
+      <Dialog open={showBoardSettings} onOpenChange={setShowBoardSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Board Settings</DialogTitle>
+          </DialogHeader>
+          {currentBoard && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allow-member-list">Allow members to view member list</Label>
+                <Switch
+                  id="allow-member-list"
+                  checked={currentBoard.allow_member_list}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ allow_member_list: checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allow-member-invites">Allow members to create invites</Label>
+                <Switch
+                  id="allow-member-invites"
+                  checked={currentBoard.allow_member_invites}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ allow_member_invites: checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="discoverable">Make board discoverable</Label>
+                <Switch
+                  id="discoverable"
+                  checked={currentBoard.discoverable}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ discoverable: checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="is-private">Private board (invite only)</Label>
+                <Switch
+                  id="is-private"
+                  checked={currentBoard.is_private}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ is_private: checked })
+                  }
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Members List Dialog */}
+      <Dialog open={showMembersList} onOpenChange={setShowMembersList}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {currentBoard?.name} Members ({boardMembers.length})
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-80">
+            <div className="space-y-3">
+              {boardMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={member.profiles?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {member.profiles?.full_name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {member.profiles?.full_name || 'Unknown User'}
+                      </p>
+                      {member.profiles?.city && (
+                        <p className="text-xs text-muted-foreground">
+                          {member.profiles.city}, {member.profiles.state}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge
+                      variant={
+                        member.role === 'admin' ? 'default' : 
+                        member.role === 'moderator' ? 'secondary' : 'outline'
+                      }
+                      className="capitalize"
+                    >
+                      {member.role === 'admin' && <Crown className="h-3 w-3 mr-1" />}
+                      {member.role === 'moderator' && <Shield className="h-3 w-3 mr-1" />}
+                      {member.role}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
