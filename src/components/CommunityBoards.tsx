@@ -1654,25 +1654,40 @@ const CommunityBoards = () => {
               )}
               
               <div className="relative">
-                <div className="flex space-x-2">
-                  {/* File attachment input */}
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="file-input"
-                    accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('file-input')?.click()}
-                    disabled={uploading}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  {/* Mobile: Attachment and send buttons row */}
+                  <div className="flex space-x-2 sm:contents">
+                    {/* File attachment input */}
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-input"
+                      accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('file-input')?.click()}
+                      disabled={uploading}
+                      className="flex-shrink-0"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">Attach</span>
+                    </Button>
+                    
+                    {/* Send button - visible on mobile, hidden on desktop in this position */}
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={!newMessage.trim() && pendingAttachments.length === 0}
+                      className="flex-shrink-0 sm:hidden"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                    
+                  {/* Message input area */}
                   <div className="relative flex-1">
                     <Textarea
                       ref={messageInputRef}
@@ -1681,7 +1696,7 @@ const CommunityBoards = () => {
                       onChange={handleMessageInputChange}
                       onKeyDown={handleKeyDown}
                       onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                      className="min-h-[40px] max-h-32 resize-none"
+                      className="min-h-[44px] max-h-32 resize-none pr-12 sm:pr-4"
                       rows={1}
                     />
                     
@@ -1714,11 +1729,14 @@ const CommunityBoards = () => {
                     )}
                   </div>
                   
+                  {/* Send button - desktop only */}
                   <Button 
                     onClick={sendMessage} 
                     disabled={!newMessage.trim() && pendingAttachments.length === 0}
+                    className="hidden sm:flex flex-shrink-0"
                   >
                     <Send className="h-4 w-4" />
+                    <span className="ml-1 hidden md:inline">Send</span>
                   </Button>
                 </div>
               </div>
