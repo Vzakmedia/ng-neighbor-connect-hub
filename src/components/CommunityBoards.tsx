@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
   AtSign,
   X,
   Settings,
+  ArrowLeft,
   Shield,
   Copy,
   RefreshCw,
@@ -171,6 +173,8 @@ interface BoardPost {
 }
 
 const CommunityBoards = () => {
+  const isMobile = useIsMobile();
+  const [showMobileConversation, setShowMobileConversation] = useState(false);
   const [boards, setBoards] = useState<DiscussionBoard[]>([]);
   const [publicBoards, setPublicBoards] = useState<DiscussionBoard[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
@@ -1189,10 +1193,18 @@ const CommunityBoards = () => {
   const currentBoard = boards.find(b => b.id === selectedBoard);
   const displayBoards = showingDiscoveredBoards ? publicBoards : boards;
 
+  // Mobile back button handler
+  const handleMobileBack = () => {
+    setShowMobileConversation(false);
+    setSelectedBoard(null);
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-12rem)] bg-background overflow-hidden">
-      {/* Boards Sidebar */}
-      <div className="w-full md:w-80 border-b md:border-r md:border-b-0 bg-card flex-shrink-0">
+      {/* Boards Sidebar - hide on mobile when conversation is shown */}
+      <div className={`w-full md:w-80 border-b md:border-r md:border-b-0 bg-card flex-shrink-0 ${
+        isMobile && showMobileConversation ? 'hidden' : ''
+      }`}>
         <div className="p-4 space-y-4">
           {/* Action Buttons */}
           <div className="flex gap-2">
@@ -1291,6 +1303,9 @@ const CommunityBoards = () => {
                 onClick={() => {
                   if (board.user_role) {
                     setSelectedBoard(board.id);
+                    if (isMobile) {
+                      setShowMobileConversation(true);
+                    }
                   }
                 }}
               >
@@ -1334,14 +1349,27 @@ const CommunityBoards = () => {
         </ScrollArea>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-background">
+      {/* Chat Area - show/hide based on mobile state */}
+      <div className={`flex-1 flex flex-col bg-background ${
+        isMobile && !showMobileConversation ? 'hidden' : ''
+      }`}>
         {selectedBoard && currentBoard ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b bg-card">
               <div className="flex items-center justify-between">
-                <div>
+                {/* Mobile back button */}
+                {isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleMobileBack}
+                    className="mr-3"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
+                <div className="flex-1">
                   <h2 className="text-lg font-semibold">{currentBoard.name}</h2>
                   {currentBoard.description && (
                     <p className="text-sm text-muted-foreground">{currentBoard.description}</p>
