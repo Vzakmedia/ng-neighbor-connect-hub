@@ -1291,6 +1291,35 @@ const CommunityBoards = () => {
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
+                {/* Pinned Messages Bar */}
+                {posts.some(post => post.is_pinned) && (
+                  <div className="bg-accent/50 border border-primary/20 rounded-lg p-3 mb-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Pin className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Pinned Messages</span>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {posts.filter(post => post.is_pinned).map((pinnedPost) => (
+                        <Button
+                          key={pinnedPost.id}
+                          variant="secondary"
+                          size="sm"
+                          className="whitespace-nowrap min-w-0 flex-shrink-0 max-w-[200px]"
+                          onClick={() => {
+                            const element = document.getElementById(`message-${pinnedPost.id}`);
+                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                        >
+                          <div className="truncate">
+                            {pinnedPost.content?.slice(0, 30) || 'Message'}
+                            {pinnedPost.content && pinnedPost.content.length > 30 && '...'}
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {posts.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-center">
                     <div className="space-y-2">
@@ -1302,7 +1331,11 @@ const CommunityBoards = () => {
                   </div>
                 ) : (
                   posts.map((post) => (
-                    <div key={post.id} className={`flex items-start space-x-3 p-3 rounded-lg ${post.is_pinned ? 'bg-accent border border-primary/20' : ''}`}>
+                    <div 
+                      key={post.id} 
+                      id={`message-${post.id}`}
+                      className={`flex items-start space-x-3 p-3 rounded-lg ${post.is_pinned ? 'bg-accent border border-primary/20' : ''}`}
+                    >
                       {post.is_pinned && (
                         <Pin className="h-4 w-4 text-primary mt-1" />
                       )}
