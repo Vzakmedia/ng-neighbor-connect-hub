@@ -38,6 +38,9 @@ import {
   Trash2,
   CheckCircle,
   Check,
+  Paperclip,
+  ThumbsUp,
+  Smile,
   Link,
   Calendar,
   Eye,
@@ -50,6 +53,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
 
 interface DiscussionBoard {
@@ -72,6 +76,8 @@ interface DiscussionBoard {
   auto_approve_members: boolean;
   member_count: number;
   user_role: string | null;
+  allow_member_posting?: boolean;
+  require_approval?: boolean;
 }
 
 interface JoinRequest {
@@ -134,6 +140,14 @@ interface BoardPost {
   content: string;
   post_type: string;
   image_urls: string[];
+  attachments?: Array<{
+    id: string;
+    type: 'image' | 'video' | 'file';
+    name: string;
+    url: string;
+    size: number;
+    mimeType: string;
+  }>;
   reply_to_id: string | null;
   is_pinned: boolean;
   approval_status: 'pending' | 'approved' | 'rejected';
@@ -150,6 +164,12 @@ interface BoardPost {
   } | null;
   likes_count: number;
   is_liked_by_user: boolean;
+  reactions?: Array<{
+    id: string;
+    user_id: string;
+    reaction: string;
+    created_at: string;
+  }>;
 }
 
 const CommunityBoards = () => {
@@ -158,6 +178,14 @@ const CommunityBoards = () => {
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [pendingAttachments, setPendingAttachments] = useState<Array<{
+    id: string;
+    type: 'image' | 'video' | 'file';
+    name: string;
+    url: string;
+    size: number;
+    mimeType: string;
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [showDiscoverBoards, setShowDiscoverBoards] = useState(false);
@@ -182,6 +210,7 @@ const CommunityBoards = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { uploadFile, uploading } = useFileUpload(user?.id || '');
 
   // Create a new board
   const createBoard = async () => {
@@ -400,6 +429,12 @@ const CommunityBoards = () => {
             .eq('user_id', user?.id)
             .single();
 
+          // Fetch reactions for this post
+          const { data: reactions } = await supabase
+            .from('board_post_reactions')
+            .select('*')
+            .eq('post_id', post.id);
+
           return {
             ...post,
             profiles: post.profiles || {
@@ -410,7 +445,8 @@ const CommunityBoards = () => {
               state: null
             },
             likes_count: count || 0,
-            is_liked_by_user: !!userLike
+            is_liked_by_user: !!userLike,
+            reactions: reactions || []
           };
         })
       );
@@ -421,23 +457,30 @@ const CommunityBoards = () => {
     }
   };
 
-  // Send message
+  // Send message with attachments
   const sendMessage = async () => {
-    if (!selectedBoard || !newMessage.trim() || !user) return;
+    if (!selectedBoard || (!newMessage.trim() && pendingAttachments.length === 0) || !user) return;
 
     try {
+      const insertData: any = {
+        board_id: selectedBoard,
+        user_id: user.id,
+        content: newMessage.trim(),
+        post_type: 'message'
+      };
+
+      if (pendingAttachments.length > 0) {
+        insertData.attachments = pendingAttachments;
+      }
+
       const { error } = await supabase
         .from('board_posts')
-        .insert({
-          board_id: selectedBoard,
-          user_id: user.id,
-          content: newMessage.trim(),
-          post_type: 'message'
-        });
+        .insert(insertData);
 
       if (error) throw error;
 
       setNewMessage('');
+      setPendingAttachments([]);
       fetchPosts();
       scrollToBottom();
     } catch (error) {
@@ -445,6 +488,113 @@ const CommunityBoards = () => {
       toast({
         title: "Error",
         description: "Failed to send message.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of Array.from(files)) {
+      try {
+        const attachment = await uploadFile(file);
+        if (attachment) {
+          setPendingAttachments(prev => [...prev, attachment]);
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        toast({
+          title: "Upload failed",
+          description: `Failed to upload ${file.name}`,
+          variant: "destructive",
+        });
+      }
+    }
+    
+    // Reset input
+    event.target.value = '';
+  };
+
+  // Remove pending attachment
+  const removePendingAttachment = (attachmentId: string) => {
+    setPendingAttachments(prev => prev.filter(a => a.id !== attachmentId));
+  };
+
+  // Toggle pin message
+  const togglePinMessage = async (postId: string, isPinned: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('board_posts')
+        .update({ is_pinned: !isPinned })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      toast({
+        title: isPinned ? "Message unpinned" : "Message pinned",
+        description: isPinned ? "Message has been unpinned" : "Message has been pinned to the top",
+      });
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update message pin status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add reaction to message
+  const addReaction = async (postId: string, reaction: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_post_reactions')
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          reaction: reaction
+        });
+
+      if (error) throw error;
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add reaction",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Remove reaction from message
+  const removeReaction = async (postId: string, reaction: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_post_reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id)
+        .eq('reaction', reaction);
+
+      if (error) throw error;
+
+      fetchPosts();
+    } catch (error) {
+      console.error('Error removing reaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove reaction",
         variant: "destructive",
       });
     }
@@ -1138,7 +1288,10 @@ const CommunityBoards = () => {
                   </div>
                 ) : (
                   posts.map((post) => (
-                    <div key={post.id} className="flex items-start space-x-3">
+                    <div key={post.id} className={`flex items-start space-x-3 p-3 rounded-lg ${post.is_pinned ? 'bg-accent border border-primary/20' : ''}`}>
+                      {post.is_pinned && (
+                        <Pin className="h-4 w-4 text-primary mt-1" />
+                      )}
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={post.profiles?.avatar_url || ''} />
                         <AvatarFallback>
@@ -1150,19 +1303,113 @@ const CommunityBoards = () => {
                           <p className="text-sm font-medium">
                             {post.profiles?.full_name || 'Unknown User'}
                           </p>
+                          {post.is_pinned && (
+                            <Badge variant="secondary" className="text-xs">Pinned</Badge>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {new Date(post.created_at).toLocaleTimeString()}
                           </p>
+                          {/* Pin/Unpin button for members/admins */}
+                          {user && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <MoreHorizontal className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => togglePinMessage(post.id, post.is_pinned)}
+                                >
+                                  <Pin className="h-4 w-4 mr-2" />
+                                  {post.is_pinned ? 'Unpin' : 'Pin'} Message
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
-                        <p className="text-sm mt-1 break-words">{post.content}</p>
-                        {post.likes_count > 0 && (
-                          <div className="flex items-center space-x-1 mt-2">
-                            <Heart className="h-3 w-3 text-red-500" />
-                            <span className="text-xs text-muted-foreground">
-                              {post.likes_count}
-                            </span>
+                        
+                        {post.content && (
+                          <p className="text-sm mt-1 break-words">{post.content}</p>
+                        )}
+                        
+                        {/* Attachments */}
+                        {post.attachments && post.attachments.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {post.attachments.map((attachment) => (
+                              <div key={attachment.id} className="flex items-center space-x-2 p-2 border rounded">
+                                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                <a 
+                                  href={attachment.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-primary hover:underline flex-1 truncate"
+                                >
+                                  {attachment.name}
+                                </a>
+                                <span className="text-xs text-muted-foreground">
+                                  {(attachment.size / 1024 / 1024).toFixed(1)}MB
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         )}
+
+                        {/* Reactions and Likes */}
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center space-x-2">
+                            {/* Quick reaction buttons */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => addReaction(post.id, '👍')}
+                              className="h-6 px-2"
+                            >
+                              <ThumbsUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => addReaction(post.id, '❤️')}
+                              className="h-6 px-2"
+                            >
+                              <Heart className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => addReaction(post.id, '😊')}
+                              className="h-6 px-2"
+                            >
+                              <Smile className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
+                          {/* Display reaction counts */}
+                          {post.reactions && post.reactions.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              {Object.entries(
+                                post.reactions.reduce((acc, reaction) => {
+                                  acc[reaction.reaction] = (acc[reaction.reaction] || 0) + 1;
+                                  return acc;
+                                }, {} as Record<string, number>)
+                              ).map(([reaction, count]) => (
+                                <span key={reaction} className="text-xs bg-muted px-1 rounded">
+                                  {reaction} {count}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {post.likes_count > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <Heart className="h-3 w-3 text-red-500" />
+                              <span className="text-xs text-muted-foreground">
+                                {post.likes_count}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -1173,7 +1420,49 @@ const CommunityBoards = () => {
 
             {/* Message Input */}
             <div className="p-4 border-t bg-card">
+              {/* Pending attachments preview */}
+              {pendingAttachments.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  <p className="text-sm font-medium">Attachments:</p>
+                  {pendingAttachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center space-x-2 p-2 border rounded">
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {(attachment.size / 1024 / 1024).toFixed(1)}MB
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removePendingAttachment(attachment.id)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="flex space-x-2">
+                {/* File attachment input */}
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-input"
+                  accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('file-input')?.click()}
+                  disabled={uploading}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                
                 <Input
                   placeholder="Type your message..."
                   value={newMessage}
@@ -1181,7 +1470,10 @@ const CommunityBoards = () => {
                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   className="flex-1"
                 />
-                <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                <Button 
+                  onClick={sendMessage} 
+                  disabled={!newMessage.trim() && pendingAttachments.length === 0}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -1247,6 +1539,27 @@ const CommunityBoards = () => {
                   checked={currentBoard.is_private}
                   onCheckedChange={(checked) => 
                     updateBoardSettings({ is_private: checked })
+                  }
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allow-member-posting">Allow members to post messages</Label>
+                <Switch
+                  id="allow-member-posting"
+                  checked={currentBoard.allow_member_posting ?? true}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ allow_member_posting: checked })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="require-approval">Require approval for new messages</Label>
+                <Switch
+                  id="require-approval"
+                  checked={currentBoard.require_approval ?? false}
+                  onCheckedChange={(checked) => 
+                    updateBoardSettings({ require_approval: checked })
                   }
                 />
               </div>
