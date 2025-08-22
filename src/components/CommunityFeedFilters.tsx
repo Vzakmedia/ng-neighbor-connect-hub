@@ -34,16 +34,16 @@ export const CommunityFeedFilters = ({
   const [tagSearch, setTagSearch] = useState("");
 
   const locationScopeOptions = [
-    { value: 'neighborhood', label: 'Neighborhood', icon: MapPin },
-    { value: 'city', label: 'City', icon: MapPin },
-    { value: 'state', label: 'State', icon: MapPin },
-    { value: 'all', label: 'All Areas', icon: MapPin }
+    { value: 'neighborhood', label: 'Neighborhood', shortLabel: 'Near', icon: MapPin },
+    { value: 'city', label: 'City', shortLabel: 'City', icon: MapPin },
+    { value: 'state', label: 'State', shortLabel: 'State', icon: MapPin },
+    { value: 'all', label: 'All Areas', shortLabel: 'All', icon: MapPin }
   ];
 
   const postTypeOptions = [
-    { value: 'events', label: 'Events', icon: Calendar },
-    { value: 'general', label: 'General Posts', icon: Users },
-    { value: 'all', label: 'All Types', icon: Users }
+    { value: 'events', label: 'Events', shortLabel: 'Events', icon: Calendar },
+    { value: 'general', label: 'General Posts', shortLabel: 'Posts', icon: Users },
+    { value: 'all', label: 'All Types', shortLabel: 'All', icon: Users }
   ];
 
   const dateRangeOptions = [
@@ -139,7 +139,7 @@ export const CommunityFeedFilters = ({
 
   return (
     <div className="space-y-3">
-      {/* Filter Button and Active Filters in same line */}
+      {/* Filter Button and Active Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
@@ -161,10 +161,10 @@ export const CommunityFeedFilters = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent 
-            className="w-72 sm:w-80 p-0 bg-popover border shadow-lg z-50" 
+            className="w-full max-w-sm sm:w-80 p-0 bg-popover border shadow-lg z-50" 
             align="start"
           >
-            <div className="p-3 space-y-3">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b">
                 <div className="flex items-center gap-2">
@@ -183,16 +183,15 @@ export const CommunityFeedFilters = ({
                 )}
               </div>
               
-              {/* Compact Grid Layout */}
-              <div className="grid grid-cols-2 gap-2">
-                {/* Sort */}
+              {/* Sort & Period - Mobile responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Sort</Label>
                   <Select
                     value={filters.sortBy}
                     onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
                   >
-                    <SelectTrigger className="h-7 text-xs bg-background">
+                    <SelectTrigger className="h-8 sm:h-7 text-xs bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
@@ -205,14 +204,13 @@ export const CommunityFeedFilters = ({
                   </Select>
                 </div>
 
-                {/* Period */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Period</Label>
                   <Select
                     value={filters.dateRange}
                     onValueChange={(value) => onFiltersChange({ ...filters, dateRange: value })}
                   >
-                    <SelectTrigger className="h-7 text-xs bg-background">
+                    <SelectTrigger className="h-8 sm:h-7 text-xs bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
@@ -226,70 +224,56 @@ export const CommunityFeedFilters = ({
                 </div>
               </div>
 
-              {/* Content Types */}
+              {/* Content Types - Mobile Button Layout */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <Users className="h-3 w-3" />
-                  Content
+                  Content Types
                 </Label>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                   {postTypeOptions.map(type => (
-                    <div 
-                      key={type.value} 
-                      className={`flex items-center space-x-1 py-0.5 px-1 rounded border text-xs cursor-pointer transition-all ${
-                        filters.postTypes.includes(type.value) 
-                          ? 'bg-primary/10 border-primary/30' 
-                          : 'bg-background border-border/50 hover:bg-accent/30'
-                      }`}
+                    <Button
+                      key={type.value}
+                      variant={filters.postTypes.includes(type.value) ? "default" : "outline"}
+                      size="sm"
                       onClick={() => handlePostTypeToggle(type.value)}
+                      className={`h-8 px-2 text-xs justify-start transition-all ${
+                        filters.postTypes.includes(type.value) 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'bg-background hover:bg-accent hover:scale-[1.02]'
+                      }`}
                     >
-                      <Checkbox
-                        id={`post-type-${type.value}`}
-                        checked={filters.postTypes.includes(type.value)}
-                        onCheckedChange={() => handlePostTypeToggle(type.value)}
-                        className="h-3 w-3"
-                      />
-                      <Label
-                        htmlFor={`post-type-${type.value}`}
-                        className="text-xs font-medium cursor-pointer truncate"
-                      >
-                        {type.label.split(' ')[0]}
-                      </Label>
-                    </div>
+                      <type.icon className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate hidden sm:inline">{type.label}</span>
+                      <span className="truncate sm:hidden">{type.shortLabel}</span>
+                    </Button>
                   ))}
                 </div>
               </div>
 
-              {/* Location Range */}
+              {/* Location Scope - Mobile Button Layout */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  Location
+                  Location Range
                 </Label>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {locationScopeOptions.map(scope => (
-                    <div 
-                      key={scope.value} 
-                      className={`flex items-center space-x-1 py-0.5 px-1 rounded border text-xs cursor-pointer transition-all ${
-                        filters.locationScope.includes(scope.value) 
-                          ? 'bg-primary/10 border-primary/30' 
-                          : 'bg-background border-border/50 hover:bg-accent/30'
-                      }`}
+                    <Button
+                      key={scope.value}
+                      variant={filters.locationScope.includes(scope.value) ? "default" : "outline"}
+                      size="sm"
                       onClick={() => handleLocationScopeToggle(scope.value)}
+                      className={`h-8 px-2 text-xs justify-center transition-all ${
+                        filters.locationScope.includes(scope.value) 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'bg-background hover:bg-accent hover:scale-[1.02]'
+                      }`}
                     >
-                      <Checkbox
-                        id={`location-${scope.value}`}
-                        checked={filters.locationScope.includes(scope.value)}
-                        onCheckedChange={() => handleLocationScopeToggle(scope.value)}
-                        className="h-3 w-3"
-                      />
-                      <Label
-                        htmlFor={`location-${scope.value}`}
-                        className="text-xs font-medium cursor-pointer truncate"
-                      >
-                        {scope.label.split(' ')[0]}
-                      </Label>
-                    </div>
+                      <scope.icon className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <span className="truncate hidden sm:inline">{scope.label}</span>
+                      <span className="truncate sm:hidden">{scope.shortLabel}</span>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -303,7 +287,7 @@ export const CommunityFeedFilters = ({
                 
                 {/* Search Input */}
                 <div className="relative">
-                  <Search className="absolute left-2 top-1.5 h-3 w-3 text-muted-foreground" />
+                  <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
                   <Input
                     placeholder="Search or add tags..."
                     value={tagSearch}
@@ -313,7 +297,7 @@ export const CommunityFeedFilters = ({
                         handleTagAdd(tagSearch);
                       }
                     }}
-                    className="h-7 pl-7 text-xs bg-background"
+                    className="h-8 pl-7 text-xs bg-background"
                   />
                 </div>
 
@@ -324,7 +308,7 @@ export const CommunityFeedFilters = ({
                       <Badge
                         key={tag}
                         variant="default"
-                        className="gap-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary border-primary/20"
+                        className="gap-1 px-2 py-1 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
                       >
                         #{tag}
                         <Button
@@ -342,12 +326,12 @@ export const CommunityFeedFilters = ({
 
                 {/* Available Tags Suggestions */}
                 {tagSearch && filteredAvailableTags.length > 0 && (
-                  <div className="max-h-16 overflow-y-auto space-y-0.5">
+                  <div className="max-h-20 overflow-y-auto space-y-0.5 border rounded p-1 bg-muted/20">
                     {filteredAvailableTags.slice(0, 4).map(tag => (
                       <div
                         key={tag}
                         onClick={() => handleTagAdd(tag)}
-                        className="text-xs p-1 hover:bg-accent/50 rounded cursor-pointer transition-colors"
+                        className="text-xs p-1.5 hover:bg-accent/50 rounded cursor-pointer transition-colors"
                       >
                         #{tag}
                       </div>
@@ -392,7 +376,7 @@ export const CommunityFeedFilters = ({
                 >
                   <MapPin className="h-2 w-2" />
                   <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === scope)?.label}</span>
-                  <span className="sm:hidden">{scope}</span>
+                  <span className="sm:hidden">{locationScopeOptions.find(opt => opt.value === scope)?.shortLabel}</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -413,7 +397,7 @@ export const CommunityFeedFilters = ({
                 >
                   <Users className="h-2 w-2" />
                   <span className="hidden sm:inline">{postTypeOptions.find(opt => opt.value === type)?.label}</span>
-                  <span className="sm:hidden">{type}</span>
+                  <span className="sm:hidden">{postTypeOptions.find(opt => opt.value === type)?.shortLabel}</span>
                   <Button
                     variant="ghost"
                     size="sm"
