@@ -1467,202 +1467,204 @@ const CommunityBoards = () => {
               </div>
             </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {/* Pinned Messages Bar */}
-                {posts.some(post => post.is_pinned) && (
-                  <div className="bg-accent/50 border border-primary/20 rounded-lg p-3 mb-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Pin className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Pinned Messages</span>
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {posts.filter(post => post.is_pinned).map((pinnedPost) => (
-                        <Button
-                          key={pinnedPost.id}
-                          variant="secondary"
-                          size="sm"
-                          className="whitespace-nowrap min-w-0 flex-shrink-0 max-w-[200px]"
-                          onClick={() => {
-                            const element = document.getElementById(`message-${pinnedPost.id}`);
-                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }}
-                        >
-                          <div className="truncate">
-                            {pinnedPost.content?.slice(0, 30) || 'Message'}
-                            {pinnedPost.content && pinnedPost.content.length > 30 && '...'}
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {posts.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-center">
-                    <div className="space-y-2">
-                      <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        No messages yet. Start the conversation!
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  posts.map((post) => (
-                    <div 
-                      key={post.id} 
-                      id={`message-${post.id}`}
-                      className={`flex items-start space-x-3 p-3 rounded-lg ${post.is_pinned ? 'bg-accent border border-primary/20' : ''}`}
-                    >
-                      {post.is_pinned && (
-                        <Pin className="h-4 w-4 text-primary mt-1" />
-                      )}
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={post.profiles?.avatar_url || ''} />
-                        <AvatarFallback>
-                          {post.profiles?.full_name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium">
-                            {post.profiles?.full_name || 'Unknown User'}
-                          </p>
-                          {post.is_pinned && (
-                            <Badge variant="secondary" className="text-xs">Pinned</Badge>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(post.created_at).toLocaleTimeString()}
-                          </p>
-                          {/* Pin/Unpin button for members/admins */}
-                          {user && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onClick={() => togglePinMessage(post.id, post.is_pinned)}
-                                >
-                                  <Pin className="h-4 w-4 mr-2" />
-                                  {post.is_pinned ? 'Unpin' : 'Pin'} Message
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                        
-                        {post.content && (
-                          <div className="text-sm mt-1 break-words">
-                            {renderMessageWithMentions(post.content)}
-                          </div>
-                        )}
-                        
-                        {/* Attachments */}
-                        {post.attachments && Array.isArray(post.attachments) && post.attachments.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {(post.attachments as any[]).map((attachment: any, index: number) => (
-                              <div key={attachment.id || index} className="flex items-center space-x-2 p-2 border rounded">
-                                <Paperclip className="h-4 w-4 text-muted-foreground" />
-                                <a 
-                                  href={attachment.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-primary hover:underline flex-1 truncate"
-                                >
-                                  {attachment.name || 'File'}
-                                </a>
-                                <span className="text-xs text-muted-foreground">
-                                  {attachment.size ? (attachment.size / 1024 / 1024).toFixed(1) + 'MB' : ''}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Tagged Members */}
-                        {post.tagged_members && post.tagged_members.length > 0 && (
-                          <div className="mt-2">
-                            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                              <Users className="h-3 w-3" />
-                              <span>Mentioned:</span>
-                              {post.tagged_members.map((memberId, index) => {
-                                const member = boardMembers.find(m => m.user_id === memberId);
-                                return member ? (
-                                  <Badge key={memberId} variant="secondary" className="text-xs">
-                                    {member.profiles?.full_name || 'Unknown User'}
-                                  </Badge>
-                                ) : null;
-                              })}
+            {/* Messages Container with Enhanced Scrolling */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <ScrollArea className="flex-1 px-4">
+                <div className="space-y-4 py-4">
+                  {/* Pinned Messages Bar */}
+                  {posts.some(post => post.is_pinned) && (
+                    <div className="bg-accent/50 border border-primary/20 rounded-lg p-3 mb-4 sticky top-0 z-10 bg-background/95 backdrop-blur">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Pin className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium text-primary">Pinned Messages</span>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto">
+                        {posts.filter(post => post.is_pinned).map((pinnedPost) => (
+                          <Button
+                            key={pinnedPost.id}
+                            variant="secondary"
+                            size="sm"
+                            className="whitespace-nowrap min-w-0 flex-shrink-0 max-w-[200px]"
+                            onClick={() => {
+                              const element = document.getElementById(`message-${pinnedPost.id}`);
+                              element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                          >
+                            <div className="truncate">
+                              {pinnedPost.content?.slice(0, 30) || 'Message'}
+                              {pinnedPost.content && pinnedPost.content.length > 30 && '...'}
                             </div>
-                          </div>
-                        )}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                        {/* Reactions and Likes */}
-                        <div className="flex items-center space-x-4 mt-2">
+                  {posts.length === 0 ? (
+                    <div className="flex items-center justify-center h-64 text-center">
+                      <div className="space-y-2">
+                        <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          No messages yet. Start the conversation!
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    posts.map((post) => (
+                      <div 
+                        key={post.id} 
+                        id={`message-${post.id}`}
+                        className={`flex items-start space-x-3 p-3 rounded-lg transition-colors hover:bg-accent/20 ${post.is_pinned ? 'bg-accent border border-primary/20' : ''}`}
+                      >
+                        {post.is_pinned && (
+                          <Pin className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                        )}
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={post.profiles?.avatar_url || ''} />
+                          <AvatarFallback>
+                            {post.profiles?.full_name?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
-                            {/* Quick reaction buttons */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addReaction(post.id, '👍')}
-                              className="h-6 px-2"
-                            >
-                              <ThumbsUp className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addReaction(post.id, '❤️')}
-                              className="h-6 px-2"
-                            >
-                              <Heart className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addReaction(post.id, '😊')}
-                              className="h-6 px-2"
-                            >
-                              <Smile className="h-3 w-3" />
-                            </Button>
+                            <p className="text-sm font-medium">
+                              {post.profiles?.full_name || 'Unknown User'}
+                            </p>
+                            {post.is_pinned && (
+                              <Badge variant="secondary" className="text-xs">Pinned</Badge>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(post.created_at).toLocaleTimeString()}
+                            </p>
+                            {/* Pin/Unpin button for members/admins */}
+                            {user && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
+                                    onClick={() => togglePinMessage(post.id, post.is_pinned)}
+                                  >
+                                    <Pin className="h-4 w-4 mr-2" />
+                                    {post.is_pinned ? 'Unpin' : 'Pin'} Message
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                           
-                          {/* Display reaction counts */}
-                          {post.reactions && post.reactions.length > 0 && (
-                            <div className="flex items-center space-x-1">
-                              {Object.entries(
-                                post.reactions.reduce((acc, reaction) => {
-                                  acc[reaction.reaction] = (acc[reaction.reaction] || 0) + 1;
-                                  return acc;
-                                }, {} as Record<string, number>)
-                              ).map(([reaction, count]) => (
-                                <span key={reaction} className="text-xs bg-muted px-1 rounded">
-                                  {reaction} {count}
-                                </span>
+                          {post.content && (
+                            <div className="text-sm mt-1 break-words">
+                              {renderMessageWithMentions(post.content)}
+                            </div>
+                          )}
+                          
+                          {/* Attachments */}
+                          {post.attachments && Array.isArray(post.attachments) && post.attachments.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                              {(post.attachments as any[]).map((attachment: any, index: number) => (
+                                <div key={attachment.id || index} className="flex items-center space-x-2 p-2 border rounded">
+                                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                  <a 
+                                    href={attachment.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-primary hover:underline flex-1 truncate"
+                                  >
+                                    {attachment.name || 'File'}
+                                  </a>
+                                  <span className="text-xs text-muted-foreground">
+                                    {attachment.size ? (attachment.size / 1024 / 1024).toFixed(1) + 'MB' : ''}
+                                  </span>
+                                </div>
                               ))}
                             </div>
                           )}
-                          
-                          {post.likes_count > 0 && (
-                            <div className="flex items-center space-x-1">
-                              <Heart className="h-3 w-3 text-red-500" />
-                              <span className="text-xs text-muted-foreground">
-                                {post.likes_count}
-                              </span>
+
+                          {/* Tagged Members */}
+                          {post.tagged_members && post.tagged_members.length > 0 && (
+                            <div className="mt-2">
+                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                <span>Mentioned:</span>
+                                {post.tagged_members.map((memberId, index) => {
+                                  const member = boardMembers.find(m => m.user_id === memberId);
+                                  return member ? (
+                                    <Badge key={memberId} variant="secondary" className="text-xs">
+                                      {member.profiles?.full_name || 'Unknown User'}
+                                    </Badge>
+                                  ) : null;
+                                })}
+                              </div>
                             </div>
                           )}
+
+                          {/* Reactions and Likes */}
+                          <div className="flex items-center space-x-4 mt-2">
+                            <div className="flex items-center space-x-2">
+                              {/* Quick reaction buttons */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addReaction(post.id, '👍')}
+                                className="h-6 px-2"
+                              >
+                                <ThumbsUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addReaction(post.id, '❤️')}
+                                className="h-6 px-2"
+                              >
+                                <Heart className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addReaction(post.id, '😊')}
+                                className="h-6 px-2"
+                              >
+                                <Smile className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            
+                            {/* Display reaction counts */}
+                            {post.reactions && post.reactions.length > 0 && (
+                              <div className="flex items-center space-x-1">
+                                {Object.entries(
+                                  post.reactions.reduce((acc, reaction) => {
+                                    acc[reaction.reaction] = (acc[reaction.reaction] || 0) + 1;
+                                    return acc;
+                                  }, {} as Record<string, number>)
+                                ).map(([reaction, count]) => (
+                                  <span key={reaction} className="text-xs bg-muted px-1 rounded">
+                                    {reaction} {count}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {post.likes_count > 0 && (
+                              <div className="flex items-center space-x-1">
+                                <Heart className="h-3 w-3 text-red-500" />
+                                <span className="text-xs text-muted-foreground">
+                                  {post.likes_count}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+            </div>
 
             {/* Message Input */}
             <div className="p-4 border-t bg-card">
