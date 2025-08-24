@@ -45,6 +45,7 @@ export const UserDirectory = () => {
 
   const fetchProfiles = async () => {
     try {
+      console.log('Fetching profiles from public_profiles table...');
       const { data, error } = await supabase
         .from('public_profiles')
         .select('*')
@@ -54,12 +55,13 @@ export const UserDirectory = () => {
         console.error('Error fetching profiles:', error);
         toast({
           title: "Error",
-          description: "Failed to load user directory.",
+          description: `Failed to load user directory: ${error.message}`,
           variant: "destructive",
         });
         return;
       }
 
+      console.log('Fetched profiles:', data);
       setProfiles(data || []);
     } catch (error) {
       console.error('Error fetching profiles:', error);
