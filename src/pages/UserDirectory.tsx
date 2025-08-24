@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { UserDirectory as UserDirectoryComponent } from '@/components/UserDirectory';
+import { SecureRoleGuard } from '@/components/security/SecureRoleGuard';
 
 const UserDirectory = () => {
   const { user, loading } = useAuth();
@@ -34,7 +35,9 @@ const UserDirectory = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-6 max-w-6xl">
-          <UserDirectoryComponent />
+          <SecureRoleGuard requiredRoles={['super_admin', 'admin']}>
+            <UserDirectoryComponent />
+          </SecureRoleGuard>
         </div>
       </main>
     </div>
