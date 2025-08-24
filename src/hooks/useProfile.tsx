@@ -49,14 +49,22 @@ export function useProfile() {
         console.log('useProfile: Query result:', { data, error, userId: user.id });
 
         if (error && error.code !== 'PGRST116') {
-          console.error('useProfile: Error fetching profile:', error);
+          console.error('useProfile: Error fetching profile:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
           return;
         }
 
         console.log('useProfile: Setting profile data:', data);
         setProfile(data || null);
       } catch (error) {
-        console.error('useProfile: Exception fetching profile:', error);
+        console.error('useProfile: Exception fetching profile:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error
+        });
       } finally {
         console.log('useProfile: Fetch complete, loading set to false');
         setLoading(false);
