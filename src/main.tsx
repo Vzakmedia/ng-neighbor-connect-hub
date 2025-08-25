@@ -24,6 +24,22 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
+// iOS Safari-specific viewport fix
+const setViewportHeight = () => {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+};
+
+// Set initial viewport height
+setViewportHeight();
+
+// Update on resize (handles iOS Safari dynamic viewport)
+window.addEventListener('resize', setViewportHeight);
+window.addEventListener('orientationchange', setViewportHeight);
+
+console.log('Starting app render process...');
+console.log('iOS Safari compatibility:', /iPad|iPhone|iPod/.test(navigator.userAgent));
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
