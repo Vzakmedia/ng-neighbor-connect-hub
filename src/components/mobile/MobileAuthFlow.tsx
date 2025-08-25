@@ -26,11 +26,12 @@ const MobileAuthFlow = () => {
     console.log('MobileAuthFlow - Device compatibility:', {
       isIOS: deviceInfo.isIOS,
       supportsAdvanced: supportsAdvancedFeatures,
-      localStorage: deviceInfo.supportsLocalStorage
+      localStorage: deviceInfo.supportsLocalStorage,
+      iosVersion: deviceInfo.version
     });
 
-    // Use iOS safe landing for older iOS or when advanced features aren't supported
-    if (deviceInfo.isIOS && (!supportsAdvancedFeatures || deviceInfo.version && deviceInfo.version < 12)) {
+    // Use iOS safe landing for older iOS (< 12) or when advanced features aren't supported
+    if (deviceInfo.isIOS && (!supportsAdvancedFeatures || (deviceInfo.version && deviceInfo.version < 12))) {
       setUseIOSSafeLanding(true);
     }
 
