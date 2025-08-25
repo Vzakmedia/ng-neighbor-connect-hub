@@ -36,11 +36,11 @@ export const detectIOSDevice = (): IOSDeviceInfo => {
     supportsLocalStorage = false;
   }
 
-  // Test private browsing mode
+  // Test private browsing mode (iOS Safari specific)
   let isInPrivateBrowsing = false;
   try {
     if (isIOS && isSafari) {
-      // iOS Safari private browsing detection
+      // iOS Safari private browsing detection - try to use sessionStorage
       const testStorage = window.sessionStorage;
       testStorage.setItem('__test__', '1');
       testStorage.removeItem('__test__');
@@ -52,11 +52,14 @@ export const detectIOSDevice = (): IOSDeviceInfo => {
   // Test WebSocket support
   const supportsWebSocket = 'WebSocket' in window;
 
-  // Test ES6 features
+  // Test ES6 features safely without eval
   let supportsES6 = false;
   try {
-    // Test arrow functions and const
-    eval('const test = () => true; supportsES6 = test();');
+    // Test modern features safely
+    supportsES6 = typeof Promise !== 'undefined' && 
+                  typeof Map !== 'undefined' && 
+                  typeof Set !== 'undefined' &&
+                  'assign' in Object;
   } catch (e) {
     supportsES6 = false;
   }
@@ -154,37 +157,42 @@ export class IOSErrorBoundary extends Error {
   }
 }
 
-// Safe feature detection
+// Safe feature detection without eval
 export const safeFeatureDetection = {
   // Test if Framer Motion will work
-  supportsFramerMotion: (): boolean => {
+  supportsFramerMotion: function(): boolean {
     try {
       const deviceInfo = detectIOSDevice();
-      if (deviceInfo.isIOS && deviceInfo.version && deviceInfo.version < 10) {
+      if (deviceInfo.isIOS && deviceInfo.version && deviceInfo.version < 12) {
         return false;
       }
-      return 'requestAnimationFrame' in window && 'IntersectionObserver' in window;
+      return typeof requestAnimationFrame !== 'undefined' && 
+             'IntersectionObserver' in window &&
+             typeof Promise !== 'undefined';
     } catch (e) {
       return false;
     }
   },
 
   // Test if WebGL will work
-  supportsWebGL: (): boolean => {
+  supportsWebGL: function(): boolean {
     try {
       const canvas = document.createElement('canvas');
-      return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      const context = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return !!context;
     } catch (e) {
       return false;
     }
   },
 
   // Test if modern JavaScript features work
-  supportsModernJS: (): boolean => {
+  supportsModernJS: function(): boolean {
     try {
       return typeof Promise !== 'undefined' && 
              typeof fetch !== 'undefined' &&
-             typeof Map !== 'undefined';
+             typeof Map !== 'undefined' &&
+             typeof Set !== 'undefined' &&
+             'assign' in Object;
     } catch (e) {
       return false;
     }

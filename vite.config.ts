@@ -21,11 +21,8 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'es2015', // Support older iOS Safari versions
-    polyfillModulePreload: false,
-    minify: 'terser',
-    terserOptions: {
-      safari10: true, // Ensure Safari 10 compatibility
-    },
+    modulePreload: { polyfill: false },
+    minify: 'esbuild', // Use esbuild instead of terser for better compatibility
     rollupOptions: {
       output: {
         manualChunks: {
@@ -36,7 +33,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   esbuild: {
-    target: 'es2015', // Ensures compatibility with iOS Safari 10.3+
+    target: 'es2017', // Better iOS Safari compatibility
     supported: {
       'bigint': false, // Disable bigint for older iOS
     },
