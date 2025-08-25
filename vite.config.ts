@@ -22,8 +22,23 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2015', // Support older iOS Safari versions
     polyfillModulePreload: false,
+    minify: 'terser',
+    terserOptions: {
+      safari10: true, // Ensure Safari 10 compatibility
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate iOS-critical modules
+          'ios-compat': ['@/utils/iosCompatibility', '@/utils/safetStorage'],
+        },
+      },
+    },
   },
   esbuild: {
     target: 'es2015', // Ensures compatibility with iOS Safari 10.3+
+    supported: {
+      'bigint': false, // Disable bigint for older iOS
+    },
   },
 }));

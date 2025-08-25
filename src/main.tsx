@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
+import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 
 // Global error handler for WebSocket connection errors to prevent console spam
 window.addEventListener('error', (event) => {
@@ -37,11 +39,39 @@ setViewportHeight();
 window.addEventListener('resize', setViewportHeight);
 window.addEventListener('orientationchange', setViewportHeight);
 
+// Log iOS compatibility information
 console.log('Starting app render process...');
-console.log('iOS Safari compatibility:', /iPad|iPhone|iPod/.test(navigator.userAgent));
+logIOSCompatibility();
+
+const deviceInfo = detectIOSDevice();
+
+// Enhanced error handling for iOS
+if (deviceInfo.isIOS) {
+  // Add iOS-specific error handlers
+  window.addEventListener('error', (event) => {
+    if (event.message?.includes('Script error') || 
+        event.message?.includes('ResizeObserver') ||
+        event.message?.includes('Non-Error promise rejection')) {
+      console.debug('iOS Error suppressed (non-critical):', event.error || event.message);
+      event.preventDefault();
+      return;
+    }
+  });
+
+  // Handle iOS Safari specific issues
+  if (!deviceInfo.supportsLocalStorage) {
+    console.warn('localStorage not available - app will use fallback storage');
+  }
+  
+  if (deviceInfo.version && deviceInfo.version < 12) {
+    console.warn('iOS version is quite old, some features may not work optimally');
+  }
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <IOSErrorBoundary>
+      <App />
+    </IOSErrorBoundary>
   </StrictMode>
 );

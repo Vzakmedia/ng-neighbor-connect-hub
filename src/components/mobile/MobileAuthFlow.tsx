@@ -4,18 +4,38 @@ import { useNavigate } from 'react-router-dom';
 import SplashScreen from './SplashScreen';
 import OnboardingScreen from './OnboardingScreen';
 import { AuthPage } from '@/components/auth/AuthPage';
+import { detectIOSDevice, safeFeatureDetection } from '@/utils/iosCompatibility';
+import { safeStorage } from '@/utils/safetStorage';
+import IOSSafeLanding from '@/components/common/IOSSafeLanding';
 
 type FlowStep = 'splash' | 'onboarding' | 'auth';
 
 const MobileAuthFlow = () => {
   const [currentStep, setCurrentStep] = useState<FlowStep>('splash');
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [useIOSSafeLanding, setUseIOSSafeLanding] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user has seen onboarding before (mobile app specific key)
-    const seenOnboarding = localStorage.getItem('neighborlink_mobile_onboarding_seen');
+    // Detect iOS device and determine if we need safe landing
+    const deviceInfo = detectIOSDevice();
+    const supportsAdvancedFeatures = safeFeatureDetection.supportsFramerMotion() && 
+                                   safeFeatureDetection.supportsModernJS();
+    
+    console.log('MobileAuthFlow - Device compatibility:', {
+      isIOS: deviceInfo.isIOS,
+      supportsAdvanced: supportsAdvancedFeatures,
+      localStorage: deviceInfo.supportsLocalStorage
+    });
+
+    // Use iOS safe landing for older iOS or when advanced features aren't supported
+    if (deviceInfo.isIOS && (!supportsAdvancedFeatures || deviceInfo.version && deviceInfo.version < 12)) {
+      setUseIOSSafeLanding(true);
+    }
+
+    // Check if user has seen onboarding before (using safe storage)
+    const seenOnboarding = safeStorage.getItem('neighborlink_mobile_onboarding_seen');
     if (seenOnboarding) {
       setHasSeenOnboarding(true);
     }
@@ -37,8 +57,14 @@ const MobileAuthFlow = () => {
   };
 
   const handleGetStarted = () => {
-    // Mark mobile onboarding as seen
-    localStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    // Mark mobile onboarding as seen (using safe storage)
+    safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    setCurrentStep('auth');
+  };
+
+  const handleIOSGetStarted = () => {
+    // Mark onboarding as seen and go directly to auth
+    safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
     setCurrentStep('auth');
   };
 
@@ -50,11 +76,18 @@ const MobileAuthFlow = () => {
     );
   }
 
+  // Use iOS safe landing if needed
+  if (useIOSSafeLanding && currentStep === 'onboarding') {
+    return <IOSSafeLanding onGetStarted={handleIOSGetStarted} />;
+  }
+
   switch (currentStep) {
     case 'splash':
       return <SplashScreen onComplete={handleSplashComplete} />;
     case 'onboarding':
-      return <OnboardingScreen onGetStarted={handleGetStarted} />;
+      return hasSeenOnboarding || useIOSSafeLanding ? 
+        <IOSSafeLanding onGetStarted={handleIOSGetStarted} /> : 
+        <OnboardingScreen onGetStarted={handleGetStarted} />;
     case 'auth':
       return <AuthPage />;
     default:
