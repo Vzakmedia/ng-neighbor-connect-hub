@@ -59,6 +59,13 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: (failureCount, error) => {
+        // Don't retry on security errors
+        if (error && (error as any).name === 'SecurityError') {
+          return false;
+        }
+        return failureCount < 3;
+      },
     },
   },
 });
@@ -91,7 +98,36 @@ const TutorialWrapper = () => {
 
 const App = () => {
   console.log("App component rendering, React:", React);
-  // Push notifications are now handled by PushNotificationWrapper inside AuthProvider
+  
+  // Add global error handler for security errors
+  React.useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.error?.name === 'SecurityError' || event.message?.includes('SecurityError')) {
+        console.error('Global SecurityError caught:', event.error || event.message);
+        // The IOSErrorBoundary will handle the UI for this
+        return;
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason?.toString() || '';
+      if (reason.includes('SecurityError') || reason.includes('insecure')) {
+        console.error('Global SecurityError promise rejection:', event.reason);
+        // Prevent default handling to avoid console spam
+        event.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   return (
     <IOSErrorBoundary>
       <QueryClientProvider client={queryClient}>
