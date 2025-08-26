@@ -1,0 +1,16 @@
+# Browsers that we support
+>0.2%
+not dead
+not op_mini all
+iOS >= 12
+Safari >= 12
+Chrome >= 60
+Firefox >= 60
+Edge >= 18
+
+# Support for legacy iOS versions
+ios_saf >= 12.0
+
+# Ensure modern ES features are properly transpiled
+supports es6-module
+supports es6-module-dynamic-import
