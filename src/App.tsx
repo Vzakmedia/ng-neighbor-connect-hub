@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
@@ -92,14 +93,15 @@ const App = () => {
   console.log("App component rendering, React:", React);
   // Push notifications are now handled by PushNotificationWrapper inside AuthProvider
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <AuthProvider>
+    <IOSErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
           <AudioInitializer />
           <PushNotificationWrapper />
           <SecurityHeaders />
@@ -150,10 +152,11 @@ const App = () => {
             <NeighborhoodEmergencyAlert position="top-center" />
             <FloatingCreatePostButton />
           </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+          </TooltipProvider>
+        </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </IOSErrorBoundary>
   );
 };
 
