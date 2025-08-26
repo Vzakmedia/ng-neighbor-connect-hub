@@ -1,8 +1,9 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { detectIOSDevice, logIOSCompatibility } from '@/utils/iosCompatibility';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Smartphone } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Smartphone, Shield } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -14,6 +15,7 @@ interface State {
   error?: Error;
   errorInfo?: ErrorInfo;
   deviceInfo?: any;
+  isSecurityError?: boolean;
 }
 
 export class IOSErrorBoundary extends Component<Props, State> {
@@ -23,55 +25,87 @@ export class IOSErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // Update state so the next render will show the fallback UI
+    const isSecurityError = error.name === 'SecurityError' || 
+                           error.message?.includes('insecure') ||
+                           error.message?.includes('SecurityError');
+    
     return { 
       hasError: true, 
       error,
-      deviceInfo: detectIOSDevice()
+      deviceInfo: detectIOSDevice(),
+      isSecurityError
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log the error with iOS device information
     console.error('iOS Error Boundary caught an error:', error, errorInfo);
     logIOSCompatibility();
+    
+    const isSecurityError = error.name === 'SecurityError' || 
+                           error.message?.includes('insecure') ||
+                           error.message?.includes('SecurityError');
     
     this.setState({
       error,
       errorInfo,
-      deviceInfo: detectIOSDevice()
+      deviceInfo: detectIOSDevice(),
+      isSecurityError
     });
 
-    // Report to error tracking service if available
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'exception', {
-        description: `iOS Error: ${error.message}`,
-        fatal: false,
-        custom_map: {
-          ios_version: this.state.deviceInfo?.version,
-          is_private_browsing: this.state.deviceInfo?.isInPrivateBrowsing,
-          supports_local_storage: this.state.deviceInfo?.supportsLocalStorage
-        }
+    // Log security errors specifically
+    if (isSecurityError) {
+      console.error('iOS Security Error detected:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        userAgent: navigator.userAgent,
+        location: window.location.href,
+        isPrivateBrowsing: this.state.deviceInfo?.isInPrivateBrowsing
       });
     }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    // Clear any problematic localStorage entries before retry
+    try {
+      if (this.state.isSecurityError) {
+        // Try to clear potentially problematic storage
+        const keysToRemove = ['supabase.auth.token', 'neighborlink-auth', 'app_preferences'];
+        keysToRemove.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.debug('Could not remove localStorage key:', key);
+          }
+        });
+      }
+    } catch (e) {
+      console.debug('Storage cleanup failed, continuing with retry');
+    }
+    
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, isSecurityError: false });
   };
 
   handleReload = () => {
-    window.location.reload();
+    // Force reload with cache clear for security errors
+    if (this.state.isSecurityError) {
+      window.location.href = window.location.href + '?t=' + Date.now();
+    } else {
+      window.location.reload();
+    }
+  };
+
+  handlePrivateModeSwitch = () => {
+    alert('Please try opening this app in a regular (non-private) browser tab for full functionality.');
   };
 
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      const { deviceInfo, error } = this.state;
+      const { deviceInfo, error, isSecurityError } = this.state;
       const isIOSDevice = deviceInfo?.isIOS;
 
       return (
@@ -79,24 +113,41 @@ export class IOSErrorBoundary extends Component<Props, State> {
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
-                {isIOSDevice ? (
+                {isSecurityError ? (
+                  <Shield className="h-12 w-12 text-destructive" />
+                ) : isIOSDevice ? (
                   <Smartphone className="h-12 w-12 text-muted-foreground" />
                 ) : (
                   <AlertTriangle className="h-12 w-12 text-destructive" />
                 )}
               </div>
               <CardTitle className="text-xl">
-                {isIOSDevice ? 'iOS Compatibility Issue' : 'Something went wrong'}
+                {isSecurityError 
+                  ? 'Security Error' 
+                  : isIOSDevice 
+                    ? 'iOS Compatibility Issue' 
+                    : 'Something went wrong'}
               </CardTitle>
               <CardDescription>
-                {isIOSDevice 
-                  ? 'We detected an issue with iOS Safari compatibility.'
-                  : 'An unexpected error occurred while loading the app.'
+                {isSecurityError
+                  ? 'A browser security restriction is preventing the app from loading properly.'
+                  : isIOSDevice 
+                    ? 'We detected an issue with iOS Safari compatibility.'
+                    : 'An unexpected error occurred while loading the app.'
                 }
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-4">
+              {isSecurityError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
+                  <p className="font-medium text-destructive">Security Restriction Detected</p>
+                  <p className="text-muted-foreground mt-1">
+                    This usually happens in private browsing mode or due to browser security settings.
+                  </p>
+                </div>
+              )}
+
               {isIOSDevice && deviceInfo && (
                 <div className="text-sm text-muted-foreground space-y-2">
                   <p><strong>Device Info:</strong></p>
@@ -108,13 +159,15 @@ export class IOSErrorBoundary extends Component<Props, State> {
                 </div>
               )}
 
-              {deviceInfo?.isInPrivateBrowsing && (
+              {(deviceInfo?.isInPrivateBrowsing || isSecurityError) && (
                 <div className="p-3 bg-muted rounded-lg text-sm">
-                  <p className="font-medium">Private Browsing Detected</p>
-                  <p className="text-muted-foreground">
-                    Some features may not work properly in private browsing mode. 
-                    Try using regular browsing mode for the best experience.
-                  </p>
+                  <p className="font-medium">Recommended Solutions:</p>
+                  <ul className="text-muted-foreground mt-2 space-y-1 text-xs">
+                    <li>• Try using regular browsing mode (not private/incognito)</li>
+                    <li>• Refresh the page and try again</li>
+                    <li>• Check Safari security settings</li>
+                    <li>• Try a different browser if available</li>
+                  </ul>
                 </div>
               )}
 
@@ -127,13 +180,19 @@ export class IOSErrorBoundary extends Component<Props, State> {
                 <Button onClick={this.handleReload} variant="outline" className="w-full">
                   Reload Page
                 </Button>
+
+                {deviceInfo?.isInPrivateBrowsing && (
+                  <Button onClick={this.handlePrivateModeSwitch} variant="secondary" className="w-full text-xs">
+                    Switch to Regular Browsing
+                  </Button>
+                )}
               </div>
 
               {error && (
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer font-medium">Technical Details</summary>
                   <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                    {error.toString()}
+                    {error.name}: {error.message}
                   </pre>
                 </details>
               )}
