@@ -12,25 +12,59 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Get safe storage for iOS compatibility (handles private browsing)
 const storage = getSafeStorage();
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage,
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false, // Prevents issues with iOS Safari
-    storageKey: 'neighborlink-auth',
-  },
-  realtime: {
-    // iOS WebSocket compatibility
-    params: {
-      eventsPerSecond: 2, // Reduce events for iOS
-    },
-    heartbeatIntervalMs: 30000, // Longer heartbeat for iOS
-    reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000), // Gradual backoff
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'neighborlink-ios-compat',
-    },
-  },
-});
+// Enhanced error handling for iOS Safari security restrictions
+const createSupabaseClient = () => {
+  try {
+    return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false, // Prevents issues with iOS Safari
+        storageKey: 'neighborlink-auth',
+        flowType: 'pkce', // More secure auth flow for iOS
+      },
+      realtime: {
+        // iOS WebSocket compatibility
+        params: {
+          eventsPerSecond: 2, // Reduce events for iOS
+        },
+        heartbeatIntervalMs: 30000, // Longer heartbeat for iOS
+        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000), // Gradual backoff
+        transport: 'websocket', // Force WebSocket transport
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'neighborlink-ios-compat',
+          'Cache-Control': 'no-cache',
+        },
+        fetch: (url, options = {}) => {
+          // Enhanced fetch with iOS security error handling
+          const enhancedOptions = {
+            ...options,
+            credentials: 'same-origin',
+            mode: 'cors' as RequestMode,
+          };
+          
+          return fetch(url, enhancedOptions).catch((error) => {
+            if (error.name === 'SecurityError' || error.message?.includes('insecure')) {
+              console.warn('iOS Safari security restriction detected, retrying with fallback');
+              // Retry with minimal options
+              return fetch(url, {
+                ...options,
+                credentials: 'omit',
+                mode: 'cors' as RequestMode,
+              });
+            }
+            throw error;
+          });
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    throw new Error('Unable to initialize secure connection. Please try refreshing the page.');
+  }
+};
+
+export const supabase = createSupabaseClient();
