@@ -100,7 +100,7 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
             board_id: board.id,
             user_id: user.id,
             message: `Request to join ${board.name}`
-          });
+          } as any);
 
         if (requestError) throw requestError;
 
@@ -116,7 +116,7 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
             board_id: board.id,
             user_id: user.id,
             role: 'member'
-          });
+          } as any);
 
         if (joinError) throw joinError;
 
