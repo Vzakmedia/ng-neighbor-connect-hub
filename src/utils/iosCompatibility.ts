@@ -293,6 +293,30 @@ export const securityErrorRecovery = {
     return error.name === 'SecurityError' || 
            error.message?.includes('insecure') ||
            error.message?.includes('SecurityError') ||
-           error.message?.includes('cross-origin');
+           error.message?.includes('cross-origin') ||
+           error.message?.includes('Failed to fetch') ||
+           error.message?.includes('Network request failed');
+  },
+
+  // Enhanced iOS 18 specific error handling
+  handleIOSSecurityError: (error: Error): boolean => {
+    if (securityErrorRecovery.isSecurityError(error)) {
+      console.warn('iOS Security Error detected, attempting recovery...');
+      
+      // Clear potentially problematic data
+      securityErrorRecovery.clearProblematicStorage();
+      
+      // Force a clean reload with cache busting
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('t', Date.now().toString());
+      currentUrl.searchParams.set('ios_recovery', '1');
+      
+      setTimeout(() => {
+        window.location.href = currentUrl.toString();
+      }, 100);
+      
+      return true;
+    }
+    return false;
   }
 };
