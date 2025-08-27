@@ -82,30 +82,30 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
       const { data: safetyDetails } = await supabase
         .from('safety_alerts')
         .select('id, user_id, severity, created_at')
-        .eq('id', alert.id)
+        .eq('id', alert.id as any)
         .maybeSingle();
 
-      if (safetyDetails) {
+      if (safetyDetails && !('error' in safetyDetails)) {
         // Look for a panic_alert by same user around the same time window
         const { data: candidatePanicAlerts } = await supabase
           .from('panic_alerts')
           .select('id, created_at, user_id')
-          .eq('user_id', safetyDetails.user_id)
+          .eq('user_id', (safetyDetails as any).user_id)
           .order('created_at', { ascending: false })
           .limit(10);
 
         if (candidatePanicAlerts && candidatePanicAlerts.length > 0) {
-          const safetyTime = new Date(safetyDetails.created_at).getTime();
+          const safetyTime = new Date((safetyDetails as any).created_at).getTime();
           const windowMs = 5 * 60 * 1000; // 5 minutes window
-          const match = candidatePanicAlerts.find((p) => {
+          const match = candidatePanicAlerts.find((p: any) => {
             const t = new Date(p.created_at).getTime();
             return Math.abs(t - safetyTime) <= windowMs;
           });
 
-          if (match?.id) {
+          if (match && (match as any).id) {
             const { error: fnError } = await supabase.functions.invoke('update-panic-alert-status', {
               body: {
-                panic_alert_id: match.id,
+                panic_alert_id: (match as any).id,
                 new_status: selectedStatus,
                 update_note: statusNote?.trim() || undefined,
               },
@@ -135,7 +135,7 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
         const { error } = await supabase
           .from('safety_alerts')
           .update(updateData)
-          .eq('id', alert.id);
+          .eq('id', alert.id as any);
 
         if (error) throw error;
 
@@ -143,11 +143,11 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
           await supabase
             .from('alert_responses')
             .insert({
-              alert_id: alert.id,
-              user_id: user?.id,
-              response_type: 'status_update',
+              alert_id: alert.id as any,
+              user_id: user?.id as any,
+              response_type: 'status_update' as any,
               comment: `Status changed to ${selectedStatus}: ${statusNote.trim()}`,
-            });
+            } as any);
         }
       }
 

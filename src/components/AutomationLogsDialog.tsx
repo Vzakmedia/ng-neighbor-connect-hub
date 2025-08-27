@@ -65,7 +65,7 @@ const AutomationLogsDialog = ({
 
         if (allLogsError) throw allLogsError;
         
-        const formattedLogs = (allLogs || []).map(log => ({
+        const formattedLogs = (allLogs || []).map((log: any) => ({
           id: log.id,
           timestamp: new Date(log.executed_at),
           status: log.execution_status === 'completed' ? 'success' : 
@@ -82,7 +82,7 @@ const AutomationLogsDialog = ({
         
         setLogs(formattedLogs);
       } else {
-        const formattedLogs = (automationLogsData || []).map(log => ({
+        const formattedLogs = (automationLogsData || []).map((log: any) => ({
           id: log.id,
           timestamp: new Date(log.executed_at),
           status: log.execution_status === 'completed' ? 'success' : 
