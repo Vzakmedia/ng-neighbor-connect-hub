@@ -119,14 +119,14 @@ const BusinessListings = () => {
 
       // For authenticated users, we can load contact info separately if needed
       const businessesWithProfiles = await Promise.all(
-        (businessData || []).map(async (business: any) => {
+        Array.isArray(businessData) ? businessData.map(async (business: any) => {
           // Note: We no longer have user_id in the directory view for privacy
           // Contact info will be loaded on-demand when user clicks contact buttons
           return {
             ...business,
             profiles: { full_name: 'Business Owner', avatar_url: '' }
           };
-        })
+        }) : []
       );
 
       // Apply client-side filtering

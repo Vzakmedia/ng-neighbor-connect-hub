@@ -73,8 +73,8 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const { data, error } = await supabase
         .from('service_weekly_availability')
         .select('*')
-        .eq('service_id', service.id)
-        .eq('is_available', true);
+        .eq('service_id', service.id as any)
+        .eq('is_available', true as any);
 
       if (error) throw error;
 
@@ -87,7 +87,9 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         currentDate.setDate(today.getDate() + i);
         const dayOfWeek = currentDate.getDay();
         
-        const hasAvailability = (data || []).some(slot => slot.day_of_week === dayOfWeek);
+        const hasAvailability = (data || []).some((slot: any) => 
+          slot && typeof slot === 'object' && slot.day_of_week === dayOfWeek
+        );
         if (hasAvailability) {
           availableDatesSet.add(currentDate.toDateString());
         }
@@ -108,16 +110,18 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const { data, error } = await supabase
         .from('service_weekly_availability')
         .select('*')
-        .eq('service_id', service.id)
-        .eq('day_of_week', dayOfWeek)
-        .eq('is_available', true);
+        .eq('service_id', service.id as any)
+        .eq('day_of_week', dayOfWeek as any)
+        .eq('is_available', true as any);
 
       if (error) throw error;
       
       // Generate one-hour time slots from availability windows
       const slots: AvailabilitySlot[] = [];
       
-      (data || []).forEach(availabilityWindow => {
+      (data || []).forEach((availabilityWindow: any) => {
+        if (!availabilityWindow || typeof availabilityWindow !== 'object') return;
+        
         const startTime = availabilityWindow.start_time;
         const endTime = availabilityWindow.end_time;
         
@@ -138,11 +142,11 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
           // Only add slot if it doesn't exceed the availability window
           if ((nextHour * 60 + startMinutes) <= endTotalMinutes) {
             slots.push({
-              id: `${availabilityWindow.id}-${bookingDate.toISOString().split('T')[0]}-${slotStart}`,
+              id: `${availabilityWindow.id || 'slot'}-${bookingDate.toISOString().split('T')[0]}-${slotStart}`,
               date: bookingDate.toISOString().split('T')[0],
               start_time: slotStart,
               end_time: slotEnd,
-              max_bookings: availabilityWindow.max_bookings,
+              max_bookings: availabilityWindow.max_bookings || 1,
               current_bookings: 0,
             });
           }
@@ -157,15 +161,16 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('service_bookings')
           .select('booking_date')
-          .eq('service_id', service.id)
+          .eq('service_id', service.id as any)
           .gte('booking_date', `${dateStr}T00:00:00`)
           .lt('booking_date', `${dateStr}T23:59:59`)
-          .neq('status', 'cancelled');
+          .neq('status', 'cancelled' as any);
 
         if (!bookingsError && bookingsData) {
           // Count bookings for each time slot
           slots.forEach(slot => {
-            const bookingCount = bookingsData.filter(booking => {
+            const bookingCount = bookingsData.filter((booking: any) => {
+              if (!booking || typeof booking !== 'object' || !booking.booking_date) return false;
               const bookingTime = new Date(booking.booking_date).toTimeString().slice(0, 5);
               return bookingTime === slot.start_time;
             }).length;
@@ -205,13 +210,13 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const { error: bookingError } = await supabase
         .from('service_bookings')
         .insert({
-          client_id: user.id,
+          user_id: user.id,
           provider_id: service.user_id,
           service_id: service.id,
           booking_date: bookingDateTime,
           message: message || null,
           status: 'pending'
-        });
+        } as any);
 
       if (bookingError) throw bookingError;
 

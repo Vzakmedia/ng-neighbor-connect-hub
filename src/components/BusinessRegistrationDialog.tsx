@@ -117,7 +117,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
           business_license: formData.business_license || null,
           operating_hours: formData.operating_hours,
           verification_status: 'pending'
-        });
+        } as any);
 
       if (error) throw error;
 
