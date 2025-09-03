@@ -71,7 +71,7 @@ const BusinessDashboard = () => {
         throw error;
       }
 
-      if (data && typeof data === 'object' && !('error' in data) && data !== null) {
+      if (data && typeof data === 'object' && !('error' in data)) {
         setBusiness(data as Business);
       } else {
         setBusiness(null);
