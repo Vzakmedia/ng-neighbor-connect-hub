@@ -64,14 +64,18 @@ const BusinessDashboard = () => {
       const { data, error } = await supabase
         .from('businesses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
 
-      setBusiness(data || null);
+      if (data && typeof data === 'object' && !('error' in data) && data !== null) {
+        setBusiness(data as Business);
+      } else {
+        setBusiness(null);
+      }
     } catch (error) {
       console.error('Error fetching business:', error);
       toast({

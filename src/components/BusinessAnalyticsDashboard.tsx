@@ -33,7 +33,7 @@ const BusinessAnalyticsDashboard = () => {
         const { data: business, error: businessError } = await supabase
           .from('businesses')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as any)
           .single();
 
         if (businessError || !business) {
@@ -44,7 +44,7 @@ const BusinessAnalyticsDashboard = () => {
         const { data: services, error: servicesError } = await supabase
           .from('services')
           .select('id, title, rating, total_reviews')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id as any);
 
         if (servicesError) throw servicesError;
 
@@ -63,11 +63,11 @@ const BusinessAnalyticsDashboard = () => {
             { date: '2024-02-05', bookings: 25, revenue: 1890 },
             { date: '2024-02-12', bookings: 21, revenue: 1520 },
           ],
-          service_performance: services?.map(service => ({
-            service_name: service.title,
+          service_performance: (services || []).map((service: any) => ({
+            service_name: service?.title || 'Unknown Service',
             bookings: Math.floor(Math.random() * 50) + 10,
             revenue: Math.floor(Math.random() * 2000) + 500,
-          })) || []
+          }))
         };
 
         setAnalytics(mockAnalytics);

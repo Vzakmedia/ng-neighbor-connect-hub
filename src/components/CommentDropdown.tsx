@@ -58,7 +58,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       const { data: commentsData, error: commentsError } = await supabase
         .from('post_comments')
         .select('id, user_id, content, created_at')
-        .eq('post_id', postId)
+        .eq('post_id', postId as any)
         .order('created_at', { ascending: true });
 
       if (commentsError) {
@@ -67,7 +67,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       }
 
       // Get user IDs and fetch profiles separately
-      const userIds = [...new Set(commentsData?.map(comment => comment.user_id) || [])];
+      const userIds = [...new Set(commentsData?.map((comment: any) => comment?.user_id).filter(Boolean) || [])];
       
       const { data: profilesDataRaw, error: profilesError } = await supabase
         .from('public_profiles')
@@ -86,7 +86,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       }));
 
       // Get comment IDs for like counting
-      const commentIds = commentsData?.map(comment => comment.id) || [];
+      const commentIds = commentsData?.map((comment: any) => comment?.id).filter(Boolean) || [];
       
       // Fetch like counts and user-like flags via secure RPC
       const { data: likesSummary, error: likesError }: { data: any[]; error: any } = await (supabase as any)
@@ -102,12 +102,15 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       );
 
       // Process comments with like information and profiles
-      const processedComments = commentsData?.map(comment => ({
-        ...comment,
-        profiles: profilesMap.get(comment.user_id) || null,
-        likes_count: likesSummary?.find((l: any) => l.comment_id === comment.id)?.likes_count || 0,
-        is_liked_by_user: likesSummary?.find((l: any) => l.comment_id === comment.id)?.liked_by_user || false
-      })) || [];
+      const processedComments = commentsData?.map((comment: any) => {
+        if (!comment || typeof comment !== 'object') return null;
+        return {
+          ...comment,
+          profiles: profilesMap.get(comment.user_id) || null,
+          likes_count: likesSummary?.find((l: any) => l.comment_id === comment.id)?.likes_count || 0,
+          is_liked_by_user: likesSummary?.find((l: any) => l.comment_id === comment.id)?.liked_by_user || false
+        };
+      }).filter(Boolean) || [];
 
       setComments(processedComments);
     } catch (error) {
@@ -127,7 +130,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
           post_id: postId,
           user_id: user.id,
           content: newComment.trim()
-        })
+        } as any)
         .select('id, user_id, content, created_at')
         .single();
 
@@ -142,17 +145,19 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       }
 
       // Add the new comment to the list with current user's profile
-      const newCommentWithLikes = {
-        ...data,
-        profiles: {
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url
-        },
-        likes_count: 0,
-        is_liked_by_user: false
-      };
+      if (data && typeof data === 'object' && !('error' in data)) {
+        const newCommentWithLikes = {
+          ...(data as any),
+          profiles: {
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url
+          },
+          likes_count: 0,
+          is_liked_by_user: false
+        };
+        setComments(prev => [...prev, newCommentWithLikes]);
+      }
 
-      setComments(prev => [...prev, newCommentWithLikes]);
       setNewComment('');
 
       toast({
@@ -181,8 +186,8 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
         const { error } = await supabase
           .from('comment_likes')
           .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id);
+          .eq('comment_id', commentId as any)
+          .eq('user_id', user.id as any);
 
         if (error) throw error;
 
@@ -199,7 +204,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
           .insert({
             comment_id: commentId,
             user_id: user.id
-          });
+          } as any);
 
         if (error) throw error;
 

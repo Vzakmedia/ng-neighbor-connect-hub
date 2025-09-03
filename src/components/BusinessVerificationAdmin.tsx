@@ -112,7 +112,7 @@ const BusinessVerificationAdmin = () => {
       const { error } = await supabase
         .from('businesses')
         .update(updates)
-        .eq('id', applicationId);
+        .eq('id', applicationId as any);
 
       if (error) throw error;
 
@@ -128,7 +128,7 @@ const BusinessVerificationAdmin = () => {
               ? `Congratulations! Your business "${application.business_name}" has been verified and is now live on NeighborLink NG.`
               : `Your business application for "${application.business_name}" has been rejected. ${reviewNotes ? `Reason: ${reviewNotes}` : 'Please review and resubmit.'}`,
             sender_name: 'NeighborLink NG Admin'
-          });
+          } as any);
       }
 
       toast({
