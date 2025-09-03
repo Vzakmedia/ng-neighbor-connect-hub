@@ -233,30 +233,33 @@ const CommunityBoards = () => {
           creator_id: user.id,
           is_public: newBoardIsPublic,
           location_scope: 'public'
-        })
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
 
-      // Add creator as admin member
-      await supabase
-        .from('board_members')
-        .insert({
-          board_id: data.id,
-          user_id: user.id,
-          role: 'admin'
+      if (data) {
+        const newBoard = data as any;
+        // Add creator as admin member
+        await supabase
+          .from('board_members')
+          .insert({
+            board_id: newBoard.id,
+            user_id: user.id,
+            role: 'admin'
+          } as any);
+
+        setNewBoardName('');
+        setNewBoardDescription('');
+        setShowCreateBoard(false);
+        fetchBoards();
+
+        toast({
+          title: "Board created!",
+          description: `${newBoard.name} has been created successfully.`,
         });
-
-      setNewBoardName('');
-      setNewBoardDescription('');
-      setShowCreateBoard(false);
-      fetchBoards();
-
-      toast({
-        title: "Board created!",
-        description: `${data.name} has been created successfully.`,
-      });
+      }
     } catch (error) {
       console.error('Error creating board:', error);
       toast({
@@ -275,7 +278,7 @@ const CommunityBoards = () => {
       const { data: membershipData, error: membershipError } = await supabase
         .from('board_members')
         .select('board_id, role')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id as any);
 
       if (membershipError) throw membershipError;
 
@@ -284,7 +287,9 @@ const CommunityBoards = () => {
         return;
       }
 
-      const boardIds = membershipData.map(m => m.board_id);
+      const boardIds = membershipData.map(m => 
+        typeof m === 'object' && 'board_id' in m ? (m as any).board_id : null
+      ).filter(Boolean);
 
       const { data: boardsData, error: boardsError } = await supabase
         .from('discussion_boards')
@@ -295,18 +300,20 @@ const CommunityBoards = () => {
       if (boardsError) throw boardsError;
 
       const boardsWithCounts = await Promise.all(
-        (boardsData || []).map(async (board) => {
+        (boardsData || []).map(async (board: any) => {
           const { count } = await supabase
             .from('board_members')
             .select('*', { count: 'exact' })
             .eq('board_id', board.id);
 
-          const userMembership = membershipData.find(m => m.board_id === board.id);
+          const userMembership = membershipData.find(m => 
+            typeof m === 'object' && 'board_id' in m && (m as any).board_id === board.id
+          );
 
           return {
             ...board,
             member_count: count || 0,
-            user_role: userMembership?.role || null
+            user_role: userMembership && typeof userMembership === 'object' && 'role' in userMembership ? (userMembership as any).role : null
           };
         })
       );
@@ -334,14 +341,14 @@ const CommunityBoards = () => {
       const { data: publicBoardsData, error } = await supabase
         .from('discussion_boards')
         .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
-        .eq('is_public', true)
+        .eq('is_public', true as any)
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
 
       const boardsWithCounts = await Promise.all(
-        (publicBoardsData || []).map(async (board) => {
+        (publicBoardsData || []).map(async (board: any) => {
           const { count } = await supabase
             .from('board_members')
             .select('*', { count: 'exact' })
@@ -351,13 +358,13 @@ const CommunityBoards = () => {
             .from('board_members')
             .select('role')
             .eq('board_id', board.id)
-            .eq('user_id', user.id)
+            .eq('user_id', user.id as any)
             .single();
 
           return {
             ...board,
             member_count: count || 0,
-            user_role: memberData?.role || null
+            user_role: memberData && typeof memberData === 'object' && 'role' in memberData ? (memberData as any).role : null
           };
         })
       );
@@ -379,7 +386,7 @@ const CommunityBoards = () => {
           board_id: boardId,
           user_id: user.id,
           role: 'member'
-        });
+        } as any);
 
       if (error) throw error;
 
@@ -417,14 +424,14 @@ const CommunityBoards = () => {
             state
           )
         `)
-        .eq('board_id', selectedBoard)
-        .eq('approval_status', 'approved')
+        .eq('board_id', selectedBoard as any)
+        .eq('approval_status', 'approved' as any)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
       const postsWithLikes = await Promise.all(
-        (data || []).map(async (post) => {
+        (data || []).map(async (post: any) => {
           const { count } = await supabase
             .from('board_post_likes')
             .select('*', { count: 'exact' })
@@ -434,7 +441,7 @@ const CommunityBoards = () => {
             .from('board_post_likes')
             .select('id')
             .eq('post_id', post.id)
-            .eq('user_id', user?.id)
+            .eq('user_id', user?.id as any)
             .single();
 
           // Fetch reactions for this post
