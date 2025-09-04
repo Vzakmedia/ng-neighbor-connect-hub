@@ -4739,6 +4739,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_automation_preferences: {
+        Row: {
+          automation_id: string
+          created_at: string | null
+          custom_settings: Json | null
+          id: string
+          is_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string | null
+          custom_settings?: Json | null
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string | null
+          custom_settings?: Json | null
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_automation_preferences_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "platform_automations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_consents: {
         Row: {
           analytics_accepted: boolean
@@ -6244,6 +6285,19 @@ export type Database = {
       get_unread_notifications_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_user_automation_preferences: {
+        Args: { _user_id?: string }
+        Returns: {
+          automation_description: string
+          automation_icon: string
+          automation_id: string
+          automation_name: string
+          automation_type: string
+          custom_settings: Json
+          is_enabled: boolean
+          webhook_url: string
+        }[]
       }
       get_user_notifications: {
         Args: {
@@ -7787,6 +7841,15 @@ export type Database = {
       }
       update_super_admin_security_check: {
         Args: { _user_id: string }
+        Returns: undefined
+      }
+      update_user_automation_preference: {
+        Args: {
+          _automation_id: string
+          _custom_settings?: Json
+          _is_enabled: boolean
+          _webhook_url?: string
+        }
         Returns: undefined
       }
       updategeometrysrid: {
