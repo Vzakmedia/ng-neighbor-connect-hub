@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Star, MapPin, DollarSign, Eye, Calendar, Package } from 'lucide-react';
-import '@/types/supabase-complete-override';
+import '@/types/supabase-complete-override.d.ts';
 
 interface ContentSuggestionPanelProps {
   adType: string;
