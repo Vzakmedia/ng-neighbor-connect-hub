@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFileUpload } from '@/hooks/useFileUpload';
-import '@/types/supabase-complete-override';
+import '@/types/supabase-complete-override.d.ts';
 import { 
   Dialog, 
   DialogContent, 
