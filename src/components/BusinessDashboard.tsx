@@ -71,6 +71,7 @@ const BusinessDashboard = () => {
         throw error;
       }
 
+      // @ts-ignore - Supabase typing issue
       if (data && typeof data === 'object' && !('error' in data)) {
         setBusiness(data as Business);
       } else {

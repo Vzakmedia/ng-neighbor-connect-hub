@@ -95,16 +95,16 @@ const CommunityServices = () => {
           *,
           profiles(full_name, avatar_url, city, state, neighborhood)
         `)
-        .eq('is_active', true)
-        .neq('user_id', user.id);
+        .eq('is_active', true as any)
+        .neq('user_id', user.id as any);
 
       // Apply location filter based on user's profile
       if (locationFilter === 'neighborhood' && profile.neighborhood) {
-        query = query.eq('profiles.neighborhood', profile.neighborhood);
+        query = query.eq('profiles.neighborhood', profile.neighborhood as any);
       } else if (locationFilter === 'city' && profile.city) {
-        query = query.eq('profiles.city', profile.city);
+        query = query.eq('profiles.city', profile.city as any);
       } else if (locationFilter === 'state' && profile.state) {
-        query = query.eq('profiles.state', profile.state);
+        query = query.eq('profiles.state', profile.state as any);
       }
 
       if (selectedCategory !== 'all') {
@@ -136,16 +136,16 @@ const CommunityServices = () => {
           *,
           profiles(full_name, avatar_url, city, state, neighborhood)
         `)
-        .eq('status', 'active')
-        .neq('user_id', user.id);
+        .eq('status', 'active' as any)
+        .neq('user_id', user.id as any);
 
       // Apply location filter based on user's profile
       if (locationFilter === 'neighborhood' && profile.neighborhood) {
-        query = query.eq('profiles.neighborhood', profile.neighborhood);
+        query = query.eq('profiles.neighborhood', profile.neighborhood as any);
       } else if (locationFilter === 'city' && profile.city) {
-        query = query.eq('profiles.city', profile.city);
+        query = query.eq('profiles.city', profile.city as any);
       } else if (locationFilter === 'state' && profile.state) {
-        query = query.eq('profiles.state', profile.state);
+        query = query.eq('profiles.state', profile.state as any);
       }
 
       if (selectedCategory !== 'all') {

@@ -122,7 +122,7 @@ const ContentManagementPanel = () => {
         .order('date', { ascending: false });
 
       if (pressError) throw pressError;
-      setPressReleases(pressData || []);
+      setPressReleases((pressData as any) || []);
 
       // Fetch job postings
       const { data: jobData, error: jobError } = await supabase
@@ -131,7 +131,7 @@ const ContentManagementPanel = () => {
         .order('created_at', { ascending: false });
 
       if (jobError) throw jobError;
-      setJobPostings(jobData || []);
+      setJobPostings((jobData as any) || []);
 
       // Fetch company info
       const { data: companyData, error: companyError } = await supabase
@@ -140,7 +140,7 @@ const ContentManagementPanel = () => {
         .order('section');
 
       if (companyError) throw companyError;
-      setCompanyInfo((companyData || []).map(item => ({
+      setCompanyInfo(((companyData as any) || []).map((item: any) => ({
         ...item,
         data: typeof item.data === 'object' && item.data !== null ? item.data : {}
       })));
@@ -175,8 +175,8 @@ const ContentManagementPanel = () => {
       if (editingPress) {
         const { error } = await supabase
           .from('press_releases')
-          .update(pressForm)
-          .eq('id', editingPress.id);
+          .update(pressForm as any)
+          .eq('id', editingPress.id as any);
 
         if (error) throw error;
         toast({
@@ -186,7 +186,7 @@ const ContentManagementPanel = () => {
       } else {
         const { error } = await supabase
           .from('press_releases')
-          .insert([{ ...pressForm, created_by: (await supabase.auth.getUser()).data.user?.id }]);
+          .insert([{ ...pressForm, created_by: (await supabase.auth.getUser()).data.user?.id } as any]);
 
         if (error) throw error;
         toast({
@@ -223,8 +223,8 @@ const ContentManagementPanel = () => {
       if (editingJob) {
         const { error } = await supabase
           .from('job_postings')
-          .update(jobForm)
-          .eq('id', editingJob.id);
+          .update(jobForm as any)
+          .eq('id', editingJob.id as any);
 
         if (error) throw error;
         toast({
@@ -234,7 +234,7 @@ const ContentManagementPanel = () => {
       } else {
         const { error } = await supabase
           .from('job_postings')
-          .insert([{ ...jobForm, created_by: (await supabase.auth.getUser()).data.user?.id }]);
+          .insert([{ ...jobForm, created_by: (await supabase.auth.getUser()).data.user?.id } as any]);
 
         if (error) throw error;
         toast({
@@ -279,8 +279,8 @@ const ContentManagementPanel = () => {
             content: companyForm.content,
             data: companyForm.data,
             updated_by: (await supabase.auth.getUser()).data.user?.id
-          })
-          .eq('id', editingCompany.id);
+          } as any)
+          .eq('id', editingCompany.id as any);
 
         if (error) throw error;
         toast({
@@ -312,9 +312,9 @@ const ContentManagementPanel = () => {
     try {
       const table = type === 'press' ? 'press_releases' : 'job_postings';
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) throw error;
       
@@ -403,7 +403,7 @@ const ContentManagementPanel = () => {
             uploaded_at: new Date().toISOString()
           },
           updated_by: (await supabase.auth.getUser()).data.user?.id
-        });
+        } as any);
 
       if (dbError) throw dbError;
 
@@ -439,8 +439,8 @@ const ContentManagementPanel = () => {
       const deleteResult = await supabase
         .from('company_info')
         .delete()
-        .eq('section', 'press_materials')
-        .eq('data->>file_path', fileName);
+        .eq('section', 'press_materials' as any)
+        .eq('data->>file_path', fileName as any);
 
       if (deleteResult.error) throw deleteResult.error;
 
@@ -501,7 +501,7 @@ const ContentManagementPanel = () => {
               uploaded_at: new Date().toISOString()
             },
             updated_by: (await supabase.auth.getUser()).data.user?.id
-          });
+          } as any);
 
         if (dbError) {
           setUploadingFiles(prev => prev.map((uploadFile, index) => 
