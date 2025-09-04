@@ -18,6 +18,12 @@ declare module '@supabase/supabase-js' {
     insert(values: any): any;
     update(values: any): any;
     delete(): any;
+    single(): any;
+    maybeSingle(): any;
+    order(column: any, options?: any): this;
+    limit(count: number): this;
+    range(from: number, to: number): this;
+    filter(column: string, operator: string, value: any): this;
   }
   
   interface PostgrestFilterBuilder<T = any> {
@@ -28,6 +34,28 @@ declare module '@supabase/supabase-js' {
     insert(values: any): any;
     update(values: any): any;
     delete(): any;
+    single(): any;
+    maybeSingle(): any;
+    order(column: any, options?: any): this;
+    limit(count: number): this;
+    range(from: number, to: number): this;
+    filter(column: string, operator: string, value: any): this;
+  }
+
+  interface PostgrestBuilder<T = any> {
+    eq(column: any, value: any): this;
+    neq(column: any, value: any): this;
+    in(column: any, values: any): this;
+    select(columns?: any): any;
+    insert(values: any): any;
+    update(values: any): any;
+    delete(): any;
+    single(): any;
+    maybeSingle(): any;
+    order(column: any, options?: any): this;
+    limit(count: number): this;
+    range(from: number, to: number): this;
+    filter(column: string, operator: string, value: any): this;
   }
 }
 

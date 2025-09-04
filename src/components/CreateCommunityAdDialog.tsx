@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import '@/types/supabase-complete-override';
 import { 
   Dialog, 
   DialogContent, 
@@ -124,10 +125,10 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
       const { data: pricingTier, error: tierError } = await supabase
         .from('ad_pricing_tiers')
         .select('id')
-        .eq('ad_type', tierType)
-        .eq('geographic_scope', geoScope)
-        .eq('is_active', true)
-        .single();
+        .eq('ad_type' as any, tierType)
+        .eq('geographic_scope' as any, geoScope)
+        .eq('is_active' as any, true)
+        .maybeSingle();
 
       if (tierError || !pricingTier) {
         throw new Error(`No pricing tier found for ${tierType} with ${geoScope} scope`);
@@ -154,15 +155,17 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
           ad_url: formData.website_url,
           ad_call_to_action: formData.call_to_action,
           ad_images: formData.images,
-          pricing_tier_id: pricingTier.id
-        }])
+          pricing_tier_id: pricingTier?.id || null
+        } as any])
         .select()
-        .single();
+        .maybeSingle();
 
       if (campaignError) throw campaignError;
 
       // Initiate payment process
-      await initiatePayment(campaign.id, totalCost);
+      if (campaign?.id) {
+        await initiatePayment(campaign.id, totalCost);
+      }
 
     } catch (error: any) {
       console.error('Error creating ad:', error);

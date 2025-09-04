@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import LocationPickerDialog from '@/components/LocationPickerDialog';
+import '@/types/supabase-complete-override';
 
 interface CreateEventDialogProps {
   open: boolean;
@@ -155,7 +156,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
           rsvp_enabled: rsvpEnabled,
           event_date: new Date().toISOString(), // TODO: Add date picker
           is_public: true
-        });
+        } as any);
 
       if (error) {
         throw error;
