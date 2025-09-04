@@ -78,7 +78,7 @@ export default function ContentModerationPanel() {
       const { data: services, error: servicesError } = await supabase
         .from('services')
         .select('*')
-        .eq('approval_status', 'pending')
+        .eq('approval_status', 'pending' as any)
         .order('created_at', { ascending: false });
 
       if (servicesError) throw servicesError;
@@ -87,45 +87,45 @@ export default function ContentModerationPanel() {
       const { data: items, error: itemsError } = await supabase
         .from('marketplace_items')
         .select('*')
-        .eq('approval_status', 'pending')
+        .eq('approval_status', 'pending' as any)
         .order('created_at', { ascending: false });
 
       if (itemsError) throw itemsError;
 
       // Fetch profiles for services
-      let servicesWithProfiles = services || [];
+      let servicesWithProfiles = (services as any) || [];
       if (services && services.length > 0) {
-        const serviceUserIds = services.map(s => s.user_id);
+        const serviceUserIds = (services as any).map((s: any) => s.user_id);
         const { data: serviceProfiles } = await supabase
           .from('profiles')
           .select('user_id, full_name, phone')
           .in('user_id', serviceUserIds);
 
-        servicesWithProfiles = services.map(service => ({
+        servicesWithProfiles = (services as any).map((service: any) => ({
           ...service,
-          profiles: serviceProfiles?.find(p => p.user_id === service.user_id)
+          profiles: (serviceProfiles as any)?.find((p: any) => p.user_id === service.user_id)
         }));
       }
 
       // Fetch profiles for marketplace items
-      let itemsWithProfiles = items || [];
+      let itemsWithProfiles = (items as any) || [];
       if (items && items.length > 0) {
-        const itemUserIds = items.map(i => i.user_id);
+        const itemUserIds = (items as any).map((i: any) => i.user_id);
         const { data: itemProfiles } = await supabase
           .from('profiles')
           .select('user_id, full_name, phone')
           .in('user_id', itemUserIds);
 
-        itemsWithProfiles = items.map(item => ({
+        itemsWithProfiles = (items as any).map((item: any) => ({
           ...item,
-          profiles: itemProfiles?.find(p => p.user_id === item.user_id)
+          profiles: (itemProfiles as any)?.find((p: any) => p.user_id === item.user_id)
         }));
       }
 
-      setPendingServices(servicesWithProfiles);
-      setPendingItems(itemsWithProfiles);
-      setFilteredServices(servicesWithProfiles);
-      setFilteredItems(itemsWithProfiles);
+      setPendingServices(servicesWithProfiles as any);
+      setPendingItems(itemsWithProfiles as any);
+      setFilteredServices(servicesWithProfiles as any);
+      setFilteredItems(itemsWithProfiles as any);
     } catch (error) {
       console.error('Error fetching pending content:', error);
       toast({
