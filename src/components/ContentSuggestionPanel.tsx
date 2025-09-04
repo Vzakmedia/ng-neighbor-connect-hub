@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Star, MapPin, DollarSign, Eye, Calendar, Package } from 'lucide-react';
+import '@/types/supabase-complete-override';
 
 interface ContentSuggestionPanelProps {
   adType: string;
@@ -60,7 +61,7 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           const { data: services, error: servicesError } = await supabase
             .from('services')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id' as any, user.id)
             .order('created_at', { ascending: false });
           
           if (servicesError) {
@@ -69,8 +70,8 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           }
           
           console.log('Fetched services:', services);
-          data = (services || []).map(service => ({
-            ...service,
+          data = (services || []).map((service: any) => ({
+            ...(service || {}),
             type: 'service'
           }));
           break;
@@ -79,7 +80,7 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           const { data: items, error: itemsError } = await supabase
             .from('marketplace_items')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id' as any, user.id)
             .order('created_at', { ascending: false });
           
           if (itemsError) {
@@ -88,8 +89,8 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           }
           
           console.log('Fetched marketplace items:', items);
-          data = (items || []).map(item => ({
-            ...item,
+          data = (items || []).map((item: any) => ({
+            ...(item || {}),
             type: 'marketplace_item'
           }));
           break;
@@ -98,13 +99,13 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           const { data: posts, error: postsError } = await supabase
             .from('community_posts')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id' as any, user.id)
             .order('created_at', { ascending: false })
             .limit(10);
           
           if (postsError) throw postsError;
-          data = (posts || []).map(post => ({
-            ...post,
+          data = (posts || []).map((post: any) => ({
+            ...(post || {}),
             type: 'community_post'
           }));
           break;
@@ -118,20 +119,23 @@ const ContentSuggestionPanel = ({ adType, onContentSelect }: ContentSuggestionPa
           const { data: businesses, error: businessError } = await supabase
             .from('businesses')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('user_id' as any, user.id)
             .order('created_at', { ascending: false });
           
           if (businessError) throw businessError;
-          data = (businesses || []).map(business => ({
-            id: business.id,
-            title: business.business_name,
-            description: business.description,
-            images: business.logo_url ? [business.logo_url] : [],
-            location: `${business.city}, ${business.state}`,
-            category: business.category,
-            created_at: business.created_at,
-            type: 'business'
-          }));
+          data = (businesses || []).map((business: any) => {
+            if (!business) return null;
+            return {
+              id: business.id,
+              title: business.business_name,
+              description: business.description,
+              images: business.logo_url ? [business.logo_url] : [],
+              location: `${business.city || ''}, ${business.state || ''}`,
+              category: business.category,
+              created_at: business.created_at,
+              type: 'business'
+            };
+          }).filter(Boolean);
           break;
       }
 
