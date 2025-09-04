@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import LocationPickerDialog from '@/components/LocationPickerDialog';
-import '@/types/supabase-complete-override';
+import '@/types/supabase-complete-override.d.ts';
 
 interface CreateEventDialogProps {
   open: boolean;
