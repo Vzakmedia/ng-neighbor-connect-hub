@@ -1273,8 +1273,8 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         return {
           campaign_id: campaign.id,
           title: campaign.title,
-          advertiser: profile?.full_name || 'Unknown',
-          email: profile?.email || 'Unknown',
+          advertiser: (profile as any)?.full_name || 'Unknown',
+          email: (profile as any)?.email || 'Unknown',
           budget: campaign.budget,
           spent: totalSpend,
           status: campaign.status,

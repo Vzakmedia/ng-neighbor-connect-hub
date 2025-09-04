@@ -31,7 +31,7 @@ const createSupabaseClient = () => {
         },
         heartbeatIntervalMs: 30000, // Longer heartbeat for iOS
         reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000), // Gradual backoff
-        transport: 'websocket', // Force WebSocket transport
+        // transport: 'websocket', // Force WebSocket transport - removed due to type issues
       },
       global: {
         headers: {
@@ -42,7 +42,7 @@ const createSupabaseClient = () => {
           // Enhanced fetch with iOS security error handling
           const enhancedOptions = {
             ...options,
-            credentials: 'same-origin',
+            credentials: 'same-origin' as RequestCredentials,
             mode: 'cors' as RequestMode,
           };
           
@@ -50,11 +50,11 @@ const createSupabaseClient = () => {
             if (error.name === 'SecurityError' || error.message?.includes('insecure')) {
               console.warn('iOS Safari security restriction detected, retrying with fallback');
               // Retry with minimal options
-              return fetch(url, {
-                ...options,
-                credentials: 'omit',
-                mode: 'cors' as RequestMode,
-              });
+          return fetch(url, {
+            ...options,
+            credentials: 'omit' as RequestCredentials,
+            mode: 'cors' as RequestMode,
+          });
             }
             throw error;
           });
