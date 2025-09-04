@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Zap, 
   Bell, 
@@ -15,153 +18,284 @@ import {
   Clock,
   Settings,
   Plus,
-  Activity
+  Activity,
+  AlertTriangle,
+  Home,
+  TestTube,
+  Calendar,
+  ShoppingBag
 } from 'lucide-react';
 
-interface Automation {
-  id: string;
-  name: string;
-  description: string;
-  icon: any;
-  enabled: boolean;
-  type: 'notification' | 'integration' | 'scheduling' | 'webhook';
-  webhookUrl?: string;
+interface UserAutomation {
+  automation_id: string;
+  automation_name: string;
+  automation_description: string;
+  automation_type: string;
+  automation_icon: string;
+  is_enabled: boolean;
+  webhook_url: string | null;
+  custom_settings: any;
 }
 
 const HomeAutomations = () => {
   const { toast } = useToast();
-  const [automations, setAutomations] = useState<Automation[]>([
-    {
-      id: '1',
-      name: 'Safety Alert Notifications',
-      description: 'Get instant notifications for safety alerts in your area',
-      icon: Bell,
-      enabled: true,
-      type: 'notification'
-    },
-    {
-      id: '2',
-      name: 'Email Digest',
-      description: 'Daily community updates sent to your email',
-      icon: Mail,
-      enabled: false,
-      type: 'notification'
-    },
-    {
-      id: '3',
-      name: 'Zapier Integration',
-      description: 'Connect community events to your favorite apps',
-      icon: Zap,
-      enabled: false,
-      type: 'webhook',
-      webhookUrl: ''
-    },
-    {
-      id: '4',
-      name: 'Mobile Push Alerts',
-      description: 'Receive push notifications for important community updates',
-      icon: Smartphone,
-      enabled: true,
-      type: 'notification'
-    },
-    {
-      id: '5',
-      name: 'Event Reminders',
-      description: 'Automatic reminders 1 hour before events you\'re attending',
-      icon: Clock,
-      enabled: true,
-      type: 'scheduling'
-    },
-    {
-      id: '6',
-      name: 'Marketplace Alerts',
-      description: 'Get notified when items matching your interests are posted',
-      icon: Globe,
-      enabled: false,
-      type: 'notification'
+  const { user } = useAuth();
+  
+  const [automations, setAutomations] = useState<UserAutomation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
+
+  // Load user automation preferences on component mount
+  useEffect(() => {
+    if (user) {
+      loadUserAutomations();
     }
-  ]);
+  }, [user]);
 
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const loadUserAutomations = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.rpc('get_user_automation_preferences');
+      
+      if (error) {
+        console.error('Error loading automations:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load automation settings. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const toggleAutomation = (id: string) => {
-    setAutomations(prev => 
-      prev.map(automation => 
-        automation.id === id 
-          ? { ...automation, enabled: !automation.enabled }
-          : automation
-      )
-    );
-
-    const automation = automations.find(a => a.id === id);
-    toast({
-      title: automation?.enabled ? "Automation Disabled" : "Automation Enabled",
-      description: `${automation?.name} has been ${automation?.enabled ? 'disabled' : 'enabled'}.`,
-    });
-  };
-
-  const testWebhook = async () => {
-    if (!webhookUrl) {
+      setAutomations(data || []);
+    } catch (error) {
+      console.error('Error loading automations:', error);
       toast({
         title: "Error",
-        description: "Please enter a webhook URL",
+        description: "Failed to load automation settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleAutomation = async (automationId: string): Promise<void> => {
+    const automation = automations.find(a => a.automation_id === automationId);
+    if (!automation) return;
+
+    const newEnabledState = !automation.is_enabled;
+    
+    try {
+      // Optimistically update UI
+      setAutomations(prevAutomations => 
+        prevAutomations.map(auto => 
+          auto.automation_id === automationId 
+            ? { ...auto, is_enabled: newEnabledState }
+            : auto
+        )
+      );
+
+      const { error } = await supabase.rpc('update_user_automation_preference', {
+        _automation_id: automationId,
+        _is_enabled: newEnabledState,
+        _webhook_url: automation.webhook_url,
+        _custom_settings: automation.custom_settings
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: newEnabledState ? "Automation Enabled" : "Automation Disabled",
+        description: `${automation.automation_name} has been ${newEnabledState ? 'enabled' : 'disabled'}.`,
+      });
+    } catch (error) {
+      // Revert optimistic update on error
+      setAutomations(prevAutomations => 
+        prevAutomations.map(auto => 
+          auto.automation_id === automationId 
+            ? { ...auto, is_enabled: !newEnabledState }
+            : auto
+        )
+      );
+      
+      console.error('Error updating automation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update automation setting. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const testWebhook = async (automationId: string): Promise<void> => {
+    const automation = automations.find(a => a.automation_id === automationId);
+    
+    if (!automation || !automation.webhook_url) {
+      toast({
+        title: "No Webhook URL",
+        description: "Please configure a webhook URL first.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsTestingWebhook(true);
-
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
+      setTestingWebhook(automationId);
+      
+      const response = await fetch(automation.webhook_url, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        mode: "no-cors",
+        mode: 'no-cors',
         body: JSON.stringify({
-          type: "test",
-          message: "Test automation from NeighborConnect",
+          test: true,
+          automation: {
+            id: automation.automation_id,
+            name: automation.automation_name,
+            type: automation.automation_type
+          },
           timestamp: new Date().toISOString(),
-          source: "home_automations"
+          message: 'This is a test webhook from CommunityConnect automations',
+          user_id: user?.id
         }),
       });
 
       toast({
         title: "Webhook Test Sent",
-        description: "Check your connected service to see if the webhook was received.",
+        description: "Test webhook has been sent successfully. Check your endpoint for the test data.",
       });
     } catch (error) {
+      console.error('Webhook test error:', error);
       toast({
-        title: "Error",
-        description: "Failed to send webhook test. Please check the URL and try again.",
+        title: "Webhook Test Failed",
+        description: "Failed to send test webhook. Please check your URL and try again.",
         variant: "destructive",
       });
     } finally {
-      setIsTestingWebhook(false);
+      setTestingWebhook(null);
     }
   };
 
-  const updateWebhookUrl = (automationId: string, url: string) => {
-    setAutomations(prev =>
-      prev.map(automation =>
-        automation.id === automationId
-          ? { ...automation, webhookUrl: url }
-          : automation
-      )
-    );
+  const updateWebhookUrl = async (automationId: string, url: string): Promise<void> => {
+    const automation = automations.find(a => a.automation_id === automationId);
+    if (!automation) return;
+
+    try {
+      // Update local state optimistically
+      setAutomations(prevAutomations => 
+        prevAutomations.map(auto => 
+          auto.automation_id === automationId 
+            ? { ...auto, webhook_url: url }
+            : auto
+        )
+      );
+
+      const { error } = await supabase.rpc('update_user_automation_preference', {
+        _automation_id: automationId,
+        _is_enabled: automation.is_enabled,
+        _webhook_url: url || null,
+        _custom_settings: automation.custom_settings
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Webhook URL Updated",
+        description: "Your webhook URL has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating webhook URL:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update webhook URL. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Revert optimistic update
+      await loadUserAutomations();
+    }
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string): string => {
     switch (type) {
-      case 'notification': return 'bg-community-blue/20 text-community-blue';
-      case 'integration': return 'bg-community-green/20 text-community-green';
-      case 'scheduling': return 'bg-community-yellow/20 text-community-yellow';
-      case 'webhook': return 'bg-primary/20 text-primary';
-      default: return 'bg-muted text-muted-foreground';
+      case 'webhook': return 'bg-blue-100 text-blue-800';
+      case 'email': return 'bg-green-100 text-green-800';
+      case 'push_notification': return 'bg-purple-100 text-purple-800';
+      case 'zapier': return 'bg-orange-100 text-orange-800';
+      case 'safety_alert': return 'bg-red-100 text-red-800';
+      case 'community_digest': return 'bg-cyan-100 text-cyan-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Helper function to get automation icon
+  const getAutomationIcon = (iconName: string, automationType: string) => {
+    const iconMap: { [key: string]: React.ComponentType<any> } = {
+      'Bell': Bell,
+      'Mail': Mail,
+      'Zap': Zap,
+      'Smartphone': Smartphone,
+      'Calendar': Calendar,
+      'ShoppingBag': ShoppingBag,
+      'AlertTriangle': AlertTriangle,
+      'Home': Home,
+      'Settings': Settings,
+      'Globe': Globe,
+      'Clock': Clock
+    };
+    
+    const IconComponent = iconMap[iconName] || Bell;
+    return IconComponent;
+  };
+
+  if (!user) {
+    return (
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-primary" />
+            Smart Automations
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Please sign in to manage your automations.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-primary" />
+            Smart Automations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start justify-between p-4 border rounded-lg">
+              <div className="flex items-start gap-3 flex-1">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+              <Skeleton className="h-6 w-10 rounded-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-card">
@@ -172,70 +306,84 @@ const HomeAutomations = () => {
             Smart Automations
           </CardTitle>
           <Badge variant="secondary" className="bg-gradient-primary text-white">
-            {automations.filter(a => a.enabled).length} Active
+            {automations.filter(a => a.is_enabled).length} Active
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {automations.map((automation) => {
-            const Icon = automation.icon;
-            return (
-              <div key={automation.id} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Icon className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium">{automation.name}</h4>
-                        <Badge variant="outline" className={`text-xs ${getTypeColor(automation.type)}`}>
-                          {automation.type}
-                        </Badge>
+          {automations.length === 0 ? (
+            <div className="text-center py-8">
+              <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-2">No automations available</p>
+              <p className="text-xs text-muted-foreground">Check back later for new automation options</p>
+            </div>
+          ) : (
+            automations.map((automation) => {
+              const IconComponent = getAutomationIcon(automation.automation_icon, automation.automation_type);
+              const needsWebhook = ['webhook', 'zapier'].includes(automation.automation_type);
+              
+              return (
+                <div key={automation.automation_id} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <IconComponent className="h-4 w-4 text-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {automation.description}
-                      </p>
-                      
-                      {automation.type === 'webhook' && automation.enabled && (
-                        <div className="space-y-2 mt-3 p-3 bg-muted/50 rounded-lg">
-                          <Label htmlFor={`webhook-${automation.id}`} className="text-xs font-medium">
-                            Webhook URL (e.g., Zapier webhook)
-                          </Label>
-                          <div className="flex space-x-2">
-                            <Input
-                              id={`webhook-${automation.id}`}
-                              type="url"
-                              placeholder="https://hooks.zapier.com/hooks/catch/..."
-                              value={automation.webhookUrl || webhookUrl}
-                              onChange={(e) => {
-                                setWebhookUrl(e.target.value);
-                                updateWebhookUrl(automation.id, e.target.value);
-                              }}
-                              className="flex-1 text-xs"
-                            />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={testWebhook}
-                              disabled={isTestingWebhook || !automation.webhookUrl}
-                            >
-                              {isTestingWebhook ? "Testing..." : "Test"}
-                            </Button>
-                          </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-medium">{automation.automation_name}</h4>
+                          <Badge variant="outline" className={`text-xs ${getTypeColor(automation.automation_type)}`}>
+                            {automation.automation_type.replace('_', ' ')}
+                          </Badge>
                         </div>
-                      )}
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {automation.automation_description}
+                        </p>
+                        
+                        {/* Webhook configuration */}
+                        {needsWebhook && automation.is_enabled && (
+                          <div className="space-y-2 mt-3 p-3 bg-muted/50 rounded-lg">
+                            <Label htmlFor={`webhook-${automation.automation_id}`} className="text-xs font-medium">
+                              {automation.automation_type === 'zapier' ? 'Zapier Webhook URL' : 'Webhook URL'}
+                            </Label>
+                            <div className="flex space-x-2">
+                              <Input
+                                id={`webhook-${automation.automation_id}`}
+                                type="url"
+                                placeholder={automation.automation_type === 'zapier' ? "https://hooks.zapier.com/hooks/catch/..." : "Enter webhook URL"}
+                                value={automation.webhook_url || ''}
+                                onChange={(e) => updateWebhookUrl(automation.automation_id, e.target.value)}
+                                className="flex-1 text-xs"
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => testWebhook(automation.automation_id)}
+                                disabled={!automation.webhook_url || testingWebhook === automation.automation_id}
+                              >
+                                <TestTube className="h-3 w-3 mr-1" />
+                                {testingWebhook === automation.automation_id ? 'Testing...' : 'Test'}
+                              </Button>
+                            </div>
+                            {automation.automation_type === 'zapier' && (
+                              <p className="text-xs text-muted-foreground">
+                                Create a webhook trigger in Zapier and paste the URL here
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    <Switch
+                      checked={automation.is_enabled}
+                      onCheckedChange={() => toggleAutomation(automation.automation_id)}
+                    />
                   </div>
-                  <Switch
-                    checked={automation.enabled}
-                    onCheckedChange={() => toggleAutomation(automation.id)}
-                  />
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         <div className="mt-6 pt-4 border-t">
