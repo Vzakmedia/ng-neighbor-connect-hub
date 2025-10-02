@@ -5,6 +5,16 @@ import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 
+// Capacitor type definitions
+declare global {
+  interface Window {
+    Capacitor?: {
+      isNativePlatform?: () => boolean;
+      getPlatform?: () => string;
+    };
+  }
+}
+
 // Global error handler for WebSocket connection errors to prevent console spam
 window.addEventListener('error', (event) => {
   // Suppress WebSocket connection errors from showing in console
@@ -39,17 +49,31 @@ setViewportHeight();
 window.addEventListener('resize', setViewportHeight);
 window.addEventListener('orientationchange', setViewportHeight);
 
-// Register service worker for offline support
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Helper functions for environment detection
+const isNativeApp = () => {
+  return window.Capacitor?.isNativePlatform?.() === true;
+};
+
+const isLovablePreview = () => {
+  return window.location.hostname.includes('lovableproject.com') || 
+         window.location.hostname.includes('lovable.app');
+};
+
+// Register service worker ONLY for true native builds (App Store), not web previews
+// This prevents iOS Safari errors when accessing the app through Lovable preview URLs
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isLovablePreview()) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('SW registered:', registration);
+        console.log('SW registered for native app:', registration);
       })
       .catch(error => {
-        console.log('SW registration failed:', error);
+        // Service worker registration can fail on iOS Safari - this is expected for web mode
+        console.debug('SW registration skipped (web mode):', error);
       });
   });
+} else if (isLovablePreview()) {
+  console.log('Running in Lovable preview - service worker disabled for web compatibility');
 }
 
 // Log iOS compatibility information
