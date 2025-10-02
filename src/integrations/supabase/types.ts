@@ -6287,7 +6287,7 @@ export type Database = {
         Returns: number
       }
       get_user_automation_preferences: {
-        Args: { _user_id?: string }
+        Args: Record<PropertyKey, never> | { _user_id?: string }
         Returns: {
           automation_description: string
           automation_icon: string
@@ -6565,7 +6565,7 @@ export type Database = {
         Args:
           | { tbl_oid: unknown; use_typmod?: boolean }
           | { use_typmod?: boolean }
-        Returns: string
+        Returns: number
       }
       post_matches_user_filter: {
         Args: {
