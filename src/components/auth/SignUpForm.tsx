@@ -208,9 +208,8 @@ export const SignUpForm = () => {
     setIsLoading(true);
 
     try {
-      const redirectUrl = window.location.hostname === 'localhost' 
-        ? `${window.location.origin}/auth/verify-email`
-        : 'https://neighborlink.ng/auth/verify-email';
+      // Use current origin for all environments (works for iOS, Lovable preview, and production)
+      const redirectUrl = `${window.location.origin}/auth/verify-email`;
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,

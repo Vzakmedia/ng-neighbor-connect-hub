@@ -81,7 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
       
-      // Clear any remaining auth data from localStorage
+      // Clear all possible auth storage keys for complete sign-out
+      localStorage.removeItem('neighborlink-auth'); // Main storage key
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
       

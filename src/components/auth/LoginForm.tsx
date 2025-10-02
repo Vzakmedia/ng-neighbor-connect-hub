@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Shield } from "lucide-react";
+import { Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
 import { RateLimiter } from "@/components/security/RateLimiter";
 import { SecureInput } from "@/components/auth/SecureAuthForms";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isPrivateBrowsing, detectIOSAuth, getIOSAuthError } from "@/utils/iosAuthHelper";
 
 
 interface LoginFormProps {
@@ -18,7 +20,20 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showIOSWarning, setShowIOSWarning] = useState(false);
   const { toast } = useToast();
+  
+  // Check for iOS private browsing on mount
+  useEffect(() => {
+    const checkPrivateMode = async () => {
+      const { isIOSSafari } = detectIOSAuth();
+      if (isIOSSafari) {
+        const inPrivateMode = await isPrivateBrowsing();
+        setShowIOSWarning(inPrivateMode);
+      }
+    };
+    checkPrivateMode();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent, recordAttempt?: () => void) => {
     e.preventDefault();
@@ -34,11 +49,12 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
         // Record failed attempt for rate limiting
         if (recordAttempt) recordAttempt();
         
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+      const errorMessage = getIOSAuthError(error.message);
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
       } else if (data.user) {
         // Check if 2FA is enabled for this user
         const { data: user2fa } = await supabase
@@ -79,8 +95,17 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     <RateLimiter action="login" maxAttempts={5} timeWindow={15}>
       {(isLimited, attemptsLeft, timeLeft) => (
         <div className="space-y-4">
+          {/* iOS Private Browsing Warning */}
+          {showIOSWarning && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Private Browsing mode detected. Please disable Private Browsing in Safari Settings for authentication to work properly.
+              </AlertDescription>
+            </Alert>
+          )}
 
-          <form 
+          <form
             onSubmit={(e) => handleLogin(e, isLimited ? undefined : () => {})} 
             className="space-y-4"
           >
