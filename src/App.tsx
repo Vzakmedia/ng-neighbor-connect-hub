@@ -138,13 +138,13 @@ const App = () => {
           disableTransitionOnChange
         >
           <AuthProvider>
-          <AudioInitializer />
-          <PushNotificationWrapper />
-          <SecurityHeaders />
           <TooltipProvider>
           <Toaster />
           <Sonner />
         <BrowserRouter>
+          <AudioInitializer />
+          <PushNotificationWrapper />
+          <SecurityHeaders />
           <OnboardingNotificationManager />
           <MessagingNotificationProvider />
           <TutorialWrapper />
