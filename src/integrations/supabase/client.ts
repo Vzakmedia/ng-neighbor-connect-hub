@@ -20,7 +20,7 @@ const createSupabaseClient = () => {
         storage,
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false, // Prevents issues with iOS Safari
+        detectSessionInUrl: true, // Enable for iOS email verification deep links
         storageKey: 'neighborlink-auth',
         flowType: 'pkce', // More secure auth flow for iOS
       },

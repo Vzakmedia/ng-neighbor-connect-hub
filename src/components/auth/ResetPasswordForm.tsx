@@ -20,6 +20,7 @@ export const ResetPasswordForm = ({ onBack }: ResetPasswordFormProps) => {
     setIsLoading(true);
 
     try {
+      // Use current origin for all environments (iOS-compatible)
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
