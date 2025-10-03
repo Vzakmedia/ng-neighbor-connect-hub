@@ -9,7 +9,8 @@
   },
   "ios": {
     "contentInset": "automatic",
-    "backgroundColor": "#ffffff"
+    "backgroundColor": "#ffffff",
+    "scheme": "neighborlink"
   },
   "plugins": {
     "SplashScreen": {

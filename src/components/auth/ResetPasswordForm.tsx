@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft } from "lucide-react";
+import { getAuthRedirectUrl } from "@/utils/authRedirect";
 
 interface ResetPasswordFormProps {
   onBack: () => void;
@@ -20,8 +21,8 @@ export const ResetPasswordForm = ({ onBack }: ResetPasswordFormProps) => {
     setIsLoading(true);
 
     try {
-      // Use current origin for all environments (iOS-compatible)
-      const redirectUrl = `${window.location.origin}/`;
+      // Get appropriate redirect URL for the platform (deep link for native app, web URL for browser)
+      const redirectUrl = getAuthRedirectUrl();
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
