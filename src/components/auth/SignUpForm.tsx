@@ -15,6 +15,7 @@ import { Camera, Upload } from "lucide-react";
 import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
+import { getAuthRedirectUrl } from "@/utils/authRedirect";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -208,8 +209,8 @@ export const SignUpForm = () => {
     setIsLoading(true);
 
     try {
-      // Use current origin for all environments (works for iOS, Lovable preview, and production)
-      const redirectUrl = `${window.location.origin}/auth/verify-email`;
+      // Get appropriate redirect URL for the platform (deep link for native app, web URL for browser)
+      const redirectUrl = getAuthRedirectUrl();
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
