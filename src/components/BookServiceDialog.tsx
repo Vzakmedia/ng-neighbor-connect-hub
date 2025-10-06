@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { errorHandler, withRetry } from '@/utils/errorHandling';
+import type { Database } from '@/integrations/supabase/types';
 
 interface Service {
   id: string;
@@ -203,26 +205,76 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
     try {
       // Find the selected availability slot
       const slot = availableSlots.find(s => s.id === selectedSlot);
-      if (!slot) throw new Error('Invalid time slot selected');
+      if (!slot) {
+        throw new Error('Invalid time slot selected');
+      }
 
-      // Create the booking - fix timestamp format
+      // Validate booking date is in the future
       const bookingDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
-      const { error: bookingError } = await supabase
-        .from('service_bookings')
-        .insert({
-          user_id: user.id,
+      const bookingDate_obj = new Date(bookingDateTime);
+      if (bookingDate_obj <= new Date()) {
+        toast({
+          title: "Invalid Date",
+          description: "Booking date must be in the future",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Verify service still exists and is active
+      const { data: serviceData, error: serviceError } = await supabase
+        .from('services')
+        .select('id, status')
+        .eq('id', service.id)
+        .single();
+
+      if (serviceError || !serviceData) {
+        toast({
+          title: "Service Not Available",
+          description: "This service is no longer available",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Create the booking with retry logic for network resilience
+      await withRetry(async () => {
+        const bookingData: Database['public']['Tables']['service_bookings']['Insert'] = {
+          client_id: user.id,  // CRITICAL FIX: Use client_id instead of user_id
           provider_id: service.user_id,
           service_id: service.id,
           booking_date: bookingDateTime,
           message: message || null,
           status: 'pending'
-        } as any);
+        };
 
-      if (bookingError) throw bookingError;
+        console.log('Creating booking with data:', {
+          client_id: user.id,
+          provider_id: service.user_id,
+          service_id: service.id,
+          booking_date: bookingDateTime,
+        });
 
-      // Note: We don't need to update booking count in weekly availability table
-      // since current_bookings is calculated dynamically from service_bookings table
+        const { error: bookingError, data: bookingResult } = await supabase
+          .from('service_bookings')
+          .insert(bookingData)
+          .select();
 
+        if (bookingError) {
+          console.error('Booking creation error details:', {
+            error: bookingError,
+            message: bookingError.message,
+            details: bookingError.details,
+            hint: bookingError.hint,
+            code: bookingError.code,
+          });
+          throw bookingError;
+        }
+
+        console.log('Booking created successfully:', bookingResult);
+      }, 2, 1000); // Retry up to 2 times with 1 second base delay
 
       toast({
         title: "Booking request sent",
@@ -235,12 +287,41 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       setSelectedSlot('');
       setOpen(false);
       onBookingCreated();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
+      
+      // Use centralized error handler for consistent error reporting
+      const errorInfo = errorHandler.classifyError(error, {
+        route: '/booking',
+        userId: user?.id,
+      });
+
+      // Show specific error message based on error type
+      let errorMessage = 'Failed to create booking request';
+      
+      if (error.message?.includes('duplicate')) {
+        errorMessage = 'You already have a booking request for this time slot';
+      } else if (error.message?.includes('foreign key')) {
+        errorMessage = 'Service or provider no longer available';
+      } else if (error.code === 'PGRST116') {
+        errorMessage = 'Unable to verify booking availability';
+      }
+
       toast({
-        title: "Error",
-        description: "Failed to create booking request",
+        title: "Booking Failed",
+        description: errorMessage,
         variant: "destructive",
+      });
+
+      // Log detailed error for debugging
+      console.error('Booking error context:', {
+        service_id: service.id,
+        provider_id: service.user_id,
+        client_id: user?.id,
+        booking_date: bookingDate?.toISOString(),
+        slot: selectedSlot,
+        errorType: errorInfo.type,
+        errorCode: errorInfo.code,
       });
     } finally {
       setLoading(false);
