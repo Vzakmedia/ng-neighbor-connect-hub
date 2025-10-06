@@ -1,4 +1,4 @@
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ interface CommunityFeedHeaderProps {
   onFiltersChange: (filters: CommunityFilters) => void;
   availableTags: string[];
   activeFiltersCount: number;
+  onMarkAllRead?: () => void;
 }
 
 export const CommunityFeedHeader = ({
@@ -27,16 +28,28 @@ export const CommunityFeedHeader = ({
   filters,
   onFiltersChange,
   availableTags,
-  activeFiltersCount
+  activeFiltersCount,
+  onMarkAllRead
 }: CommunityFeedHeaderProps) => {
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4">
       <div className="flex flex-col space-y-4">
         {unreadCount > 0 && (
-          <div className="flex justify-center">
+          <div className="flex justify-center items-center gap-2">
             <Badge variant="secondary" className="animate-pulse">
               {unreadCount} new
             </Badge>
+            {onMarkAllRead && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onMarkAllRead}
+                className="h-6 text-xs"
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Mark all read
+              </Button>
+            )}
           </div>
         )}
         

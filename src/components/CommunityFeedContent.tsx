@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useRef, useEffect } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { CommunityPostCard } from "./CommunityPostCard";
 import ShareDialog from "./ShareDialog";
@@ -41,6 +41,7 @@ interface CommunityFeedContentProps {
   fetchNextPage?: () => void;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
+  onPostVisible?: (postId: string) => void;
 }
 
 const LoadingSkeleton = () => (
@@ -74,7 +75,39 @@ const CommunityFeedContentComponent = ({
   fetchNextPage,
   hasNextPage = false,
   isFetchingNextPage = false,
+  onPostVisible,
 }: CommunityFeedContentProps) => {
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Set up Intersection Observer for marking posts as read
+  useEffect(() => {
+    if (!onPostVisible) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            const postId = entry.target.getAttribute('data-post-id');
+            if (postId) {
+              onPostVisible(postId);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 } // Mark as read when 50% visible
+    );
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [onPostVisible]);
+
+  // Observe each post element
+  const observePost = (element: HTMLDivElement | null) => {
+    if (element && observerRef.current) {
+      observerRef.current.observe(element);
+    }
+  };
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false);
@@ -166,6 +199,8 @@ const CommunityFeedContentComponent = ({
           {events.map((event, index) => (
             <div
               key={event.id}
+              ref={observePost}
+              data-post-id={event.id}
               className="animate-fade-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
