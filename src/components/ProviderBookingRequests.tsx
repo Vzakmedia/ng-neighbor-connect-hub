@@ -49,8 +49,9 @@ const ProviderBookingRequests = () => {
           message,
           created_at,
           client_id,
-          services!inner(id, title, description),
-          profiles!service_bookings_client_id_fkey(full_name, avatar_url, phone)
+          service_id,
+          services!service_bookings_service_id_fkey(id, title, description),
+          client:profiles!service_bookings_client_id_fkey(full_name, avatar_url, phone)
         `)
         .eq('provider_id', user.id)
         .order('created_at', { ascending: false });
@@ -68,8 +69,8 @@ const ProviderBookingRequests = () => {
         message: request.message,
         created_at: request.created_at,
         client_id: request.client_id,
-        service: Array.isArray(request.services) ? request.services[0] : request.services,
-        client: Array.isArray(request.profiles) ? request.profiles[0] : request.profiles,
+        service: request.services,
+        client: request.client,
       }));
 
       // Filter out requests with missing relationships
