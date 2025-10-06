@@ -562,6 +562,13 @@ const CommunityBoards = () => {
     scrollToBottom();
   }, [posts]);
 
+  // Auto-show conversation on mobile when board is selected
+  useEffect(() => {
+    if (isMobile && selectedBoard && !showMobileConversation) {
+      setShowMobileConversation(true);
+    }
+  }, [isMobile, selectedBoard]);
+
   if (!user) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -618,7 +625,12 @@ const CommunityBoards = () => {
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${
                     selectedBoard === board.id ? 'bg-muted' : 'hover:bg-muted/50'
                   }`}
-                  onClick={() => setSelectedBoard(board.id)}
+                  onClick={() => {
+                    setSelectedBoard(board.id);
+                    if (isMobile) {
+                      setShowMobileConversation(true);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
