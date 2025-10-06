@@ -21,6 +21,7 @@ import MessagingNotificationProvider from "@/components/messaging/MessagingNotif
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
+import PlatformRoot from "@/components/PlatformRoot";
 import About from "./pages/About";
 import Community from "./pages/Community";
 import Messages from "./pages/Messages";
@@ -149,7 +150,7 @@ const App = () => {
           <MessagingNotificationProvider />
           <TutorialWrapper />
           <Routes>
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<PlatformRoot />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/about" element={<About />} />

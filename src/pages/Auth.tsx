@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthPage } from "@/components/auth/AuthPage";
-import MobileAuthFlow from "@/components/mobile/MobileAuthFlow";
+import NativeAppWrapper from "@/components/mobile/NativeAppWrapper";
 import { useAuth } from "@/hooks/useAuth";
 import { Capacitor } from '@capacitor/core';
 
@@ -13,10 +13,11 @@ const Auth = () => {
   const isMobileApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !isMobileApp) {
+      // Only redirect for web users (native app handled by NativeAppWrapper)
       navigate("/");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isMobileApp]);
 
   if (loading) {
     return (
@@ -26,8 +27,8 @@ const Auth = () => {
     );
   }
 
-  // Use mobile flow only for mobile app (Capacitor), regular auth page for web
-  return isMobileApp ? <MobileAuthFlow /> : <AuthPage />;
+  // Use NativeAppWrapper for mobile app (handles splash + auth flow), regular auth page for web
+  return isMobileApp ? <NativeAppWrapper /> : <AuthPage />;
 };
 
 export default Auth;
