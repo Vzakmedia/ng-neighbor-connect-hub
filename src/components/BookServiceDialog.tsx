@@ -75,16 +75,17 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const { data, error } = await supabase
         .from('service_weekly_availability')
         .select('*')
-        .eq('service_id', service.id as any)
-        .eq('is_available', true as any);
+        .eq('service_id', service.id)
+        .eq('is_available', true);
 
       if (error) throw error;
 
       // Calculate available dates for the next 30 days based on weekly patterns
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const availableDatesSet = new Set();
       
-      for (let i = 0; i < 30; i++) {
+      for (let i = 1; i <= 30; i++) {
         const currentDate = new Date(today);
         currentDate.setDate(today.getDate() + i);
         const dayOfWeek = currentDate.getDay();
@@ -98,6 +99,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       }
 
       const dates = Array.from(availableDatesSet).map(dateStr => new Date(dateStr as string));
+      console.log('Available dates generated:', dates.length, dates);
       setAvailableDates(dates);
     } catch (error) {
       console.error('Error fetching weekly availability:', error);
@@ -112,9 +114,9 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       const { data, error } = await supabase
         .from('service_weekly_availability')
         .select('*')
-        .eq('service_id', service.id as any)
-        .eq('day_of_week', dayOfWeek as any)
-        .eq('is_available', true as any);
+        .eq('service_id', service.id)
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_available', true);
 
       if (error) throw error;
       
@@ -163,10 +165,10 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('service_bookings')
           .select('booking_date')
-          .eq('service_id', service.id as any)
+          .eq('service_id', service.id)
           .gte('booking_date', `${dateStr}T00:00:00`)
           .lt('booking_date', `${dateStr}T23:59:59`)
-          .neq('status', 'cancelled' as any);
+          .neq('status', 'cancelled');
 
         if (!bookingsError && bookingsData) {
           // Count bookings for each time slot
@@ -225,14 +227,24 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       // Verify service still exists and is active
       const { data: serviceData, error: serviceError } = await supabase
         .from('services')
-        .select('id, status')
+        .select('id, is_active, approval_status')
         .eq('id', service.id)
         .single();
 
       if (serviceError || !serviceData) {
         toast({
           title: "Service Not Available",
-          description: "This service is no longer available",
+          description: "Unable to verify service availability.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!serviceData.is_active || serviceData.approval_status !== 'approved') {
+        toast({
+          title: "Service Not Available",
+          description: "This service is currently unavailable.",
           variant: "destructive",
         });
         setLoading(false);
@@ -369,10 +381,18 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
                   selected={bookingDate}
                   onSelect={setBookingDate}
                   disabled={(date) => {
-                    if (date < new Date()) return true;
-                    return !availableDates.some(availableDate => 
-                      availableDate.toDateString() === date.toDateString()
-                    );
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const checkDate = new Date(date);
+                    checkDate.setHours(0, 0, 0, 0);
+                    
+                    if (checkDate <= today) return true;
+                    
+                    return !availableDates.some(availableDate => {
+                      const availDate = new Date(availableDate);
+                      availDate.setHours(0, 0, 0, 0);
+                      return availDate.getTime() === checkDate.getTime();
+                    });
                   }}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
