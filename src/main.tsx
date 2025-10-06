@@ -145,6 +145,9 @@ root.render(
           },
         },
       }}
+      onSuccess={() => {
+        console.log('✅ React Query cache hydrated from localStorage');
+      }}
     >
       <IOSErrorBoundary>
         <App />
