@@ -45,8 +45,10 @@ const MyBookingsPanel = () => {
           status,
           message,
           created_at,
-          services!inner(id, title, description, location),
-          profiles!service_bookings_provider_id_fkey(full_name, avatar_url, phone)
+          service_id,
+          provider_id,
+          services!service_bookings_service_id_fkey(id, title, description, location),
+          provider:profiles!service_bookings_provider_id_fkey(full_name, avatar_url, phone)
         `)
         .eq('client_id', user!.id)
         .order('booking_date', { ascending: true });
@@ -63,8 +65,8 @@ const MyBookingsPanel = () => {
         status: booking.status,
         message: booking.message,
         created_at: booking.created_at,
-        service: Array.isArray(booking.services) ? booking.services[0] : booking.services,
-        provider: Array.isArray(booking.profiles) ? booking.profiles[0] : booking.profiles,
+        service: booking.services,
+        provider: booking.provider,
       }));
 
       // Filter out bookings with missing relationships
