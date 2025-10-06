@@ -1,3 +1,17 @@
+/**
+ * @deprecated This hook is deprecated as React Query now handles all caching.
+ * 
+ * The manual post cache has been replaced by React Query's built-in caching:
+ * - Automatic cache invalidation
+ * - Persistent cache to localStorage
+ * - Cross-tab synchronization
+ * - Better memory management
+ * 
+ * No migration needed - React Query handles everything automatically.
+ * 
+ * See: docs/FEED_PERFORMANCE.md
+ */
+
 import { useEffect } from 'react';
 import { postCache } from '@/services/postCache';
 import { useProfile } from '@/hooks/useProfile';

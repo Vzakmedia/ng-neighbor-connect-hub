@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, memo } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { CommunityPostCard } from "./CommunityPostCard";
 import ShareDialog from "./ShareDialog";
@@ -65,7 +65,8 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-export const CommunityFeedContent = ({ 
+// Memoize component to prevent unnecessary re-renders
+const CommunityFeedContentComponent = ({ 
   events, 
   loading, 
   onLike, 
@@ -261,3 +262,8 @@ export const CommunityFeedContent = ({
     </>
   );
 };
+
+// Export memoized version for better performance
+export const CommunityFeedContent = memo(CommunityFeedContentComponent);
+
+export default CommunityFeedContent;

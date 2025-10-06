@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, memo } from "react";
 import { Heart, MessageCircle, Share2, Bookmark, Eye, Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,8 @@ interface CommunityPostCardProps {
   onToggleComments: () => void;
 }
 
-export const CommunityPostCard = ({
+// Memoize component to prevent unnecessary re-renders
+const CommunityPostCardComponent = ({
   event,
   onLike,
   onSave,
@@ -134,6 +135,7 @@ export const CommunityPostCard = ({
                   <img
                     src={url}
                     alt={`Post image ${index + 1}`}
+                    loading="lazy"
                     className="w-full h-40 sm:h-48 object-cover rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
                     onError={() => handleImageError(index)}
                     onClick={(e) => {
@@ -256,3 +258,8 @@ export const CommunityPostCard = ({
     </Card>
   );
 };
+
+// Export memoized version for better performance
+export const CommunityPostCard = memo(CommunityPostCardComponent);
+
+export default CommunityPostCard;
