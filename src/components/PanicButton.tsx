@@ -22,10 +22,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { checkPanicButtonRateLimit, updatePanicButtonRateLimit, validateEmergencyLocation, sanitizeText } from '@/utils/security';
 import { useSecurityAudit } from '@/hooks/useSecurityAudit';
+import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 
 const PanicButton = () => {
   const { user } = useAuth();
   const { logPanicButton } = useSecurityAudit();
+  const { getCurrentPosition } = useNativePermissions();
   const [isPressed, setIsPressed] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
@@ -72,26 +74,16 @@ const PanicButton = () => {
     }
   };
 
-  const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation is not supported'));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          reject(error);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
-    });
+  const getCurrentLocation = async (): Promise<{ latitude: number; longitude: number }> => {
+    try {
+      const position = await getCurrentPosition();
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+    } catch (error) {
+      throw new Error('Failed to get location. Please enable location services.');
+    }
   };
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
