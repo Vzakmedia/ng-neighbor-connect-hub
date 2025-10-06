@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
@@ -26,6 +27,9 @@ export const CommunityFeed = () => {
   });
   const [unreadCounts, setUnreadCounts] = useState({ community: 0 });
 
+  // Debounce search query to prevent excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
   // Use React Query for feed data
   const {
     data,
@@ -39,7 +43,7 @@ export const CommunityFeed = () => {
     locationScope: filters.locationScope as 'neighborhood' | 'city' | 'state' | 'all',
     tags: filters.tags,
     sortBy: 'recent' as 'recent' | 'popular',
-    searchQuery,
+    searchQuery: debouncedSearchQuery, // Use debounced search
   });
 
   // Mutations

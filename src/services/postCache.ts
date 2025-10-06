@@ -29,6 +29,22 @@ interface CachedPost {
   target_state?: string;
 }
 
+/**
+ * @deprecated This service is deprecated in favor of React Query caching.
+ * 
+ * React Query provides superior caching with:
+ * - Automatic cache invalidation
+ * - Persistent storage to localStorage
+ * - Background refetching
+ * - Memory-efficient garbage collection
+ * - Cross-tab synchronization
+ * 
+ * This file is kept for backward compatibility only.
+ * New code should use useFeedQuery instead.
+ * 
+ * See: docs/FEED_PERFORMANCE.md
+ */
+
 interface CacheEntry {
   posts: CachedPost[];
   timestamp: number;

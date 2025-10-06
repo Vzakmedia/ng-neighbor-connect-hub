@@ -1,3 +1,33 @@
+/**
+ * @deprecated This hook is deprecated in favor of useFeedQuery.
+ * 
+ * Please migrate to the new React Query-based approach:
+ * 
+ * Old:
+ * ```typescript
+ * const { events, loading, handleLike, handleSave } = useCommunityFeed();
+ * ```
+ * 
+ * New:
+ * ```typescript
+ * import { useFeedQuery, useLikePost, useSavePost } from '@/hooks/useFeedQuery';
+ * 
+ * const { data, isLoading } = useFeedQuery(filters);
+ * const likePost = useLikePost();
+ * const savePost = useSavePost();
+ * const events = data?.pages.flatMap(page => page.items) ?? [];
+ * ```
+ * 
+ * Benefits:
+ * - Automatic caching and persistence
+ * - Optimistic updates
+ * - Infinite scroll support
+ * - Real-time invalidation
+ * - Better performance
+ * 
+ * See: docs/FEED_PERFORMANCE.md
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
