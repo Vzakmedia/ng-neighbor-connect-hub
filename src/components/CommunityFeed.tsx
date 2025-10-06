@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import PullToRefresh from "react-simple-pull-to-refresh";
 import { CommunityFeedHeader } from "./CommunityFeedHeader";
 import { CommunityFeedContent } from "./CommunityFeedContent";
 import { NewPostsBanner } from "./NewPostsBanner";
@@ -7,11 +8,13 @@ import { useCommunitySubscriptions } from "@/hooks/useCommunitySubscriptions";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useLocationPreferences } from "@/hooks/useLocationPreferences";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
+  const isMobile = useIsMobile();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -83,8 +86,8 @@ export const CommunityFeed = () => {
     }
   };
 
-  // Handle refresh
-  const handleRefresh = async () => {
+  // Handle refresh for pull-to-refresh
+  const handlePullRefresh = async () => {
     await refetch();
   };
 
@@ -100,7 +103,7 @@ export const CommunityFeed = () => {
     onUpdatePostComments: () => {},
   });
 
-  return (
+  const feedContent = (
     <div className="max-w-2xl mx-auto px-2 sm:px-4">
       <NewPostsBanner />
       
@@ -108,7 +111,7 @@ export const CommunityFeed = () => {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         hasNewContent={false}
-        onRefresh={handleRefresh}
+        onRefresh={refetch}
         refreshing={isFetching && !isFetchingNextPage}
         unreadCount={unreadCounts.community}
         filters={filters}
@@ -130,6 +133,30 @@ export const CommunityFeed = () => {
       </div>
     </div>
   );
+
+  // Wrap with pull-to-refresh on mobile
+  if (isMobile) {
+    return (
+      <PullToRefresh
+        onRefresh={handlePullRefresh}
+        pullingContent={
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            Pull down to refresh...
+          </div>
+        }
+        refreshingContent={
+          <div className="text-center py-4 text-primary text-sm animate-pulse">
+            Refreshing...
+          </div>
+        }
+        className="min-h-screen"
+      >
+        {feedContent}
+      </PullToRefresh>
+    );
+  }
+
+  return feedContent;
 };
 
 export default CommunityFeed;

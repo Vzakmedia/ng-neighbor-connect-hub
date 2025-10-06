@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import App from './App.tsx'
 import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
@@ -13,12 +15,18 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
       staleTime: 30 * 1000, // 30s cache for instant back-navigation
       retry: 1, // Reduce wait time on errors
-      gcTime: 5 * 60 * 1000, // 5 min garbage collection
+      gcTime: 5 * 60 * 1000, // 5 min garbage collection (formerly cacheTime)
     },
     mutations: {
       retry: 1,
     },
   },
+})
+
+// Create persister for offline cache
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'REACT_QUERY_OFFLINE_CACHE',
 })
 
 // Capacitor type definitions
@@ -125,11 +133,23 @@ const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => {
+            // Only persist feed queries for offline viewing
+            return query.queryKey[0] === 'feed';
+          },
+        },
+      }}
+    >
       <IOSErrorBoundary>
         <App />
       </IOSErrorBoundary>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>
 );
 
