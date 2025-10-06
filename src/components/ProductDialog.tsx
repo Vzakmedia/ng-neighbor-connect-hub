@@ -27,6 +27,8 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
+import { useNativeShare } from '@/hooks/mobile/useNativeShare';
+import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
 
 interface MarketplaceItem {
   id: string;
@@ -64,6 +66,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const { user } = useAuth();
   const { sendMessageWithAttachments } = useDirectMessages(user?.id);
   const { toast } = useToast();
+  const { share, canShare } = useNativeShare();
+  const { copyToClipboard } = useNativeClipboard();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [likesCount, setLikesCount] = useState(product?.likes_count || 0);
@@ -189,32 +193,15 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/marketplace?item=${product.id}`;
     
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.title,
-          text: `Check out this item: ${product.title}`,
-          url: shareUrl,
-        });
-      } catch (error) {
-        // User cancelled sharing or sharing failed
-        console.log('Sharing cancelled');
-      }
-    } else {
+    const shared = await share({
+      title: product.title,
+      text: `Check out this item: ${product.title}`,
+      url: shareUrl,
+    });
+    
+    if (!shared) {
       // Fallback to copying to clipboard
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        toast({
-          title: "Link copied!",
-          description: "Product link copied to clipboard",
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to copy link to clipboard",
-          variant: "destructive",
-        });
-      }
+      await copyToClipboard(shareUrl, "Product link copied to clipboard");
     }
   };
 

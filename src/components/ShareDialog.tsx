@@ -17,6 +17,9 @@ import {
   FaWhatsapp 
 } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
+import { useNativeShare } from '@/hooks/mobile/useNativeShare';
+import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
+import { openUrl } from '@/utils/nativeBrowser';
 
 interface ShareDialogProps {
   open: boolean;
@@ -30,28 +33,18 @@ interface ShareDialogProps {
 const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postAuthor }: ShareDialogProps) => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { share, canShare } = useNativeShare();
+  const { copyToClipboard } = useNativeClipboard();
 
   // Generate share URL (in a real app, this would be the actual post URL)
   const shareUrl = `${window.location.origin}/community/post/${postId}`;
   const shareText = postTitle ? `${postTitle} - by ${postAuthor}` : `Post by ${postAuthor}`;
   const fullShareText = `${shareText}\n\n${(postContent || '').substring(0, 100)}${(postContent || '').length > 100 ? '...' : ''}`;
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast({
-        title: "Link copied!",
-        description: "The post link has been copied to your clipboard.",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "Could not copy the link to clipboard.",
-        variant: "destructive",
-      });
-    }
+  const copyLink = async () => {
+    await copyToClipboard(shareUrl, "The post link has been copied to your clipboard.");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const shareToSocial = (platform: string) => {
@@ -81,24 +74,19 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
         return;
     }
     
-    window.open(shareLink, '_blank', 'width=600,height=400');
+    openUrl(shareLink, '_blank', 'width=600,height=400');
   };
 
   const shareNative = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareText,
-          text: postContent,
-          url: shareUrl,
-        });
-      } catch (err) {
-        // User cancelled sharing or error occurred
-        console.log('Error sharing:', err);
-      }
-    } else {
+    const shared = await share({
+      title: shareText,
+      text: postContent,
+      url: shareUrl,
+    });
+    
+    if (!shared) {
       // Fallback to copy to clipboard
-      copyToClipboard();
+      copyLink();
     }
   };
 
@@ -183,7 +171,7 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
                 className="flex-1"
               />
               <Button
-                onClick={copyToClipboard}
+                onClick={copyLink}
                 variant="outline"
                 size="icon"
                 className="shrink-0"
@@ -198,7 +186,7 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
           </div>
 
           {/* Native Share (if supported) */}
-          {navigator.share && (
+          {canShare() && (
             <>
               <Separator />
               <Button

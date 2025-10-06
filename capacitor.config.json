@@ -18,6 +18,10 @@
     },
     "Camera": {
       "permissions": ["camera", "photos"]
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#667eea"
     }
   }
 }

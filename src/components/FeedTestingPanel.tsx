@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, Database, Wifi, Zap } from 'lucide-react';
+import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
 
 interface TestResult {
   name: string;
@@ -18,6 +19,7 @@ interface TestResult {
  */
 export const FeedTestingPanel = () => {
   const queryClient = useQueryClient();
+  const { isOnline, connectionType } = useNativeNetwork();
   const [tests, setTests] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -170,7 +172,7 @@ export const FeedTestingPanel = () => {
           <div className="flex items-center gap-1">
             <Wifi className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">
-              {navigator.onLine ? 'Online' : 'Offline'}
+              {isOnline ? 'Online' : 'Offline'} {connectionType !== 'unknown' && `(${connectionType})`}
             </span>
           </div>
         </div>

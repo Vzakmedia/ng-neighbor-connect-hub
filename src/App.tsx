@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { initializeStatusBar } from '@/hooks/mobile/useNativeStatusBar';
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
@@ -103,25 +104,28 @@ const TutorialWrapper = () => {
 const App = () => {
   console.log("App component rendering, React:", React);
   
-  // Hide native splash screen after React is ready
+  // Hide native splash screen and initialize status bar after React is ready
   React.useEffect(() => {
-    const hideSplash = async () => {
+    const initializeNative = async () => {
       // Only on native platforms
       if (Capacitor.isNativePlatform()) {
         try {
+          // Initialize status bar
+          await initializeStatusBar('light');
+          
           // Wait for React to paint (400ms should be enough)
           await new Promise(resolve => setTimeout(resolve, 400));
           await SplashScreen.hide({
             fadeOutDuration: 300
           });
-          console.log('Native splash screen hidden');
+          console.log('Native splash screen hidden and status bar initialized');
         } catch (error) {
           console.debug('Splash screen already hidden or not available:', error);
         }
       }
     };
     
-    hideSplash();
+    initializeNative();
   }, []);
   
   // Add global error handler for security errors
