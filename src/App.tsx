@@ -16,6 +16,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AudioInitializer } from "@/components/AudioInitializer";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 import { OnboardingNotificationManager } from "@/components/OnboardingNotificationManager";
+import { SessionRecovery } from "@/components/SessionRecovery";
 import AppTutorial from "@/components/AppTutorial";
 import { useTutorial } from "@/hooks/useTutorial";
 import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
@@ -166,6 +167,7 @@ const App = () => {
           <Toaster />
           <Sonner />
         <BrowserRouter>
+          <SessionRecovery />
           <AudioInitializer />
           <PushNotificationWrapper />
           <SecurityHeaders />
