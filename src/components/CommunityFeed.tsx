@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PullToRefresh from "react-simple-pull-to-refresh";
 import { CommunityFeedHeader } from "./CommunityFeedHeader";
 import { CommunityFeedContent } from "./CommunityFeedContent";
@@ -10,11 +10,13 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useReadStatus } from "@/hooks/useReadStatus";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
+  const { markCommunityPostAsRead } = useReadStatus();
   const isMobile = useIsMobile();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,6 +69,17 @@ export const CommunityFeed = () => {
     }))) ?? [],
     [data]
   );
+
+  // Mark posts as read when they come into view
+  useEffect(() => {
+    if (events.length > 0) {
+      // Mark the first 5 visible posts as read
+      const visiblePosts = events.slice(0, 5);
+      visiblePosts.forEach(post => {
+        markCommunityPostAsRead(post.id);
+      });
+    }
+  }, [events, markCommunityPostAsRead]);
 
   // Extract available tags
   const availableTags = useMemo(() => {
