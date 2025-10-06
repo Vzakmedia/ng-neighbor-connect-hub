@@ -21,7 +21,8 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: ['es2017', 'safari12'], // Support iOS Safari 12+
-    modulePreload: { polyfill: false },
+    modulePreload: { polyfill: true },
+    cssCodeSplit: true,
     minify: 'esbuild',
     rollupOptions: {
       output: {

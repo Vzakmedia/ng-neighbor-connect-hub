@@ -105,10 +105,25 @@ if (deviceInfo.isIOS) {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
+const root = createRoot(document.getElementById("root")!);
+
+root.render(
   <StrictMode>
     <IOSErrorBoundary>
       <App />
     </IOSErrorBoundary>
   </StrictMode>
 );
+
+// Remove the temporary loader after React hydration
+const loader = document.getElementById('app-loader');
+if (loader) {
+  // Fade out smoothly
+  loader.style.transition = 'opacity 300ms ease-out';
+  loader.style.opacity = '0';
+  
+  // Remove from DOM after transition completes
+  setTimeout(() => {
+    loader.remove();
+  }, 300);
+}
