@@ -24,11 +24,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           console.log("Auth state changed:", event, session?.user?.email_confirmed_at);
+          
+          // Detect session expiry
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('Token refreshed successfully');
+          } else if (event === 'SIGNED_OUT') {
+            console.log('User signed out');
+            setSession(null);
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+          
           setSession(session);
           
           // Only set user if email is confirmed (ALL users need email confirmation)
           if (session?.user && session.user.email_confirmed_at) {
             setUser(session.user);
+            
+            // Check token expiry
+            if (session.expires_at) {
+              const expiresAt = session.expires_at * 1000;
+              const now = Date.now();
+              const timeUntilExpiry = expiresAt - now;
+              
+              if (timeUntilExpiry < 0) {
+                console.warn('Session already expired, refreshing...');
+                supabase.auth.refreshSession();
+              } else if (timeUntilExpiry < 5 * 60 * 1000) { // Less than 5 minutes
+                console.log('Session expiring soon, will refresh');
+              }
+            }
           } else {
             setUser(null);
           }
@@ -37,9 +63,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       console.log("Auth listener set up successfully");
 
-      // THEN check for existing session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      // THEN check for existing session with validation
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          console.error("Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+        
         console.log("Got existing session:", session?.user?.email_confirmed_at);
+        
+        // Validate session token if present
+        if (session?.expires_at) {
+          const expiresAt = session.expires_at * 1000;
+          const now = Date.now();
+          
+          if (expiresAt < now) {
+            console.warn('Stored session expired, refreshing...');
+            supabase.auth.refreshSession();
+            return;
+          }
+        }
+        
         setSession(session);
         
         // Apply same email confirmation logic for initial session
