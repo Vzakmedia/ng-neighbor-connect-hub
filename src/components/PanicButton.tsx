@@ -23,11 +23,13 @@ import { toast } from '@/hooks/use-toast';
 import { checkPanicButtonRateLimit, updatePanicButtonRateLimit, validateEmergencyLocation, sanitizeText } from '@/utils/security';
 import { useSecurityAudit } from '@/hooks/useSecurityAudit';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
+import { useNativeHaptics } from '@/hooks/mobile/useNativeHaptics';
 
 const PanicButton = () => {
   const { user } = useAuth();
   const { logPanicButton } = useSecurityAudit();
   const { getCurrentPosition } = useNativePermissions();
+  const { impact, notification, vibrate } = useNativeHaptics();
   const [isPressed, setIsPressed] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
@@ -280,6 +282,9 @@ const PanicButton = () => {
 
       if (alertError) throw alertError;
 
+      // Success haptic feedback
+      notification('success');
+      
       setIsActivated(true);
       
       toast({
@@ -333,6 +338,10 @@ const PanicButton = () => {
   };
 
   const handlePanicButtonPress = () => {
+    // Heavy haptic feedback when panic button is pressed
+    vibrate(500);
+    impact('heavy');
+    
     setIsPressed(true);
     setIsConfirming(true);
     const duration = preferences?.countdown_duration || 3;
@@ -360,6 +369,9 @@ const PanicButton = () => {
   };
 
   const cancelPanic = () => {
+    // Light haptic feedback when canceling
+    impact('light');
+    
     setIsPressed(false);
     setIsConfirming(false);
     setCountdown(preferences?.countdown_duration || 3);

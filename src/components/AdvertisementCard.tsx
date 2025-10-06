@@ -7,6 +7,9 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { useNativeShare } from '@/hooks/mobile/useNativeShare';
+import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
+import { openUrl } from '@/utils/nativeBrowser';
 
 interface Advertisement {
   id: string;
@@ -28,6 +31,8 @@ interface AdvertisementCardProps {
 const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { share, canShare } = useNativeShare();
+  const { copyToClipboard } = useNativeClipboard();
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,20 +70,16 @@ const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
           _impression_type: 'click',
         });
       } catch {}
-      window.open(ad.url, '_blank', 'noopener,noreferrer');
+      openUrl(ad.url, '_blank');
     }
   };
 
   const handleShare = async () => {
     if (!ad.url) return;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: ad.title, text: ad.description, url: ad.url });
-      } else {
-        await navigator.clipboard.writeText(ad.url);
-        toast({ title: 'Link copied to clipboard' });
-      }
-    } catch {}
+    const shared = await share({ title: ad.title, text: ad.description, url: ad.url });
+    if (!shared) {
+      await copyToClipboard(ad.url, 'Link copied to clipboard');
+    }
   };
 
   const handleHide = () => {
@@ -119,7 +120,7 @@ const AdvertisementCard = ({ ad }: AdvertisementCardProps) => {
                 </DropdownMenuItem>
               )}
               {ad.url && (
-                <DropdownMenuItem onClick={async () => { if (!ad.url) return; await navigator.clipboard.writeText(ad.url); toast({ title: 'Link copied to clipboard' }); }}>
+                <DropdownMenuItem onClick={async () => { if (!ad.url) return; await copyToClipboard(ad.url, 'Link copied to clipboard'); }}>
                   <LinkIcon className="h-4 w-4 mr-2" /> Copy link
                 </DropdownMenuItem>
               )}
