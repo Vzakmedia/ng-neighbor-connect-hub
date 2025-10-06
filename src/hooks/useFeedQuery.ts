@@ -85,22 +85,19 @@ export function useFeedQuery(filters: FeedFilters) {
         .order('created_at', { ascending: false })
         .range(offset, offset + POSTS_PER_PAGE - 1);
 
-      // Apply location filters - CRITICAL: Use OR logic, not AND
-      // Posts with location_scope = 'all' should ALWAYS appear
-      if (filters.locationScope !== 'all') {
-        let locationFilter = `location_scope.eq.all`;
-        
-        if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
-          locationFilter += `,and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state})`;
-        } else if (filters.locationScope === 'city' && profile.city && profile.state) {
-          locationFilter += `,and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`;
-        } else if (filters.locationScope === 'state' && profile.state) {
-          locationFilter += `,and(location_scope.eq.state,target_state.eq.${profile.state})`;
-        }
-        
-        // Use .or() to match posts with 'all' scope OR matching location
-        query = query.or(locationFilter);
+      // Apply location filters - Show 'all' posts + location-specific posts
+      // Don't filter if locationScope is 'all' - show everything
+      if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
+        // Show posts with scope 'all' OR neighborhood-specific posts
+        query = query.or(`location_scope.eq.all,and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state})`);
+      } else if (filters.locationScope === 'city' && profile.city && profile.state) {
+        // Show posts with scope 'all' OR city-specific posts
+        query = query.or(`location_scope.eq.all,and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`);
+      } else if (filters.locationScope === 'state' && profile.state) {
+        // Show posts with scope 'all' OR state-specific posts
+        query = query.or(`location_scope.eq.all,and(location_scope.eq.state,target_state.eq.${profile.state})`);
       }
+      // If locationScope is 'all', no filter is applied
 
       const { data: postsData, error } = await query;
 
