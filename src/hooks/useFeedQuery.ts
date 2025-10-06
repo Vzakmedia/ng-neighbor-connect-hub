@@ -102,7 +102,7 @@ export function useFeedQuery(filters: FeedFilters) {
       const posts: FeedPost[] = await Promise.all(
         (postsData || []).map(async (post: any) => {
           // Fetch profile and engagement data in parallel
-          const [profileData, likeData, saveData, userLike, userSave] = await Promise.all([
+          const [profileData, likeData, commentData, saveData, userLike, userSave] = await Promise.all([
             supabase
               .from('profiles')
               .select('full_name, avatar_url, city, state')
@@ -110,6 +110,10 @@ export function useFeedQuery(filters: FeedFilters) {
               .maybeSingle(),
             supabase
               .from('post_likes')
+              .select('id', { count: 'exact', head: true })
+              .eq('post_id', post.id),
+            supabase
+              .from('post_comments')
               .select('id', { count: 'exact', head: true })
               .eq('post_id', post.id),
             supabase
@@ -147,7 +151,7 @@ export function useFeedQuery(filters: FeedFilters) {
             author_city: profileData.data?.city || null,
             author_state: profileData.data?.state || null,
             like_count: likeData.count || 0,
-            comment_count: 0, // Would need separate query
+            comment_count: commentData.count || 0,
             save_count: saveData.count || 0,
             is_liked: !!userLike?.data,
             is_saved: !!userSave?.data,
