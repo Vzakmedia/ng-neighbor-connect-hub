@@ -16,8 +16,9 @@ export const CommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
-  const { markCommunityPostAsRead } = useReadStatus();
+  const { markCommunityPostAsRead, refreshUnreadCounts } = useReadStatus();
   const isMobile = useIsMobile();
+  const [markedPostIds, setMarkedPostIds] = useState<Set<string>>(new Set());
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -73,13 +74,26 @@ export const CommunityFeed = () => {
   // Mark posts as read when they come into view
   useEffect(() => {
     if (events.length > 0) {
-      // Mark the first 5 visible posts as read
+      // Mark the first 5 visible posts as read (only once per post)
       const visiblePosts = events.slice(0, 5);
-      visiblePosts.forEach(post => {
-        markCommunityPostAsRead(post.id);
-      });
+      const newPostsToMark = visiblePosts.filter(post => !markedPostIds.has(post.id));
+      
+      if (newPostsToMark.length > 0) {
+        Promise.all(
+          newPostsToMark.map(post => markCommunityPostAsRead(post.id))
+        ).then(() => {
+          // Update marked posts set
+          setMarkedPostIds(prev => {
+            const updated = new Set(prev);
+            newPostsToMark.forEach(post => updated.add(post.id));
+            return updated;
+          });
+          // Refresh unread counts after marking posts as read
+          refreshUnreadCounts();
+        });
+      }
     }
-  }, [events, markCommunityPostAsRead]);
+  }, [events, markCommunityPostAsRead, markedPostIds, refreshUnreadCounts]);
 
   // Extract available tags
   const availableTags = useMemo(() => {
