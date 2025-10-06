@@ -151,15 +151,15 @@ const InteractiveLandingPage = () => {
       stiffness: 400
     }} />
 
-      {/* Main boxed container */}
-      <div className="max-w-6xl mx-auto bg-background relative overflow-hidden">
+      {/* Main full-width container */}
+      <div className="w-full bg-background relative overflow-hidden">
         {/* Header */}
         <motion.header initial={{
         y: -100
       }} animate={{
         y: 0
       }} className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="w-full flex h-16 items-center justify-between px-6 md:px-12 lg:px-16 xl:px-24">
           <motion.div whileHover={{
             scale: 1.05
           }} whileTap={{
@@ -221,7 +221,8 @@ const InteractiveLandingPage = () => {
           y: y1
         }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
         
-        <div className="container px-4 mx-auto relative">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 relative">
+          <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div initial={{
               opacity: 0,
@@ -405,12 +406,13 @@ const InteractiveLandingPage = () => {
               </motion.div>
             </motion.div>
           </div>
+          </div>
         </div>
       </section>
 
       {/* Interactive Features Section */}
       <section id="features" className="py-24 bg-muted/30 relative">
-        <div className="container px-4 mx-auto">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
           <motion.div className="text-center space-y-4 mb-16" initial={{
             opacity: 0,
             y: 50
@@ -537,7 +539,7 @@ const InteractiveLandingPage = () => {
 
       {/* Animated Testimonials */}
       <section id="testimonials" className="py-24 overflow-hidden">
-        <div className="container px-4 mx-auto">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
           <motion.div className="text-center space-y-4 mb-16" initial={{
             opacity: 0,
             y: 50
@@ -620,7 +622,7 @@ const InteractiveLandingPage = () => {
 
       {/* Device Compatibility with Animations */}
       <section className="py-24 bg-muted/30">
-        <div className="container px-4 mx-auto text-center">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 text-center">
           <motion.div className="space-y-4 mb-12" initial={{
             opacity: 0,
             y: 50
@@ -727,7 +729,7 @@ const InteractiveLandingPage = () => {
             </motion.div>)}
         </div>
         
-        <div className="container px-4 mx-auto text-center space-y-8 relative">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 text-center space-y-8 relative">
           <motion.div initial={{
             opacity: 0,
             scale: 0.8
@@ -784,7 +786,7 @@ const InteractiveLandingPage = () => {
 
       {/* Contact Section */}
       <section id="contact" className="py-24">
-        <div className="container px-4 mx-auto">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
           <motion.div className="text-center space-y-4 mb-16" initial={{
             opacity: 0,
             y: 50
@@ -858,7 +860,7 @@ const InteractiveLandingPage = () => {
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-12">
-        <div className="container px-4 mx-auto">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
           <div className="grid md:grid-cols-4 gap-8">
             <motion.div className="space-y-4" initial={{
               opacity: 0
