@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -568,6 +570,23 @@ const CommunityBoards = () => {
       setShowMobileConversation(true);
     }
   }, [isMobile, selectedBoard]);
+
+  // Handle native back button on mobile devices
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !isMobile) {
+      return;
+    }
+
+    const backButtonListener = App.addListener('backButton', () => {
+      if (showMobileConversation) {
+        setShowMobileConversation(false);
+      }
+    });
+
+    return () => {
+      backButtonListener.then(listener => listener.remove());
+    };
+  }, [isMobile, showMobileConversation]);
 
   if (!user) {
     return (
