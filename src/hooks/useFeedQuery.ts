@@ -85,13 +85,41 @@ export function useFeedQuery(filters: FeedFilters) {
         .order('created_at', { ascending: false })
         .range(offset, offset + POSTS_PER_PAGE - 1);
 
-      // Apply location filters
-      if (filters.locationScope === 'neighborhood' && profile.neighborhood) {
-        query = query.eq('target_neighborhood', profile.neighborhood);
-      } else if (filters.locationScope === 'city' && profile.city) {
-        query = query.eq('target_city', profile.city);
-      } else if (filters.locationScope === 'state' && profile.state) {
+      // Apply location filters with fallback logic
+      let effectiveScope = filters.locationScope;
+      
+      // Fallback to broader scopes if profile data is missing
+      if (effectiveScope === 'neighborhood' && !profile.neighborhood) {
+        console.log('Neighborhood not set, falling back to city');
+        effectiveScope = 'city';
+      }
+      if (effectiveScope === 'city' && !profile.city) {
+        console.log('City not set, falling back to state');
+        effectiveScope = 'state';
+      }
+      if (effectiveScope === 'state' && !profile.state) {
+        console.log('State not set, showing all posts');
+        effectiveScope = 'all';
+      }
+
+      // Apply filters based on effective scope
+      if (effectiveScope === 'neighborhood') {
+        query = query
+          .eq('target_neighborhood', profile.neighborhood)
+          .eq('target_city', profile.city)
+          .eq('target_state', profile.state);
+        console.log('Filtering by neighborhood:', profile.neighborhood);
+      } else if (effectiveScope === 'city') {
+        query = query
+          .eq('target_city', profile.city)
+          .eq('target_state', profile.state);
+        console.log('Filtering by city:', profile.city);
+      } else if (effectiveScope === 'state') {
         query = query.eq('target_state', profile.state);
+        console.log('Filtering by state:', profile.state);
+      } else {
+        // 'all' scope - no location filter
+        console.log('Showing all posts (no location filter)');
       }
 
       const { data: postsData, error } = await query;

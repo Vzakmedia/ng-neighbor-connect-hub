@@ -22,7 +22,7 @@ export const CommunityFeed = () => {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    locationScope: 'neighborhood' as string,
+    locationScope: (preferences?.default_location_filter || 'all') as string,
     tags: [] as string[],
     postTypes: 'all' as string,
     sortBy: 'newest' as string,
