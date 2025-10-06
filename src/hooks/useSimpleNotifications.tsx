@@ -1,3 +1,15 @@
+/**
+ * @deprecated This hook is deprecated and will be removed in a future version.
+ * Please use the new centralized notification system instead:
+ * - Store: import { useNotificationStore } from '@/store/notificationStore'
+ * - Realtime: import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
+ * 
+ * Migration guide:
+ * 1. Replace useNotifications() with useNotificationStore()
+ * 2. Call useRealtimeNotifications() in your root component (already done in PlatformRoot)
+ * 3. Use NotificationBell and NotificationPanel components for UI
+ */
+
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
