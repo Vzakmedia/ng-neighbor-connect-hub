@@ -74,10 +74,46 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#8B5CF6" />
+    
+    <!-- Preload main CSS for instant styling -->
+    <link rel="preload" href="/src/index.css" as="style" onload="this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
   </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;padding:0;background:#fafafa;">
+    <div id="root">
+      <!-- Inline loader shown until React mounts -->
+      <div id="app-loader" style="
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color:#ffffff;
+        font-family:'Questrial', sans-serif;
+        text-align:center;
+        padding:20px;
+      ">
+        <div style="
+          width:80px;
+          height:80px;
+          border:4px solid rgba(255,255,255,0.3);
+          border-top-color:#ffffff;
+          border-radius:50%;
+          animation:spin 1s linear infinite;
+          margin-bottom:20px;
+        "></div>
+        <h2 style="font-size:24px;font-weight:600;margin:0 0 8px 0;">NeighborLink</h2>
+        <p style="font-size:14px;opacity:0.9;margin:0;">Connecting communities...</p>
+      </div>
+      <!-- Keyframe animation for spinner -->
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

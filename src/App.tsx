@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
+import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 import { AuthProvider } from "@/hooks/useAuth";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
@@ -99,6 +101,27 @@ const TutorialWrapper = () => {
 
 const App = () => {
   console.log("App component rendering, React:", React);
+  
+  // Hide native splash screen after React is ready
+  React.useEffect(() => {
+    const hideSplash = async () => {
+      // Only on native platforms
+      if (Capacitor.isNativePlatform()) {
+        try {
+          // Wait for React to paint (400ms should be enough)
+          await new Promise(resolve => setTimeout(resolve, 400));
+          await SplashScreen.hide({
+            fadeOutDuration: 300
+          });
+          console.log('Native splash screen hidden');
+        } catch (error) {
+          console.debug('Splash screen already hidden or not available:', error);
+        }
+      }
+    };
+    
+    hideSplash();
+  }, []);
   
   // Add global error handler for security errors
   React.useEffect(() => {
