@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Users, Shield, MessageSquare } from 'lucide-react';
+import onboardingImage1 from '@/assets/onboarding/onboarding-young-woman.png';
+import onboardingImage2 from '@/assets/onboarding/onboarding-mature-woman.png';
+import onboardingImage3 from '@/assets/onboarding/onboarding-young-man.png';
 
 interface OnboardingScreenProps {
   onGetStarted: () => void;
@@ -16,7 +19,7 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
       id: 1,
       title: "Connect with Your Neighbors",
       description: "Build meaningful relationships with people in your community. Share experiences, help each other, and create lasting bonds.",
-      image: "photo-1544027993-37dbfe43562a", // Community gathering
+      image: onboardingImage1,
       icon: Users,
       color: "from-blue-500 to-purple-600"
     },
@@ -24,7 +27,7 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
       id: 2,
       title: "Stay Safe Together",
       description: "Share safety alerts, report incidents, and keep your neighborhood secure. Emergency features help you stay connected when it matters most.",
-      image: "photo-1573497620053-ea5300f94f21", // Safety/security
+      image: onboardingImage2,
       icon: Shield,
       color: "from-green-500 to-teal-600"
     },
@@ -32,7 +35,7 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
       id: 3,
       title: "Share & Discover",
       description: "Find local services, join community events, and discover what's happening around you. Your neighborhood, connected.",
-      image: "photo-1517486808906-6ca8b3f04846", // People sharing/connecting
+      image: onboardingImage3,
       icon: MessageSquare,
       color: "from-orange-500 to-red-600"
     }
@@ -112,7 +115,7 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
           <div className="flex-1 relative">
             <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color} opacity-90`} />
             <img 
-              src={`https://images.unsplash.com/${slides[currentSlide].image}?auto=format&fit=crop&w=800&q=80`}
+              src={slides[currentSlide].image}
               alt={slides[currentSlide].title}
               className="w-full h-full object-cover"
             />
