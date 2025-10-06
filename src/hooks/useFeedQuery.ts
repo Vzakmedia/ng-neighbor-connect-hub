@@ -70,23 +70,92 @@ export function useFeedQuery(filters: FeedFilters) {
 
       const offset = pageParam as number;
 
-      // Call Supabase RPC function
-      const { data, error } = await supabase.rpc('get_feed', {
-        user_id: user.id,
-        user_neighborhood: filters.locationScope === 'neighborhood' ? profile.neighborhood : null,
-        user_city: filters.locationScope === 'city' || filters.locationScope === 'neighborhood' ? profile.city : null,
-        user_state: filters.locationScope === 'state' || filters.locationScope === 'city' || filters.locationScope === 'neighborhood' ? profile.state : null,
-        show_all_posts: filters.locationScope === 'all',
-        post_limit: POSTS_PER_PAGE,
-        post_offset: offset,
-      });
+      // Build query for community posts
+      let query = supabase
+        .from('community_posts')
+        .select(`
+          *,
+          profiles!community_posts_user_id_fkey (
+            full_name,
+            avatar_url,
+            city,
+            state
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + POSTS_PER_PAGE - 1);
+
+      // Apply location filters
+      if (filters.locationScope === 'neighborhood' && profile.neighborhood) {
+        query = query.eq('target_neighborhood', profile.neighborhood);
+      } else if (filters.locationScope === 'city' && profile.city) {
+        query = query.eq('target_city', profile.city);
+      } else if (filters.locationScope === 'state' && profile.state) {
+        query = query.eq('target_state', profile.state);
+      }
+
+      const { data: postsData, error } = await query;
 
       if (error) {
         console.error('Feed fetch error:', error);
         throw error;
       }
 
-      const posts = (data || []) as FeedPost[];
+      // Transform and enrich posts with engagement data
+      const posts: FeedPost[] = await Promise.all(
+        (postsData || []).map(async (post: any) => {
+          // Fetch engagement counts in parallel
+          const [likeData, saveData] = await Promise.all([
+            supabase
+              .from('post_likes')
+              .select('id', { count: 'exact', head: true })
+              .eq('post_id', post.id),
+            supabase
+              .from('saved_posts')
+              .select('id', { count: 'exact', head: true })
+              .eq('post_id', post.id),
+          ]);
+
+          const [userLike, userSave] = await Promise.all([
+            supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', post.id)
+              .eq('user_id', user.id)
+              .maybeSingle(),
+            supabase
+              .from('saved_posts')
+              .select('id')
+              .eq('post_id', post.id)
+              .eq('user_id', user.id)
+              .maybeSingle(),
+          ]);
+
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            content: post.content,
+            title: post.title,
+            image_urls: post.image_urls || [],
+            file_urls: post.file_urls || [],
+            tags: post.tags || [],
+            location: post.location,
+            location_scope: post.location_scope,
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+            author_name: post.profiles?.full_name || 'Unknown User',
+            author_avatar: post.profiles?.avatar_url || null,
+            author_city: post.profiles?.city || null,
+            author_state: post.profiles?.state || null,
+            like_count: likeData.count || 0,
+            comment_count: 0, // Would need separate query
+            save_count: saveData.count || 0,
+            is_liked: !!userLike.data,
+            is_saved: !!userSave.data,
+            rsvp_enabled: post.rsvp_enabled || false,
+          };
+        })
+      );
 
       // Apply client-side filters
       let filteredPosts = posts;
@@ -133,8 +202,8 @@ export function useFeedQuery(filters: FeedFilters) {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
     enabled: !!user && !!profile,
-    staleTime: 30 * 1000, // 30 seconds - same as global but explicit
-    gcTime: 10 * 60 * 1000, // 10 minutes for feed cache
+    staleTime: 30 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
