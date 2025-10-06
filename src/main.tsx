@@ -1,9 +1,25 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
+
+// Configure React Query with optimized defaults for feed performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches
+      staleTime: 30 * 1000, // 30s cache for instant back-navigation
+      retry: 1, // Reduce wait time on errors
+      gcTime: 5 * 60 * 1000, // 5 min garbage collection
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+})
 
 // Capacitor type definitions
 declare global {
@@ -109,9 +125,11 @@ const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <StrictMode>
-    <IOSErrorBoundary>
-      <App />
-    </IOSErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <IOSErrorBoundary>
+        <App />
+      </IOSErrorBoundary>
+    </QueryClientProvider>
   </StrictMode>
 );
 
