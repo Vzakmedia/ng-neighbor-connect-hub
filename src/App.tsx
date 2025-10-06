@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
@@ -156,9 +155,6 @@ const App = () => {
   return (
     <IOSErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        {/* React Query DevTools - Only visible in development */}
-        <ReactQueryDevtools initialIsOpen={false} />
-        
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

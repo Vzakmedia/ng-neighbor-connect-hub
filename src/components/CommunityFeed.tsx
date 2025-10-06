@@ -3,8 +3,6 @@ import PullToRefresh from "react-simple-pull-to-refresh";
 import { CommunityFeedHeader } from "./CommunityFeedHeader";
 import { CommunityFeedContent } from "./CommunityFeedContent";
 import { NewPostsBanner } from "./NewPostsBanner";
-import { FeedErrorBoundary } from "./FeedErrorBoundary";
-import { FeedTestingPanel } from "./FeedTestingPanel";
 import { useFeedQuery, useLikePost, useSavePost } from "@/hooks/useFeedQuery";
 import { useCommunitySubscriptions } from "@/hooks/useCommunitySubscriptions";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +10,6 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useFeedPerformance, useNetworkMonitoring } from "@/hooks/useFeedPerformance";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
@@ -32,10 +29,6 @@ export const CommunityFeed = () => {
 
   // Debounce search query to prevent excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
-  // Performance monitoring (dev mode)
-  useFeedPerformance();
-  useNetworkMonitoring();
 
   // Use React Query for feed data
   const {
@@ -115,39 +108,34 @@ export const CommunityFeed = () => {
   });
 
   const feedContent = (
-    <FeedErrorBoundary>
-      <div className="max-w-2xl mx-auto px-2 sm:px-4">
-        <NewPostsBanner />
-        
-        <CommunityFeedHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          hasNewContent={false}
-          onRefresh={refetch}
-          refreshing={isFetching && !isFetchingNextPage}
-          unreadCount={unreadCounts.community}
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableTags={availableTags}
-          activeFiltersCount={activeFiltersCount}
+    <div className="max-w-2xl mx-auto px-2 sm:px-4">
+      <NewPostsBanner />
+      
+      <CommunityFeedHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        hasNewContent={false}
+        onRefresh={refetch}
+        refreshing={isFetching && !isFetchingNextPage}
+        unreadCount={unreadCounts.community}
+        filters={filters}
+        onFiltersChange={setFilters}
+        availableTags={availableTags}
+        activeFiltersCount={activeFiltersCount}
+      />
+      
+      <div className="p-2 sm:p-4">
+        <CommunityFeedContent
+          events={events}
+          loading={isLoading}
+          onLike={handleLike}
+          onSave={handleSave}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
         />
-        
-        <div className="p-2 sm:p-4">
-          <CommunityFeedContent
-            events={events}
-            loading={isLoading}
-            onLike={handleLike}
-            onSave={handleSave}
-            fetchNextPage={fetchNextPage}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-          />
-        </div>
       </div>
-
-      {/* Testing Panel - Dev Mode Only */}
-      <FeedTestingPanel />
-    </FeedErrorBoundary>
+    </div>
   );
 
   // Wrap with pull-to-refresh on mobile

@@ -85,41 +85,21 @@ export function useFeedQuery(filters: FeedFilters) {
         .order('created_at', { ascending: false })
         .range(offset, offset + POSTS_PER_PAGE - 1);
 
-      // Apply location filters with fallback logic
-      let effectiveScope = filters.locationScope;
-      
-      // Fallback to broader scopes if profile data is missing
-      if (effectiveScope === 'neighborhood' && !profile.neighborhood) {
-        console.log('Neighborhood not set, falling back to city');
-        effectiveScope = 'city';
-      }
-      if (effectiveScope === 'city' && !profile.city) {
-        console.log('City not set, falling back to state');
-        effectiveScope = 'state';
-      }
-      if (effectiveScope === 'state' && !profile.state) {
-        console.log('State not set, showing all posts');
-        effectiveScope = 'all';
-      }
-
-      // Apply filters based on effective scope
-      if (effectiveScope === 'neighborhood') {
-        query = query
-          .eq('target_neighborhood', profile.neighborhood)
-          .eq('target_city', profile.city)
-          .eq('target_state', profile.state);
-        console.log('Filtering by neighborhood:', profile.neighborhood);
-      } else if (effectiveScope === 'city') {
-        query = query
-          .eq('target_city', profile.city)
-          .eq('target_state', profile.state);
-        console.log('Filtering by city:', profile.city);
-      } else if (effectiveScope === 'state') {
-        query = query.eq('target_state', profile.state);
-        console.log('Filtering by state:', profile.state);
-      } else {
-        // 'all' scope - no location filter
-        console.log('Showing all posts (no location filter)');
+      // Apply location filters - CRITICAL: Use OR logic, not AND
+      // Posts with location_scope = 'all' should ALWAYS appear
+      if (filters.locationScope !== 'all') {
+        let locationFilter = `location_scope.eq.all`;
+        
+        if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
+          locationFilter += `,and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state})`;
+        } else if (filters.locationScope === 'city' && profile.city && profile.state) {
+          locationFilter += `,and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`;
+        } else if (filters.locationScope === 'state' && profile.state) {
+          locationFilter += `,and(location_scope.eq.state,target_state.eq.${profile.state})`;
+        }
+        
+        // Use .or() to match posts with 'all' scope OR matching location
+        query = query.or(locationFilter);
       }
 
       const { data: postsData, error } = await query;

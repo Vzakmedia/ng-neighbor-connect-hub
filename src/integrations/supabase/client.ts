@@ -69,22 +69,54 @@ const createSupabaseClient = () => {
 
 export const supabase = createSupabaseClient();
 
-// Add visibility change listener to refresh session when app comes to foreground
-// This ensures tokens are fresh after app has been in background
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible') {
-      console.log('App became visible, refreshing session...');
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Failed to refresh session:', error);
-        } else if (session) {
+// Aggressive session refresh and validation
+const validateAndRefreshSession = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Session validation error:', error);
+      return;
+    }
+    
+    if (session) {
+      // Check if token is about to expire (within 5 minutes)
+      const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+      const now = Date.now();
+      const fiveMinutes = 5 * 60 * 1000;
+      
+      if (expiresAt - now < fiveMinutes) {
+        console.log('Token expiring soon, refreshing...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('Session refresh failed:', refreshError);
+        } else {
           console.log('Session refreshed successfully');
         }
-      } catch (error) {
-        console.error('Error refreshing session on visibility change:', error);
       }
+    }
+  } catch (error) {
+    console.error('Error in validateAndRefreshSession:', error);
+  }
+};
+
+// Add visibility change listener to refresh session when app comes to foreground
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      console.log('App became visible, validating session');
+      validateAndRefreshSession();
+    }
+  });
+
+  // Validate session on startup
+  validateAndRefreshSession();
+
+  // Monitor localStorage for session changes (multi-tab support)
+  window.addEventListener('storage', (event) => {
+    if (event.key?.startsWith('sb-') && event.key?.includes('auth-token')) {
+      console.log('Auth storage changed, revalidating session');
+      validateAndRefreshSession();
     }
   });
 }
