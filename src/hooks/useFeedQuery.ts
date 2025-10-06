@@ -37,6 +37,7 @@ interface FeedPost {
   save_count: number;
   is_liked: boolean;
   is_saved: boolean;
+  optimistic?: boolean; // Flag for optimistic updates
   rsvp_enabled: boolean;
 }
 
@@ -132,6 +133,8 @@ export function useFeedQuery(filters: FeedFilters) {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
     enabled: !!user && !!profile,
+    staleTime: 30 * 1000, // 30 seconds - same as global but explicit
+    gcTime: 10 * 60 * 1000, // 10 minutes for feed cache
   });
 }
 

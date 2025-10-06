@@ -44,21 +44,21 @@ interface CommunityFeedContentProps {
 }
 
 const LoadingSkeleton = () => (
-  <div className="space-y-4">
+  <div className="space-y-4 animate-fade-in">
     {[1, 2, 3].map((i) => (
-      <div key={i} className="bg-card rounded-lg p-4 space-y-3">
+      <div key={i} className="bg-card rounded-lg p-4 space-y-3 border border-border/50">
         <div className="flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-full" />
+          <Skeleton className="w-10 h-10 rounded-full bg-muted" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-4 w-32 bg-muted" />
+            <Skeleton className="h-3 w-24 bg-muted" />
           </div>
         </div>
-        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full bg-muted" />
         <div className="flex gap-4">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-20 bg-muted" />
+          <Skeleton className="h-8 w-20 bg-muted" />
+          <Skeleton className="h-8 w-20 bg-muted" />
         </div>
       </div>
     ))}
@@ -150,33 +150,38 @@ export const CommunityFeedContent = ({
         next={() => fetchNextPage?.()}
         hasMore={hasNextPage || false}
         loader={
-          <div className="py-4">
+          <div className="py-4 animate-fade-in">
             <LoadingSkeleton />
           </div>
         }
         scrollThreshold={0.8}
         endMessage={
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            {events.length > 0 ? "You've reached the end" : ""}
+          <div className="text-center py-8 text-muted-foreground text-sm animate-fade-in">
+            {events.length > 0 ? "✨ You've caught up with your community" : ""}
           </div>
         }
       >
         <div className="space-y-4 sm:space-y-6 pb-6">
-          {events.map((event) => (
-            <CommunityPostCard
+          {events.map((event, index) => (
+            <div
               key={event.id}
-              event={event}
-              onLike={onLike}
-              onSave={onSave}
-              onShare={handleShare}
-              onRSVP={handleRSVP}
-              onViewEvent={handleViewEvent}
-              onAvatarClick={handleAvatarClick}
-              onImageClick={handleImageClick}
-              onPostClick={handlePostClick}
-              showComments={visibleComments.has(event.id)}
-              onToggleComments={() => toggleComments(event.id)}
-            />
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <CommunityPostCard
+                event={event}
+                onLike={onLike}
+                onSave={onSave}
+                onShare={handleShare}
+                onRSVP={handleRSVP}
+                onViewEvent={handleViewEvent}
+                onAvatarClick={handleAvatarClick}
+                onImageClick={handleImageClick}
+                onPostClick={handlePostClick}
+                showComments={visibleComments.has(event.id)}
+                onToggleComments={() => toggleComments(event.id)}
+              />
+            </div>
           ))}
         </div>
       </InfiniteScroll>
