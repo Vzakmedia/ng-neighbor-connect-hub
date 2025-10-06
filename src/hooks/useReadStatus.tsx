@@ -138,7 +138,7 @@ export const useReadStatus = () => {
     try {
       const { error } = await supabase.rpc('mark_community_post_as_read', { target_post_id: postId });
       if (error) throw error;
-      loadCommunityUnreadCount(); // Refresh count
+      // Don't refresh count here - let the caller handle batched refreshes
     } catch (error) {
       console.error('Error marking community post as read:', error);
     }

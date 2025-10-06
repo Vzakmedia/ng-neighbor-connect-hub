@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import PullToRefresh from "react-simple-pull-to-refresh";
 import { CommunityFeedHeader } from "./CommunityFeedHeader";
 import { CommunityFeedContent } from "./CommunityFeedContent";
@@ -16,9 +16,11 @@ export const CommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
-  const { markCommunityPostAsRead, refreshUnreadCounts } = useReadStatus();
+  const { markCommunityPostAsRead, refreshUnreadCounts, markAllCommunityPostsAsRead } = useReadStatus();
   const isMobile = useIsMobile();
   const [markedPostIds, setMarkedPostIds] = useState<Set<string>>(new Set());
+  const pendingMarksRef = useRef<Set<string>>(new Set());
+  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -71,29 +73,39 @@ export const CommunityFeed = () => {
     [data]
   );
 
-  // Mark posts as read when they come into view
-  useEffect(() => {
-    if (events.length > 0) {
-      // Mark the first 5 visible posts as read (only once per post)
-      const visiblePosts = events.slice(0, 5);
-      const newPostsToMark = visiblePosts.filter(post => !markedPostIds.has(post.id));
-      
-      if (newPostsToMark.length > 0) {
-        Promise.all(
-          newPostsToMark.map(post => markCommunityPostAsRead(post.id))
-        ).then(() => {
-          // Update marked posts set
-          setMarkedPostIds(prev => {
-            const updated = new Set(prev);
-            newPostsToMark.forEach(post => updated.add(post.id));
-            return updated;
-          });
-          // Refresh unread counts after marking posts as read
-          refreshUnreadCounts();
-        });
-      }
+  // Debounced function to refresh unread counts
+  const debouncedRefreshCounts = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
     }
-  }, [events, markCommunityPostAsRead, markedPostIds, refreshUnreadCounts]);
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshUnreadCounts();
+    }, 500); // Debounce for 500ms
+  }, [refreshUnreadCounts]);
+
+  // Mark a post as read when it comes into view
+  const handlePostVisible = useCallback((postId: string) => {
+    if (markedPostIds.has(postId) || pendingMarksRef.current.has(postId)) {
+      return; // Already marked or pending
+    }
+
+    pendingMarksRef.current.add(postId);
+    
+    markCommunityPostAsRead(postId).then(() => {
+      setMarkedPostIds(prev => new Set(prev).add(postId));
+      pendingMarksRef.current.delete(postId);
+      debouncedRefreshCounts();
+    });
+  }, [markedPostIds, markCommunityPostAsRead, debouncedRefreshCounts]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Extract available tags
   const availableTags = useMemo(() => {
@@ -161,6 +173,7 @@ export const CommunityFeed = () => {
         onFiltersChange={setFilters}
         availableTags={availableTags}
         activeFiltersCount={activeFiltersCount}
+        onMarkAllRead={markAllCommunityPostsAsRead}
       />
       
       <div className="p-2 sm:p-4">
@@ -172,6 +185,7 @@ export const CommunityFeed = () => {
           fetchNextPage={fetchNextPage}
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
+          onPostVisible={handlePostVisible}
         />
       </div>
     </div>
