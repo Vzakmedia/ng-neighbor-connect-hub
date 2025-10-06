@@ -16,7 +16,7 @@ export const LoadingSpinner = ({ className, size = "md", text }: LoadingSpinnerP
 
   return (
     <div className={cn("flex items-center justify-center gap-2", className)}>
-      <Loader2 className={cn("animate-spin", sizeClasses[size])} />
+      <Loader2 className={cn("animate-spin text-[hsl(162,85%,30%)]", sizeClasses[size])} />
       {text && <span className="text-sm text-muted-foreground">{text}</span>}
     </div>
   );
