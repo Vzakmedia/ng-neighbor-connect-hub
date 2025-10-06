@@ -68,3 +68,23 @@ const createSupabaseClient = () => {
 };
 
 export const supabase = createSupabaseClient();
+
+// Add visibility change listener to refresh session when app comes to foreground
+// This ensures tokens are fresh after app has been in background
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      console.log('App became visible, refreshing session...');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Failed to refresh session:', error);
+        } else if (session) {
+          console.log('Session refreshed successfully');
+        }
+      } catch (error) {
+        console.error('Error refreshing session on visibility change:', error);
+      }
+    }
+  });
+}

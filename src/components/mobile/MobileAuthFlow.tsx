@@ -10,8 +10,12 @@ import IOSSafeLanding from '@/components/common/IOSSafeLanding';
 
 type FlowStep = 'splash' | 'onboarding' | 'auth';
 
-const MobileAuthFlow = () => {
-  const [currentStep, setCurrentStep] = useState<FlowStep>('splash');
+interface MobileAuthFlowProps {
+  skipSplash?: boolean; // Used by NativeAppWrapper to skip splash (already shown)
+}
+
+const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
+  const [currentStep, setCurrentStep] = useState<FlowStep>(skipSplash ? 'onboarding' : 'splash');
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [useIOSSafeLanding, setUseIOSSafeLanding] = useState(false);
   const { user, loading } = useAuth();
@@ -43,11 +47,18 @@ const MobileAuthFlow = () => {
   }, []);
 
   useEffect(() => {
-    // Redirect authenticated users to main app
+    // Redirect authenticated users to dashboard
     if (!loading && user) {
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    // If skipSplash is true and we're on onboarding, check if we should skip to auth
+    if (skipSplash && currentStep === 'onboarding' && hasSeenOnboarding) {
+      setCurrentStep('auth');
+    }
+  }, [skipSplash, currentStep, hasSeenOnboarding]);
 
   const handleSplashComplete = () => {
     if (hasSeenOnboarding) {
