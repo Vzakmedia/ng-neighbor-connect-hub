@@ -408,6 +408,8 @@ export type Database = {
           content: string | null
           id: string
           is_read: boolean | null
+          notification_category: string | null
+          notification_metadata: Json | null
           notification_type: string
           panic_alert_id: string | null
           read_at: string | null
@@ -422,6 +424,8 @@ export type Database = {
           content?: string | null
           id?: string
           is_read?: boolean | null
+          notification_category?: string | null
+          notification_metadata?: Json | null
           notification_type: string
           panic_alert_id?: string | null
           read_at?: string | null
@@ -436,6 +440,8 @@ export type Database = {
           content?: string | null
           id?: string
           is_read?: boolean | null
+          notification_category?: string | null
+          notification_metadata?: Json | null
           notification_type?: string
           panic_alert_id?: string | null
           read_at?: string | null

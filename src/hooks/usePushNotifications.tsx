@@ -1,3 +1,17 @@
+/**
+ * @deprecated This hook is deprecated and will be removed in a future version.
+ * Please use the new centralized notification system instead:
+ * - Store: import { useNotificationStore } from '@/store/notificationStore'
+ * - Realtime: import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
+ * 
+ * The new system provides:
+ * - Better performance with Zustand state management
+ * - Persistent notifications across page refreshes
+ * - Server synchronization with Supabase
+ * - Deduplication to prevent duplicate notifications
+ * - Cross-tab sync via localStorage
+ */
+
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
