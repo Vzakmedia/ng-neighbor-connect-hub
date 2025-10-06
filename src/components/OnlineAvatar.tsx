@@ -36,11 +36,6 @@ export const OnlineAvatar: React.FC<OnlineAvatarProps> = ({
 }) => {
   const { isUserOnline } = useUserPresence();
   const isOnline = userId && showOnlineStatus ? isUserOnline(userId) : false;
-  
-  // Debug logging - remove in production
-  if (userId && showOnlineStatus) {
-    console.log(`OnlineAvatar for user ${userId}: isOnline = ${isOnline}`);
-  }
 
   return (
     <div className="relative inline-block">
