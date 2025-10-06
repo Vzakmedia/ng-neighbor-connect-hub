@@ -41,6 +41,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import LocationPickerDialog from './LocationPickerDialog';
+import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -62,6 +63,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { pickImages, isNative } = useNativeCamera();
 
   const postTypes = [
     { value: 'general', label: 'General Update', icon: Users, color: 'text-muted-foreground' },
@@ -73,10 +75,19 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const getCurrentPostType = () => postTypes.find(type => type.value === postType)!;
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setImages(prev => [...prev, ...newFiles].slice(0, 4)); // Max 4 images
+    }
+  };
+
+  const handleNativeImagePick = async () => {
+    if (!isNative) return;
+    
+    const files = await pickImages(true);
+    if (files.length > 0) {
+      setImages(prev => [...prev, ...files].slice(0, 4)); // Max 4 images
     }
   };
 
@@ -406,17 +417,24 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               <Label>Images (Optional)</Label>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" className="relative">
-                    <ImagePlus className="h-4 w-4 mr-2" />
-                    Add Images
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </Button>
+                  {isNative ? (
+                    <Button type="button" variant="outline" onClick={handleNativeImagePick}>
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      Add Images
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="outline" className="relative">
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      Add Images
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </Button>
+                  )}
                   <span className="text-sm text-muted-foreground">
                     Up to 4 images
                   </span>

@@ -11,5 +11,13 @@
   },
   "ios": {
     "contentInset": "automatic"
+  },
+  "plugins": {
+    "Geolocation": {
+      "permissions": ["location"]
+    },
+    "Camera": {
+      "permissions": ["camera", "photos"]
+    }
   }
 }

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Camera, X } from 'lucide-react';
+import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 
 interface CreateMarketplaceItemDialogProps {
   onItemCreated: () => void;
@@ -20,6 +21,7 @@ interface CreateMarketplaceItemDialogProps {
 const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketplaceItemDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { pickImages, isNative } = useNativeCamera();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -43,8 +45,36 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
     'new', 'like_new', 'good', 'fair', 'poor'
   ];
 
+  const handleNativeImagePick = async () => {
+    if (!user || !isNative) return;
+
+    setUploadingImages(true);
+    try {
+      const files = await pickImages(true);
+      if (files.length === 0) {
+        setUploadingImages(false);
+        return;
+      }
+
+      await uploadFilesToStorage(files);
+    } catch (error) {
+      console.error('Error picking images:', error);
+      toast({
+        title: "Error",
+        description: "Failed to select images",
+        variant: "destructive",
+      });
+      setUploadingImages(false);
+    }
+  };
+
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || !user) return;
+    await uploadFilesToStorage(Array.from(files));
+  };
+
+  const uploadFilesToStorage = async (files: File[]) => {
+    if (!user) return;
 
     setUploadingImages(true);
     try {
@@ -285,7 +315,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById('gallery-upload')?.click()}
+                  onClick={isNative ? handleNativeImagePick : () => document.getElementById('gallery-upload')?.click()}
                   disabled={uploadingImages}
                   className="flex items-center gap-2"
                 >

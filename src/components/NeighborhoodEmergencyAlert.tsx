@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AlertTriangle, MapPin, X, Bell, Users, Navigation } from 'lucide-react';
 import { playNotification } from '@/utils/audioUtils';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
+import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 
 interface NeighborhoodEmergencyAlertProps {
   position?: 'top-center' | 'bottom-center';
@@ -16,6 +17,7 @@ interface NeighborhoodEmergencyAlertProps {
 const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEmergencyAlertProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { getCurrentPosition } = useNativePermissions();
   const { } = useNotifications(); // Emergency alerts now handled by unified system
   const [alerts, setAlerts] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -48,21 +50,16 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
   }, [userLocation]);
 
-  const getUserLocation = () => {
-    if (!navigator.geolocation) return;
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
+  const getUserLocation = async () => {
+    try {
+      const position = await getCurrentPosition();
+      setUserLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
   };
 
   const loadNearbyAlerts = async () => {

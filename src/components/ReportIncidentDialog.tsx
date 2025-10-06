@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { MapPin, Upload, AlertTriangle, Loader2 } from 'lucide-react';
+import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 
 interface ReportIncidentDialogProps {
   trigger: React.ReactNode;
@@ -38,6 +39,7 @@ const severityLevels = [
 const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { getCurrentPosition } = useNativePermissions();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{lat: number; lng: number} | null>(null);
@@ -53,52 +55,41 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
     longitude: null as number | null
   });
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = async () => {
     setLocationLoading(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ lat: latitude, lng: longitude });
-          setFormData(prev => ({
-            ...prev,
-            latitude,
-            longitude
-          }));
-          
-          // Reverse geocode to get address
-          if (window.google && window.google.maps) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode(
-              { location: { lat: latitude, lng: longitude } },
-              (results, status) => {
-                if (status === 'OK' && results?.[0]) {
-                  setFormData(prev => ({
-                    ...prev,
-                    address: results[0].formatted_address
-                  }));
-                }
-                setLocationLoading(false);
-              }
-            );
-          } else {
+    try {
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      setCurrentLocation({ lat: latitude, lng: longitude });
+      setFormData(prev => ({
+        ...prev,
+        latitude,
+        longitude
+      }));
+      
+      // Reverse geocode to get address
+      if (window.google && window.google.maps) {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat: latitude, lng: longitude } },
+          (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+              setFormData(prev => ({
+                ...prev,
+                address: results[0].formatted_address
+              }));
+            }
             setLocationLoading(false);
           }
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          toast({
-            title: "Location Error",
-            description: "Unable to get your current location. Please enter the address manually.",
-            variant: "destructive"
-          });
-          setLocationLoading(false);
-        }
-      );
-    } else {
+        );
+      } else {
+        setLocationLoading(false);
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
       toast({
-        title: "Location Not Supported",
-        description: "Geolocation is not supported by this browser.",
+        title: "Location Error",
+        description: "Unable to get your current location. Please enable location access or enter the address manually.",
         variant: "destructive"
       });
       setLocationLoading(false);

@@ -12,6 +12,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Navigation } from 'lucide-react';
+import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
+import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
 
 interface LocationPickerDialogProps {
   open: boolean;
@@ -23,11 +25,13 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const { toast } = useToast();
+  const { getCurrentPosition } = useNativePermissions();
   const initializeMap = async () => {
     if (!mapRef.current) {
       console.log('Map container not available');
@@ -69,29 +73,8 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       console.log('Getting user location...');
 
-      // Get user's current position with high accuracy
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation is not supported by this browser'));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log('Got user location:', pos.coords.latitude, pos.coords.longitude);
-            resolve(pos);
-          },
-          (error) => {
-            console.error('Geolocation error:', error);
-            reject(error);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-          }
-        );
-      });
+      // Get user's current position with high accuracy using native permission system
+      const position = await getCurrentPosition();
 
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
@@ -191,6 +174,12 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
     } catch (error) {
       console.error('Error initializing map:', error);
+      
+      // Check if it's a permission error
+      if (error instanceof Error && error.message.includes('permission')) {
+        setPermissionDenied(true);
+      }
+      
       toast({
         title: "Map Loading Error",
         description: "Unable to load the map. Please try manual entry instead.",
@@ -332,6 +321,11 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         </DialogHeader>
 
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
+          {/* Permission Denied Alert */}
+          {permissionDenied && (
+            <PermissionDeniedAlert permissionType="location" feature="location picker" />
+          )}
+          
           {/* Map Container */}
           <div className="flex-1 relative border rounded-lg overflow-hidden min-h-[400px]">
             {isLoading && (
