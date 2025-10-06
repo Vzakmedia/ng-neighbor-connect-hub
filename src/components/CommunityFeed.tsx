@@ -50,9 +50,21 @@ export const CommunityFeed = () => {
   const likePost = useLikePost();
   const savePost = useSavePost();
 
-  // Flatten paginated data
+  // Flatten paginated data and transform to match component expectations
   const events = useMemo(() => 
-    data?.pages.flatMap(page => page.items) ?? [],
+    data?.pages.flatMap(page => page.items.map(item => ({
+      ...item,
+      author: {
+        user_id: item.user_id,
+        full_name: item.author_name,
+        avatar_url: item.author_avatar,
+      },
+      likes_count: item.like_count,
+      comments_count: item.comment_count,
+      saves_count: item.save_count,
+      isLiked: item.is_liked,
+      isSaved: item.is_saved,
+    }))) ?? [],
     [data]
   );
 
