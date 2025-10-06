@@ -51,7 +51,10 @@ const MyBookingsPanel = () => {
         .eq('client_id', user!.id)
         .order('booking_date', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Bookings fetch error:', error);
+        throw error;
+      }
       
       // Transform the data to match our interface
       const transformedBookings = (data || []).map(booking => ({
@@ -63,13 +66,62 @@ const MyBookingsPanel = () => {
         service: Array.isArray(booking.services) ? booking.services[0] : booking.services,
         provider: Array.isArray(booking.profiles) ? booking.profiles[0] : booking.profiles,
       }));
+
+      // Filter out bookings with missing relationships
+      const validBookings = transformedBookings.filter(booking => {
+        if (!booking.service) {
+          console.warn('Booking missing service data:', booking.id);
+          return false;
+        }
+        if (!booking.provider) {
+          console.warn('Booking missing provider profile:', booking.id);
+          return false;
+        }
+        return true;
+      });
       
-      setBookings(transformedBookings as Booking[]);
-    } catch (error) {
+      setBookings(validBookings as Booking[]);
+    } catch (error: any) {
       console.error('Error fetching bookings:', error);
+      
+      let errorMessage = 'Failed to load your bookings';
+      if (error.message?.includes('foreign key') || error.code === 'PGRST200') {
+        errorMessage = 'Some booking information is incomplete. Showing available bookings.';
+        // Try to fetch without joins as fallback
+        try {
+          const { data: basicData } = await supabase
+            .from('service_bookings')
+            .select('*')
+            .eq('client_id', user!.id)
+            .order('booking_date', { ascending: true });
+          
+          if (basicData && basicData.length > 0) {
+            // Set bookings with partial data
+            const partialBookings = basicData.map(booking => ({
+              id: booking.id,
+              booking_date: booking.booking_date,
+              status: booking.status,
+              message: booking.message,
+              created_at: booking.created_at,
+              service: { id: '', title: 'Service', description: '', location: null },
+              provider: { full_name: 'Provider', avatar_url: null, phone: null },
+            }));
+            setBookings(partialBookings as any);
+            toast({
+              title: "Partial Data Loaded",
+              description: "Some booking details may be missing",
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch also failed:', fallbackError);
+        }
+      }
+
       toast({
         title: "Error",
-        description: "Failed to load your bookings",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

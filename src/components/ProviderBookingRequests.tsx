@@ -55,7 +55,10 @@ const ProviderBookingRequests = () => {
         .eq('provider_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Booking requests fetch error:', error);
+        throw error;
+      }
       
       // Transform the data to match our interface
       const transformedRequests = (data || []).map(request => ({
@@ -68,13 +71,63 @@ const ProviderBookingRequests = () => {
         service: Array.isArray(request.services) ? request.services[0] : request.services,
         client: Array.isArray(request.profiles) ? request.profiles[0] : request.profiles,
       }));
+
+      // Filter out requests with missing relationships
+      const validRequests = transformedRequests.filter(request => {
+        if (!request.service) {
+          console.warn('Booking request missing service data:', request.id);
+          return false;
+        }
+        if (!request.client) {
+          console.warn('Booking request missing client profile:', request.id);
+          return false;
+        }
+        return true;
+      });
       
-      setBookingRequests(transformedRequests as BookingRequest[]);
-    } catch (error) {
+      setBookingRequests(validRequests as BookingRequest[]);
+    } catch (error: any) {
       console.error('Error fetching booking requests:', error);
+      
+      let errorMessage = 'Failed to load booking requests';
+      if (error.message?.includes('foreign key') || error.code === 'PGRST200') {
+        errorMessage = 'Some booking request information is incomplete. Showing available requests.';
+        // Try to fetch without joins as fallback
+        try {
+          const { data: basicData } = await supabase
+            .from('service_bookings')
+            .select('*')
+            .eq('provider_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (basicData && basicData.length > 0) {
+            // Set requests with partial data
+            const partialRequests = basicData.map(request => ({
+              id: request.id,
+              booking_date: request.booking_date,
+              status: request.status,
+              message: request.message,
+              created_at: request.created_at,
+              client_id: request.client_id,
+              service: { id: '', title: 'Service', description: '' },
+              client: { full_name: 'Client', avatar_url: null, phone: null },
+            }));
+            setBookingRequests(partialRequests as any);
+            toast({
+              title: "Partial Data Loaded",
+              description: "Some booking request details may be missing",
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch also failed:', fallbackError);
+        }
+      }
+
       toast({
         title: "Error",
-        description: "Failed to load booking requests",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
