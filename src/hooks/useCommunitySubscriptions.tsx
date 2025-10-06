@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { postCache } from "@/services/postCache";
+import { useNewPostsStore } from '@/components/NewPostsBanner';
 
 interface Profile {
   neighborhood?: string;
@@ -30,6 +31,8 @@ export const useCommunitySubscriptions = ({
   onUpdatePostLikes,
   onUpdatePostComments
 }: UseCommunitySubscriptionsProps) => {
+  const queryClient = useQueryClient();
+  const { setHasNewPosts } = useNewPostsStore();
   useEffect(() => {
     if (!user || !profile) return;
 
@@ -60,29 +63,10 @@ export const useCommunitySubscriptions = ({
               console.log('Community posts change:', payload);
               
               if (payload.eventType === 'INSERT') {
-                // Check if the new post matches user's current location filter
-                const newPost = payload.new as any;
-                if (newPost?.user_id) {
-                  try {
-                    const { data: matches } = await supabase.rpc('post_matches_user_filter', {
-                      post_user_id: newPost.user_id,
-                      target_user_id: user.id,
-                      filter_level: currentLocationFilter
-                    });
-                    
-                    if (matches) {
-                      onNewContent();
-                      onUpdateUnreadCounts(prev => ({
-                        ...prev,
-                        community: prev.community + 1
-                      }));
-                    }
-                  } catch (error) {
-                    console.error('Error checking post location match:', error);
-                    // Fallback to showing notification anyway
-                    onNewContent();
-                  }
-                }
+                // Show banner and invalidate React Query cache
+                setHasNewPosts(true);
+                queryClient.invalidateQueries({ queryKey: ['feed'] });
+                onNewContent();
               }
               
               if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {

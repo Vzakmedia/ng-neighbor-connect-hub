@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InfiniteScroll from "react-infinite-scroll-component";
 import { CommunityPostCard } from "./CommunityPostCard";
 import ShareDialog from "./ShareDialog";
 import RSVPDialog from "./RSVPDialog";
@@ -7,6 +8,7 @@ import { UserProfileDialog } from "./UserProfileDialog";
 import { LoadingSpinner } from "./common/LoadingSpinner";
 import { ImageGalleryDialog } from "./ImageGalleryDialog";
 import { PostFullScreenDialog } from "./PostFullScreenDialog";
+import { Skeleton } from "./ui/skeleton";
 
 interface Event {
   id: string;
@@ -36,13 +38,41 @@ interface CommunityFeedContentProps {
   loading: boolean;
   onLike: (eventId: string) => void;
   onSave: (eventId: string) => void;
+  fetchNextPage?: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
 }
 
-export const CommunityFeedContent = ({
-  events,
-  loading,
-  onLike,
-  onSave
+const LoadingSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="bg-card rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-20 w-full" />
+        <div className="flex gap-4">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+export const CommunityFeedContent = ({ 
+  events, 
+  loading, 
+  onLike, 
+  onSave,
+  fetchNextPage,
+  hasNextPage = false,
+  isFetchingNextPage = false,
 }: CommunityFeedContentProps) => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -99,11 +129,7 @@ export const CommunityFeedContent = ({
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (events.length === 0) {
@@ -119,24 +145,41 @@ export const CommunityFeedContent = ({
 
   return (
     <>
-      <div className="space-y-4 sm:space-y-6 pb-6">{/* Mobile responsive spacing */}
-        {events.map((event) => (
-          <CommunityPostCard
-            key={event.id}
-            event={event}
-            onLike={onLike}
-            onSave={onSave}
-            onShare={handleShare}
-            onRSVP={handleRSVP}
-            onViewEvent={handleViewEvent}
-            onAvatarClick={handleAvatarClick}
-            onImageClick={handleImageClick}
-            onPostClick={handlePostClick}
-            showComments={visibleComments.has(event.id)}
-            onToggleComments={() => toggleComments(event.id)}
-          />
-        ))}
-      </div>
+      <InfiniteScroll
+        dataLength={events.length}
+        next={() => fetchNextPage?.()}
+        hasMore={hasNextPage || false}
+        loader={
+          <div className="py-4">
+            <LoadingSkeleton />
+          </div>
+        }
+        scrollThreshold={0.8}
+        endMessage={
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            {events.length > 0 ? "You've reached the end" : ""}
+          </div>
+        }
+      >
+        <div className="space-y-4 sm:space-y-6 pb-6">
+          {events.map((event) => (
+            <CommunityPostCard
+              key={event.id}
+              event={event}
+              onLike={onLike}
+              onSave={onSave}
+              onShare={handleShare}
+              onRSVP={handleRSVP}
+              onViewEvent={handleViewEvent}
+              onAvatarClick={handleAvatarClick}
+              onImageClick={handleImageClick}
+              onPostClick={handlePostClick}
+              showComments={visibleComments.has(event.id)}
+              onToggleComments={() => toggleComments(event.id)}
+            />
+          ))}
+        </div>
+      </InfiniteScroll>
 
       {/* Dialogs */}
       <ShareDialog
