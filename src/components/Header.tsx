@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,31 +6,19 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
-import { Bell, Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone, X, Phone, Check, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
-import { supabase } from '@/integrations/supabase/client';
-import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
-import { playNotification } from '@/utils/audioUtils';
-import { useNotifications } from '@/hooks/useSimpleNotifications';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { NotificationBell } from './notifications/NotificationBell';
+import { NotificationPanel } from './notifications/NotificationPanel';
 
 const Header = () => {
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
   const navigate = useNavigate();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
-  const { toast } = useToast();
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-
-  // Notification system is now handled by the unified hook
-
-  // Notification counts are now managed by the unified notification system
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleMessagesClick = () => {
     navigate('/messages');
@@ -39,66 +27,6 @@ const Header = () => {
 
   const handleSignOut = async () => {
     await signOut();
-  };
-
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-
-  const handleContactRequest = async (requestId: string, notificationId: string) => {
-    try {
-      const { data, error } = await supabase.rpc('confirm_emergency_contact_request', {
-        _request_id: requestId,
-        _accept: true
-      });
-
-      if (error) throw error;
-      
-      await markAsRead(notificationId);
-      
-      toast({
-        title: "Contact Request Accepted",
-        description: "You are now listed as an emergency contact.",
-      });
-    } catch (error) {
-      console.error('Error accepting contact request:', error);
-      toast({
-        title: "Error",
-        description: "Failed to accept contact request.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCall = (phoneNumber: string) => {
-    if (phoneNumber) {
-      window.open(`tel:${phoneNumber}`, '_self');
-    }
-  };
-
-  const getNotificationIcon = (type: any) => {
-    switch (type) {
-      case 'emergency':
-      case 'panic_alert':
-        return <AlertTriangle className="h-4 w-4 text-destructive" />;
-      case 'message':
-        return <MessageSquare className="h-4 w-4 text-primary" />;
-      case 'contact_request':
-        return <Shield className="h-4 w-4 text-warning" />;
-      default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getNotificationColor = (type: any, priority: any, isRead: boolean) => {
-    if (isRead) return 'border-muted bg-muted/20';
-    
-    switch (priority) {
-      case 'urgent':
-        return 'border-destructive bg-destructive/10';
-      case 'high':
-        return 'border-warning bg-warning/10';
-      default:
-        return 'border-primary bg-primary/5';
-    }
   };
 
   const isAdmin = user?.email === 'admin@nextdoor.ng' || user?.email === 'vzakfenwa@gmail.com';
@@ -148,138 +76,7 @@ const Header = () => {
               )}
             </Button>
             
-            <div className="relative">
-              <Button variant="ghost" size="icon" className="relative" onClick={() => setIsNotificationOpen(!isNotificationOpen)} data-tutorial="notifications">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-600">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Badge>
-                )}
-              </Button>
-
-              {/* Notification Panel */}
-              {isNotificationOpen && (
-                <Card className="absolute top-12 right-0 w-80 max-h-96 shadow-xl z-50">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Notifications
-                      {unreadNotifications.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {unreadNotifications.length}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-1">
-                      {unreadNotifications.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={markAllAsRead}
-                          className="text-xs h-6 px-2"
-                        >
-                          Mark all read
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsNotificationOpen(false)}
-                        className="h-6 w-6"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    <ScrollArea className="h-80">
-                      {notifications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                          <Bell className="h-8 w-8 mb-2 opacity-50" />
-                          <p className="text-sm">No notifications</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {notifications.map((notification) => (
-                            <div
-                              key={notification.id}
-                              className={`p-3 border-l-4 ${getNotificationColor(notification.type, notification.priority, notification.isRead)} hover:bg-muted/50 transition-colors`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-2 flex-1">
-                                  {getNotificationIcon(notification.type)}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="text-sm font-medium truncate">
-                                        {notification.title}
-                                      </p>
-                                      {notification.priority === 'urgent' && (
-                                        <Badge variant="destructive" className="text-xs">
-                                          URGENT
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                      {notification.body}
-                                    </p>
-                                    {notification.data?.sender_name && (
-                                      <p className="text-xs text-muted-foreground mb-2">
-                                        From: {notification.data.sender_name}
-                                      </p>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">
-                                      {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex items-center gap-1 mt-2">
-                                {notification.type === 'contact_request' && notification.data?.request_id && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleContactRequest(notification.data.request_id, notification.id)}
-                                    className="h-6 px-2 text-xs"
-                                  >
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Accept
-                                  </Button>
-                                )}
-                                
-                                {notification.data?.sender_phone && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCall(notification.data.sender_phone)}
-                                    className="h-6 px-2 text-xs"
-                                  >
-                                    <Phone className="h-3 w-3 mr-1" />
-                                    Call
-                                  </Button>
-                                )}
-                                
-                                {!notification.isRead && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => markAsRead(notification.id)}
-                                    className="h-6 px-2 text-xs ml-auto"
-                                  >
-                                    Mark read
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <NotificationBell onClick={() => setShowNotifications(!showNotifications)} />
             
             {user && (
               <DropdownMenu>
@@ -348,7 +145,6 @@ const Header = () => {
           </div>
           
           <div className="flex items-center space-x-1">
-            
             <ThemeToggle />
             
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick} data-tutorial="messages">
@@ -360,143 +156,12 @@ const Header = () => {
               )}
             </Button>
             
-            <div className="relative">
-              <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={() => setIsNotificationOpen(!isNotificationOpen)} data-tutorial="notifications">
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-red-600">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Badge>
-                )}
-              </Button>
-
-              {/* Notification Panel - Mobile */}
-              {isNotificationOpen && (
-                <Card className="absolute top-10 right-0 w-80 max-h-80 shadow-xl z-50">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Notifications
-                      {unreadNotifications.length > 0 && (
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          {unreadNotifications.length}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-1">
-                      {unreadNotifications.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={markAllAsRead}
-                          className="text-xs h-5 px-1"
-                        >
-                          Mark all
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsNotificationOpen(false)}
-                        className="h-5 w-5"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="p-0">
-                    <ScrollArea className="h-64">
-                      {notifications.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                          <Bell className="h-6 w-6 mb-2 opacity-50" />
-                          <p className="text-xs">No notifications</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {notifications.map((notification) => (
-                            <div
-                              key={notification.id}
-                              className={`p-2 border-l-4 ${getNotificationColor(notification.type, notification.priority, notification.isRead)} hover:bg-muted/50 transition-colors`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-2 flex-1">
-                                  {getNotificationIcon(notification.type)}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <p className="text-xs font-medium truncate">
-                                        {notification.title}
-                                      </p>
-                                      {notification.priority === 'urgent' && (
-                                        <Badge variant="destructive" className="text-xs h-4">
-                                          URGENT
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mb-1">
-                                      {notification.body}
-                                    </p>
-                                    {notification.data?.sender_name && (
-                                      <p className="text-xs text-muted-foreground mb-1">
-                                        From: {notification.data.sender_name}
-                                      </p>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">
-                                      {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex items-center gap-1 mt-1">
-                                {notification.type === 'contact_request' && notification.data?.request_id && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleContactRequest(notification.data.request_id, notification.id)}
-                                    className="h-5 px-2 text-xs"
-                                  >
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Accept
-                                  </Button>
-                                )}
-                                
-                                {notification.data?.sender_phone && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCall(notification.data.sender_phone)}
-                                    className="h-5 px-2 text-xs"
-                                  >
-                                    <Phone className="h-3 w-3 mr-1" />
-                                    Call
-                                  </Button>
-                                )}
-                                
-                                {!notification.isRead && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => markAsRead(notification.id)}
-                                    className="h-5 px-2 text-xs ml-auto"
-                                  >
-                                    Mark read
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <NotificationBell onClick={() => setShowNotifications(!showNotifications)} className="h-8 w-8" />
             
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-7 w-7 rounded-full">
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-tutorial="profile">
                     <OnlineAvatar
                       userId={user?.id}
                       src={profile?.avatar_url}
@@ -506,10 +171,10 @@ const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium text-sm">{getDisplayName()}</p>
-                      <p className="w-[200px] truncate text-xs text-muted-foreground">
+                      <p className="text-sm font-medium">{getDisplayName()}</p>
+                      <p className="w-[180px] truncate text-xs text-muted-foreground">
                         {user?.email}
                       </p>
                     </div>
@@ -518,27 +183,27 @@ const Header = () => {
                   <CreateCommunityAdDialog>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                       <Megaphone className="mr-2 h-4 w-4" />
-                      <span className="text-sm">Create Ad</span>
+                      Create Ad
                     </DropdownMenuItem>
                   </CreateCommunityAdDialog>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <User className="mr-2 h-4 w-4" />
-                    <span className="text-sm">Profile</span>
+                    Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
                     <Settings className="mr-2 h-4 w-4" />
-                    <span className="text-sm">Settings</span>
+                    Settings
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
                       <Shield className="mr-2 h-4 w-4" />
-                      <span className="text-sm">Admin Panel</span>
+                      Admin Panel
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span className="text-sm">Sign Out</span>
+                    Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -548,8 +213,14 @@ const Header = () => {
       </div>
     </header>
     
-    
-  </>
+    {/* Notification Panel - shared for both mobile and desktop */}
+    {showNotifications && (
+      <NotificationPanel 
+        onClose={() => setShowNotifications(false)} 
+        position="top-right"
+      />
+    )}
+    </>
   );
 };
 

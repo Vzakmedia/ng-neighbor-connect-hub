@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useNotificationStore } from '@/store/notificationStore';
 import Landing from '@/pages/Landing';
 
 /**
@@ -20,6 +22,17 @@ const PlatformRoot = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const isNativeApp = Capacitor.isNativePlatform();
+  const syncWithServer = useNotificationStore(state => state.syncWithServer);
+  
+  // Initialize real-time notifications
+  useRealtimeNotifications();
+  
+  // Sync notifications with server when user logs in
+  useEffect(() => {
+    if (user?.id) {
+      syncWithServer(user.id);
+    }
+  }, [user?.id, syncWithServer]);
 
   useEffect(() => {
     if (loading) return;
