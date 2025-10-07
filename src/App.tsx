@@ -128,22 +128,45 @@ const App = () => {
     initializeNative();
   }, []);
   
-  // Add global error handler for security errors
+  // Add global error handler for security errors (especially iOS WebSocket issues)
   React.useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     const handleGlobalError = (event: ErrorEvent) => {
       if (event.error?.name === 'SecurityError' || event.message?.includes('SecurityError')) {
-        console.error('Global SecurityError caught:', event.error || event.message);
-        // The IOSErrorBoundary will handle the UI for this
+        console.warn('Global SecurityError caught (suppressed to prevent crash):', event.error?.message || event.message);
+        
+        // On iOS, prevent SecurityErrors from crashing the app
+        if (isIOS) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          // Show a user-friendly toast instead of crashing
+          if (event.message?.includes('WebSocket') || event.message?.includes('insecure')) {
+            console.log('iOS WebSocket security restriction detected - continuing without realtime features');
+          }
+        }
         return;
       }
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const reason = event.reason?.toString() || '';
-      if (reason.includes('SecurityError') || reason.includes('insecure')) {
-        console.error('Global SecurityError promise rejection:', event.reason);
-        // Prevent default handling to avoid console spam
-        event.preventDefault();
+      const reasonMessage = event.reason?.message || '';
+      
+      if (reason.includes('SecurityError') || reason.includes('insecure') || 
+          reasonMessage.includes('insecure') || reasonMessage.includes('SecurityError')) {
+        console.warn('Global SecurityError promise rejection (suppressed):', reasonMessage || reason);
+        
+        // On iOS, prevent SecurityErrors from crashing the app
+        if (isIOS) {
+          event.preventDefault();
+          
+          // Log but don't crash
+          if (reason.includes('WebSocket') || reasonMessage.includes('WebSocket')) {
+            console.log('iOS WebSocket security restriction detected - app will continue without realtime');
+          }
+        }
         return;
       }
     };

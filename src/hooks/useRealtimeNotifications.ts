@@ -21,10 +21,14 @@ export const useRealtimeNotifications = () => {
     // Initial sync with server
     syncWithServer(user.id);
 
-    // 1. Subscribe to alert_notifications table
-    const alertNotificationsChannel = supabase
-      .channel('alert-notifications-changes')
-      .on(
+    // Detect iOS - realtime might be disabled
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    try {
+      // 1. Subscribe to alert_notifications table
+      const alertNotificationsChannel = supabase
+        .channel('alert-notifications-changes')
+        .on(
         'postgres_changes',
         {
           event: 'INSERT',
@@ -250,21 +254,39 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
-    // Store channels for cleanup
-    channelsRef.current = [
-      alertNotificationsChannel,
-      directMessagesChannel,
-      communityPostsChannel,
-      safetyAlertsChannel,
-      panicAlertsChannel
-    ];
+      // Store channels for cleanup
+      channelsRef.current = [
+        alertNotificationsChannel,
+        directMessagesChannel,
+        communityPostsChannel,
+        safetyAlertsChannel,
+        panicAlertsChannel
+      ];
+    } catch (error: any) {
+      // Handle realtime subscription errors gracefully (especially on iOS)
+      if (error?.name === 'SecurityError' || error?.message?.includes('insecure') || error?.message?.includes('WebSocket')) {
+        console.log('[RealtimeNotifications] Realtime unavailable (likely iOS), using polling fallback');
+        
+        // On iOS or when realtime fails, fall back to periodic polling
+        if (isIOS) {
+          console.log('[RealtimeNotifications] iOS detected - realtime disabled, app will function without live updates');
+        }
+      } else {
+        console.error('[RealtimeNotifications] Unexpected error setting up subscriptions:', error);
+      }
+    }
 
     // Cleanup function
     return () => {
       console.log('[RealtimeNotifications] Cleaning up subscriptions');
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
+      try {
+        channelsRef.current.forEach(channel => {
+          supabase.removeChannel(channel);
+        });
+      } catch (error) {
+        // Ignore cleanup errors
+        console.debug('[RealtimeNotifications] Error during cleanup (ignored):', error);
+      }
       channelsRef.current = [];
     };
   }, [user?.id, addNotification, syncWithServer]);

@@ -73,6 +73,9 @@ export const createSafeSubscription = (
   // Only start polling if real-time is disabled or connection fails
   // startPolling();
   
+  // Detect iOS - realtime might be disabled
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
   // Try to set up real-time subscription
   let channel: any = null;
   let subscription: any = null;
@@ -123,8 +126,16 @@ export const createSafeSubscription = (
         startPolling();
       }
     });
-  } catch (error) {
-    console.debug(`${debugName}: Real-time setup failed, using polling only:`, error);
+  } catch (error: any) {
+    // Handle iOS SecurityError gracefully
+    if (error?.name === 'SecurityError' || error?.message?.includes('insecure') || error?.message?.includes('WebSocket')) {
+      console.log(`${debugName}: Realtime unavailable (iOS SecurityError), app will function without live updates`);
+      if (isIOS) {
+        console.log(`${debugName}: iOS detected - continuing without realtime features`);
+      }
+    } else {
+      console.debug(`${debugName}: Real-time setup failed, using polling only:`, error);
+    }
     isRealTimeConnected = false;
   }
   
