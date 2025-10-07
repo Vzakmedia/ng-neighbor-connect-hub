@@ -12,10 +12,13 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Get safe storage for iOS compatibility (handles private browsing)
 const storage = getSafeStorage();
 
+// Detect iOS device
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 // Enhanced error handling for iOS Safari security restrictions
 const createSupabaseClient = () => {
   try {
-    return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    const clientConfig: any = {
       auth: {
         storage,
         persistSession: true,
@@ -23,15 +26,6 @@ const createSupabaseClient = () => {
         detectSessionInUrl: true, // Enable for iOS email verification deep links
         storageKey: 'neighborlink-auth',
         flowType: 'pkce', // More secure auth flow for iOS
-      },
-      realtime: {
-        // iOS WebSocket compatibility
-        params: {
-          eventsPerSecond: 2, // Reduce events for iOS
-        },
-        heartbeatIntervalMs: 30000, // Longer heartbeat for iOS
-        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000), // Gradual backoff
-        // transport: 'websocket', // Force WebSocket transport - removed due to type issues
       },
       global: {
         headers: {
@@ -50,19 +44,49 @@ const createSupabaseClient = () => {
             if (error.name === 'SecurityError' || error.message?.includes('insecure')) {
               console.warn('iOS Safari security restriction detected, retrying with fallback');
               // Retry with minimal options
-          return fetch(url, {
-            ...options,
-            credentials: 'omit' as RequestCredentials,
-            mode: 'cors' as RequestMode,
-          });
+              return fetch(url, {
+                ...options,
+                credentials: 'omit' as RequestCredentials,
+                mode: 'cors' as RequestMode,
+              });
             }
             throw error;
           });
         },
       },
-    });
+    };
+
+    // Only enable realtime on non-iOS devices or with careful error handling
+    if (!isIOS) {
+      clientConfig.realtime = {
+        params: {
+          eventsPerSecond: 2,
+        },
+        heartbeatIntervalMs: 30000,
+        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
+      };
+    } else {
+      // Disable realtime on iOS to prevent WebSocket SecurityError
+      console.log('iOS detected: Realtime features disabled to prevent security errors');
+    }
+
+    return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, clientConfig);
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
+    // Don't throw on iOS if it's a SecurityError - allow degraded functionality
+    if (isIOS && (error as any)?.name === 'SecurityError') {
+      console.warn('iOS SecurityError caught during client creation, using fallback configuration');
+      return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: {
+          storage,
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'neighborlink-auth',
+          flowType: 'pkce',
+        },
+      });
+    }
     throw new Error('Unable to initialize secure connection. Please try refreshing the page.');
   }
 };

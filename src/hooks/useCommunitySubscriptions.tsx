@@ -41,14 +41,20 @@ export const useCommunitySubscriptions = ({
         try {
           subscription?.unsubscribe?.();
         } catch (error) {
-          console.error('Error unsubscribing:', error);
+          console.debug('Error unsubscribing:', error);
         }
       };
     };
 
     console.log('Setting up real-time subscriptions for community feed');
 
-    const subscriptions = [
+    // Detect iOS - realtime might be disabled
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    let subscriptions: Array<() => void> = [];
+    
+    try {
+      subscriptions = [
       createSafeSubscription(
         supabase
           .channel('community_posts_changes')
@@ -108,13 +114,29 @@ export const useCommunitySubscriptions = ({
                 onUpdatePostComments(postId);
               }
             }
-          )
+        )
           .subscribe()
       )
-    ];
+      ];
+    } catch (error: any) {
+      // Handle realtime subscription errors gracefully (especially on iOS)
+      if (error?.name === 'SecurityError' || error?.message?.includes('insecure') || error?.message?.includes('WebSocket')) {
+        console.log('[CommunitySubscriptions] Realtime unavailable (likely iOS), app will function without live updates');
+        
+        if (isIOS) {
+          console.log('[CommunitySubscriptions] iOS detected - continuing without realtime features');
+        }
+      } else {
+        console.error('[CommunitySubscriptions] Unexpected error setting up subscriptions:', error);
+      }
+    }
 
     return () => {
-      subscriptions.forEach(cleanup => cleanup());
+      try {
+        subscriptions.forEach(cleanup => cleanup());
+      } catch (error) {
+        console.debug('[CommunitySubscriptions] Error during cleanup (ignored):', error);
+      }
     };
-  }, [user, profile, currentLocationFilter, onNewContent, onUpdateUnreadCounts, onRefreshPosts, onUpdatePostLikes, onUpdatePostComments]);
+  }, [user, profile, currentLocationFilter, onNewContent, onUpdateUnreadCounts, onRefreshPosts, onUpdatePostLikes, onUpdatePostComments, queryClient, setHasNewPosts]);
 };
