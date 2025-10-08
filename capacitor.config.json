@@ -2,10 +2,6 @@
   "appId": "app.lovable.1a2a500fc780403294cae7185a964f07",
   "appName": "Neighborlink",
   "webDir": "dist",
-  "server": {
-    "url": "https://1a2a500f-c780-4032-94ca-e7185a964f07.lovableproject.com?forceHideBadge=true",
-    "cleartext": true
-  },
   "android": {
     "allowMixedContent": true
   },
