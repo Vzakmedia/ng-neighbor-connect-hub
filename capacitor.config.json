@@ -2,13 +2,29 @@
   "appId": "app.lovable.1a2a500fc780403294cae7185a964f07",
   "appName": "Neighborlink",
   "webDir": "dist",
+  "bundledWebRuntime": false,
   "android": {
-    "allowMixedContent": true
+    "allowMixedContent": false,
+    "backgroundColor": "#ffffff"
   },
   "ios": {
-    "contentInset": "automatic"
+    "contentInset": "always",
+    "backgroundColor": "#ffffff",
+    "scheme": "neighborlink"
   },
   "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": false,
+      "backgroundColor": "#667eea",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
     "Geolocation": {
       "permissions": ["location"]
     },
@@ -18,6 +34,10 @@
     "StatusBar": {
       "style": "dark",
       "backgroundColor": "#667eea"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "style": "dark"
     }
   }
 }

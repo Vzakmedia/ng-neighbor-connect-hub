@@ -110,13 +110,13 @@ const App = () => {
       // Only on native platforms
       if (Capacitor.isNativePlatform()) {
         try {
-          // Initialize status bar
+          // Initialize status bar first
           await initializeStatusBar('light');
           
-          // Wait for React to paint (400ms should be enough)
-          await new Promise(resolve => setTimeout(resolve, 400));
+          // Wait longer for React to paint and custom splash to show (1500ms)
+          await new Promise(resolve => setTimeout(resolve, 1500));
           await SplashScreen.hide({
-            fadeOutDuration: 300
+            fadeOutDuration: 500
           });
           console.log('Native splash screen hidden and status bar initialized');
         } catch (error) {

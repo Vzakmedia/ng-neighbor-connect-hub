@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import SplashScreen from './SplashScreen';
 import MobileAuthFlow from './MobileAuthFlow';
 
@@ -19,19 +21,37 @@ const NativeAppWrapper = () => {
   const [splashShownThisSession, setSplashShownThisSession] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    // Check if splash was already shown this session
-    const shownThisSession = sessionStorage.getItem('splash_shown');
-    if (shownThisSession) {
-      setShowSplash(false);
-      setSplashShownThisSession(true);
-    }
-  }, []);
+    const checkSplashStatus = async () => {
+      if (isNative) {
+        // Use Capacitor Preferences for native
+        const { value } = await Preferences.get({ key: 'splash_shown_session' });
+        if (value === 'true') {
+          setShowSplash(false);
+          setSplashShownThisSession(true);
+        }
+      } else {
+        // Use sessionStorage for web
+        const shownThisSession = sessionStorage.getItem('splash_shown');
+        if (shownThisSession) {
+          setShowSplash(false);
+          setSplashShownThisSession(true);
+        }
+      }
+    };
+    
+    checkSplashStatus();
+  }, [isNative]);
 
-  const handleSplashComplete = () => {
+  const handleSplashComplete = async () => {
     // Mark splash as shown for this session
-    sessionStorage.setItem('splash_shown', 'true');
+    if (isNative) {
+      await Preferences.set({ key: 'splash_shown_session', value: 'true' });
+    } else {
+      sessionStorage.setItem('splash_shown', 'true');
+    }
     setSplashShownThisSession(true);
     setShowSplash(false);
   };
