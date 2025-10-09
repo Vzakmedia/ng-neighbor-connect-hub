@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import SplashScreen from './SplashScreen';
 import OnboardingScreen from './OnboardingScreen';
 import { AuthPage } from '@/components/auth/AuthPage';
@@ -20,31 +22,43 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
   const [useIOSSafeLanding, setUseIOSSafeLanding] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    // Detect iOS device and determine if we need safe landing
-    const deviceInfo = detectIOSDevice();
-    const supportsAdvancedFeatures = safeFeatureDetection.supportsFramerMotion() && 
-                                   safeFeatureDetection.supportsModernJS();
+    const initializeFlow = async () => {
+      // Detect iOS device and determine if we need safe landing
+      const deviceInfo = detectIOSDevice();
+      const supportsAdvancedFeatures = safeFeatureDetection.supportsFramerMotion() && 
+                                     safeFeatureDetection.supportsModernJS();
+      
+      console.log('MobileAuthFlow - Device compatibility:', {
+        isIOS: deviceInfo.isIOS,
+        supportsAdvanced: supportsAdvancedFeatures,
+        localStorage: deviceInfo.supportsLocalStorage,
+        iosVersion: deviceInfo.version
+      });
+
+      // Use iOS safe landing for older iOS (< 12) or when advanced features aren't supported
+      if (deviceInfo.isIOS && (!supportsAdvancedFeatures || (deviceInfo.version && deviceInfo.version < 12))) {
+        setUseIOSSafeLanding(true);
+      }
+
+      // Check if user has seen onboarding before
+      let seenOnboarding = false;
+      if (isNative) {
+        // Use Capacitor Preferences for native (persists across app launches)
+        const { value } = await Preferences.get({ key: 'neighborlink_onboarding_completed' });
+        seenOnboarding = value === 'true';
+      } else {
+        // Use localStorage for web
+        seenOnboarding = safeStorage.getItem('neighborlink_mobile_onboarding_seen') === 'true';
+      }
+      
+      setHasSeenOnboarding(seenOnboarding);
+    };
     
-    console.log('MobileAuthFlow - Device compatibility:', {
-      isIOS: deviceInfo.isIOS,
-      supportsAdvanced: supportsAdvancedFeatures,
-      localStorage: deviceInfo.supportsLocalStorage,
-      iosVersion: deviceInfo.version
-    });
-
-    // Use iOS safe landing for older iOS (< 12) or when advanced features aren't supported
-    if (deviceInfo.isIOS && (!supportsAdvancedFeatures || (deviceInfo.version && deviceInfo.version < 12))) {
-      setUseIOSSafeLanding(true);
-    }
-
-    // Check if user has seen onboarding before (using safe storage)
-    const seenOnboarding = safeStorage.getItem('neighborlink_mobile_onboarding_seen');
-    if (seenOnboarding) {
-      setHasSeenOnboarding(true);
-    }
-  }, []);
+    initializeFlow();
+  }, [isNative]);
 
   useEffect(() => {
     // Redirect authenticated users to dashboard
@@ -68,15 +82,23 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
     }
   };
 
-  const handleGetStarted = () => {
-    // Mark mobile onboarding as seen (using safe storage)
-    safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+  const handleGetStarted = async () => {
+    // Mark mobile onboarding as seen
+    if (isNative) {
+      await Preferences.set({ key: 'neighborlink_onboarding_completed', value: 'true' });
+    } else {
+      safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    }
     setCurrentStep('auth');
   };
 
-  const handleIOSGetStarted = () => {
+  const handleIOSGetStarted = async () => {
     // Mark onboarding as seen and go directly to auth
-    safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    if (isNative) {
+      await Preferences.set({ key: 'neighborlink_onboarding_completed', value: 'true' });
+    } else {
+      safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    }
     setCurrentStep('auth');
   };
 
