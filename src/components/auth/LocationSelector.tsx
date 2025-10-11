@@ -30,6 +30,47 @@ const NIGERIAN_STATES = [
   "Sokoto", "Taraba", "Yobe", "Zamfara"
 ];
 
+// Major cities by state as fallback
+const STATE_CITIES: { [key: string]: string[] } = {
+  'Lagos': ['Lagos Island', 'Lagos Mainland', 'Surulere', 'Ikeja', 'Oshodi-Isolo', 'Mushin', 'Alimosho', 'Agege', 'Ifako-Ijaiye', 'Kosofe', 'Ikorodu', 'Epe', 'Badagry', 'Lekki', 'Victoria Island', 'Ikoyi', 'Yaba', 'Gbagada', 'Ajah', 'Maryland'],
+  'Federal Capital Territory': ['Abuja Municipal', 'Gwagwalada', 'Kuje', 'Abaji', 'Kwali', 'Bwari', 'Garki', 'Wuse', 'Maitama', 'Asokoro', 'Gwarinpa', 'Kubwa', 'Nyanya', 'Karu', 'Lugbe', 'Life Camp', 'Utako', 'Jabi'],
+  'Kano': ['Kano Municipal', 'Fagge', 'Dala', 'Gwale', 'Tarauni', 'Nassarawa', 'Ungogo', 'Kumbotso'],
+  'Rivers': ['Port Harcourt', 'Obio-Akpor', 'Okrika', 'Ogu-Bolo', 'Eleme', 'Bonny', 'Degema'],
+  'Kaduna': ['Kaduna North', 'Kaduna South', 'Chikun', 'Igabi', 'Zaria', 'Sabon Gari'],
+  'Oyo': ['Ibadan North', 'Ibadan South', 'Ogbomoso', 'Oyo', 'Iseyin'],
+  'Abia': ['Aba North', 'Aba South', 'Umuahia North', 'Umuahia South'],
+  'Adamawa': ['Yola North', 'Yola South', 'Mubi North', 'Mubi South'],
+  'Akwa Ibom': ['Uyo', 'Ikot Ekpene', 'Eket', 'Oron'],
+  'Anambra': ['Awka', 'Onitsha', 'Nnewi', 'Ekwulobia'],
+  'Bauchi': ['Bauchi', 'Azare', 'Misau', 'Katagum'],
+  'Bayelsa': ['Yenagoa', 'Brass', 'Sagbama'],
+  'Benue': ['Makurdi', 'Gboko', 'Otukpo', 'Katsina-Ala'],
+  'Borno': ['Maiduguri', 'Bama', 'Biu'],
+  'Cross River': ['Calabar', 'Ikom', 'Ugep'],
+  'Delta': ['Asaba', 'Warri', 'Sapele', 'Ughelli'],
+  'Ebonyi': ['Abakaliki', 'Afikpo', 'Onueke'],
+  'Edo': ['Benin City', 'Auchi', 'Ekpoma', 'Uromi'],
+  'Ekiti': ['Ado-Ekiti', 'Ikere', 'Ijero', 'Ikole'],
+  'Enugu': ['Enugu', 'Nsukka', 'Oji River', 'Agbani'],
+  'Gombe': ['Gombe', 'Kumo', 'Deba', 'Bajoga'],
+  'Imo': ['Owerri', 'Orlu', 'Okigwe', 'Mbaise'],
+  'Jigawa': ['Dutse', 'Hadejia', 'Kazaure', 'Gumel'],
+  'Katsina': ['Katsina', 'Daura', 'Funtua', 'Malumfashi'],
+  'Kebbi': ['Birnin Kebbi', 'Argungu', 'Zuru', 'Yauri'],
+  'Kogi': ['Lokoja', 'Okene', 'Kabba', 'Idah'],
+  'Kwara': ['Ilorin', 'Offa', 'Omu-Aran', 'Jebba'],
+  'Nasarawa': ['Lafia', 'Keffi', 'Akwanga', 'Nasarawa'],
+  'Niger': ['Minna', 'Bida', 'Kontagora', 'Suleja'],
+  'Ogun': ['Abeokuta', 'Ijebu-Ode', 'Sagamu', 'Ota'],
+  'Ondo': ['Akure', 'Ondo', 'Owo', 'Okitipupa'],
+  'Osun': ['Osogbo', 'Ile-Ife', 'Ilesa', 'Ede'],
+  'Plateau': ['Jos', 'Bukuru', 'Pankshin', 'Shendam'],
+  'Sokoto': ['Sokoto', 'Gwadabawa', 'Tambuwal', 'Wurno'],
+  'Taraba': ['Jalingo', 'Wukari', 'Bali', 'Gembu'],
+  'Yobe': ['Damaturu', 'Potiskum', 'Gashua', 'Nguru'],
+  'Zamfara': ['Gusau', 'Kaura Namoda', 'Talata Mafara', 'Zurmi']
+};
+
 export const LocationSelector = ({ 
   onLocationChange, 
   defaultState, 
@@ -99,7 +140,7 @@ export const LocationSelector = ({
     try {
       console.log(`Fetching ${type}, attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
       
-      // For states, use hardcoded fallback immediately to avoid edge function dependency
+      // For states, use hardcoded fallback immediately
       if (type === 'states') {
         console.log('Using hardcoded states list');
         return NIGERIAN_STATES.map((stateName) => ({
@@ -107,6 +148,18 @@ export const LocationSelector = ({
           formatted_address: `${stateName}, Nigeria`,
           place_id: `state_${stateName.toLowerCase().replace(/\s+/g, '_')}`,
           types: ['administrative_area_level_1']
+        }));
+      }
+      
+      // For cities, use hardcoded fallback immediately
+      if (type === 'cities' && payload.state) {
+        console.log('Using hardcoded cities list for', payload.state);
+        const cities = STATE_CITIES[payload.state] || [];
+        return cities.map((cityName) => ({
+          name: cityName,
+          formatted_address: `${cityName}, ${payload.state}, Nigeria`,
+          place_id: `city_${cityName.toLowerCase().replace(/\s+/g, '_')}`,
+          types: ['locality']
         }));
       }
       
