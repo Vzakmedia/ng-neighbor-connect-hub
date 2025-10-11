@@ -111,11 +111,11 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   useEffect(() => {
     if (!mapContainer.current || !googleMapsApiKey) return;
 
-    // Initialize Google Maps
+    // Initialize Google Maps with marker library
     const loader = new Loader({
       apiKey: googleMapsApiKey,
       version: 'weekly',
-      libraries: ['places']
+      libraries: ['places', 'marker']
     });
 
     loader.load().then(async () => {
@@ -128,6 +128,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
+        mapId: 'SAFETY_MAP' // Required for AdvancedMarkerElement
       });
 
       setMapLoaded(true);
@@ -140,7 +141,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     if (!map.current || !mapLoaded) return;
 
     // Clear existing markers
-    markers.current.forEach(marker => marker.setMap(null));
+    markers.current.forEach(marker => marker.map = null);
     markers.current = [];
 
     // Add markers for each alert
@@ -154,21 +155,19 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         critical: '#EF4444'  // red
       };
 
-      // Create custom marker icon
-      const markerIcon = {
-        path: (window as any).google.maps.SymbolPath.CIRCLE,
-        scale: 12,
-        fillColor: severityColors[alert.severity],
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 3,
-      };
+      // Create custom marker content using PinElement
+      const pinElement = new (window as any).google.maps.marker.PinElement({
+        background: severityColors[alert.severity],
+        borderColor: '#ffffff',
+        glyphColor: '#ffffff',
+        scale: 1.2,
+      });
 
-      // Create marker
-      const marker = new (window as any).google.maps.Marker({
+      // Create AdvancedMarkerElement
+      const marker = new (window as any).google.maps.marker.AdvancedMarkerElement({
         position: { lat: alert.latitude, lng: alert.longitude },
         map: map.current,
-        icon: markerIcon,
+        content: pinElement.element,
         title: alert.title,
       });
 

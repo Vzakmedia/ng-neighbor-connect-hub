@@ -33,7 +33,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [loadingMessage, setLoadingMessage] = useState('Getting your precise location...');
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
@@ -116,7 +116,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       // Load Google Maps API if not already loaded
       if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
@@ -208,6 +208,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         zoomControl: true,
         scaleControl: true,
         rotateControl: true,
+        mapId: 'LOCATION_PICKER_MAP' // Required for AdvancedMarkerElement
       });
 
       console.log('Map created successfully');
@@ -222,22 +223,21 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       const geocoder = new google.maps.Geocoder();
       geocoderRef.current = geocoder;
 
-      // Create marker with better visibility
-      const marker = new google.maps.Marker({
+      // Create custom pin element
+      const pinElement = new google.maps.marker.PinElement({
+        background: '#EA4335',
+        borderColor: '#ffffff',
+        glyphColor: '#ffffff',
+        scale: 1.5,
+      });
+
+      // Create AdvancedMarkerElement with draggable capability
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         position: initialLocation,
         map: map,
-        draggable: true,
+        gmpDraggable: true,
+        content: pinElement.element,
         title: 'Drag to select exact location',
-        animation: google.maps.Animation.DROP,
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#EA4335"/>
-            </svg>
-          `),
-          scaledSize: new google.maps.Size(32, 32),
-          anchor: new google.maps.Point(16, 32)
-        }
       });
 
       mapInstanceRef.current = map;
@@ -254,18 +254,18 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             lat: event.latLng.lat(),
             lng: event.latLng.lng()
           };
-          marker.setPosition(newPosition);
+          marker.position = newPosition;
           reverseGeocode(newPosition);
         }
       });
 
-      // Add drag listener to marker
+      // Add drag listener to marker using gmp-dragend event
       marker.addListener('dragend', () => {
-        const position = marker.getPosition();
+        const position = marker.position as google.maps.LatLng | google.maps.LatLngLiteral | null;
         if (position) {
           const newPosition = {
-            lat: position.lat(),
-            lng: position.lng()
+            lat: typeof position.lat === 'function' ? position.lat() : position.lat,
+            lng: typeof position.lng === 'function' ? position.lng() : position.lng
           };
           reverseGeocode(newPosition);
         }
@@ -342,7 +342,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           // Update map if it exists
           if (mapInstanceRef.current && markerRef.current) {
             mapInstanceRef.current.setCenter(coords);
-            markerRef.current.setPosition(coords);
+            markerRef.current.position = coords;
           }
           
           toast({

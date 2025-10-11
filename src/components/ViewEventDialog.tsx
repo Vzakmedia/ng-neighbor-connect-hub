@@ -194,10 +194,10 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
         return;
       }
 
-      // Dynamically load Google Maps API
+      // Dynamically load Google Maps API with marker library
       if (!window.google) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker`;
         script.async = true;
         document.head.appendChild(script);
 
@@ -227,11 +227,21 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
+          mapId: 'EVENT_VIEW_MAP' // Required for AdvancedMarkerElement
         });
 
-        new window.google.maps.Marker({
+        // Create PinElement for the marker
+        const pinElement = new window.google.maps.marker.PinElement({
+          background: '#EA4335',
+          borderColor: '#ffffff',
+          glyphColor: '#ffffff',
+          scale: 1.3,
+        });
+
+        new window.google.maps.marker.AdvancedMarkerElement({
           position: location,
           map: map,
+          content: pinElement.element,
           title: event.title,
         });
       }
