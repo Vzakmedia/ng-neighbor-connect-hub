@@ -272,6 +272,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       });
 
       console.log('Map initialization completed successfully');
+      setIsLoading(false); // Show map immediately after initialization
 
     } catch (error) {
       console.error('❌ [LocationPicker] Error initializing map:', error);
