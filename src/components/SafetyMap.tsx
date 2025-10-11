@@ -34,34 +34,73 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => {
     // Get Google Maps API key from edge function
     const getGoogleMapsApiKey = async () => {
       try {
-        console.log('Fetching Google Maps API key...');
+        console.log('🗺️ [SafetyMap] Fetching Google Maps API key... Attempt:', retryCount + 1);
+        setIsRetrying(true);
+        
         const { data, error } = await supabase.functions.invoke('get-google-maps-token');
         
+        console.log('🗺️ [SafetyMap] Edge function response:', { 
+          hasData: !!data, 
+          hasError: !!error,
+          data: data ? JSON.stringify(data).substring(0, 100) : 'null',
+          error: error ? JSON.stringify(error) : 'null'
+        });
+        
         if (error) {
-          console.error('Edge function error:', error);
-          throw error;
+          console.error('❌ [SafetyMap] Edge function error:', error);
+          throw new Error(error.message || 'Edge function failed');
         }
         
-        if (!data || !data.token) {
-          console.error('No token received from edge function');
-          throw new Error('No API key returned');
+        if (!data) {
+          console.error('❌ [SafetyMap] No data received from edge function');
+          throw new Error('No response from edge function');
+        }
+
+        if (data.error) {
+          console.error('❌ [SafetyMap] Error in response:', data.error);
+          throw new Error(data.error);
         }
         
-        console.log('Successfully received Google Maps API key');
+        if (!data.token) {
+          console.error('❌ [SafetyMap] No token in response, data:', data);
+          throw new Error('No API key in response');
+        }
+        
+        console.log('✅ [SafetyMap] Successfully received API key, length:', data.token.length);
         setGoogleMapsApiKey(data.token);
-      } catch (error) {
-        console.error('Error getting Google Maps API key:', error);
-        setError('Unable to load map: API key not configured. Please add your Google Maps API key in Supabase secrets.');
+        setError('');
+        setIsRetrying(false);
+      } catch (error: any) {
+        console.error('❌ [SafetyMap] Error getting API key:', {
+          message: error.message,
+          stack: error.stack,
+          retryCount
+        });
+        
+        const errorMessage = error.message || 'Failed to load map configuration';
+        setError(errorMessage);
+        setIsRetrying(false);
+        
+        // Auto-retry up to 3 times with exponential backoff
+        if (retryCount < 3) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+          console.log(`🔄 [SafetyMap] Retrying in ${delay}ms... (${retryCount + 1}/3)`);
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, delay);
+        }
       }
     };
 
     getGoogleMapsApiKey();
-  }, []);
+  }, [retryCount]);
 
   useEffect(() => {
     if (!mapContainer.current || !googleMapsApiKey) return;
@@ -156,31 +195,50 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     });
   }, [alerts, onAlertClick, mapLoaded]);
 
-  if (error) {
+  if (error && retryCount >= 3) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
-        <div className="text-center p-4">
+        <div className="text-center p-6 max-w-md">
+          <div className="text-4xl mb-3">🗺️</div>
           <h3 className="text-lg font-semibold mb-2">Map Not Available</h3>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <a 
-            href="https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline text-sm"
-          >
-            Configure API Key in Supabase →
-          </a>
+          <p className="text-sm text-muted-foreground mb-4">{error}</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setError('');
+                setRetryCount(0);
+              }}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 text-sm"
+            >
+              Try Again
+            </button>
+            <div>
+              <a 
+                href="https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline text-sm block"
+              >
+                Configure API Key in Supabase →
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!googleMapsApiKey) {
+  if (!googleMapsApiKey || isRetrying) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading map...</p>
+          <p className="text-muted-foreground">
+            {isRetrying ? `Loading map... (Attempt ${retryCount + 1}/3)` : 'Loading map...'}
+          </p>
+          {error && retryCount < 3 && (
+            <p className="text-xs text-muted-foreground mt-2">Retrying...</p>
+          )}
         </div>
       </div>
     );
