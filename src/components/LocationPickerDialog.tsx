@@ -136,19 +136,19 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       console.log('Requesting location permission...');
       setLoadingMessage('Requesting location permission...');
 
-      // Set timeout to show manual entry option after 10 seconds
+      // Set timeout to show manual entry option after 5 seconds
       timeoutRef.current = setTimeout(() => {
         setLoadingMessage('Taking longer than expected... Try manual entry below');
         setManualEntryMode(true);
-      }, 10000);
+      }, 5000);
 
       let position;
       try {
-        // Get user's current position with timeout handling
+        // Get user's current position with reduced timeout
         position = await Promise.race([
           getCurrentPosition(),
           new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Location request timed out')), 20000)
+            setTimeout(() => reject(new Error('Location request timed out')), 8000)
           )
         ]);
       } catch (locationError) {
