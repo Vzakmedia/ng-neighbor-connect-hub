@@ -28,10 +28,14 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [manualEntryMode, setManualEntryMode] = useState(false);
+  const [manualAddress, setManualAddress] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Getting your precise location...');
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const { getCurrentPosition } = useNativePermissions();
   
@@ -129,15 +133,54 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         });
       }
 
-      console.log('Getting user location...');
+      console.log('Requesting location permission...');
+      setLoadingMessage('Requesting location permission...');
 
-      // Get user's current position with high accuracy using native permission system
-      const position = await getCurrentPosition();
+      // Set timeout to show manual entry option after 10 seconds
+      timeoutRef.current = setTimeout(() => {
+        setLoadingMessage('Taking longer than expected... Try manual entry below');
+        setManualEntryMode(true);
+      }, 10000);
+
+      let position;
+      try {
+        // Get user's current position with timeout handling
+        position = await Promise.race([
+          getCurrentPosition(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Location request timed out')), 20000)
+          )
+        ]);
+      } catch (locationError) {
+        console.error('Location error:', locationError);
+        
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        
+        const errorMsg = locationError instanceof Error ? locationError.message : 'Location error';
+        
+        if (errorMsg.includes('permission')) {
+          setPermissionDenied(true);
+          setError('Location permission denied. Please enter your location manually below.');
+        } else {
+          setError('Unable to get your location. Please enter it manually below.');
+        }
+        
+        setManualEntryMode(true);
+        setIsLoading(false);
+        return;
+      }
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
 
       console.log('Initializing map with location:', initialLocation);
+      setLoadingMessage('Loading map...');
 
       // Wait for Google Maps to be fully loaded
       await new Promise((resolve) => {
@@ -255,7 +298,79 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const handleRetry = () => {
     setError(null);
     setRetryCount(0);
+    setManualEntryMode(false);
+    setPermissionDenied(false);
     initializeMap();
+  };
+
+  const handleManualAddressSearch = async () => {
+    if (!manualAddress.trim()) {
+      toast({
+        title: "Address required",
+        description: "Please enter an address to search",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Use Google Maps Geocoding API if available
+      if (geocoderRef.current) {
+        const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+          geocoderRef.current!.geocode(
+            { address: manualAddress },
+            (results, status) => {
+              if (status === 'OK' && results) {
+                resolve(results);
+              } else {
+                reject(new Error(`Geocoding failed: ${status}`));
+              }
+            }
+          );
+        });
+
+        if (results && results.length > 0) {
+          const location = results[0].geometry.location;
+          const coords = { lat: location.lat(), lng: location.lng() };
+          
+          setSelectedAddress(results[0].formatted_address);
+          setSelectedCoords(coords);
+          
+          // Update map if it exists
+          if (mapInstanceRef.current && markerRef.current) {
+            mapInstanceRef.current.setCenter(coords);
+            markerRef.current.setPosition(coords);
+          }
+          
+          toast({
+            title: "Location found!",
+            description: results[0].formatted_address,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Manual geocoding error:', error);
+      toast({
+        title: "Location not found",
+        description: "Please try a different address or be more specific",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkipLocation = () => {
+    // Use a default location (e.g., center of Nigeria)
+    const defaultCoords = { lat: 9.0820, lng: 8.6753 };
+    onLocationConfirm("Nigeria", defaultCoords);
+    onOpenChange(false);
+    toast({
+      title: "Location skipped",
+      description: "You can set your precise location later in settings",
+    });
   };
 
   const reverseGeocode = async (coords: { lat: number; lng: number }) => {
@@ -370,12 +485,18 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
     }
     
     // Cleanup when dialog closes
-    if (!open && mapInstanceRef.current) {
+    if (!open) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       mapInstanceRef.current = null;
       markerRef.current = null;
       geocoderRef.current = null;
       setSelectedAddress('');
       setSelectedCoords(null);
+      setManualEntryMode(false);
+      setManualAddress('');
+      setLoadingMessage('Getting your precise location...');
     }
   }, [open]);
 
@@ -395,6 +516,47 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             <PermissionDeniedAlert permissionType="location" feature="location picker" />
           )}
           
+          {/* Manual Entry Mode */}
+          {manualEntryMode && (
+            <div className="space-y-3 p-4 bg-muted rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="manual-address">Enter Your Location Manually</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="manual-address"
+                    placeholder="Enter address, city, or landmark..."
+                    value={manualAddress}
+                    onChange={(e) => setManualAddress(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualAddressSearch()}
+                  />
+                  <Button onClick={handleManualAddressSearch} disabled={isLoading}>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="flex-1"
+                >
+                  <Navigation className="h-3 w-3 mr-2" />
+                  Try Auto-Detect Again
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSkipLocation}
+                  className="flex-1"
+                >
+                  Skip for Now
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Map Container */}
           <div className="flex-1 relative border rounded-lg overflow-hidden min-h-[400px]">
             {isLoading && (
@@ -402,7 +564,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2">
                     <Navigation className="h-4 w-4 animate-spin" />
-                    <span>Getting your precise location...</span>
+                    <span>{loadingMessage}</span>
                   </div>
                   {retryCount > 0 && (
                     <p className="text-sm text-muted-foreground">
