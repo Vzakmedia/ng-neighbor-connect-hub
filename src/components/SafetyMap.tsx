@@ -44,25 +44,31 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         console.log('🗺️ [SafetyMap] Fetching Google Maps API key... Attempt:', retryCount + 1);
         setIsRetrying(true);
         
-        const { data, error } = await supabase.functions.invoke('get-google-maps-token');
+        const response = await fetch(
+          'https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/get-google-maps-token',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4`,
+            },
+          }
+        );
+        
+        console.log('🗺️ [SafetyMap] Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
         
         console.log('🗺️ [SafetyMap] Edge function response:', { 
           hasData: !!data, 
-          hasError: !!error,
-          data: data ? JSON.stringify(data).substring(0, 100) : 'null',
-          error: error ? JSON.stringify(error) : 'null'
+          hasToken: !!data?.token,
+          error: data?.error
         });
         
-        if (error) {
-          console.error('❌ [SafetyMap] Edge function error:', error);
-          throw new Error(error.message || 'Edge function failed');
-        }
-        
-        if (!data) {
-          console.error('❌ [SafetyMap] No data received from edge function');
-          throw new Error('No response from edge function');
-        }
-
         if (data.error) {
           console.error('❌ [SafetyMap] Error in response:', data.error);
           throw new Error(data.error);

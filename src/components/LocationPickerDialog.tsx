@@ -40,16 +40,33 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
     console.log(`🔑 [LocationPicker] Fetching API key (attempt ${attempt + 1}/${MAX_RETRIES})...`);
     
     try {
-      const { data, error } = await supabase.functions.invoke('get-google-maps-token');
+      const response = await fetch(
+        'https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/get-google-maps-token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4`,
+          },
+        }
+      );
+      
+      console.log('🔑 [LocationPicker] Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       
       console.log('🔑 [LocationPicker] Edge function response:', { 
         hasData: !!data, 
         hasToken: !!data?.token,
-        error: error?.message 
+        error: data?.error 
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to fetch API key');
+      if (data.error) {
+        throw new Error(data.error);
       }
 
       if (!data?.token) {
