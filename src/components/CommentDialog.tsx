@@ -80,7 +80,7 @@ const CommentDialog = ({ open, onOpenChange, postId, postAuthor, postContent }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Comments</DialogTitle>
         </DialogHeader>

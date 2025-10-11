@@ -121,7 +121,7 @@ export const DirectMessageDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0">
+      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0" aria-describedby={undefined}>
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
