@@ -33,18 +33,30 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const markers = useRef<any[]>([]);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     // Get Google Maps API key from edge function
     const getGoogleMapsApiKey = async () => {
       try {
+        console.log('Fetching Google Maps API key...');
         const { data, error } = await supabase.functions.invoke('get-google-maps-token');
-        if (error) throw error;
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
+        
+        if (!data || !data.token) {
+          console.error('No token received from edge function');
+          throw new Error('No API key returned');
+        }
+        
+        console.log('Successfully received Google Maps API key');
         setGoogleMapsApiKey(data.token);
       } catch (error) {
         console.error('Error getting Google Maps API key:', error);
-        // Fallback: Use a placeholder token for development
-        setGoogleMapsApiKey('placeholder-token');
+        setError('Unable to load map: API key not configured. Please add your Google Maps API key in Supabase secrets.');
       }
     };
 
@@ -52,7 +64,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current || !googleMapsApiKey || googleMapsApiKey === 'placeholder-token') return;
+    if (!mapContainer.current || !googleMapsApiKey) return;
 
     // Initialize Google Maps
     const loader = new Loader({
@@ -144,14 +156,31 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     });
   }, [alerts, onAlertClick, mapLoaded]);
 
-  if (!googleMapsApiKey || googleMapsApiKey === 'placeholder-token') {
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center bg-muted">
+        <div className="text-center p-4">
+          <h3 className="text-lg font-semibold mb-2">Map Not Available</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <a 
+            href="https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline text-sm"
+          >
+            Configure API Key in Supabase →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!googleMapsApiKey) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">Map Not Available</h3>
-          <p className="text-muted-foreground">
-            Please configure your Google Maps API key in Supabase Edge Function secrets
-          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading map...</p>
         </div>
       </div>
     );
