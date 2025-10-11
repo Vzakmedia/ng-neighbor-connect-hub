@@ -71,6 +71,67 @@ const STATE_CITIES: { [key: string]: string[] } = {
   'Zamfara': ['Gusau', 'Kaura Namoda', 'Talata Mafara', 'Zurmi']
 };
 
+// Neighborhoods by city as fallback
+const CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
+  // Lagos neighborhoods
+  'Lagos Island': ['Marina', 'Ikoyi', 'Victoria Island', 'Lekki Phase 1', 'Onikan', 'Falomo', 'Banana Island'],
+  'Ikeja': ['GRA Ikeja', 'Allen Avenue', 'Opebi', 'Oregun', 'Alausa', 'Computer Village', 'Awolowo Way'],
+  'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Abraham Adesanya', 'Chevron', 'VGC', 'Oniru'],
+  'Victoria Island': ['VI Annex', 'Oniru', 'Maroko', 'Sandfill'],
+  'Ikoyi': ['Old Ikoyi', 'Parkview Estate', 'Banana Island', 'Dolphin Estate'],
+  'Yaba': ['Sabo', 'Abule Ijesha', 'Akoka', 'Onike', 'Makoko'],
+  'Surulere': ['Adeniran Ogunsanya', 'Aguda', 'Ijeshatedo', 'Itire', 'Lawanson'],
+  'Gbagada': ['Phase 1', 'Phase 2', 'Ifako', 'Soluyi', 'New Garage'],
+  'Maryland': ['Mende', 'Anthony', 'Ojota', 'Ikosi'],
+  'Ajah': ['Sangotedo', 'Lakowe', 'Badore', 'Ilaje', 'Ado'],
+  'Ikorodu': ['Ikorodu Town', 'Ijede', 'Igbogbo', 'Isiu', 'Majidun'],
+  
+  // FCT neighborhoods
+  'Abuja Municipal': ['Central Business District', 'Garki 1', 'Garki 2', 'Wuse', 'Wuse 2', 'Maitama', 'Asokoro'],
+  'Garki': ['Garki 1', 'Garki 2', 'Area 1', 'Area 2', 'Area 3', 'Area 7', 'Area 8', 'Area 10', 'Area 11'],
+  'Wuse': ['Wuse 1', 'Wuse 2', 'Wuse Zone 1', 'Wuse Zone 2', 'Wuse Zone 3', 'Wuse Zone 4', 'Wuse Zone 5', 'Wuse Zone 6'],
+  'Gwarinpa': ['Gwarinpa 1st Avenue', 'Gwarinpa Estate', 'Gwarinpa 1', 'Gwarinpa 2'],
+  'Kubwa': ['Kubwa Phase 1', 'Kubwa Phase 2', 'Kubwa Phase 3', 'Kubwa Phase 4', 'Byazhin'],
+  'Maitama': ['Maitama District', 'Maitama Extension'],
+  'Asokoro': ['Asokoro District', 'Asokoro Extension'],
+  'Jabi': ['Jabi District', 'Jabi Lake'],
+  'Utako': ['Utako District', 'Jabi Lake Mall Area'],
+  'Life Camp': ['Life Camp', 'Jikwoyi'],
+  'Lugbe': ['Lugbe District', 'Lugbe FHA', 'Trademore Estate'],
+  'Nyanya': ['Nyanya', 'Karu', 'Mararaba', 'Masaka'],
+  
+  // Kano neighborhoods
+  'Kano Municipal': ['Kofar Mata', 'Kofar Nasarawa', 'Sabon Gari', 'Fagge', 'Dala'],
+  'Nassarawa': ['Nassarawa GRA', 'Bompai', 'Zoo Road'],
+  'Sabon Gari': ['Sabon Gari Market', 'France Road', 'Lebanon Street'],
+  
+  // Port Harcourt neighborhoods
+  'Port Harcourt': ['Old GRA', 'New GRA', 'Diobu', 'Trans Amadi', 'Rumuola', 'Rumuokoro', 'Eliozu'],
+  'Obio-Akpor': ['Rumuokwurushi', 'Rumueme', 'Rumuogba', 'Elelenwo', 'Choba'],
+  
+  // Ibadan neighborhoods
+  'Ibadan North': ['Bodija', 'Sango', 'UI', 'Agbowo', 'Ajibode'],
+  'Ibadan South': ['Ring Road', 'Mokola', 'Oke Ado', 'Challenge'],
+  
+  // Other major cities
+  'Benin City': ['GRA', 'Ikpoba Hill', 'Ugbowo', 'Uselu', 'Sapele Road'],
+  'Enugu': ['Independence Layout', 'GRA', 'New Haven', 'Trans Ekulu', 'Achara Layout'],
+  'Kaduna North': ['Kaduna GRA', 'Barnawa', 'Sabon Tasha', 'Malali'],
+  'Zaria': ['Samaru', 'Sabon Gari', 'Tudun Wada'],
+  'Owerri': ['GRA', 'New Owerri', 'Ikenegbu', 'Wetheral Road'],
+  'Calabar': ['GRA', 'Marian Road', 'Ekpo Abasi', 'Satellite Town'],
+  'Abeokuta': ['GRA', 'Oke Ilewo', 'Isale Igbein', 'Kuto'],
+  'Akure': ['GRA', 'Oba Ile', 'Alagbaka', 'Ondo Road'],
+  'Minna': ['GRA', 'Tunga', 'Bosso', 'Chanchaga'],
+  'Uyo': ['Ikot Ekpene Road', 'Oron Road', 'Eket', 'Aka Road'],
+  'Warri': ['GRA', 'Effurun', 'Airport Road', 'PTI Road'],
+  'Aba North': ['Ariaria', 'Ogbor Hill', 'Ngwa Road'],
+  'Aba South': ['Aba Main Market', 'Eziukwu', 'St. Michael Road'],
+  'Jos': ['Jos GRA', 'Bukuru', 'Rayfield', 'Gangare'],
+  'Ilorin': ['GRA', 'Tanke', 'Fate Road', 'Unity Road'],
+  'Asaba': ['GRA', 'Cable Point', 'Okpanam Road', 'Summit Road']
+};
+
 export const LocationSelector = ({ 
   onLocationChange, 
   defaultState, 
@@ -160,6 +221,20 @@ export const LocationSelector = ({
           formatted_address: `${cityName}, ${payload.state}, Nigeria`,
           place_id: `city_${cityName.toLowerCase().replace(/\s+/g, '_')}`,
           types: ['locality']
+        }));
+      }
+      
+      // For neighborhoods, use hardcoded fallback immediately
+      if (type === 'neighborhoods' && payload.city) {
+        console.log('Using hardcoded neighborhoods list for', payload.city);
+        const neighborhoods = CITY_NEIGHBORHOODS[payload.city] || [
+          'Area 1', 'Area 2', 'Area 3', 'Central', 'North', 'South', 'East', 'West'
+        ];
+        return neighborhoods.map((hood) => ({
+          name: hood,
+          formatted_address: `${hood}, ${payload.city}, ${payload.state}, Nigeria`,
+          place_id: `neighborhood_${hood.toLowerCase().replace(/\s+/g, '_')}`,
+          types: ['neighborhood']
         }));
       }
       
