@@ -39,8 +39,12 @@ export const LocationSelector = ({
   const [loadingStates, setLoadingStates] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingNeighborhoods, setLoadingNeighborhoods] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   
   const { toast } = useToast();
+  
+  const MAX_RETRIES = 3;
 
   // Fetch states on component mount
   useEffect(() => {
@@ -82,17 +86,29 @@ export const LocationSelector = ({
     onLocationChange(selectedState, selectedCity, selectedNeighborhood);
   }, [selectedState, selectedCity, selectedNeighborhood, onLocationChange]);
 
-  const fetchLocations = async (type: 'states' | 'cities' | 'neighborhoods', payload: any) => {
+  const fetchLocations = async (type: 'states' | 'cities' | 'neighborhoods', payload: any, attempt = 0): Promise<any[]> => {
     try {
+      console.log(`Fetching ${type}, attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
+      
       const { data, error } = await supabase.functions.invoke('nigeria-locations', {
         body: { type, ...payload }
       });
 
       if (error) {
         console.error('Supabase function error:', error);
+        
+        // Retry logic with exponential backoff
+        if (attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt) * 1000;
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchLocations(type, payload, attempt + 1);
+        }
+        
+        setError(error.message || 'Failed to load location data');
         toast({
           title: "Error fetching locations",
-          description: error.message,
+          description: `${error.message}. Please try again or contact support.`,
           variant: "destructive",
         });
         return [];
@@ -100,6 +116,14 @@ export const LocationSelector = ({
 
       if (data?.error) {
         console.error('Function returned error:', data.error);
+        
+        if (attempt < MAX_RETRIES) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchLocations(type, payload, attempt + 1);
+        }
+        
+        setError(data.error);
         toast({
           title: "Error fetching locations",
           description: data.error,
@@ -108,12 +132,24 @@ export const LocationSelector = ({
         return [];
       }
 
+      setError(null);
+      setRetryCount(0);
       return data?.locations || [];
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling function:', error);
+      
+      if (attempt < MAX_RETRIES) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`Retrying in ${delay}ms...`);
+        setRetryCount(attempt + 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchLocations(type, payload, attempt + 1);
+      }
+      
+      setError('Failed to fetch location data after multiple attempts');
       toast({
-        title: "Error fetching locations",
-        description: "Failed to fetch location data. Please try again.",
+        title: "Connection Error",
+        description: "Failed to load location data. Please check your internet connection and try again.",
         variant: "destructive",
       });
       return [];
@@ -122,9 +158,16 @@ export const LocationSelector = ({
 
   const fetchStates = async () => {
     setLoadingStates(true);
+    setError(null);
     const locations = await fetchLocations('states', {});
     setStates(locations);
     setLoadingStates(false);
+  };
+  
+  const handleRetry = () => {
+    setRetryCount(0);
+    setError(null);
+    fetchStates();
   };
 
   const fetchCities = async (state: string) => {
@@ -148,6 +191,18 @@ export const LocationSelector = ({
         <h3 className="text-lg font-semibold">Location Information <span className="text-destructive">*</span></h3>
         <p className="text-sm text-muted-foreground">(All fields required)</p>
       </div>
+      
+      {error && (
+        <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
+          <p className="text-sm text-destructive font-medium mb-2">
+            {retryCount > 0 ? `Retrying... (Attempt ${retryCount}/${MAX_RETRIES})` : 'Failed to load location data'}
+          </p>
+          <p className="text-sm text-muted-foreground mb-3">{error}</p>
+          <Button onClick={handleRetry} variant="outline" size="sm">
+            Try Again
+          </Button>
+        </div>
+      )}
 
       {/* State Selector */}
       <div className="space-y-2">
