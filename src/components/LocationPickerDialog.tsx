@@ -26,12 +26,56 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [selectedAddress, setSelectedAddress] = useState('');
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const { toast } = useToast();
   const { getCurrentPosition } = useNativePermissions();
+  
+  const MAX_RETRIES = 3;
+  const fetchApiKeyWithRetry = async (attempt = 0): Promise<string> => {
+    console.log(`🔑 [LocationPicker] Fetching API key (attempt ${attempt + 1}/${MAX_RETRIES})...`);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('get-google-maps-token');
+      
+      console.log('🔑 [LocationPicker] Edge function response:', { 
+        hasData: !!data, 
+        hasToken: !!data?.token,
+        error: error?.message 
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch API key');
+      }
+
+      if (!data?.token) {
+        throw new Error('No API key returned from server');
+      }
+
+      console.log('✅ [LocationPicker] API key retrieved successfully');
+      setError(null);
+      return data.token;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`❌ [LocationPicker] Attempt ${attempt + 1} failed:`, errorMessage);
+
+      if (attempt < MAX_RETRIES - 1) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ [LocationPicker] Retrying in ${delay}ms...`);
+        setRetryCount(attempt + 1);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchApiKeyWithRetry(attempt + 1);
+      } else {
+        throw new Error(`Failed to load map after ${MAX_RETRIES} attempts: ${errorMessage}`);
+      }
+    }
+  };
+
   const initializeMap = async () => {
     if (!mapRef.current) {
       console.log('Map container not available');
@@ -40,21 +84,18 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
     try {
       setIsLoading(true);
+      setError(null);
+      setRetryCount(0);
       console.log('Starting map initialization...');
 
-      // Get Google Maps API key
-      const { data: tokenData, error } = await supabase.functions.invoke('get-google-maps-token');
-      
-      if (error || !tokenData?.token) {
-        throw new Error('Unable to get Maps API token');
-      }
-
+      // Get Google Maps API key with retry logic
+      const apiKey = await fetchApiKeyWithRetry();
       console.log('Got Google Maps token, loading script...');
 
       // Load Google Maps API if not already loaded
       if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${tokenData.token}&libraries=places&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
@@ -66,7 +107,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           };
           script.onerror = (error) => {
             console.error('Failed to load Google Maps script:', error);
-            reject(error);
+            reject(new Error('Failed to load Google Maps script'));
           };
         });
       }
@@ -173,20 +214,31 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       console.log('Map initialization completed successfully');
 
     } catch (error) {
-      console.error('Error initializing map:', error);
+      console.error('❌ [LocationPicker] Error initializing map:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       // Check if it's a permission error
       if (error instanceof Error && error.message.includes('permission')) {
         setPermissionDenied(true);
+        setError('Location permission denied');
+      } else {
+        setError(errorMessage);
       }
       
       toast({
         title: "Map Loading Error",
-        description: "Unable to load the map. Please try manual entry instead.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setRetryCount(0);
+    initializeMap();
   };
 
   const reverseGeocode = async (coords: { lat: number; lng: number }) => {
@@ -330,12 +382,45 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           <div className="flex-1 relative border rounded-lg overflow-hidden min-h-[400px]">
             {isLoading && (
               <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
-                <div className="flex items-center gap-2">
-                  <Navigation className="h-4 w-4 animate-spin" />
-                  <span>Getting your precise location...</span>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Navigation className="h-4 w-4 animate-spin" />
+                    <span>Getting your precise location...</span>
+                  </div>
+                  {retryCount > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Retrying... (Attempt {retryCount + 1} of {MAX_RETRIES})
+                    </p>
+                  )}
                 </div>
               </div>
             )}
+            
+            {error && !isLoading && (
+              <div className="absolute inset-0 bg-background flex items-center justify-center z-10 p-4">
+                <div className="text-center space-y-4 max-w-md">
+                  <div className="text-destructive">
+                    <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <h3 className="font-semibold text-lg">Map Loading Failed</h3>
+                    <p className="text-sm mt-2">{error}</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={handleRetry} variant="default" size="sm">
+                      <Navigation className="h-4 w-4 mr-2" />
+                      Try Again
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open('https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions', '_blank')}
+                    >
+                      Configure API Key
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div 
               ref={mapRef} 
               className="w-full h-full"
