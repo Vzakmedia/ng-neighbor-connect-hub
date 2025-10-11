@@ -33,7 +33,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [loadingMessage, setLoadingMessage] = useState('Getting your precise location...');
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
@@ -116,7 +116,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       // Load Google Maps API if not already loaded
       if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
@@ -208,7 +208,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         zoomControl: true,
         scaleControl: true,
         rotateControl: true,
-        mapId: 'LOCATION_PICKER_MAP' // Required for AdvancedMarkerElement
       });
 
       console.log('Map created successfully');
@@ -223,21 +222,20 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       const geocoder = new google.maps.Geocoder();
       geocoderRef.current = geocoder;
 
-      // Create custom pin element
-      const pinElement = new google.maps.marker.PinElement({
-        background: '#EA4335',
-        borderColor: '#ffffff',
-        glyphColor: '#ffffff',
-        scale: 1.5,
-      });
-
-      // Create AdvancedMarkerElement with draggable capability
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      // Create draggable marker
+      const marker = new google.maps.Marker({
         position: initialLocation,
         map: map,
-        gmpDraggable: true,
-        content: pinElement.element,
+        draggable: true,
         title: 'Drag to select exact location',
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#EA4335',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
       });
 
       mapInstanceRef.current = map;
@@ -254,18 +252,18 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             lat: event.latLng.lat(),
             lng: event.latLng.lng()
           };
-          marker.position = newPosition;
+          marker.setPosition(newPosition);
           reverseGeocode(newPosition);
         }
       });
 
-      // Add drag listener to marker using gmp-dragend event
+      // Add drag listener to marker
       marker.addListener('dragend', () => {
-        const position = marker.position as google.maps.LatLng | google.maps.LatLngLiteral | null;
+        const position = marker.getPosition();
         if (position) {
           const newPosition = {
-            lat: typeof position.lat === 'function' ? position.lat() : position.lat,
-            lng: typeof position.lng === 'function' ? position.lng() : position.lng
+            lat: position.lat(),
+            lng: position.lng()
           };
           reverseGeocode(newPosition);
         }
@@ -342,7 +340,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           // Update map if it exists
           if (mapInstanceRef.current && markerRef.current) {
             mapInstanceRef.current.setCenter(coords);
-            markerRef.current.position = coords;
+            markerRef.current.setPosition(coords);
           }
           
           toast({
