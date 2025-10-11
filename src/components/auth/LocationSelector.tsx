@@ -21,6 +21,15 @@ interface LocationSelectorProps {
   defaultNeighborhood?: string;
 }
 
+// Hardcoded Nigerian states as fallback
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Federal Capital Territory",
+  "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara",
+  "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
+  "Sokoto", "Taraba", "Yobe", "Zamfara"
+];
+
 export const LocationSelector = ({ 
   onLocationChange, 
   defaultState, 
@@ -89,6 +98,17 @@ export const LocationSelector = ({
   const fetchLocations = async (type: 'states' | 'cities' | 'neighborhoods', payload: any, attempt = 0): Promise<any[]> => {
     try {
       console.log(`Fetching ${type}, attempt ${attempt + 1}/${MAX_RETRIES + 1}`);
+      
+      // For states, use hardcoded fallback immediately to avoid edge function dependency
+      if (type === 'states') {
+        console.log('Using hardcoded states list');
+        return NIGERIAN_STATES.map((stateName) => ({
+          name: stateName,
+          formatted_address: `${stateName}, Nigeria`,
+          place_id: `state_${stateName.toLowerCase().replace(/\s+/g, '_')}`,
+          types: ['administrative_area_level_1']
+        }));
+      }
       
       const { data, error } = await supabase.functions.invoke('nigeria-locations', {
         body: { type, ...payload }
