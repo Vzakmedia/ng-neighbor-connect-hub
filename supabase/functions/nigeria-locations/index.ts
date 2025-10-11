@@ -22,69 +22,32 @@ const NIGERIAN_STATES = [
 ];
 
 serve(async (req) => {
+  console.log(`📍 [LOCATIONS] Request received: ${req.method} ${req.url}`);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ [LOCATIONS] Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const apiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    if (!apiKey) {
-      console.error('Google Maps API key not found');
-      return new Response(
-        JSON.stringify({ error: 'Google Maps API key not configured' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
+    console.log('📝 [LOCATIONS] Processing request...');
     const { type, state, city, query }: LocationRequest = await req.json();
-    console.log(`Fetching ${type} for`, { state, city, query });
+    console.log(`🔍 [LOCATIONS] Fetching ${type} for:`, { state, city, query });
 
-    let searchQuery = '';
     let locations: any[] = [];
 
     switch (type) {
       case 'states':
-        // Return the predefined list of Nigerian states with enhanced data from Google Places
-        console.log('Returning all Nigerian states');
-        locations = await Promise.all(
-          NIGERIAN_STATES.map(async (stateName) => {
-            try {
-              // Try to get additional info from Google Places for each state
-              const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-              placesUrl.searchParams.set('query', `${stateName} state Nigeria`);
-              placesUrl.searchParams.set('key', apiKey);
-              placesUrl.searchParams.set('region', 'ng');
-              placesUrl.searchParams.set('type', 'administrative_area_level_1');
-              
-              const response = await fetch(placesUrl.toString());
-              const data = await response.json();
-              
-              if (data.status === 'OK' && data.results.length > 0) {
-                const place = data.results[0];
-                return {
-                  name: stateName,
-                  formatted_address: place.formatted_address || `${stateName}, Nigeria`,
-                  place_id: place.place_id || `state_${stateName.toLowerCase().replace(/\s+/g, '_')}`,
-                  types: place.types || ['administrative_area_level_1']
-                };
-              }
-            } catch (error) {
-              console.error(`Error fetching data for ${stateName}:`, error);
-            }
-            
-            // Fallback to basic state info
-            return {
-              name: stateName,
-              formatted_address: `${stateName}, Nigeria`,
-              place_id: `state_${stateName.toLowerCase().replace(/\s+/g, '_')}`,
-              types: ['administrative_area_level_1']
-            };
-          })
-        );
+        // Return the predefined list of Nigerian states immediately (no API calls needed)
+        console.log('📋 [LOCATIONS] Returning Nigerian states list');
+        locations = NIGERIAN_STATES.map((stateName) => ({
+          name: stateName,
+          formatted_address: `${stateName}, Nigeria`,
+          place_id: `state_${stateName.toLowerCase().replace(/\s+/g, '_')}`,
+          types: ['administrative_area_level_1']
+        }));
+        console.log(`✅ [LOCATIONS] Returned ${locations.length} states`);
         break;
         
       case 'cities':
