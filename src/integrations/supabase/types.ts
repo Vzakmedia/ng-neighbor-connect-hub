@@ -3022,6 +3022,13 @@ export type Database = {
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "post_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       post_likes: {
@@ -3050,6 +3057,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3799,7 +3813,15 @@ export type Database = {
           post_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -5384,7 +5406,13 @@ export type Database = {
               _role: Database["public"]["Enums"]["app_role"]
             }
           | { invitation_email: string; invitation_role: string }
-        Returns: string
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          invitation_code: string
+          role: string
+        }[]
       }
       debug_posts_for_user: {
         Args: { _user_id: string }
@@ -6579,7 +6607,7 @@ export type Database = {
         Args:
           | { tbl_oid: unknown; use_typmod?: boolean }
           | { use_typmod?: boolean }
-        Returns: number
+        Returns: string
       }
       post_matches_user_filter: {
         Args: {
