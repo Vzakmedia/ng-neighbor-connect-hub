@@ -7,6 +7,27 @@ interface SafeSubscriptionOptions {
   debugName?: string;
 }
 
+// Connection diagnostics
+interface ConnectionDiagnostics {
+  channelName: string;
+  status: string;
+  error?: string;
+  timestamp: number;
+  isIOS: boolean;
+}
+
+const connectionDiagnostics: ConnectionDiagnostics[] = [];
+const MAX_DIAGNOSTICS = 50;
+
+export const getConnectionDiagnostics = () => [...connectionDiagnostics];
+
+const logDiagnostic = (diagnostic: ConnectionDiagnostics) => {
+  connectionDiagnostics.push(diagnostic);
+  if (connectionDiagnostics.length > MAX_DIAGNOSTICS) {
+    connectionDiagnostics.shift();
+  }
+};
+
 // Global circuit breaker for all subscriptions
 let globalFailureCount = 0;
 const MAX_FAILURES = 3; // Reduced from 5
@@ -91,7 +112,19 @@ export const createSafeSubscription = (
         event.preventDefault?.();
         event.stopPropagation?.();
         
-        console.debug(`${debugName}: WebSocket connection error (handled gracefully)`);
+        const errorMsg = event instanceof ErrorEvent ? event.message : 'WebSocket error';
+        
+        logDiagnostic({
+          channelName,
+          status: 'WEBSOCKET_ERROR',
+          error: errorMsg,
+          timestamp: Date.now(),
+          isIOS
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`${debugName}: WebSocket error:`, errorMsg);
+        }
         
         // Only call custom error handler if provided
         if (options.onError) {
@@ -111,30 +144,60 @@ export const createSafeSubscription = (
     }
     
     subscription = channelBuilder(channel).subscribe((status: string) => {
-      console.debug(`${debugName}: Subscription status:`, status);
+      logDiagnostic({
+        channelName,
+        status,
+        timestamp: Date.now(),
+        isIOS
+      });
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`${debugName}: Subscription status:`, status);
+      }
       
       if (status === 'SUBSCRIBED') {
         isRealTimeConnected = true;
-        console.debug(`${debugName}: Real-time connected, stopping polling`);
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`${debugName}: Real-time connected, stopping polling`);
+        }
         if (pollingInterval) {
           clearInterval(pollingInterval);
           pollingInterval = null;
         }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         isRealTimeConnected = false;
-        console.debug(`${debugName}: WebSocket ${status.toLowerCase()}, falling back to polling (this is normal)`);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`${debugName}: Connection ${status}, reason: ${
+            status === 'TIMED_OUT' ? 'Connection timeout (network issue or server unavailable)' :
+            status === 'CLOSED' ? 'Connection closed (possibly by server)' :
+            'Channel error (configuration or permission issue)'
+          }`);
+        }
+        
         startPolling();
       }
     });
   } catch (error: any) {
+    const errorMessage = error?.message || String(error);
+    
+    logDiagnostic({
+      channelName,
+      status: 'SETUP_ERROR',
+      error: errorMessage,
+      timestamp: Date.now(),
+      isIOS
+    });
+    
     // Handle iOS SecurityError gracefully
     if (error?.name === 'SecurityError' || error?.message?.includes('insecure') || error?.message?.includes('WebSocket')) {
-      console.log(`${debugName}: Realtime unavailable (iOS SecurityError), app will function without live updates`);
-      if (isIOS) {
-        console.log(`${debugName}: iOS detected - continuing without realtime features`);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`${debugName}: Realtime unavailable (SecurityError) - this is normal on iOS`);
       }
     } else {
-      console.debug(`${debugName}: Real-time setup failed, using polling only:`, error);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`${debugName}: Real-time setup failed:`, errorMessage);
+      }
     }
     isRealTimeConnected = false;
   }
