@@ -250,20 +250,14 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
 
       if (error) throw error;
 
-      // Create payment session
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-        'create-ad-campaign-payment',
-        {
-          body: {
-            campaignId: campaign.id,
-            totalAmount: calculateTotalCost(),
-            campaignName: formData.campaignName,
-            duration: formData.duration
-          }
-        }
-      );
-
-      if (paymentError) throw paymentError;
+      // Create payment session via Render API
+      const { RenderApiService } = await import('@/services/renderApiService');
+      const paymentData = await RenderApiService.createAdCampaignPayment({
+        campaignId: campaign.id,
+        totalAmount: calculateTotalCost(),
+        campaignName: formData.campaignName,
+        duration: formData.duration
+      });
 
       // Redirect to Stripe Checkout
       window.open(paymentData.url, '_blank');

@@ -86,17 +86,19 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-business-promotion-payment', {
-        body: {
-          businessId: business.id,
-          promotionType,
-          duration: parseInt(duration),
-          targetLocation: targetLocation === 'all' ? null : targetLocation,
-          images
-        }
-      });
+      // Calculate price based on selected plan and duration
+      const selectedPlan = promotionPlans[promotionType];
+      const priceString = selectedPlan.prices[duration];
+      const amount = parseFloat(priceString.replace('₦', '').replace(',', ''));
 
-      if (error) throw error;
+      const { RenderApiService } = await import('@/services/renderApiService');
+      const data = await RenderApiService.createBusinessPromotionPayment({
+        businessId: business.id,
+        promotionType,
+        duration: parseInt(duration),
+        amount,
+        description: `${selectedPlan.name} - ${duration} days`
+      });
 
       if (data.url) {
         // Open Stripe checkout in a new tab
