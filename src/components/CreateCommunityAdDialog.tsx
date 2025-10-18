@@ -181,16 +181,13 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
 
   const initiatePayment = async (campaignId: string, amount: number) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-ad-campaign-payment', {
-        body: {
-          campaignId: campaignId,
-          totalAmount: amount,
-          campaignName: formData.title,
-          duration: parseInt(formData.duration_days)
-        }
+      const { RenderApiService } = await import('@/services/renderApiService');
+      const data = await RenderApiService.createAdCampaignPayment({
+        campaignId: campaignId,
+        totalAmount: amount,
+        campaignName: formData.title,
+        duration: parseInt(formData.duration_days)
       });
-
-      if (error) throw error;
 
       // Open payment page in new tab
       if (data?.url) {

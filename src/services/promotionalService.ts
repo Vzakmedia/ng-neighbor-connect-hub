@@ -305,22 +305,20 @@ export class PromotionalService {
   }
 
   /**
-   * Create promotional payment session
+   * Create promotional payment session (deprecated - use RenderApiService directly)
    */
   static async createPromotionalPayment(
     campaignData: any,
     promotionType: string
   ): Promise<{ url: string } | null> {
     try {
-      const { data, error } = await supabase.functions.invoke('create-ad-campaign-payment', {
-        body: {
-          campaignData,
-          promotionType
-        }
+      const { RenderApiService } = await import('@/services/renderApiService');
+      return await RenderApiService.createAdCampaignPayment({
+        campaignId: campaignData.id,
+        totalAmount: campaignData.total_budget,
+        campaignName: campaignData.campaign_name,
+        duration: Math.ceil((new Date(campaignData.end_date).getTime() - new Date(campaignData.start_date).getTime()) / (1000 * 60 * 60 * 24))
       });
-
-      if (error) throw error;
-      return data;
     } catch (error) {
       console.error('Error creating promotional payment:', error);
       return null;
