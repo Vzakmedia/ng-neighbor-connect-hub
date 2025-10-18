@@ -122,7 +122,14 @@ const EventFeed = () => {
           created_at,
           event_date,
           rsvp_enabled,
-          file_urls
+          file_urls,
+          profiles!events_user_id_fkey(
+            full_name,
+            avatar_url,
+            neighborhood,
+            city,
+            state
+          )
         `)
         .order('event_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
@@ -141,23 +148,10 @@ const EventFeed = () => {
 
       if (!postsData) return;
 
-      // Get user profiles
-      const userIds = [...new Set(postsData.map(post => post.user_id))];
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, neighborhood, city, state')
-        .in('user_id', userIds);
-
-      const profilesMap = profilesData?.reduce((acc, profile) => {
-        acc[profile.user_id] = profile;
-        return acc;
-      }, {} as Record<string, any>) || {};
-
       // Filter events by user's city and state
-      const filteredPosts = postsData.filter(post => {
-        const postProfile = profilesMap[post.user_id];
-        if (!postProfile || !profile.city || !profile.state) return false;
-        return postProfile.city === profile.city && postProfile.state === profile.state;
+      const filteredPosts = postsData.filter((post: any) => {
+        if (!post.profiles || !profile.city || !profile.state) return false;
+        return post.profiles.city === profile.city && post.profiles.state === profile.state;
       });
 
       // Get likes and comments counts
@@ -198,16 +192,15 @@ const EventFeed = () => {
       const userSaves = new Set(userSavesResult.data?.map(save => save.post_id) || []);
 
       const transformedEvents: Event[] = filteredPosts.map((post: any) => {
-        const profile = profilesMap[post.user_id];
         return {
           id: post.id,
           author: {
-            name: profile?.full_name || 'Anonymous User',
-            avatar: profile?.avatar_url || undefined,
+            name: post.profiles?.full_name || 'Anonymous User',
+            avatar: post.profiles?.avatar_url || undefined,
             location: [
-              profile?.neighborhood,
-              profile?.city,
-              profile?.state
+              post.profiles?.neighborhood,
+              post.profiles?.city,
+              post.profiles?.state
             ].filter(Boolean).join(', ') || 'Unknown Location'
           },
           content: post.content,
@@ -227,8 +220,8 @@ const EventFeed = () => {
           file_urls: post.file_urls || [],
           image_urls: post.image_urls || [],
           profiles: {
-            full_name: profile?.full_name || 'Anonymous User',
-            avatar_url: profile?.avatar_url || ''
+            full_name: post.profiles?.full_name || 'Anonymous User',
+            avatar_url: post.profiles?.avatar_url || ''
           }
         };
       });
