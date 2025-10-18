@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { createSafeSubscription } from '@/utils/realtimeUtils';
+import { createSafeSubscription, getConnectionDiagnostics } from '@/utils/realtimeUtils';
 
 interface UserPresence {
   [userId: string]: {
@@ -322,11 +322,30 @@ export const useUserPresence = () => {
     return presenceState[userId];
   }, [presenceState]);
 
+  const getConnectionStatus = useCallback(() => {
+    const diagnostics = getConnectionDiagnostics();
+    const recentDiagnostics = diagnostics.slice(-10);
+    
+    return {
+      fallbackMode,
+      connectionMetrics,
+      retryAttempt,
+      lastSuccessfulConnection: lastSuccessfulConnection 
+        ? new Date(lastSuccessfulConnection).toISOString() 
+        : null,
+      recentDiagnostics: recentDiagnostics.map(d => ({
+        ...d,
+        timestamp: new Date(d.timestamp).toISOString()
+      }))
+    };
+  }, [fallbackMode, connectionMetrics, retryAttempt, lastSuccessfulConnection]);
+
   return {
     onlineUsers: Array.from(onlineUsers),
     isUserOnline,
     getUserPresence,
     totalOnlineUsers: onlineUsers.size,
-    fallbackMode, // Expose fallback mode for debugging
+    fallbackMode,
+    connectionStatus: getConnectionStatus(), // Detailed diagnostics
   };
 };
