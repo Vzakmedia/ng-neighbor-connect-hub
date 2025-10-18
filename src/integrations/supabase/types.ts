@@ -6250,6 +6250,12 @@ export type Database = {
           status: string
         }[]
       }
+      get_recently_active_users: {
+        Args: { since_timestamp: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
       get_revenue_breakdown: {
         Args: { end_date?: string; start_date?: string }
         Returns: {

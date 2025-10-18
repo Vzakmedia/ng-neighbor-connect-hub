@@ -26,6 +26,20 @@ export const useUserPresence = () => {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [presenceState, setPresenceState] = useState<PresenceState>({});
   const [fallbackMode, setFallbackMode] = useState(false);
+  
+  // Recovery mechanism state
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const [lastSuccessfulConnection, setLastSuccessfulConnection] = useState<number | null>(null);
+  
+  // Smart polling state
+  const [userIsActive, setUserIsActive] = useState(true);
+  
+  // Connection diagnostics
+  const [connectionMetrics] = useState({
+    isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+    totalAttempts: 0,
+    failedConnections: 0
+  });
 
   const updatePresenceState = useCallback((presences: UserPresence) => {
     const flattened: PresenceState = {};
@@ -50,45 +64,28 @@ export const useUserPresence = () => {
     setOnlineUsers(userIds);
   }, []);
 
-  // Fallback: assume current user and recently active users are online
+  // Optimized fallback presence check using database function
   const fallbackPresenceCheck = useCallback(async () => {
     if (!user) return;
     
     try {
-      // Always mark current user as online
       const activeUsers = new Set<string>([user.id]);
-      
-      // Get recently active users (within last 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      
-      // Check for recent activity in various tables
-      const [messagesData, postsData, profilesData] = await Promise.all([
-        supabase
-          .from('direct_messages')
-          .select('sender_id')
-          .gte('created_at', fiveMinutesAgo)
-          .limit(20),
-        supabase
-          .from('community_posts')
-          .select('user_id')
-          .gte('created_at', fiveMinutesAgo)
-          .limit(20),
-        supabase
-          .from('profiles')
-          .select('user_id, updated_at')
-          .gte('updated_at', fiveMinutesAgo)
-          .limit(20),
-      ]);
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
 
-      // Add recently active users
-      messagesData.data?.forEach(msg => activeUsers.add(msg.sender_id));
-      postsData.data?.forEach(post => activeUsers.add(post.user_id));
-      profilesData.data?.forEach(profile => activeUsers.add(profile.user_id));
+      // Single optimized query using custom database function
+      const { data, error } = await supabase
+        .rpc('get_recently_active_users', { 
+          since_timestamp: twoMinutesAgo 
+        });
 
-      // Only log in development to reduce console noise
+      if (error) throw error;
+
+      data?.forEach((item: { user_id: string }) => activeUsers.add(item.user_id));
+
       if (process.env.NODE_ENV === 'development') {
-        console.log('Fallback presence check - active users:', Array.from(activeUsers));
+        console.debug('Fallback presence check - active users:', Array.from(activeUsers));
       }
+      
       setOnlineUsers(activeUsers);
       
       // Create basic presence state for active users
@@ -103,7 +100,6 @@ export const useUserPresence = () => {
       
     } catch (error) {
       console.error('Error in fallback presence check:', error);
-      // At minimum, mark current user as online
       setOnlineUsers(new Set([user.id]));
       setPresenceState({
         [user.id]: {
@@ -113,45 +109,116 @@ export const useUserPresence = () => {
       });
     }
   }, [user]);
+  
+  // Recovery mechanism with exponential backoff
+  const getRetryDelay = useCallback((attempt: number) => {
+    return Math.min(30000 * Math.pow(2, attempt), 300000); // 30s to 5min
+  }, []);
+  
+  const attemptReconnection = useCallback(() => {
+    if (!fallbackMode || connectionMetrics.isIOS) return;
+    
+    const delay = getRetryDelay(retryAttempt);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`Scheduling Realtime reconnection attempt ${retryAttempt + 1} in ${delay / 1000}s`);
+    }
+    
+    setTimeout(() => {
+      setRetryAttempt(prev => prev + 1);
+      setFallbackMode(false); // Trigger re-initialization
+    }, delay);
+  }, [fallbackMode, retryAttempt, getRetryDelay, connectionMetrics.isIOS]);
+
+  // Track user activity for smart polling
+  useEffect(() => {
+    const handleActivity = () => setUserIsActive(true);
+    const events = ['mousemove', 'keypress', 'touchstart', 'scroll'];
+    
+    events.forEach(event => {
+      window.addEventListener(event, handleActivity, { passive: true });
+    });
+    
+    const inactivityTimer = setInterval(() => {
+      setUserIsActive(false);
+    }, 60000); // Mark as inactive after 1 minute
+    
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, handleActivity);
+      });
+      clearInterval(inactivityTimer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
 
     let subscription: any = null;
     let fallbackInterval: NodeJS.Timeout | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
 
     const initializePresence = async () => {
       try {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Initializing presence...', { 
+            isIOS: connectionMetrics.isIOS, 
+            retryAttempt 
+          });
+        }
+
         subscription = createSafeSubscription(
           (channel) => {
             return channel
               .on('presence', { event: 'sync' }, () => {
                 try {
                   const presences = channel.presenceState() as UserPresence;
-                  console.log('Presence sync - raw presences:', presences);
+                  if (process.env.NODE_ENV === 'development') {
+                    console.debug('Presence sync - raw presences:', presences);
+                  }
                   updatePresenceState(presences);
-                  setFallbackMode(false);
+                  
+                  // Connection successful - reset retry attempts
+                  setRetryAttempt(0);
+                  setLastSuccessfulConnection(Date.now());
+                  if (fallbackMode) {
+                    setFallbackMode(false);
+                    if (process.env.NODE_ENV === 'development') {
+                      console.debug('Reconnected to Realtime successfully');
+                    }
+                  }
                 } catch (error) {
                   console.error('Error syncing presence:', error);
                   setFallbackMode(true);
                 }
               })
               .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                console.log('User joined:', key, newPresences);
+                if (process.env.NODE_ENV === 'development') {
+                  console.debug('User joined:', key, newPresences);
+                }
                 const presences = channel.presenceState() as UserPresence;
                 updatePresenceState(presences);
               })
               .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                console.log('User left:', key, leftPresences);
+                if (process.env.NODE_ENV === 'development') {
+                  console.debug('User left:', key, leftPresences);
+                }
                 const presences = channel.presenceState() as UserPresence;
                 updatePresenceState(presences);
               })
               .subscribe(async (status) => {
-                console.log('Presence subscription status:', status);
+                if (process.env.NODE_ENV === 'development') {
+                  console.debug('Presence subscription status:', status);
+                }
                 
                 if (status === 'TIMED_OUT' || status === 'CLOSED') {
-                  console.log('Presence connection failed, switching to fallback mode');
+                  console.error('Presence connection failed, switching to fallback mode');
                   setFallbackMode(true);
+                  
+                  // Schedule reconnection attempt (unless iOS)
+                  if (!connectionMetrics.isIOS) {
+                    attemptReconnection();
+                  }
                   return;
                 }
                 
@@ -176,12 +243,15 @@ export const useUserPresence = () => {
                   };
 
                   const presenceTrackStatus = await channel.track(presenceData);
-                  console.log('Tracking user presence:', presenceData, presenceTrackStatus);
+                  if (process.env.NODE_ENV === 'development') {
+                    console.debug('Tracking user presence:', presenceData, presenceTrackStatus);
+                  }
                   
                   const currentPresences = channel.presenceState() as UserPresence;
-                  console.log('Current online users:', currentPresences);
                   updatePresenceState(currentPresences);
                   setFallbackMode(false);
+                  setRetryAttempt(0);
+                  setLastSuccessfulConnection(Date.now());
                 } catch (error) {
                   console.error('Error tracking presence:', error);
                   setFallbackMode(true);
@@ -193,18 +263,23 @@ export const useUserPresence = () => {
             debugName: 'UserPresence',
             pollInterval: 30000,
             onError: () => {
-              console.log('UserPresence: Connection issues, switching to fallback mode');
+              console.error('UserPresence: Connection issues, switching to fallback mode');
               setFallbackMode(true);
+              
+              // Schedule reconnection attempt (unless iOS)
+              if (!connectionMetrics.isIOS) {
+                attemptReconnection();
+              }
             },
           }
         );
 
-        // Set up fallback interval with reduced frequency
+        // Smart polling - only when user is active
         fallbackInterval = setInterval(() => {
-          if (fallbackMode) {
+          if (fallbackMode && userIsActive) {
             fallbackPresenceCheck();
           }
-        }, 60000); // Check every 60 seconds in fallback mode to reduce load
+        }, 60000); // Check every 60 seconds
 
         // Initial fallback check
         setTimeout(() => {
@@ -229,8 +304,11 @@ export const useUserPresence = () => {
       if (fallbackInterval) {
         clearInterval(fallbackInterval);
       }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
-  }, [user, updatePresenceState, fallbackPresenceCheck]); // Removed fallbackMode to prevent infinite loop
+  }, [user, updatePresenceState, fallbackPresenceCheck, userIsActive, attemptReconnection, retryAttempt, connectionMetrics.isIOS]);
 
   const isUserOnline = useCallback((userId: string) => {
     // In fallback mode, be more lenient about marking users as online
