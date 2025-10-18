@@ -85,7 +85,10 @@ export const useUserPresence = () => {
       postsData.data?.forEach(post => activeUsers.add(post.user_id));
       profilesData.data?.forEach(profile => activeUsers.add(profile.user_id));
 
-      console.log('Fallback presence check - active users:', Array.from(activeUsers));
+      // Only log in development to reduce console noise
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Fallback presence check - active users:', Array.from(activeUsers));
+      }
       setOnlineUsers(activeUsers);
       
       // Create basic presence state for active users
@@ -196,12 +199,12 @@ export const useUserPresence = () => {
           }
         );
 
-        // Set up fallback interval
+        // Set up fallback interval with reduced frequency
         fallbackInterval = setInterval(() => {
           if (fallbackMode) {
             fallbackPresenceCheck();
           }
-        }, 10000); // Check every 10 seconds in fallback mode
+        }, 60000); // Check every 60 seconds in fallback mode to reduce load
 
         // Initial fallback check
         setTimeout(() => {
@@ -227,7 +230,7 @@ export const useUserPresence = () => {
         clearInterval(fallbackInterval);
       }
     };
-  }, [user, updatePresenceState, fallbackMode, fallbackPresenceCheck]);
+  }, [user, updatePresenceState, fallbackPresenceCheck]); // Removed fallbackMode to prevent infinite loop
 
   const isUserOnline = useCallback((userId: string) => {
     // In fallback mode, be more lenient about marking users as online
