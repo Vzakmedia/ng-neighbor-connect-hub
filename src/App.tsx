@@ -11,6 +11,7 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { initializeStatusBar } from '@/hooks/mobile/useNativeStatusBar';
 
 import { AuthProvider } from "@/hooks/useAuth";
+import { PresenceProvider } from "@/contexts/PresenceContext";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -190,10 +191,11 @@ const App = () => {
           disableTransitionOnChange
         >
           <AuthProvider>
-          <TooltipProvider>
-          <Toaster />
-          <Sonner />
-        <BrowserRouter>
+            <PresenceProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
           
           <AudioInitializer />
           <PushNotificationWrapper />
@@ -239,10 +241,11 @@ const App = () => {
               <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
-            <FloatingCreatePostButton />
-          </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+                  <FloatingCreatePostButton />
+                </BrowserRouter>
+              </TooltipProvider>
+            </PresenceProvider>
+          </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </IOSErrorBoundary>
