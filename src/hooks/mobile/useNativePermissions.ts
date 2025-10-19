@@ -130,6 +130,21 @@ export const useNativePermissions = () => {
       throw new Error('Location permission denied');
     }
 
+    // Browser capability detection
+    const detectGPSCapability = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isDesktop = !(/android|iphone|ipad|ipod/.test(userAgent));
+      
+      if (isDesktop) {
+        console.warn('⚠️ Desktop browser detected. GPS accuracy may be limited to Wi-Fi/IP positioning.');
+        console.warn('   For best results, use a mobile device or enable location sharing in browser.');
+      } else if (/chrome/.test(userAgent)) {
+        console.log('✅ Chrome mobile detected. Good GPS support.');
+      } else if (/safari/.test(userAgent)) {
+        console.log('✅ Safari mobile detected. Good GPS support.');
+      }
+    };
+
     // Validate position helper
     const validatePosition = (pos: GeolocationPosition): GeolocationPosition => {
       const { latitude, longitude, accuracy } = pos.coords;
@@ -166,60 +181,101 @@ export const useNativePermissions = () => {
       return pos;
     };
 
+    detectGPSCapability();
+
     return new Promise((resolve, reject) => {
-      // Use navigator.geolocation for both web and native (Capacitor uses this)
       if (!navigator.geolocation) {
         return reject(new Error('Geolocation is not supported'));
       }
 
       let best: GeolocationPosition | null = null;
       let attempts = 0;
-      const maxAttempts = 5;
-
-      const tryGet = () => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const acc = pos.coords.accuracy;
-            console.log(`📍 GPS Attempt ${attempts + 1}/${maxAttempts}: ±${acc.toFixed(1)}m`);
-            attempts++;
-
-            // Keep the best position we've seen
-            if (!best || acc < best.coords.accuracy) {
-              best = pos;
-              console.log(`🎯 New best: ±${acc.toFixed(1)}m`);
-            }
-
-            // Success criteria: Met desired accuracy OR exhausted attempts
-            if (acc <= desiredAccuracy) {
-              console.log(`✅ Target accuracy achieved: ±${acc.toFixed(1)}m`);
-              resolve(validatePosition(best));
-            } else if (attempts >= maxAttempts) {
-              console.log(`⏱️ Max attempts reached. Best: ±${best.coords.accuracy.toFixed(1)}m`);
-              resolve(validatePosition(best));
-            } else {
-              // Try again after short delay
-              setTimeout(tryGet, 1500);
-            }
-          },
-          (err) => {
-            console.error(`❌ GPS error on attempt ${attempts + 1}:`, err);
-            // If we have ANY position, return it rather than failing
-            if (best) {
-              console.log(`⚠️ Returning best position despite error: ±${best.coords.accuracy.toFixed(1)}m`);
-              resolve(validatePosition(best));
-            } else {
-              reject(err);
-            }
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 8000, // 8 seconds per attempt
-            maximumAge: 0, // Never use cached position
+      const startTime = Date.now();
+      const maxTotalTime = 120000; // 2 minutes total
+      
+      // Use watchPosition to activate GPS hardware and continuously improve
+      console.log('🛰️ Activating GPS hardware...');
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const acc = pos.coords.accuracy;
+          const { latitude, longitude, altitude, speed, heading } = pos.coords;
+          const elapsed = Date.now() - startTime;
+          
+          console.log(`📍 GPS Update ${attempts + 1}: ±${acc.toFixed(1)}m (${(elapsed/1000).toFixed(1)}s elapsed)`);
+          console.log(`   Coords: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          console.log(`   Altitude: ${altitude ?? 'N/A'}m`);
+          console.log(`   Speed: ${speed ?? 'N/A'}m/s`);
+          console.log(`   Heading: ${heading ?? 'N/A'}°`);
+          console.log(`   Timestamp: ${new Date(pos.timestamp).toISOString()}`);
+          
+          // Detect if this is cell tower / IP-based positioning
+          if (acc > 1000) {
+            console.warn(`⚠️ WARNING: Very poor accuracy (${acc}m). GPS satellites not acquired.`);
+            console.warn(`   Possible causes:`);
+            console.warn(`   - Indoor location (GPS signals blocked)`);
+            console.warn(`   - GPS hardware not active`);
+            console.warn(`   - Browser using IP/cell tower positioning`);
+            console.warn(`   - Location permissions restricted`);
           }
-        );
-      };
+          
+          attempts++;
 
-      tryGet();
+          // Track best position
+          if (!best || acc < best.coords.accuracy) {
+            best = pos;
+            console.log(`🎯 New best: ±${acc.toFixed(1)}m`);
+          }
+
+          // Success: Met desired accuracy
+          if (acc <= desiredAccuracy) {
+            console.log(`✅ Target accuracy achieved: ±${acc.toFixed(1)}m`);
+            navigator.geolocation.clearWatch(watchId);
+            resolve(validatePosition(best));
+          }
+          
+          // Timeout: Return best we got
+          if (elapsed >= maxTotalTime) {
+            console.log(`⏱️ Stopping GPS acquisition. Best: ±${best.coords.accuracy.toFixed(1)}m`);
+            navigator.geolocation.clearWatch(watchId);
+            
+            if (best.coords.accuracy > 100) {
+              console.error('❌ GPS failed to acquire satellites. Accuracy too poor.');
+              reject(new Error(`GPS accuracy too poor: ±${best.coords.accuracy.toFixed(0)}m. Move outdoors for better signal.`));
+            } else {
+              resolve(validatePosition(best));
+            }
+          }
+        },
+        (err) => {
+          console.error('❌ GPS error:', err);
+          navigator.geolocation.clearWatch(watchId);
+          
+          if (best && best.coords.accuracy <= 100) {
+            resolve(validatePosition(best));
+          } else {
+            reject(new Error('GPS failed to acquire accurate position. Please ensure location services are enabled and you have clear sky view.'));
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 30000, // 30 seconds per update
+          maximumAge: 0, // Never use cached position
+        }
+      );
+
+      // Safety timeout
+      setTimeout(() => {
+        navigator.geolocation.clearWatch(watchId);
+        if (best) {
+          if (best.coords.accuracy > 100) {
+            reject(new Error(`GPS timeout. Best accuracy: ±${best.coords.accuracy.toFixed(0)}m. Move outdoors for better GPS signal.`));
+          } else {
+            resolve(validatePosition(best));
+          }
+        } else {
+          reject(new Error('GPS timeout with no position acquired'));
+        }
+      }, maxTotalTime);
     });
   }, [requestLocationPermission]);
 

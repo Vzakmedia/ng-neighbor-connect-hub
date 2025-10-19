@@ -137,7 +137,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       }
 
       console.log('Requesting location permission...');
-      setLoadingMessage('Requesting location permission...');
+      setLoadingMessage('Activating GPS... This may take 30-60 seconds.');
 
       // Set timeout to show manual entry option after 5 seconds
       timeoutRef.current = setTimeout(() => {
@@ -147,7 +147,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       let position;
       try {
-        // Get user's current position (will wait for ≤25m accuracy or 5 attempts)
+        // Get user's current position (will wait for ≤25m accuracy or up to 2 minutes)
         position = await getCurrentPosition(25);
       } catch (locationError) {
         console.error('Location error:', locationError);
@@ -158,7 +158,9 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         
         const errorMsg = locationError instanceof Error ? locationError.message : 'Location error';
         
-        if (errorMsg.includes('permission')) {
+        if (errorMsg.includes('too poor') || errorMsg.includes('timeout')) {
+          setError(`GPS signal too weak. ${errorMsg}\n\nTips:\n• Move outdoors or near a window\n• Ensure Location Services are enabled\n• Wait for clear sky view\n\nOr enter location manually below.`);
+        } else if (errorMsg.includes('permission')) {
           setPermissionDenied(true);
           setError('Location permission denied. Please enter your location manually below.');
         } else if (errorMsg.includes('Invalid coordinates')) {
@@ -197,6 +199,25 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       
       setLocationAccuracy(accuracy);
       console.log(`📍 Valid position: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
+
+      // Update loading message based on accuracy
+      if (accuracy && accuracy > 100) {
+        setLoadingMessage(`⚠️ GPS accuracy is poor (±${accuracy.toFixed(0)}m). Consider improving.`);
+        setIsImprovingAccuracy(true);
+        
+        toast({
+          title: "Poor GPS Accuracy",
+          description: `Current accuracy: ±${accuracy.toFixed(0)}m. For better results, move outdoors or wait longer.`,
+          variant: "destructive",
+        });
+      } else if (accuracy && accuracy <= 20) {
+        setLoadingMessage('✅ High-precision location detected');
+      } else if (accuracy && accuracy <= 50) {
+        setLoadingMessage(`Location detected (±${accuracy.toFixed(0)}m). Initializing map...`);
+      } else {
+        setLoadingMessage(`Location acquired (±${accuracy.toFixed(0)}m). Consider improving for accuracy.`);
+        setIsImprovingAccuracy(true);
+      }
 
       // Update loading message based on accuracy
       if (accuracy && accuracy <= 20) {
