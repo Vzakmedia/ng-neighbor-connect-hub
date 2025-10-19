@@ -124,42 +124,90 @@ export const useNativePermissions = () => {
     }
   }, [isNative, toast]);
 
-  const getCurrentPosition = useCallback(async () => {
+  const getCurrentPosition = useCallback(async (desiredAccuracy: number = 20) => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       throw new Error('Location permission denied');
     }
 
     if (!isNative) {
-      // Web fallback
+      // Web fallback with accuracy retry logic
       return new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        });
+        let bestPosition: GeolocationPosition | null = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        const tryGetPosition = () => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              attempts++;
+              console.log(`📍 GPS attempt ${attempts}: ±${position.coords.accuracy.toFixed(1)}m`);
+              
+              if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+                bestPosition = position;
+              }
+              
+              if (position.coords.accuracy <= desiredAccuracy || attempts >= maxAttempts) {
+                console.log(`✅ Final position: ±${bestPosition.coords.accuracy.toFixed(1)}m`);
+                resolve(bestPosition);
+              } else {
+                setTimeout(tryGetPosition, 2000);
+              }
+            },
+            (error) => {
+              if (bestPosition) {
+                resolve(bestPosition);
+              } else {
+                reject(error);
+              }
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            }
+          );
+        };
+        
+        tryGetPosition();
       });
     }
 
     try {
-      const position = await Geolocation.getCurrentPosition({
+      let bestPosition = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 30000,
         maximumAge: 0
       });
+      
+      console.log(`📍 First position: ±${bestPosition.coords.accuracy}m`);
+      
+      if (bestPosition.coords.accuracy > desiredAccuracy) {
+        console.log('Trying for better accuracy...');
+        
+        const secondAttempt = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        });
+        
+        if (secondAttempt.coords.accuracy < bestPosition.coords.accuracy) {
+          bestPosition = secondAttempt;
+          console.log(`✅ Improved to: ±${bestPosition.coords.accuracy}m`);
+        }
+      }
 
-      // Convert to browser GeolocationPosition format for compatibility
       return {
         coords: {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude,
-          altitudeAccuracy: position.coords.altitudeAccuracy,
-          heading: position.coords.heading,
-          speed: position.coords.speed
+          latitude: bestPosition.coords.latitude,
+          longitude: bestPosition.coords.longitude,
+          accuracy: bestPosition.coords.accuracy,
+          altitude: bestPosition.coords.altitude,
+          altitudeAccuracy: bestPosition.coords.altitudeAccuracy,
+          heading: bestPosition.coords.heading,
+          speed: bestPosition.coords.speed
         },
-        timestamp: position.timestamp
+        timestamp: bestPosition.timestamp
       } as GeolocationPosition;
     } catch (error) {
       console.error('Error getting position:', error);
