@@ -124,7 +124,10 @@ export const useNativePermissions = () => {
     }
   }, [isNative, toast]);
 
-  const getCurrentPosition = useCallback(async (desiredAccuracy: number = 25): Promise<GeolocationPosition> => {
+  const getCurrentPosition = useCallback(async (
+    desiredAccuracy: number = 25,
+    onUpdate?: (position: GeolocationPosition) => void
+  ): Promise<GeolocationPosition> => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       throw new Error('Location permission denied');
@@ -208,6 +211,11 @@ export const useNativePermissions = () => {
           console.log(`   Heading: ${heading ?? 'N/A'}°`);
           console.log(`   Timestamp: ${new Date(pos.timestamp).toISOString()}`);
           
+          // Call onUpdate callback if provided
+          if (onUpdate) {
+            onUpdate(pos);
+          }
+          
           // Detect if this is cell tower / IP-based positioning
           if (acc > 1000) {
             console.warn(`⚠️ WARNING: Very poor accuracy (${acc}m). GPS satellites not acquired.`);
@@ -238,9 +246,29 @@ export const useNativePermissions = () => {
             console.log(`⏱️ Stopping GPS acquisition. Best: ±${best.coords.accuracy.toFixed(1)}m`);
             navigator.geolocation.clearWatch(watchId);
             
+            // Accept coordinates within Lagos area even if accuracy is poor
+            const LAGOS_BOUNDS = {
+              north: 6.7,
+              south: 6.4,
+              east: 3.7,
+              west: 3.1
+            };
+            
+            const inLagos = (
+              best.coords.latitude >= LAGOS_BOUNDS.south &&
+              best.coords.latitude <= LAGOS_BOUNDS.north &&
+              best.coords.longitude >= LAGOS_BOUNDS.west &&
+              best.coords.longitude <= LAGOS_BOUNDS.east
+            );
+            
             if (best.coords.accuracy > 100) {
-              console.error('❌ GPS failed to acquire satellites. Accuracy too poor.');
-              reject(new Error(`GPS accuracy too poor: ±${best.coords.accuracy.toFixed(0)}m. Move outdoors for better signal.`));
+              if (inLagos) {
+                console.warn(`⚠️ Very poor accuracy (${best.coords.accuracy}m), but coordinates are in Lagos area - accepting`);
+                resolve(validatePosition(best));
+              } else {
+                console.error('❌ GPS failed to acquire satellites. Accuracy too poor.');
+                reject(new Error(`GPS accuracy too poor: ±${best.coords.accuracy.toFixed(0)}m. Move outdoors for better signal.`));
+              }
             } else {
               resolve(validatePosition(best));
             }
