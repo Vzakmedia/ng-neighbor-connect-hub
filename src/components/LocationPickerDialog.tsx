@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Navigation } from 'lucide-react';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
+import { Capacitor } from '@capacitor/core';
 
 interface LocationPickerDialogProps {
   open: boolean;
@@ -179,7 +180,15 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
 
-      console.log('Initializing map with location:', initialLocation);
+      const isNative = Capacitor.isNativePlatform();
+      const platform = Capacitor.getPlatform();
+      const startTime = performance.now();
+
+      console.log('[MAP] Starting initialization...', {
+        platform,
+        isNative,
+        location: initialLocation
+      });
       setLoadingMessage('Loading map...');
 
       // Wait for Google Maps to be fully loaded
@@ -196,19 +205,20 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         }
       });
 
-      // Initialize map with higher zoom for better accuracy and Nigeria restrictions
+      // Initialize map with native optimizations
       const map = new google.maps.Map(mapRef.current, {
         center: initialLocation,
-        zoom: 16,
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true,
+        zoom: isNative ? 16 : 15,
+        mapTypeControl: !isNative,
+        streetViewControl: !isNative,
+        fullscreenControl: !isNative,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: 'cooperative',
+        gestureHandling: isNative ? 'greedy' : 'cooperative',
         zoomControl: true,
-        scaleControl: true,
-        rotateControl: true,
-        mapId: 'LOCATION_PICKER_MAP', // Required for AdvancedMarkerElement
+        scaleControl: !isNative,
+        rotateControl: !isNative,
+        disableDefaultUI: isNative,
+        mapId: 'LOCATION_PICKER_MAP',
         restriction: {
           latLngBounds: {
             north: 13.9,
@@ -218,6 +228,13 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           },
           strictBounds: false
         }
+      });
+
+      const loadTime = performance.now() - startTime;
+      console.log('[MAP] Initialization complete', {
+        platform,
+        loadTimeMs: Math.round(loadTime),
+        coordinates: initialLocation
       });
 
       console.log('Map created successfully');
@@ -287,20 +304,37 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       console.error('❌ [LocationPicker] Error initializing map:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const isNative = Capacitor.isNativePlatform();
       
-      // Check if it's a permission error
-      if (error instanceof Error && error.message.includes('permission')) {
-        setPermissionDenied(true);
-        setError('Location permission denied');
+      // Native-specific error handling
+      if (isNative) {
+        if (errorMessage.includes('net::ERR_NAME_NOT_RESOLVED') || errorMessage.includes('Failed to fetch')) {
+          setError('No internet connection. Please check your WiFi or mobile data.');
+        } else if (errorMessage.includes('API key') || errorMessage.includes('ApiNotActivatedMapError')) {
+          setError('Map service unavailable. Please use manual entry below.');
+        } else if (errorMessage.includes('permission')) {
+          setPermissionDenied(true);
+          setError('Location permission denied. Please use manual entry below.');
+        } else {
+          setError('Map loading issue. Try manual entry or select your neighborhood.');
+        }
       } else {
-        setError(errorMessage);
+        // Check if it's a permission error
+        if (error instanceof Error && error.message.includes('permission')) {
+          setPermissionDenied(true);
+          setError('Location permission denied');
+        } else {
+          setError(errorMessage);
+        }
       }
       
       toast({
         title: "Map Loading Error",
-        description: errorMessage,
+        description: isNative ? 'Please use manual entry to set your location' : errorMessage,
         variant: "destructive",
       });
+      
+      setManualEntryMode(true);
       setIsLoading(false);
     }
   };
