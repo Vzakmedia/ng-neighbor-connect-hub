@@ -122,13 +122,22 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       if (!mapContainer.current) return;
 
       map.current = new (window as any).google.maps.Map(mapContainer.current, {
-        center: { lat: 6.5244, lng: 3.3792 }, // Lagos, Nigeria coordinates
-        zoom: 11,
+        center: { lat: 9.0820, lng: 8.6753 }, // Nigeria center coordinates
+        zoom: 6, // Show all of Nigeria
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
-        mapId: 'SAFETY_MAP' // Required for AdvancedMarkerElement
+        mapId: 'SAFETY_MAP', // Required for AdvancedMarkerElement
+        restriction: {
+          latLngBounds: {
+            north: 13.9,  // Northern Nigeria border
+            south: 4.3,   // Southern Nigeria border
+            east: 14.7,   // Eastern Nigeria border
+            west: 2.7     // Western Nigeria border
+          },
+          strictBounds: false
+        }
       });
 
       setMapLoaded(true);

@@ -91,15 +91,19 @@ const PanicButton = () => {
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       
+      // Use our Nigeria-specific reverse geocoding edge function
       const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+        'https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/nigeria-reverse-geocode',
         { 
+          method: 'POST',
           signal: controller.signal,
           headers: {
-            'Accept': 'application/json',
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4`,
+          },
+          body: JSON.stringify({ latitude: lat, longitude: lng })
         }
       );
       
@@ -110,10 +114,9 @@ const PanicButton = () => {
       }
       
       const data = await response.json();
-      return data.display_name || data.locality || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      return data.address || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch (error) {
-      console.error('Reverse geocoding failed:', error);
-      // Always return coordinates as fallback
+      console.error('Nigeria reverse geocoding failed:', error);
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
   };
