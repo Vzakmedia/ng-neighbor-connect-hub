@@ -448,29 +448,22 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
   const fallbackReverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      console.log('🗺️ [LocationPicker] Using Nigeria-specific reverse geocoding:', { lat, lng });
       
-      const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
-        { 
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-          }
-        }
-      );
+      // Use our Nigeria-specific reverse geocoding edge function
+      const { data, error } = await supabase.functions.invoke('nigeria-reverse-geocode', {
+        body: { latitude: lat, longitude: lng }
+      });
       
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Geocoding failed: ${response.status}`);
+      if (error) {
+        console.error('❌ [LocationPicker] Edge function error:', error);
+        throw error;
       }
       
-      const data = await response.json();
-      return data.display_name || data.locality || data.city || "Current Location";
+      console.log('✅ [LocationPicker] Geocoding success:', data);
+      return data?.address || "Current Location";
     } catch (error) {
-      console.error('Fallback reverse geocoding failed:', error);
+      console.error('❌ [LocationPicker] Nigeria reverse geocoding failed:', error);
       return "Current Location";
     }
   };

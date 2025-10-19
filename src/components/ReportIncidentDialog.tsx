@@ -67,24 +67,23 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
         longitude
       }));
       
-      // Reverse geocode to get address
-      if (window.google && window.google.maps) {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode(
-          { location: { lat: latitude, lng: longitude } },
-          (results, status) => {
-            if (status === 'OK' && results?.[0]) {
-              setFormData(prev => ({
-                ...prev,
-                address: results[0].formatted_address
-              }));
-            }
-            setLocationLoading(false);
-          }
-        );
-      } else {
-        setLocationLoading(false);
+      // Reverse geocode to get Nigerian address
+      try {
+        const { data, error } = await supabase.functions.invoke('nigeria-reverse-geocode', {
+          body: { latitude, longitude }
+        });
+        
+        if (!error && data?.address) {
+          setFormData(prev => ({
+            ...prev,
+            address: data.address
+          }));
+        }
+      } catch (error) {
+        console.error('Reverse geocoding failed:', error);
       }
+      
+      setLocationLoading(false);
     } catch (error) {
       console.error('Error getting location:', error);
       toast({
