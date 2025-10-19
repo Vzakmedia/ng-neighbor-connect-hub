@@ -58,17 +58,8 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
   const getCurrentLocation = async () => {
     setLocationLoading(true);
     try {
-      // Target 20m accuracy for incident reports
-      const position = await getCurrentPosition(20);
-      const { latitude, longitude, accuracy } = position.coords;
-      
-      // Validate
-      if (Math.abs(latitude) < 0.001 && Math.abs(longitude) < 0.001) {
-        throw new Error('Invalid GPS coordinates');
-      }
-      
-      console.log(`📍 Incident location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
-      
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
       setCurrentLocation({ lat: latitude, lng: longitude });
       setFormData(prev => ({
         ...prev,
@@ -97,7 +88,7 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
       console.error('Error getting location:', error);
       toast({
         title: "Location Error",
-        description: "Could not determine your location. Please enable GPS.",
+        description: "Unable to get your current location. Please enable location access or enter the address manually.",
         variant: "destructive"
       });
       setLocationLoading(false);
