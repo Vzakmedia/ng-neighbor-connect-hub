@@ -10,7 +10,10 @@
   "ios": {
     "contentInset": "always",
     "backgroundColor": "#ffffff",
-    "scheme": "neighborlink"
+    "scheme": "neighborlink",
+    "limitsNavigationsToAppBoundDomains": false,
+    "allowsInlineMediaPlayback": true,
+    "webContentsDebuggingEnabled": true
   },
   "plugins": {
     "SplashScreen": {
