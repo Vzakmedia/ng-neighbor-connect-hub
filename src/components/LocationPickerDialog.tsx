@@ -591,13 +591,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                       <Navigation className="h-4 w-4 mr-2" />
                       Try Again
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open('https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions', '_blank')}
-                    >
-                      Configure API Key
-                    </Button>
                   </div>
                 </div>
               </div>
