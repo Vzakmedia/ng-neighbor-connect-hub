@@ -78,23 +78,12 @@ const PanicButton = () => {
 
   const getCurrentLocation = async (): Promise<{ latitude: number; longitude: number }> => {
     try {
-      console.log('🚨 EMERGENCY: Acquiring precise location...');
-      
-      // For emergencies, demand ≤15m accuracy
-      const position = await getCurrentPosition(15);
-      
-      const { latitude, longitude, accuracy } = position.coords;
-      
-      // Validate
-      if (Math.abs(latitude) < 0.001 && Math.abs(longitude) < 0.001) {
-        throw new Error('Invalid GPS coordinates');
-      }
-      
-      console.log(`🚨 Emergency location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
-      
-      return { latitude, longitude };
+      const position = await getCurrentPosition();
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
     } catch (error) {
-      console.error('❌ Failed to get emergency location:', error);
       throw new Error('Failed to get location. Please enable location services.');
     }
   };

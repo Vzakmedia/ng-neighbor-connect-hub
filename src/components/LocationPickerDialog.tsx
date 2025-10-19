@@ -11,41 +11,15 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Navigation, Activity } from 'lucide-react';
+import { MapPin, Navigation } from 'lucide-react';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
-import { LocationAccuracyIndicator } from '@/components/LocationAccuracyIndicator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface LocationPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLocationConfirm: (location: string, coords: { lat: number; lng: number }) => void;
 }
-
-// Lagos neighborhood presets
-const LAGOS_NEIGHBORHOODS = [
-  { name: 'Ojota', coords: { lat: 6.5780, lng: 3.3767 } },
-  { name: 'Ikeja', coords: { lat: 6.6018, lng: 3.3515 } },
-  { name: 'Lekki', coords: { lat: 6.4474, lng: 3.5895 } },
-  { name: 'Yaba', coords: { lat: 6.5095, lng: 3.3711 } },
-  { name: 'Surulere', coords: { lat: 6.4969, lng: 3.3534 } },
-  { name: 'Victoria Island', coords: { lat: 6.4281, lng: 3.4219 } },
-  { name: 'Lagos Island', coords: { lat: 6.4541, lng: 3.3947 } },
-  { name: 'Ikoyi', coords: { lat: 6.4543, lng: 3.4316 } },
-  { name: 'Maryland', coords: { lat: 6.5703, lng: 3.3678 } },
-  { name: 'Gbagada', coords: { lat: 6.5462, lng: 3.3835 } },
-];
-
-// Address cache for common Lagos locations
-const LAGOS_LOCATION_CACHE: Record<string, string> = {
-  '6.578_3.377': '137 Olatunji Street, Ojota, Lagos',
-  '6.577_3.388': 'Ojota Bus Stop, Lagos',
-  '6.602_3.352': 'Ikeja City Mall, Ikeja, Lagos',
-  '6.447_3.590': 'Lekki Phase 1, Lagos',
-};
 
 const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: LocationPickerDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -57,22 +31,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [manualEntryMode, setManualEntryMode] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Getting your precise location...');
-  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
-  const [isImprovingAccuracy, setIsImprovingAccuracy] = useState(false);
-  const [manualLat, setManualLat] = useState('');
-  const [manualLng, setManualLng] = useState('');
-  const [debugInfo, setDebugInfo] = useState<{
-    coords: { lat: number; lng: number } | null;
-    accuracy: number | null;
-    updates: number;
-    method: string;
-  }>({
-    coords: null,
-    accuracy: null,
-    updates: 0,
-    method: ''
-  });
-  const [showDebug, setShowDebug] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
@@ -176,7 +134,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       }
 
       console.log('Requesting location permission...');
-      setLoadingMessage('Activating GPS... This may take 30-60 seconds.');
+      setLoadingMessage('Requesting location permission...');
 
       // Set timeout to show manual entry option after 5 seconds
       timeoutRef.current = setTimeout(() => {
@@ -186,15 +144,13 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       let position;
       try {
-        // Get user's current position with real-time debug callback
-        position = await getCurrentPosition(25, (pos) => {
-          setDebugInfo({
-            coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-            accuracy: pos.coords.accuracy,
-            updates: debugInfo.updates + 1,
-            method: pos.coords.accuracy > 100 ? 'Cell Tower/IP' : 'GPS'
-          });
-        });
+        // Get user's current position with reduced timeout
+        position = await Promise.race([
+          getCurrentPosition(),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Location request timed out')), 8000)
+          )
+        ]);
       } catch (locationError) {
         console.error('Location error:', locationError);
         
@@ -204,13 +160,9 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         
         const errorMsg = locationError instanceof Error ? locationError.message : 'Location error';
         
-        if (errorMsg.includes('too poor') || errorMsg.includes('timeout')) {
-          setError(`GPS signal too weak. ${errorMsg}\n\nTips:\n• Move outdoors or near a window\n• Ensure Location Services are enabled\n• Wait for clear sky view\n\nOr enter location manually below.`);
-        } else if (errorMsg.includes('permission')) {
+        if (errorMsg.includes('permission')) {
           setPermissionDenied(true);
           setError('Location permission denied. Please enter your location manually below.');
-        } else if (errorMsg.includes('Invalid coordinates')) {
-          setError('Invalid GPS data received. Please try again or enter location manually.');
         } else {
           setError('Unable to get your location. Please enter it manually below.');
         }
@@ -224,58 +176,11 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         clearTimeout(timeoutRef.current);
       }
 
-      const { latitude, longitude, accuracy } = position.coords;
-      
-      // Validate coordinates
-      if (Math.abs(latitude) < 0.001 && Math.abs(longitude) < 0.001) {
-        setError('Invalid GPS coordinates (0,0). Please try again.');
-        setManualEntryMode(true);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
-        setError('Invalid GPS data. Please enable location services.');
-        setManualEntryMode(true);
-        setIsLoading(false);
-        return;
-      }
-
+      const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
-      
-      setLocationAccuracy(accuracy);
-      console.log(`📍 Valid position: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
-
-      // Update loading message based on accuracy
-      if (accuracy && accuracy > 100) {
-        setLoadingMessage(`⚠️ GPS accuracy is poor (±${accuracy.toFixed(0)}m). Consider improving.`);
-        setIsImprovingAccuracy(true);
-        
-        toast({
-          title: "Poor GPS Accuracy",
-          description: `Current accuracy: ±${accuracy.toFixed(0)}m. For better results, move outdoors or wait longer.`,
-          variant: "destructive",
-        });
-      } else if (accuracy && accuracy <= 20) {
-        setLoadingMessage('✅ High-precision location detected');
-      } else if (accuracy && accuracy <= 50) {
-        setLoadingMessage(`Location detected (±${accuracy.toFixed(0)}m). Initializing map...`);
-      } else {
-        setLoadingMessage(`Location acquired (±${accuracy.toFixed(0)}m). Consider improving for accuracy.`);
-        setIsImprovingAccuracy(true);
-      }
-
-      // Update loading message based on accuracy
-      if (accuracy && accuracy <= 20) {
-        setLoadingMessage('✅ High-precision location detected');
-      } else if (accuracy && accuracy <= 50) {
-        setLoadingMessage(`Location detected (±${accuracy.toFixed(0)}m). Initializing map...`);
-      } else {
-        setLoadingMessage(`Location acquired (±${accuracy.toFixed(0)}m). Consider improving for accuracy.`);
-        setIsImprovingAccuracy(true);
-      }
 
       console.log('Initializing map with location:', initialLocation);
+      setLoadingMessage('Loading map...');
 
       // Wait for Google Maps to be fully loaded
       await new Promise((resolve) => {
@@ -348,8 +253,8 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       markerRef.current = marker;
 
       console.log('Getting initial address...');
-      // Get initial address with accuracy
-      await reverseGeocode(initialLocation, accuracy);
+      // Get initial address
+      await reverseGeocode(initialLocation);
 
       // Add click listener to map
       map.addListener('click', (event: google.maps.MapMouseEvent) => {
@@ -478,148 +383,67 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
     });
   };
 
-  const handleUseManualCoords = async () => {
-    const lat = parseFloat(manualLat);
-    const lng = parseFloat(manualLng);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      toast({
-        title: "Invalid coordinates",
-        description: "Please enter valid latitude and longitude values",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const coords = { lat, lng };
-    setSelectedCoords(coords);
+  const reverseGeocode = async (coords: { lat: number; lng: number }) => {
+    console.log('Starting reverse geocoding for:', coords);
     
-    // Update map if it exists
-    if (mapInstanceRef.current && markerRef.current) {
-      mapInstanceRef.current.setCenter(coords);
-      markerRef.current.position = coords;
-    }
-
-    // Try to get address
-    await reverseGeocode(coords);
-    
-    toast({
-      title: "Coordinates set",
-      description: `Using ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-    });
-  };
-
-  const handleNeighborhoodSelect = async (neighborhoodName: string) => {
-    const neighborhood = LAGOS_NEIGHBORHOODS.find(n => n.name === neighborhoodName);
-    if (!neighborhood) return;
-
-    const coords = neighborhood.coords;
-    setSelectedCoords(coords);
-    
-    // Update map if it exists
-    if (mapInstanceRef.current && markerRef.current) {
-      mapInstanceRef.current.setCenter(coords);
-      markerRef.current.position = coords;
-    }
-
-    // Try to get address
-    await reverseGeocode(coords);
-    
-    toast({
-      title: "Neighborhood selected",
-      description: neighborhood.name,
-    });
-  };
-
-  const getCachedAddress = (lat: number, lng: number): string | null => {
-    const key = `${lat.toFixed(3)}_${lng.toFixed(3)}`;
-    return LAGOS_LOCATION_CACHE[key] || null;
-  };
-
-  const reverseGeocode = async (coords: { lat: number; lng: number }, accuracy?: number) => {
-    // Validate coordinates before geocoding
-    if (!coords || !coords.lat || !coords.lng) {
-      console.warn('⚠️ Skipping reverse geocode: invalid coords', coords);
-      return;
-    }
-    
-    if (Math.abs(coords.lat) < 0.001 && Math.abs(coords.lng) < 0.001) {
-      console.warn('⚠️ Skipping reverse geocode: (0,0) coordinates');
-      return;
-    }
-    
-    // Check cache first
-    const cached = getCachedAddress(coords.lat, coords.lng);
-    if (cached) {
-      console.log('✅ Using cached address:', cached);
-      setSelectedAddress(cached);
-      setSelectedCoords(coords);
-      return;
-    }
-    
-    console.log('🗺️ Starting reverse geocoding for:', coords, `accuracy: ±${accuracy}m`);
-    
-    // First try Google Maps Geocoder (most accurate for Nigeria)
-    if (geocoderRef.current) {
+    if (!geocoderRef.current) {
+      console.log('Geocoder not available, using fallback');
       try {
-        const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-          geocoderRef.current!.geocode(
-            { 
-              location: coords,
-              region: 'ng',
-              language: 'en'
-            },
-            (results, status) => {
-              console.log('Geocoding status:', status);
-              if (status === 'OK') {
-                resolve(results || []);
-              } else {
-                reject(new Error(`Geocoding failed: ${status}`));
-              }
-            }
-          );
-        });
-
-        if (results && results.length > 0) {
-          const bestResult = results.find(r => 
-            r.types.includes('neighborhood') || 
-            r.types.includes('sublocality') ||
-            r.types.includes('route')
-          ) || results[0];
-          
-          const address = bestResult.formatted_address;
-          console.log('✅ Found address:', address);
-          setSelectedAddress(address);
-          setSelectedCoords(coords);
-          
-          // Only show toast for good accuracy
-          if (accuracy && accuracy <= 50) {
-            toast({
-              title: accuracy <= 20 ? "Precise location detected" : "Location confirmed",
-              description: address,
-            });
-          }
-          
-          setIsLoading(false);
-          return;
-        }
+        const address = await fallbackReverseGeocode(coords.lat, coords.lng);
+        setSelectedAddress(address);
+        setSelectedCoords(coords);
       } catch (error) {
-        console.log('Google Geocoder failed, trying fallback...', error);
+        setSelectedAddress(`Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+        setSelectedCoords(coords);
       }
+      setIsLoading(false);
+      return;
     }
 
-    // Fallback to Nigeria-specific edge function
     try {
-      const fallbackAddress = await fallbackReverseGeocode(coords.lat, coords.lng);
-      setSelectedAddress(fallbackAddress);
-      setSelectedCoords(coords);
-    } catch (fallbackError) {
-      console.error('All geocoding methods failed:', fallbackError);
-      setSelectedAddress(`Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-      setSelectedCoords(coords);
+      const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+        geocoderRef.current!.geocode(
+          { location: coords },
+          (results, status) => {
+            console.log('Geocoding status:', status);
+            
+            if (status === 'OK') {
+              resolve(results || []);
+            } else {
+              reject(new Error(`Geocoding failed: ${status}`));
+            }
+          }
+        );
+      });
+
+      if (results && results.length > 0) {
+        const address = results[0].formatted_address;
+        console.log('Found address:', address);
+        setSelectedAddress(address);
+        setSelectedCoords(coords);
+        
+        toast({
+          title: "Location updated",
+          description: "Location has been selected successfully",
+        });
+      } else {
+        const fallbackAddress = await fallbackReverseGeocode(coords.lat, coords.lng);
+        setSelectedAddress(fallbackAddress);
+        setSelectedCoords(coords);
+      }
+    } catch (error) {
+      console.error('Error getting address:', error);
+      try {
+        const fallbackAddress = await fallbackReverseGeocode(coords.lat, coords.lng);
+        setSelectedAddress(fallbackAddress);
+        setSelectedCoords(coords);
+      } catch (fallbackError) {
+        setSelectedAddress(`Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+        setSelectedCoords(coords);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const fallbackReverseGeocode = async (lat: number, lng: number): Promise<string> => {
@@ -641,47 +465,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
     } catch (error) {
       console.error('❌ [LocationPicker] Nigeria reverse geocoding failed:', error);
       return "Current Location";
-    }
-  };
-
-  const improveLocationAccuracy = async () => {
-    setIsImprovingAccuracy(true);
-    setLoadingMessage('Waiting for better GPS signal...');
-    
-    try {
-      const position = await getCurrentPosition();
-      const { latitude, longitude, accuracy } = position.coords;
-      
-      setLocationAccuracy(accuracy);
-      
-      if (accuracy && (!locationAccuracy || accuracy < locationAccuracy)) {
-        const newLocation = { lat: latitude, lng: longitude };
-        
-        if (mapInstanceRef.current && markerRef.current) {
-          mapInstanceRef.current.setCenter(newLocation);
-          markerRef.current.position = newLocation;
-        }
-        
-        await reverseGeocode(newLocation, accuracy);
-        
-        toast({
-          title: "Location improved!",
-          description: `Accuracy improved to ±${accuracy.toFixed(0)}m`,
-        });
-      } else {
-        toast({
-          title: "GPS signal",
-          description: "This is the best accuracy available in your current location",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Could not improve accuracy",
-        description: "Try moving to an open area with clear sky view",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImprovingAccuracy(false);
     }
   };
 
@@ -736,15 +519,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
             <PermissionDeniedAlert permissionType="location" feature="location picker" />
           )}
           
-          {/* GPS Accuracy Indicator */}
-          {locationAccuracy && (
-            <LocationAccuracyIndicator 
-              accuracy={locationAccuracy}
-              onImprove={improveLocationAccuracy}
-              isImproving={isImprovingAccuracy}
-            />
-          )}
-
           {/* Manual Entry Mode */}
           {manualEntryMode && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
@@ -764,44 +538,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                   </Button>
                 </div>
               </div>
-
-              {/* Manual Coordinates Entry */}
-              <div className="space-y-2">
-                <Label>Or enter exact coordinates:</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    placeholder="Latitude (e.g., 6.5781131)"
-                    value={manualLat}
-                    onChange={(e) => setManualLat(e.target.value)}
-                  />
-                  <Input 
-                    placeholder="Longitude (e.g., 3.3769411)"
-                    value={manualLng}
-                    onChange={(e) => setManualLng(e.target.value)}
-                  />
-                </div>
-                <Button onClick={handleUseManualCoords} variant="secondary" size="sm" className="w-full">
-                  Use These Coordinates
-                </Button>
-              </div>
-
-              {/* Neighborhood Quick Select */}
-              <div className="space-y-2">
-                <Label>Or select your Lagos neighborhood:</Label>
-                <Select onValueChange={handleNeighborhoodSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose neighborhood" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LAGOS_NEIGHBORHOODS.map(n => (
-                      <SelectItem key={n.name} value={n.name}>
-                        {n.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -822,36 +558,6 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                 </Button>
               </div>
             </div>
-          )}
-
-          {/* GPS Debug Panel */}
-          {debugInfo.coords && (
-            <Collapsible open={showDebug} onOpenChange={setShowDebug}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full">
-                  <Activity className="h-4 w-4 mr-2" />
-                  {showDebug ? 'Hide' : 'Show'} GPS Debug Info
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <Alert className="mt-2">
-                  <AlertDescription>
-                    <div className="font-mono text-xs space-y-1">
-                      <div>📍 Lat: {debugInfo.coords.lat.toFixed(6)}</div>
-                      <div>📍 Lng: {debugInfo.coords.lng.toFixed(6)}</div>
-                      <div>📏 Accuracy: ±{debugInfo.accuracy}m</div>
-                      <div>🔄 Updates: {debugInfo.updates}</div>
-                      <div>🛰️ Method: {debugInfo.method}</div>
-                      {debugInfo.method === 'Cell Tower/IP' && (
-                        <div className="text-destructive mt-2">
-                          ⚠️ Using cell tower/IP positioning. Move outdoors for GPS.
-                        </div>
-                      )}
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              </CollapsibleContent>
-            </Collapsible>
           )}
 
           {/* Map Container */}
