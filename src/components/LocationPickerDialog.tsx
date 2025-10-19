@@ -147,13 +147,8 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       let position;
       try {
-        // Get user's current position with reduced timeout
-        position = await Promise.race([
-          getCurrentPosition(),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Location request timed out')), 8000)
-          )
-        ]);
+        // Get user's current position (will wait for ≤25m accuracy or 5 attempts)
+        position = await getCurrentPosition(25);
       } catch (locationError) {
         console.error('Location error:', locationError);
         
@@ -166,6 +161,8 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         if (errorMsg.includes('permission')) {
           setPermissionDenied(true);
           setError('Location permission denied. Please enter your location manually below.');
+        } else if (errorMsg.includes('Invalid coordinates')) {
+          setError('Invalid GPS data received. Please try again or enter location manually.');
         } else {
           setError('Unable to get your location. Please enter it manually below.');
         }
@@ -180,16 +177,35 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       }
 
       const { latitude, longitude, accuracy } = position.coords;
+      
+      // Validate coordinates
+      if (Math.abs(latitude) < 0.001 && Math.abs(longitude) < 0.001) {
+        setError('Invalid GPS coordinates (0,0). Please try again.');
+        setManualEntryMode(true);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+        setError('Invalid GPS data. Please enable location services.');
+        setManualEntryMode(true);
+        setIsLoading(false);
+        return;
+      }
+
       const initialLocation = { lat: latitude, lng: longitude };
       
       setLocationAccuracy(accuracy);
-      console.log(`📍 Location accuracy: ±${accuracy?.toFixed(1)}m`);
+      console.log(`📍 Valid position: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${accuracy}m)`);
 
-      if (accuracy && accuracy > 50) {
-        setLoadingMessage(`Location detected (±${accuracy.toFixed(0)}m). Improving...`);
-        setIsImprovingAccuracy(true);
+      // Update loading message based on accuracy
+      if (accuracy && accuracy <= 20) {
+        setLoadingMessage('✅ High-precision location detected');
+      } else if (accuracy && accuracy <= 50) {
+        setLoadingMessage(`Location detected (±${accuracy.toFixed(0)}m). Initializing map...`);
       } else {
-        setLoadingMessage('High-accuracy location detected ✓');
+        setLoadingMessage(`Location acquired (±${accuracy.toFixed(0)}m). Consider improving for accuracy.`);
+        setIsImprovingAccuracy(true);
       }
 
       console.log('Initializing map with location:', initialLocation);
@@ -396,6 +412,17 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   };
 
   const reverseGeocode = async (coords: { lat: number; lng: number }, accuracy?: number) => {
+    // Validate coordinates before geocoding
+    if (!coords || !coords.lat || !coords.lng) {
+      console.warn('⚠️ Skipping reverse geocode: invalid coords', coords);
+      return;
+    }
+    
+    if (Math.abs(coords.lat) < 0.001 && Math.abs(coords.lng) < 0.001) {
+      console.warn('⚠️ Skipping reverse geocode: (0,0) coordinates');
+      return;
+    }
+    
     console.log('🗺️ Starting reverse geocoding for:', coords, `accuracy: ±${accuracy}m`);
     
     // First try Google Maps Geocoder (most accurate for Nigeria)
@@ -431,10 +458,13 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           setSelectedAddress(address);
           setSelectedCoords(coords);
           
-          toast({
-            title: accuracy && accuracy <= 20 ? "Precise location detected" : "Location updated",
-            description: address,
-          });
+          // Only show toast for good accuracy
+          if (accuracy && accuracy <= 50) {
+            toast({
+              title: accuracy <= 20 ? "Precise location detected" : "Location confirmed",
+              description: address,
+            });
+          }
           
           setIsLoading(false);
           return;
