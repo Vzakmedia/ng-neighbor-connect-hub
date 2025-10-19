@@ -2,17 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
-import { useUserPresence } from '@/hooks/useUserPresence';
+import { usePresence } from '@/contexts/PresenceContext';
 import { Users } from 'lucide-react';
 
 export const OnlineUsersIndicator: React.FC = () => {
-  const { onlineUsers, totalOnlineUsers, getUserPresence } = useUserPresence();
-
-  console.log('OnlineUsersIndicator - Real-time online users from database:', {
-    totalOnlineUsers,
-    onlineUserIds: onlineUsers,
-    presenceData: onlineUsers.map(userId => getUserPresence(userId))
-  });
+  const { onlineUsers, totalOnlineUsers, getUserPresence } = usePresence();
 
   // Always show the component, but with different content when no users are online
   const displayUsers = onlineUsers.length > 0;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUserPresence } from '@/hooks/useUserPresence';
+import { usePresence } from '@/contexts/PresenceContext';
 import { cn } from '@/lib/utils';
 
 interface OnlineAvatarProps {
@@ -34,7 +34,7 @@ export const OnlineAvatar: React.FC<OnlineAvatarProps> = ({
   showOnlineStatus = true,
   size = 'md',
 }) => {
-  const { isUserOnline } = useUserPresence();
+  const { isUserOnline } = usePresence();
   const isOnline = userId && showOnlineStatus ? isUserOnline(userId) : false;
 
   return (

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
-import { useUserPresence } from '@/hooks/useUserPresence';
+import { usePresence } from '@/contexts/PresenceContext';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
@@ -24,7 +24,7 @@ import { VideoCallDialog } from '@/components/messaging/VideoCallDialog';
 import { IncomingCallDialog } from '@/components/messaging/IncomingCallDialog';
 
 const Chat = () => {
-  const { isUserOnline } = useUserPresence();
+  const { isUserOnline } = usePresence();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
