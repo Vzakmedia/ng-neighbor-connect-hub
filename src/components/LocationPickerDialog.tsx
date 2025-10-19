@@ -196,7 +196,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         }
       });
 
-      // Initialize map with higher zoom for better accuracy
+      // Initialize map with higher zoom for better accuracy and Nigeria restrictions
       const map = new google.maps.Map(mapRef.current, {
         center: initialLocation,
         zoom: 16,
@@ -208,7 +208,16 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         zoomControl: true,
         scaleControl: true,
         rotateControl: true,
-        mapId: 'LOCATION_PICKER_MAP' // Required for AdvancedMarkerElement
+        mapId: 'LOCATION_PICKER_MAP', // Required for AdvancedMarkerElement
+        restriction: {
+          latLngBounds: {
+            north: 13.9,
+            south: 4.3,
+            east: 14.7,
+            west: 2.7
+          },
+          strictBounds: false
+        }
       });
 
       console.log('Map created successfully');

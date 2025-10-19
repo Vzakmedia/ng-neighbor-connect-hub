@@ -175,13 +175,28 @@ serve(async (req) => {
         types: ['locality']
       }));
       console.log(`✅ Returning ${locations.length} cities for ${state}`);
-    } else if (type === 'neighborhoods' && state && city) {
-      // Return a basic set of neighborhoods
-      const neighborhoods = ['Area 1', 'Area 2', 'Area 3', 'Central', 'North', 'South', 'East', 'West'];
+  } else if (type === 'neighborhoods' && state && city) {
+      // Comprehensive neighborhood data for major Nigerian cities
+      const CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
+        'Lagos Island': ['Marina', 'Ikoyi', 'Victoria Island', 'Lekki Phase 1', 'Onikan', 'Falomo', 'Banana Island'],
+        'Ikeja': ['GRA Ikeja', 'Allen Avenue', 'Opebi', 'Oregun', 'Alausa', 'Computer Village'],
+        'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Abraham Adesanya', 'Chevron', 'VGC'],
+        'Garki': ['Garki 1', 'Garki 2', 'Area 1', 'Area 2', 'Area 3', 'Area 7', 'Area 8'],
+        'Wuse': ['Wuse 1', 'Wuse 2', 'Wuse Zone 1', 'Wuse Zone 2', 'Wuse Zone 3'],
+        'Gwarinpa': ['Gwarinpa 1st Avenue', 'Gwarinpa Estate', '3rd Avenue', '4th Avenue'],
+        'Kubwa': ['Kubwa Phase 1', 'Kubwa Phase 2', 'Kubwa Phase 3', 'Byazhin'],
+        'Port Harcourt': ['Old GRA', 'New GRA', 'Diobu', 'Trans Amadi', 'Rumuola'],
+        'Kano Municipal': ['Kofar Mata', 'Kofar Nasarawa', 'Sabon Gari', 'Fagge'],
+        'Ibadan North': ['Bodija', 'Sango', 'UI', 'Agbowo', 'Ajibode']
+      };
+
+      const neighborhoods = CITY_NEIGHBORHOODS[city] || 
+        ['Central', 'North', 'South', 'East', 'West', 'GRA'];
+      
       locations = neighborhoods.map((hood) => ({
-        name: `${hood}`,
+        name: hood,
         formatted_address: `${hood}, ${city}, ${state}, Nigeria`,
-        place_id: `neighborhood_${hood.toLowerCase().replace(/\s+/g, '_')}`,
+        place_id: `neighborhood_${city.toLowerCase()}_${hood.toLowerCase().replace(/\s+/g, '_')}`,
         types: ['neighborhood']
       }));
       console.log(`✅ Returning ${locations.length} neighborhoods for ${city}, ${state}`);
