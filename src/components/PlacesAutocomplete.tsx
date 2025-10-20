@@ -35,10 +35,18 @@ const PlacesAutocomplete = ({
         // Get Google Maps API key
         const { data, error: apiError } = await supabase.functions.invoke('get-google-maps-token');
         
-        if (apiError) throw new Error('Failed to load map services');
+        if (apiError) {
+          console.error('Edge function error:', apiError);
+          throw new Error(`Failed to load map services: ${apiError.message || 'Unknown error'}`);
+        }
         
         const apiKey = data?.token;
-        if (!apiKey) throw new Error('Map services unavailable');
+        if (!apiKey) {
+          console.error('No API key in response:', data);
+          throw new Error('Map services unavailable. Please configure GOOGLE_MAPS_API_KEY secret.');
+        }
+        
+        console.log('✅ Google Maps API key loaded successfully');
 
         // Load Google Maps script if not already loaded
         if (!window.google?.maps) {
