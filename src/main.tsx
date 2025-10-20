@@ -8,6 +8,33 @@ import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 
+// Wrap WebSocket to intercept preview domain connections at the source
+const originalWebSocket = window.WebSocket;
+window.WebSocket = class extends originalWebSocket {
+  constructor(url: string | URL, protocols?: string | string[]) {
+    super(url, protocols);
+    
+    const urlString = url.toString();
+    
+    // Intercept Lovable preview WebSocket connections
+    if (urlString.includes('lovableproject.com') || urlString.includes('lovable.app')) {
+      console.debug('Preview WebSocket suppressed:', urlString);
+      
+      // Prevent error events from bubbling
+      this.addEventListener('error', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      
+      // Prevent close events from bubbling
+      this.addEventListener('close', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+    }
+  }
+} as any;
+
 // Configure React Query with optimized defaults for feed performance
 const queryClient = new QueryClient({
   defaultOptions: {
