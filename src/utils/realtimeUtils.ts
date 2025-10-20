@@ -36,6 +36,7 @@ let circuitBreakerOpenUntil = 0;
 
 // Track active subscriptions to prevent duplicates
 const activeSubscriptions = new Map<string, any>();
+const subscriptionCleanupTimers = new Map<string, NodeJS.Timeout>();
 
 export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
@@ -211,6 +212,12 @@ export const createSafeSubscription = (
       if (channel) {
         supabase.removeChannel(channel);
       }
+      // Clear cleanup timer
+      const cleanupTimer = subscriptionCleanupTimers.get(channelName);
+      if (cleanupTimer) {
+        clearTimeout(cleanupTimer);
+        subscriptionCleanupTimers.delete(channelName);
+      }
       // Remove from active subscriptions
       activeSubscriptions.delete(channelName);
       console.log(`${debugName}: Unsubscribed successfully`);
@@ -227,6 +234,13 @@ export const createSafeSubscription = (
   
   // Track this subscription
   activeSubscriptions.set(channelName, subscriptionObj);
+  
+  // Add cleanup timer to prevent stale subscriptions
+  const cleanupTimer = setTimeout(() => {
+    activeSubscriptions.delete(channelName);
+    subscriptionCleanupTimers.delete(channelName);
+  }, 300000); // 5 minutes
+  subscriptionCleanupTimers.set(channelName, cleanupTimer);
   
   return subscriptionObj;
 };
