@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import LocationPickerDialog from '@/components/LocationPickerDialog';
+import PlacesAutocomplete from '@/components/PlacesAutocomplete';
 import '@/types/supabase-complete-override.d.ts';
 
 interface CreateEventDialogProps {
@@ -26,7 +26,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -53,10 +53,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
   const handleLocationConfirm = (confirmedLocation: string, coords: { lat: number; lng: number }) => {
     setLocation(confirmedLocation);
-  };
-
-  const openLocationPicker = () => {
-    setShowLocationPicker(true);
+    setCoordinates(coords);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,26 +215,28 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
           <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="location"
-                placeholder="Event location (optional)"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={openLocationPicker}
-              className="flex items-center gap-2"
-            >
-              <Navigation className="h-4 w-4" />
-              Use my location
-            </Button>
+            <PlacesAutocomplete
+              onLocationSelect={handleLocationConfirm}
+              placeholder="Search for event location in Nigeria..."
+              defaultValue={location}
+            />
+            {location && coordinates && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                <span>{location}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setLocation('');
+                    setCoordinates(null);
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -373,11 +372,6 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
           </div>
         </form>
 
-        <LocationPickerDialog
-          open={showLocationPicker}
-          onOpenChange={setShowLocationPicker}
-          onLocationConfirm={handleLocationConfirm}
-        />
       </DialogContent>
     </Dialog>
   );
