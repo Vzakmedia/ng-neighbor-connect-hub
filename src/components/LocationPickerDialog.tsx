@@ -117,7 +117,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       // Load Google Maps API if not already loaded
       if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&region=NG&language=en&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
@@ -364,7 +364,11 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       if (geocoderRef.current) {
         const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
           geocoderRef.current!.geocode(
-            { address: manualAddress },
+            { 
+              address: manualAddress,
+              componentRestrictions: { country: 'NG' },
+              region: 'ng'
+            },
             (results, status) => {
               if (status === 'OK' && results) {
                 resolve(results);

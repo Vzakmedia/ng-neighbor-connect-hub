@@ -197,7 +197,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
       // Dynamically load Google Maps API with marker library
       if (!window.google) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&region=NG&language=en`;
         script.async = true;
         document.head.appendChild(script);
 
@@ -217,7 +217,11 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
 
     const geocoder = new window.google.maps.Geocoder();
     
-    geocoder.geocode({ address: event.location }, (results, status) => {
+    geocoder.geocode({ 
+      address: event.location,
+      componentRestrictions: { country: 'NG' },
+      region: 'ng'
+    }, (results, status) => {
       if (status === 'OK' && results && results[0]) {
         const location = results[0].geometry.location;
         
@@ -227,7 +231,16 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
-          mapId: 'EVENT_VIEW_MAP' // Required for AdvancedMarkerElement
+          mapId: 'EVENT_VIEW_MAP', // Required for AdvancedMarkerElement
+          restriction: {
+            latLngBounds: {
+              north: 13.9,  // Northern Nigeria
+              south: 4.3,   // Southern Nigeria
+              east: 14.7,   // Eastern Nigeria
+              west: 2.7     // Western Nigeria
+            },
+            strictBounds: false
+          }
         });
 
         // Create PinElement for the marker
