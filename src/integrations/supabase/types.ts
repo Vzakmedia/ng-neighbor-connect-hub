@@ -6343,7 +6343,7 @@ export type Database = {
         Returns: number
       }
       get_user_automation_preferences: {
-        Args: Record<PropertyKey, never> | { _user_id?: string }
+        Args: Record<PropertyKey, never>
         Returns: {
           automation_description: string
           automation_icon: string
