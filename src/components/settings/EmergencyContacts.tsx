@@ -235,11 +235,16 @@ const EmergencyContacts = () => {
       
       console.log('EmergencyContacts: Loaded contacts:', data?.length || 0);
       setContacts(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('EmergencyContacts: Error loading emergency contacts:', error);
-      // Don't show toast for expected errors to reduce noise
-      if (error && typeof error === 'object' && 'code' in error) {
-        console.debug('EmergencyContacts: Database error code:', error.code);
+      
+      // Only show toast for unexpected errors
+      if (error?.code !== 'PGRST116' && error?.code !== '42P01') {
+        toast({
+          title: "Error Loading Contacts",
+          description: "Some contacts may not be visible. Please refresh the page.",
+          variant: "destructive"
+        });
       }
     } finally {
       setLoading(false);
@@ -283,31 +288,47 @@ const EmergencyContacts = () => {
         
         if (requestError) {
           console.error('Error creating contact request:', requestError);
+          toast({
+            title: "Warning",
+            description: "Contact added but notification may be delayed.",
+            variant: "default"
+          });
         } else {
           console.log('Contact request created:', request);
           
-          // Trigger the edge function to handle notifications
-          const { data: response, error: funcError } = await supabase.functions.invoke(
-            'emergency-contact-invitation',
-            {
-              body: {
-                type: 'INSERT',
-                table: 'emergency_contact_requests',
-                record: request,
-                schema: 'public',
-                old_record: null
+          // Try to trigger the edge function
+          try {
+            const { data: response, error: funcError } = await supabase.functions.invoke(
+              'emergency-contact-invitation',
+              {
+                body: {
+                  type: 'INSERT',
+                  table: 'emergency_contact_requests',
+                  record: request,
+                  schema: 'public',
+                  old_record: null
+                }
               }
+            );
+            
+            if (funcError) {
+              console.warn('Edge function not available, notifications may be delayed:', funcError);
+              // Don't fail the whole operation, database trigger will handle it
+            } else {
+              console.log('Edge function response:', response);
             }
-          );
-          
-          if (funcError) {
-            console.error('Error triggering edge function:', funcError);
-          } else {
-            console.log('Edge function response:', response);
+          } catch (funcErr) {
+            console.warn('Edge function invocation failed:', funcErr);
+            // Continue anyway - the contact is added
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('Error in contact request creation:', e);
+        toast({
+          title: "Warning",
+          description: "Contact added but notification system may be unavailable. Contact will still receive alerts.",
+          variant: "default"
+        });
       }
       
       toast({
@@ -842,8 +863,8 @@ const EmergencyContacts = () => {
                               Confirmed
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs">
-                              <Lock className="h-3 w-3 mr-1" />
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
                               Pending Confirmation
                             </Badge>
                           )}

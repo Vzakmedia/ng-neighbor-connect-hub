@@ -53,6 +53,7 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const retryAttemptRef = useRef(0);
   const lastSuccessfulConnectionRef = useRef<number | null>(null);
   const userIsActiveRef = useRef(true);
+  const hasLoggedFallbackRef = useRef(false);
   
   const connectionMetrics = useRef({
     isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
@@ -65,6 +66,15 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (fallbackModeRef.current === value) return;
     fallbackModeRef.current = value;
     setFallbackMode(value);
+    
+    // Only log once when switching modes
+    if (value && !hasLoggedFallbackRef.current) {
+      console.info('Presence: Real-time unavailable, using polling fallback');
+      hasLoggedFallbackRef.current = true;
+    } else if (!value && hasLoggedFallbackRef.current) {
+      console.info('Presence: Real-time connection restored');
+      hasLoggedFallbackRef.current = false;
+    }
   }, []);
 
   const updatePresenceState = useCallback((presences: UserPresence) => {
