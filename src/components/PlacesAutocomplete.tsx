@@ -74,6 +74,20 @@ const PlacesAutocomplete = ({
           }
         });
 
+        // Ensure dropdown appears on top of dialogs
+        const observer = new MutationObserver(() => {
+          const pacContainer = document.querySelector('.pac-container') as HTMLElement;
+          if (pacContainer) {
+            pacContainer.style.zIndex = '10000';
+            observer.disconnect();
+          }
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: false
+        });
+
         setIsLoading(false);
       } catch (err) {
         console.error('Error initializing autocomplete:', err);
