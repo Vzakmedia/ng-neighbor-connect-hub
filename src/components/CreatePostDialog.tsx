@@ -40,7 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import LocationPickerDialog from './LocationPickerDialog';
+import PlacesAutocomplete from './PlacesAutocomplete';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 
 interface CreatePostDialogProps {
@@ -57,7 +57,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const [locationScope, setLocationScope] = useState<'neighborhood' | 'city' | 'state' | 'all'>('all');
   const { toast } = useToast();
@@ -115,10 +115,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const handleLocationConfirm = (selectedLocation: string, coords: { lat: number; lng: number }) => {
     setLocation(selectedLocation);
-  };
-
-  const openLocationPicker = () => {
-    setLocationPickerOpen(true);
+    setCoordinates(coords);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -340,27 +337,28 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             {/* Location */}
             <div className="space-y-2">
               <Label>Specific Location (Optional)</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Add specific location details..."
-                    className="pl-10"
-                  />
+              <PlacesAutocomplete
+                onLocationSelect={handleLocationConfirm}
+                placeholder="Search for a place in Nigeria..."
+                defaultValue={location}
+              />
+              {location && coordinates && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  <span>{location}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLocation('');
+                      setCoordinates(null);
+                    }}
+                  >
+                    Clear
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={openLocationPicker}
-                  className="flex items-center gap-2"
-                >
-                  <Navigation className="h-4 w-4" />
-                  Use my location
-                </Button>
-              </div>
+              )}
             </div>
 
             {/* Tags */}
@@ -525,11 +523,6 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         </DialogFooter>
       </DialogContent>
 
-      <LocationPickerDialog
-        open={locationPickerOpen}
-        onOpenChange={setLocationPickerOpen}
-        onLocationConfirm={handleLocationConfirm}
-      />
     </Dialog>
   );
 };
