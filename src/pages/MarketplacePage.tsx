@@ -76,36 +76,40 @@ const MarketplacePage = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Desktop tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
-              <TabsTrigger value="marketplace">
-                <div className="flex items-center gap-2">
-                  <span>Services & Goods</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button type="button" className="inline-flex items-center">
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="z-50 bg-background">
-                      <DropdownMenuItem onClick={() => { setActiveTab('marketplace'); setMarketSubTab('services'); }}>
-                        Services
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setActiveTab('marketplace'); setMarketSubTab('goods'); }}>
-                        Goods
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                        My City
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setViewScope('state')}>
-                        Entire State
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
-            </TabsList>
+            <div className="hidden md:flex items-center gap-4">
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="marketplace">Services & Goods</TabsTrigger>
+                <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
+              </TabsList>
+              
+              {activeTab === 'marketplace' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {marketSubTab === 'services' ? 'Services' : 'Goods'} 
+                      {' • '}
+                      {viewScope === 'neighborhood' ? 'My City' : 'Entire State'}
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="z-50 bg-background">
+                    <DropdownMenuItem onClick={() => setMarketSubTab('services')}>
+                      Services
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setMarketSubTab('goods')}>
+                      Goods
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                      My City
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setViewScope('state')}>
+                      Entire State
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
             
             <TabsContent value="marketplace" className="mt-6">
               <Marketplace activeSubTab={marketSubTab} locationScope={viewScope} />
