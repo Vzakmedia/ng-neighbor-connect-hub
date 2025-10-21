@@ -92,12 +92,11 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
       const amount = parseFloat(priceString.replace('₦', '').replace(',', ''));
 
       const { RenderApiService } = await import('@/services/renderApiService');
-      const data = await RenderApiService.createBusinessPromotionPayment({
-        businessId: business.id,
-        promotionType,
-        duration: parseInt(duration),
-        amount,
-        description: `${selectedPlan.name} - ${duration} days`
+      const data = await RenderApiService.createCampaignPayment({
+        campaignId: business.id, // Using business ID temporarily
+        totalAmount: amount,
+        campaignName: `${selectedPlan.name} - ${duration} days`,
+        duration: parseInt(duration)
       });
 
       if (data.url) {

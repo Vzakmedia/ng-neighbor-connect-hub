@@ -126,7 +126,7 @@ export const CreateCampaignDialog = ({
       const campaign = await createCampaign(campaignData);
       if (campaign) {
         // Initiate payment
-        const paymentResponse = await RenderApiService.createAdCampaignPayment({
+        const paymentResponse = await RenderApiService.createCampaignPayment({
           campaignId: campaign.id,
           totalAmount: estimatedCost,
           currency: 'ngn',
