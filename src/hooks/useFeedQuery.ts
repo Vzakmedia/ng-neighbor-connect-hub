@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { normalizeLocation } from '@/lib/community/locationNormalizer';
 import { toast } from 'sonner';
 
 interface FeedFilters {
@@ -76,36 +77,48 @@ export function useFeedQuery(filters: FeedFilters) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Apply location filters FIRST - EXCLUSIVE filtering (each filter shows ONLY that scope)
-      if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
-        // Show ONLY neighborhood-specific posts matching user's location
-        query = query
-          .eq('location_scope', 'neighborhood')
-          .eq('target_neighborhood', profile.neighborhood)
-          .eq('target_city', profile.city)
-          .eq('target_state', profile.state);
-          
-      } else if (filters.locationScope === 'city' && profile.city && profile.state) {
-        // Show ONLY city-specific posts matching user's city
-        query = query
-          .eq('location_scope', 'city')
-          .eq('target_city', profile.city)
-          .eq('target_state', profile.state);
-          
-      } else if (filters.locationScope === 'state' && profile.state) {
-        // Show ONLY state-specific posts matching user's state
-        query = query
-          .eq('location_scope', 'state')
-          .eq('target_state', profile.state);
-          
+      // Normalize user's location for consistent matching
+      const normalizedProfile = normalizeLocation({
+        state: profile.state,
+        city: profile.city,
+        neighborhood: profile.neighborhood,
+      });
+
+      console.log('📍 Feed Query Location Debug:', {
+        filterScope: filters.locationScope,
+        originalProfile: { state: profile.state, city: profile.city, neighborhood: profile.neighborhood },
+        normalizedProfile,
+      });
+
+      // Apply hierarchical location-based filtering
+      // Users see posts at their level AND broader levels
+      if (filters.locationScope === 'neighborhood' && normalizedProfile.neighborhood && normalizedProfile.city && normalizedProfile.state) {
+        // Show: exact neighborhood match, city-wide posts, state-wide posts, and platform-wide posts
+        query = query.or(`
+          and(location_scope.eq.neighborhood,target_neighborhood.eq.${normalizedProfile.neighborhood},target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.city,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
+          location_scope.eq.all
+        `);
+      } else if (filters.locationScope === 'city' && normalizedProfile.city && normalizedProfile.state) {
+        // Show: city-wide posts, neighborhood posts in same city, state-wide posts, and platform-wide posts
+        query = query.or(`
+          and(location_scope.eq.city,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.neighborhood,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
+          location_scope.eq.all
+        `);
+      } else if (filters.locationScope === 'state' && normalizedProfile.state) {
+        // Show: state-wide posts, all city/neighborhood posts in same state, and platform-wide posts
+        query = query.or(`
+          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.city,target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.neighborhood,target_state.eq.${normalizedProfile.state}),
+          location_scope.eq.all
+        `);
       } else if (filters.locationScope === 'all') {
-        // Show ALL posts regardless of scope (no filter applied)
-        // This is the default behavior - no additional filter needed
-        
-      } else {
-        // Fallback: if user doesn't have complete location data for the selected filter,
-        // show only 'all' posts as a safe default
-        query = query.eq('location_scope', 'all');
+        // Show all posts platform-wide (no filtering)
+        // This is the broadest scope - no location filter needed
       }
 
       // Apply pagination LAST (after all filters)
