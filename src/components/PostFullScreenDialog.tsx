@@ -3,7 +3,10 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -125,6 +128,12 @@ export const PostFullScreenDialog = ({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-4 pb-3 border-b sticky top-0 bg-background z-10 relative">
+            <VisuallyHidden>
+              <DialogTitle>View Post by {post.author.name}</DialogTitle>
+              <DialogDescription>
+                Full screen view of the community post with comments and interactions
+              </DialogDescription>
+            </VisuallyHidden>
             <div className="flex items-start justify-between">
               {/* Close button positioned absolutely */}
               <button

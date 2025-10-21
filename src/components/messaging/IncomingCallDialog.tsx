@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Phone, PhoneOff, VideoIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -52,6 +52,9 @@ export const IncomingCallDialog: React.FC<IncomingCallDialogProps> = ({
           <DialogTitle>
             {isVideoCall ? 'Incoming Video Call' : 'Incoming Voice Call'}
           </DialogTitle>
+          <DialogDescription>
+            {callerName} is calling you
+          </DialogDescription>
         </DialogHeader>
         
         <div className="flex flex-col items-center space-y-6 py-6">
