@@ -20,7 +20,7 @@ export const PostCardHeader = ({
   onAvatarClick 
 }: PostCardHeaderProps) => {
   return (
-    <CardHeader className="pb-2 px-3 sm:px-6 py-3 sm:py-6">
+    <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
       <div className="flex items-center gap-2 sm:gap-3">
         <div 
           className="cursor-pointer"

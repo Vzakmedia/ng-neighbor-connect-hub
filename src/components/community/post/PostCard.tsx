@@ -91,7 +91,7 @@ const PostCardComponent = ({
         onAvatarClick={onAvatarClick}
       />
       
-      <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
+      <CardContent className="space-y-2 px-3 sm:px-4 pb-2 sm:pb-3 pt-0">
         {getVisibilityBadge() && (
           <div className="flex justify-end">
             {getVisibilityBadge()}
@@ -124,7 +124,7 @@ const PostCardComponent = ({
         />
         
         {showComments && (
-          <div className="pt-3 border-t animate-fade-in">
+          <div className="pt-2 border-t animate-fade-in">
             <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
           </div>
         )}
