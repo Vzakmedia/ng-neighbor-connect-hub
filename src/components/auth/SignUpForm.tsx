@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, User, Loader2 } from "lucide-react";
-import { LocationSelector } from "./LocationSelector";
+import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
 import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
@@ -391,7 +391,7 @@ export const SignUpForm = () => {
         />
       </div>
 
-      <LocationSelector 
+      <SimpleLocationSelector 
         onLocationChange={handleLocationChange}
         defaultState={formData.state}
         defaultCity={formData.city}
