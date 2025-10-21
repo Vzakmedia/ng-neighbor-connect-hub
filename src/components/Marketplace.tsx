@@ -91,18 +91,16 @@ interface MarketplaceItem {
   is_liked_by_user?: boolean;
 }
 
-const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services' | 'goods'; locationScope?: 'neighborhood' | 'state' }) => {
+const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood' }: { activeSubTab?: 'services' | 'goods'; locationScope?: 'neighborhood' | 'state' }) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'services' | 'goods'>('services');
   const [services, setServices] = useState<Service[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('neighborhood');
   const [loading, setLoading] = useState(true);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -110,20 +108,6 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceItem | null>(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
-
-  // Sync sub-selection from parent
-  useEffect(() => {
-    if (activeSubTab && activeSubTab !== activeTab) {
-      setActiveTab(activeSubTab);
-    }
-}, [activeSubTab]);
-
-  // Sync view scope from parent if provided
-  useEffect(() => {
-    if (locationScope && locationScope !== viewScope) {
-      setViewScope(locationScope);
-    }
-  }, [locationScope]);
 
   const handleServiceBooked = () => {
     // Refresh services after booking
@@ -150,12 +134,12 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
   ];
 
   useEffect(() => {
-    if (activeTab === 'services') {
+    if (activeSubTab === 'services') {
       fetchServices();
     } else {
       fetchItems();
     }
-  }, [activeTab, selectedCategory, searchTerm, viewScope]);
+  }, [activeSubTab, selectedCategory, searchTerm, locationScope]);
 
 
   // Handle URL parameter for specific item
@@ -163,7 +147,6 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
     const itemId = searchParams.get('item');
     if (itemId) {
       setHighlightedItemId(itemId);
-      setActiveTab('goods'); // Switch to goods tab when item is specified
       
       // Clear the URL parameter after a short delay to clean up URL
       setTimeout(() => {
@@ -241,8 +224,8 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
       const filteredServices = servicesWithProfilesAndLikes.filter(service => {
         if (!currentUserProfile?.state || !service.profiles) return true; // Show all if no filter data
         
-        if (viewScope === 'state') {
-          // For entire state view, show services from the same state only
+        if (locationScope === 'state') {
+      // For entire state view, show services from the same state only
           const serviceState = service.profiles.state?.trim().toLowerCase();
           const userState = currentUserProfile.state?.trim().toLowerCase();
           console.log('State filtering service:', { serviceState, userState, match: serviceState === userState });
@@ -326,8 +309,8 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
       const filteredItems = itemsWithProfilesAndLikes.filter(item => {
       if (!currentUserProfile?.state || !item.profiles) return true; // Show all if no filter data
         
-        if (viewScope === 'state') {
-          // For entire state view, show items from the same state only
+        if (locationScope === 'state') {
+      // For entire state view, show items from the same state only
           const itemState = item.profiles.state?.trim().toLowerCase();
           const userState = currentUserProfile.state?.trim().toLowerCase();
           console.log('State filtering item:', { itemState, userState, match: itemState === userState });
@@ -366,7 +349,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
         },
         async (payload) => {
           // Refetch items to update like counts in real-time
-          if (activeTab === 'goods') {
+          if (activeSubTab === 'goods') {
             fetchItems();
           }
         }
@@ -376,7 +359,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab]);
+  }, [activeSubTab]);
 
   const formatPrice = (price: number) => {
     return `₦${(price / 100).toLocaleString()}`;
@@ -388,8 +371,8 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
     return categoryData?.icon || Users;
   };
 
-  const currentCategories = activeTab === 'services' ? serviceCategories : itemCategories;
-  const currentItems = activeTab === 'services' ? services : items;
+  const currentCategories = activeSubTab === 'services' ? serviceCategories : itemCategories;
+  const currentItems = activeSubTab === 'services' ? services : items;
 
 
   const handleImageClick = (images: string[], title: string) => {
@@ -528,28 +511,12 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder={`Search ${activeTab}...`}
+                placeholder={`Search ${activeSubTab}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-12 md:h-10 w-full"
               />
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-12 md:h-10 px-3 flex-shrink-0">
-                  <span className="text-sm">{viewScope === 'neighborhood' ? 'My City' : 'Entire State'}</span>
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-50 bg-background">
-                <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
-                  My City
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setViewScope('state')}>
-                  Entire State
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
           <div className="flex items-center gap-2">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -570,7 +537,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                 })}
               </SelectContent>
             </Select>
-            {activeTab === 'services' ? (
+            {activeSubTab === 'services' ? (
               <CreateServiceDialog
                 onServiceCreated={() => fetchServices()}
                 trigger={
@@ -643,7 +610,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
               <AdDisplay 
                 placement="inline"
                 maxAds={2}
-                filterType={activeTab === 'services' ? 'service_ad' : 'marketplace_ad'}
+                filterType={activeSubTab === 'services' ? 'service_ad' : 'marketplace_ad'}
               />
             </div>
           )}
@@ -657,7 +624,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                 highlightedItemId === item.id ? 'ring-2 ring-primary shadow-lg scale-105' : ''
               }`}
               onClick={() => {
-                if (activeTab === 'goods') {
+                if (activeSubTab === 'goods') {
                   setSelectedProduct(item as MarketplaceItem);
                   setProductDialogOpen(true);
                 }
@@ -700,21 +667,21 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                          </div>
                        )}
                      </Carousel>
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-muted">
-                       {activeTab === 'services' ? (
-                         <Users className="h-12 w-12 text-muted-foreground" />
-                       ) : (
-                         <ShoppingBag className="h-12 w-12 text-muted-foreground" />
-                       )}
-                     </div>
-                   )}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        {activeSubTab === 'services' ? (
+                          <Users className="h-12 w-12 text-muted-foreground" />
+                        ) : (
+                          <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                        )}
+                      </div>
+                    )}
                    
                    {/* Category badge */}
                    <div className="absolute top-2 right-2">
                      <Badge variant="secondary" className="bg-white/90 text-green-600 hover:text-white">
-                       {getCategoryIcon(item.category, activeTab) && (
-                         React.createElement(getCategoryIcon(item.category, activeTab), {
+                       {getCategoryIcon(item.category, activeSubTab) && (
+                         React.createElement(getCategoryIcon(item.category, activeSubTab), {
                            className: "h-3 w-3 mr-1"
                          })
                        )}
@@ -738,10 +705,10 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                   <h3 className="font-semibold text-lg mb-2 line-clamp-2">{item.title}</h3>
                   <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{item.description}</p>
 
-                  {/* Price and Rating/Condition */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-lg font-bold text-primary">
-                      {activeTab === 'services' ? (
+                   {/* Price and Rating/Condition */}
+                   <div className="flex items-center justify-between mb-3">
+                     <div className="text-lg font-bold text-primary">
+                       {activeSubTab === 'services' ? (
                         <>
                           {formatPrice((item as Service).price_min)} - {formatPrice((item as Service).price_max)}
                           <span className="text-sm font-normal text-muted-foreground">
@@ -755,9 +722,9 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                             <span className="text-sm font-normal text-muted-foreground"> (negotiable)</span>
                           )}
                         </>
-                      )}
-                    </div>
-                    {activeTab === 'services' ? (
+                       )}
+                     </div>
+                     {activeSubTab === 'services' ? (
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
                         <span className="text-sm font-medium">{(item as Service).rating || 'New'}</span>
@@ -789,9 +756,9 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-4">
-                    {activeTab === 'services' ? (
+                   {/* Action Buttons */}
+                   <div className="flex gap-2 mt-4">
+                     {activeSubTab === 'services' ? (
                       user?.id !== item.user_id ? (
                         <BookServiceDialog 
                           service={{
@@ -844,7 +811,7 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
                        variant="outline" 
                        size="sm" 
                        className={`h-8 px-2 ${item.is_liked_by_user ? 'text-red-500' : ''}`}
-                       onClick={() => toggleLike(item.id, activeTab === 'services')}
+                       onClick={() => toggleLike(item.id, activeSubTab === 'services')}
                      >
                        <Heart className={`h-3 w-3 ${item.is_liked_by_user ? 'fill-current' : ''}`} />
                        {(item.likes_count || 0) > 0 && (
@@ -861,22 +828,22 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
       )}
 
       {/* Empty State */}
-      {!loading && currentItems.length === 0 && (
+       {!loading && currentItems.length === 0 && (
         <div className="text-center py-12">
           <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-            {activeTab === 'services' ? (
+            {activeSubTab === 'services' ? (
               <Users className="h-12 w-12 text-muted-foreground" />
             ) : (
               <ShoppingBag className="h-12 w-12 text-muted-foreground" />
             )}
           </div>
-          <h3 className="text-lg font-semibold mb-2">No {activeTab} found</h3>
+          <h3 className="text-lg font-semibold mb-2">No {activeSubTab} found</h3>
           <p className="text-muted-foreground mb-4">
             {searchTerm || selectedCategory !== 'all'
               ? `Try adjusting your search or filters`
-              : `Be the first to list a ${activeTab.slice(0, -1)} in your area`}
+              : `Be the first to list a ${activeSubTab.slice(0, -1)} in your area`}
           </p>
-          {activeTab === 'services' ? (
+          {activeSubTab === 'services' ? (
             <CreateServiceDialog
               onServiceCreated={() => fetchServices()}
               trigger={
