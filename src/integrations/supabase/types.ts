@@ -1046,6 +1046,13 @@ export type Database = {
             foreignKeyName: "board_posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "board_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -1423,6 +1430,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "community_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "community_posts_user_id_fkey"
             columns: ["user_id"]
@@ -2127,6 +2141,13 @@ export type Database = {
             foreignKeyName: "events_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -2393,6 +2414,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "marketplace_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "marketplace_items_user_id_fkey"
             columns: ["user_id"]
@@ -2910,6 +2938,13 @@ export type Database = {
             foreignKeyName: "fk_panic_alerts_user_id"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_panic_alerts_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -3034,6 +3069,13 @@ export type Database = {
             foreignKeyName: "post_comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "post_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -3065,6 +3107,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "post_likes_user_id_fkey"
@@ -3761,6 +3810,13 @@ export type Database = {
             foreignKeyName: "fk_safety_alerts_user_id"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_safety_alerts_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
@@ -3822,6 +3878,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "saved_posts_user_id_fkey"
             columns: ["user_id"]
@@ -5072,6 +5135,36 @@ export type Database = {
       }
     }
     Views: {
+      display_profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          created_at: string | null
+          display_name: string | null
+          is_verified: boolean | null
+          state: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null

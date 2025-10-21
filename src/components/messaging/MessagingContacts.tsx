@@ -267,7 +267,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     
     try {
       const { data, error } = await supabase
-        .from('public_profiles')
+        .from('display_profiles')
         .select('user_id, display_name, avatar_url')
         .neq('user_id', user?.id)
         .or(`display_name.ilike.%${query}%`)
