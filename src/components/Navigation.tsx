@@ -99,6 +99,11 @@ const Navigation = () => {
           
           <nav className="flex-1 px-1 lg:px-2 space-y-1">
             {navItems.map((item) => {
+              // Hide User Directory for non-staff users
+              if (item.id === 'users' && !hasStaffRole) {
+                return null;
+              }
+              
               const Icon = item.icon;
               return (
                 <button
@@ -167,7 +172,13 @@ const Navigation = () => {
         <div className="flex h-16">
           {/* Main nav items - 4 columns */}
           <div className="flex-1 grid grid-cols-4">
-            {mobileNavItems.slice(0, 4).map((item) => {
+            {mobileNavItems.slice(0, 4).filter(item => {
+              // Hide User Directory for non-staff users on mobile
+              if (item.id === 'users' && !hasStaffRole) {
+                return false;
+              }
+              return true;
+            }).slice(0, 4).map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -210,7 +221,13 @@ const Navigation = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" side="top" className="mb-2">
-                {mobileNavItems.slice(4).map((item) => {
+                {mobileNavItems.slice(4).filter(item => {
+                  // Hide User Directory for non-staff users
+                  if (item.id === 'users' && !hasStaffRole) {
+                    return false;
+                  }
+                  return true;
+                }).map((item) => {
                   const Icon = item.icon;
                   return (
                     <DropdownMenuItem
