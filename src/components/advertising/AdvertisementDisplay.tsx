@@ -154,7 +154,20 @@ export const AdvertisementDisplay = ({ maxAds = 3, className = '', placement = '
     const contentData = getContentData();
     const title = ad.ad_title || contentData?.title || contentData?.name;
     const description = ad.ad_description || contentData?.description;
-    const price = contentData?.price;
+    
+    // Format price to handle service pricing structure
+    const formatPrice = () => {
+      if (contentData?.price) return contentData.price;
+      if (contentData?.price_min && contentData?.price_max) {
+        return `₦${contentData.price_min.toLocaleString()} - ₦${contentData.price_max.toLocaleString()}`;
+      }
+      if (contentData?.price_min) {
+        return `From ₦${contentData.price_min.toLocaleString()}`;
+      }
+      return null;
+    };
+    
+    const price = formatPrice();
     const images = Array.isArray(ad.ad_images) && ad.ad_images.length > 0 ? ad.ad_images : (contentData?.images || []);
     const rating = contentData?.rating;
 
