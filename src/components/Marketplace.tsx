@@ -40,7 +40,7 @@ import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 import CreateServiceDialog from './CreateServiceDialog';
-import { SponsoredContent } from './SponsoredContent';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 
 
 interface Service {
@@ -637,12 +637,13 @@ const Marketplace = ({ activeSubTab, locationScope }: { activeSubTab?: 'services
         </div>
       ) : (
         <>
-          {/* Sponsored Content */}
-          {currentItems.length > 0 && user && profile && (
+          {/* Marketplace Sponsored Ads */}
+          {currentItems.length > 0 && (
             <div className="mb-8">
-              <SponsoredContent 
-                userLocation={`${profile.city || ''}, ${profile.state || ''}`}
-                limit={2}
+              <AdDisplay 
+                placement="inline"
+                maxAds={2}
+                filterType={activeTab === 'services' ? 'service_ad' : 'marketplace_ad'}
               />
             </div>
           )}

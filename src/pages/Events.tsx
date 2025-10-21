@@ -9,6 +9,7 @@ import { Plus, Calendar, Users } from 'lucide-react';
 import EventFeed from '@/components/EventFeed';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import MyEventsPanel from '@/components/MyEventsPanel';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 
 const Events = () => {
   const { user, loading } = useAuth();
@@ -70,6 +71,9 @@ const Events = () => {
             </Button>
           </div>
 
+          {/* Event Advertisements */}
+          <AdDisplay placement="banner" maxAds={1} />
+
           <Tabs defaultValue="all" className="w-full">
             {/* Desktop tabs */}
             <TabsList className="hidden md:grid w-full grid-cols-2">
@@ -77,8 +81,9 @@ const Events = () => {
               <TabsTrigger value="my-events">My Events</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="all">
+            <TabsContent value="all" className="space-y-6">
               <EventFeed key={refreshKey} />
+              <AdDisplay placement="inline" maxAds={2} />
             </TabsContent>
             
             <TabsContent value="my-events">

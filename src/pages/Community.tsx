@@ -7,7 +7,7 @@ import CommunityFeed from '@/components/CommunityFeed';
 import PaymentStatusHandler from '@/components/PaymentStatusHandler';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
 import CreatePostDialog from '@/components/CreatePostDialog';
-import { AdvertisementDisplay } from '@/components/advertising/AdvertisementDisplay';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from "@/hooks/useAuth";
@@ -77,14 +77,14 @@ const Community = () => {
             
             <TabsContent value="feed" className="mt-6 space-y-6">
               {/* Sponsored ads in feed */}
-              <AdvertisementDisplay placement="banner" maxAds={1} />
+              <AdDisplay placement="banner" maxAds={1} />
               <CommunityFeed />
               {/* Additional ads below feed */}
-              <AdvertisementDisplay placement="feed" maxAds={3} />
+              <AdDisplay placement="feed" maxAds={3} />
             </TabsContent>
             
             <TabsContent value="boards" className="mt-6 space-y-6">
-              <AdvertisementDisplay placement="sidebar" maxAds={2} />
+              <AdDisplay placement="sidebar" maxAds={2} />
               <CommunityBoards />
             </TabsContent>
           </Tabs>
