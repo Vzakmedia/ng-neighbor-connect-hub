@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LocationSelector } from "./LocationSelector";
+import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -372,7 +372,7 @@ export const EnhancedProfileCompletion = () => {
 
             {/* Location Information */}
             <div className="space-y-4">
-              <LocationSelector
+              <SimpleLocationSelector
                 onLocationChange={handleLocationChange}
                 defaultState={formData.state}
                 defaultCity={formData.city}
