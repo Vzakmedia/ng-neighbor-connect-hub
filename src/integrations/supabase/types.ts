@@ -6062,20 +6062,17 @@ export type Database = {
         Args: { content_limit?: number; user_location?: string }
         Returns: {
           business: Json
+          campaign_id: string
           category: string
-          comments: number
-          cta: string
+          cta_text: string
+          cta_url: string
           description: string
           id: string
-          images: Json
-          likes: number
-          location: string
+          images: string[]
+          placement: string
           price: string
-          sponsored: boolean
-          time_posted: string
+          priority: number
           title: string
-          type: string
-          url: string
         }[]
       }
       get_admin_user_stats: {
