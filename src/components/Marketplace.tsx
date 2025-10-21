@@ -62,6 +62,8 @@ interface Service {
   profiles: {
     full_name: string;
     avatar_url?: string;
+    city?: string | null;
+    state?: string | null;
   } | null;
   likes_count?: number;
   is_liked_by_user?: boolean;
@@ -86,6 +88,8 @@ interface MarketplaceItem {
     avatar_url?: string;
     phone?: string;
     email?: string;
+    city?: string | null;
+    state?: string | null;
   } | null;
   likes_count?: number;
   is_liked_by_user?: boolean;
