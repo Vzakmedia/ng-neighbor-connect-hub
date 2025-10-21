@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -130,7 +130,7 @@ const App = () => {
   }, []);
   
   // Add global error handler for security errors (especially iOS WebSocket issues)
-  React.useEffect(() => {
+  useEffect(() => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     const handleGlobalError = (event: ErrorEvent) => {
