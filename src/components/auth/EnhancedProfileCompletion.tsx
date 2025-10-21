@@ -372,12 +372,32 @@ export const EnhancedProfileCompletion = () => {
 
             {/* Location Information */}
             <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <h3 className="font-medium">Your Community Location <span className="text-destructive">*</span></h3>
+              </div>
+              
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-md mb-3">
+                <p className="text-xs text-muted-foreground">
+                  This will be your permanent community location. All posts you create and see will be based on this location.
+                </p>
+              </div>
+              
               <SimpleLocationSelector
                 onLocationChange={handleLocationChange}
                 defaultState={formData.state}
                 defaultCity={formData.city}
                 defaultNeighborhood={formData.neighborhood}
               />
+              
+              {formData.state && formData.city && formData.neighborhood && (
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-xs font-medium mb-1">You'll join the community in:</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.neighborhood}, {formData.city}, {formData.state}
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="address">Street Address</Label>
