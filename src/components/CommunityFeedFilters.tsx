@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal, Search, Globe, Home, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,23 +22,71 @@ interface CommunityFeedFiltersProps {
   onFiltersChange: (filters: CommunityFilters) => void;
   availableTags: string[];
   activeFiltersCount: number;
+  userLocation?: {
+    state?: string;
+    city?: string;
+    neighborhood?: string;
+  };
 }
 
 export const CommunityFeedFilters = ({
   filters,
   onFiltersChange,
   availableTags,
-  activeFiltersCount
+  activeFiltersCount,
+  userLocation
 }: CommunityFeedFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [tagSearch, setTagSearch] = useState("");
 
-  const locationScopeOptions = [
-    { value: 'all', label: 'All Areas', shortLabel: 'All', icon: MapPin },
-    { value: 'neighborhood', label: 'Neighborhood', shortLabel: 'Near', icon: MapPin },
-    { value: 'city', label: 'City', shortLabel: 'City', icon: MapPin },
-    { value: 'state', label: 'State', shortLabel: 'State', icon: MapPin }
-  ];
+  // Create dynamic location options with user's actual location
+  const locationScopeOptions = useMemo(() => {
+    const baseOptions = [
+      { 
+        value: 'all', 
+        label: 'All Areas', 
+        shortLabel: 'All', 
+        icon: Globe, 
+        description: 'See posts from everywhere',
+        fullLabel: 'All Areas'
+      },
+    ];
+    
+    if (userLocation?.neighborhood && userLocation?.city) {
+      baseOptions.push({
+        value: 'neighborhood',
+        label: 'My Ward',
+        shortLabel: 'Ward',
+        icon: Home,
+        description: `Posts from ${userLocation.neighborhood} ward only`,
+        fullLabel: `${userLocation.neighborhood} Ward`
+      });
+    }
+    
+    if (userLocation?.city && userLocation?.state) {
+      baseOptions.push({
+        value: 'city',
+        label: 'My LGA',
+        shortLabel: 'LGA',
+        icon: Building,
+        description: `Posts from ${userLocation.city} LGA`,
+        fullLabel: `${userLocation.city} LGA`
+      });
+    }
+    
+    if (userLocation?.state) {
+      baseOptions.push({
+        value: 'state',
+        label: 'My State',
+        shortLabel: 'State',
+        icon: MapPin,
+        description: `Posts from ${userLocation.state} state`,
+        fullLabel: `${userLocation.state} State`
+      });
+    }
+    
+    return baseOptions;
+  }, [userLocation]);
 
   const postTypeOptions = [
     { value: 'all', label: 'All Types', shortLabel: 'All', icon: Users },
@@ -239,10 +287,13 @@ export const CommunityFeedFilters = ({
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
                     {locationScopeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value} className="text-xs h-7">
-                        <div className="flex items-center gap-2">
-                          <option.icon className="h-3 w-3" />
-                          {option.label}
+                      <SelectItem key={option.value} value={option.value} className="text-xs py-2">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <option.icon className="h-3 w-3" />
+                            <span className="font-medium">{option.label}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{option.description}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -346,7 +397,7 @@ export const CommunityFeedFilters = ({
                   className="gap-1 px-2 py-0.5 text-xs bg-accent/20 text-accent-foreground border-accent/30 hover:bg-accent/30 transition-colors"
                 >
                   <MapPin className="h-2 w-2" />
-                  <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.label}</span>
+                  <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.fullLabel || locationScopeOptions.find(opt => opt.value === filters.locationScope)?.label}</span>
                   <span className="sm:hidden">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.shortLabel}</span>
                   <Button
                     variant="ghost"

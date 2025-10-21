@@ -16,6 +16,11 @@ interface CommunityFeedHeaderProps {
   availableTags: string[];
   activeFiltersCount: number;
   onMarkAllRead?: () => void;
+  userLocation?: {
+    state?: string;
+    city?: string;
+    neighborhood?: string;
+  };
 }
 
 export const CommunityFeedHeader = ({
@@ -29,7 +34,8 @@ export const CommunityFeedHeader = ({
   onFiltersChange,
   availableTags,
   activeFiltersCount,
-  onMarkAllRead
+  onMarkAllRead,
+  userLocation
 }: CommunityFeedHeaderProps) => {
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4">
@@ -70,6 +76,7 @@ export const CommunityFeedHeader = ({
           onFiltersChange={onFiltersChange}
           availableTags={availableTags}
           activeFiltersCount={activeFiltersCount}
+          userLocation={userLocation}
         />
 
       </div>

@@ -174,6 +174,11 @@ export const CommunityFeed = () => {
         availableTags={availableTags}
         activeFiltersCount={activeFiltersCount}
         onMarkAllRead={markAllCommunityPostsAsRead}
+        userLocation={{
+          state: profile?.state,
+          city: profile?.city,
+          neighborhood: profile?.neighborhood
+        }}
       />
       
       <div className="p-2 sm:p-4">
