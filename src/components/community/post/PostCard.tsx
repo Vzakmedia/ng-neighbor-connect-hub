@@ -88,15 +88,14 @@ const PostCardComponent = ({
         author={post.author}
         createdAt={post.created_at}
         rsvpEnabled={post.rsvp_enabled}
+        locationScope={(post as any).location_scope}
+        targetNeighborhood={(post as any).target_neighborhood}
+        targetCity={(post as any).target_city}
+        targetState={(post as any).target_state}
         onAvatarClick={onAvatarClick}
       />
       
       <CardContent className="space-y-2 px-3 sm:px-4 pb-2 sm:pb-3 pt-0">
-        {getVisibilityBadge() && (
-          <div className="flex justify-end">
-            {getVisibilityBadge()}
-          </div>
-        )}
         
         <PostCardContent
           title={post.title}

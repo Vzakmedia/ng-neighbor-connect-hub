@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Users, Building, Home, Globe } from 'lucide-react';
 import { CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OnlineAvatar } from '@/components/OnlineAvatar';
@@ -10,15 +10,56 @@ interface PostCardHeaderProps {
   author: PostAuthor;
   createdAt: string;
   rsvpEnabled: boolean;
+  locationScope?: string;
+  targetNeighborhood?: string;
+  targetCity?: string;
+  targetState?: string;
   onAvatarClick: (userId: string) => void;
 }
 
 export const PostCardHeader = ({ 
   author, 
   createdAt, 
-  rsvpEnabled, 
+  rsvpEnabled,
+  locationScope,
+  targetNeighborhood,
+  targetCity,
+  targetState,
   onAvatarClick 
 }: PostCardHeaderProps) => {
+  const getVisibilityBadge = () => {
+    if (locationScope === 'neighborhood' && targetNeighborhood) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Users className="h-3 w-3 mr-1" />
+          {targetNeighborhood}
+        </Badge>
+      );
+    } else if (locationScope === 'city' && targetCity) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Building className="h-3 w-3 mr-1" />
+          {targetCity}
+        </Badge>
+      );
+    } else if (locationScope === 'state' && targetState) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Home className="h-3 w-3 mr-1" />
+          {targetState}
+        </Badge>
+      );
+    } else if (locationScope === 'all') {
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Globe className="h-3 w-3 mr-1" />
+          Everyone
+        </Badge>
+      );
+    }
+    return null;
+  };
+
   return (
     <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
       <div className="flex items-center gap-2 sm:gap-3">
@@ -37,9 +78,12 @@ export const PostCardHeader = ({
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">
-            {author.full_name || "Anonymous"}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-sm truncate">
+              {author.full_name || "Anonymous"}
+            </p>
+            {getVisibilityBadge()}
+          </div>
           <p className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
           </p>
