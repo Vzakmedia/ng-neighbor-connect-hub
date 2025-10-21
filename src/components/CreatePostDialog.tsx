@@ -40,9 +40,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import PlacesAutocomplete from './PlacesAutocomplete';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 import { normalizeLocation } from '@/lib/community/locationNormalizer';
+import { PostLocationSelector } from '@/components/community/PostLocationSelector';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -53,14 +55,17 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [postType, setPostType] = useState<string>('general');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
   const [locationScope, setLocationScope] = useState<'neighborhood' | 'city' | 'state' | 'all'>('all');
+  
+  // Specific location override states (from structured Nigerian data)
+  const [specificState, setSpecificState] = useState('');
+  const [specificCity, setSpecificCity] = useState('');
+  const [specificNeighborhood, setSpecificNeighborhood] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -114,9 +119,28 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     }
   };
 
-  const handleLocationConfirm = (selectedLocation: string, coords: { lat: number; lng: number }) => {
-    setLocation(selectedLocation);
-    setCoordinates(coords);
+  const handleSpecificLocationChange = (state: string, city: string, neighborhood: string) => {
+    setSpecificState(state);
+    setSpecificCity(city);
+    setSpecificNeighborhood(neighborhood);
+  };
+
+  const hasSpecificLocation = specificState && specificCity && specificNeighborhood;
+  
+  // Check if user has required location data for selected visibility scope
+  const hasRequiredLocation = () => {
+    if (locationScope === 'all') return true;
+    
+    const effectiveLocation = hasSpecificLocation 
+      ? { state: specificState, city: specificCity, neighborhood: specificNeighborhood }
+      : { state: profile?.state, city: profile?.city, neighborhood: profile?.neighborhood };
+    
+    if (locationScope === 'state') return !!effectiveLocation.state;
+    if (locationScope === 'city') return !!effectiveLocation.state && !!effectiveLocation.city;
+    if (locationScope === 'neighborhood') {
+      return !!effectiveLocation.state && !!effectiveLocation.city && !!effectiveLocation.neighborhood;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,16 +172,18 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         }
       }
 
+      // Determine which location to use (specific override or profile location)
+      const sourceLocation = hasSpecificLocation
+        ? { state: specificState, city: specificCity, neighborhood: specificNeighborhood }
+        : { state: profile?.state, city: profile?.city, neighborhood: profile?.neighborhood };
+
       // Normalize location data for consistent filtering
-      const normalizedLocation = normalizeLocation({
-        state: profile?.state,
-        city: profile?.city,
-        neighborhood: profile?.neighborhood,
-      });
+      const normalizedLocation = normalizeLocation(sourceLocation);
 
       console.log('📍 Creating post with normalized location:', {
         scope: locationScope,
-        original: { state: profile?.state, city: profile?.city, neighborhood: profile?.neighborhood },
+        hasOverride: hasSpecificLocation,
+        source: sourceLocation,
         normalized: normalizedLocation,
       });
 
@@ -169,7 +195,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           post_type: postType,
           title: title || null,
           content,
-          location: location || null,
+          location: normalizedLocation.neighborhood && normalizedLocation.city && normalizedLocation.state
+            ? `${normalizedLocation.neighborhood}, ${normalizedLocation.city}, ${normalizedLocation.state}`
+            : null,
           image_urls: imageUrls,
           tags: tags,
           rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
@@ -197,13 +225,15 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       // Reset form
       setContent('');
       setTitle('');
-      setLocation('');
       setImages([]);
       setTags([]);
       setCurrentTag('');
       setPostType('general');
       setRsvpEnabled(false);
       setLocationScope('all');
+      setSpecificState('');
+      setSpecificCity('');
+      setSpecificNeighborhood('');
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -293,50 +323,79 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
             {/* Post Visibility */}
             <div className="space-y-3">
-              <Label>Who can see this post?</Label>
+              <div className="flex items-center gap-2">
+                <Label>Who can see this post?</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-xs">Visibility uses Nigerian administrative divisions (Ward → LGA → State). 
+                      The post will appear in feeds for users in the selected scope.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              {!hasRequiredLocation() && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                  <p className="text-xs text-destructive">
+                    ⚠️ Your profile doesn't have complete location information for this visibility scope. 
+                    Please {hasSpecificLocation ? 'complete the specific location below' : 'set a specific location below or update your profile'}.
+                  </p>
+                </div>
+              )}
+
               <RadioGroup value={locationScope} onValueChange={(value: 'neighborhood' | 'city' | 'state' | 'all') => setLocationScope(value)}>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="neighborhood" id="neighborhood" />
-                    <Label htmlFor="neighborhood" className="flex items-center gap-2">
+                    <Label htmlFor="neighborhood" className="flex items-center gap-2 flex-1">
                       <Users className="h-4 w-4" />
-                      <div>
+                      <div className="flex-1">
                         <div>My neighborhood only</div>
                         <div className="text-xs text-muted-foreground">
-                          {profile?.neighborhood || 'Set your neighborhood in profile'}
+                          {hasSpecificLocation 
+                            ? `${specificNeighborhood}, ${specificCity}`
+                            : (profile?.neighborhood ? `${profile.neighborhood}, ${profile.city}` : 'Set location below')}
                         </div>
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="city" id="city" />
-                    <Label htmlFor="city" className="flex items-center gap-2">
+                    <Label htmlFor="city" className="flex items-center gap-2 flex-1">
                       <Building className="h-4 w-4" />
-                      <div>
-                        <div>My city</div>
+                      <div className="flex-1">
+                        <div>My city (LGA)</div>
                         <div className="text-xs text-muted-foreground">
-                          {profile?.city || 'Set your city in profile'}
+                          {hasSpecificLocation 
+                            ? specificCity
+                            : (profile?.city || 'Set location below')}
                         </div>
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="state" id="state" />
-                    <Label htmlFor="state" className="flex items-center gap-2">
+                    <Label htmlFor="state" className="flex items-center gap-2 flex-1">
                       <Home className="h-4 w-4" />
-                      <div>
+                      <div className="flex-1">
                         <div>My state</div>
                         <div className="text-xs text-muted-foreground">
-                          {profile?.state || 'Set your state in profile'}
+                          {hasSpecificLocation 
+                            ? specificState
+                            : (profile?.state || 'Set location below')}
                         </div>
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="all" id="all" />
-                    <Label htmlFor="all" className="flex items-center gap-2">
+                    <Label htmlFor="all" className="flex items-center gap-2 flex-1">
                       <Globe className="h-4 w-4" />
-                      <div>
+                      <div className="flex-1">
                         <div>Everyone</div>
                         <div className="text-xs text-muted-foreground">
                           Visible to all users on the platform
@@ -348,32 +407,28 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               </RadioGroup>
             </div>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label>Specific Location (Optional)</Label>
-              <PlacesAutocomplete
-                onLocationSelect={handleLocationConfirm}
-                placeholder="Search for a place in Nigeria..."
-                defaultValue={location}
-              />
-              {location && coordinates && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span>{location}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setLocation('');
-                      setCoordinates(null);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                </div>
-              )}
-            </div>
+            {/* Specific Location Override */}
+            <PostLocationSelector
+              onLocationChange={handleSpecificLocationChange}
+              defaultState={specificState}
+              defaultCity={specificCity}
+              defaultNeighborhood={specificNeighborhood}
+              profileState={profile?.state || ''}
+              profileCity={profile?.city || ''}
+              profileNeighborhood={profile?.neighborhood || ''}
+              onUseProfileLocation={() => {
+                toast({
+                  title: "Location updated",
+                  description: "Using your profile location",
+                });
+              }}
+              onClear={() => {
+                toast({
+                  title: "Location cleared",
+                  description: "Will use your profile location",
+                });
+              }}
+            />
 
             {/* Tags */}
             <div className="space-y-2">
@@ -529,7 +584,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isSubmitting}
+            disabled={!content.trim() || isSubmitting || !hasRequiredLocation()}
             className="bg-gradient-primary hover:opacity-90"
           >
             {isSubmitting ? 'Posting...' : 'Post to Community'}
