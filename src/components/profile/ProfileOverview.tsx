@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { SimpleLocationSelector } from '@/components/profile/SimpleLocationSelector';
+import { useLocationPreferences, type LocationFilterScope } from '@/hooks/useLocationPreferences';
 
 interface Profile {
   id: string;
@@ -34,6 +35,7 @@ interface Profile {
 const ProfileOverview = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { updateLocationFilter } = useLocationPreferences();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,10 +93,48 @@ const ProfileOverview = () => {
     }
   };
 
+  const determineOptimalLocationFilter = (
+    oldState: string,
+    oldCity: string,
+    oldNeighborhood: string,
+    newState: string,
+    newCity: string,
+    newNeighborhood: string
+  ): LocationFilterScope | null => {
+    // No location data change
+    if (oldState === newState && oldCity === newCity && oldNeighborhood === newNeighborhood) {
+      return null;
+    }
+    
+    // State changed - user moved to different state
+    if (oldState !== newState) {
+      return 'city';
+    }
+    
+    // City (LGA) changed - user moved to different LGA
+    if (oldCity !== newCity) {
+      return 'city';
+    }
+    
+    // Only neighborhood changed - user moved within same LGA
+    if (oldNeighborhood !== newNeighborhood) {
+      return 'neighborhood';
+    }
+    
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      // Store old location data for comparison
+      const oldLocationData = {
+        state: profile?.state || '',
+        city: profile?.city || '',
+        neighborhood: profile?.neighborhood || ''
+      };
+      
       const { error } = await supabase
         .from('profiles')
         .update(formData)
@@ -102,10 +142,31 @@ const ProfileOverview = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
+      // Check if location changed and update preset filter accordingly
+      const optimalFilter = determineOptimalLocationFilter(
+        oldLocationData.state,
+        oldLocationData.city,
+        oldLocationData.neighborhood,
+        formData.state,
+        formData.city,
+        formData.neighborhood
+      );
+      
+      if (optimalFilter) {
+        // Update the default location filter
+        await updateLocationFilter(optimalFilter);
+        
+        const filterLabel = optimalFilter === 'city' ? 'City Wide' : 'Neighborhood Only';
+        toast({
+          title: "Profile updated",
+          description: `Your profile and location preferences have been updated. Default feed filter set to ${filterLabel} to help you discover your new area.`,
+        });
+      } else {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated.",
+        });
+      }
 
       setEditing(false);
       fetchProfile();
