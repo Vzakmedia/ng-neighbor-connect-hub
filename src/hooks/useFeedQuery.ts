@@ -75,7 +75,7 @@ export function useFeedQuery(filters: FeedFilters) {
         .from('community_posts')
         .select(`
           *,
-          author:profiles!community_posts_user_id_fkey (
+          author:profiles!user_id (
             full_name,
             avatar_url,
             city,
