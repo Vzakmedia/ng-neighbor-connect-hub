@@ -70,18 +70,10 @@ export function useFeedQuery(filters: FeedFilters) {
 
       const offset = pageParam as number;
 
-      // Build query for community posts - use relationship to fetch profiles
+      // Build query for community posts
       let query = supabase
         .from('community_posts')
-        .select(`
-          *,
-          profiles!community_posts_user_id_fkey(
-            full_name,
-            avatar_url,
-            city,
-            state
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .range(offset, offset + POSTS_PER_PAGE - 1);
 
@@ -127,8 +119,13 @@ export function useFeedQuery(filters: FeedFilters) {
       // Transform and enrich posts with engagement data (profile already fetched via relationship)
       const posts: FeedPost[] = await Promise.all(
         (postsData || []).map(async (post: any) => {
-          // Fetch engagement data in parallel
-          const [likeData, commentData, saveData, userLike, userSave] = await Promise.all([
+          // Fetch user profile and engagement data in parallel
+          const [profileData, likeData, commentData, saveData, userLike, userSave] = await Promise.all([
+            supabase
+              .from('profiles')
+              .select('full_name, avatar_url, city, state')
+              .eq('user_id', post.user_id)
+              .maybeSingle(),
             supabase
               .from('post_likes')
               .select('id', { count: 'exact', head: true })
@@ -141,18 +138,22 @@ export function useFeedQuery(filters: FeedFilters) {
               .from('saved_posts')
               .select('id', { count: 'exact', head: true })
               .eq('post_id', post.id),
-            user ? supabase
-              .from('post_likes')
-              .select('id')
-              .eq('post_id', post.id)
-              .eq('user_id', user.id)
-              .maybeSingle() : Promise.resolve({ data: null }),
-            user ? supabase
-              .from('saved_posts')
-              .select('id')
-              .eq('post_id', post.id)
-              .eq('user_id', user.id)
-              .maybeSingle() : Promise.resolve({ data: null }),
+            user
+              ? supabase
+                  .from('post_likes')
+                  .select('id')
+                  .eq('post_id', post.id)
+                  .eq('user_id', user.id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
+            user
+              ? supabase
+                  .from('saved_posts')
+                  .select('id')
+                  .eq('post_id', post.id)
+                  .eq('user_id', user.id)
+                  .maybeSingle()
+              : Promise.resolve({ data: null }),
           ]);
 
           return {
@@ -167,10 +168,10 @@ export function useFeedQuery(filters: FeedFilters) {
             location_scope: post.location_scope,
             created_at: post.created_at,
             updated_at: post.updated_at,
-            author_name: post.profiles?.full_name || 'Unknown User',
-            author_avatar: post.profiles?.avatar_url || null,
-            author_city: post.profiles?.city || null,
-            author_state: post.profiles?.state || null,
+            author_name: profileData.data?.full_name || 'Unknown User',
+            author_avatar: profileData.data?.avatar_url || null,
+            author_city: profileData.data?.city || null,
+            author_state: profileData.data?.state || null,
             like_count: likeData.count || 0,
             comment_count: commentData.count || 0,
             save_count: saveData.count || 0,
