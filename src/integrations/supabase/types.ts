@@ -217,6 +217,7 @@ export type Database = {
           payment_completed_at: string | null
           payment_status: string | null
           pricing_tier_id: string
+          priority_level: number | null
           rejection_reason: string | null
           service_id: string | null
           start_date: string
@@ -256,6 +257,7 @@ export type Database = {
           payment_completed_at?: string | null
           payment_status?: string | null
           pricing_tier_id: string
+          priority_level?: number | null
           rejection_reason?: string | null
           service_id?: string | null
           start_date: string
@@ -295,6 +297,7 @@ export type Database = {
           payment_completed_at?: string | null
           payment_status?: string | null
           pricing_tier_id?: string
+          priority_level?: number | null
           rejection_reason?: string | null
           service_id?: string | null
           start_date?: string
@@ -5442,6 +5445,10 @@ export type Database = {
         Args: { "": unknown } | { "": unknown }
         Returns: string
       }
+      calculate_campaign_cost: {
+        Args: { duration_days: number; pricing_tier_id: string }
+        Returns: number
+      }
       calculate_distance: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
@@ -6033,6 +6040,34 @@ export type Database = {
       geomfromewkt: {
         Args: { "": string }
         Returns: unknown
+      }
+      get_active_ads: {
+        Args: {
+          content_limit?: number
+          user_city?: string
+          user_location?: string
+          user_state?: string
+        }
+        Returns: {
+          ad_call_to_action: string
+          ad_description: string
+          ad_images: Json
+          ad_title: string
+          ad_url: string
+          business_logo: string
+          business_name: string
+          campaign_id: string
+          campaign_type: string
+          created_at: string
+          event_date: string
+          event_title: string
+          location: string
+          marketplace_price: number
+          marketplace_title: string
+          priority_level: number
+          service_name: string
+          service_price: string
+        }[]
       }
       get_active_advertisements: {
         Args: {
