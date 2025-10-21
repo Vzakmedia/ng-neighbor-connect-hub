@@ -70,14 +70,13 @@ export function useFeedQuery(filters: FeedFilters) {
 
       const offset = pageParam as number;
 
-      // Build query for community posts
+      // Build query for community posts (without pagination first)
       let query = supabase
         .from('community_posts')
         .select('*')
-        .order('created_at', { ascending: false })
-        .range(offset, offset + POSTS_PER_PAGE - 1);
+        .order('created_at', { ascending: false });
 
-      // Apply location filters - EXCLUSIVE filtering (each filter shows ONLY that scope)
+      // Apply location filters FIRST - EXCLUSIVE filtering (each filter shows ONLY that scope)
       if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
         // Show ONLY neighborhood-specific posts matching user's location
         query = query
@@ -108,6 +107,9 @@ export function useFeedQuery(filters: FeedFilters) {
         // show only 'all' posts as a safe default
         query = query.eq('location_scope', 'all');
       }
+
+      // Apply pagination LAST (after all filters)
+      query = query.range(offset, offset + POSTS_PER_PAGE - 1);
 
       const { data: postsData, error } = await query;
 
