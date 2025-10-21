@@ -42,6 +42,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import PlacesAutocomplete from './PlacesAutocomplete';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
+import { normalizeLocation } from '@/lib/community/locationNormalizer';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -147,6 +148,19 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         }
       }
 
+      // Normalize location data for consistent filtering
+      const normalizedLocation = normalizeLocation({
+        state: profile?.state,
+        city: profile?.city,
+        neighborhood: profile?.neighborhood,
+      });
+
+      console.log('📍 Creating post with normalized location:', {
+        scope: locationScope,
+        original: { state: profile?.state, city: profile?.city, neighborhood: profile?.neighborhood },
+        normalized: normalizedLocation,
+      });
+
       // Insert the post into the database
       const { error } = await supabase
         .from('community_posts')
@@ -160,9 +174,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           tags: tags,
           rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
           location_scope: locationScope,
-          target_neighborhood: locationScope === 'neighborhood' ? profile?.neighborhood : null,
-          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? profile?.city : null,
-          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? profile?.state : null
+          target_neighborhood: locationScope === 'neighborhood' ? normalizedLocation.neighborhood : null,
+          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? normalizedLocation.city : null,
+          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? normalizedLocation.state : null
         });
 
       if (error) {
