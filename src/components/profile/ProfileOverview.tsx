@@ -14,7 +14,7 @@ import { Edit, MapPin, Phone, Mail, User, Star, Camera, Save, X, Upload, Calenda
 import { useToast } from '@/hooks/use-toast';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { LocationSelector } from '@/components/auth/LocationSelector';
+import { SimpleLocationSelector } from '@/components/profile/SimpleLocationSelector';
 
 interface Profile {
   id: string;
@@ -509,7 +509,7 @@ const ProfileOverview = () => {
           {editing ? (
             <div className="lg:col-span-2 space-y-4">
               <Label className="text-sm">Location</Label>
-              <LocationSelector 
+              <SimpleLocationSelector 
                 onLocationChange={handleLocationChange}
                 defaultState={formData.state}
                 defaultCity={formData.city}
