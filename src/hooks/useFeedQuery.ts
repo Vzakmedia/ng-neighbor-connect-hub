@@ -86,18 +86,32 @@ export function useFeedQuery(filters: FeedFilters) {
         .range(offset, offset + POSTS_PER_PAGE - 1);
 
       // Apply location filters - Show 'all' posts + location-specific posts
-      // Don't filter if locationScope is 'all' - show everything
+      // Enhanced logic: neighborhood filter also shows city and neighborhood posts
       if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
-        // Show posts with scope 'all' OR neighborhood-specific posts
-        query = query.or(`location_scope.eq.all,and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state})`);
+        // Show: 'all' posts OR neighborhood-specific posts OR city-wide posts
+        query = query.or(
+          `location_scope.eq.all,` +
+          `and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state}),` +
+          `and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`
+        );
       } else if (filters.locationScope === 'city' && profile.city && profile.state) {
-        // Show posts with scope 'all' OR city-specific posts
-        query = query.or(`location_scope.eq.all,and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`);
+        // Show: 'all' posts OR city-specific posts
+        query = query.or(
+          `location_scope.eq.all,` +
+          `and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state})`
+        );
       } else if (filters.locationScope === 'state' && profile.state) {
-        // Show posts with scope 'all' OR state-specific posts
-        query = query.or(`location_scope.eq.all,and(location_scope.eq.state,target_state.eq.${profile.state})`);
+        // Show: 'all' posts OR state-specific posts
+        query = query.or(
+          `location_scope.eq.all,` +
+          `and(location_scope.eq.state,target_state.eq.${profile.state})`
+        );
+      } else if (filters.locationScope === 'all') {
+        // No filter - show everything
+      } else {
+        // Fallback: if user doesn't have complete location data, show only 'all' posts
+        query = query.eq('location_scope', 'all');
       }
-      // If locationScope is 'all', no filter is applied
 
       const { data: postsData, error } = await query;
 
