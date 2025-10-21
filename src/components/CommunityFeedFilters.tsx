@@ -58,7 +58,7 @@ export const CommunityFeedFilters = ({
         label: 'My Ward',
         shortLabel: 'Ward',
         icon: Home,
-        description: `Posts from ${userLocation.neighborhood} ward only`,
+        description: `People in ${userLocation.neighborhood} ward`,
         fullLabel: `${userLocation.neighborhood} Ward`
       });
     }
@@ -69,7 +69,7 @@ export const CommunityFeedFilters = ({
         label: 'My LGA',
         shortLabel: 'LGA',
         icon: Building,
-        description: `Posts from ${userLocation.city} LGA`,
+        description: `People in ${userLocation.city} LGA`,
         fullLabel: `${userLocation.city} LGA`
       });
     }
@@ -80,7 +80,7 @@ export const CommunityFeedFilters = ({
         label: 'My State',
         shortLabel: 'State',
         icon: MapPin,
-        description: `Posts from ${userLocation.state} state`,
+        description: `People in ${userLocation.state} state`,
         fullLabel: `${userLocation.state} State`
       });
     }
@@ -276,7 +276,7 @@ export const CommunityFeedFilters = ({
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  Location Range
+                  Show Posts From
                 </Label>
                 <Select
                   value={filters.locationScope}
