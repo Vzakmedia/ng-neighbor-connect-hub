@@ -121,10 +121,10 @@ export function useFeedQuery(filters: FeedFilters) {
       // Extract unique user IDs from posts
       const uniqueUserIds = [...new Set((postsData || []).map(post => post.user_id).filter(Boolean))];
 
-      // Batch fetch all profiles for these users in ONE query
+      // Batch fetch all profiles for these users in ONE query using public_profiles view
       const { data: profilesData } = uniqueUserIds.length > 0
         ? await supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('user_id, full_name, avatar_url, city, state')
             .in('user_id', uniqueUserIds)
         : { data: [] };
