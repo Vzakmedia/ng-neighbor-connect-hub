@@ -1800,7 +1800,22 @@ export type Database = {
           requires_approval?: boolean | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "discussion_boards_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "display_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "discussion_boards_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       dismissed_alerts: {
         Row: {
@@ -5791,32 +5806,15 @@ export type Database = {
         Returns: unknown
       }
       get_active_ads: {
-        Args: {
-          content_limit?: number
-          user_city?: string
-          user_location?: string
-          user_state?: string
-        }
-        Returns: {
-          ad_call_to_action: string
-          ad_description: string
-          ad_images: Json
-          ad_title: string
-          ad_url: string
-          business_logo: string
-          business_name: string
-          campaign_id: string
-          campaign_type: string
-          created_at: string
-          event_date: string
-          event_title: string
-          location: string
-          marketplace_price: number
-          marketplace_title: string
-          priority_level: number
-          service_name: string
-          service_price: string
-        }[]
+        Args:
+          | {
+              content_limit?: number
+              user_city?: string
+              user_location?: string
+              user_state?: string
+            }
+          | { p_limit?: number; p_user_location?: Json }
+        Returns: Json
       }
       get_active_advertisements: {
         Args: {
