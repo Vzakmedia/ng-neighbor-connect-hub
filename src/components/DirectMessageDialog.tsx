@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -121,7 +122,7 @@ export const DirectMessageDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0" aria-describedby={undefined}>
+      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0">
         <DialogHeader className="p-4 border-b">
           <DialogTitle className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
@@ -132,6 +133,9 @@ export const DirectMessageDialog = ({
             </Avatar>
             <span>Message {recipientName}</span>
           </DialogTitle>
+          <DialogDescription>
+            Send and receive direct messages with {recipientName}
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 p-4">
