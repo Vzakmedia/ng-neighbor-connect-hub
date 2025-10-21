@@ -31,12 +31,10 @@ import {
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
-import AdvertisementCard from './AdvertisementCard';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import AdCarousel from './AdCarousel';
-import { usePromotionalAds } from '@/hooks/usePromotionalAds';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 import { 
   useUpcomingEvents, 
   useSafetyAlerts, 
@@ -50,7 +48,6 @@ const HomeDashboard = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('state'); // Default to state for better content visibility
   const dashboardStats = useDashboardStats();
-  const { ads: promotionalAds, loading: adsLoading } = usePromotionalAds(8);
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
   const { items: marketplaceHighlights, loading: marketplaceLoading } = useMarketplaceHighlights(3);
@@ -88,9 +85,6 @@ const HomeDashboard = () => {
     },
   ];
 
-  // Use only real promotional ads from the database
-  const currentAds = promotionalAds;
-
   return (
     <div className="space-y-4 sm:space-y-5 md:space-y-6 overflow-x-hidden">
       {/* Hero Section */}
@@ -116,27 +110,7 @@ const HomeDashboard = () => {
 
         {/* Mobile Sponsored Section */}
         <div className="lg:hidden">
-          <Card className="shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-base">
-                <TrendingUp className="h-4 w-4 mr-2 text-primary" />
-                <span>Sponsored</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3">
-              {adsLoading ? (
-                <div className="animate-pulse">
-                  <div className="h-40 bg-muted rounded-lg"></div>
-                </div>
-              ) : currentAds.length > 0 ? (
-                <AdCarousel ads={currentAds} />
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">
-                  No sponsored content available
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <AdDisplay placement="sidebar" maxAds={3} />
         </div>
 
         {/* Nextdoor-Style Dashboard Tabs */}
@@ -181,28 +155,8 @@ const HomeDashboard = () => {
 
             {/* Sidebar - Visible on desktop only due to space constraints */}
             <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
-              {/* Ad Carousel Section */}
-              <Card className="shadow-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-base md:text-lg">
-                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5 mr-2 text-primary" />
-                    <span>Sponsored</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 md:px-6">
-                  {adsLoading ? (
-                    <div className="animate-pulse">
-                      <div className="h-48 bg-muted rounded-lg"></div>
-                    </div>
-                  ) : currentAds.length > 0 ? (
-                    <AdCarousel ads={currentAds} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No sponsored content available
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+              {/* Sponsored Ads Section */}
+              <AdDisplay placement="sidebar" maxAds={3} />
 
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
@@ -483,34 +437,17 @@ const HomeDashboard = () => {
         </TabsContent>
 
         <TabsContent value="ads" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-          {adsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="h-48 bg-muted rounded-lg"></div>
-                </div>
-              ))}
-            </div>
-          ) : currentAds.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-              {currentAds.map((ad) => (
-                <AdvertisementCard key={ad.id} ad={ad} />
-              ))}
-            </div>
-          ) : (
-            <Card className="shadow-card">
-              <CardContent className="p-8 text-center">
-                <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Active Advertisements</h3>
-                <p className="text-muted-foreground mb-4">
-                  There are no active promoted advertisements at the moment.
-                </p>
-                <Button onClick={() => navigate('/community')} variant="outline">
-                  View Community Posts Instead
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+                Active Advertisements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdDisplay placement="inline" maxAds={9} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 
 const Services = () => {
   const { user, loading } = useAuth();
@@ -38,7 +39,10 @@ const Services = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center space-y-4">
+          {/* Service Advertisements */}
+          <AdDisplay placement="banner" maxAds={1} />
+          
+          <div className="text-center space-y-4 mt-6">
             <h1 className="text-2xl md:text-3xl font-bold">My Services & Goods</h1>
             <p className="text-muted-foreground">Manage your services, goods, and bookings</p>
             
