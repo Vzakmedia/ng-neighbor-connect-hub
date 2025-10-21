@@ -106,7 +106,7 @@ const App = () => {
   console.log("App component rendering, React:", React);
   
   // Hide native splash screen and initialize status bar after React is ready
-  React.useEffect(() => {
+  useEffect(() => {
     const initializeNative = async () => {
       // Only on native platforms
       if (Capacitor.isNativePlatform()) {
