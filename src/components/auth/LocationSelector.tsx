@@ -265,29 +265,32 @@ export const LocationSelector = ({
         }));
       }
       
-      // For cities, use hardcoded fallback immediately
+      // For cities, use comprehensive LGA data immediately
       if (type === 'cities' && payload.state) {
-        console.log('Using hardcoded cities list for', payload.state);
+        console.log('📍 Using comprehensive LGA list for', payload.state);
         const cities = STATE_CITIES[payload.state] || [];
         return cities.map((cityName) => ({
           name: cityName,
-          formatted_address: `${cityName}, ${payload.state}, Nigeria`,
+          formatted_address: `${cityName} LGA, ${payload.state}, Nigeria`,
           place_id: `city_${cityName.toLowerCase().replace(/\s+/g, '_')}`,
-          types: ['locality']
+          types: ['locality', 'lga']
         }));
       }
       
-      // For neighborhoods, use hardcoded fallback immediately
+      // For neighborhoods, use comprehensive Ward data immediately
       if (type === 'neighborhoods' && payload.city) {
-        console.log('Using hardcoded neighborhoods list for', payload.city);
-        const neighborhoods = CITY_NEIGHBORHOODS[payload.city] || [
-          'Area 1', 'Area 2', 'Area 3', 'Central', 'North', 'South', 'East', 'West'
-        ];
+        console.log('📍 Using comprehensive Ward data for', payload.city);
+        const neighborhoods = CITY_NEIGHBORHOODS[payload.city] || [];
+        
+        if (neighborhoods.length === 0) {
+          console.warn(`⚠️ No wards found for ${payload.city}`);
+        }
+        
         return neighborhoods.map((hood) => ({
           name: hood,
-          formatted_address: `${hood}, ${payload.city}, ${payload.state}, Nigeria`,
+          formatted_address: `${hood} Ward, ${payload.city}, ${payload.state}, Nigeria`,
           place_id: `neighborhood_${hood.toLowerCase().replace(/\s+/g, '_')}`,
-          types: ['neighborhood']
+          types: ['neighborhood', 'ward']
         }));
       }
       
@@ -429,9 +432,9 @@ export const LocationSelector = ({
         </Select>
       </div>
 
-      {/* City Selector */}
+      {/* LGA Selector */}
       <div className="space-y-2">
-        <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
+        <Label htmlFor="city">Local Government Area (LGA) <span className="text-destructive">*</span></Label>
         <Select 
           value={selectedCity} 
           onValueChange={setSelectedCity}
@@ -443,8 +446,8 @@ export const LocationSelector = ({
                 !selectedState 
                   ? "Select a state first" 
                   : loadingCities 
-                    ? "Loading cities..." 
-                    : "Select your city"
+                    ? "Loading LGAs..." 
+                    : "Select your LGA"
               } 
             />
           </SelectTrigger>
@@ -452,7 +455,7 @@ export const LocationSelector = ({
             {loadingCities ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="ml-2">Loading cities...</span>
+                <span className="ml-2">Loading LGAs...</span>
               </div>
             ) : (
               cities.map((city) => (
@@ -465,14 +468,14 @@ export const LocationSelector = ({
         </Select>
       </div>
 
-      {/* Neighborhood Search and Selector */}
+      {/* Ward Search and Selector */}
       <div className="space-y-2">
-        <Label htmlFor="neighborhood">Neighborhood <span className="text-destructive">*</span></Label>
+        <Label htmlFor="neighborhood">Ward/Neighborhood <span className="text-destructive">*</span></Label>
         <div className="space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder={!selectedCity ? "Select a city first" : "Search for your neighborhood..."}
+              placeholder={!selectedCity ? "Select an LGA first" : "Search for your ward..."}
               value={neighborhoodSearch}
               onChange={(e) => setNeighborhoodSearch(e.target.value)}
               disabled={!selectedCity}
@@ -489,10 +492,10 @@ export const LocationSelector = ({
               <SelectValue 
                 placeholder={
                   !selectedCity 
-                    ? "Select a city first" 
+                    ? "Select an LGA first" 
                     : loadingNeighborhoods 
-                      ? "Loading neighborhoods..." 
-                      : "Select your neighborhood"
+                      ? "Loading wards..." 
+                      : "Select your ward"
                 } 
               />
             </SelectTrigger>
@@ -500,7 +503,7 @@ export const LocationSelector = ({
               {loadingNeighborhoods ? (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2">Loading neighborhoods...</span>
+                  <span className="ml-2">Loading wards...</span>
                 </div>
               ) : neighborhoods.length > 0 ? (
                 neighborhoods.map((neighborhood) => (
@@ -510,7 +513,7 @@ export const LocationSelector = ({
                 ))
               ) : selectedCity && (
                 <div className="p-4 text-center text-muted-foreground">
-                  No neighborhoods found. Try a different search term.
+                  No wards found for {selectedCity}. This LGA may not have ward data yet.
                 </div>
               )}
             </SelectContent>
@@ -523,7 +526,7 @@ export const LocationSelector = ({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <span>
-              {selectedNeighborhood}, {selectedCity}, {selectedState}
+              {selectedNeighborhood} Ward, {selectedCity} LGA, {selectedState} State
             </span>
           </div>
         </div>
