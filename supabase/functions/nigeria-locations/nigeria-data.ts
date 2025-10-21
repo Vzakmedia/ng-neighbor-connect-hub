@@ -2,7 +2,7 @@
 // Source: https://github.com/temikeezy/nigeria-geojson-data
 // This file is auto-generated from the comprehensive dataset
 
-import fullData from '../../../src/data/nigeria-full.json' assert { type: 'json' };
+import fullData from './nigeria-full.json' assert { type: 'json' };
 
 interface Ward {
   name: string;
