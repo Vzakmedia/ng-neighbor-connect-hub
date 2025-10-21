@@ -142,7 +142,7 @@ export const useBoardSuggestions = (limit: number = 3) => {
             .select('role')
             .eq('board_id', board.id)
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           return {
             ...board,

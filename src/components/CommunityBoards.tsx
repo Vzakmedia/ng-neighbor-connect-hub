@@ -388,7 +388,7 @@ const CommunityBoards = () => {
             .select('role')
             .eq('board_id', board.id)
             .eq('user_id', user.id as any)
-            .single();
+            .maybeSingle();
 
           return {
             ...board,
