@@ -109,10 +109,7 @@ const MyBookingsPanel = () => {
               provider: { full_name: 'Provider', avatar_url: null, phone: null },
             }));
             setBookings(partialBookings as any);
-            toast({
-              title: "Partial Data Loaded",
-              description: "Some booking details may be missing",
-            });
+            console.warn('Loading bookings with partial data - some details may be missing');
             setLoading(false);
             return;
           }
@@ -121,11 +118,16 @@ const MyBookingsPanel = () => {
         }
       }
 
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Only show error toast if it's a real failure (not orphaned data)
+      if (!errorMessage.includes('incomplete')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        console.warn('Skipping bookings with incomplete data');
+      }
     } finally {
       setLoading(false);
     }

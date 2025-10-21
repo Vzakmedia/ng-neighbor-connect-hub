@@ -114,10 +114,7 @@ const ProviderBookingRequests = () => {
               client: { full_name: 'Client', avatar_url: null, phone: null },
             }));
             setBookingRequests(partialRequests as any);
-            toast({
-              title: "Partial Data Loaded",
-              description: "Some booking request details may be missing",
-            });
+            console.warn('Loading booking requests with partial data - some details may be missing');
             setLoading(false);
             return;
           }
@@ -126,11 +123,16 @@ const ProviderBookingRequests = () => {
         }
       }
 
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Only show error toast if it's a real failure (not orphaned data)
+      if (!errorMessage.includes('incomplete')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        console.warn('Skipping booking requests with incomplete data');
+      }
     } finally {
       setLoading(false);
     }
