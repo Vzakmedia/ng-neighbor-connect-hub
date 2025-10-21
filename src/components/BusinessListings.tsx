@@ -13,6 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import BusinessRegistrationDialog from './BusinessRegistrationDialog';
 import { formatTimeAgo } from '@/lib/utils';
+import { BUSINESS_CATEGORIES, formatCategory as formatCategoryUtil } from '@/data/businessCategories';
+import { NIGERIAN_STATES, STATE_CITIES, CITY_NEIGHBORHOODS } from '@/data/nigeriaLocationData';
 
 interface Business {
   id: string;
@@ -40,62 +42,8 @@ interface Business {
   };
 }
 
-const businessCategories = [
-  'all',
-  'restaurant_food',
-  'retail_shopping',
-  'health_wellness',
-  'automotive',
-  'home_services',
-  'professional_services',
-  'technology',
-  'beauty_personal_care',
-  'education_training',
-  'entertainment',
-  'sports_fitness',
-  'real_estate',
-  'financial_services',
-  'other'
-];
-
-const nigerianLocations = {
-  'Lagos State': {
-    'Lagos Island': ['Victoria Island', 'Ikoyi', 'Lagos Island Central', 'Tafawa Balewa Square'],
-    'Lagos Mainland': ['Yaba', 'Surulere', 'Mushin', 'Ikeja', 'Maryland', 'Ogba', 'Palmgrove'],
-    'Lekki': ['Lekki Phase 1', 'Lekki Phase 2', 'Ajah', 'Sangotedo', 'Chevron'],
-    'Alimosho': ['Egbeda', 'Idimu', 'Ikotun', 'Akowonjo', 'Igando'],
-    'Kosofe': ['Ketu', 'Mile 12', 'Ojota', 'Anthony Village'],
-    'Other Areas': ['Gbagada', 'Festac', 'Satellite Town', 'Badagry', 'Epe']
-  },
-  'Federal Capital Territory': {
-    'Abuja Municipal': ['Central Business District', 'Garki', 'Wuse', 'Maitama', 'Asokoro'],
-    'Gwagwalada': ['Gwagwalada Central', 'Dobi', 'Paiko'],
-    'Kuje': ['Kuje Central', 'Chibiri', 'Gudun Karya'],
-    'Bwari': ['Bwari Central', 'Kubwa', 'Dutse', 'Sabon Gida'],
-    'Kwali': ['Kwali Central', 'Kilankwa', 'Yangoji'],
-    'Abaji': ['Abaji Central', 'Pandogari', 'Yaba']
-  },
-  'Rivers State': {
-    'Port Harcourt': ['GRA Phase 1', 'GRA Phase 2', 'Old GRA', 'New GRA', 'Town', 'Diobu'],
-    'Obio-Akpor': ['Rumuola', 'Rumuokwurushi', 'Choba', 'Alakahia', 'Eliozu'],
-    'Okrika': ['Okrika Town', 'Bolo', 'Ogan'],
-    'Oyigbo': ['Oyigbo Central', 'Komkom', 'Afam'],
-    'Other Areas': ['Bonny', 'Degema', 'Ahoada', 'Omoku']
-  },
-  'Kano State': {
-    'Kano Municipal': ['Sabon Gari', 'Fagge', 'Dala', 'Gwale', 'Nassarawa'],
-    'Nasarawa': ['Nasarawa Central', 'Bompai', 'Hotoro'],
-    'Ungogo': ['Ungogo Central', 'Bachirawa', 'Zango'],
-    'Other Areas': ['Wudil', 'Gwarzo', 'Dawakin Kudu', 'Kiru']
-  },
-  'Oyo State': {
-    'Ibadan North': ['Bodija', 'Agodi', 'Jericho', 'Mokola', 'Sango'],
-    'Ibadan South-West': ['Ring Road', 'Dugbe', 'Adamasingba', 'Oke Ado'],
-    'Ibadan North-East': ['Iwo Road', 'Challenge', 'Felele', 'Bashorun'],
-    'Ibadan South-East': ['Mapo', 'Oja Oba', 'Isale Eko'],
-    'Other Areas': ['Ogbomoso', 'Oyo', 'Iseyin', 'Saki']
-  }
-};
+// Get all business categories with 'all' option
+const businessCategories = ['all', ...BUSINESS_CATEGORIES.map(cat => cat.value)];
 
 const BusinessListings = () => {
   const { user } = useAuth();
@@ -183,16 +131,15 @@ const BusinessListings = () => {
   };
 
   const formatCategory = (category: string) => {
-    return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (category === 'all') return 'All Categories';
+    return formatCategoryUtil(category);
   };
 
   // Get available cities for selected state
   const getAvailableCities = () => {
     try {
-      if (selectedState === 'all' || !nigerianLocations) return [];
-      const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
-      if (!stateData || typeof stateData !== 'object') return [];
-      const cities = Object.keys(stateData) || [];
+      if (selectedState === 'all' || !STATE_CITIES) return [];
+      const cities = STATE_CITIES[selectedState] || [];
       console.log('Available cities for', selectedState, ':', cities);
       return cities;
     } catch (error) {
@@ -204,13 +151,10 @@ const BusinessListings = () => {
   // Get available neighborhoods for selected city
   const getAvailableNeighborhoods = () => {
     try {
-      if (selectedState === 'all' || selectedCity === 'all' || !nigerianLocations) return [];
-      const stateData = nigerianLocations[selectedState as keyof typeof nigerianLocations];
-      if (!stateData || typeof stateData !== 'object') return [];
-      const cityData = stateData[selectedCity as keyof typeof stateData];
-      if (!cityData || !Array.isArray(cityData)) return [];
-      console.log('Available neighborhoods for', selectedCity, ':', cityData);
-      return cityData;
+      if (selectedCity === 'all' || !CITY_NEIGHBORHOODS) return [];
+      const neighborhoods = CITY_NEIGHBORHOODS[selectedCity] || [];
+      console.log('Available neighborhoods for', selectedCity, ':', neighborhoods);
+      return neighborhoods;
     } catch (error) {
       console.error('Error getting neighborhoods:', error);
       return [];
@@ -221,24 +165,19 @@ const BusinessListings = () => {
   const getAllLocations = () => {
     const locations: string[] = [];
     try {
-      if (!nigerianLocations || typeof nigerianLocations !== 'object') {
-        console.log('nigerianLocations is not valid:', nigerianLocations);
-        return [];
-      }
+      // Add all states
+      locations.push(...NIGERIAN_STATES);
       
-      Object.entries(nigerianLocations).forEach(([state, cities]) => {
-        if (state) locations.push(state);
-        if (cities && typeof cities === 'object') {
-          Object.entries(cities).forEach(([city, neighborhoods]) => {
-            if (city) locations.push(city);
-            if (Array.isArray(neighborhoods)) {
-              neighborhoods.forEach(neighborhood => {
-                if (neighborhood) locations.push(neighborhood);
-              });
-            }
-          });
-        }
+      // Add all cities
+      Object.values(STATE_CITIES).forEach(cities => {
+        locations.push(...cities);
       });
+      
+      // Add all neighborhoods
+      Object.values(CITY_NEIGHBORHOODS).forEach(neighborhoods => {
+        locations.push(...neighborhoods);
+      });
+      
       console.log('Generated locations:', locations.length);
     } catch (error) {
       console.error('Error building locations list:', error);
@@ -373,12 +312,9 @@ const BusinessListings = () => {
                   {/* States */}
                   {(() => {
                     try {
-                      const states = nigerianLocations && typeof nigerianLocations === 'object' 
-                        ? Object.keys(nigerianLocations).filter(state => 
-                            state && typeof state === 'string' && 
-                            state.toLowerCase().includes((searchLocation || '').toLowerCase())
-                          )
-                        : [];
+                      const states = NIGERIAN_STATES.filter(state => 
+                        state.toLowerCase().includes((searchLocation || '').toLowerCase())
+                      );
                       
                       return states.length > 0 && (
                         <div className="space-y-1">
@@ -476,7 +412,7 @@ const BusinessListings = () => {
                           location && 
                           typeof location === 'string' && 
                           location.toLowerCase().includes((searchLocation || '').toLowerCase()) &&
-                          !Object.keys(nigerianLocations || {}).includes(location)
+                          !NIGERIAN_STATES.includes(location)
                         )
                         .slice(0, 10) : [];
                       
@@ -489,34 +425,34 @@ const BusinessListings = () => {
                               onClick={() => {
                                 try {
                                   // Find which state/city this belongs to
-                                  const foundState = Object.entries(nigerianLocations || {}).find(([state, cities]) => {
+                                  const foundState = NIGERIAN_STATES.find(state => {
                                     if (state === location) return true;
-                                    if (!cities || typeof cities !== 'object') return false;
-                                    return Object.entries(cities).some(([city, neighborhoods]) => {
-                                      if (city === location) return true;
-                                      return Array.isArray(neighborhoods) && neighborhoods.includes(location);
+                                    const cities = STATE_CITIES[state] || [];
+                                    if (cities.includes(location)) return true;
+                                    return cities.some(city => {
+                                      const neighborhoods = CITY_NEIGHBORHOODS[city] || [];
+                                      return neighborhoods.includes(location);
                                     });
                                   });
                                   
                                   if (foundState) {
-                                    const [stateName, cities] = foundState;
-                                    if (cities && typeof cities === 'object') {
-                                      const foundCity = Object.entries(cities).find(([city, neighborhoods]) => {
-                                        if (city === location) return true;
-                                        return Array.isArray(neighborhoods) && neighborhoods.includes(location);
-                                      });
-                                      
-                                      if (foundCity) {
-                                        const [cityName, neighborhoods] = foundCity;
-                                        if (Array.isArray(neighborhoods) && neighborhoods.includes(location)) {
-                                          setSelectedState(stateName);
-                                          setSelectedCity(cityName);
-                                          setSelectedNeighborhood(location);
-                                        } else {
-                                          setSelectedState(stateName);
-                                          setSelectedCity(location);
-                                          setSelectedNeighborhood('all');
-                                        }
+                                    const cities = STATE_CITIES[foundState] || [];
+                                    const foundCity = cities.find(city => {
+                                      if (city === location) return true;
+                                      const neighborhoods = CITY_NEIGHBORHOODS[city] || [];
+                                      return neighborhoods.includes(location);
+                                    });
+                                    
+                                    if (foundCity) {
+                                      const neighborhoods = CITY_NEIGHBORHOODS[foundCity] || [];
+                                      if (neighborhoods.includes(location)) {
+                                        setSelectedState(foundState);
+                                        setSelectedCity(foundCity);
+                                        setSelectedNeighborhood(location);
+                                      } else {
+                                        setSelectedState(foundState);
+                                        setSelectedCity(location);
+                                        setSelectedNeighborhood('all');
                                       }
                                     }
                                   }

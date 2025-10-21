@@ -11,36 +11,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, Building, Shield, CheckCircle } from 'lucide-react';
+import { BUSINESS_CATEGORIES, formatCategory as formatCategoryUtil } from '@/data/businessCategories';
+import { NIGERIAN_STATES } from '@/data/nigeriaLocationData';
 
 interface BusinessRegistrationDialogProps {
   children: React.ReactNode;
   onBusinessRegistered?: () => void;
 }
 
-const businessCategories = [
-  'restaurant_food',
-  'retail_shopping', 
-  'health_wellness',
-  'automotive',
-  'home_services',
-  'professional_services',
-  'technology',
-  'beauty_personal_care',
-  'education_training',
-  'entertainment',
-  'sports_fitness',
-  'real_estate',
-  'financial_services',
-  'other'
-];
-
-const nigerianStates = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
-  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
-  'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT'
-];
 
 const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: BusinessRegistrationDialogProps) => {
   const { user } = useAuth();
@@ -75,9 +53,6 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const formatCategory = (category: string) => {
-    return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
 
   const validateStep1 = () => {
     return formData.business_name && formData.category && formData.description && 
@@ -182,9 +157,9 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
             <SelectValue placeholder="Select business category" />
           </SelectTrigger>
           <SelectContent>
-            {businessCategories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {formatCategory(category)}
+            {BUSINESS_CATEGORIES.map((category) => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -266,7 +241,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
               <SelectValue placeholder="Select state" />
             </SelectTrigger>
             <SelectContent>
-              {nigerianStates.map((state) => (
+              {NIGERIAN_STATES.map((state) => (
                 <SelectItem key={state} value={state}>
                   {state}
                 </SelectItem>
@@ -315,7 +290,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
             <span className="font-medium">Business Name:</span> {formData.business_name}
           </div>
           <div>
-            <span className="font-medium">Category:</span> {formatCategory(formData.category)}
+            <span className="font-medium">Category:</span> {formatCategoryUtil(formData.category)}
           </div>
           <div>
             <span className="font-medium">Location:</span> {formData.city}, {formData.state}
