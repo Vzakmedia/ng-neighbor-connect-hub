@@ -1,8 +1,13 @@
 /**
- * Location Normalization Utilities
+ * DEPRECATED - No longer used
  * 
- * This module provides functions to normalize location names across the platform
- * to ensure consistent matching between posts and user profiles.
+ * Location normalization is not needed because:
+ * 1. User profiles use exact values from nigeria-full.json
+ * 2. Posts use exact profile values
+ * 3. Filtering uses exact profile values
+ * 
+ * This file is kept for historical reference only.
+ * DO NOT USE - All location data comes directly from nigeria-full.json as single source of truth.
  */
 
 /**
