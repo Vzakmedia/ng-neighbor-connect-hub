@@ -3800,6 +3800,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "service_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_bookings_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "service_bookings_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
