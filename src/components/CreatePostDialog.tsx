@@ -41,7 +41,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
-import { normalizeLocation } from '@/lib/community/locationNormalizer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
 
@@ -153,22 +152,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         }
       }
 
-      // Always use profile location
-      const sourceLocation = { 
-        state: profile?.state, 
-        city: profile?.city, 
-        neighborhood: profile?.neighborhood 
-      };
-
-      // Normalize location data for consistent filtering
-      const normalizedLocation = normalizeLocation(sourceLocation);
-
-      console.log('📍 Creating post with profile location:', {
-        scope: locationScope,
-        normalized: normalizedLocation,
-      });
-
-      // Insert the post into the database
+      // Use exact profile location as single source of truth
       const { error } = await supabase
         .from('community_posts')
         .insert({
@@ -176,16 +160,16 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           post_type: postType,
           title: title || null,
           content,
-          location: normalizedLocation.neighborhood && normalizedLocation.city && normalizedLocation.state
-            ? `${normalizedLocation.neighborhood}, ${normalizedLocation.city}, ${normalizedLocation.state}`
+          location: profile?.neighborhood && profile?.city && profile?.state
+            ? `${profile.neighborhood}, ${profile.city}, ${profile.state}`
             : null,
           image_urls: imageUrls,
           tags: tags,
           rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
           location_scope: locationScope,
-          target_neighborhood: locationScope === 'neighborhood' ? normalizedLocation.neighborhood : null,
-          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? normalizedLocation.city : null,
-          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? normalizedLocation.state : null
+          target_neighborhood: locationScope === 'neighborhood' ? profile?.neighborhood : null,
+          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? profile?.city : null,
+          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? profile?.state : null
         });
 
       if (error) {

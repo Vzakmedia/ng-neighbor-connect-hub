@@ -2,7 +2,6 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { normalizeLocation } from '@/lib/community/locationNormalizer';
 import { toast } from 'sonner';
 
 interface FeedFilters {
@@ -77,43 +76,30 @@ export function useFeedQuery(filters: FeedFilters) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Normalize user's location for consistent matching
-      const normalizedProfile = normalizeLocation({
-        state: profile.state,
-        city: profile.city,
-        neighborhood: profile.neighborhood,
-      });
-
-      console.log('📍 Feed Query Location Debug:', {
-        filterScope: filters.locationScope,
-        originalProfile: { state: profile.state, city: profile.city, neighborhood: profile.neighborhood },
-        normalizedProfile,
-      });
-
-      // Apply hierarchical location-based filtering
+      // Apply hierarchical location-based filtering using exact profile values
       // Users see posts at their level AND broader levels
-      if (filters.locationScope === 'neighborhood' && normalizedProfile.neighborhood && normalizedProfile.city && normalizedProfile.state) {
+      if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
         // Show: exact neighborhood match, city-wide posts, state-wide posts, and platform-wide posts
         query = query.or(`
-          and(location_scope.eq.neighborhood,target_neighborhood.eq.${normalizedProfile.neighborhood},target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.city,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state}),
+          and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state}),
+          and(location_scope.eq.state,target_state.eq.${profile.state}),
           location_scope.eq.all
         `);
-      } else if (filters.locationScope === 'city' && normalizedProfile.city && normalizedProfile.state) {
+      } else if (filters.locationScope === 'city' && profile.city && profile.state) {
         // Show: city-wide posts, neighborhood posts in same city, state-wide posts, and platform-wide posts
         query = query.or(`
-          and(location_scope.eq.city,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.neighborhood,target_city.eq.${normalizedProfile.city},target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state}),
+          and(location_scope.eq.neighborhood,target_city.eq.${profile.city},target_state.eq.${profile.state}),
+          and(location_scope.eq.state,target_state.eq.${profile.state}),
           location_scope.eq.all
         `);
-      } else if (filters.locationScope === 'state' && normalizedProfile.state) {
+      } else if (filters.locationScope === 'state' && profile.state) {
         // Show: state-wide posts, all city/neighborhood posts in same state, and platform-wide posts
         query = query.or(`
-          and(location_scope.eq.state,target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.city,target_state.eq.${normalizedProfile.state}),
-          and(location_scope.eq.neighborhood,target_state.eq.${normalizedProfile.state}),
+          and(location_scope.eq.state,target_state.eq.${profile.state}),
+          and(location_scope.eq.city,target_state.eq.${profile.state}),
+          and(location_scope.eq.neighborhood,target_state.eq.${profile.state}),
           location_scope.eq.all
         `);
       } else if (filters.locationScope === 'all') {
