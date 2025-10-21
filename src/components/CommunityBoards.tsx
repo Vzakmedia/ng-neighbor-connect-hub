@@ -471,7 +471,7 @@ const CommunityBoards = () => {
             .select('id')
             .eq('post_id', post.id)
             .eq('user_id', user?.id as any)
-            .single();
+            .maybeSingle();
 
           // Fetch reactions for this post
           const { data: reactions } = await supabase
