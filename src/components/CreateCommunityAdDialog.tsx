@@ -182,7 +182,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
   const initiatePayment = async (campaignId: string, amount: number) => {
     try {
       const { RenderApiService } = await import('@/services/renderApiService');
-      const data = await RenderApiService.createAdCampaignPayment({
+      const data = await RenderApiService.createCampaignPayment({
         campaignId: campaignId,
         totalAmount: amount,
         campaignName: formData.title,

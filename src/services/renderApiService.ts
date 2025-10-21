@@ -15,15 +15,6 @@ interface AdCampaignPaymentRequest {
   duration: number;
 }
 
-interface BusinessPromotionPaymentRequest {
-  businessId: string;
-  promotionType: string;
-  duration: number;
-  amount: number;
-  currency?: string;
-  description?: string;
-}
-
 export class RenderApiService {
   /**
    * Get authentication token from Supabase
@@ -67,26 +58,13 @@ export class RenderApiService {
   }
 
   /**
-   * Create payment session for ad campaign
+   * Create payment session for ad campaign (unified method)
    */
-  static async createAdCampaignPayment(
+  static async createCampaignPayment(
     request: AdCampaignPaymentRequest
   ): Promise<PaymentResponse> {
     return this.makeRequest<PaymentResponse>(
       '/api/payments/ad-campaign',
-      'POST',
-      request
-    );
-  }
-
-  /**
-   * Create payment session for business promotion
-   */
-  static async createBusinessPromotionPayment(
-    request: BusinessPromotionPaymentRequest
-  ): Promise<PaymentResponse> {
-    return this.makeRequest<PaymentResponse>(
-      '/api/payments/business-promotion',
       'POST',
       request
     );

@@ -15,10 +15,7 @@ verify_jwt = false
 [functions.update-panic-alert-status]
 verify_jwt = true
 
-[functions.create-ad-payment]
-verify_jwt = true
-
-[functions.create-business-promotion-payment]
+[functions.create-ad-campaign-payment]
 verify_jwt = true
 
 [functions.stripe-webhook]

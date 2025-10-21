@@ -252,7 +252,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
 
       // Create payment session via Render API
       const { RenderApiService } = await import('@/services/renderApiService');
-      const paymentData = await RenderApiService.createAdCampaignPayment({
+      const paymentData = await RenderApiService.createCampaignPayment({
         campaignId: campaign.id,
         totalAmount: calculateTotalCost(),
         campaignName: formData.campaignName,
