@@ -70,18 +70,10 @@ export function useFeedQuery(filters: FeedFilters) {
 
       const offset = pageParam as number;
 
-      // Build query for community posts with author data JOIN
+      // Build query for community posts (WITHOUT JOIN - we'll fetch profiles separately)
       let query = supabase
         .from('community_posts')
-        .select(`
-          *,
-          author:profiles (
-            full_name,
-            avatar_url,
-            city,
-            state
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply location filters FIRST - EXCLUSIVE filtering (each filter shows ONLY that scope)
@@ -126,9 +118,28 @@ export function useFeedQuery(filters: FeedFilters) {
         throw error;
       }
 
-      // Transform and enrich posts with engagement data (author already fetched via JOIN)
+      // Extract unique user IDs from posts
+      const uniqueUserIds = [...new Set((postsData || []).map(post => post.user_id).filter(Boolean))];
+
+      // Batch fetch all profiles for these users in ONE query
+      const { data: profilesData } = uniqueUserIds.length > 0
+        ? await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar_url, city, state')
+            .in('user_id', uniqueUserIds)
+        : { data: [] };
+
+      // Create a Map for O(1) profile lookups
+      const profileMap = new Map(
+        (profilesData || []).map((profile: any) => [profile.user_id, profile])
+      );
+
+      // Transform and enrich posts with engagement data and author info
       const posts: FeedPost[] = await Promise.all(
         (postsData || []).map(async (post: any) => {
+          // Get profile from map
+          const authorProfile = profileMap.get(post.user_id);
+
           // Fetch engagement data in parallel
           const [likeData, commentData, saveData, userLike, userSave] = await Promise.all([
             supabase
@@ -173,10 +184,10 @@ export function useFeedQuery(filters: FeedFilters) {
             location_scope: post.location_scope,
             created_at: post.created_at,
             updated_at: post.updated_at,
-            author_name: post.author?.full_name || 'Anonymous User',
-            author_avatar: post.author?.avatar_url || null,
-            author_city: post.author?.city || null,
-            author_state: post.author?.state || null,
+            author_name: (authorProfile as any)?.full_name || 'Anonymous User',
+            author_avatar: (authorProfile as any)?.avatar_url || null,
+            author_city: (authorProfile as any)?.city || null,
+            author_state: (authorProfile as any)?.state || null,
             like_count: likeData.count || 0,
             comment_count: commentData.count || 0,
             save_count: saveData.count || 0,
