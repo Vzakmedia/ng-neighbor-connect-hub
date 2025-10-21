@@ -70,7 +70,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
       const userIds = [...new Set(commentsData?.map((comment: any) => comment?.user_id).filter(Boolean) || [])];
       
       const { data: profilesDataRaw, error: profilesError } = await supabase
-        .from('public_profiles')
+        .from('display_profiles')
         .select('user_id, display_name, avatar_url')
         .in('user_id', userIds);
 
