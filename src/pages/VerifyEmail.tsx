@@ -5,12 +5,20 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, CheckCircle2, AlertCircle, PartyPopper } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const VerifyEmail = () => {
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -33,14 +41,8 @@ const VerifyEmail = () => {
             setError(error.message);
           } else {
             setVerified(true);
-            toast({
-              title: "Email Verified!",
-              description: "Your email has been confirmed. Complete your profile to continue.",
-            });
-            // Redirect to profile completion after a short delay
-            setTimeout(() => {
-              navigate("/auth/complete-profile");
-            }, 2000);
+            // Show welcome dialog instead of immediate redirect
+            setShowWelcomeDialog(true);
           }
         } else {
           // Check if user is already logged in and verified
@@ -155,6 +157,49 @@ const VerifyEmail = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Welcome Dialog */}
+      <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex flex-col items-center justify-center mb-4 space-y-4">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center animate-scale-in">
+                  <CheckCircle2 className="h-10 w-10 text-white" />
+                </div>
+                <PartyPopper className="h-6 w-6 text-primary absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <DialogTitle className="text-center text-2xl">
+                Welcome to NeighborLink! 🎉
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-center space-y-3">
+              <p className="text-base">
+                Your email has been verified successfully!
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You're now part of the NeighborLink community. Let's complete your profile to help you connect with your neighbors and discover local services.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button 
+              onClick={() => navigate("/auth/complete-profile")}
+              className="w-full"
+              size="lg"
+            >
+              Complete My Profile
+            </Button>
+            <Button 
+              onClick={() => navigate("/")}
+              variant="outline"
+              className="w-full"
+            >
+              Skip for Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
