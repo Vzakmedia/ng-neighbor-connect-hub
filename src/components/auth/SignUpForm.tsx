@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, User, Loader2 } from "lucide-react";
+import { Eye, EyeOff, User, Loader2, Mail } from "lucide-react";
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
@@ -16,6 +16,15 @@ import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
 import { getAuthRedirectUrl } from "@/utils/authRedirect";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -38,6 +47,8 @@ export const SignUpForm = () => {
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [userConsents, setUserConsents] = useState<ConsentState | null>(null);
+  const [showEmailSentDialog, setShowEmailSentDialog] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -299,10 +310,9 @@ export const SignUpForm = () => {
           // Don't block signup for this, but log the error
         }
 
-        toast({
-          title: "Check Your Email",
-          description: "Please check your email and click the confirmation link to complete your account setup.",
-        });
+        // Show prominent email sent dialog instead of toast
+        setSignupEmail(formData.email);
+        setShowEmailSentDialog(true);
       }
     } catch (error) {
       toast({
@@ -485,6 +495,31 @@ export const SignUpForm = () => {
       imageSrc={selectedImageSrc}
       onCropComplete={handleCropComplete}
     />
+
+    {/* Email Sent Dialog */}
+    <AlertDialog open={showEmailSentDialog} onOpenChange={setShowEmailSentDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <div className="flex items-center justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Mail className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+          </div>
+          <AlertDialogTitle className="text-center text-2xl">Check Your Email!</AlertDialogTitle>
+          <AlertDialogDescription className="text-center space-y-2">
+            <p>We've sent a confirmation link to:</p>
+            <p className="font-semibold text-foreground">{signupEmail}</p>
+            <p className="mt-4">Please check your inbox (and spam folder) and click the link to verify your account.</p>
+            <p className="text-xs text-muted-foreground mt-4">
+              Didn't receive it? You can resend the email from the verification page.
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction className="w-full">Got it!</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </div>
   );
 };
