@@ -71,9 +71,28 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           // Redirect to 2FA verification
           window.location.href = `/auth/2fa-verify?userId=${data.user.id}`;
         } else {
+          // Check if this is the user's first login
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_login_completed')
+            .eq('user_id', data.user.id)
+            .single();
+
+          const isFirstLogin = !profile?.first_login_completed;
+
+          if (isFirstLogin) {
+            // Update the flag
+            await supabase
+              .from('profiles')
+              .update({ first_login_completed: true })
+              .eq('user_id', data.user.id);
+          }
+
           toast({
-            title: "Welcome back!",
-            description: "You've been successfully logged in.",
+            title: isFirstLogin ? "Welcome to NeighborLink!" : "Welcome back!",
+            description: isFirstLogin 
+              ? "You've successfully signed in for the first time." 
+              : "You've been successfully logged in.",
           });
         }
       }
