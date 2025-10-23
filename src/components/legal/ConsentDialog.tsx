@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TermsAndConditions } from "./TermsAndConditions";
 import { PrivacyPolicy } from "./PrivacyPolicy";
-import { Shield, FileText, Eye } from "lucide-react";
+import { Shield, FileText, Eye, CheckSquare } from "lucide-react";
 
 interface ConsentDialogProps {
   open: boolean;
@@ -108,6 +108,72 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
     setConsents(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleTickAll = () => {
+    setConsents({
+      termsAccepted: true,
+      privacyAccepted: true,
+      dataProcessingAccepted: true,
+      locationSharingAccepted: true,
+      communicationAccepted: true,
+      cameraAccessAccepted: true,
+      microphoneAccessAccepted: true,
+      pushNotificationsAccepted: true,
+      fileAccessAccepted: true,
+      deviceStorageAccepted: true,
+      analyticsAccepted: true,
+      crashReportingAccepted: true,
+      preciseLocationAccepted: true,
+      backgroundLocationAccepted: true,
+      locationHistoryAccepted: true,
+      voiceVideoCallsAccepted: true,
+      emergencyContactsAccepted: true,
+      externalIntegrationsAccepted: true,
+      marketplaceTransactionsAccepted: true,
+      businessVerificationAccepted: true,
+      paymentProcessingAccepted: true,
+      contentProcessingAccepted: true,
+      contentModerationAccepted: true,
+      recommendationsAccepted: true,
+      googleServicesAccepted: true,
+      externalApisAccepted: true,
+      crossPlatformSyncAccepted: true,
+    });
+  };
+
+  const handleUntickAll = () => {
+    setConsents({
+      termsAccepted: false,
+      privacyAccepted: false,
+      dataProcessingAccepted: false,
+      locationSharingAccepted: false,
+      communicationAccepted: false,
+      cameraAccessAccepted: false,
+      microphoneAccessAccepted: false,
+      pushNotificationsAccepted: false,
+      fileAccessAccepted: false,
+      deviceStorageAccepted: false,
+      analyticsAccepted: false,
+      crashReportingAccepted: false,
+      preciseLocationAccepted: false,
+      backgroundLocationAccepted: false,
+      locationHistoryAccepted: false,
+      voiceVideoCallsAccepted: false,
+      emergencyContactsAccepted: false,
+      externalIntegrationsAccepted: false,
+      marketplaceTransactionsAccepted: false,
+      businessVerificationAccepted: false,
+      paymentProcessingAccepted: false,
+      contentProcessingAccepted: false,
+      contentModerationAccepted: false,
+      recommendationsAccepted: false,
+      googleServicesAccepted: false,
+      externalApisAccepted: false,
+      crossPlatformSyncAccepted: false,
+    });
+  };
+
+  const allConsentsChecked = Object.values(consents).every(value => value === true);
+
   const allRequiredConsentsGiven = 
     consents.termsAccepted && 
     consents.privacyAccepted && 
@@ -157,6 +223,24 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
                   <li>• <strong>Communication:</strong> Messages, posts, community interactions</li>
                   <li>• <strong>Usage Analytics:</strong> How you use the app (anonymized)</li>
                 </ul>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Quick Action</p>
+                  <p className="text-xs text-muted-foreground">
+                    {allConsentsChecked ? "All consents accepted" : "Accept all consents at once"}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={allConsentsChecked ? handleUntickAll : handleTickAll}
+                  className="ml-4"
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  {allConsentsChecked ? "Untick All" : "Tick All"}
+                </Button>
               </div>
 
               <div className="space-y-4">
