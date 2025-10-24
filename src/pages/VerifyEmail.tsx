@@ -26,29 +26,62 @@ const VerifyEmail = () => {
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        // Check if this is a confirmation callback
-        const token = searchParams.get('token');
+        // Check URL parameters for token_hash
+        const token_hash = searchParams.get('token_hash');
         const type = searchParams.get('type');
         
-        if (token && type === 'signup') {
-          // This is an email confirmation callback
+        console.log('Verification attempt:', { 
+          token_hash: token_hash?.substring(0, 10) + '...', 
+          type,
+          fullURL: window.location.href 
+        });
+        
+        if (token_hash && type) {
+          // Accept both 'email' and 'signup' types
+          const verifyType = (type === 'email' || type === 'signup') ? 'signup' : type as 'signup';
+          
           const { error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'signup'
+            token_hash: token_hash,
+            type: verifyType
           });
 
           if (error) {
+            console.error('Verification error:', error);
             setError(error.message);
           } else {
             setVerified(true);
-            // Show welcome dialog instead of immediate redirect
             setShowWelcomeDialog(true);
           }
         } else {
-          // Check if user is already logged in and verified
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user?.email_confirmed_at) {
-            navigate("/auth/complete-profile");
+          // Also check hash parameters as fallback
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const hash_token = hashParams.get('token_hash');
+          const hash_type = hashParams.get('type');
+          
+          if (hash_token && hash_type) {
+            const verifyType = (hash_type === 'email' || hash_type === 'signup') ? 'signup' : hash_type as 'signup';
+            
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: hash_token,
+              type: verifyType
+            });
+            
+            if (error) {
+              console.error('Hash verification error:', error);
+              setError(error.message);
+            } else {
+              setVerified(true);
+              setShowWelcomeDialog(true);
+            }
+          } else {
+            // Check if user is already logged in and verified
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email_confirmed_at) {
+              navigate("/auth/complete-profile");
+            } else if (!token_hash && !hash_token) {
+              console.error('Missing token_hash parameter in URL');
+              setError('Invalid confirmation link. Please check your email for a new verification link.');
+            }
           }
         }
       } catch (err: any) {
@@ -71,7 +104,7 @@ const VerifyEmail = () => {
           type: 'signup',
           email: session.user.email,
           options: {
-            emailRedirectTo: window.location.origin + '/auth/verify-email'
+            emailRedirectTo: `${window.location.origin}/auth/verify-email`
           }
         });
 

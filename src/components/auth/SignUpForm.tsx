@@ -15,7 +15,7 @@ import { Camera, Upload } from "lucide-react";
 import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
-import { getAuthRedirectUrl } from "@/utils/authRedirect";
+import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -220,8 +220,10 @@ export const SignUpForm = () => {
     setIsLoading(true);
 
     try {
-      // Get appropriate redirect URL for the platform (deep link for native app, web URL for browser)
-      const redirectUrl = getAuthRedirectUrl();
+      // Redirect to verification page for both web and native
+      const redirectUrl = Capacitor.isNativePlatform() 
+        ? 'neighborlink://auth/verify-email'
+        : `${window.location.origin}/auth/verify-email`;
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
