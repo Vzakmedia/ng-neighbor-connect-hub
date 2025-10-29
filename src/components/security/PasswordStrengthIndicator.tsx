@@ -62,11 +62,11 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
         </div>
       )}
       
-      {showDetails && score < 3 && (
+      {showDetails && score < 3 && password.length > 0 && (
         <div className="flex items-center space-x-2">
-          <AlertCircle className="h-4 w-4 text-yellow-500" />
-          <span className="text-sm text-yellow-600">
-            Consider using a stronger password for better security
+          <AlertCircle className="h-4 w-4 text-blue-500" />
+          <span className="text-sm text-blue-600">
+            Tip: A stronger password helps protect your account better
           </span>
         </div>
       )}
