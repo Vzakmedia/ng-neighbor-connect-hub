@@ -26,7 +26,7 @@ const CompleteProfile = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, state, city, neighborhood')
+        .select('id, state, city, neighborhood, full_name, address')
         .eq('user_id', user?.id)
         .maybeSingle();
 
@@ -34,8 +34,13 @@ const CompleteProfile = () => {
         console.error('Error checking profile:', error);
       }
 
-      // Check if user has complete location information
-      const hasCompleteProfile = data && data.state && data.city && data.neighborhood;
+      // Check if user has complete profile information
+      const hasCompleteProfile = data && 
+        data.state && 
+        data.city && 
+        data.neighborhood &&
+        data.full_name && 
+        data.address;
       
       if (hasCompleteProfile) {
         setHasProfile(true);

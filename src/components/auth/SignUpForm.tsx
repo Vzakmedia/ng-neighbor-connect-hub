@@ -8,6 +8,7 @@ import { Eye, EyeOff, User, Loader2, Mail } from "lucide-react";
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -465,6 +466,21 @@ export const SignUpForm = () => {
         {isLoading ? "Creating account..." : "Create Account"}
       </Button>
     </form>
+
+    {/* OR Divider */}
+    <div className="relative my-4">
+      <div className="absolute inset-0 flex items-center">
+        <span className="w-full border-t" />
+      </div>
+      <div className="relative flex justify-center text-xs uppercase">
+        <span className="bg-background px-2 text-muted-foreground">
+          Or continue with
+        </span>
+      </div>
+    </div>
+
+    {/* Google Sign-up Button */}
+    <GoogleAuthButton mode="signup" />
 
     {/* Consent Dialog */}
     <ConsentDialog

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { Capacitor } from '@capacitor/core';
 
 interface GoogleAuthButtonProps {
   mode: 'signin' | 'signup';
@@ -15,9 +16,10 @@ export const GoogleAuthButton = ({ mode }: GoogleAuthButtonProps) => {
     setIsLoading(true);
     
     try {
-      const redirectUrl = window.location.hostname === 'localhost' 
-        ? `${window.location.origin}/auth/verify-email`
-        : 'https://neighborlink.ng/auth/verify-email';
+      // Redirect to complete profile page for OAuth users
+      const redirectUrl = Capacitor.isNativePlatform() 
+        ? 'neighborlink://auth/complete-profile'
+        : `${window.location.origin}/auth/complete-profile`;
         
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
