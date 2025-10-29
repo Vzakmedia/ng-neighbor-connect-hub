@@ -154,16 +154,6 @@ export const EnhancedProfileCompletion = () => {
         });
         return;
       }
-
-      const passwordValidation = validatePasswordStrength(formData.password);
-      if (passwordValidation.score < 3) {
-        toast({
-          title: "Password Too Weak",
-          description: "Please choose a stronger password. " + passwordValidation.feedback.join(", "),
-          variant: "destructive",
-        });
-        return;
-      }
     }
 
     setLoading(true);
