@@ -135,6 +135,15 @@ export const EnhancedProfileCompletion = () => {
       return;
     }
 
+    if (!formData.address.trim()) {
+      toast({
+        title: "Address Required",
+        description: "Please provide your complete address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate password for Google users
     if (isGoogleUser) {
       if (!formData.password) {
@@ -215,6 +224,7 @@ export const EnhancedProfileCompletion = () => {
                      formData.state && 
                      formData.city && 
                      formData.neighborhood &&
+                     formData.address.trim() &&
                      (!isGoogleUser || (formData.password && formData.password === formData.confirmPassword));
 
   return (
@@ -390,14 +400,15 @@ export const EnhancedProfileCompletion = () => {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="address">Street Address</Label>
+                <Label htmlFor="address">Complete Address <span className="text-destructive">*</span></Label>
                 <Input
                   id="address"
                   name="address"
                   type="text"
-                  placeholder="Your street address (optional)"
+                  placeholder="Enter your complete street address"
                   value={formData.address}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
             </div>

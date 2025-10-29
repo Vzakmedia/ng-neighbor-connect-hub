@@ -8,6 +8,7 @@ import { LoginForm } from "./LoginForm";
 import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 import AuthBackground from "./AuthBackground";
+import { GoogleAuthButton } from "./GoogleAuthButton";
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
