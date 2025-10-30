@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { Preferences } from '@capacitor/preferences';
 import SplashScreen from './SplashScreen';
 import OnboardingScreen from './OnboardingScreen';
 import { AuthPage } from '@/components/auth/AuthPage';
 import { detectIOSDevice, safeFeatureDetection } from '@/utils/iosCompatibility';
-import { safeStorage } from '@/utils/safetStorage';
 import IOSSafeLanding from '@/components/common/IOSSafeLanding';
+import { supabase } from '@/integrations/supabase/client';
 
 type FlowStep = 'splash' | 'onboarding' | 'auth';
 
@@ -43,22 +42,24 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
         setUseIOSSafeLanding(true);
       }
 
-      // Check if user has seen onboarding before
-      let seenOnboarding = false;
-      if (isNative) {
-        // Use Capacitor Preferences for native (persists across app launches)
-        const { value } = await Preferences.get({ key: 'neighborlink_onboarding_completed' });
-        seenOnboarding = value === 'true';
+      // Check onboarding status based on authentication
+      if (user) {
+        // User is authenticated, check their profile in database
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('has_completed_onboarding')
+          .eq('id', user.id)
+          .single();
+        
+        setHasSeenOnboarding(profile?.has_completed_onboarding ?? false);
       } else {
-        // Use localStorage for web
-        seenOnboarding = safeStorage.getItem('neighborlink_mobile_onboarding_seen') === 'true';
+        // Not authenticated, always show onboarding
+        setHasSeenOnboarding(false);
       }
-      
-      setHasSeenOnboarding(seenOnboarding);
     };
     
     initializeFlow();
-  }, [isNative]);
+  }, [user]);
 
   useEffect(() => {
     // Redirect authenticated users to dashboard
@@ -83,21 +84,23 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
   };
 
   const handleGetStarted = async () => {
-    // Mark mobile onboarding as seen
-    if (isNative) {
-      await Preferences.set({ key: 'neighborlink_onboarding_completed', value: 'true' });
-    } else {
-      safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    // Update database if user is authenticated
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ has_completed_onboarding: true })
+        .eq('id', user.id);
     }
     setCurrentStep('auth');
   };
 
   const handleIOSGetStarted = async () => {
-    // Mark onboarding as seen and go directly to auth
-    if (isNative) {
-      await Preferences.set({ key: 'neighborlink_onboarding_completed', value: 'true' });
-    } else {
-      safeStorage.setItem('neighborlink_mobile_onboarding_seen', 'true');
+    // Update database if user is authenticated
+    if (user) {
+      await supabase
+        .from('profiles')
+        .update({ has_completed_onboarding: true })
+        .eq('id', user.id);
     }
     setCurrentStep('auth');
   };

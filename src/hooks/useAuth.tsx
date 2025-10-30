@@ -146,15 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
       
-      // Clear mobile onboarding flag so user sees onboarding again on next login
-      try {
-        const { safeStorage } = await import('@/utils/safetStorage');
-        safeStorage.removeItem('neighborlink_mobile_onboarding_seen');
-        console.log("Cleared onboarding flag");
-      } catch (storageError) {
-        console.warn("Failed to clear onboarding flag:", storageError);
-      }
-      
       // Clear session storage (used for splash screen tracking)
       sessionStorage.clear();
       

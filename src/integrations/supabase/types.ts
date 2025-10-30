@@ -681,6 +681,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          created_at: string | null
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       app_configuration: {
         Row: {
           config_key: string
@@ -3293,6 +3311,7 @@ export type Database = {
           email: string | null
           first_login_completed: boolean | null
           full_name: string | null
+          has_completed_onboarding: boolean | null
           id: string
           is_verified: boolean | null
           location: unknown
@@ -3313,6 +3332,7 @@ export type Database = {
           email?: string | null
           first_login_completed?: boolean | null
           full_name?: string | null
+          has_completed_onboarding?: boolean | null
           id?: string
           is_verified?: boolean | null
           location?: unknown
@@ -3333,6 +3353,7 @@ export type Database = {
           email?: string | null
           first_login_completed?: boolean | null
           full_name?: string | null
+          has_completed_onboarding?: boolean | null
           id?: string
           is_verified?: boolean | null
           location?: unknown
