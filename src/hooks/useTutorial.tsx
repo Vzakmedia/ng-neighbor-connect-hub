@@ -3,22 +3,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TutorialState {
   isOpen: boolean;
   hasCompletedTutorial: boolean;
   loading: boolean;
+  platform: 'mobile' | 'desktop' | 'native';
 }
 
 export const useTutorial = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const isMobileWeb = useIsMobile();
+  const isNative = Capacitor.isNativePlatform();
+  const platform = isNative ? 'native' : isMobileWeb ? 'mobile' : 'desktop';
+  
   const [tutorialState, setTutorialState] = useState<TutorialState>({
     isOpen: false,
     hasCompletedTutorial: false,
     loading: true,
+    platform,
   });
+
+  useEffect(() => {
+    // Update platform when it changes
+    setTutorialState(prev => ({ ...prev, platform }));
+  }, [platform]);
 
   useEffect(() => {
     // Only check tutorial status when both user and profile are available
@@ -45,11 +58,12 @@ export const useTutorial = () => {
 
       const hasCompletedTutorial = data?.tutorial_completed || false;
       
-      setTutorialState({
+      setTutorialState(prev => ({
+        ...prev,
         isOpen: false,
         hasCompletedTutorial,
         loading: false,
-      });
+      }));
 
       // Show tutorial for new users who haven't completed it
       if (!hasCompletedTutorial) {
@@ -64,11 +78,12 @@ export const useTutorial = () => {
       }
     } catch (error) {
       console.error('Error checking tutorial status:', error);
-      setTutorialState({
+      setTutorialState(prev => ({
+        ...prev,
         isOpen: false,
         hasCompletedTutorial: false,
         loading: false,
-      });
+      }));
     }
   };
 
@@ -99,11 +114,12 @@ export const useTutorial = () => {
           }
         );
 
-      setTutorialState({
+      setTutorialState(prev => ({
+        ...prev,
         isOpen: false,
         hasCompletedTutorial: true,
         loading: false,
-      });
+      }));
 
       toast({
         title: "Tutorial Complete! 🎉",
@@ -136,11 +152,12 @@ export const useTutorial = () => {
           }
         );
 
-      setTutorialState({
+      setTutorialState(prev => ({
+        ...prev,
         isOpen: false,
         hasCompletedTutorial: false,
         loading: false,
-      });
+      }));
 
       toast({
         title: "Tutorial Reset",
