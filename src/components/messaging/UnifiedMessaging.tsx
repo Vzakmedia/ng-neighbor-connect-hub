@@ -129,15 +129,45 @@ const UnifiedMessaging = () => {
     if (!activeConversation || !user) return;
     const recipientId = activeConversation.user1_id === user.id ? activeConversation.user2_id : activeConversation.user1_id;
 
-    let success = false;
-    if (attachments && attachments.length > 0) {
-      success = await sendMessageWithAttachments(content, recipientId, attachments);
-    } else {
-      success = await sendMessage(content, recipientId);
-    }
-    if (success) {
+    // Generate temporary message for optimistic UI
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const tempMessage: Message = {
+      id: tempId,
+      sender_id: user.id,
+      recipient_id: recipientId,
+      content: content,
+      created_at: new Date().toISOString(),
+      status: 'sent',
+      attachments: attachments || [],
+    };
+
+    // Add to UI immediately
+    addMessage(tempMessage);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+
+    // Backend operation
+    try {
+      let success = false;
+      if (attachments && attachments.length > 0) {
+        success = await sendMessageWithAttachments(content, recipientId, attachments);
+      } else {
+        success = await sendMessage(content, recipientId);
+      }
+
+      if (!success) throw new Error('Failed to send message');
+
+      // Fetch to get real message ID and update status
       await fetchMessages(recipientId);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
+    } catch (error) {
+      // Remove temporary message on error
+      const updatedMessages = messages.filter(m => m.id !== tempId);
+      updateMessage(updatedMessages[0] || tempMessage); // Trigger state update
+      
+      toast({
+        title: "Failed to send",
+        description: "Your message couldn't be sent. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
