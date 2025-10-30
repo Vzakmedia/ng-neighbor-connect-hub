@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { to, subject, body, type = 'notification', userId } = await req.json();
+    const { to, subject, body, type = 'notification', userId, data: templateData } = await req.json();
     
     console.log('Email notification request:', { to, subject, type, userId });
 
@@ -119,11 +119,20 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey);
     const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
 
+    // Generate HTML body from template if data is provided
+    let htmlBody = typeof body === 'string' ? body : JSON.stringify(body);
+    
+    if (templateData) {
+      const { generateEmailTemplate } = await import('./templates.ts');
+      const appUrl = Deno.env.get('APP_URL') || 'https://yourapp.com';
+      htmlBody = generateEmailTemplate(type, { ...templateData, appUrl });
+    }
+
     const emailResponse = await resend.emails.send({
       from,
       to: [to],
       subject,
-      html: typeof body === 'string' ? body : JSON.stringify(body),
+      html: htmlBody,
     });
 
     // Log the email for audit purposes

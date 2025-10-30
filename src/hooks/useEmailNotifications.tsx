@@ -16,6 +16,9 @@ interface EmailPreferences {
   messages: boolean;
   contact_requests: boolean;
   event_reminders: boolean;
+  post_comments: boolean;
+  comment_replies: boolean;
+  post_likes: boolean;
   frequency: string;
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
