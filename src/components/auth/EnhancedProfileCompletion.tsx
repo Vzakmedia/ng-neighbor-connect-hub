@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,17 @@ export const EnhancedProfileCompletion = () => {
 
   // Check if user is from Google OAuth (needs to set password)
   const isGoogleUser = user?.app_metadata?.provider === 'google';
+
+  // Pre-fill data from Google if available
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || prev.full_name,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || prev.avatar_url,
+      }));
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

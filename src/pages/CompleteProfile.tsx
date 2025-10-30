@@ -23,12 +23,18 @@ const CompleteProfile = () => {
   }, [user, authLoading, navigate]);
 
   const checkUserProfile = async () => {
+    console.log('Checking profile for user:', user?.id);
+    console.log('User metadata:', user?.user_metadata);
+    console.log('App metadata:', user?.app_metadata);
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, state, city, neighborhood, full_name, address')
         .eq('user_id', user?.id)
         .maybeSingle();
+
+      console.log('Profile check result:', { data, error });
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking profile:', error);
@@ -41,6 +47,8 @@ const CompleteProfile = () => {
         data.neighborhood &&
         data.full_name && 
         data.address;
+      
+      console.log('Has complete profile:', hasCompleteProfile);
       
       if (hasCompleteProfile) {
         setHasProfile(true);
