@@ -332,39 +332,51 @@ export const useCommunityFeed = () => {
   const handleSave = async (eventId: string) => {
     if (!user) return;
 
-    try {
-      const event = events.find(e => e.id === eventId);
-      if (!event) return;
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
 
+    // Save previous state for rollback
+    const previousEvents = [...events];
+
+    // Optimistic UI: Update state immediately
+    setEvents(prev => prev.map(e => 
+      e.id === eventId 
+        ? { 
+            ...e, 
+            isSaved: !e.isSaved,
+            saves_count: e.isSaved ? (e.saves_count || 1) - 1 : (e.saves_count || 0) + 1
+          }
+        : e
+    ));
+
+    toast({
+      title: event.isSaved ? "Post unsaved" : "Post saved",
+      description: event.isSaved ? "Removed from your saved posts" : "Added to your saved posts",
+    });
+
+    // Backend operation
+    try {
       if (event.isSaved) {
-        await supabase
+        const { error } = await supabase
           .from('saved_posts')
           .delete()
           .eq('post_id', eventId)
           .eq('user_id', user.id);
+        
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('saved_posts')
           .insert({ post_id: eventId, user_id: user.id });
+        
+        if (error) throw error;
       }
-
-      // Update local state immediately for better UX
-      setEvents(prev => prev.map(e => 
-        e.id === eventId 
-          ? { 
-              ...e, 
-              isSaved: !e.isSaved,
-              saves_count: e.isSaved ? (e.saves_count || 1) - 1 : (e.saves_count || 0) + 1
-            }
-          : e
-      ));
-
-      toast({
-        title: event.isSaved ? "Post unsaved" : "Post saved",
-        description: event.isSaved ? "Removed from your saved posts" : "Added to your saved posts",
-      });
     } catch (error) {
       console.error('Error toggling save:', error);
+      
+      // Rollback on error
+      setEvents(previousEvents);
+      
       toast({
         title: "Error",
         description: "Failed to save post. Please try again.",
