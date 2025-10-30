@@ -4,6 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, ArrowLeft, ArrowRight, Navigation, SkipForward } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileTutorial from '@/components/mobile/MobileTutorial';
 
 interface TutorialStep {
   id: string;
@@ -105,6 +108,22 @@ const getTutorialSteps = (): TutorialStep[] => {
 };
 
 const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }) => {
+  const isNative = Capacitor.isNativePlatform();
+  const isMobileWeb = useIsMobile();
+  const isMobileView = isNative || isMobileWeb;
+
+  // Use mobile tutorial for native and mobile web
+  if (isMobileView) {
+    return (
+      <MobileTutorial
+        isOpen={isOpen}
+        onClose={onClose}
+        onComplete={onComplete}
+      />
+    );
+  }
+
+  // Desktop tutorial below
   const [currentStep, setCurrentStep] = useState(0);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
