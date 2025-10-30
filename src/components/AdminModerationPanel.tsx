@@ -247,6 +247,21 @@ const AdminModerationPanel = () => {
   }, [flaggedContent, searchQuery, contentTypeFilter, dateFilter]);
 
   const handleReportAction = async (reportId: string, action: 'reviewed' | 'resolved' | 'dismissed') => {
+    // Save previous state for rollback
+    const previousReports = [...reports];
+
+    // Optimistically update UI
+    setReports(prev => prev.map(report =>
+      report.id === reportId
+        ? { ...report, status: action, reviewed_by: user?.id, reviewed_at: new Date().toISOString() }
+        : report
+    ));
+
+    toast({
+      title: "Updating report...",
+      description: `Marking report as ${action}`,
+    });
+
     try {
       const { error } = await supabase
         .from('review_reports')
@@ -263,10 +278,11 @@ const AdminModerationPanel = () => {
         title: "Report Updated",
         description: `Report marked as ${action}`,
       });
-
-      fetchReports();
     } catch (error) {
       console.error('Error updating report:', error);
+      // Rollback on error
+      setReports(previousReports);
+      setFilteredReports(previousReports);
       toast({
         title: "Error",
         description: "Failed to update report",

@@ -127,12 +127,30 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     e.preventDefault();
     if (!content.trim() || !user) return;
 
+    // Show optimistic success immediately
+    toast({
+      title: "Creating post...",
+      description: "Your post is being shared with the community.",
+    });
+
+    // Reset form and close dialog immediately
+    const formState = { content, title, images, tags, currentTag, postType, rsvpEnabled, locationScope };
+    setContent('');
+    setTitle('');
+    setImages([]);
+    setTags([]);
+    setCurrentTag('');
+    setPostType('general');
+    setRsvpEnabled(false);
+    setLocationScope('all');
+    onOpenChange(false);
+
     setIsSubmitting(true);
     try {
       // Upload images first if any
       const imageUrls: string[] = [];
-      if (images.length > 0) {
-        for (const image of images) {
+      if (formState.images.length > 0) {
+        for (const image of formState.images) {
           const fileExt = image.name.split('.').pop();
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `${user.id}/${fileName}`;
@@ -157,46 +175,27 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         .from('community_posts')
         .insert({
           user_id: user.id,
-          post_type: postType,
-          title: title || null,
-          content,
+          post_type: formState.postType,
+          title: formState.title || null,
+          content: formState.content,
           location: profile?.neighborhood && profile?.city && profile?.state
             ? `${profile.neighborhood}, ${profile.city}, ${profile.state}`
             : null,
           image_urls: imageUrls,
-          tags: tags,
-          rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
-          location_scope: locationScope,
-          target_neighborhood: locationScope === 'neighborhood' ? profile?.neighborhood : null,
-          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? profile?.city : null,
-          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? profile?.state : null
+          tags: formState.tags,
+          rsvp_enabled: formState.postType === 'event' ? formState.rsvpEnabled : false,
+          location_scope: formState.locationScope,
+          target_neighborhood: formState.locationScope === 'neighborhood' ? profile?.neighborhood : null,
+          target_city: formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.city : null,
+          target_state: formState.locationScope === 'state' || formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.state : null
         });
 
-      if (error) {
-        console.error('Error creating post:', error);
-        toast({
-          title: "Error creating post",
-          description: "Please try again later.",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
       
       toast({
         title: "Post created successfully!",
         description: "Your post has been shared with the community.",
       });
-
-      // Reset form
-      setContent('');
-      setTitle('');
-      setImages([]);
-      setTags([]);
-      setCurrentTag('');
-      setPostType('general');
-      setRsvpEnabled(false);
-      setLocationScope('all');
-      onOpenChange(false);
     } catch (error) {
       console.error('Error creating post:', error);
       toast({
@@ -204,6 +203,16 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         description: "Please try again later.",
         variant: "destructive",
       });
+      // Restore form on error
+      setContent(formState.content);
+      setTitle(formState.title);
+      setImages(formState.images);
+      setTags(formState.tags);
+      setCurrentTag(formState.currentTag);
+      setPostType(formState.postType);
+      setRsvpEnabled(formState.rsvpEnabled);
+      setLocationScope(formState.locationScope);
+      onOpenChange(true);
     } finally {
       setIsSubmitting(false);
     }

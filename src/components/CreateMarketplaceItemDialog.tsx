@@ -144,20 +144,42 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
     e.preventDefault();
     if (!user) return;
 
+    // Show optimistic success
+    toast({
+      title: "Creating listing...",
+      description: "Your item is being listed",
+    });
+
+    // Save form state and reset immediately
+    const savedFormData = { ...formData };
+    const savedImages = [...galleryImages];
+    setFormData({
+      title: '',
+      description: '',
+      category: '',
+      price: '',
+      location: '',
+      condition: '',
+      is_negotiable: false
+    });
+    setGalleryImages([]);
+    setOpen(false);
+    onItemCreated();
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('marketplace_items')
         .insert({
           user_id: user.id,
-          title: formData.title,
-          description: formData.description,
-          category: formData.category as any,
-          price: parseInt(formData.price), // Store as entered
-          location: formData.location,
-          condition: formData.condition,
-          is_negotiable: formData.is_negotiable,
-          images: galleryImages,
+          title: savedFormData.title,
+          description: savedFormData.description,
+          category: savedFormData.category as any,
+          price: parseInt(savedFormData.price),
+          location: savedFormData.location,
+          condition: savedFormData.condition,
+          is_negotiable: savedFormData.is_negotiable,
+          images: savedImages,
           status: 'active'
         });
 
@@ -167,20 +189,6 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
         title: "Item listed",
         description: "Your item has been successfully listed",
       });
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-        price: '',
-        location: '',
-        condition: '',
-        is_negotiable: false
-      });
-      setGalleryImages([]);
-      setOpen(false);
-      onItemCreated();
     } catch (error) {
       console.error('Error creating item:', error);
       toast({
@@ -188,6 +196,10 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
         description: "Failed to create listing",
         variant: "destructive",
       });
+      // Restore form on error
+      setFormData(savedFormData);
+      setGalleryImages(savedImages);
+      setOpen(true);
     } finally {
       setLoading(false);
     }

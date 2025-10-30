@@ -203,27 +203,45 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
     e.preventDefault();
     if (!user || !bookingDate || !selectedSlot) return;
 
+    // Find the selected availability slot
+    const slot = availableSlots.find(s => s.id === selectedSlot);
+    if (!slot) {
+      toast({
+        title: "Error",
+        description: "Invalid time slot selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate booking date is in the future
+    const bookingDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
+    const bookingDate_obj = new Date(bookingDateTime);
+    if (bookingDate_obj <= new Date()) {
+      toast({
+        title: "Invalid Date",
+        description: "Booking date must be in the future",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show optimistic success
+    toast({
+      title: "Sending booking request...",
+      description: "Your request is being processed",
+    });
+
+    // Reset form and close immediately
+    const formState = { message, bookingDate, selectedSlot };
+    setMessage('');
+    setBookingDate(undefined);
+    setSelectedSlot('');
+    setOpen(false);
+    onBookingCreated();
+
     setLoading(true);
     try {
-      // Find the selected availability slot
-      const slot = availableSlots.find(s => s.id === selectedSlot);
-      if (!slot) {
-        throw new Error('Invalid time slot selected');
-      }
-
-      // Validate booking date is in the future
-      const bookingDateTime = `${bookingDate.toISOString().split('T')[0]}T${slot.start_time}`;
-      const bookingDate_obj = new Date(bookingDateTime);
-      if (bookingDate_obj <= new Date()) {
-        toast({
-          title: "Invalid Date",
-          description: "Booking date must be in the future",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
       // Verify service still exists and is active
       const { data: serviceData, error: serviceError } = await supabase
         .from('services')
@@ -232,73 +250,36 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         .single();
 
       if (serviceError || !serviceData) {
-        toast({
-          title: "Service Not Available",
-          description: "Unable to verify service availability.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+        throw new Error('Unable to verify service availability');
       }
 
       if (!serviceData.is_active || serviceData.approval_status !== 'approved') {
-        toast({
-          title: "Service Not Available",
-          description: "This service is currently unavailable.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+        throw new Error('This service is currently unavailable');
       }
 
       // Create the booking with retry logic for network resilience
       await withRetry(async () => {
         const bookingData: Database['public']['Tables']['service_bookings']['Insert'] = {
-          client_id: user.id,  // CRITICAL FIX: Use client_id instead of user_id
-          provider_id: service.user_id,
-          service_id: service.id,
-          booking_date: bookingDateTime,
-          message: message || null,
-          status: 'pending'
-        };
-
-        console.log('Creating booking with data:', {
           client_id: user.id,
           provider_id: service.user_id,
           service_id: service.id,
           booking_date: bookingDateTime,
-        });
+          message: formState.message || null,
+          status: 'pending'
+        };
 
-        const { error: bookingError, data: bookingResult } = await supabase
+        const { error: bookingError } = await supabase
           .from('service_bookings')
           .insert(bookingData)
           .select();
 
-        if (bookingError) {
-          console.error('Booking creation error details:', {
-            error: bookingError,
-            message: bookingError.message,
-            details: bookingError.details,
-            hint: bookingError.hint,
-            code: bookingError.code,
-          });
-          throw bookingError;
-        }
-
-        console.log('Booking created successfully:', bookingResult);
-      }, 2, 1000); // Retry up to 2 times with 1 second base delay
+        if (bookingError) throw bookingError;
+      }, 2, 1000);
 
       toast({
         title: "Booking request sent",
         description: "Your booking request has been sent to the service provider",
       });
-
-      // Reset form
-      setMessage('');
-      setBookingDate(undefined);
-      setSelectedSlot('');
-      setOpen(false);
-      onBookingCreated();
     } catch (error: any) {
       console.error('Error creating booking:', error);
       
@@ -309,7 +290,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       });
 
       // Show specific error message based on error type
-      let errorMessage = 'Failed to create booking request';
+      let errorMessage = error.message || 'Failed to create booking request';
       
       if (error.message?.includes('duplicate')) {
         errorMessage = 'You already have a booking request for this time slot';
@@ -325,16 +306,11 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         variant: "destructive",
       });
 
-      // Log detailed error for debugging
-      console.error('Booking error context:', {
-        service_id: service.id,
-        provider_id: service.user_id,
-        client_id: user?.id,
-        booking_date: bookingDate?.toISOString(),
-        slot: selectedSlot,
-        errorType: errorInfo.type,
-        errorCode: errorInfo.code,
-      });
+      // Restore form on error
+      setMessage(formState.message);
+      setBookingDate(formState.bookingDate);
+      setSelectedSlot(formState.selectedSlot);
+      setOpen(true);
     } finally {
       setLoading(false);
     }

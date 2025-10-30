@@ -90,9 +90,19 @@ export const useMessageActions = () => {
     }
   }, [toast]);
 
-  const deleteSingleMessage = useCallback(async (messageId: string) => {
+  const deleteSingleMessage = useCallback(async (messageId: string, onOptimisticDelete?: () => void) => {
+    // Optimistically remove from UI
+    if (onOptimisticDelete) {
+      onOptimisticDelete();
+    }
+
+    toast({
+      title: "Deleting message...",
+      description: "Message is being removed",
+    });
+
+    setLoading(true);
     try {
-      setLoading(true);
       const { error } = await supabase
         .from('direct_messages')
         .delete()
