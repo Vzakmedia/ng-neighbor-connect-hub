@@ -82,7 +82,22 @@ export const useUpcomingEvents = (limit: number = 3) => {
 
       if (error) throw error;
 
-      const formattedEvents: UpcomingEvent[] = (data || []).map((event, index) => ({
+      // Get RSVP counts for each event
+      const eventIds = (data || []).map(event => event.id);
+      const { data: rsvpData } = eventIds.length > 0
+        ? await supabase
+            .from('event_rsvps')
+            .select('post_id')
+            .in('post_id', eventIds)
+            .eq('status', 'attending')
+        : { data: [] };
+
+      const rsvpCounts = (rsvpData || []).reduce((acc, rsvp) => {
+        acc[rsvp.post_id] = (acc[rsvp.post_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const formattedEvents: UpcomingEvent[] = (data || []).map((event) => ({
         id: event.id,
         title: event.title || 'Community Event',
         date: new Date(event.created_at).toLocaleDateString('en-US', { 
@@ -96,8 +111,8 @@ export const useUpcomingEvents = (limit: number = 3) => {
           hour12: true 
         }),
         location: event.location || (event.profiles as any)?.neighborhood || (event.profiles as any)?.city || 'TBA',
-        attendees: Math.floor(Math.random() * 50) + 10, // Placeholder until RSVP system
-        type: ['community', 'social', 'sports', 'education'][index % 4],
+        attendees: rsvpCounts[event.id] || 0,
+        type: 'community',
         created_at: event.created_at
       }));
 
