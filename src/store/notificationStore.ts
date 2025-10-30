@@ -82,6 +82,11 @@ export const useNotificationStore = create<NotificationState>()(
             data: notification.data,
             requireInteraction: notification.priority === 'urgent'
           });
+
+          // Trigger email notification asynchronously (don't block)
+          triggerEmailNotification(notification).catch(error => {
+            console.error('[NotificationStore] Email send failed:', error);
+          });
         }
 
         console.log('[NotificationStore] Notification added:', notification.id, 'Unread:', unreadCount);
@@ -304,8 +309,82 @@ function determinePriority(notificationType: string): NotificationData['priority
   if (notificationType.includes('panic') || notificationType.includes('emergency')) {
     return 'urgent';
   }
-  if (notificationType.includes('alert')) {
-    return 'high';
-  }
+  
   return 'normal';
+}
+
+// Email notification helpers
+async function triggerEmailNotification(notification: NotificationData) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return;
+    
+    // Map notification type to email type
+    const emailType = mapNotificationTypeToEmailType(notification.type);
+    
+    // Generate email content
+    const subject = generateEmailSubject(notification);
+    const body = generateEmailBody(notification, emailType);
+    
+    // Call edge function (fire and forget)
+    await supabase.functions.invoke('send-email-notification', {
+      body: {
+        to: user.email,
+        subject,
+        body,
+        type: emailType,
+        userId: user.id
+      }
+    });
+    
+    console.log('[NotificationStore] Email notification triggered for:', notification.id);
+  } catch (error) {
+    console.error('[NotificationStore] Email trigger error:', error);
+  }
+}
+
+function mapNotificationTypeToEmailType(type: NotificationData['type']): string {
+  const mapping: Record<NotificationData['type'], string> = {
+    'emergency': 'emergency_alert',
+    'panic_alert': 'panic_alert',
+    'alert': 'safety_alert',
+    'message': 'message',
+    'contact_request': 'contact_request',
+    'post': 'community_post',
+    'system': 'system'
+  };
+  return mapping[type] || 'notification';
+}
+
+function generateEmailSubject(notification: NotificationData): string {
+  const prefix = notification.priority === 'urgent' ? '🚨 URGENT: ' : '';
+  return `${prefix}${notification.title}`;
+}
+
+function generateEmailBody(notification: NotificationData, emailType: string): string {
+  const baseStyle = `
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  `;
+  
+  return `
+    <div style="${baseStyle}">
+      <h2>${notification.title}</h2>
+      <p>${notification.body}</p>
+      <a href="${window.location.origin}" 
+         style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; 
+                text-decoration: none; border-radius: 6px; margin-top: 16px;">
+        Open App
+      </a>
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;"/>
+      <p style="color: #666; font-size: 12px;">
+        You received this email because you have email notifications enabled.
+        <a href="${window.location.origin}/settings">Manage preferences</a>
+      </p>
+    </div>
+  `;
 }

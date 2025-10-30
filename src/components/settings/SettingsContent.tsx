@@ -39,6 +39,7 @@ import { TwoFactorSetup } from '@/components/security/TwoFactorSetup';
 import { SuperAdminSecurityPanel } from '@/components/security/SuperAdminSecurityPanel';
 import { useTutorial } from '@/hooks/useTutorial';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +57,7 @@ const SettingsContent = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { startTutorial, resetTutorial, hasCompletedTutorial } = useTutorial();
+  const { preferences: emailPreferences, updatePreferences: updateEmailPreferences, sendTestEmail } = useEmailNotifications();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -408,6 +410,133 @@ const [audioSettings, setAudioSettings] = useState({
                       className="shrink-0"
                     />
                   </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  Email Notification Preferences
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose which notifications you want to receive via email
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Enable Email Notifications</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Master switch for all email notifications
+                      </p>
+                    </div>
+                    <Switch
+                      checked={emailPreferences?.email_enabled ?? true}
+                      onCheckedChange={(checked) => 
+                        updateEmailPreferences.mutate({ email_enabled: checked })
+                      }
+                    />
+                  </div>
+                  
+                  {emailPreferences?.email_enabled && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3 pl-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Emergency Alerts</Label>
+                          <Switch
+                            checked={emailPreferences?.emergency_alerts ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ emergency_alerts: checked })
+                            }
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Safety Alerts</Label>
+                          <Switch
+                            checked={emailPreferences?.safety_alerts ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ safety_alerts: checked })
+                            }
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Panic Alerts</Label>
+                          <Switch
+                            checked={emailPreferences?.panic_alerts ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ panic_alerts: checked })
+                            }
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Direct Messages</Label>
+                          <Switch
+                            checked={emailPreferences?.messages ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ messages: checked })
+                            }
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Community Posts</Label>
+                          <Switch
+                            checked={emailPreferences?.community_posts ?? false}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ community_posts: checked })
+                            }
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Marketplace Updates</Label>
+                          <Switch
+                            checked={emailPreferences?.marketplace_updates ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ marketplace_updates: checked })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Service Bookings</Label>
+                          <Switch
+                            checked={emailPreferences?.service_bookings ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ service_bookings: checked })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Contact Requests</Label>
+                          <Switch
+                            checked={emailPreferences?.contact_requests ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ contact_requests: checked })
+                            }
+                          />
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <Button
+                        variant="outline"
+                        onClick={() => sendTestEmail.mutate()}
+                        disabled={sendTestEmail.isPending}
+                        className="w-full sm:w-auto"
+                      >
+                        {sendTestEmail.isPending ? 'Sending...' : 'Send Test Email'}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
