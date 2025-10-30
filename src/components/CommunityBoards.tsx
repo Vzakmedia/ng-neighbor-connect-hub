@@ -503,38 +503,140 @@ const CommunityBoards = () => {
 
   // Send message with attachments
   const sendMessage = async () => {
-    if (!selectedBoard || (!newMessage.trim() && pendingAttachments.length === 0) || !user) return;
+    if (!selectedBoard || (!newMessage.trim() && pendingAttachments.length === 0) || !user || !profile) return;
 
+    // Generate temporary post for optimistic UI
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const tempPost: BoardPost = {
+      id: tempId,
+      board_id: selectedBoard,
+      user_id: user.id,
+      content: newMessage.trim(),
+      post_type: 'message',
+      image_urls: [],
+      attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
+      reply_to_id: null,
+      is_pinned: false,
+      approval_status: 'approved',
+      approved_by: null,
+      approved_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      tagged_members: taggedMembers,
+      profiles: {
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        neighborhood: profile.neighborhood,
+        city: profile.city,
+        state: profile.state,
+      },
+      likes_count: 0,
+      is_liked_by_user: false,
+      reactions: [],
+    };
+
+    // Add to UI immediately
+    setPosts(prev => [...prev, tempPost]);
+    
+    // Clear input
+    const messageContent = newMessage.trim();
+    const attachments = [...pendingAttachments];
+    const members = [...taggedMembers];
+    setNewMessage('');
+    setPendingAttachments([]);
+    setTaggedMembers([]);
+    
+    // Scroll
+    setTimeout(() => scrollToBottom(), 50);
+
+    // Backend operation
     try {
       const insertData: any = {
         board_id: selectedBoard,
         user_id: user.id,
-        content: newMessage.trim(),
+        content: messageContent,
         post_type: 'message',
-        tagged_members: taggedMembers
+        tagged_members: members
       };
 
-      // Add attachments if there are any
-      if (pendingAttachments.length > 0) {
-        insertData.attachments = pendingAttachments;
+      if (attachments.length > 0) {
+        insertData.attachments = attachments;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('board_posts')
-        .insert(insertData as any);
+        .insert(insertData as any)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNewMessage('');
-      setPendingAttachments([]);
-      setTaggedMembers([]);
-      fetchPosts();
-      scrollToBottom();
+      // Replace temp post with real post
+      if (data) {
+        setPosts(prev => prev.map(p => 
+          p.id === tempId ? { ...tempPost, id: data.id } : p
+        ));
+      }
     } catch (error) {
-      console.error('Error sending message:', error);
+      // Remove temporary post on error
+      setPosts(prev => prev.filter(p => p.id !== tempId));
+      
+      toast({
+        title: "Failed to send",
+        description: "Your message couldn't be sent. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleBoardPostLike = async (postId: string) => {
+    if (!user) return;
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    // Save previous state
+    const previousPosts = [...posts];
+
+    // Update UI immediately
+    setPosts(prev => prev.map(p => 
+      p.id === postId 
+        ? {
+            ...p,
+            is_liked_by_user: !p.is_liked_by_user,
+            likes_count: p.is_liked_by_user ? p.likes_count - 1 : p.likes_count + 1
+          }
+        : p
+    ));
+
+    // Backend operation
+    try {
+      if (post.is_liked_by_user) {
+        // Unlike
+        const { error } = await supabase
+          .from('board_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('board_post_likes')
+          .insert({
+            post_id: postId,
+            user_id: user.id
+          });
+        
+        if (error) throw error;
+      }
+    } catch (error) {
+      // Rollback
+      setPosts(previousPosts);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to update like. Please try again.",
         variant: "destructive",
       });
     }
@@ -773,8 +875,11 @@ const CommunityBoards = () => {
                           variant="ghost"
                           size="sm"
                           className="h-6 px-2 text-xs"
+                          onClick={() => toggleBoardPostLike(post.id)}
                         >
-                          <ThumbsUp className="h-3 w-3 mr-1" />
+                          <ThumbsUp 
+                            className={`h-3 w-3 mr-1 ${post.is_liked_by_user ? 'fill-current text-primary' : ''}`} 
+                          />
                           {post.likes_count}
                         </Button>
                         <Button
