@@ -6,9 +6,15 @@ import { Capacitor } from '@capacitor/core';
 
 interface GoogleAuthButtonProps {
   mode: 'signin' | 'signup';
+  locationData?: {
+    state: string;
+    city: string;
+    neighborhood: string;
+    address: string;
+  };
 }
 
-export const GoogleAuthButton = ({ mode }: GoogleAuthButtonProps) => {
+export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -29,6 +35,15 @@ export const GoogleAuthButton = ({ mode }: GoogleAuthButtonProps) => {
             access_type: 'offline',
             prompt: 'consent',
           },
+          // Store location data in user metadata for signup mode
+          ...(mode === 'signup' && locationData && {
+            data: {
+              state: locationData.state,
+              city: locationData.city,
+              neighborhood: locationData.neighborhood,
+              address: locationData.address,
+            }
+          }),
         },
       });
 

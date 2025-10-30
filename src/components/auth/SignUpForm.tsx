@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,8 +50,20 @@ export const SignUpForm = () => {
   const [userConsents, setUserConsents] = useState<ConsentState | null>(null);
   const [showEmailSentDialog, setShowEmailSentDialog] = useState(false);
   const [signupEmail, setSignupEmail] = useState("");
+  const [locationComplete, setLocationComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Monitor location fields to enable Google sign-up
+  useEffect(() => {
+    const isLocationFilled = 
+      formData.state && 
+      formData.city && 
+      formData.neighborhood && 
+      formData.address.trim();
+    
+    setLocationComplete(!!isLocationFilled);
+  }, [formData.state, formData.city, formData.neighborhood, formData.address]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -393,12 +405,24 @@ export const SignUpForm = () => {
         />
       </div>
 
-      <SimpleLocationSelector 
-        onLocationChange={handleLocationChange}
-        defaultState={formData.state}
-        defaultCity={formData.city}
-        defaultNeighborhood={formData.neighborhood}
-      />
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-base font-semibold">
+            Location Information <span className="text-destructive">*</span>
+          </Label>
+          {!locationComplete && (
+            <span className="text-xs text-muted-foreground">
+              Required for Google sign-up
+            </span>
+          )}
+        </div>
+        <SimpleLocationSelector 
+          onLocationChange={handleLocationChange}
+          defaultState={formData.state}
+          defaultCity={formData.city}
+          defaultNeighborhood={formData.neighborhood}
+        />
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="address">Complete Address <span className="text-destructive">*</span></Label>
@@ -467,20 +491,38 @@ export const SignUpForm = () => {
       </Button>
     </form>
 
-    {/* OR Divider */}
-    <div className="relative my-4">
-      <div className="absolute inset-0 flex items-center">
-        <span className="w-full border-t" />
+    {/* OR Divider - Only show if location is complete */}
+    {locationComplete && (
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with
+          </span>
+        </div>
       </div>
-      <div className="relative flex justify-center text-xs uppercase">
-        <span className="bg-background px-2 text-muted-foreground">
-          Or continue with
-        </span>
-      </div>
-    </div>
+    )}
 
-    {/* Google Sign-up Button */}
-    <GoogleAuthButton mode="signup" />
+    {/* Google Sign-up Button - Only enabled when location is complete */}
+    {locationComplete ? (
+      <GoogleAuthButton 
+        mode="signup" 
+        locationData={{
+          state: formData.state,
+          city: formData.city,
+          neighborhood: formData.neighborhood,
+          address: formData.address,
+        }}
+      />
+    ) : (
+      <div className="w-full p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30">
+        <p className="text-sm text-muted-foreground text-center">
+          📍 Please fill in your location details above to enable Google sign-up
+        </p>
+      </div>
+    )}
 
     {/* Consent Dialog */}
     <ConsentDialog
