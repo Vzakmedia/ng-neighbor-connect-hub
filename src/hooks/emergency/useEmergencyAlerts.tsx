@@ -52,6 +52,10 @@ export const useEmergencyAlerts = () => {
         lastFetchTimeRef.current = now;
         setLoading(true);
         try {
+          // Get user's creation date for clean slate filtering
+          const { data: userData } = await supabase.auth.getUser();
+          const userCreatedAt = userData.user?.created_at;
+
           // Use cached profile if available
           let currentUserProfile = profileCacheRef.current;
           
@@ -78,6 +82,11 @@ export const useEmergencyAlerts = () => {
             `)
             .order('created_at', { ascending: false })
             .limit(50);
+
+          // Only show alerts created after user joined (clean slate)
+          if (userCreatedAt) {
+            query = query.gte('created_at', userCreatedAt);
+          }
 
           if (filters.severity !== 'all') {
             query = query.eq('severity', filters.severity as any);
@@ -183,6 +192,10 @@ export const useEmergencyAlerts = () => {
     return new Promise<void>((resolve) => {
       debounceTimeoutRef.current = setTimeout(async () => {
         try {
+          // Get user's creation date for clean slate filtering
+          const { data: userData } = await supabase.auth.getUser();
+          const userCreatedAt = userData.user?.created_at;
+
           // Use cached profile
           let userProfile = profileCacheRef.current;
           if (!userProfile) {
@@ -200,12 +213,18 @@ export const useEmergencyAlerts = () => {
             }
           }
 
-          // Get panic alerts created by user
-          const { data: userPanicAlerts, error: userError } = await supabase
+          // Get panic alerts created by user (only after they joined)
+          let userQuery = supabase
             .from('panic_alerts')
             .select('*')
             .eq('user_id', user.id)
             .limit(20);
+
+          if (userCreatedAt) {
+            userQuery = userQuery.gte('created_at', userCreatedAt);
+          }
+
+          const { data: userPanicAlerts, error: userError } = await userQuery;
 
           if (userError) {
             throw userError;
@@ -227,11 +246,18 @@ export const useEmergencyAlerts = () => {
                 } else if (listedByUsers && listedByUsers.length > 0) {
                   const contactUserIds = listedByUsers.map((u: { user_id: string }) => u.user_id);
                   
-                  const { data: contactAlerts, error: contactError } = await supabase
+                  let contactQuery = supabase
                     .from('panic_alerts')
                     .select('*')
                     .in('user_id', contactUserIds)
                     .limit(10);
+
+                  // Only show alerts created after user joined
+                  if (userCreatedAt) {
+                    contactQuery = contactQuery.gte('created_at', userCreatedAt);
+                  }
+
+                  const { data: contactAlerts, error: contactError } = await contactQuery;
 
                   if (contactError) {
                     console.error('Error fetching contact panic alerts:', contactError);
@@ -247,7 +273,7 @@ export const useEmergencyAlerts = () => {
             // Get panic alerts in user's neighborhood
             if (userProfile.neighborhood) {
               try {
-                const { data: areaAlerts, error: areaError } = await supabase
+                let areaQuery = supabase
                   .from('panic_alerts')
                   .select(`
                     *,
@@ -256,6 +282,13 @@ export const useEmergencyAlerts = () => {
                   .neq('user_id', user.id)
                   .order('created_at', { ascending: false })
                   .limit(15);
+
+                // Only show alerts created after user joined
+                if (userCreatedAt) {
+                  areaQuery = areaQuery.gte('created_at', userCreatedAt);
+                }
+
+                const { data: areaAlerts, error: areaError } = await areaQuery;
 
                 if (areaError) {
                   console.error('Error fetching area panic alerts:', areaError);

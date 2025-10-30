@@ -70,11 +70,20 @@ export function useFeedQuery(filters: FeedFilters) {
 
       const offset = pageParam as number;
 
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       // Build query for community posts (WITHOUT JOIN - we'll fetch profiles separately)
       let query = supabase
         .from('community_posts')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter posts to only show those created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt);
+      }
 
       // Apply hierarchical location-based filtering using exact profile values
       // Users see posts at their level AND broader levels

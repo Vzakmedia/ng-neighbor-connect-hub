@@ -109,6 +109,10 @@ const EventFeed = () => {
     try {
       setLoading(true);
       
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       let query = supabase
         .from('events')
         .select(`
@@ -133,6 +137,11 @@ const EventFeed = () => {
         `)
         .order('event_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
+
+      // Only show events created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt);
+      }
 
       const { data: postsData, error } = await query;
 

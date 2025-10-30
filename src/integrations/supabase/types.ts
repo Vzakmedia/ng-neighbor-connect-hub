@@ -867,6 +867,33 @@ export type Database = {
           },
         ]
       }
+      board_memberships: {
+        Row: {
+          board_id: string
+          created_at: string | null
+          id: string
+          joined_at: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       board_post_likes: {
         Row: {
           created_at: string
@@ -5582,8 +5609,9 @@ export type Database = {
       get_feed: {
         Args: {
           cursor?: string
-          filter_level?: string
+          filter_level: string
           limit_count?: number
+          min_created_at?: string
           target_user_id: string
         }
         Returns: {
@@ -5592,12 +5620,11 @@ export type Database = {
           comments_count: number
           content: string
           created_at: string
-          feed_score: number
           id: string
           image_urls: string[]
           likes_count: number
           location: string
-          location_scope: Database["public"]["Enums"]["location_scope"]
+          location_scope: string
           rsvp_enabled: boolean
           tags: string[]
           target_city: string
