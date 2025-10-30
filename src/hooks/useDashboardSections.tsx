@@ -372,14 +372,23 @@ export const useTrendingTopics = (limit: number = 4) => {
     if (!user) return;
 
     try {
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       // Get all tags from recent posts (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+      // Use the more recent date between user creation and 7 days ago
+      const filterDate = userCreatedAt && new Date(userCreatedAt) > sevenDaysAgo 
+        ? userCreatedAt 
+        : sevenDaysAgo.toISOString();
+
       const { data, error } = await supabase
         .from('community_posts')
         .select('tags')
-        .gte('created_at', sevenDaysAgo.toISOString())
+        .gte('created_at', filterDate)
         .not('tags', 'is', null);
 
       if (error) throw error;
@@ -402,28 +411,10 @@ export const useTrendingTopics = (limit: number = 4) => {
         .sort((a, b) => b.posts - a.posts)
         .slice(0, limit);
 
-      // Add fallback topics if not enough trending
-      const fallbackTopics = [
-        { tag: '#CommunityLife', posts: 5 },
-        { tag: '#LocalBusiness', posts: 3 },
-        { tag: '#NeighborhoodWatch', posts: 2 },
-        { tag: '#EventPlanning', posts: 1 }
-      ];
-
-      const finalTopics = sortedTopics.length >= limit 
-        ? sortedTopics 
-        : [...sortedTopics, ...fallbackTopics.slice(0, limit - sortedTopics.length)];
-
-      setTopics(finalTopics);
+      setTopics(sortedTopics);
     } catch (error) {
       console.error('Error fetching trending topics:', error);
-      // Set fallback topics on error
-      setTopics([
-        { tag: '#CommunityLife', posts: 5 },
-        { tag: '#LocalBusiness', posts: 3 },
-        { tag: '#NeighborhoodWatch', posts: 2 },
-        { tag: '#EventPlanning', posts: 1 }
-      ]);
+      setTopics([]);
     } finally {
       setLoading(false);
     }
