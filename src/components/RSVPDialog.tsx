@@ -79,7 +79,27 @@ const RSVPDialog = ({
       return;
     }
 
+    // Store previous state for potential rollback
+    const previousFormState = {
+      status,
+      message,
+      fullName,
+      phoneNumber,
+      emailAddress
+    };
+
+    // Optimistic UI update: Show success immediately
     setIsSubmitting(true);
+    toast({
+      title: "RSVP Submitted!",
+      description: `Your RSVP for "${eventTitle}" has been recorded.`,
+    });
+
+    // Close dialog and reset form optimistically
+    resetForm();
+    onOpenChange(false);
+    onRSVPSubmitted?.();
+
     try {
       // Check if user already has an RSVP for this event
       const { data: existingRSVP, error: fetchError } = await supabase
@@ -92,11 +112,11 @@ const RSVPDialog = ({
       if (fetchError) throw fetchError;
 
       const rsvpData = {
-        status,
-        message: message.trim() || null,
-        full_name: fullName.trim(),
-        phone_number: phoneNumber.trim() || null,
-        email_address: emailAddress.trim(),
+        status: previousFormState.status,
+        message: previousFormState.message.trim() || null,
+        full_name: previousFormState.fullName.trim(),
+        phone_number: previousFormState.phoneNumber.trim() || null,
+        email_address: previousFormState.emailAddress.trim(),
         updated_at: new Date().toISOString()
       };
 
@@ -121,18 +141,17 @@ const RSVPDialog = ({
         if (error) throw error;
       }
 
-      toast({
-        title: "RSVP Submitted!",
-        description: `Your RSVP for "${eventTitle}" has been recorded.`,
-      });
-
-      // Reset form and close dialog
-      resetForm();
-      onOpenChange(false);
-      onRSVPSubmitted?.();
-
     } catch (error) {
       console.error('Error submitting RSVP:', error);
+      
+      // Rollback: Restore form state and reopen dialog
+      setStatus(previousFormState.status);
+      setMessage(previousFormState.message);
+      setFullName(previousFormState.fullName);
+      setPhoneNumber(previousFormState.phoneNumber);
+      setEmailAddress(previousFormState.emailAddress);
+      onOpenChange(true);
+      
       toast({
         title: "Error",
         description: "Failed to submit RSVP. Please try again.",

@@ -90,9 +90,24 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
   const handleJoinBoard = async () => {
     if (!user) return;
 
+    // Optimistic UI: Show success immediately
+    const requiresApproval = board.requires_approval && !board.auto_approve_members;
+    
     setIsJoining(true);
+    toast({
+      title: requiresApproval ? "Join request sent" : "Joined board",
+      description: requiresApproval 
+        ? "Your request to join this board has been sent to the moderators."
+        : `You have successfully joined ${board.name}!`,
+    });
+
+    // Call onJoin callback optimistically
+    if (!requiresApproval) {
+      onJoin?.();
+    }
+
     try {
-      if (board.requires_approval && !board.auto_approve_members) {
+      if (requiresApproval) {
         // Create join request
         const { error: requestError } = await supabase
           .from('board_join_requests')
@@ -103,11 +118,6 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
           } as any);
 
         if (requestError) throw requestError;
-
-        toast({
-          title: "Join request sent",
-          description: "Your request to join this board has been sent to the moderators.",
-        });
       } else {
         // Join directly
         const { error: joinError } = await supabase
@@ -119,16 +129,11 @@ const BoardSuggestionCard = ({ board, onJoin }: BoardSuggestionCardProps) => {
           } as any);
 
         if (joinError) throw joinError;
-
-        toast({
-          title: "Joined board",
-          description: `You have successfully joined ${board.name}!`,
-        });
-        
-        onJoin?.();
       }
     } catch (error) {
       console.error('Error joining board:', error);
+      
+      // Rollback: Show error and potentially refresh to restore state
       toast({
         title: "Error",
         description: "Failed to join board. Please try again.",
