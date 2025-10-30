@@ -206,12 +206,11 @@ const HomeDashboard = () => {
                             {event.location}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs sm:text-sm md:text-sm text-muted-foreground">
-                              {event.attendees} interested
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {event.type}
-                            </Badge>
+                            {event.attendees > 0 && (
+                              <span className="text-xs sm:text-sm md:text-sm text-muted-foreground">
+                                {event.attendees} attending
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
