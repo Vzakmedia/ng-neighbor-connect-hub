@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingNotifications } from '@/hooks/useOnboardingNotifications';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,21 +33,39 @@ export const BusinessEncouragementCard = ({ onDismiss }: BusinessEncouragementCa
   const navigate = useNavigate();
   const { dismissBusinessCard } = useOnboardingNotifications();
   const [showDismissDialog, setShowDismissDialog] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
+  const { toast } = useToast();
 
   const handleClose = () => {
     setShowDismissDialog(true);
   };
 
   const handleTemporaryDismiss = async () => {
-    await dismissBusinessCard(false);
-    setShowDismissDialog(false);
-    onDismiss();
+    setDismissing(true);
+    try {
+      await dismissBusinessCard(false);
+      setShowDismissDialog(false);
+      onDismiss();
+    } catch (error) {
+      console.error('Failed to dismiss card:', error);
+      toast({ title: "Error", description: "Failed to save preference", variant: "destructive" });
+    } finally {
+      setDismissing(false);
+    }
   };
 
   const handlePermanentDismiss = async () => {
-    await dismissBusinessCard(true);
-    setShowDismissDialog(false);
-    onDismiss();
+    setDismissing(true);
+    try {
+      await dismissBusinessCard(true);
+      setShowDismissDialog(false);
+      onDismiss();
+    } catch (error) {
+      console.error('Failed to dismiss card:', error);
+      toast({ title: "Error", description: "Failed to save preference", variant: "destructive" });
+    } finally {
+      setDismissing(false);
+    }
   };
 
   const handleCreateBusiness = () => {
@@ -131,14 +150,15 @@ export const BusinessEncouragementCard = ({ onDismiss }: BusinessEncouragementCa
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel onClick={handleTemporaryDismiss}>
+            <AlertDialogCancel onClick={handleTemporaryDismiss} disabled={dismissing}>
               Remind Me Later
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handlePermanentDismiss}
+              disabled={dismissing}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Don't Show Again
+              {dismissing ? 'Saving...' : "Don't Show Again"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
