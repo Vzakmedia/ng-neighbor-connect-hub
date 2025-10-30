@@ -4901,6 +4901,7 @@ export type Database = {
       }
       user_email_preferences: {
         Row: {
+          comment_replies: boolean | null
           community_posts: boolean | null
           contact_requests: boolean | null
           created_at: string
@@ -4912,6 +4913,8 @@ export type Database = {
           marketplace_updates: boolean | null
           messages: boolean | null
           panic_alerts: boolean | null
+          post_comments: boolean | null
+          post_likes: boolean | null
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           safety_alerts: boolean | null
@@ -4921,6 +4924,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          comment_replies?: boolean | null
           community_posts?: boolean | null
           contact_requests?: boolean | null
           created_at?: string
@@ -4932,6 +4936,8 @@ export type Database = {
           marketplace_updates?: boolean | null
           messages?: boolean | null
           panic_alerts?: boolean | null
+          post_comments?: boolean | null
+          post_likes?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           safety_alerts?: boolean | null
@@ -4941,6 +4947,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          comment_replies?: boolean | null
           community_posts?: boolean | null
           contact_requests?: boolean | null
           created_at?: string
@@ -4952,6 +4959,8 @@ export type Database = {
           marketplace_updates?: boolean | null
           messages?: boolean | null
           panic_alerts?: boolean | null
+          post_comments?: boolean | null
+          post_likes?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           safety_alerts?: boolean | null

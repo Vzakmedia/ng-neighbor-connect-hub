@@ -9,6 +9,15 @@ export interface EmailTemplateData {
   authorName?: string;
   title?: string;
   content?: string;
+  postId?: string;
+  postTitle?: string;
+  postContent?: string;
+  commentContent?: string;
+  commentAuthor?: string;
+  replyContent?: string;
+  parentCommentContent?: string;
+  postAuthor?: string;
+  messageContent?: string;
 }
 
 const baseStyle = `
@@ -21,7 +30,92 @@ const baseStyle = `
 `;
 
 export function generateEmailTemplate(type: string, data: EmailTemplateData): string {
+  const appUrl = data.appUrl || 'https://yourapp.com';
+  
   const templates: Record<string, string> = {
+    post_comment: `
+      <div style="${baseStyle}">
+        <div style="background: #3b82f6; color: white; padding: 20px; border-radius: 8px;">
+          <h2 style="margin: 0;">💬 New Comment on Your Post</h2>
+        </div>
+        <div style="padding: 20px; background: #eff6ff; margin-top: 16px; border-radius: 8px;">
+          <p><strong>From:</strong> ${data.commentAuthor || 'A community member'}</p>
+          <p style="font-style: italic; color: #666; background: #f9fafb; padding: 12px; border-radius: 6px;">
+            "${data.commentContent || 'New comment'}"
+          </p>
+          <hr style="margin: 16px 0; border: none; border-top: 1px solid #ddd;"/>
+          <p style="font-size: 14px; color: #666;"><strong>Your post:</strong></p>
+          <p style="color: #888;">${data.postContent?.substring(0, 150) || ''}${data.postContent && data.postContent.length > 150 ? '...' : ''}</p>
+        </div>
+        <a href="${appUrl}/community?postId=${data.postId}" 
+           style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 6px; margin-top: 16px;">
+          View Comment & Reply
+        </a>
+      </div>
+    `,
+    
+    comment_reply: `
+      <div style="${baseStyle}">
+        <div style="background: #8b5cf6; color: white; padding: 20px; border-radius: 8px;">
+          <h2 style="margin: 0;">💬 Reply to Your Comment</h2>
+        </div>
+        <div style="padding: 20px; background: #f5f3ff; margin-top: 16px; border-radius: 8px;">
+          <p><strong>From:</strong> ${data.commentAuthor || 'A community member'}</p>
+          <p style="font-style: italic; color: #666; background: #f9fafb; padding: 12px; border-radius: 6px;">
+            "${data.replyContent || 'New reply'}"
+          </p>
+          <hr style="margin: 16px 0; border: none; border-top: 1px solid #ddd;"/>
+          <p style="font-size: 14px; color: #666;"><strong>Your comment:</strong></p>
+          <p style="color: #888;">${data.parentCommentContent?.substring(0, 150) || ''}${data.parentCommentContent && data.parentCommentContent.length > 150 ? '...' : ''}</p>
+        </div>
+        <a href="${appUrl}/community?postId=${data.postId}" 
+           style="display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 6px; margin-top: 16px;">
+          View Reply
+        </a>
+      </div>
+    `,
+    
+    post_like: `
+      <div style="${baseStyle}">
+        <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px;">
+          <h2 style="margin: 0;">❤️ Someone Liked Your Post</h2>
+        </div>
+        <div style="padding: 20px; background: #fef2f2; margin-top: 16px; border-radius: 8px;">
+          <p><strong>${data.senderName || 'Someone'}</strong> liked your post</p>
+          <p style="color: #888; margin-top: 12px;">${data.postContent?.substring(0, 150) || ''}${data.postContent && data.postContent.length > 150 ? '...' : ''}</p>
+        </div>
+        <a href="${appUrl}/community?postId=${data.postId}" 
+           style="display: inline-block; background: #ef4444; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 6px; margin-top: 16px;">
+          View Post
+        </a>
+      </div>
+    `,
+    
+    direct_message: `
+      <div style="${baseStyle}">
+        <div style="background: #10b981; color: white; padding: 20px; border-radius: 8px;">
+          <h2 style="margin: 0;">💬 New Direct Message</h2>
+        </div>
+        <div style="padding: 20px; background: #ecfdf5; margin-top: 16px; border-radius: 8px;">
+          <p><strong>From:</strong> ${data.senderName || 'A User'}</p>
+          <div style="background: white; padding: 16px; border-radius: 8px; margin-top: 12px; border-left: 4px solid #10b981;">
+            <p style="margin: 0; color: #333;">${data.messageContent || 'You have a new message'}</p>
+          </div>
+        </div>
+        <a href="${appUrl}/messages" 
+           style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 6px; margin-top: 16px;">
+          Reply to Message
+        </a>
+        <p style="margin-top: 20px; color: #999; font-size: 12px;">
+          💡 Tip: Open the app to see the full conversation
+        </p>
+      </div>
+    `,
+    
     emergency_alert: `
       <div style="${baseStyle}">
         <div style="background: #dc2626; color: white; padding: 20px; border-radius: 8px;">
