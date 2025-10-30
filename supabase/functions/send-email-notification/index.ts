@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     const { to, subject, body, type = 'notification', userId } = await req.json();
-
+    
     console.log('Email notification request:', { to, subject, type, userId });
 
     // Validate required fields
@@ -38,25 +38,67 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if email notifications are enabled
+    // Check if email notifications are enabled globally
     const { data: emailConfig } = await supabase
       .from('app_configuration')
       .select('config_value')
       .eq('config_key', 'email_enabled')
       .single();
 
-    if (!emailConfig?.config_value) {
-      console.log('Email notifications are disabled');
+    if (emailConfig?.config_value === false) {
+      console.log('Email notifications are disabled globally');
       return new Response(
         JSON.stringify({ 
-          error: 'Email notifications are disabled',
-          status: 'disabled'
+          status: 'skipped',
+          reason: 'global_disabled'
         }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
+    }
+
+    // Check user's email preferences if userId is provided
+    if (userId) {
+      const { data: userPrefs } = await supabase
+        .from('user_email_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      // If user has preferences and email is disabled
+      if (userPrefs && !userPrefs.email_enabled) {
+        console.log('Email notifications disabled for user:', userId);
+        return new Response(
+          JSON.stringify({ 
+            status: 'skipped',
+            reason: 'user_disabled'
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      // Check notification type preference
+      if (userPrefs) {
+        const typeKey = type.replace('_alert', '_alerts').replace('_request', '_requests');
+        if (userPrefs[typeKey] === false) {
+          console.log(`Email notification type '${type}' disabled for user:`, userId);
+          return new Response(
+            JSON.stringify({ 
+              status: 'skipped',
+              reason: 'type_disabled'
+            }),
+            { 
+              status: 200, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
     }
 
     // Initialize Resend and send the email

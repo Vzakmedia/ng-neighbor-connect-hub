@@ -1865,6 +1865,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          body: string | null
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          provider: string | null
+          provider_id: string | null
+          recipient_email: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          provider?: string | null
+          provider_id?: string | null
+          recipient_email: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          provider?: string | null
+          provider_id?: string | null
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       emergency_automation_rules: {
         Row: {
           actions: Json
@@ -4848,6 +4896,69 @@ export type Database = {
           platform?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_email_preferences: {
+        Row: {
+          community_posts: boolean | null
+          contact_requests: boolean | null
+          created_at: string
+          email_enabled: boolean
+          emergency_alerts: boolean | null
+          event_reminders: boolean | null
+          frequency: string | null
+          id: string
+          marketplace_updates: boolean | null
+          messages: boolean | null
+          panic_alerts: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          safety_alerts: boolean | null
+          service_bookings: boolean | null
+          timezone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          community_posts?: boolean | null
+          contact_requests?: boolean | null
+          created_at?: string
+          email_enabled?: boolean
+          emergency_alerts?: boolean | null
+          event_reminders?: boolean | null
+          frequency?: string | null
+          id?: string
+          marketplace_updates?: boolean | null
+          messages?: boolean | null
+          panic_alerts?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          safety_alerts?: boolean | null
+          service_bookings?: boolean | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          community_posts?: boolean | null
+          contact_requests?: boolean | null
+          created_at?: string
+          email_enabled?: boolean
+          emergency_alerts?: boolean | null
+          event_reminders?: boolean | null
+          frequency?: string | null
+          id?: string
+          marketplace_updates?: boolean | null
+          messages?: boolean | null
+          panic_alerts?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          safety_alerts?: boolean | null
+          service_bookings?: boolean | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
