@@ -110,15 +110,37 @@ export const useOnboardingNotifications = () => {
   };
 
   const dismissBusinessCard = async (permanently: boolean = false) => {
+    if (!user) return;
+
     const updates: Partial<OnboardingPreferences> = {
       last_business_card_shown_at: new Date().toISOString(),
     };
 
     if (permanently) {
       updates.business_card_permanently_dismissed = true;
+      updates.business_creation_reminders = false;
     }
 
-    await updatePreferences(updates);
+    try {
+      const { error } = await supabase
+        .from('user_onboarding_preferences')
+        .update(updates)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setOnboardingStatus(prev => ({
+        ...prev,
+        preferences: prev.preferences ? { ...prev.preferences, ...updates } : null,
+      }));
+
+      // Refetch to ensure sync
+      await fetchOnboardingStatus();
+    } catch (error) {
+      console.error('Error dismissing business card:', error);
+      throw error;
+    }
   };
 
   const dismissProfileReminders = async () => {
