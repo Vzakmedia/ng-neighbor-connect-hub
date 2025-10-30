@@ -39,13 +39,18 @@ export const EnhancedProfileCompletion = () => {
   // Check if user is from Google OAuth (needs to set password)
   const isGoogleUser = user?.app_metadata?.provider === 'google';
 
-  // Pre-fill data from Google if available
+  // Pre-fill data from Google AND stored location if available
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
         ...prev,
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || prev.full_name,
         avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || prev.avatar_url,
+        // Pre-fill location from OAuth metadata if available
+        state: user.user_metadata?.state || prev.state,
+        city: user.user_metadata?.city || prev.city,
+        neighborhood: user.user_metadata?.neighborhood || prev.neighborhood,
+        address: user.user_metadata?.address || prev.address,
       }));
     }
   }, [user]);
