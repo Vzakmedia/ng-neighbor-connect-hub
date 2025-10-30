@@ -72,7 +72,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [likesCount, setLikesCount] = useState(product?.likes_count || 0);
   const [isLiked, setIsLiked] = useState(product?.is_liked_by_user || false);
-  const [isLiking, setIsLiking] = useState(false);
 
   // Update local state when product changes
   useEffect(() => {
@@ -145,7 +144,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   };
 
   const handleLike = async () => {
-    if (!user || isLiking) {
+    if (!user) {
       toast({
         title: "Please log in",
         description: "You need to be logged in to like items",
@@ -154,10 +153,17 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       return;
     }
 
-    setIsLiking(true);
+    // Save previous state for rollback
+    const previousLikedState = isLiked;
+    const previousLikeCount = likesCount;
+
+    // Update UI IMMEDIATELY (optimistic)
+    setIsLiked(!isLiked);
+    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+
+    // Then update backend asynchronously
     try {
-      if (isLiked) {
-        // Unlike the item
+      if (previousLikedState) {
         const { error } = await supabase
           .from('marketplace_item_likes')
           .delete()
@@ -166,7 +172,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
         if (error) throw error;
       } else {
-        // Like the item
         const { error } = await supabase
           .from('marketplace_item_likes')
           .insert([
@@ -179,14 +184,15 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
         if (error) throw error;
       }
     } catch (error) {
+      // Rollback on error
       console.error('Error toggling like:', error);
+      setIsLiked(previousLikedState);
+      setLikesCount(previousLikeCount);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLiking(false);
     }
   };
 
@@ -424,7 +430,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     variant="outline" 
                     size="icon"
                     onClick={handleLike}
-                    disabled={isLiking}
                     className={isLiked ? "text-red-500 border-red-500" : ""}
                   >
                     <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />

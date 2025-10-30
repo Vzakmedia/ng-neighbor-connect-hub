@@ -328,33 +328,44 @@ const EventFeed = () => {
   const handleLike = async (eventId: string) => {
     if (!user) return;
 
-    try {
-      const event = events.find(e => e.id === eventId);
-      if (!event) return;
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
 
+    // Save previous state for rollback
+    const previousEvents = [...events];
+
+    // Update UI IMMEDIATELY (optimistic)
+    setEvents(prev => prev.map(e => 
+      e.id === eventId 
+        ? { 
+            ...e, 
+            isLiked: !e.isLiked,
+            likes: e.isLiked ? e.likes - 1 : e.likes + 1
+          }
+        : e
+    ));
+
+    // Then update backend asynchronously
+    try {
       if (event.isLiked) {
-        await supabase
+        const { error } = await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', eventId)
           .eq('user_id', user.id);
+
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('post_likes')
           .insert({ post_id: eventId, user_id: user.id });
-      }
 
-      setEvents(prev => prev.map(e => 
-        e.id === eventId 
-          ? { 
-              ...e, 
-              isLiked: !e.isLiked,
-              likes: e.isLiked ? e.likes - 1 : e.likes + 1
-            }
-          : e
-      ));
+        if (error) throw error;
+      }
     } catch (error) {
+      // Rollback on error
       console.error('Error toggling like:', error);
+      setEvents(previousEvents);
       toast({
         title: "Error",
         description: "Failed to update like",
