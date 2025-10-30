@@ -523,6 +523,36 @@ const [audioSettings, setAudioSettings] = useState({
                             }
                           />
                         </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Post Comments</Label>
+                          <Switch
+                            checked={emailPreferences?.post_comments ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ post_comments: checked })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Comment Replies</Label>
+                          <Switch
+                            checked={emailPreferences?.comment_replies ?? true}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ comment_replies: checked })
+                            }
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Post Likes</Label>
+                          <Switch
+                            checked={emailPreferences?.post_likes ?? false}
+                            onCheckedChange={(checked) => 
+                              updateEmailPreferences.mutate({ post_likes: checked })
+                            }
+                          />
+                        </div>
                       </div>
                       
                       <Separator />
