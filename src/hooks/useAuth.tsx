@@ -49,8 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           setSession(session);
           
-          // Only set user if email is confirmed (ALL users need email confirmation)
-          if (session?.user && session.user.email_confirmed_at) {
+          // Allow OAuth users through immediately, only require email confirmation for email/password signups
+          const isOAuthUser = session?.user?.app_metadata?.provider !== 'email';
+          
+          if (session?.user && (session.user.email_confirmed_at || isOAuthUser)) {
             setUser(session.user);
             
             // Check token expiry
@@ -99,7 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         
         // Apply same email confirmation logic for initial session
-        if (session?.user && session.user.email_confirmed_at) {
+        const isOAuthUser = session?.user?.app_metadata?.provider !== 'email';
+        
+        if (session?.user && (session.user.email_confirmed_at || isOAuthUser)) {
           setUser(session.user);
         } else {
           setUser(null);
