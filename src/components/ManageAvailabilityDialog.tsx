@@ -104,6 +104,18 @@ const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialo
   const handleSaveAvailability = async () => {
     if (!user) return;
 
+    // Save previous state for rollback
+    const previousAvailability = [...weeklyAvailability];
+
+    // Show optimistic success
+    toast({
+      title: "Saving availability...",
+      description: "Your weekly availability is being updated",
+    });
+
+    // Close dialog immediately
+    setOpen(false);
+
     setLoading(true);
     try {
       // Delete existing availability for this service
@@ -138,10 +150,11 @@ const ManageAvailabilityDialog = ({ service, children }: ManageAvailabilityDialo
         title: "Availability updated",
         description: "Your weekly availability has been successfully updated",
       });
-
-      setOpen(false);
     } catch (error) {
       console.error('Error saving availability:', error);
+      // Rollback on error
+      setWeeklyAvailability(previousAvailability);
+      setOpen(true);
       toast({
         title: "Error",
         description: "Failed to save availability",

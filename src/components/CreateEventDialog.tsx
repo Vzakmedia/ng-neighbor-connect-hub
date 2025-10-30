@@ -137,36 +137,41 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
       return;
     }
 
-    setLoading(true);
+    // Show optimistic success
+    toast({
+      title: "Creating event...",
+      description: "Your event is being created",
+    });
 
+    // Save form state and reset immediately
+    const formState = { title, content, location, tags, uploadedFiles, rsvpEnabled };
+    resetForm();
+    onOpenChange(false);
+    onEventCreated?.();
+
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('events')
         .insert({
           user_id: user.id,
-          title: title.trim(),
-          content: content.trim(),
-          location: location.trim() || null,
-          tags: tags,
-          image_urls: uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
-          file_urls: uploadedFiles,
-          rsvp_enabled: rsvpEnabled,
-          event_date: new Date().toISOString(), // TODO: Add date picker
+          title: formState.title.trim(),
+          content: formState.content.trim(),
+          location: formState.location.trim() || null,
+          tags: formState.tags,
+          image_urls: formState.uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
+          file_urls: formState.uploadedFiles,
+          rsvp_enabled: formState.rsvpEnabled,
+          event_date: new Date().toISOString(),
           is_public: true
         } as any);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success!",
         description: "Your event has been created successfully",
       });
-
-      resetForm();
-      onOpenChange(false);
-      onEventCreated?.();
     } catch (error) {
       console.error('Error creating event:', error);
       toast({
@@ -174,6 +179,14 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
         description: "Failed to create event. Please try again.",
         variant: "destructive",
       });
+      // Restore form on error
+      setTitle(formState.title);
+      setContent(formState.content);
+      setLocation(formState.location);
+      setTags(formState.tags);
+      setUploadedFiles(formState.uploadedFiles);
+      setRsvpEnabled(formState.rsvpEnabled);
+      onOpenChange(true);
     } finally {
       setLoading(false);
     }

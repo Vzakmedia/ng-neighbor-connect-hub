@@ -115,19 +115,39 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
       return;
     }
 
+    // Show optimistic success
+    toast({
+      title: "Submitting incident report...",
+      description: "Your report is being processed",
+    });
+
+    // Reset form and close immediately
+    const submittedData = { ...formData };
+    const submittedLocation = currentLocation;
+    setFormData({
+      title: '',
+      description: '',
+      alert_type: '',
+      severity: '',
+      address: '',
+      latitude: null,
+      longitude: null
+    });
+    setCurrentLocation(null);
+    setOpen(false);
+
     setLoading(true);
-    
     try {
       const { error } = await supabase
         .from('safety_alerts')
         .insert([{
-          title: formData.title,
-          description: formData.description,
-          alert_type: formData.alert_type as any,
-          severity: formData.severity as any,
-          address: formData.address || 'Location not specified',
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          title: submittedData.title,
+          description: submittedData.description,
+          alert_type: submittedData.alert_type as any,
+          severity: submittedData.severity as any,
+          address: submittedData.address || 'Location not specified',
+          latitude: submittedData.latitude,
+          longitude: submittedData.longitude,
           user_id: user.id,
           status: 'active' as any,
           is_verified: false
@@ -139,20 +159,6 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
         title: "Incident Reported",
         description: "Your safety incident report has been submitted successfully.",
       });
-
-      // Reset form and close dialog
-      setFormData({
-        title: '',
-        description: '',
-        alert_type: '',
-        severity: '',
-        address: '',
-        latitude: null,
-        longitude: null
-      });
-      setCurrentLocation(null);
-      setOpen(false);
-      
     } catch (error) {
       console.error('Error submitting incident report:', error);
       toast({
@@ -160,6 +166,10 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
         description: "Failed to submit your incident report. Please try again.",
         variant: "destructive"
       });
+      // Restore form on error
+      setFormData(submittedData);
+      setCurrentLocation(submittedLocation);
+      setOpen(true);
     } finally {
       setLoading(false);
     }
