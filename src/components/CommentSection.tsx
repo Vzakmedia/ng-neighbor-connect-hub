@@ -248,9 +248,20 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     const comment = findComment(comments, commentId);
     if (!comment) return;
 
+    // Save previous state for rollback
+    const previousComments = [...comments];
+
+    // Update UI IMMEDIATELY (optimistic)
+    setComments(prev => updateCommentState(prev, commentId, {
+      is_liked_by_user: !comment.is_liked_by_user,
+      likes_count: comment.is_liked_by_user 
+        ? comment.likes_count - 1 
+        : comment.likes_count + 1
+    }));
+
+    // Then update backend asynchronously
     try {
       if (comment.is_liked_by_user) {
-        // Unlike the comment
         const { error } = await supabase
           .from('comment_likes')
           .delete()
@@ -258,14 +269,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           .eq('user_id', user.id as any);
 
         if (error) throw error;
-
-        // Update local state
-        setComments(prev => updateCommentState(prev, commentId, {
-          is_liked_by_user: false,
-          likes_count: comment.likes_count - 1
-        }));
       } else {
-        // Like the comment
         const { error } = await supabase
           .from('comment_likes')
           .insert({
@@ -274,15 +278,11 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           } as any);
 
         if (error) throw error;
-
-        // Update local state
-        setComments(prev => updateCommentState(prev, commentId, {
-          is_liked_by_user: true,
-          likes_count: comment.likes_count + 1
-        }));
       }
     } catch (error) {
+      // Rollback on error
       console.error('Error toggling comment like:', error);
+      setComments(previousComments);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",

@@ -180,9 +180,23 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
 
+    // Save previous state for rollback
+    const previousComments = [...comments];
+
+    // Update UI IMMEDIATELY (optimistic)
+    setComments(prev => prev.map(c => 
+      c.id === commentId 
+        ? { 
+            ...c, 
+            is_liked_by_user: !c.is_liked_by_user, 
+            likes_count: c.is_liked_by_user ? c.likes_count - 1 : c.likes_count + 1 
+          }
+        : c
+    ));
+
+    // Then update backend asynchronously
     try {
       if (comment.is_liked_by_user) {
-        // Unlike the comment
         const { error } = await supabase
           .from('comment_likes')
           .delete()
@@ -190,15 +204,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
           .eq('user_id', user.id as any);
 
         if (error) throw error;
-
-        // Update local state
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_liked_by_user: false, likes_count: c.likes_count - 1 }
-            : c
-        ));
       } else {
-        // Like the comment
         const { error } = await supabase
           .from('comment_likes')
           .insert({
@@ -207,16 +213,11 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
           } as any);
 
         if (error) throw error;
-
-        // Update local state
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_liked_by_user: true, likes_count: c.likes_count + 1 }
-            : c
-        ));
       }
     } catch (error) {
+      // Rollback on error
       console.error('Error toggling comment like:', error);
+      setComments(previousComments);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
