@@ -89,6 +89,10 @@ const CommunityServices = () => {
     if (!user || !profile) return;
 
     try {
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       let query = supabase
         .from('services')
         .select(`
@@ -97,6 +101,11 @@ const CommunityServices = () => {
         `)
         .eq('is_active', true as any)
         .neq('user_id', user.id as any);
+
+      // Only show services created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt as any);
+      }
 
       // Apply location filter based on user's profile
       if (locationFilter === 'neighborhood' && profile.neighborhood) {
@@ -130,6 +139,10 @@ const CommunityServices = () => {
     if (!user || !profile) return;
 
     try {
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       let query = supabase
         .from('marketplace_items')
         .select(`
@@ -138,6 +151,11 @@ const CommunityServices = () => {
         `)
         .eq('status', 'active' as any)
         .neq('user_id', user.id as any);
+
+      // Only show items created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt as any);
+      }
 
       // Apply location filter based on user's profile
       if (locationFilter === 'neighborhood' && profile.neighborhood) {

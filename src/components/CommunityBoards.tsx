@@ -441,7 +441,22 @@ const CommunityBoards = () => {
     if (!selectedBoard) return;
 
     try {
-      const { data, error } = await supabase
+      // Get user's creation date and board membership date for clean slate
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
+      // Check board membership for joined_at timestamp
+      const { data: membership } = await supabase
+        .from('board_memberships')
+        .select('joined_at')
+        .eq('board_id', selectedBoard)
+        .eq('user_id', user?.id || '')
+        .maybeSingle();
+
+      // Use board join date if available, otherwise use user creation date
+      const filterDate = membership?.joined_at || userCreatedAt;
+
+      let query = supabase
         .from('board_posts')
         .select(`
           *,
@@ -456,6 +471,13 @@ const CommunityBoards = () => {
         .eq('board_id', selectedBoard as any)
         .eq('approval_status', 'approved' as any)
         .order('created_at', { ascending: true });
+
+      // Only show posts created after user joined board (clean slate)
+      if (filterDate) {
+        query = query.gte('created_at', filterDate as any);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

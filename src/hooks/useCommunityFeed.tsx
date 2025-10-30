@@ -202,12 +202,17 @@ export const useCommunityFeed = () => {
       setLoading(true);
       console.log('Fetching community posts with PostGIS...');
 
-      // Use the new PostGIS get_feed function
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at || null;
+
+      // Use the new PostGIS get_feed function with clean slate filtering
       const { data: posts, error } = await supabase.rpc('get_feed', {
         target_user_id: user.id,
         filter_level: filters.locationScope,
         limit_count: 50,
-        cursor: null
+        cursor: null,
+        min_created_at: userCreatedAt
       });
 
       if (error) {

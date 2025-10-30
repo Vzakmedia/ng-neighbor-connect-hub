@@ -173,10 +173,19 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   const fetchServices = async () => {
     setLoading(true);
     try {
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       let query = supabase
         .from('services')
         .select('*')
         .eq('is_active', true);
+
+      // Only show services created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt);
+      }
 
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory as any);
@@ -258,10 +267,19 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   const fetchItems = async () => {
     setLoading(true);
     try {
+      // Get user's creation date for clean slate filtering
+      const { data: userData } = await supabase.auth.getUser();
+      const userCreatedAt = userData.user?.created_at;
+
       let query = supabase
         .from('marketplace_items')
         .select('*')
         .eq('status', 'active');
+
+      // Only show items created after user joined (clean slate)
+      if (userCreatedAt) {
+        query = query.gte('created_at', userCreatedAt);
+      }
 
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory as any);

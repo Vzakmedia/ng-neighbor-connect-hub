@@ -152,12 +152,23 @@ export const useNotificationStore = create<NotificationState>()(
         console.log('[NotificationStore] Syncing with server for user:', userId);
         
         try {
-          const { data, error } = await supabase
+          // Get user's creation date for clean slate filtering
+          const { data: { user } } = await supabase.auth.getUser();
+          const userCreatedAt = user?.created_at;
+
+          let query = supabase
             .from('alert_notifications')
             .select('*')
             .eq('recipient_id', userId)
             .order('sent_at', { ascending: false })
             .limit(MAX_NOTIFICATIONS);
+
+          // Only sync notifications sent after user creation (clean slate)
+          if (userCreatedAt) {
+            query = query.gte('sent_at', userCreatedAt);
+          }
+
+          const { data, error } = await query;
 
           if (error) {
             console.error('[NotificationStore] Sync error:', error);

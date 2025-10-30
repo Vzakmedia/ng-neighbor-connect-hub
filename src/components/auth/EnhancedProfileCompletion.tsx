@@ -217,6 +217,14 @@ export const EnhancedProfileCompletion = () => {
         throw error;
       }
 
+      // Clear old notifications for clean slate
+      try {
+        localStorage.removeItem('ng-notifications-store');
+        console.log('Cleared notification store for new user');
+      } catch (err) {
+        console.error('Error clearing notification store:', err);
+      }
+
       toast({
         title: "Profile Completed!",
         description: "Welcome to NeighborLink! Your profile has been set up successfully.",
