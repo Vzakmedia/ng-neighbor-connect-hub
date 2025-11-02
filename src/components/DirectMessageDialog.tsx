@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Check, CheckCheck, Clock, AlertCircle } from 'lucide-react';
+import { Send, Check, CheckCheck, Clock, AlertCircle, RotateCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, MessageStatus } from '@/hooks/useDirectMessages';
@@ -46,7 +46,8 @@ export const DirectMessageDialog = ({
     sendMessage, 
     markMessageAsRead,
     addMessage,
-    updateMessage 
+    updateMessage,
+    retryMessage 
   } = useDirectMessages(user?.id);
 
   const { createOrFindConversation } = useConversations(user?.id);
@@ -157,27 +158,44 @@ export const DirectMessageDialog = ({
           <div className="space-y-4">
             {messages.map((message) => {
               const isOwnMessage = message.sender_id === user?.id;
+              const isFailed = message.status === 'failed';
+              
               return (
                 <div
                   key={message.id}
                   className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`max-w-[70%] p-3 rounded-lg ${
-                      isOwnMessage
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <div className={`flex items-center gap-1 mt-1 ${
-                      isOwnMessage ? 'justify-end' : 'justify-start'
-                    }`}>
-                      <span className="text-xs opacity-70">
-                        {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                      </span>
-                      {getStatusIcon(message)}
+                  <div className="flex items-end gap-2">
+                    <div
+                      className={`max-w-[70%] p-3 rounded-lg ${
+                        isOwnMessage
+                          ? isFailed 
+                            ? 'bg-destructive/10 text-foreground border border-destructive/30'
+                            : 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <div className={`flex items-center gap-1 mt-1 ${
+                        isOwnMessage ? 'justify-end' : 'justify-start'
+                      }`}>
+                        <span className="text-xs opacity-70">
+                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                        </span>
+                        {getStatusIcon(message)}
+                      </div>
                     </div>
+                    
+                    {isFailed && isOwnMessage && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => retryMessage(message.id)}
+                      >
+                        <RotateCw className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

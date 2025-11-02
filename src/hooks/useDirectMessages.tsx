@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMessageQueue } from './useMessageQueue';
+import { useConnectionStatus } from './useConnectionStatus';
 
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
@@ -26,6 +28,24 @@ export const useDirectMessages = (userId: string | undefined) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { 
+    queue, 
+    addToQueue, 
+    removeFromQueue, 
+    updateRetryCount,
+    getRetryableMessages 
+  } = useMessageQueue(userId);
+  const { status: connectionStatus } = useConnectionStatus();
+
+  // Auto-retry queued messages when connection is restored
+  useEffect(() => {
+    if (connectionStatus === 'connected' && queue.length > 0) {
+      const retryableMessages = getRetryableMessages();
+      retryableMessages.forEach(queuedMsg => {
+        retryQueuedMessage(queuedMsg.tempId, queuedMsg.content, queuedMsg.recipientId);
+      });
+    }
+  }, [connectionStatus]);
 
   const fetchMessages = useCallback(async (otherUserId: string) => {
     if (!userId) {
@@ -78,11 +98,11 @@ export const useDirectMessages = (userId: string | undefined) => {
     }
   }, [userId, toast]);
 
-  const sendMessage = useCallback(async (content: string, recipientId: string) => {
+  const sendMessage = useCallback(async (content: string, recipientId: string, tempId?: string) => {
     if (!userId || !content.trim()) return false;
 
     // Create optimistic message
-    const optimisticId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticId = tempId || `temp-${Date.now()}-${Math.random()}`;
     const optimisticMessage: Message = {
       id: optimisticId,
       content: content.trim(),
@@ -93,8 +113,16 @@ export const useDirectMessages = (userId: string | undefined) => {
       optimistic: true,
     };
 
-    // Add optimistic message immediately for instant feedback
-    setMessages(prev => [...prev, optimisticMessage]);
+    // Add optimistic message immediately for instant feedback (if not already there)
+    if (!tempId) {
+      setMessages(prev => [...prev, optimisticMessage]);
+    } else {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === tempId ? { ...msg, status: 'sending' as MessageStatus } : msg
+        )
+      );
+    }
 
     try {
       setLoading(true);
@@ -110,6 +138,11 @@ export const useDirectMessages = (userId: string | undefined) => {
         .single();
 
       if (error) throw error;
+
+      // Remove from queue if it was queued
+      if (tempId) {
+        removeFromQueue(tempId);
+      }
 
       // Replace optimistic message with real one
       setMessages(prev => 
@@ -152,17 +185,43 @@ export const useDirectMessages = (userId: string | undefined) => {
             : msg
         )
       );
+
+      // Add to queue for retry
+      if (!tempId) {
+        addToQueue({
+          tempId: optimisticId,
+          content: content.trim(),
+          recipientId,
+          timestamp: Date.now(),
+          retryCount: 0
+        });
+      } else {
+        updateRetryCount(tempId);
+      }
       
       toast({
-        title: "Error",
-        description: "Failed to send message. Tap to retry.",
+        title: "Message failed",
+        description: connectionStatus === 'offline' 
+          ? "No internet. Message will retry when online."
+          : "Tap the message to retry.",
         variant: "destructive",
       });
       return false;
     } finally {
       setLoading(false);
     }
-  }, [userId, toast]);
+  }, [userId, toast, addToQueue, removeFromQueue, updateRetryCount, connectionStatus]);
+
+  const retryMessage = useCallback(async (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (!message || message.status !== 'failed') return false;
+
+    return sendMessage(message.content, message.recipient_id, messageId);
+  }, [messages, sendMessage]);
+
+  const retryQueuedMessage = useCallback(async (tempId: string, content: string, recipientId: string) => {
+    return sendMessage(content, recipientId, tempId);
+  }, [sendMessage]);
 
   const sendMessageWithAttachments = useCallback(async (
     content: string, 
@@ -298,6 +357,8 @@ export const useDirectMessages = (userId: string | undefined) => {
     markConversationAsRead,
     addMessage,
     updateMessage,
-    setMessages
+    setMessages,
+    retryMessage,
+    queuedMessagesCount: queue.length
   };
 };
