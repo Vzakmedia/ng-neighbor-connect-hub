@@ -112,51 +112,8 @@ export const useRealtimeNotifications = () => {
       )
       .subscribe();
 
-    // 3. Subscribe to community_posts table
-    const communityPostsChannel = supabase
-      .channel('community-posts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'community_posts'
-        },
-        async (payload) => {
-          console.log('[RealtimeNotifications] Community post received:', payload);
-          
-          const post = payload.new;
-          
-          // Fetch author profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', post.user_id)
-            .single();
-
-          // Only notify if it matches user's location preferences
-          // (This is a simplified check - you might want more sophisticated filtering)
-          const notification: NotificationData = {
-            id: `post-${post.id}`,
-            type: 'post',
-            title: 'New Community Post',
-            body: post.title || post.content?.substring(0, 100) || 'New post in your area',
-            data: {
-              postId: post.id,
-              authorId: post.user_id,
-              location: post.location
-            },
-            timestamp: post.created_at,
-            isRead: false,
-            priority: 'low',
-            senderId: post.user_id,
-            senderName: profile?.full_name
-          };
-
-          addNotification(notification);
-        }
-      )
-      .subscribe();
+    // Community posts are handled by their own unread system in the feed
+    // No need to duplicate them in the notification bell
 
     // 4. Subscribe to safety_alerts table
     const safetyAlertsChannel = supabase
@@ -258,7 +215,6 @@ export const useRealtimeNotifications = () => {
       channelsRef.current = [
         alertNotificationsChannel,
         directMessagesChannel,
-        communityPostsChannel,
         safetyAlertsChannel,
         panicAlertsChannel
       ];
