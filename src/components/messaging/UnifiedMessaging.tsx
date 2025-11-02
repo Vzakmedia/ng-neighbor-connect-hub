@@ -24,7 +24,7 @@ const UnifiedMessaging = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
-  const { messages, fetchMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
+  const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
 
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,6 +321,11 @@ const UnifiedMessaging = () => {
                       if (otherUserId) fetchMessages(otherUserId);
                     }}
                     onRetryMessage={retryMessage}
+                    onLoadOlder={() => {
+                      if (otherUserId) fetchOlderMessages(otherUserId);
+                    }}
+                    loadingOlder={loadingOlder}
+                    hasMoreMessages={hasMoreMessages}
                   />
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground">
