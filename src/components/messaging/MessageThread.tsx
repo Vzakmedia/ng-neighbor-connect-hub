@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +38,9 @@ interface MessageThreadProps {
   selectedMessages?: Set<string>;
   onSelectedMessagesChange?: (messages: Set<string>) => void;
   onRetryMessage?: (messageId: string) => void;
+  onLoadOlder?: () => void;
+  loadingOlder?: boolean;
+  hasMoreMessages?: boolean;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -50,11 +55,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   isSelectionMode = false,
   selectedMessages = new Set(),
   onSelectedMessagesChange,
-  onRetryMessage
+  onRetryMessage,
+  onLoadOlder,
+  loadingOlder = false,
+  hasMoreMessages = true
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
   const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
@@ -179,23 +189,75 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  // Virtual scrolling setup
+  const virtualizer = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
+
+  // Intersection Observer for loading older messages
+  useEffect(() => {
+    if (!loadMoreTriggerRef.current || !onLoadOlder || !hasMoreMessages) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingOlder) {
+          onLoadOlder();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(loadMoreTriggerRef.current);
+    
+    return () => observer.disconnect();
+  }, [onLoadOlder, loadingOlder, hasMoreMessages]);
+
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
       <div className="px-2 md:px-4 pt-2">
         <ConnectionStatusBanner />
       </div>
-      {/* Messages - with bottom padding to account for sticky input */}
-      <ScrollArea className="flex-1 overflow-y-auto">
-        <div className="space-y-2 md:space-y-4 p-2 md:p-4 pb-32">
-          {messages.map((message) => {
+      {/* Messages - virtualized scrolling */}
+      <div ref={parentRef} className="flex-1 overflow-y-auto">
+        <div 
+          className="space-y-2 md:space-y-4 p-2 md:p-4 pb-32"
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            position: 'relative',
+          }}
+        >
+          {/* Load more trigger */}
+          {hasMoreMessages && (
+            <div ref={loadMoreTriggerRef} className="py-4 flex justify-center">
+              {loadingOlder && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Loading older messages...</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const message = messages[virtualRow.index];
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
             const isFailed = message.status === 'failed';
             
             return (
               <div 
-                key={message.id} 
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                key={message.id}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group px-2 md:px-4`}
                 onDoubleClick={() => handleLongPress(message.id)}
               >
                 {isSelectionMode && (
@@ -287,7 +349,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           {/* Auto-scroll target */}
           <div ref={messagesEndRef} className="h-1" />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Selection Toolbar */}
       <MessageSelectionToolbar

@@ -27,6 +27,8 @@ export interface Message {
 export const useDirectMessages = (userId: string | undefined) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const { toast } = useToast();
   const { 
     queue, 
@@ -70,15 +72,22 @@ export const useDirectMessages = (userId: string | undefined) => {
       setLoading(true);
       console.log('Fetching messages between', userId, 'and', otherUserId);
       
-      // Fetch only last 50 messages initially for performance
+      // Mobile optimization: Load fewer messages initially (20 vs 50)
+      const isMobile = window.innerWidth < 768;
+      const initialLimit = isMobile ? 20 : 50;
+      
+      // Fetch only last N messages initially for performance
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(initialLimit);
 
       if (error) throw error;
+      
+      // Check if there are more messages
+      setHasMoreMessages((data || []).length === initialLimit);
       
       // Map the database response to our Message interface
       const mappedMessages: Message[] = (data || []).map(msg => ({
@@ -115,6 +124,70 @@ export const useDirectMessages = (userId: string | undefined) => {
       setLoading(false);
     }
   }, [userId, toast]);
+
+  const fetchOlderMessages = useCallback(async (otherUserId: string) => {
+    if (!userId || messages.length === 0 || loadingOlder || !hasMoreMessages) {
+      return;
+    }
+    
+    try {
+      setLoadingOlder(true);
+      const oldestMessage = messages[0];
+      
+      // Mobile optimization: Load fewer messages (20 vs 50)
+      const isMobile = window.innerWidth < 768;
+      const loadLimit = isMobile ? 20 : 50;
+      
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
+        .lt('created_at', oldestMessage.created_at)
+        .order('created_at', { ascending: false })
+        .limit(loadLimit);
+
+      if (error) throw error;
+      
+      // Check if there are more messages
+      setHasMoreMessages((data || []).length === loadLimit);
+      
+      const mappedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        created_at: msg.created_at,
+        status: msg.status as 'sent' | 'delivered' | 'read',
+        attachments: Array.isArray(msg.attachments) 
+          ? msg.attachments as Array<{
+              id: string;
+              type: 'image' | 'video' | 'file';
+              name: string;
+              url: string;
+              size: number;
+              mimeType: string;
+            }>
+          : []
+      })).reverse();
+      
+      // Prepend older messages
+      setMessages(prev => [...mappedMessages, ...prev]);
+      
+      // Update cache
+      const cacheKey = [userId, otherUserId].sort().join('-');
+      messageCache.current.set(cacheKey, [...mappedMessages, ...messages]);
+      
+    } catch (error) {
+      console.error('Error fetching older messages:', error);
+      toast({
+        title: "Error",
+        description: "Could not load older messages.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [userId, messages, loadingOlder, hasMoreMessages, toast]);
 
   const sendMessage = useCallback(async (content: string, recipientId: string, tempId?: string) => {
     if (!userId || !content.trim()) return false;
@@ -432,7 +505,10 @@ export const useDirectMessages = (userId: string | undefined) => {
   return {
     messages,
     loading,
+    loadingOlder,
+    hasMoreMessages,
     fetchMessages,
+    fetchOlderMessages,
     sendMessage,
     sendMessageWithAttachments,
     markMessageAsRead,
