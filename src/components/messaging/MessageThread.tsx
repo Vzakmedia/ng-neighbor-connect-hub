@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle } from 'lucide-react';
+import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle, RotateCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message, MessageStatus } from '@/hooks/useDirectMessages';
@@ -35,6 +35,7 @@ interface MessageThreadProps {
   isSelectionMode?: boolean;
   selectedMessages?: Set<string>;
   onSelectedMessagesChange?: (messages: Set<string>) => void;
+  onRetryMessage?: (messageId: string) => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -48,7 +49,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onMessageDeleted,
   isSelectionMode = false,
   selectedMessages = new Set(),
-  onSelectedMessagesChange
+  onSelectedMessagesChange,
+  onRetryMessage
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
@@ -188,6 +190,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
+            const isFailed = message.status === 'failed';
             
             return (
               <div 
@@ -208,7 +211,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   <div 
                     className={`p-2 md:p-3 rounded-lg ${
                       isOwn 
-                        ? 'bg-primary text-primary-foreground' 
+                        ? isFailed
+                          ? 'bg-destructive/10 text-foreground border border-destructive/30'
+                          : 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
                     } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                   >
@@ -231,10 +236,20 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </span>
                     {getMessageStatusIcon(message)}
+                    {isFailed && isOwn && onRetryMessage && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-5 w-5 ml-1"
+                        onClick={() => onRetryMessage(message.id)}
+                      >
+                        <RotateCw className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Single message delete option for own messages */}
-                  {!isSelectionMode && isOwn && (
+                  {!isSelectionMode && isOwn && !isFailed && (
                     <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
