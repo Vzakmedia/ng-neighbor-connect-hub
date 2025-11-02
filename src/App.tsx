@@ -193,9 +193,14 @@ const App = () => {
           <AuthProvider>
             <PresenceProvider>
               <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+                <div style={{ 
+                  paddingLeft: 'var(--safe-area-left)', 
+                  paddingRight: 'var(--safe-area-right)',
+                  paddingBottom: 'var(--safe-area-bottom)'
+                }}>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
           
           <AudioInitializer />
           <PushNotificationWrapper />
@@ -242,7 +247,8 @@ const App = () => {
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
                   <FloatingCreatePostButton />
-                </BrowserRouter>
+                  </BrowserRouter>
+                </div>
               </TooltipProvider>
             </PresenceProvider>
           </AuthProvider>
