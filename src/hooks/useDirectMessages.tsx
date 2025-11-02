@@ -2,13 +2,16 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+
 export interface Message {
   id: string;
   content: string;
   sender_id: string;
   recipient_id: string;
   created_at: string;
-  status: 'sent' | 'delivered' | 'read';
+  status: MessageStatus;
+  optimistic?: boolean;
   attachments?: Array<{
     id: string;
     type: 'image' | 'video' | 'file';
@@ -78,6 +81,21 @@ export const useDirectMessages = (userId: string | undefined) => {
   const sendMessage = useCallback(async (content: string, recipientId: string) => {
     if (!userId || !content.trim()) return false;
 
+    // Create optimistic message
+    const optimisticId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticMessage: Message = {
+      id: optimisticId,
+      content: content.trim(),
+      sender_id: userId,
+      recipient_id: recipientId,
+      created_at: new Date().toISOString(),
+      status: 'sending',
+      optimistic: true,
+    };
+
+    // Add optimistic message immediately for instant feedback
+    setMessages(prev => [...prev, optimisticMessage]);
+
     try {
       setLoading(true);
       const { data: message, error } = await supabase
@@ -88,10 +106,19 @@ export const useDirectMessages = (userId: string | undefined) => {
           recipient_id: recipientId,
           status: 'sent'
         })
-        .select('id')
+        .select()
         .single();
 
       if (error) throw error;
+
+      // Replace optimistic message with real one
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === optimisticId 
+            ? { ...message, status: 'sent' as MessageStatus }
+            : msg
+        )
+      );
 
       // Create notification for the recipient
       if (message) {
@@ -110,16 +137,25 @@ export const useDirectMessages = (userId: string | undefined) => {
           });
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);
-          // Don't fail the message send if notification fails
         }
       }
 
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Mark optimistic message as failed
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === optimisticId 
+            ? { ...msg, status: 'failed' as MessageStatus }
+            : msg
+        )
+      );
+      
       toast({
         title: "Error",
-        description: "Could not send message.",
+        description: "Failed to send message. Tap to retry.",
         variant: "destructive",
       });
       return false;
@@ -228,15 +264,20 @@ export const useDirectMessages = (userId: string | undefined) => {
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
-      // Check if message already exists
-      const messageExists = prev.some(msg => msg.id === message.id);
+      // Remove any optimistic version of this message
+      const filtered = prev.filter(msg => 
+        !(msg.optimistic && msg.sender_id === message.sender_id && msg.content === message.content)
+      );
+      
+      // Check if real message already exists
+      const messageExists = filtered.some(msg => msg.id === message.id);
       if (messageExists) {
-        // Update existing message instead of adding duplicate
-        return prev.map(msg => msg.id === message.id ? message : msg);
+        // Update existing message
+        return filtered.map(msg => msg.id === message.id ? message : msg);
       }
       
       // Add new message and sort by created_at to maintain order
-      const newMessages = [...prev, message];
+      const newMessages = [...filtered, message];
       return newMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     });
   }, []);
