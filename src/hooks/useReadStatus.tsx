@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeContext } from '@/contexts/RealtimeContext';
 
 export const useReadStatus = () => {
   const { user } = useAuth();
+  const { onCommunityPost, onMessage, onConversation, onAlert } = useRealtimeContext();
   const [unreadCounts, setUnreadCounts] = useState({
     community: 0,
     messages: 0,
@@ -15,86 +17,35 @@ export const useReadStatus = () => {
 
     loadUnreadCounts();
     
-    // Set up real-time subscriptions for updates with error handling
-    let communitySubscription: any;
-    let messagesSubscription: any;
-    let notificationsSubscription: any;
-    let pollInterval: NodeJS.Timeout;
+    console.log('[ReadStatus] Using unified real-time subscriptions');
 
-    const setupPolling = () => {
-      // Polling disabled to prevent constant refreshes
-      console.log('Polling disabled for useReadStatus to prevent refresh loops');
-    };
+    // Subscribe to community post events
+    const unsubscribeCommunity = onCommunityPost(() => {
+      loadCommunityUnreadCount();
+    });
 
-    try {
-      communitySubscription = supabase
-        .channel('community-posts-changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, () => {
-          loadCommunityUnreadCount();
-        })
-        .subscribe((status) => {
-          console.log('Community subscription status:', status);
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to community posts - falling back to polling');
-            setupPolling();
-          }
-        });
+    // Subscribe to message events
+    const unsubscribeMessages = onMessage(() => {
+      loadMessagesUnreadCount();
+    });
 
-      messagesSubscription = supabase
-        .channel('messages-changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, () => {
-          loadMessagesUnreadCount();
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'direct_conversations' }, () => {
-          loadMessagesUnreadCount();
-        })
-        .subscribe((status) => {
-          console.log('Messages subscription status:', status);
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to messages - falling back to polling');
-            setupPolling();
-          }
-        });
+    // Subscribe to conversation events
+    const unsubscribeConversations = onConversation(() => {
+      loadMessagesUnreadCount();
+    });
 
-      notificationsSubscription = supabase
-        .channel('notifications-changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alert_notifications' }, () => {
-          loadNotificationsUnreadCount();
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'alert_notifications' }, () => {
-          loadNotificationsUnreadCount();
-        })
-        .subscribe((status) => {
-          console.log('Notifications subscription status:', status);
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to notifications - falling back to polling');
-            setupPolling();
-          }
-        });
-    } catch (error) {
-      console.error('Error setting up realtime subscriptions:', error);
-      setupPolling();
-    }
+    // Subscribe to alert notification events
+    const unsubscribeAlerts = onAlert(() => {
+      loadNotificationsUnreadCount();
+    });
 
     return () => {
-      try {
-        if (communitySubscription) {
-          supabase.removeChannel(communitySubscription);
-        }
-        if (messagesSubscription) {
-          supabase.removeChannel(messagesSubscription);
-        }
-        if (notificationsSubscription) {
-          supabase.removeChannel(notificationsSubscription);
-        }
-        if (pollInterval) {
-          clearInterval(pollInterval);
-        }
-      } catch (error) {
-        console.error('Error cleaning up subscriptions:', error);
-      }
+      unsubscribeCommunity();
+      unsubscribeMessages();
+      unsubscribeConversations();
+      unsubscribeAlerts();
     };
-  }, [user]);
+  }, [user, onCommunityPost, onMessage, onConversation, onAlert]);
 
   const loadUnreadCounts = async () => {
     await Promise.all([

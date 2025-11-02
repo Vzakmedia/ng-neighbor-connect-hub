@@ -12,6 +12,7 @@ import { initializeStatusBar } from '@/hooks/mobile/useNativeStatusBar';
 
 import { AuthProvider } from "@/hooks/useAuth";
 import { PresenceProvider } from "@/contexts/PresenceContext";
+import { RealtimeProvider } from "@/contexts/RealtimeContext";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -191,9 +192,10 @@ const App = () => {
           disableTransitionOnChange
         >
           <AuthProvider>
-            <PresenceProvider>
-              <TooltipProvider>
-                <div style={{ 
+            <RealtimeProvider>
+              <PresenceProvider>
+                <TooltipProvider>
+                  <div style={{
                   paddingLeft: 'var(--safe-area-left)', 
                   paddingRight: 'var(--safe-area-right)',
                   paddingBottom: 'var(--safe-area-bottom)'
@@ -248,9 +250,10 @@ const App = () => {
             <NeighborhoodEmergencyAlert position="top-center" />
                   <FloatingCreatePostButton />
                   </BrowserRouter>
-                </div>
-              </TooltipProvider>
-            </PresenceProvider>
+                  </div>
+                </TooltipProvider>
+              </PresenceProvider>
+            </RealtimeProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
