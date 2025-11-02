@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationStore, NotificationData } from '@/store/notificationStore';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { useRealtimeContext } from '@/contexts/RealtimeContext';
 
 export const useRealtimeNotifications = () => {
   const { user } = useAuth();
-  const channelsRef = useRef<RealtimeChannel[]>([]);
+  const { onAlert, onMessage, onSafetyAlert, onPanicAlert } = useRealtimeContext();
   const addNotification = useNotificationStore(state => state.addNotification);
   const syncWithServer = useNotificationStore(state => state.syncWithServer);
 
@@ -16,236 +16,164 @@ export const useRealtimeNotifications = () => {
       return;
     }
 
-    console.log('[RealtimeNotifications] Setting up subscriptions for user:', user.id);
+    console.log('[RealtimeNotifications] Using unified subscriptions for user:', user.id);
 
     // Initial sync with server
     syncWithServer(user.id);
 
-    // Detect iOS - realtime might be disabled
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
-    try {
-      // 1. Subscribe to alert_notifications table
-      const alertNotificationsChannel = supabase
-        .channel('alert-notifications-changes')
-        .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'alert_notifications',
-          filter: `recipient_id=eq.${user.id}`
+    // Subscribe to alert notification events
+    const unsubscribeAlerts = onAlert((payload) => {
+      console.log('[RealtimeNotifications] Alert notification received:', payload);
+      
+      const record = payload.new;
+      
+      // Only process alerts for this user
+      if (record.recipient_id !== user.id) return;
+      
+      const notification: NotificationData = {
+        id: record.id,
+        type: mapNotificationType(record.notification_type),
+        title: record.sender_name || 'New Notification',
+        body: record.content || '',
+        data: {
+          alertId: record.alert_id,
+          panicAlertId: record.panic_alert_id,
+          requestId: record.request_id,
+          senderPhone: record.sender_phone
         },
-        (payload) => {
-          console.log('[RealtimeNotifications] Alert notification received:', payload);
-          
-          const record = payload.new;
-          const notification: NotificationData = {
-            id: record.id,
-            type: mapNotificationType(record.notification_type),
-            title: record.sender_name || 'New Notification',
-            body: record.content || '',
-            data: {
-              alertId: record.alert_id,
-              panicAlertId: record.panic_alert_id,
-              requestId: record.request_id,
-              senderPhone: record.sender_phone
-            },
-            timestamp: record.sent_at,
-            isRead: false,
-            priority: determinePriority(record.notification_type),
-            senderId: record.alert_id || record.panic_alert_id,
-            senderName: record.sender_name || undefined,
-            alertId: record.alert_id || undefined,
-            panicAlertId: record.panic_alert_id || undefined,
-            requestId: record.request_id || undefined
-          };
+        timestamp: record.sent_at,
+        isRead: false,
+        priority: determinePriority(record.notification_type),
+        senderId: record.alert_id || record.panic_alert_id,
+        senderName: record.sender_name || undefined,
+        alertId: record.alert_id || undefined,
+        panicAlertId: record.panic_alert_id || undefined,
+        requestId: record.request_id || undefined
+      };
 
-          addNotification(notification);
-        }
-      )
-      .subscribe();
+      addNotification(notification);
+    });
 
-    // 2. Subscribe to direct_messages table
-    const directMessagesChannel = supabase
-      .channel('direct-messages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `recipient_id=eq.${user.id}`
+    // Subscribe to direct message events
+    const unsubscribeMessages = onMessage(async (payload) => {
+      console.log('[RealtimeNotifications] Direct message received:', payload);
+      
+      const message = payload.new;
+      
+      // Only process messages for this user
+      if (message.recipient_id !== user.id) return;
+      
+      // Fetch sender profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('user_id', message.sender_id)
+        .single();
+
+      const notification: NotificationData = {
+        id: `msg-${message.id}`,
+        type: 'message',
+        title: profile?.full_name || 'New Message',
+        body: message.content?.substring(0, 100) || 'You have a new message',
+        data: {
+          messageId: message.id,
+          conversationId: message.conversation_id,
+          senderId: message.sender_id,
+          senderAvatar: profile?.avatar_url
         },
-        async (payload) => {
-          console.log('[RealtimeNotifications] Direct message received:', payload);
-          
-          const message = payload.new;
-          
-          // Fetch sender profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', message.sender_id)
-            .single();
+        timestamp: message.created_at,
+        isRead: false,
+        priority: 'normal',
+        senderId: message.sender_id,
+        senderName: profile?.full_name
+      };
 
-          const notification: NotificationData = {
-            id: `msg-${message.id}`,
-            type: 'message',
-            title: profile?.full_name || 'New Message',
-            body: message.content?.substring(0, 100) || 'You have a new message',
-            data: {
-              messageId: message.id,
-              conversationId: message.conversation_id,
-              senderId: message.sender_id,
-              senderAvatar: profile?.avatar_url
-            },
-            timestamp: message.created_at,
-            isRead: false,
-            priority: 'normal',
-            senderId: message.sender_id,
-            senderName: profile?.full_name
-          };
+      addNotification(notification);
+    });
 
-          addNotification(notification);
-        }
-      )
-      .subscribe();
+    // Subscribe to safety alert events
+    const unsubscribeSafetyAlerts = onSafetyAlert(async (payload) => {
+      console.log('[RealtimeNotifications] Safety alert received:', payload);
+      
+      const alert = payload.new;
+      
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', alert.user_id)
+        .single();
 
-    // Community posts are handled by their own unread system in the feed
-    // No need to duplicate them in the notification bell
-
-    // 4. Subscribe to safety_alerts table
-    const safetyAlertsChannel = supabase
-      .channel('safety-alerts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'safety_alerts'
+      const notification: NotificationData = {
+        id: `alert-${alert.id}`,
+        type: 'alert',
+        title: `Safety Alert: ${alert.alert_type}`,
+        body: alert.description || 'New safety alert in your area',
+        data: {
+          alertId: alert.id,
+          alertType: alert.alert_type,
+          severity: alert.severity,
+          latitude: alert.latitude,
+          longitude: alert.longitude,
+          address: alert.address
         },
-        async (payload) => {
-          console.log('[RealtimeNotifications] Safety alert received:', payload);
-          
-          const alert = payload.new;
-          
-          // Fetch user profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('user_id', alert.user_id)
-            .single();
+        timestamp: alert.created_at,
+        isRead: false,
+        priority: alert.severity === 'critical' ? 'urgent' : 'high',
+        senderId: alert.user_id,
+        senderName: profile?.full_name,
+        alertId: alert.id
+      };
 
-          const notification: NotificationData = {
-            id: `alert-${alert.id}`,
-            type: 'alert',
-            title: `Safety Alert: ${alert.alert_type}`,
-            body: alert.description || 'New safety alert in your area',
-            data: {
-              alertId: alert.id,
-              alertType: alert.alert_type,
-              severity: alert.severity,
-              latitude: alert.latitude,
-              longitude: alert.longitude,
-              address: alert.address
-            },
-            timestamp: alert.created_at,
-            isRead: false,
-            priority: alert.severity === 'critical' ? 'urgent' : 'high',
-            senderId: alert.user_id,
-            senderName: profile?.full_name,
-            alertId: alert.id
-          };
+      addNotification(notification);
+    });
 
-          addNotification(notification);
-        }
-      )
-      .subscribe();
+    // Subscribe to panic alert events
+    const unsubscribePanicAlerts = onPanicAlert(async (payload) => {
+      console.log('[RealtimeNotifications] Panic alert received:', payload);
+      
+      const alert = payload.new;
+      
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .eq('user_id', alert.user_id)
+        .single();
 
-    // 5. Subscribe to panic_alerts table
-    const panicAlertsChannel = supabase
-      .channel('panic-alerts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'panic_alerts'
+      const notification: NotificationData = {
+        id: `panic-${alert.id}`,
+        type: 'panic_alert',
+        title: '🚨 EMERGENCY: Panic Alert',
+        body: `${profile?.full_name || 'Someone'} has triggered a panic alert`,
+        data: {
+          panicAlertId: alert.id,
+          userId: alert.user_id,
+          latitude: alert.latitude,
+          longitude: alert.longitude,
+          address: alert.address,
+          phone: profile?.phone
         },
-        async (payload) => {
-          console.log('[RealtimeNotifications] Panic alert received:', payload);
-          
-          const alert = payload.new;
-          
-          // Fetch user profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, phone')
-            .eq('user_id', alert.user_id)
-            .single();
+        timestamp: alert.created_at,
+        isRead: false,
+        priority: 'urgent',
+        senderId: alert.user_id,
+        senderName: profile?.full_name,
+        panicAlertId: alert.id
+      };
 
-          const notification: NotificationData = {
-            id: `panic-${alert.id}`,
-            type: 'panic_alert',
-            title: '🚨 EMERGENCY: Panic Alert',
-            body: `${profile?.full_name || 'Someone'} has triggered a panic alert`,
-            data: {
-              panicAlertId: alert.id,
-              userId: alert.user_id,
-              latitude: alert.latitude,
-              longitude: alert.longitude,
-              address: alert.address,
-              phone: profile?.phone
-            },
-            timestamp: alert.created_at,
-            isRead: false,
-            priority: 'urgent',
-            senderId: alert.user_id,
-            senderName: profile?.full_name,
-            panicAlertId: alert.id
-          };
-
-          addNotification(notification);
-        }
-      )
-      .subscribe();
-
-      // Store channels for cleanup
-      channelsRef.current = [
-        alertNotificationsChannel,
-        directMessagesChannel,
-        safetyAlertsChannel,
-        panicAlertsChannel
-      ];
-    } catch (error: any) {
-      // Handle realtime subscription errors gracefully (especially on iOS)
-      if (error?.name === 'SecurityError' || error?.message?.includes('insecure') || error?.message?.includes('WebSocket')) {
-        console.log('[RealtimeNotifications] Realtime unavailable (likely iOS), using polling fallback');
-        
-        // On iOS or when realtime fails, fall back to periodic polling
-        if (isIOS) {
-          console.log('[RealtimeNotifications] iOS detected - realtime disabled, app will function without live updates');
-        }
-      } else {
-        console.error('[RealtimeNotifications] Unexpected error setting up subscriptions:', error);
-      }
-    }
+      addNotification(notification);
+    });
 
     // Cleanup function
     return () => {
-      console.log('[RealtimeNotifications] Cleaning up subscriptions');
-      try {
-        channelsRef.current.forEach(channel => {
-          supabase.removeChannel(channel);
-        });
-      } catch (error) {
-        // Ignore cleanup errors
-        console.debug('[RealtimeNotifications] Error during cleanup (ignored):', error);
-      }
-      channelsRef.current = [];
+      console.log('[RealtimeNotifications] Cleaning up unified subscriptions');
+      unsubscribeAlerts();
+      unsubscribeMessages();
+      unsubscribeSafetyAlerts();
+      unsubscribePanicAlerts();
     };
-  }, [user?.id, addNotification, syncWithServer]);
+  }, [user?.id, onAlert, onMessage, onSafetyAlert, onPanicAlert, addNotification, syncWithServer]);
 };
 
 // Helper functions
