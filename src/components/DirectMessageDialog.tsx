@@ -10,12 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Check, CheckCheck } from 'lucide-react';
+import { Send, Check, CheckCheck, Clock, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
-import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { useDirectMessages, MessageStatus } from '@/hooks/useDirectMessages';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useConversations } from '@/hooks/useConversations';
+import { ConnectionStatusBanner } from '@/components/messaging/ConnectionStatusBanner';
 
 interface DirectMessageDialogProps {
   isOpen: boolean;
@@ -109,14 +110,24 @@ export const DirectMessageDialog = ({
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (message: any) => {
+    if (message.sender_id !== user?.id) return null;
+
+    const status: MessageStatus = message.status || 'sent';
+
     switch (status) {
-      case 'read':
-        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+      case 'sending':
+        return <Clock className="h-3 w-3 text-muted-foreground animate-pulse" />;
+      case 'failed':
+        return <AlertCircle className="h-3 w-3 text-destructive" />;
+      case 'sent':
+        return <Check className="h-3 w-3 text-muted-foreground" />;
       case 'delivered':
         return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
+      case 'read':
+        return <CheckCheck className="h-3 w-3 text-primary" />;
       default:
-        return <Check className="h-3 w-3 text-muted-foreground" />;
+        return null;
     }
   };
 
@@ -137,6 +148,10 @@ export const DirectMessageDialog = ({
             Send and receive direct messages with {recipientName}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="px-4">
+          <ConnectionStatusBanner />
+        </div>
         
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
@@ -161,7 +176,7 @@ export const DirectMessageDialog = ({
                       <span className="text-xs opacity-70">
                         {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                       </span>
-                      {isOwnMessage && getStatusIcon(message.status)}
+                      {getStatusIcon(message)}
                     </div>
                   </div>
                 </div>

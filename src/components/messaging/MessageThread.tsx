@@ -11,10 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare } from 'lucide-react';
+import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
-import { type Message } from '@/hooks/useDirectMessages';
+import { type Message, MessageStatus } from '@/hooks/useDirectMessages';
+import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { useFileUpload, type Attachment } from '@/hooks/useFileUpload';
 import MessageSelectionToolbar from './MessageSelectionToolbar';
@@ -102,10 +103,17 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       .toUpperCase();
   };
 
-  const getMessageStatusIcon = (status: string, isOwn: boolean) => {
+  const getMessageStatusIcon = (message: Message) => {
+    const isOwn = message.sender_id === currentUserId;
     if (!isOwn || !showReadReceipts) return null;
     
+    const status: MessageStatus = message.status || 'sent';
+    
     switch (status) {
+      case 'sending':
+        return <Clock className="h-3 w-3 text-muted-foreground animate-pulse" />;
+      case 'failed':
+        return <AlertCircle className="h-3 w-3 text-destructive" />;
       case 'sent':
         return <Check className="h-3 w-3 text-muted-foreground" />;
       case 'delivered':
@@ -171,6 +179,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden">
+      <div className="px-2 md:px-4 pt-2">
+        <ConnectionStatusBanner />
+      </div>
       {/* Messages - with bottom padding to account for sticky input */}
       <ScrollArea className="flex-1 overflow-y-auto">
         <div className="space-y-2 md:space-y-4 p-2 md:p-4 pb-32">
@@ -219,7 +230,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </span>
-                    {getMessageStatusIcon(message.status, isOwn)}
+                    {getMessageStatusIcon(message)}
                   </div>
 
                   {/* Single message delete option for own messages */}
