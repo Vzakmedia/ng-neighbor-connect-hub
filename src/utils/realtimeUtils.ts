@@ -28,10 +28,10 @@ const logDiagnostic = (diagnostic: ConnectionDiagnostics) => {
   }
 };
 
-// Global circuit breaker for all subscriptions
+// Global circuit breaker for all subscriptions - optimized for better reliability
 let globalFailureCount = 0;
-const MAX_FAILURES = 3; // Reduced from 5
-const CIRCUIT_BREAKER_TIMEOUT = 60000; // Increased to 1 minute
+const MAX_FAILURES = 10; // Increased threshold to prevent unnecessary disconnections
+const CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds (reduced for faster recovery)
 let circuitBreakerOpenUntil = 0;
 
 // Track active subscriptions to prevent duplicates
@@ -42,7 +42,7 @@ export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
 ) => {
-  const { channelName, onError, pollInterval = 60000, debugName = 'unknown' } = options; // Increased default interval
+  const { channelName, onError, pollInterval = 5000, debugName = 'unknown' } = options; // 5 seconds for faster fallback
   
   // Prevent duplicate subscriptions
   if (activeSubscriptions.has(channelName)) {

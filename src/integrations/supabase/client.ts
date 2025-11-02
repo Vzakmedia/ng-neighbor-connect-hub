@@ -56,19 +56,14 @@ const createSupabaseClient = () => {
       },
     };
 
-    // Only enable realtime on non-iOS devices or with careful error handling
-    if (!isIOS) {
-      clientConfig.realtime = {
-        params: {
-          eventsPerSecond: 2,
-        },
-        heartbeatIntervalMs: 30000,
-        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
-      };
-    } else {
-      // Disable realtime on iOS to prevent WebSocket SecurityError
-      console.log('iOS detected: Realtime features disabled to prevent security errors');
-    }
+    // Enable realtime for all devices with optimized settings
+    clientConfig.realtime = {
+      params: {
+        eventsPerSecond: 10, // Increased for faster message delivery
+      },
+      heartbeatIntervalMs: 15000, // More frequent heartbeats for better connection
+      reconnectAfterMs: (tries: number) => Math.min(tries * 500, 5000), // Faster reconnection
+    };
 
     return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, clientConfig);
   } catch (error) {
