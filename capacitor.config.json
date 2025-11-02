@@ -8,7 +8,7 @@
     "backgroundColor": "#ffffff"
   },
   "ios": {
-    "contentInset": "always",
+    "contentInset": "automatic",
     "backgroundColor": "#ffffff",
     "scheme": "neighborlink",
     "limitsNavigationsToAppBoundDomains": false,

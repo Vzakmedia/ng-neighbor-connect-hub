@@ -8,6 +8,12 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Safe area insets for notches and rounded corners */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+
     --background: 0 0% 100%;
     --foreground: 140 6% 10%;
 
