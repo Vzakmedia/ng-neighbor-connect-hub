@@ -9,6 +9,7 @@ interface UseMessageSubscriptionsProps {
   onConversationUpdate?: () => void;
   recipientId?: string; // For direct message dialogs
   activeConversationId?: string; // For main messaging interface
+  onReadReceipt?: (messageId: string) => void; // For broadcast read receipts
 }
 
 export const useMessageSubscriptions = ({
@@ -17,10 +18,12 @@ export const useMessageSubscriptions = ({
   onMessageUpdate,
   onConversationUpdate,
   recipientId,
-  activeConversationId
+  activeConversationId,
+  onReadReceipt
 }: UseMessageSubscriptionsProps) => {
   const messageChannelRef = useRef<any>(null);
   const conversationChannelRef = useRef<any>(null);
+  const readReceiptChannelRef = useRef<any>(null);
 
   const setupMessageSubscription = useCallback(() => {
     if (!userId || messageChannelRef.current) return;
@@ -130,6 +133,31 @@ export const useMessageSubscriptions = ({
     }
   }, [userId, onConversationUpdate]);
 
+  const setupReadReceiptSubscription = useCallback(() => {
+    if (!userId || !onReadReceipt || readReceiptChannelRef.current) return;
+
+    console.log('Setting up read receipt broadcast for user:', userId);
+
+    try {
+      const channel = supabase
+        .channel(`read-receipts:${userId}`)
+        .on('broadcast', { event: 'read_receipt' }, (payload: any) => {
+          console.log('Read receipt received:', payload);
+          const { messageId } = payload.payload;
+          if (messageId) {
+            onReadReceipt(messageId);
+          }
+        })
+        .subscribe((status) => {
+          console.log('Read receipt subscription status:', status);
+        });
+
+      readReceiptChannelRef.current = channel;
+    } catch (error) {
+      console.error('Error setting up read receipt subscription:', error);
+    }
+  }, [userId, onReadReceipt]);
+
   const cleanup = useCallback(() => {
     if (messageChannelRef.current) {
       supabase.removeChannel(messageChannelRef.current);
@@ -139,20 +167,26 @@ export const useMessageSubscriptions = ({
       supabase.removeChannel(conversationChannelRef.current);
       conversationChannelRef.current = null;
     }
+    if (readReceiptChannelRef.current) {
+      supabase.removeChannel(readReceiptChannelRef.current);
+      readReceiptChannelRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
     if (userId) {
       setupMessageSubscription();
       setupConversationSubscription();
+      setupReadReceiptSubscription();
     }
 
     return cleanup;
-  }, [userId, setupMessageSubscription, setupConversationSubscription, cleanup]);
+  }, [userId, setupMessageSubscription, setupConversationSubscription, setupReadReceiptSubscription, cleanup]);
 
   return {
     cleanup,
     setupMessageSubscription,
-    setupConversationSubscription
+    setupConversationSubscription,
+    setupReadReceiptSubscription
   };
 };

@@ -118,11 +118,20 @@ const UnifiedMessaging = () => {
     fetchConversations();
   }, [fetchConversations]);
 
+  const onReadReceipt = useCallback((messageId: string) => {
+    // Update message status to 'read' instantly
+    updateMessage({
+      ...messages.find(m => m.id === messageId)!,
+      status: 'read'
+    });
+  }, [messages, updateMessage]);
+
   useMessageSubscriptions({
     userId: user?.id,
     onNewMessage,
     onMessageUpdate,
-    onConversationUpdate
+    onConversationUpdate,
+    onReadReceipt
   });
 
   const handleSendMessage = async (content: string, attachments?: Array<{ id: string; type: 'image' | 'video' | 'file'; name: string; url: string; size: number; mimeType: string; }>) => {

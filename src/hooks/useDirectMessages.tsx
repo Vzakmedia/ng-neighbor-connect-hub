@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMessageQueue } from './useMessageQueue';
@@ -36,6 +36,10 @@ export const useDirectMessages = (userId: string | undefined) => {
     getRetryableMessages 
   } = useMessageQueue(userId);
   const { status: connectionStatus } = useConnectionStatus();
+  
+  // Message cache for last 50 messages per conversation
+  const messageCache = useRef<Map<string, Message[]>>(new Map());
+  const broadcastChannelRef = useRef<any>(null);
 
   // Auto-retry queued messages when connection is restored
   useEffect(() => {
@@ -47,21 +51,32 @@ export const useDirectMessages = (userId: string | undefined) => {
     }
   }, [connectionStatus]);
 
-  const fetchMessages = useCallback(async (otherUserId: string) => {
+  const fetchMessages = useCallback(async (otherUserId: string, useCache: boolean = true) => {
     if (!userId) {
       console.log('No userId provided to fetchMessages');
       setLoading(false);
       return;
     }
     
+    // Check cache first
+    const cacheKey = [userId, otherUserId].sort().join('-');
+    if (useCache && messageCache.current.has(cacheKey)) {
+      const cached = messageCache.current.get(cacheKey)!;
+      setMessages(cached);
+      return;
+    }
+    
     try {
       setLoading(true);
       console.log('Fetching messages between', userId, 'and', otherUserId);
+      
+      // Fetch only last 50 messages initially for performance
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
       
@@ -83,7 +98,10 @@ export const useDirectMessages = (userId: string | undefined) => {
               mimeType: string;
             }>
           : []
-      }));
+      })).reverse(); // Reverse to get chronological order
+      
+      // Update cache (keep only last 50)
+      messageCache.current.set(cacheKey, mappedMessages);
       
       setMessages(mappedMessages);
     } catch (error) {
@@ -266,16 +284,10 @@ export const useDirectMessages = (userId: string | undefined) => {
 
   const markMessageAsRead = useCallback(async (messageId: string) => {
     try {
-      const { error } = await supabase.rpc('mark_message_as_read', {
-        message_id: messageId
-      });
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return false;
       
-      if (error) {
-        console.error('Error marking message as read:', error);
-        return false;
-      }
-      
-      // Update local state immediately
+      // Update local state immediately for instant feedback
       setMessages(prev => 
         prev.map(msg => 
           msg.id === messageId 
@@ -284,28 +296,40 @@ export const useDirectMessages = (userId: string | undefined) => {
         )
       );
       
+      // Broadcast read receipt instantly via realtime (no DB write needed)
+      if (broadcastChannelRef.current) {
+        await broadcastChannelRef.current.send({
+          type: 'broadcast',
+          event: 'read_receipt',
+          payload: { 
+            messageId, 
+            recipientId: message.sender_id,
+            readBy: userId 
+          }
+        });
+      }
+      
+      // Update DB in background (for persistence)
+      const { error } = await supabase.rpc('mark_message_as_read', {
+        message_id: messageId
+      });
+      
+      if (error) {
+        console.error('Error marking message as read:', error);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error marking message as read:', error);
       return false;
     }
-  }, []);
+  }, [messages, userId]);
 
-  const markConversationAsRead = useCallback(async (conversationId: string) => {
+  const markConversationAsRead = useCallback(async (conversationId: string, otherUserId?: string) => {
     if (!userId) return false;
     
     try {
-      const { error } = await supabase.rpc('mark_direct_messages_as_read', {
-        conversation_id: conversationId,
-        current_user_id: userId
-      });
-      
-      if (error) {
-        console.error('Error marking conversation as read:', error);
-        return false;
-      }
-      
-      // Update local message states to 'read' for messages we received
+      // Update local message states immediately for instant feedback
       setMessages(prev => 
         prev.map(msg => 
           msg.recipient_id === userId 
@@ -314,12 +338,41 @@ export const useDirectMessages = (userId: string | undefined) => {
         )
       );
       
+      // Broadcast read receipts for all unread messages
+      const unreadMessages = messages.filter(m => 
+        m.recipient_id === userId && m.status !== 'read'
+      );
+      
+      if (broadcastChannelRef.current && unreadMessages.length > 0) {
+        for (const msg of unreadMessages) {
+          await broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'read_receipt',
+            payload: { 
+              messageId: msg.id, 
+              recipientId: msg.sender_id,
+              readBy: userId 
+            }
+          });
+        }
+      }
+      
+      // Update DB in background
+      const { error } = await supabase.rpc('mark_direct_messages_as_read', {
+        conversation_id: conversationId,
+        current_user_id: userId
+      });
+      
+      if (error) {
+        console.error('Error marking conversation as read:', error);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error marking conversation as read:', error);
       return false;
     }
-  }, [userId]);
+  }, [userId, messages]);
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
@@ -347,6 +400,35 @@ export const useDirectMessages = (userId: string | undefined) => {
     );
   }, []);
 
+  // Setup broadcast channel for instant read receipts
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase.channel(`read-receipts:${userId}`)
+      .on('broadcast', { event: 'read_receipt' }, (payload: any) => {
+        const { messageId, readBy } = payload.payload;
+        
+        // Only update if we're the sender of the message
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId && msg.sender_id === userId
+              ? { ...msg, status: 'read' as const }
+              : msg
+          )
+        );
+      })
+      .subscribe();
+
+    broadcastChannelRef.current = channel;
+
+    return () => {
+      if (broadcastChannelRef.current) {
+        supabase.removeChannel(broadcastChannelRef.current);
+        broadcastChannelRef.current = null;
+      }
+    };
+  }, [userId]);
+
   return {
     messages,
     loading,
@@ -359,6 +441,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     updateMessage,
     setMessages,
     retryMessage,
-    queuedMessagesCount: queue.length
+    queuedMessagesCount: queue.length,
+    broadcastChannelRef
   };
 };
