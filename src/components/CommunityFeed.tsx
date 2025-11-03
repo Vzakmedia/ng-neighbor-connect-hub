@@ -73,30 +73,58 @@ export const CommunityFeed = () => {
     [data]
   );
 
-  // Debounced function to refresh unread counts
-  const debouncedRefreshCounts = useCallback(() => {
+  // Batch mark-as-read operations and optimistically update count
+  const batchedMarkAsRead = useCallback(() => {
+    const pendingPosts = Array.from(pendingMarksRef.current);
+    if (pendingPosts.length === 0) return;
+
+    // Optimistically decrease unread count immediately
+    setUnreadCounts(prev => ({ 
+      ...prev, 
+      community: Math.max(0, prev.community - pendingPosts.length) 
+    }));
+
+    // Mark all pending posts as read in parallel
+    Promise.all(pendingPosts.map(postId => markCommunityPostAsRead(postId)))
+      .then(() => {
+        // Add to marked set
+        setMarkedPostIds(prev => {
+          const newSet = new Set(prev);
+          pendingPosts.forEach(id => newSet.add(id));
+          return newSet;
+        });
+        // Clear pending
+        pendingMarksRef.current.clear();
+      })
+      .catch(() => {
+        // Revert optimistic update on error
+        refreshUnreadCounts();
+        pendingMarksRef.current.clear();
+      });
+  }, [markCommunityPostAsRead, refreshUnreadCounts]);
+
+  // Debounced batch processing - increased to 2000ms for better batching
+  const debouncedBatchMarkRead = useCallback(() => {
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
     }
     refreshTimeoutRef.current = setTimeout(() => {
-      refreshUnreadCounts();
-    }, 500); // Debounce for 500ms
-  }, [refreshUnreadCounts]);
+      batchedMarkAsRead();
+    }, 2000); // Batch for 2 seconds
+  }, [batchedMarkAsRead]);
 
-  // Mark a post as read when it comes into view
+  // Mark a post as read when it's been visible for 2+ seconds
   const handlePostVisible = useCallback((postId: string) => {
     if (markedPostIds.has(postId) || pendingMarksRef.current.has(postId)) {
       return; // Already marked or pending
     }
 
+    // Add to pending batch
     pendingMarksRef.current.add(postId);
     
-    markCommunityPostAsRead(postId).then(() => {
-      setMarkedPostIds(prev => new Set(prev).add(postId));
-      pendingMarksRef.current.delete(postId);
-      debouncedRefreshCounts();
-    });
-  }, [markedPostIds, markCommunityPostAsRead, debouncedRefreshCounts]);
+    // Trigger batched update
+    debouncedBatchMarkRead();
+  }, [markedPostIds, debouncedBatchMarkRead]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
