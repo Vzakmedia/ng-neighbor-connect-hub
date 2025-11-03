@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { UserDirectory as UserDirectoryComponent } from '@/components/UserDirectory';
 import { SecureRoleGuard } from '@/components/security/SecureRoleGuard';
+import { FindFriendsButton } from '@/components/UserDirectory/FindFriendsButton';
 
 const UserDirectory = () => {
   const { user, loading } = useAuth();
@@ -35,6 +36,9 @@ const UserDirectory = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-6 max-w-6xl">
+          <div className="mb-4">
+            <FindFriendsButton />
+          </div>
           <SecureRoleGuard requiredRoles={['super_admin', 'admin']}>
             <UserDirectoryComponent />
           </SecureRoleGuard>

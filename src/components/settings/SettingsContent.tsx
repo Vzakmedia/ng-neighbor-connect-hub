@@ -37,6 +37,8 @@ import UserSupportTickets from './UserSupportTickets';
 import { LocationFilterSettings } from './LocationFilterSettings';
 import { TwoFactorSetup } from '@/components/security/TwoFactorSetup';
 import { SuperAdminSecurityPanel } from '@/components/security/SuperAdminSecurityPanel';
+import { BiometricSettings } from './BiometricSettings';
+import { ContactSyncSettings } from './ContactSyncSettings';
 import { useTutorial } from '@/hooks/useTutorial';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
@@ -1057,8 +1059,10 @@ const [audioSettings, setAudioSettings] = useState({
         </TabsContent>
 
         {/* Security Tab */}
-        <TabsContent value="security" className="w-full max-w-full">
+        <TabsContent value="security" className="w-full max-w-full space-y-4">
+          <BiometricSettings />
           <TwoFactorSetup />
+          <ContactSyncSettings />
         </TabsContent>
 
         {/* Admin Security Tab */}

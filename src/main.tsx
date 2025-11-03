@@ -7,6 +7,12 @@ import App from './App.tsx'
 import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
+import { performanceMonitor } from './utils/performanceMonitoring'
+
+// Initialize performance monitoring
+// Add your Sentry DSN here when ready: performanceMonitor.initialize('YOUR_SENTRY_DSN');
+performanceMonitor.initialize();
+performanceMonitor.startMemoryMonitoring();
 
 // Wrap WebSocket to intercept preview domain connections at the source
 const originalWebSocket = window.WebSocket;

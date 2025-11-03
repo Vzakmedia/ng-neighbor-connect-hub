@@ -13,7 +13,9 @@
     "scheme": "neighborlink",
     "limitsNavigationsToAppBoundDomains": false,
     "allowsInlineMediaPlayback": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": true,
+    "mediaTypesRequiringUserActionForPlayback": [],
+    "allowsBackForwardNavigationGestures": true
   },
   "plugins": {
     "SplashScreen": {
