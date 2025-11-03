@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,6 +40,7 @@ export const useRealtimeContext = () => {
 
 export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const location = useLocation();
   
   // Callback registries
   const communityPostCallbacks = useRef<Set<CommunityPostCallback>>(new Set());
@@ -53,67 +55,177 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
   // Subscription cleanup refs
   const subscriptionsRef = useRef<Array<{ unsubscribe: () => void }>>([]);
+  
+  // Route-based subscription control
+  const isMessagingRoute = location.pathname.startsWith('/messages') || location.pathname.startsWith('/chat');
+  const isCommunityRoute = location.pathname === '/community' || location.pathname === '/';
+  const isSafetyRoute = location.pathname.startsWith('/safety');
 
   useEffect(() => {
     if (!user) return;
 
-    console.log('[RealtimeProvider] Setting up unified subscriptions for user:', user.id);
+    console.log('[RealtimeProvider] Setting up route-aware subscriptions', {
+      route: location.pathname,
+      messaging: isMessagingRoute,
+      community: isCommunityRoute,
+      safety: isSafetyRoute
+    });
 
-    // 1. Community Posts Subscription
-    const communityPostsSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'community_posts',
-          filter: `post_type=neq.private_message`
-        }, (payload) => {
-          communityPostCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-community-posts',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-CommunityPosts'
-      }
-    );
+    const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
-    // 2. Direct Messages Subscription
-    const messagesSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
-        }, (payload) => {
-          messageCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-messages',
-        pollInterval: 15000,
-        debugName: 'RealtimeProvider-Messages'
-      }
-    );
+    // 1. Community Posts Subscription - only on community routes
+    if (isCommunityRoute) {
+      const communityPostsSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'community_posts',
+            filter: `post_type=neq.private_message`
+          }, (payload) => {
+            communityPostCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-community-posts',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-CommunityPosts'
+        }
+      );
+      subscriptions.push(communityPostsSub);
+    }
 
-    // 3. Conversations Subscription
-    const conversationsSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'direct_conversations',
-          filter: `or(user1_id.eq.${user.id},user2_id.eq.${user.id})`
-        }, (payload) => {
-          conversationCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-conversations',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-Conversations'
-      }
-    );
+    // 2. Direct Messages Subscription - only on messaging routes
+    if (isMessagingRoute) {
+      const messagesSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'direct_messages',
+            filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
+          }, (payload) => {
+            messageCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-messages',
+          pollInterval: 15000,
+          debugName: 'RealtimeProvider-Messages'
+        }
+      );
+      subscriptions.push(messagesSub);
 
-    // 4. Alert Notifications Subscription
+      // 3. Conversations Subscription
+      const conversationsSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'direct_conversations',
+            filter: `or(user1_id.eq.${user.id},user2_id.eq.${user.id})`
+          }, (payload) => {
+            conversationCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-conversations',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-Conversations'
+        }
+      );
+      subscriptions.push(conversationsSub);
+    }
+
+
+    // 5. Safety Alerts Subscription - only on safety routes
+    if (isSafetyRoute) {
+      const safetyAlertsSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'safety_alerts'
+          }, (payload) => {
+            safetyAlertCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-safety-alerts',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-SafetyAlerts'
+        }
+      );
+      subscriptions.push(safetyAlertsSub);
+
+      // 6. Panic Alerts Subscription
+      const panicAlertsSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'panic_alerts'
+          }, (payload) => {
+            panicAlertCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-panic-alerts',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-PanicAlerts'
+        }
+      );
+      subscriptions.push(panicAlertsSub);
+    }
+
+    // 7. Post Likes Subscription - only on community routes
+    if (isCommunityRoute) {
+      const postLikesSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'post_likes'
+          }, (payload) => {
+            postLikeCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-post-likes',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-PostLikes'
+        }
+      );
+      subscriptions.push(postLikesSub);
+
+      // 8. Post Comments Subscription
+      const postCommentsSub = createSafeSubscription(
+        (channel) => channel
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'post_comments'
+          }, (payload) => {
+            postCommentCallbacks.current.forEach(cb => cb(payload));
+          }),
+        {
+          channelName: 'unified-post-comments',
+          pollInterval: 30000,
+          debugName: 'RealtimeProvider-PostComments'
+        }
+      );
+      subscriptions.push(postCommentsSub);
+    }
+
+    // 9. Read Receipts Broadcast Channel - only on messaging routes
+    if (isMessagingRoute) {
+      const readReceiptChannel = supabase
+        .channel(`unified-read-receipts:${user.id}`)
+        .on('broadcast', { event: 'read_receipt' }, (payload: any) => {
+          const { messageId } = payload.payload;
+          if (messageId) {
+            readReceiptCallbacks.current.forEach(cb => cb(messageId));
+          }
+        })
+        .subscribe();
+      subscriptions.push({ unsubscribe: () => supabase.removeChannel(readReceiptChannel) });
+    }
+
+    // 4. Alert Notifications - always active (important notifications)
     const alertsSub = createSafeSubscription(
       (channel) => channel
         .on('postgres_changes', {
@@ -130,106 +242,18 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
         debugName: 'RealtimeProvider-Alerts'
       }
     );
-
-    // 5. Safety Alerts Subscription
-    const safetyAlertsSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'safety_alerts'
-        }, (payload) => {
-          safetyAlertCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-safety-alerts',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-SafetyAlerts'
-      }
-    );
-
-    // 6. Panic Alerts Subscription
-    const panicAlertsSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'panic_alerts'
-        }, (payload) => {
-          panicAlertCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-panic-alerts',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-PanicAlerts'
-      }
-    );
-
-    // 7. Post Likes Subscription
-    const postLikesSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'post_likes'
-        }, (payload) => {
-          postLikeCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-post-likes',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-PostLikes'
-      }
-    );
-
-    // 8. Post Comments Subscription
-    const postCommentsSub = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'post_comments'
-        }, (payload) => {
-          postCommentCallbacks.current.forEach(cb => cb(payload));
-        }),
-      {
-        channelName: 'unified-post-comments',
-        pollInterval: 30000,
-        debugName: 'RealtimeProvider-PostComments'
-      }
-    );
-
-    // 9. Read Receipts Broadcast Channel
-    const readReceiptChannel = supabase
-      .channel(`unified-read-receipts:${user.id}`)
-      .on('broadcast', { event: 'read_receipt' }, (payload: any) => {
-        const { messageId } = payload.payload;
-        if (messageId) {
-          readReceiptCallbacks.current.forEach(cb => cb(messageId));
-        }
-      })
-      .subscribe();
+    subscriptions.push(alertsSub);
 
     // Store all subscriptions
-    subscriptionsRef.current = [
-      communityPostsSub,
-      messagesSub,
-      conversationsSub,
-      alertsSub,
-      safetyAlertsSub,
-      panicAlertsSub,
-      postLikesSub,
-      postCommentsSub,
-      { unsubscribe: () => supabase.removeChannel(readReceiptChannel) }
-    ];
+    subscriptionsRef.current = subscriptions;
 
     // Cleanup
     return () => {
-      console.log('[RealtimeProvider] Cleaning up unified subscriptions');
+      console.log('[RealtimeProvider] Cleaning up subscriptions', { count: subscriptions.length });
       subscriptionsRef.current.forEach(sub => sub?.unsubscribe());
       subscriptionsRef.current = [];
     };
-  }, [user]);
+  }, [user, location.pathname, isMessagingRoute, isCommunityRoute, isSafetyRoute]);
 
   // Registration methods
   const onCommunityPost = (callback: CommunityPostCallback) => {
