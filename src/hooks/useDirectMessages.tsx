@@ -449,21 +449,25 @@ export const useDirectMessages = (userId: string | undefined) => {
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
-      // Remove any optimistic version of this message
-      const filtered = prev.filter(msg => 
-        !(msg.optimistic && msg.sender_id === message.sender_id && msg.content === message.content)
+      // Deduplication: Check if message already exists (by ID or optimistic match)
+      const messageExists = prev.some(msg => 
+        msg.id === message.id || 
+        (msg.optimistic && msg.sender_id === message.sender_id && msg.content === message.content && 
+         Math.abs(new Date(msg.created_at).getTime() - new Date(message.created_at).getTime()) < 5000) // Within 5 seconds
       );
       
-      // Check if real message already exists
-      const messageExists = filtered.some(msg => msg.id === message.id);
       if (messageExists) {
-        // Update existing message
-        return filtered.map(msg => msg.id === message.id ? message : msg);
+        // Update existing message (replace optimistic with real)
+        return prev.map(msg => 
+          msg.id === message.id || 
+          (msg.optimistic && msg.sender_id === message.sender_id && msg.content === message.content)
+            ? { ...message, optimistic: false }
+            : msg
+        );
       }
       
-      // Add new message and sort by created_at to maintain order
-      const newMessages = [...filtered, message];
-      return newMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      // Add new message - append to end for performance (already sorted by DB query)
+      return [...prev, message];
     });
   }, []);
 

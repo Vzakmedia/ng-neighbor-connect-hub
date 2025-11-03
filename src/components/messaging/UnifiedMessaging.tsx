@@ -83,15 +83,16 @@ const UnifiedMessaging = () => {
 
   const onNewMessage = useCallback((message: Message) => {
     if (!activeConversation) {
-      // Ensure list reflects unread states
+      // Update conversation list to show new conversation
       fetchConversations();
       return;
     }
     const belongsToActive = (message.sender_id === activeConversation.user1_id && message.recipient_id === activeConversation.user2_id) ||
                             (message.sender_id === activeConversation.user2_id && message.recipient_id === activeConversation.user1_id);
     if (belongsToActive) {
+      // Append message directly to state - no refetch needed
       addMessage(message);
-      // If user is recipient, mark as read and deliver older sent messages
+      // If user is recipient, mark as read
       if (user && message.recipient_id === user.id) {
         markConversationAsRead(activeConversation.id);
         (async () => {
@@ -105,7 +106,7 @@ const UnifiedMessaging = () => {
       }
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } else {
-      // Refresh list to update unread badges
+      // Only refresh conversation list for unread badges, not messages
       fetchConversations();
     }
   }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations]);
@@ -138,23 +139,7 @@ const UnifiedMessaging = () => {
     if (!activeConversation || !user) return;
     const recipientId = activeConversation.user1_id === user.id ? activeConversation.user2_id : activeConversation.user1_id;
 
-    // Generate temporary message for optimistic UI
-    const tempId = `temp-${Date.now()}-${Math.random()}`;
-    const tempMessage: Message = {
-      id: tempId,
-      sender_id: user.id,
-      recipient_id: recipientId,
-      content: content,
-      created_at: new Date().toISOString(),
-      status: 'sent',
-      attachments: attachments || [],
-    };
-
-    // Add to UI immediately
-    addMessage(tempMessage);
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-
-    // Backend operation
+    // Backend operation - no optimistic UI here, sendMessage handles it
     try {
       let success = false;
       if (attachments && attachments.length > 0) {
@@ -165,13 +150,9 @@ const UnifiedMessaging = () => {
 
       if (!success) throw new Error('Failed to send message');
 
-      // Fetch to get real message ID and update status
-      await fetchMessages(recipientId);
+      // Don't refetch - real-time subscription will update the message
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
-      // Remove temporary message on error
-      const updatedMessages = messages.filter(m => m.id !== tempId);
-      updateMessage(updatedMessages[0] || tempMessage); // Trigger state update
-      
       toast({
         title: "Failed to send",
         description: "Your message couldn't be sent. Please try again.",

@@ -28,7 +28,7 @@ export const useMessageSubscriptions = ({
 
     console.log('[MessageSubscriptions] Using unified subscriptions for user:', userId, 'recipient:', recipientId);
 
-    // Subscribe to message events
+    // Subscribe to message events with deduplication
     const unsubscribeMessages = onMessage((payload) => {
       // Filter messages for the current conversation if recipientId is specified
       const message = payload.new as Message;
@@ -52,10 +52,10 @@ export const useMessageSubscriptions = ({
       }
 
       if (payload.eventType === 'INSERT') {
-        console.log('New message received via unified subscription:', message);
+        console.log('[MessageSubscriptions] New message received, appending to state:', message.id);
         onNewMessage(message);
       } else if (payload.eventType === 'UPDATE') {
-        console.log('Message updated via unified subscription:', message);
+        console.log('[MessageSubscriptions] Message updated:', message.id);
         onMessageUpdate(message);
       }
     });

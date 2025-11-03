@@ -153,12 +153,7 @@ export const useConversations = (userId: string | undefined) => {
     if (!userId) return;
 
     try {
-      await supabase.rpc('mark_direct_messages_as_read', {
-        conversation_id: conversationId,
-        current_user_id: userId
-      });
-      
-      // Update local state
+      // Optimistically update local state immediately
       setConversations(prev => 
         prev.map(conv => 
           conv.id === conversationId 
@@ -170,10 +165,18 @@ export const useConversations = (userId: string | undefined) => {
             : conv
         )
       );
+
+      // Then update database in background
+      await supabase.rpc('mark_direct_messages_as_read', {
+        conversation_id: conversationId,
+        current_user_id: userId
+      });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
+      // Revert optimistic update on error
+      fetchConversations();
     }
-  }, [userId]);
+  }, [userId, fetchConversations]);
 
   return {
     conversations,
