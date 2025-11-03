@@ -189,9 +189,10 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
         duration: parseInt(formData.duration_days)
       });
 
-      // Open payment page in new tab
+      // Open payment page in native browser
       if (data?.url) {
-        window.open(data.url, '_blank');
+        const { openUrl } = await import('@/utils/nativeBrowser');
+        await openUrl(data.url, '_blank');
         
         toast({
           title: "Payment Required",

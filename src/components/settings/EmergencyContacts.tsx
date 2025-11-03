@@ -477,12 +477,10 @@ const EmergencyContacts = () => {
     }
   };
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast({
-      title: "Code Copied",
-      description: "Confirmation code copied to clipboard.",
-    });
+  const copyCode = async (code: string) => {
+    const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+    const { copyToClipboard } = useNativeClipboard();
+    await copyToClipboard(code, "Confirmation code copied to clipboard");
   };
 
   const openEditDialog = (contact: EmergencyContact) => {

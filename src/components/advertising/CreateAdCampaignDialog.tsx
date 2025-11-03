@@ -259,8 +259,9 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
         duration: formData.duration
       });
 
-      // Redirect to Stripe Checkout
-      window.open(paymentData.url, '_blank');
+      // Redirect to Stripe Checkout in native browser
+      const { openUrl } = await import('@/utils/nativeBrowser');
+      await openUrl(paymentData.url, '_blank');
 
       toast({
         title: "Campaign Created",

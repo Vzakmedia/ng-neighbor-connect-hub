@@ -141,10 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
       
-      // Clear all possible auth storage keys for complete sign-out
-      localStorage.removeItem('neighborlink-auth'); // Main storage key
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
+      // Clear all possible auth storage keys using native storage
+      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+      const { removeItem } = useNativeStorage();
+      await removeItem('neighborlink-auth');
+      await removeItem('supabase.auth.token');
+      await removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
       
       // Clear session storage (used for splash screen tracking)
       sessionStorage.clear();

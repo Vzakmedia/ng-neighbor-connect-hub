@@ -19,15 +19,31 @@ export const useFileUpload = (userId: string) => {
     try {
       setUploading(true);
       
+      let fileToUpload = file;
+      
+      // Optimize images before upload (Phase 13)
+      if (file.type.startsWith('image/')) {
+        const { useNativeImageOptimization } = await import('@/hooks/mobile/useNativeImageOptimization');
+        const { optimizeImage } = useNativeImageOptimization();
+        const optimizedResult = await optimizeImage(file, {
+          quality: 80,
+          maxWidth: 1920,
+          maxHeight: 1920
+        });
+        if (optimizedResult) {
+          fileToUpload = optimizedResult.file;
+        }
+      }
+      
       // Generate unique filename
-      const fileExt = file.name.split('.').pop();
+      const fileExt = fileToUpload.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
 
       // Upload file to storage
       const { data, error } = await supabase.storage
         .from('chat-attachments')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (error) throw error;
 

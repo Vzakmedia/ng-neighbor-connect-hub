@@ -283,9 +283,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     {message.attachments && message.attachments.length > 0 && (
                       <AttachmentDisplay 
                         attachments={message.attachments}
-                        onPreview={(attachment) => {
-                          // Handle attachment preview
-                          window.open(attachment.url, '_blank');
+                        onPreview={async (attachment) => {
+                          // Handle attachment preview in native browser
+                          const { openUrl } = await import('@/utils/nativeBrowser');
+                          await openUrl(attachment.url, '_blank');
                         }}
                       />
                     )}

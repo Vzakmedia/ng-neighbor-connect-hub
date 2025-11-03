@@ -129,9 +129,11 @@ export const NOTIFICATION_SOUNDS = {
 export type NotificationSoundType = keyof typeof NOTIFICATION_SOUNDS;
 
 // Get user's selected notification sound preference
-export const getSelectedNotificationSound = (): NotificationSoundType => {
+export const getSelectedNotificationSound = async (): Promise<NotificationSoundType> => {
   try {
-    const audioSettings = localStorage.getItem('audioSettings');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { getItem } = useNativeStorage();
+    const audioSettings = await getItem('audioSettings');
     if (audioSettings) {
       const settings = JSON.parse(audioSettings);
       return settings.notificationSound || 'generated';
@@ -302,9 +304,11 @@ export const sendBrowserNotification = async (title: string, options: Notificati
 };
 
 // Check if user has enabled sound in settings
-export const isSoundEnabled = (): boolean => {
+export const isSoundEnabled = async (): Promise<boolean> => {
   try {
-    const audioSettings = localStorage.getItem('audioSettings');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { getItem } = useNativeStorage();
+    const audioSettings = await getItem('audioSettings');
     if (audioSettings) {
       const settings = JSON.parse(audioSettings);
       // Default to enabled unless explicitly set to false
@@ -318,9 +322,11 @@ export const isSoundEnabled = (): boolean => {
 };
 
 // Get volume level from user settings
-export const getSoundVolume = (): number => {
+export const getSoundVolume = async (): Promise<number> => {
   try {
-    const audioSettings = localStorage.getItem('audioSettings');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { getItem } = useNativeStorage();
+    const audioSettings = await getItem('audioSettings');
     if (audioSettings) {
       const settings = JSON.parse(audioSettings);
       return settings.volume || 0.5; // Default volume
@@ -333,9 +339,11 @@ export const getSoundVolume = (): number => {
 };
 
 // Message chime settings (mode + volume) from user settings
-export const getMessageChimeSettings = (): { mode: 'single' | 'double'; volume: number } => {
+export const getMessageChimeSettings = async (): Promise<{ mode: 'single' | 'double'; volume: number }> => {
   try {
-    const raw = localStorage.getItem('audioSettings');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { getItem } = useNativeStorage();
+    const raw = await getItem('audioSettings');
     const defaults = { mode: 'single' as 'single' | 'double', volume: 0.7 };
     if (!raw) return defaults;
     const s = JSON.parse(raw);
@@ -360,7 +368,7 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
   }
 
   // Get volume from settings or use custom volume
-  const volume = customVolume !== undefined ? customVolume : getSoundVolume();
+  const volume = customVolume !== undefined ? customVolume : await getSoundVolume();
 
   try {
     // Try native audio first on mobile
@@ -385,7 +393,7 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
       console.log('Playing emergency sound');
       await generateEmergencySound(volume);
     } else {
-      const selectedSound = getSelectedNotificationSound();
+      const selectedSound = await getSelectedNotificationSound();
       console.log('Playing selected notification sound:', selectedSound);
       
       if (selectedSound === 'generated') {
@@ -476,9 +484,9 @@ export const playMessagingChime = async (
   modeOverride?: 'single' | 'double'
 ): Promise<void> => {
   try {
-    if (!isSoundEnabled()) return;
+    if (!(await isSoundEnabled())) return;
 
-    const { mode, volume } = getMessageChimeSettings();
+    const { mode, volume } = await getMessageChimeSettings();
     const vol = Math.min(volumeOverride ?? volume ?? 0.7, 1.0);
     const modeToUse: 'single' | 'double' = modeOverride ?? mode ?? 'single';
 
@@ -574,7 +582,8 @@ export const createRingtonePlayer = () => {
       { f: 880.0, d: 0.35, o: 0.78 },
     ];
 
-    const volume = Math.min(getSoundVolume() * 0.9, 0.9);
+    const soundVolume = await getSoundVolume();
+    const volume = Math.min(soundVolume * 0.9, 0.9);
 
     pattern.forEach(({ f, d, o }) => {
       const osc = ctx.createOscillator();

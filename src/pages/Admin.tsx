@@ -3831,9 +3831,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
                           <DropdownMenuItem 
-                            onClick={() => {
-                              navigator.clipboard.writeText(selectedAlert.id);
-                              toast({ title: "Alert ID copied to clipboard" });
+                            onClick={async () => {
+                              const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+                              const { copyToClipboard } = useNativeClipboard();
+                              await copyToClipboard(selectedAlert.id, "Alert ID copied to clipboard");
                             }}
                           >
                             Copy Alert ID
@@ -4113,9 +4114,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
                           <DropdownMenuItem 
-                            onClick={() => {
-                              navigator.clipboard.writeText(selectedMarketplaceItem.id);
-                              toast({ title: "Item ID copied to clipboard" });
+                            onClick={async () => {
+                              const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+                              const { copyToClipboard } = useNativeClipboard();
+                              await copyToClipboard(selectedMarketplaceItem.id, "Item ID copied to clipboard");
                             }}
                           >
                             Copy Item ID
@@ -7332,7 +7334,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                     <Download className="h-4 w-4 mr-2" />
                     Download SDKs
                   </Button>
-                  <Button variant="outline" onClick={() => {
+                  <Button variant="outline" onClick={async () => {
                     const exampleData = {
                       authentication: {
                         headers: {
@@ -7346,11 +7348,9 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                       }
                     };
                     
-                    navigator.clipboard.writeText(JSON.stringify(exampleData, null, 2));
-                    toast({
-                      title: "Examples Copied",
-                      description: "API examples copied to clipboard",
-                    });
+                    const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+                    const { copyToClipboard } = useNativeClipboard();
+                    await copyToClipboard(JSON.stringify(exampleData, null, 2), "API examples copied to clipboard");
                   }}>
                     <Code className="h-4 w-4 mr-2" />
                     Copy Examples

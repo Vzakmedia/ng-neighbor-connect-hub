@@ -97,26 +97,36 @@ const [audioSettings, setAudioSettings] = useState({
     messageChimeVolume: [0.7],
   });
 
-  // Load audio settings from localStorage on component mount
+  // Load audio settings from native storage on component mount
   useEffect(() => {
-    const savedAudioSettings = localStorage.getItem('audioSettings');
-    if (savedAudioSettings) {
-      try {
-        const parsed = JSON.parse(savedAudioSettings);
-        setAudioSettings(prev => ({ 
-          ...prev, 
-          ...parsed,
-          notificationSound: parsed.notificationSound || 'generated'
-        }));
-      } catch (error) {
-        console.error('Error loading audio settings:', error);
+    const loadSettings = async () => {
+      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+      const { getItem } = useNativeStorage();
+      const savedAudioSettings = await getItem('audioSettings');
+      if (savedAudioSettings) {
+        try {
+          const parsed = JSON.parse(savedAudioSettings);
+          setAudioSettings(prev => ({ 
+            ...prev, 
+            ...parsed,
+            notificationSound: parsed.notificationSound || 'generated'
+          }));
+        } catch (error) {
+          console.error('Error loading audio settings:', error);
+        }
       }
-    }
+    };
+    loadSettings();
   }, []);
 
-  // Save audio settings to localStorage whenever they change
+  // Save audio settings to native storage whenever they change
   useEffect(() => {
-    localStorage.setItem('audioSettings', JSON.stringify(audioSettings));
+    const saveSettings = async () => {
+      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+      const { setItem } = useNativeStorage();
+      await setItem('audioSettings', JSON.stringify(audioSettings));
+    };
+    saveSettings();
   }, [audioSettings]);
 
   // Privacy Settings

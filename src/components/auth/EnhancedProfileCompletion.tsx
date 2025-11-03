@@ -217,9 +217,11 @@ export const EnhancedProfileCompletion = () => {
         throw error;
       }
 
-      // Clear old notifications for clean slate
+      // Clear old notifications for clean slate using native storage
       try {
-        localStorage.removeItem('ng-notifications-store');
+        const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+        const { removeItem } = useNativeStorage();
+        await removeItem('ng-notifications-store');
         console.log('Cleared notification store for new user');
       } catch (err) {
         console.error('Error clearing notification store:', err);

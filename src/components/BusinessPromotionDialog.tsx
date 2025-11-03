@@ -100,8 +100,9 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
       });
 
       if (data.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
+        // Open Stripe checkout in native browser
+        const { openUrl } = await import('@/utils/nativeBrowser');
+        await openUrl(data.url, '_blank');
         setOpen(false);
         toast({
           title: "Redirecting to payment",

@@ -19,16 +19,23 @@ const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(true);
   
   useEffect(() => {
-    // Check if user has dismissed the hero before
-    const hasSeenHero = localStorage.getItem('hero-dismissed');
-    if (hasSeenHero === 'true') {
-      setIsVisible(false);
-    }
+    // Check if user has dismissed the hero before using native storage
+    const checkDismissed = async () => {
+      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+      const { getItem } = useNativeStorage();
+      const hasSeenHero = await getItem('hero-dismissed');
+      if (hasSeenHero === 'true') {
+        setIsVisible(false);
+      }
+    };
+    checkDismissed();
   }, []);
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     setIsVisible(false);
-    localStorage.setItem('hero-dismissed', 'true');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { setItem } = useNativeStorage();
+    await setItem('hero-dismissed', 'true');
   };
 
   const getCommunityWelcome = () => {

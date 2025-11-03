@@ -216,8 +216,11 @@ export const useSafetyAlerts = (limit: number = 3) => {
       // Play notification sound if new alerts arrived
       if (formattedAlerts.length > alertCountRef.current && alertCountRef.current > 0) {
         try {
-          // Get audio settings from localStorage
-          const audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}');
+          // Get audio settings from native storage
+          const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+          const { getItem } = useNativeStorage();
+          const audioSettingsRaw = await getItem('audioSettings');
+          const audioSettings = audioSettingsRaw ? JSON.parse(audioSettingsRaw) : {};
           const soundEnabled = audioSettings.soundEnabled !== false; // Default to true
           const volume = audioSettings.emergencyVolume?.[0] || 0.7;
           
