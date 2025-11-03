@@ -3,6 +3,10 @@ let audioContext: AudioContext | null = null;
 let audioInitialized = false;
 let userInteracted = false;
 
+// Audio buffer cache for instant playback
+const audioBufferCache = new Map<string, AudioBuffer>();
+let preloadingPromise: Promise<void> | null = null;
+
 // Initialize audio context with mobile support
 const getAudioContext = async (): Promise<AudioContext> => {
   if (!audioContext) {
@@ -15,6 +19,68 @@ const getAudioContext = async (): Promise<AudioContext> => {
   }
   
   return audioContext;
+};
+
+// Preload and decode audio files into buffers
+export const preloadAudioFiles = async (): Promise<void> => {
+  // Return existing promise if already preloading
+  if (preloadingPromise) return preloadingPromise;
+  
+  preloadingPromise = (async () => {
+    try {
+      const ctx = await getAudioContext();
+      const filesToPreload = [
+        '/notification.mp3',
+        '/notification-bell.mp3',
+        '/notification-chime.mp3',
+        '/notification-ding.mp3'
+      ];
+      
+      console.log('Preloading audio files...');
+      
+      const loadPromises = filesToPreload.map(async (file) => {
+        try {
+          // Skip if already cached
+          if (audioBufferCache.has(file)) return;
+          
+          const response = await fetch(file);
+          const arrayBuffer = await response.arrayBuffer();
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+          audioBufferCache.set(file, audioBuffer);
+          console.log(`Preloaded: ${file}`);
+        } catch (error) {
+          console.warn(`Failed to preload ${file}:`, error);
+        }
+      });
+      
+      await Promise.all(loadPromises);
+      console.log('Audio preloading complete');
+    } catch (error) {
+      console.error('Audio preloading failed:', error);
+    }
+  })();
+  
+  return preloadingPromise;
+};
+
+// Play audio from buffer (instant playback)
+const playAudioBuffer = async (file: string, volume: number): Promise<void> => {
+  const ctx = await getAudioContext();
+  const buffer = audioBufferCache.get(file);
+  
+  if (!buffer) {
+    throw new Error(`Audio buffer not found for ${file}`);
+  }
+  
+  const source = ctx.createBufferSource();
+  const gainNode = ctx.createGain();
+  
+  source.buffer = buffer;
+  source.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  
+  gainNode.gain.setValueAtTime(Math.min(volume, 1.0), ctx.currentTime);
+  source.start(0);
 };
 
 // Initialize audio on first user interaction (critical for mobile)
@@ -39,6 +105,9 @@ export const initializeAudioOnInteraction = async (): Promise<void> => {
     userInteracted = true;
     audioInitialized = true;
     console.log('Audio initialized for mobile compatibility');
+    
+    // Start preloading audio files immediately after unlock
+    preloadAudioFiles().catch(console.error);
   } catch (error) {
     console.error('Failed to initialize audio:', error);
   }
@@ -317,36 +386,27 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
         if (selectedSound === 'generated') {
           await generateNotificationSound(volume);
         } else {
-          // Use selected audio file
+          // Use selected audio file with buffer playback
           const soundConfig = NOTIFICATION_SOUNDS[selectedSound];
           if (soundConfig.file) {
-            console.log('Loading audio file:', soundConfig.file);
-            const audio = new Audio(soundConfig.file);
-            audio.volume = Math.min(volume, 1.0);
-            audio.crossOrigin = 'anonymous';
-            audio.preload = 'auto';
-            
-            // Add error handling
-            audio.addEventListener('error', (e) => {
-              console.error('Audio file error:', e);
-            });
-            
-            // Wait for audio to be ready
-            await new Promise((resolve, reject) => {
-              if (audio.readyState >= 3) {
-                resolve(true);
-              } else {
-                audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
-                audio.addEventListener('error', reject, { once: true });
-                setTimeout(() => resolve(true), 2000); // Timeout
+            console.log('Playing audio file from buffer:', soundConfig.file);
+            try {
+              // Try buffer playback first (instant)
+              await playAudioBuffer(soundConfig.file, volume);
+              console.log('Audio buffer played successfully');
+            } catch (bufferError) {
+              console.warn('Buffer playback failed, falling back to Audio element:', bufferError);
+              // Fallback to traditional Audio element
+              const audio = new Audio(soundConfig.file);
+              audio.volume = Math.min(volume, 1.0);
+              audio.crossOrigin = 'anonymous';
+              audio.preload = 'auto';
+              
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                await playPromise;
               }
-            });
-            
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-              await playPromise;
             }
-            console.log('Audio file played successfully');
           } else {
             // Fallback to generated sound
             console.log('No file found, using generated sound');
@@ -453,52 +513,49 @@ export const playMessagingChime = async (
 
     const playOnce = async (): Promise<void> => {
       try {
-        const audio = new Audio('/notification-chime.mp3');
-        audio.volume = vol;
-        audio.preload = 'auto';
-        audio.crossOrigin = 'anonymous';
+        // Try buffer playback first (instant)
+        await playAudioBuffer('/notification-chime.mp3', vol);
+      } catch (bufferErr) {
+        console.warn('Chime buffer playback failed, trying fallback:', bufferErr);
+        try {
+          // Fallback to Audio element
+          const audio = new Audio('/notification-chime.mp3');
+          audio.volume = vol;
+          audio.preload = 'auto';
+          audio.crossOrigin = 'anonymous';
 
-        await new Promise((resolve, reject) => {
-          if (audio.readyState >= 3) {
-            resolve(true);
-          } else {
-            audio.addEventListener('canplaythrough', () => resolve(true), { once: true });
-            audio.addEventListener('error', reject, { once: true });
-            setTimeout(() => resolve(true), 1500);
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            await playPromise;
           }
-        });
+        } catch (fileErr) {
+          // Fallback to generated chime
+          const ctx = await getAudioContext();
+          const baseTime = ctx.currentTime + 0.05;
 
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          await playPromise;
+          const notes = [
+            { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
+            { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
+            { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
+          ];
+
+          notes.forEach(({ freq, dur, offset }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, baseTime + offset);
+
+            gain.gain.setValueAtTime(0, baseTime + offset);
+            gain.gain.linearRampToValueAtTime(Math.min(vol * 0.35, 0.6), baseTime + offset + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(baseTime + offset);
+            osc.stop(baseTime + offset + dur + 0.02);
+          });
         }
-      } catch (fileErr) {
-        // Fallback to generated chime
-        const ctx = await getAudioContext();
-        const baseTime = ctx.currentTime + 0.05;
-
-        const notes = [
-          { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
-          { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
-          { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
-        ];
-
-        notes.forEach(({ freq, dur, offset }) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, baseTime + offset);
-
-          gain.gain.setValueAtTime(0, baseTime + offset);
-          gain.gain.linearRampToValueAtTime(Math.min(vol * 0.35, 0.6), baseTime + offset + 0.03);
-          gain.gain.exponentialRampToValueAtTime(0.001, baseTime + offset + dur);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.start(baseTime + offset);
-          osc.stop(baseTime + offset + dur + 0.02);
-        });
       }
     };
 
