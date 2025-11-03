@@ -4,7 +4,7 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
-import { playMessagingChime } from '@/utils/audioUtils';
+import { nativeAudioManager } from '@/utils/nativeAudioManager';
 
 const getPlatform = () => {
   try {
@@ -48,8 +48,10 @@ export const useNativePushRegistration = () => {
         });
 
         // Foreground notifications
-        const recvListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          playMessagingChime(undefined, 'single');
+        const recvListener = await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+          // Play native notification sound
+          await nativeAudioManager.play('notification', 0.7);
+          
           const title = notification.title || 'New notification';
           const body = notification.body || '';
           toast({ title, description: body });
