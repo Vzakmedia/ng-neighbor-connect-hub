@@ -2607,6 +2607,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </TabsTrigger>
+          <TabsTrigger value="performance" className="w-full justify-start">
+            <Activity className="h-4 w-4 mr-2" />
+            Performance
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1">

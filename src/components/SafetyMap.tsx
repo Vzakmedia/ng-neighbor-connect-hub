@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+import { NativeSafetyMap } from './mobile/NativeSafetyMap';
 
 interface SafetyAlert {
   id: string;
@@ -28,6 +30,33 @@ interface SafetyMapProps {
 }
 
 const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
+  const isNative = Capacitor.isNativePlatform();
+  
+  // Use native map on mobile, web map otherwise
+  if (isNative) {
+    const nativeMarkers = alerts.map(alert => ({
+      id: alert.id,
+      latitude: alert.latitude,
+      longitude: alert.longitude,
+      title: alert.title,
+      snippet: alert.description,
+      type: 'alert' as const,
+    }));
+
+    return (
+      <NativeSafetyMap
+        center={{ lat: 9.082, lng: 8.6753 }}
+        zoom={12}
+        markers={nativeMarkers}
+        onMarkerClick={(markerId) => {
+          const alert = alerts.find(a => a.id === markerId);
+          if (alert) onAlertClick(alert);
+        }}
+      />
+    );
+  }
+
+  // Web map implementation below
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
