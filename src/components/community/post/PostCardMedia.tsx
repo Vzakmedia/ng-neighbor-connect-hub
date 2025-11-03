@@ -1,4 +1,5 @@
 import React from 'react';
+import { LazyImage } from './LazyImage';
 
 interface PostCardMediaProps {
   images: string[];
@@ -32,10 +33,9 @@ export const PostCardMedia = ({
       {images.slice(0, 4).map((url, index) => (
         !imageError[index] && (
           <div key={index} className="relative group overflow-hidden">
-            <img
+            <LazyImage
               src={url}
               alt={`Post image ${index + 1}`}
-              loading="lazy"
               className={`w-full ${imageHeight} object-cover hover:opacity-90 transition-opacity cursor-pointer`}
               onError={() => onImageError(index)}
               onClick={(e) => {
