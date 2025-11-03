@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { createSafeSubscription, getConnectionDiagnostics } from '@/utils/realtimeUtils';
@@ -23,6 +24,7 @@ interface PresenceState {
 
 export const useUserPresence = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [presenceState, setPresenceState] = useState<PresenceState>({});
   const [fallbackMode, setFallbackMode] = useState(false);
@@ -31,8 +33,12 @@ export const useUserPresence = () => {
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [lastSuccessfulConnection, setLastSuccessfulConnection] = useState<number | null>(null);
   
-  // Smart polling state
+  // Smart polling state - track page visibility and route
+  const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
   const [userIsActive, setUserIsActive] = useState(true);
+  
+  // Only run presence on messaging pages
+  const isMessagingRoute = location.pathname === '/messages' || location.pathname.startsWith('/chat');
   
   // Connection diagnostics
   const [connectionMetrics] = useState({
@@ -130,6 +136,19 @@ export const useUserPresence = () => {
     }, delay);
   }, [fallbackMode, retryAttempt, getRetryDelay, connectionMetrics.isIOS]);
 
+  // Track page visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Track user activity for smart polling
   useEffect(() => {
     const handleActivity = () => setUserIsActive(true);
@@ -141,7 +160,7 @@ export const useUserPresence = () => {
     
     const inactivityTimer = setInterval(() => {
       setUserIsActive(false);
-    }, 60000); // Mark as inactive after 1 minute
+    }, 120000); // Mark as inactive after 2 minutes
     
     return () => {
       events.forEach(event => {
@@ -152,7 +171,10 @@ export const useUserPresence = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isMessagingRoute) {
+      // Don't initialize presence tracking if not on messaging pages
+      return;
+    }
 
     let subscription: any = null;
     let fallbackInterval: NodeJS.Timeout | null = null;
@@ -274,12 +296,13 @@ export const useUserPresence = () => {
           }
         );
 
-        // Smart polling - only when user is active
+        // Smart polling - increased interval to 180 seconds (3 minutes)
+        // Only poll when page is visible, user is active, and in fallback mode
         fallbackInterval = setInterval(() => {
-          if (fallbackMode && userIsActive) {
+          if (fallbackMode && userIsActive && isPageVisible) {
             fallbackPresenceCheck();
           }
-        }, 60000); // Check every 60 seconds
+        }, 180000); // Check every 3 minutes
 
         // Initial fallback check
         setTimeout(() => {
@@ -308,7 +331,7 @@ export const useUserPresence = () => {
         clearTimeout(reconnectTimeout);
       }
     };
-  }, [user, updatePresenceState, fallbackPresenceCheck, userIsActive, attemptReconnection, retryAttempt, connectionMetrics.isIOS]);
+  }, [user, isMessagingRoute, updatePresenceState, fallbackPresenceCheck, userIsActive, isPageVisible, attemptReconnection, retryAttempt, connectionMetrics.isIOS]);
 
   const isUserOnline = useCallback((userId: string) => {
     // In fallback mode, be more lenient about marking users as online
@@ -340,6 +363,12 @@ export const useUserPresence = () => {
     };
   }, [fallbackMode, connectionMetrics, retryAttempt, lastSuccessfulConnection]);
 
+  const manualRefresh = useCallback(() => {
+    if (isMessagingRoute) {
+      fallbackPresenceCheck();
+    }
+  }, [isMessagingRoute, fallbackPresenceCheck]);
+
   return {
     onlineUsers: Array.from(onlineUsers),
     isUserOnline,
@@ -347,5 +376,7 @@ export const useUserPresence = () => {
     totalOnlineUsers: onlineUsers.size,
     fallbackMode,
     connectionStatus: getConnectionStatus(), // Detailed diagnostics
+    manualRefresh, // Allow manual refresh on messages page
+    isEnabled: isMessagingRoute, // Expose whether presence is enabled
   };
 };
