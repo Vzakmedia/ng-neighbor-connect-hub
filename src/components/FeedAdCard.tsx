@@ -42,9 +42,10 @@ interface FeedAdProps {
 }
 
 const FeedAdCard = ({ ad }: FeedAdProps) => {
-  const handleAdClick = () => {
+  const handleAdClick = async () => {
     if (ad.url) {
-      window.open(ad.url, '_blank', 'noopener,noreferrer');
+      const { openUrl } = await import('@/utils/nativeBrowser');
+      await openUrl(ad.url, '_blank');
     }
   };
 

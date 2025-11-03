@@ -14,13 +14,14 @@ interface AdCardProps {
 export const AdCard = ({ ad, placement, onAdClick }: AdCardProps) => {
   const navigate = useNavigate();
 
-  const handleClick = () => {
+  const handleClick = async () => {
     onAdClick();
     
     // Navigate to URL if provided, otherwise navigate internally
     if (ad.ad_url) {
       if (ad.ad_url.startsWith('http')) {
-        window.open(ad.ad_url, '_blank', 'noopener,noreferrer');
+        const { openUrl } = await import('@/utils/nativeBrowser');
+        await openUrl(ad.ad_url, '_blank');
       } else {
         navigate(ad.ad_url);
       }

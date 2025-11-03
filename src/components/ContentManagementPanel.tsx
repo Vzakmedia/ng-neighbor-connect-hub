@@ -1205,7 +1205,10 @@ const ContentManagementPanel = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                              onClick={async () => {
+                                const { openUrl } = await import('@/utils/nativeBrowser');
+                                await openUrl(getFileUrl(item.data?.file_path), '_blank');
+                              }}
                             >
                               <Download className="h-4 w-4 mr-1" />
                               Download
@@ -1213,7 +1216,10 @@ const ContentManagementPanel = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(getFileUrl(item.data?.file_path), '_blank')}
+                              onClick={async () => {
+                                const { openUrl } = await import('@/utils/nativeBrowser');
+                                await openUrl(getFileUrl(item.data?.file_path), '_blank');
+                              }}
                             >
                               <ExternalLink className="h-4 w-4 mr-1" />
                               View

@@ -120,13 +120,11 @@ const StaffInvitationManager = () => {
     }
   };
 
-  const copyInvitationLink = (code: string) => {
+  const copyInvitationLink = async (code: string) => {
     const inviteUrl = `${window.location.origin}/staff-login?invitation=${code}`;
-    navigator.clipboard.writeText(inviteUrl);
-    toast({
-      title: "Copied!",
-      description: "Invitation link copied to clipboard"
-    });
+    const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+    const { copyToClipboard } = useNativeClipboard();
+    await copyToClipboard(inviteUrl, "Invitation link copied to clipboard");
   };
 
   const deactivateInvitation = async (id: string) => {

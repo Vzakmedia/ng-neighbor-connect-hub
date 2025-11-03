@@ -466,7 +466,10 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => window.open(url, '_blank')}
+                              onClick={async () => {
+                                const { openUrl } = await import('@/utils/nativeBrowser');
+                                await openUrl(url, '_blank');
+                              }}
                             >
                               <ExternalLink className="h-4 w-4" />
                             </Button>

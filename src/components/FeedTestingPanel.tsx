@@ -39,11 +39,13 @@ export const FeedTestingPanel = () => {
 
     // Test 2: Check cache persistence
     const cacheStart = Date.now();
-    const cachedData = localStorage.getItem('REACT_QUERY_OFFLINE_CACHE');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { getItem } = useNativeStorage();
+    const cachedData = await getItem('REACT_QUERY_OFFLINE_CACHE');
     results.push({
       name: 'Cache Persistence',
       status: cachedData ? 'pass' : 'fail',
-      message: cachedData ? 'Cache found in localStorage' : 'No cached data',
+      message: cachedData ? 'Cache found in storage' : 'No cached data',
       duration: Date.now() - cacheStart,
     });
 
@@ -97,9 +99,11 @@ export const FeedTestingPanel = () => {
     setIsRunning(false);
   };
 
-  const clearCache = () => {
+  const clearCache = async () => {
     queryClient.clear();
-    localStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { removeItem } = useNativeStorage();
+    await removeItem('REACT_QUERY_OFFLINE_CACHE');
     setTests([]);
   };
 

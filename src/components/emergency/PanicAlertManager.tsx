@@ -130,10 +130,11 @@ const PanicAlertManager = ({
           {/* Actions */}
           <div className="flex gap-3 pt-4">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (panicAlert.latitude && panicAlert.longitude) {
                   const url = `https://www.google.com/maps?q=${panicAlert.latitude},${panicAlert.longitude}`;
-                  window.open(url, '_blank');
+                  const { openUrl } = await import('@/utils/nativeBrowser');
+                  await openUrl(url, '_blank');
                 }
               }}
               variant="outline"

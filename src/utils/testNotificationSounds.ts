@@ -8,7 +8,7 @@ export const testNotificationSound = async (soundType: NotificationSoundType, vo
     // Ensure audio is initialized first (critical for mobile and modern browsers)
     await initializeAudioOnInteraction();
     
-    const testVolume = volume !== undefined ? volume : getSoundVolume();
+    const testVolume = volume !== undefined ? volume : await getSoundVolume();
     console.log('Using volume:', testVolume);
     
     if (soundType === 'generated') {
@@ -63,7 +63,8 @@ export const testNotificationSound = async (soundType: NotificationSoundType, vo
     if (soundType !== 'generated') {
       console.log('Falling back to generated sound');
       try {
-        await generateNotificationSound(volume || getSoundVolume());
+        const fallbackVolume = volume || await getSoundVolume();
+        await generateNotificationSound(fallbackVolume);
         console.log('Fallback generated sound played');
       } catch (fallbackError) {
         console.error('Fallback generated sound also failed:', fallbackError);

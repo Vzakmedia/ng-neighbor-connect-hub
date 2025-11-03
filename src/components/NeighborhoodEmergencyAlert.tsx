@@ -225,10 +225,11 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
   };
 
-  const getDirections = (latitude: number, longitude: number) => {
+  const getDirections = async (latitude: number, longitude: number) => {
     if (userLocation) {
       const url = `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${latitude},${longitude}`;
-      window.open(url, '_blank');
+      const { openUrl } = await import('@/utils/nativeBrowser');
+      await openUrl(url, '_blank');
     }
   };
 

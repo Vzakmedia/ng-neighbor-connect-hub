@@ -155,12 +155,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete }) =>
     }
   };
 
-  const copyBackupCodes = () => {
-    navigator.clipboard.writeText(backupCodes.join('\n'));
-    toast({
-      title: "Copied to Clipboard",
-      description: "Backup codes have been copied to your clipboard.",
-    });
+  const copyBackupCodes = async () => {
+    const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
+    const { copyToClipboard } = useNativeClipboard();
+    await copyToClipboard(backupCodes.join('\n'), "Backup codes copied to clipboard");
   };
 
   const downloadBackupCodes = () => {
