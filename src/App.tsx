@@ -192,17 +192,17 @@ const App = () => {
           disableTransitionOnChange
         >
           <AuthProvider>
-            <RealtimeProvider>
-              <PresenceProvider>
-                <TooltipProvider>
-                  <div style={{
-                  paddingLeft: 'var(--safe-area-left)', 
-                  paddingRight: 'var(--safe-area-right)',
-                  paddingBottom: 'var(--safe-area-bottom)'
-                }}>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
+            <TooltipProvider>
+              <div style={{
+                paddingLeft: 'var(--safe-area-left)', 
+                paddingRight: 'var(--safe-area-right)',
+                paddingBottom: 'var(--safe-area-bottom)'
+              }}>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <RealtimeProvider>
+                    <PresenceProvider>
           
           <AudioInitializer />
           <PushNotificationWrapper />
@@ -248,12 +248,12 @@ const App = () => {
               <Route path="/api-docs" element={<ApiDocs />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
-                  <FloatingCreatePostButton />
-                  </BrowserRouter>
-                  </div>
-                </TooltipProvider>
-              </PresenceProvider>
-            </RealtimeProvider>
+            <FloatingCreatePostButton />
+                    </PresenceProvider>
+                  </RealtimeProvider>
+                </BrowserRouter>
+              </div>
+            </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
