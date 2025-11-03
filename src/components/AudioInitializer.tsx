@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { initializeAudioOnInteraction } from '@/utils/audioUtils';
+import { initializeAudioOnInteraction, preloadAudioFiles } from '@/utils/audioUtils';
 
 // Component to initialize audio on app startup
 export const AudioInitializer = () => {
@@ -26,6 +26,17 @@ export const AudioInitializer = () => {
         passive: true 
       });
     });
+    
+    // Also start preloading on page load (will complete after user interaction)
+    const startPreload = () => {
+      // Delay slightly to not block initial render
+      setTimeout(() => {
+        preloadAudioFiles().catch(console.error);
+      }, 1000);
+    };
+    
+    // Start preload after a short delay
+    startPreload();
 
     // Cleanup
     return () => {
