@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
+import { Capacitor } from '@capacitor/core';
 
 export interface Attachment {
   id: string;
@@ -14,9 +16,19 @@ export interface Attachment {
 export const useFileUpload = (userId: string) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { connectionType } = useNativeNetwork();
+  const isNative = Capacitor.isNativePlatform();
 
   const uploadFile = useCallback(async (file: File): Promise<Attachment | null> => {
     try {
+      // Warn on large uploads over cellular
+      if (isNative && connectionType === 'cellular' && file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Large Upload on Cellular',
+          description: `Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB over cellular data. Consider using WiFi.`,
+        });
+      }
+
       setUploading(true);
       
       let fileToUpload = file;
@@ -81,7 +93,7 @@ export const useFileUpload = (userId: string) => {
     } finally {
       setUploading(false);
     }
-  }, [userId, toast]);
+  }, [userId, toast, isNative, connectionType]);
 
   const uploadMultipleFiles = useCallback(async (files: File[]): Promise<Attachment[]> => {
     const attachments: Attachment[] = [];

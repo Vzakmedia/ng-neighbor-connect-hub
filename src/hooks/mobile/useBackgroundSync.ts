@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useNativeStorage } from './useNativeStorage';
 import { useNativeNetwork } from './useNativeNetwork';
+import { useBatteryStatus } from './useBatteryStatus';
 import { useToast } from '@/hooks/use-toast';
 
 export interface QueuedOperation {
@@ -22,7 +23,8 @@ export const useBackgroundSync = () => {
   const [queue, setQueue] = useState<QueuedOperation[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { getItem, setItem } = useNativeStorage();
-  const { isOnline } = useNativeNetwork();
+  const { isOnline, connectionType } = useNativeNetwork();
+  const { shouldPauseBackgroundTasks, isLowBattery } = useBatteryStatus();
   const { toast } = useToast();
   const isNative = Capacitor.isNativePlatform();
 
@@ -100,7 +102,20 @@ export const useBackgroundSync = () => {
    * Process queue with exponential backoff
    */
   const processQueue = useCallback(async () => {
+    // Don't process if offline, already processing, or queue is empty
     if (!isOnline || isProcessing || queue.length === 0) return;
+
+    // Pause sync on low battery (unless charging)
+    if (shouldPauseBackgroundTasks) {
+      console.log('Background sync paused due to low battery');
+      return;
+    }
+
+    // Skip retry on airplane mode
+    if (connectionType === 'none') {
+      console.log('Background sync paused: no connection');
+      return;
+    }
 
     setIsProcessing(true);
 
@@ -147,7 +162,7 @@ export const useBackgroundSync = () => {
     }
 
     setIsProcessing(false);
-  }, [isOnline, isProcessing, queue, toast, removeFromQueue, updateOperation]);
+  }, [isOnline, isProcessing, queue, toast, removeFromQueue, updateOperation, shouldPauseBackgroundTasks, connectionType]);
 
   /**
    * Process individual operation (to be implemented by consumer)
@@ -200,6 +215,8 @@ export const useBackgroundSync = () => {
     clearQueue,
     getQueueStats,
     hasQueuedItems: queue.length > 0,
-    isNative
+    isNative,
+    isPaused: shouldPauseBackgroundTasks,
+    batteryOptimized: isLowBattery,
   };
 };

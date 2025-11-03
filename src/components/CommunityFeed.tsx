@@ -11,6 +11,8 @@ import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useReadStatus } from "@/hooks/useReadStatus";
+import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
+import { Capacitor } from "@capacitor/core";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
@@ -18,9 +20,19 @@ export const CommunityFeed = () => {
   const { preferences } = useLocationPreferences();
   const { markCommunityPostAsRead, refreshUnreadCounts, markAllCommunityPostsAsRead } = useReadStatus();
   const isMobile = useIsMobile();
+  const { connectionType } = useNativeNetwork();
+  const isNative = Capacitor.isNativePlatform();
   const [markedPostIds, setMarkedPostIds] = useState<Set<string>>(new Set());
   const pendingMarksRef = useRef<Set<string>>(new Set());
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Adjust polling interval based on connection type
+  const pollingInterval = useMemo(() => {
+    if (!isNative) return 60000; // 1 minute on web
+    if (connectionType === 'wifi') return 30000; // 30 seconds on WiFi
+    if (connectionType === 'cellular') return 120000; // 2 minutes on cellular
+    return 300000; // 5 minutes on slow/unknown connections
+  }, [isNative, connectionType]);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -103,15 +115,20 @@ export const CommunityFeed = () => {
       });
   }, [markCommunityPostAsRead, refreshUnreadCounts]);
 
-  // Debounced batch processing - increased to 2000ms for better batching
+  // Debounced batch processing - adjust based on connection
+  const batchDelay = useMemo(() => {
+    if (connectionType === 'cellular') return 5000; // 5s on cellular
+    return 2000; // 2s on WiFi/web
+  }, [connectionType]);
+
   const debouncedBatchMarkRead = useCallback(() => {
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
     }
     refreshTimeoutRef.current = setTimeout(() => {
       batchedMarkAsRead();
-    }, 2000); // Batch for 2 seconds
-  }, [batchedMarkAsRead]);
+    }, batchDelay);
+  }, [batchedMarkAsRead, batchDelay]);
 
   // Mark a post as read when it's been visible for 2+ seconds
   const handlePostVisible = useCallback((postId: string) => {
