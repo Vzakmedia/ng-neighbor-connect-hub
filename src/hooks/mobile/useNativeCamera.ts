@@ -8,7 +8,7 @@ export const useNativeCamera = () => {
   const { requestCameraPermission, isNative } = useNativePermissions();
   const { toast } = useToast();
 
-  const takePicture = useCallback(async (): Promise<File | null> => {
+  const takePicture = useCallback(async (optimized = true): Promise<File | null> => {
     if (!isNative) {
       // Web fallback - not available, return null
       return null;
@@ -21,10 +21,13 @@ export const useNativeCamera = () => {
       }
 
       const photo = await Camera.getPhoto({
-        quality: 90,
+        quality: optimized ? 80 : 90, // Use 80% quality for optimized images
         allowEditing: false,
         resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
+        width: optimized ? 1920 : undefined, // Max 1920px width
+        height: optimized ? 1920 : undefined, // Max 1920px height
+        correctOrientation: true, // Fix rotation issues
       });
 
       return await photoToFile(photo);
@@ -39,7 +42,7 @@ export const useNativeCamera = () => {
     }
   }, [isNative, requestCameraPermission, toast]);
 
-  const pickImages = useCallback(async (multiple = true): Promise<File[]> => {
+  const pickImages = useCallback(async (multiple = true, optimized = true): Promise<File[]> => {
     if (!isNative) {
       // Web fallback - return empty array, let file input handle it
       return [];
@@ -52,10 +55,13 @@ export const useNativeCamera = () => {
       }
 
       const photo = await Camera.getPhoto({
-        quality: 90,
+        quality: optimized ? 80 : 90, // Use 80% quality for optimized images
         allowEditing: false,
         resultType: CameraResultType.Uri,
         source: CameraSource.Photos,
+        width: optimized ? 1920 : undefined, // Max 1920px width
+        height: optimized ? 1920 : undefined, // Max 1920px height
+        correctOrientation: true, // Fix rotation issues
       });
 
       const file = await photoToFile(photo);
