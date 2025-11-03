@@ -1,3 +1,7 @@
+import { Capacitor } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { nativeAudioManager, type SoundAssetId } from './nativeAudioManager';
+
 // Audio Context for sound generation
 let audioContext: AudioContext | null = null;
 let audioInitialized = false;
@@ -349,117 +353,81 @@ export const getMessageChimeSettings = (): { mode: 'single' | 'double'; volume: 
 
 // Enhanced play notification with permission and settings check
 export const playNotification = async (type: 'normal' | 'emergency' | 'notification', customVolume?: number): Promise<void> => {
+  // Check if sound is enabled in user settings
+  if (!isSoundEnabled()) {
+    console.log('Sound disabled in user settings, skipping sound');
+    return;
+  }
+
+  // Get volume from settings or use custom volume
+  const volume = customVolume !== undefined ? customVolume : getSoundVolume();
+
   try {
-    console.log('playNotification called with type:', type, 'customVolume:', customVolume);
-    
-    // For mobile compatibility, ensure audio is initialized
-    if (!userInteracted) {
-      console.log('Audio not initialized due to mobile restrictions, trying to initialize...');
-      await initializeAudioOnInteraction();
-    }
-    
-    // Proceed without requiring Notification permission; sounds can play in-app
-    // (Browser push notifications are handled separately)
-
-    // Check if sound is enabled in user settings
-    if (!isSoundEnabled()) {
-      console.log('Sound disabled in user settings, skipping sound');
-      return;
+    // Try native audio first on mobile
+    if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+      const assetId: SoundAssetId = type === 'emergency' ? 'emergency' : 'notification';
+      const success = await nativeAudioManager.play(assetId, volume);
+      
+      if (success) {
+        console.log(`playNotification: Played native ${assetId}`);
+        return;
+      }
+      
+      console.warn('playNotification: Native audio failed, falling back to Web Audio');
     }
 
-    // Get volume from settings or use custom volume
-    const volume = customVolume !== undefined ? customVolume : getSoundVolume();
-    console.log('Playing notification with volume:', volume, 'type:', type);
+    // Web Audio fallback for web or if native fails
+    console.log('playNotification called with type:', type, 'volume:', volume);
     
-    // Ensure audio is initialized first
     await initializeAudioOnInteraction();
     
-    try {
-      if (type === 'emergency') {
-        console.log('Playing emergency sound');
-        await generateEmergencySound(volume);
+    if (type === 'emergency') {
+      console.log('Playing emergency sound');
+      await generateEmergencySound(volume);
+    } else {
+      const selectedSound = getSelectedNotificationSound();
+      console.log('Playing selected notification sound:', selectedSound);
+      
+      if (selectedSound === 'generated') {
+        await generateNotificationSound(volume);
       } else {
-        // Play user's preferred notification sound
-        const selectedSound = getSelectedNotificationSound();
-        console.log('Playing selected notification sound:', selectedSound);
-        
-        if (selectedSound === 'generated') {
-          await generateNotificationSound(volume);
-        } else {
-          // Use selected audio file with buffer playback
-          const soundConfig = NOTIFICATION_SOUNDS[selectedSound];
-          if (soundConfig.file) {
-            console.log('Playing audio file from buffer:', soundConfig.file);
-            try {
-              // Try buffer playback first (instant)
-              await playAudioBuffer(soundConfig.file, volume);
-              console.log('Audio buffer played successfully');
-            } catch (bufferError) {
-              console.warn('Buffer playback failed, falling back to Audio element:', bufferError);
-              // Fallback to traditional Audio element
-              const audio = new Audio(soundConfig.file);
-              audio.volume = Math.min(volume, 1.0);
-              audio.crossOrigin = 'anonymous';
-              audio.preload = 'auto';
-              
-              const playPromise = audio.play();
-              if (playPromise !== undefined) {
-                await playPromise;
-              }
+        const soundConfig = NOTIFICATION_SOUNDS[selectedSound];
+        if (soundConfig.file) {
+          try {
+            await playAudioBuffer(soundConfig.file, volume);
+          } catch (bufferError) {
+            console.warn('Buffer playback failed, falling back to Audio element:', bufferError);
+            const audio = new Audio(soundConfig.file);
+            audio.volume = Math.min(volume, 1.0);
+            audio.crossOrigin = 'anonymous';
+            audio.preload = 'auto';
+            
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              await playPromise;
             }
-          } else {
-            // Fallback to generated sound
-            console.log('No file found, using generated sound');
-            await generateNotificationSound(volume);
           }
+        } else {
+          await generateNotificationSound(volume);
         }
       }
-      console.log('Notification sound played successfully');
-    } catch (audioError) {
-      console.error('Selected audio failed:', audioError);
-      throw audioError; // Let it fall through to fallbacks
     }
-    
+    console.log('Notification sound played successfully');
   } catch (error) {
     console.error('Error playing notification sound:', error);
     
-    // Enhanced fallback chain for mobile
-    try {
-      console.log('Trying fallback with notification.mp3');
-      const audio = new Audio('/notification.mp3');
-      const volume = customVolume !== undefined ? customVolume : getSoundVolume();
-      audio.volume = Math.min(volume, 1.0);
-      
-      // Add mobile-specific audio handling
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'auto';
-      
-      // For mobile, we need to handle play promise
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        await playPromise;
+    // Fallback to vibration on mobile
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Haptics.impact({ style: type === 'emergency' ? ImpactStyle.Heavy : ImpactStyle.Medium });
+      } catch (hapticError) {
+        console.error('Haptic feedback failed:', hapticError);
       }
-      
-      console.log('Fallback audio file played');
-    } catch (fallbackError) {
-      console.error('Fallback audio also failed:', fallbackError);
-      
-      // Try vibration as final fallback on mobile
-      if ('vibrate' in navigator && isSoundEnabled()) {
-        if (type === 'emergency') {
-          navigator.vibrate([200, 100, 200, 100, 200]); // Emergency pattern
-        } else {
-          navigator.vibrate([100]); // Normal notification
-        }
-        console.log('Used vibration as audio fallback');
-      }
-      
-      // Final fallback to system notification (but only if user has enabled sounds)
-      if ('Notification' in window && isSoundEnabled()) {
-        new Notification('New alert', { 
-          silent: false,
-          tag: 'audio-fallback-notification'
-        });
+    } else if ('vibrate' in navigator) {
+      if (type === 'emergency') {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+      } else {
+        navigator.vibrate([100]);
       }
     }
   }
@@ -470,17 +438,23 @@ export const playEmergencyAlert = async (): Promise<void> => {
   try {
     console.log('Playing emergency alert sound');
     
-    // Check settings only (sound may play without Notification permission)
     if (!isSoundEnabled()) {
       console.log('Sound disabled in user settings, skipping emergency alert');
       return;
     }
 
-    // Play emergency sound at high volume for emergencies
-    const volume = Math.min(getSoundVolume() * 1.5, 1.0); // Boost volume for emergencies but cap at 1.0
-    await generateEmergencySound(volume);
-    
-    // Also show a browser notification for emergencies (only if permission granted)
+    // Play emergency sound at high volume
+    await playNotification('emergency', 0.9);
+
+    // Vibrate for emphasis on mobile
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+        setTimeout(() => Haptics.impact({ style: ImpactStyle.Heavy }), 300);
+      } catch {}
+    }
+
+    // Show browser notification if permission granted
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('🚨 EMERGENCY ALERT', {
         body: 'Emergency alert in your area',
@@ -502,24 +476,39 @@ export const playMessagingChime = async (
   modeOverride?: 'single' | 'double'
 ): Promise<void> => {
   try {
-    // Respect global sound toggle
     if (!isSoundEnabled()) return;
-
-    await initializeAudioOnInteraction();
 
     const { mode, volume } = getMessageChimeSettings();
     const vol = Math.min(volumeOverride ?? volume ?? 0.7, 1.0);
     const modeToUse: 'single' | 'double' = modeOverride ?? mode ?? 'single';
 
+    console.log(`playMessagingChime: Playing ${modeToUse} chime at volume ${vol}`);
+
+    // Try native audio first on mobile
+    if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+      const success = await nativeAudioManager.play('message-chime', vol);
+      
+      if (success) {
+        if (modeToUse === 'double') {
+          setTimeout(() => nativeAudioManager.play('message-chime', vol), 200);
+        }
+        console.log('playMessagingChime: Played native audio');
+        return;
+      }
+      
+      console.warn('playMessagingChime: Native audio failed, falling back');
+    }
+
+    // Web Audio fallback
+    await initializeAudioOnInteraction();
+
     const playOnce = async (): Promise<void> => {
       try {
-        // Try buffer playback first (instant)
-        await playAudioBuffer('/notification-chime.mp3', vol);
+        await playAudioBuffer('/assets/sounds/message-chime.mp3', vol);
       } catch (bufferErr) {
-        console.warn('Chime buffer playback failed, trying fallback:', bufferErr);
+        console.warn('Chime buffer playback failed:', bufferErr);
         try {
-          // Fallback to Audio element
-          const audio = new Audio('/notification-chime.mp3');
+          const audio = new Audio('/assets/sounds/message-chime.mp3');
           audio.volume = vol;
           audio.preload = 'auto';
           audio.crossOrigin = 'anonymous';
@@ -529,14 +518,14 @@ export const playMessagingChime = async (
             await playPromise;
           }
         } catch (fileErr) {
-          // Fallback to generated chime
+          // Generated chime fallback
           const ctx = await getAudioContext();
           const baseTime = ctx.currentTime + 0.05;
 
           const notes = [
-            { freq: 659.25, dur: 0.14, offset: 0.0 },  // E5
-            { freq: 880.0,  dur: 0.16, offset: 0.16 }, // A5 (sweeter interval)
-            { freq: 987.77, dur: 0.18, offset: 0.34 }, // B5
+            { freq: 659.25, dur: 0.14, offset: 0.0 },
+            { freq: 880.0,  dur: 0.16, offset: 0.16 },
+            { freq: 987.77, dur: 0.18, offset: 0.34 },
           ];
 
           notes.forEach(({ freq, dur, offset }) => {
@@ -573,16 +562,16 @@ export const playMessagingChime = async (
 export const createRingtonePlayer = () => {
   let timer: number | null = null;
   let active = false;
+  let nativeRingtoneActive = false;
 
   const scheduleCycle = async () => {
     const ctx = await getAudioContext();
     const t0 = ctx.currentTime + 0.05;
     const pattern = [
-      // A gentle arpeggio in A major
-      { f: 440.0, d: 0.25, o: 0.00 }, // A4
-      { f: 554.37, d: 0.22, o: 0.28 }, // C#5
-      { f: 659.25, d: 0.22, o: 0.52 }, // E5
-      { f: 880.0, d: 0.35, o: 0.78 },  // A5
+      { f: 440.0, d: 0.25, o: 0.00 },
+      { f: 554.37, d: 0.22, o: 0.28 },
+      { f: 659.25, d: 0.22, o: 0.52 },
+      { f: 880.0, d: 0.35, o: 0.78 },
     ];
 
     const volume = Math.min(getSoundVolume() * 0.9, 0.9);
@@ -610,6 +599,21 @@ export const createRingtonePlayer = () => {
     start: async () => {
       if (active) return;
       active = true;
+
+      // Try native audio looping on mobile
+      if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+        const success = await nativeAudioManager.loop('ringtone', 0.5);
+        
+        if (success) {
+          console.log('createRingtonePlayer: Started native ringtone loop');
+          nativeRingtoneActive = true;
+          return;
+        }
+        
+        console.warn('createRingtonePlayer: Native loop failed, using Web Audio');
+      }
+
+      // Web Audio fallback
       await initializeAudioOnInteraction();
       const loop = async () => {
         if (!active) return;
@@ -618,8 +622,18 @@ export const createRingtonePlayer = () => {
       };
       loop();
     },
-    stop: () => {
+    stop: async () => {
       active = false;
+
+      // Stop native ringtone if active
+      if (nativeRingtoneActive) {
+        await nativeAudioManager.stop('ringtone');
+        nativeRingtoneActive = false;
+        console.log('createRingtonePlayer: Stopped native ringtone');
+        return;
+      }
+
+      // Stop Web Audio timer
       if (timer) {
         clearTimeout(timer);
         timer = null;
