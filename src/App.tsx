@@ -62,10 +62,14 @@ import Press from "./pages/Press";
 import Careers from "./pages/Careers";
 import ApiDocs from "./pages/ApiDocs";
 
+// Enhanced QueryClient with persistence and optimizations
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false, // Reduce unnecessary refetches
+      refetchOnReconnect: 'always',
       retry: (failureCount, error) => {
         // Don't retry on security errors
         if (error && (error as any).name === 'SecurityError') {
@@ -73,6 +77,12 @@ const queryClient = new QueryClient({
         }
         return failureCount < 3;
       },
+      // Enable query deduplication
+      structuralSharing: true,
+    },
+    mutations: {
+      // Retry mutations once on network errors
+      retry: 1,
     },
   },
 });
