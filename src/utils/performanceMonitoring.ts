@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react';
 import { Capacitor } from '@capacitor/core';
 
 interface PerformanceMetrics {
@@ -18,27 +17,7 @@ class PerformanceMonitor {
   initialize(dsn?: string) {
     if (this.initialized) return;
 
-    // Only initialize Sentry in production on native
-    if (this.isNative && import.meta.env.PROD && dsn) {
-      Sentry.init({
-        dsn: dsn,
-        integrations: [
-          Sentry.browserTracingIntegration(),
-          Sentry.replayIntegration({
-            maskAllText: true,
-            blockAllMedia: true,
-          }),
-        ],
-        tracesSampleRate: 0.1, // 10% of transactions
-        replaysSessionSampleRate: 0.1, // 10% of sessions
-        replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
-        environment: import.meta.env.MODE,
-        enabled: import.meta.env.PROD,
-      });
-
-      console.log('Performance monitoring initialized');
-    }
-
+    console.log('Performance monitoring initialized');
     this.initialized = true;
     this.trackAppLaunch();
   }
@@ -57,14 +36,6 @@ class PerformanceMonitor {
         appLaunchTime: `${appLaunchTime}ms`,
         firstRenderTime: `${firstRenderTime}ms`,
       });
-
-      // Send to Sentry if available (metrics API may not be available in all Sentry versions)
-      if (this.initialized && Sentry.isInitialized()) {
-        Sentry.captureMessage(`App launch time: ${appLaunchTime}ms`, {
-          level: 'info',
-          tags: { platform: this.isNative ? 'native' : 'web', metric: 'launch_time' },
-        });
-      }
     }
   }
 
@@ -78,33 +49,10 @@ class PerformanceMonitor {
     }
     
     this.metrics.apiLatency.set(endpoint, latencies);
-
-    // Send to Sentry (using breadcrumb for API timing)
-    if (this.initialized && Sentry.isInitialized()) {
-      Sentry.addBreadcrumb({
-        category: 'api',
-        message: `API call to ${endpoint}`,
-        level: 'info',
-        data: {
-          duration,
-          endpoint,
-          platform: this.isNative ? 'native' : 'web',
-        },
-      });
-    }
   }
 
   trackError(error: Error, context?: Record<string, any>) {
     console.error('Tracked error:', error, context);
-
-    if (this.initialized && Sentry.isInitialized()) {
-      Sentry.captureException(error, {
-        extra: context,
-        tags: {
-          platform: this.isNative ? 'native' : 'web',
-        },
-      });
-    }
   }
 
   trackMemoryUsage() {
@@ -112,18 +60,6 @@ class PerformanceMonitor {
       const memory = (performance as any).memory;
       const usedMemory = memory.usedJSHeapSize / 1048576; // Convert to MB
       this.metrics.memoryUsage = usedMemory;
-
-      if (this.initialized && Sentry.isInitialized()) {
-        Sentry.addBreadcrumb({
-          category: 'performance',
-          message: 'Memory usage check',
-          level: 'info',
-          data: {
-            memoryUsage: usedMemory,
-            platform: this.isNative ? 'native' : 'web',
-          },
-        });
-      }
     }
   }
 
@@ -151,15 +87,11 @@ class PerformanceMonitor {
   }
 
   setUser(userId: string, email?: string) {
-    if (this.initialized && Sentry.isInitialized()) {
-      Sentry.setUser({ id: userId, email });
-    }
+    console.log('User set for performance monitoring:', userId);
   }
 
   clearUser() {
-    if (this.initialized && Sentry.isInitialized()) {
-      Sentry.setUser(null);
-    }
+    console.log('User cleared from performance monitoring');
   }
 
   // Start monitoring memory usage every 30 seconds
