@@ -517,12 +517,12 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     <div className="relative h-full">
       <div ref={mapContainer} className="absolute inset-0" />
       
-      {/* Recenter Button */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Recenter Button - Positioned below the action buttons */}
+      <div className="absolute top-28 right-4 z-20">
         <Button
           size="icon"
           onClick={recenterToUserLocation}
-          className="rounded-full shadow-lg bg-background hover:bg-accent text-foreground"
+          className="rounded-full shadow-lg bg-background hover:bg-accent text-foreground border border-border"
           title="Recenter to my location"
         >
           <Locate className="h-5 w-5" />
