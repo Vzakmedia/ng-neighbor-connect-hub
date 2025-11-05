@@ -67,6 +67,15 @@ export const CommunityFeed = ({
   // Debounce search query to prevent excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  // Map CommunityFilters to FeedFilters format for useFeedQuery
+  const feedQueryFilters = useMemo(() => ({
+    locationScope: filters.locationScope as 'neighborhood' | 'city' | 'state' | 'all',
+    tags: filters.tags,
+    postType: filters.postTypes !== 'all' ? filters.postTypes : undefined,
+    sortBy: (filters.sortBy === 'newest' || filters.sortBy === 'oldest' ? 'recent' : 'popular') as 'recent' | 'popular',
+    searchQuery: debouncedSearchQuery,
+  }), [filters.locationScope, filters.tags, filters.postTypes, filters.sortBy, debouncedSearchQuery]);
+
   // Use React Query for feed data
   const {
     data,
@@ -77,12 +86,7 @@ export const CommunityFeed = ({
     refetch,
     isFetching,
     isPlaceholderData, // NEW: Track if showing stale cached data
-  } = useFeedQuery({
-    locationScope: filters.locationScope as 'neighborhood' | 'city' | 'state' | 'all',
-    tags: filters.tags,
-    sortBy: 'recent' as 'recent' | 'popular',
-    searchQuery: debouncedSearchQuery, // Use debounced search
-  });
+  } = useFeedQuery(feedQueryFilters);
 
   // Mutations
   const likePost = useLikePost();
