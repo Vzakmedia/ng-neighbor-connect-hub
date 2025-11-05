@@ -2,13 +2,14 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useRecommendations, calculatePostScore } from '@/hooks/useRecommendations';
 import { toast } from 'sonner';
 
 interface FeedFilters {
   locationScope: 'neighborhood' | 'city' | 'state' | 'all';
   tags?: string[];
   postType?: string;
-  sortBy?: 'recent' | 'popular';
+  sortBy?: 'recent' | 'popular' | 'recommended';
   searchQuery?: string;
   dateRange?: {
     start: Date;
@@ -52,6 +53,7 @@ export function useFeedQuery(filters: FeedFilters) {
   const { user } = useAuth();
   const { profile } = useProfile();
   const queryClient = useQueryClient();
+  const { data: recommendations } = useRecommendations();
 
   const queryKey = ['feed', {
     userId: user?.id,
@@ -240,7 +242,15 @@ export function useFeedQuery(filters: FeedFilters) {
           const scoreB = (b.like_count * 2) + b.comment_count + (b.save_count * 1.5);
           return scoreB - scoreA;
         });
+      } else if (filters.sortBy === 'recommended' && recommendations) {
+        // Use AI-powered personalized scoring
+        filteredPosts.sort((a, b) => {
+          const scoreA = calculatePostScore(a, recommendations);
+          const scoreB = calculatePostScore(b, recommendations);
+          return scoreB - scoreA;
+        });
       }
+      // Default 'recent' sorting is already applied by database order
 
       return {
         items: filteredPosts,

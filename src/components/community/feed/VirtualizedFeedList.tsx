@@ -6,6 +6,7 @@ import { FeedDialogs } from './FeedDialogs';
 import { PostCardData } from '@/types/community';
 import { usePostVisibility } from '@/hooks/community/usePostVisibility';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePostViews } from '@/hooks/usePostViews';
 
 interface VirtualizedFeedListProps {
   events: PostCardData[];
@@ -30,6 +31,7 @@ const VirtualizedFeedListComponent = ({
 }: VirtualizedFeedListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { trackPostView } = usePostViews();
   
   // Dialog state
   const [selectedEvent, setSelectedEvent] = useState<PostCardData | null>(null);
@@ -44,6 +46,9 @@ const VirtualizedFeedListComponent = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const { observePost } = usePostVisibility((postId) => {
+    // Track view for recommendations
+    trackPostView(postId);
+    // Call parent's onPostVisible callback
     if (onPostVisible) {
       onPostVisible(postId);
     }

@@ -3259,6 +3259,38 @@ export type Database = {
         }
         Relationships: []
       }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          view_duration_seconds: number | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          view_duration_seconds?: number | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          view_duration_seconds?: number | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       press_releases: {
         Row: {
           category: string
@@ -6001,6 +6033,16 @@ export type Database = {
           custom_settings: Json
           is_enabled: boolean
           webhook_url: string
+        }[]
+      }
+      get_user_engagement_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          engagement_score: number
+          liked_tags: string[]
+          preferred_locations: string[]
+          saved_tags: string[]
+          viewed_tags: string[]
         }[]
       }
       get_user_notifications: {

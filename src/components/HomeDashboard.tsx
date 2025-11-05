@@ -48,18 +48,17 @@ const HomeDashboard = () => {
     dateRange: 'all',
   });
 
-  // Handle tab changes and update filters accordingly
   const handleTabChange = (tab: 'for-you' | 'recent' | 'nearby' | 'trending') => {
     setActiveTab(tab);
     
     switch (tab) {
       case 'for-you':
-        // Personalized feed based on user's location and preferences
+        // Personalized feed using AI recommendations
         setFeedFilters({
           locationScope: profile?.city ? 'city' : 'state',
           tags: [],
           postTypes: 'all',
-          sortBy: 'newest',
+          sortBy: 'recommended',
           dateRange: 'all',
         });
         break;
