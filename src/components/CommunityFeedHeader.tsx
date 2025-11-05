@@ -59,25 +59,27 @@ export const CommunityFeedHeader = ({
           </div>
         )}
         
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search posts..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search posts..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-        
-        {/* Filters */}
-        <CommunityFeedFilters
-          filters={filters}
-          onFiltersChange={onFiltersChange}
-          availableTags={availableTags}
-          activeFiltersCount={activeFiltersCount}
-          userLocation={userLocation}
-        />
+          <div className="flex-shrink-0">
+            <CommunityFeedFilters
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              availableTags={availableTags}
+              activeFiltersCount={activeFiltersCount}
+              userLocation={userLocation}
+            />
+          </div>
+        </div>
 
       </div>
     </div>
