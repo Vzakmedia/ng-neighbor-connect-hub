@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, memo, useState } from 'react';
+import React, { useEffect, memo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PostCard } from '../post/PostCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -6,7 +6,6 @@ import { FeedDialogs } from './FeedDialogs';
 import { PostCardData } from '@/types/community';
 import { usePostVisibility } from '@/hooks/community/usePostVisibility';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useScrollRestoration } from '@/hooks/community/useScrollRestoration';
 
 interface VirtualizedFeedListProps {
   events: PostCardData[];
