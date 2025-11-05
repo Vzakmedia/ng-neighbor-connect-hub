@@ -55,13 +55,18 @@ const SafetyAlertsSplitView = ({
       </div>
 
       {/* Left Sidebar Card - Bottom drawer on mobile, left floating card on desktop */}
-      <div className="absolute bottom-0 left-0 right-0 lg:left-4 lg:top-4 lg:bottom-4 lg:right-auto lg:w-full lg:max-w-md z-10 transition-all duration-300">
+      <div className={cn(
+        "absolute left-0 right-0 lg:left-4 lg:top-4 lg:right-auto lg:w-full lg:max-w-md z-10 transition-all duration-300",
+        isCollapsed 
+          ? "bottom-0 lg:bottom-auto" 
+          : "bottom-0 lg:bottom-4"
+      )}>
         <Card className={cn(
-          "bg-white/95 dark:bg-background/95 backdrop-blur-sm shadow-xl border-border transition-all duration-300",
+          "backdrop-blur-sm shadow-xl border-border transition-all duration-300",
           "rounded-t-2xl lg:rounded-lg",
           isCollapsed 
-            ? "h-auto" 
-            : "h-[50vh] lg:h-full"
+            ? "h-auto bg-background/50 dark:bg-background/50" 
+            : "h-[50vh] lg:h-full bg-background/95 dark:bg-background/95"
         )}>
           <div className="flex flex-col h-full">
             {/* Header with Toggle */}
