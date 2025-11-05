@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { PillFilter } from "@/components/ui/pill-filter";
+import { CommunityAdvancedFilters, AdvancedFilters } from "@/components/CommunityAdvancedFilters";
 
 export interface CommunityFilters {
   tags: string[];
@@ -16,6 +17,7 @@ export interface CommunityFilters {
   postTypes: string;
   dateRange: string;
   sortBy: string;
+  advancedFilters?: AdvancedFilters;
 }
 
 interface CommunityFeedFiltersProps {
@@ -439,6 +441,14 @@ export const CommunityFeedFilters = ({
           </>
         )}
       </div>
+
+      {/* Advanced Filters Section */}
+      <CommunityAdvancedFilters
+        filters={filters.advancedFilters || { states: [], categories: [], dateRanges: [] }}
+        onFiltersChange={(advancedFilters) => 
+          onFiltersChange({ ...filters, advancedFilters })
+        }
+      />
     </div>
   );
 };
