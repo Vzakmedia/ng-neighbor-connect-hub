@@ -216,14 +216,32 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
-      <div className="px-2 md:px-4 pt-2">
+    <div className="h-full flex flex-col relative overflow-hidden w-full">
+      <div className="px-4 md:px-6 py-3 border-b bg-background">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <OnlineAvatar
+            userId={conversation.other_user_id}
+            src={conversation.other_user_avatar || ''}
+            fallback={getInitials(conversation.other_user_name)}
+            size="md"
+          />
+          <div className="flex-1">
+            <h3 className="font-semibold text-base">{conversation.other_user_name || 'Unknown User'}</h3>
+          </div>
+        </div>
+      </div>
+      <div className="px-2 md:px-4">
         <ConnectionStatusBanner />
       </div>
       {/* Messages - virtualized scrolling */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto">
+      <div ref={parentRef} className="flex-1 overflow-y-auto px-3 md:px-6">
         <div 
-          className="space-y-2 md:space-y-4 p-2 md:p-4 pb-32"
+          className="space-y-3 md:space-y-4 py-4 pb-4"
           style={{
             height: `${virtualizer.getTotalSize()}px`,
             position: 'relative',
@@ -257,7 +275,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group px-2 md:px-4`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
                 onDoubleClick={() => handleLongPress(message.id)}
               >
                 {isSelectionMode && (
@@ -269,9 +287,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   </div>
                 )}
                 
-                <div className={`max-w-[85%] md:max-w-[70%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
+                <div className={`max-w-[75%] md:max-w-[65%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
                   <div 
-                    className={`p-2 md:p-3 rounded-lg ${
+                    className={`px-4 py-3 rounded-2xl shadow-sm ${
                       isOwn 
                         ? isFailed
                           ? 'bg-destructive/10 text-foreground border border-destructive/30'
@@ -279,7 +297,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                         : 'bg-muted'
                     } ${isSelected ? 'ring-2 ring-primary' : ''}`}
                   >
-                    {message.content && <p className="text-sm">{message.content}</p>}
+                    {message.content && <p className="text-sm md:text-base leading-relaxed break-words">{message.content}</p>}
                     {message.attachments && message.attachments.length > 0 && (
                       <AttachmentDisplay 
                         attachments={message.attachments}
@@ -292,7 +310,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     )}
                   </div>
                   
-                  <div className={`flex items-center mt-1 space-x-1 ${
+                  <div className={`flex items-center gap-1 mt-1.5 ${
                     isOwn ? 'justify-end' : 'justify-start'
                   }`}>
                     <span className="text-xs text-muted-foreground">
@@ -335,7 +353,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 </div>
                 
                 {!isOwn && (
-                  <div className={`mr-1 md:mr-2 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
+                  <div className={`mr-2 md:mr-3 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
                     <OnlineAvatar
                       userId={conversation.other_user_id}
                       src={conversation.other_user_avatar || ''}
@@ -362,7 +380,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       />
 
       {/* Fixed/Pinned Message input - WhatsApp style sticky bottom */}
-      <div className="flex-shrink-0 sticky bottom-0 left-0 right-0 p-2 md:p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 shadow-lg">
+      <div className="flex-shrink-0 sticky bottom-0 left-0 right-0 px-4 md:px-6 py-3 md:py-4 border-t bg-background shadow-lg">
         {/* Pending attachments preview */}
         {pendingAttachments.length > 0 && (
           <div className="mb-2 md:mb-4 p-2 md:p-3 bg-muted/30 rounded-lg">
@@ -389,7 +407,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             {(conversation.other_user_name || 'User')} is typing…
           </div>
         )}
-        <div className="flex space-x-1 md:space-x-2">
+        <div className="flex items-end gap-2 md:gap-3">
           <AttachmentButton 
             onFileSelect={handleFileSelect}
             uploading={uploading}
@@ -404,14 +422,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             onBlur={notifyTypingStop}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
-            className="flex-1 min-h-[36px] md:min-h-[40px] max-h-[120px] resize-none text-sm md:text-base"
+            className="flex-1 min-h-[44px] md:min-h-[48px] max-h-[120px] resize-none text-sm md:text-base rounded-2xl"
             rows={1}
           />
           <Button 
             onClick={handleSendMessage}
             disabled={!newMessage.trim() && pendingAttachments.length === 0}
             size="icon"
-            className="bg-gradient-primary hover:opacity-90 transition-opacity h-9 w-9 md:h-10 md:w-10"
+            className="bg-gradient-primary hover:opacity-90 transition-opacity h-11 w-11 md:h-12 md:w-12 rounded-full"
           >
             <Send className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
