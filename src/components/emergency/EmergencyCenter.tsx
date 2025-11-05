@@ -144,21 +144,26 @@ const EmergencyCenter = () => {
   // User location will be undefined for now - can be added when geolocation is implemented
   const userLocation = undefined;
 
+  const getLocationText = () => {
+    if (profile?.neighborhood) {
+      return `Alerts in ${profile.neighborhood}`;
+    } else if (profile?.city) {
+      return `Alerts in ${profile.city}`;
+    } else if (profile?.state) {
+      return `Alerts in ${profile.state}`;
+    }
+    return 'Safety Center';
+  };
+
   return (
     <div className="space-y-3">
-      <div className="px-2 md:px-0 space-y-3">
-        <EmergencyHeader />
-
-        <HorizontalFilters 
-          selectedCategory={selectedCategory}
-          onCategoryChange={handleCategoryChange}
-        />
-      </div>
-
       <SafetyAlertsSplitView
         alerts={alerts}
         userLocation={userLocation}
         onAlertClick={setSelectedAlert}
+        locationText={getLocationText()}
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
       />
 
       {/* Alert Details Dialog */}
