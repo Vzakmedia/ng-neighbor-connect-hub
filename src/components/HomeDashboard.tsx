@@ -40,22 +40,24 @@ const HomeDashboard = () => {
   const { profile } = useProfile();
   const [activeTab, setActiveTab] = useState<'for-you' | 'recent' | 'nearby' | 'trending'>('for-you');
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [selectedLocationScope, setSelectedLocationScope] = useState<'neighborhood' | 'city' | 'state' | null>(null);
   const [feedFilters, setFeedFilters] = useState({
-    locationScope: profile?.city ? 'city' : 'all',
+    locationScope: 'neighborhood',
     tags: [] as string[],
     postTypes: 'all',
-    sortBy: 'newest',
+    sortBy: 'recommended',
     dateRange: 'all',
   });
 
   const handleTabChange = (tab: 'for-you' | 'recent' | 'nearby' | 'trending') => {
     setActiveTab(tab);
+    setSelectedLocationScope(null); // Clear location pill when switching main tabs
     
     switch (tab) {
       case 'for-you':
         // Personalized feed using AI recommendations
         setFeedFilters({
-          locationScope: profile?.city ? 'city' : 'state',
+          locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
           sortBy: 'recommended',
@@ -63,9 +65,9 @@ const HomeDashboard = () => {
         });
         break;
       case 'recent':
-        // Most recent posts from all locations
+        // Most recent posts
         setFeedFilters({
-          locationScope: 'all',
+          locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
           sortBy: 'newest',
@@ -75,7 +77,7 @@ const HomeDashboard = () => {
       case 'nearby':
         // Posts from user's immediate neighborhood
         setFeedFilters({
-          locationScope: profile?.neighborhood ? 'neighborhood' : 'city',
+          locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
           sortBy: 'newest',
@@ -85,13 +87,30 @@ const HomeDashboard = () => {
       case 'trending':
         // Popular posts based on engagement
         setFeedFilters({
-          locationScope: 'all',
+          locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
           sortBy: 'popular',
           dateRange: 'week',
         });
         break;
+    }
+  };
+
+  const handleLocationScopeChange = (scope: 'neighborhood' | 'city' | 'state' | null) => {
+    setSelectedLocationScope(scope);
+    
+    if (scope) {
+      setFeedFilters(prev => ({
+        ...prev,
+        locationScope: scope
+      }));
+    } else {
+      // Reset to default neighborhood when clearing
+      setFeedFilters(prev => ({
+        ...prev,
+        locationScope: 'neighborhood'
+      }));
     }
   };
   const dashboardStats = useDashboardStats();
@@ -190,6 +209,8 @@ const HomeDashboard = () => {
             activeTab={activeTab}
             onTabChange={handleTabChange}
             onCreatePost={() => setCreatePostOpen(true)}
+            selectedLocationScope={selectedLocationScope}
+            onLocationScopeChange={handleLocationScopeChange}
           />
           
           {/* Feed Content */}
