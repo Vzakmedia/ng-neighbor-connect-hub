@@ -194,9 +194,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 100, // Increased from 80 for better spacing
+    estimateSize: () => 120, // Increased to account for content + spacing
     overscan: 5,
-    gap: 16, // Add 16px gap between items
   });
 
   // Intersection Observer for loading older messages
@@ -276,9 +275,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   left: 0,
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
-                  paddingBottom: '12px', // Add vertical spacing
+                  height: `${virtualRow.size}px`,
                 }}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-4`}
                 onDoubleClick={() => handleLongPress(message.id)}
               >
                 {isSelectionMode && (
