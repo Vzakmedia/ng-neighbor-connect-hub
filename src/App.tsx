@@ -62,30 +62,7 @@ import Press from "./pages/Press";
 import Careers from "./pages/Careers";
 import ApiDocs from "./pages/ApiDocs";
 
-// Enhanced QueryClient with persistence and optimizations
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-      refetchOnWindowFocus: false, // Reduce unnecessary refetches
-      refetchOnReconnect: 'always',
-      retry: (failureCount, error) => {
-        // Don't retry on security errors
-        if (error && (error as any).name === 'SecurityError') {
-          return false;
-        }
-        return failureCount < 3;
-      },
-      // Enable query deduplication
-      structuralSharing: true,
-    },
-    mutations: {
-      // Retry mutations once on network errors
-      retry: 1,
-    },
-  },
-});
+// REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
 // Component that initializes push notifications inside AuthProvider
 const PushNotificationWrapper = () => {
@@ -125,10 +102,10 @@ const App = () => {
           // Initialize status bar first
           await initializeStatusBar('light');
           
-          // Wait longer for React to paint and custom splash to show (1500ms)
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Reduced delay from 1500ms to 300ms for faster perceived load
+          await new Promise(resolve => setTimeout(resolve, 300));
           await SplashScreen.hide({
-            fadeOutDuration: 500
+            fadeOutDuration: 300
           });
           console.log('Native splash screen hidden and status bar initialized');
         } catch (error) {
@@ -194,7 +171,6 @@ const App = () => {
 
   return (
     <IOSErrorBoundary>
-      <QueryClientProvider client={queryClient}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -261,12 +237,11 @@ const App = () => {
             <FloatingCreatePostButton />
                     </PresenceProvider>
                   </RealtimeProvider>
-                </BrowserRouter>
+                 </BrowserRouter>
               </div>
             </TooltipProvider>
           </AuthProvider>
         </ThemeProvider>
-      </QueryClientProvider>
     </IOSErrorBoundary>
   );
 };

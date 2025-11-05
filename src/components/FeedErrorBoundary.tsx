@@ -1,11 +1,12 @@
 import React, { Component, ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
 interface State {
@@ -14,10 +15,6 @@ interface State {
   errorInfo: React.ErrorInfo | null;
 }
 
-/**
- * Error boundary specifically for the community feed
- * Catches errors and provides a fallback UI with retry
- */
 export class FeedErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -37,21 +34,9 @@ export class FeedErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Feed Error Boundary caught an error:', error, errorInfo);
-    
-    this.setState({
-      error,
-      errorInfo,
-    });
-
-    // Log to monitoring service (if available)
-    if ((window as any).analytics) {
-      (window as any).analytics.track('feed_error', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-      });
-    }
+    console.error('Feed Error Boundary caught error:', error, errorInfo);
+    this.setState({ errorInfo });
+    this.props.onError?.(error, errorInfo);
   }
 
   handleReset = () => {
@@ -60,8 +45,6 @@ export class FeedErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
     });
-    
-    // Clear feed cache and reload
     window.location.reload();
   };
 
@@ -72,47 +55,17 @@ export class FeedErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="max-w-2xl mx-auto px-4 py-8 animate-fade-in">
-          <Card className="border-destructive/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
-                Something went wrong with the feed
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                We encountered an error while loading your community feed. This might be a temporary issue.
-              </p>
-              
-              {import.meta.env.DEV && this.state.error && (
-                <details className="text-xs bg-muted p-3 rounded-md">
-                  <summary className="cursor-pointer font-medium mb-2">
-                    Error Details (Dev Mode)
-                  </summary>
-                  <pre className="overflow-auto">
-                    {this.state.error.toString()}
-                    {'\n\n'}
-                    {this.state.errorInfo?.componentStack}
-                  </pre>
-                </details>
-              )}
-
-              <div className="flex gap-2">
-                <Button onClick={this.handleReset} className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Reload Feed
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/'}
-                >
-                  Go Home
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="p-8 text-center max-w-md mx-auto mt-8">
+          <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {this.state.error?.message || 'An unexpected error occurred while loading the feed.'}
+          </p>
+          <Button onClick={this.handleReset} variant="default" className="gap-2">
+            <RefreshCcw className="w-4 h-4" />
+            Reload Feed
+          </Button>
+        </Card>
       );
     }
 

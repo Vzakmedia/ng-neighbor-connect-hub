@@ -11,8 +11,15 @@ export interface IOSDeviceInfo {
   supportsES6: boolean;
 }
 
+// Cache iOS detection results to avoid repeated checks
+let cachedDeviceInfo: IOSDeviceInfo | null = null;
+
 // Detect iOS device and version
 export const detectIOSDevice = (): IOSDeviceInfo => {
+  // Return cached result if available
+  if (cachedDeviceInfo) {
+    return cachedDeviceInfo;
+  }
   const userAgent = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(userAgent);
   const isSafari = /Safari/.test(userAgent) && !/Chrome|CriOS|FxiOS/.test(userAgent);
@@ -72,7 +79,8 @@ export const detectIOSDevice = (): IOSDeviceInfo => {
     supportsES6 = false;
   }
 
-  return {
+  // Cache the result
+  cachedDeviceInfo = {
     isIOS,
     isSafari,
     isInPrivateBrowsing,
@@ -81,6 +89,8 @@ export const detectIOSDevice = (): IOSDeviceInfo => {
     supportsWebSocket,
     supportsES6
   };
+
+  return cachedDeviceInfo;
 };
 
 // Enhanced fallback storage for when localStorage is unavailable

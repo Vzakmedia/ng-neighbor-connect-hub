@@ -9,10 +9,11 @@ import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
 
-// Initialize performance monitoring
-// Add your Sentry DSN here when ready: performanceMonitor.initialize('YOUR_SENTRY_DSN');
-performanceMonitor.initialize();
-performanceMonitor.startMemoryMonitoring();
+// Defer performance monitoring to avoid blocking initial load
+setTimeout(() => {
+  performanceMonitor.initialize();
+  performanceMonitor.startMemoryMonitoring();
+}, 3000);
 
 // Wrap WebSocket to intercept preview domain connections at the source
 const originalWebSocket = window.WebSocket;
@@ -116,28 +117,46 @@ const isLovablePreview = () => {
          window.location.hostname.includes('lovable.app');
 };
 
-// Register service worker ONLY for true native builds (App Store), not web previews
-// This prevents iOS Safari errors when accessing the app through Lovable preview URLs
+// Defer service worker registration to not block initial load
 if ('serviceWorker' in navigator && import.meta.env.PROD && !isLovablePreview()) {
-  window.addEventListener('load', () => {
+  // Use requestIdleCallback or timeout to defer registration
+  const registerSW = () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
         console.log('SW registered for native app:', registration);
       })
       .catch(error => {
-        // Service worker registration can fail on iOS Safari - this is expected for web mode
         console.debug('SW registration skipped (web mode):', error);
       });
-  });
+  };
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(registerSW);
+  } else {
+    setTimeout(registerSW, 5000);
+  }
 } else if (isLovablePreview()) {
   console.log('Running in Lovable preview - service worker disabled for web compatibility');
 }
 
-// Log iOS compatibility information
-console.log('Starting app render process...');
-logIOSCompatibility();
+// Cache iOS detection and defer detailed logging
+let deviceInfo: any = null;
 
-const deviceInfo = detectIOSDevice();
+// Quick synchronous detection for critical checks
+const quickIOSCheck = () => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  return { isIOS, cached: true };
+};
+
+// Defer full iOS compatibility logging to not block startup
+setTimeout(() => {
+  console.log('Starting deferred iOS compatibility check...');
+  deviceInfo = detectIOSDevice();
+  logIOSCompatibility();
+}, 1000);
+
+// Use quick check for immediate needs
+deviceInfo = quickIOSCheck();
 
 // Enhanced error handling for iOS
 if (deviceInfo.isIOS) {
@@ -174,7 +193,20 @@ root.render(
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
             // Only persist feed queries for offline viewing
-            return query.queryKey[0] === 'feed';
+            // LIMIT to most recent 50 posts to reduce hydration time
+            if (query.queryKey[0] === 'feed') {
+              const data = query.state.data as any;
+              if (data?.pages) {
+                // Keep only first 2 pages (~40 posts)
+                const limitedData = {
+                  ...data,
+                  pages: data.pages.slice(0, 2),
+                };
+                query.state.data = limitedData;
+              }
+              return true;
+            }
+            return false;
           },
         },
       }}

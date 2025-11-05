@@ -86,16 +86,23 @@ export function useFeedQuery(filters: FeedFilters) {
       }
 
       // Apply hierarchical location-based filtering using exact profile values
+      // URL-encode neighborhood names to handle special characters like parentheses
       // Users see posts at their level AND broader levels
       if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
+        const safeNeighborhood = encodeURIComponent(profile.neighborhood);
+        const safeCity = encodeURIComponent(profile.city);
+        const safeState = encodeURIComponent(profile.state);
         // Show: exact neighborhood match, city-wide posts, state-wide posts, and platform-wide posts
-        query = query.or(`and(location_scope.eq.neighborhood,target_neighborhood.eq.${profile.neighborhood},target_city.eq.${profile.city},target_state.eq.${profile.state}),and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state}),and(location_scope.eq.state,target_state.eq.${profile.state}),location_scope.eq.all`);
+        query = query.or(`and(location_scope.eq.neighborhood,target_neighborhood.eq.${safeNeighborhood},target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.city,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.state,target_state.eq.${safeState}),location_scope.eq.all`);
       } else if (filters.locationScope === 'city' && profile.city && profile.state) {
+        const safeCity = encodeURIComponent(profile.city);
+        const safeState = encodeURIComponent(profile.state);
         // Show: city-wide posts, neighborhood posts in same city, state-wide posts, and platform-wide posts
-        query = query.or(`and(location_scope.eq.city,target_city.eq.${profile.city},target_state.eq.${profile.state}),and(location_scope.eq.neighborhood,target_city.eq.${profile.city},target_state.eq.${profile.state}),and(location_scope.eq.state,target_state.eq.${profile.state}),location_scope.eq.all`);
+        query = query.or(`and(location_scope.eq.city,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.neighborhood,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.state,target_state.eq.${safeState}),location_scope.eq.all`);
       } else if (filters.locationScope === 'state' && profile.state) {
+        const safeState = encodeURIComponent(profile.state);
         // Show: state-wide posts, all city/neighborhood posts in same state, and platform-wide posts
-        query = query.or(`and(location_scope.eq.state,target_state.eq.${profile.state}),and(location_scope.eq.city,target_state.eq.${profile.state}),and(location_scope.eq.neighborhood,target_state.eq.${profile.state}),location_scope.eq.all`);
+        query = query.or(`and(location_scope.eq.state,target_state.eq.${safeState}),and(location_scope.eq.city,target_state.eq.${safeState}),and(location_scope.eq.neighborhood,target_state.eq.${safeState}),location_scope.eq.all`);
       } else if (filters.locationScope === 'all') {
         // Show all posts platform-wide (no filtering)
         // This is the broadest scope - no location filter needed

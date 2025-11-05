@@ -1,11 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
-import HomeDashboard from '@/components/HomeDashboard';
-import StaffNavigation from '@/components/StaffNavigation';
 import { useAuth } from "@/hooks/useAuth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FeedErrorBoundary } from "@/components/FeedErrorBoundary";
+
+// Lazy load the dashboard for better initial load
+const HomeDashboard = lazy(() => import('@/components/HomeDashboard'));
+
+// Loading skeleton
+const DashboardSkeleton = () => (
+  <div className="space-y-4 p-4">
+    <Skeleton className="h-32 w-full" />
+    <Skeleton className="h-64 w-full" />
+    <Skeleton className="h-48 w-full" />
+  </div>
+);
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -67,7 +79,11 @@ const Index = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-2 md:pt-0">
         <div className="container px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
-          <HomeDashboard />
+          <FeedErrorBoundary>
+            <Suspense fallback={<DashboardSkeleton />}>
+              <HomeDashboard />
+            </Suspense>
+          </FeedErrorBoundary>
         </div>
       </main>
     </div>
