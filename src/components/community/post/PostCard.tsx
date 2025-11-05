@@ -81,7 +81,7 @@ const PostCardComponent = ({
 
   return (
     <Card 
-      className="w-full animate-fade-in hover:shadow-md transition-shadow cursor-pointer"
+      className="w-full animate-fade-in hover:shadow-md transition-shadow cursor-pointer rounded-xl overflow-hidden"
       onClick={onPostClick}
     >
       <PostCardHeader 
@@ -95,8 +95,7 @@ const PostCardComponent = ({
         onAvatarClick={onAvatarClick}
       />
       
-      <CardContent className="space-y-2 px-3 sm:px-4 pb-2 sm:pb-3 pt-0">
-        
+      <div className="px-4 space-y-3">
         <PostCardContent
           title={post.title}
           content={post.content}
@@ -104,14 +103,16 @@ const PostCardComponent = ({
           tags={post.tags}
           onPostClick={onPostClick}
         />
-        
-        <PostCardMedia
-          images={post.image_urls}
-          imageError={imageError}
-          onImageError={handleImageError}
-          onImageClick={onImageClick}
-        />
-        
+      </div>
+      
+      <PostCardMedia
+        images={post.image_urls}
+        imageError={imageError}
+        onImageError={handleImageError}
+        onImageClick={onImageClick}
+      />
+      
+      <div className="px-4">
         <PostCardActions
           post={post}
           showComments={showComments}
@@ -123,11 +124,11 @@ const PostCardComponent = ({
         />
         
         {showComments && (
-          <div className="pt-2 border-t animate-fade-in">
+          <div className="pt-2 pb-4 border-t animate-fade-in">
             <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 };

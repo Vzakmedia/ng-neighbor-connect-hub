@@ -1,10 +1,16 @@
 import React from 'react';
-import { Calendar, Users, Building, Home, Globe } from 'lucide-react';
+import { Calendar, Users, Building, Home, Globe, MoreVertical } from 'lucide-react';
 import { CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { OnlineAvatar } from '@/components/OnlineAvatar';
 import { PostAuthor } from '@/types/community';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface PostCardHeaderProps {
   author: PostAuthor;
@@ -27,42 +33,30 @@ export const PostCardHeader = ({
   targetState,
   onAvatarClick 
 }: PostCardHeaderProps) => {
-  const getVisibilityBadge = () => {
-    if (locationScope === 'neighborhood' && targetNeighborhood) {
-      return (
-        <Badge variant="outline" className="text-xs">
-          <Users className="h-3 w-3 mr-1" />
-          {targetNeighborhood}
-        </Badge>
-      );
-    } else if (locationScope === 'city' && targetCity) {
-      return (
-        <Badge variant="outline" className="text-xs">
-          <Building className="h-3 w-3 mr-1" />
-          {targetCity}
-        </Badge>
-      );
-    } else if (locationScope === 'state' && targetState) {
-      return (
-        <Badge variant="outline" className="text-xs">
-          <Home className="h-3 w-3 mr-1" />
-          {targetState}
-        </Badge>
-      );
+  const getVisibilityIcon = () => {
+    if (locationScope === 'neighborhood') {
+      return <Users className="h-3.5 w-3.5 text-muted-foreground" />;
+    } else if (locationScope === 'city') {
+      return <Building className="h-3.5 w-3.5 text-muted-foreground" />;
+    } else if (locationScope === 'state') {
+      return <Home className="h-3.5 w-3.5 text-muted-foreground" />;
     } else if (locationScope === 'all') {
-      return (
-        <Badge variant="outline" className="text-xs">
-          <Globe className="h-3 w-3 mr-1" />
-          Everyone
-        </Badge>
-      );
+      return <Globe className="h-3.5 w-3.5 text-muted-foreground" />;
     }
-    return null;
+    return <Globe className="h-3.5 w-3.5 text-muted-foreground" />;
+  };
+
+  const getLocation = () => {
+    if (locationScope === 'neighborhood' && targetNeighborhood) return targetNeighborhood;
+    if (locationScope === 'city' && targetCity) return targetCity;
+    if (locationScope === 'state' && targetState) return targetState;
+    if (locationScope === 'all') return 'Everyone';
+    return author.city || author.state || 'Location';
   };
 
   return (
-    <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-      <div className="flex items-center gap-2 sm:gap-3">
+    <CardHeader className="p-4">
+      <div className="flex items-center gap-3">
         <div 
           className="cursor-pointer"
           onClick={(e) => {
@@ -74,26 +68,49 @@ export const PostCardHeader = ({
             userId={author.user_id}
             src={author.avatar_url}
             fallback={author.full_name?.[0] || "U"}
-            className="h-8 w-8 sm:h-10 sm:w-10"
+            className="h-10 w-10"
           />
         </div>
+        
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate">
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="font-medium truncate">
               {author.full_name || "Anonymous"}
-            </p>
-            {getVisibilityBadge()}
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground truncate">{getLocation()}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground text-xs">
+              {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+            </span>
+            {getVisibilityIcon()}
+            {rsvpEnabled && (
+              <>
+                <span className="text-muted-foreground">·</span>
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              </>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-          </p>
         </div>
-        {rsvpEnabled && (
-          <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-            <Calendar className="h-3 w-3" />
-            <span className="hidden sm:inline">Event</span>
-          </Badge>
-        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+              View Full Post
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+              Copy Link
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+              Report Post
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </CardHeader>
   );

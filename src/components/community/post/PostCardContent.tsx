@@ -22,34 +22,14 @@ export const PostCardContent = ({
 
   return (
     <>
-      {title && (
-        <h3 className="font-semibold text-base sm:text-lg leading-tight">
-          {title}
-        </h3>
-      )}
-      
       <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-        {isTruncated ? (
-          <>
-            {text}...
-            <span className="text-primary ml-1 font-medium">Read more</span>
-          </>
-        ) : (
-          content
-        )}
+        {isTruncated ? `${text}...` : content}
       </div>
 
-      {location && (
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4 shrink-0" />
-          <span className="truncate">{location}</span>
-        </div>
-      )}
-
       {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {tags.map((tag, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
+            <Badge key={index} variant="secondary" className="text-xs font-normal">
               #{tag}
             </Badge>
           ))}
