@@ -310,7 +310,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
         </DialogHeader>
 
         <Tabs defaultValue="content" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="flex mb-4 flex-wrap">
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="targeting">Targeting</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>

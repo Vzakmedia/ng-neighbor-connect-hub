@@ -101,7 +101,7 @@ const MarketplacePage = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Desktop tabs */}
             <div className="hidden md:flex items-center gap-4">
-              <TabsList className="grid grid-cols-2">
+              <TabsList className="flex mb-4">
                 <TabsTrigger value="marketplace">Services & Goods</TabsTrigger>
                 <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
               </TabsList>

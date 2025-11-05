@@ -159,7 +159,7 @@ const ApiDocs = () => {
           <section className="space-y-6">
             <h2 className="text-2xl font-bold">API Overview</h2>
             <Tabs defaultValue="endpoints" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="flex mb-4 flex-wrap">
                 <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
                 <TabsTrigger value="authentication">Authentication</TabsTrigger>
                 <TabsTrigger value="examples">Examples</TabsTrigger>

@@ -212,7 +212,7 @@ const ActivityHistory = () => {
       
       <CardContent className="p-4 sm:p-6 overflow-x-hidden">
         <Tabs defaultValue="marketplace" className="w-full max-w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto overflow-x-auto">
+          <TabsList className="flex mb-4 flex-wrap overflow-x-auto">
             <TabsTrigger value="marketplace" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3 min-w-0">
               <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span className="hidden sm:inline truncate">Marketplace</span>

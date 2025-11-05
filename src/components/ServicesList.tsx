@@ -645,7 +645,7 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="flex mb-4">
         <TabsTrigger value="my-services">My Services</TabsTrigger>
         <TabsTrigger value="my-goods">My Goods</TabsTrigger>
         <TabsTrigger value="my-bookings">My Bookings</TabsTrigger>

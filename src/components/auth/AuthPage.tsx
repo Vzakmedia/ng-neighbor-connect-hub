@@ -44,7 +44,7 @@ export const AuthPage = () => {
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             {/* Desktop tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
+            <TabsList className="hidden md:flex mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
