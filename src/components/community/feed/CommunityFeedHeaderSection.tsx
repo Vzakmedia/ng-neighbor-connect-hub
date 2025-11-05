@@ -1,17 +1,17 @@
-import { useState } from "react";
 import { CardTitle } from "@/components/ui/card";
 import { CommunityFeedFilters, CommunityFilters } from "@/components/CommunityFeedFilters";
 import { useProfile } from "@/hooks/useProfile";
 
-export const CommunityFeedHeaderSection = () => {
+interface CommunityFeedHeaderSectionProps {
+  filters: CommunityFilters;
+  onFiltersChange: (filters: CommunityFilters) => void;
+}
+
+export const CommunityFeedHeaderSection = ({ 
+  filters, 
+  onFiltersChange 
+}: CommunityFeedHeaderSectionProps) => {
   const { profile } = useProfile();
-  const [filters, setFilters] = useState<CommunityFilters>({
-    locationScope: profile?.city ? 'city' : 'all',
-    tags: [],
-    postTypes: 'all',
-    sortBy: 'newest',
-    dateRange: 'all',
-  });
 
   // Extract available tags - you may need to get this from a hook or context
   const availableTags: string[] = [];
@@ -29,7 +29,7 @@ export const CommunityFeedHeaderSection = () => {
       <div className="flex-shrink-0">
         <CommunityFeedFilters
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={onFiltersChange}
           availableTags={availableTags}
           activeFiltersCount={activeFiltersCount}
           userLocation={{

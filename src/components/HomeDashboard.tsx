@@ -58,6 +58,13 @@ const HomeDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('state'); // Default to state for better content visibility
+  const [feedFilters, setFeedFilters] = useState({
+    locationScope: profile?.city ? 'city' : 'all',
+    tags: [] as string[],
+    postTypes: 'all',
+    sortBy: 'newest',
+    dateRange: 'all',
+  });
   const dashboardStats = useDashboardStats();
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
@@ -193,10 +200,16 @@ const HomeDashboard = () => {
             <div className="lg:col-span-2">
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
-                  <CommunityFeedHeaderSection />
+                  <CommunityFeedHeaderSection 
+                    filters={feedFilters}
+                    onFiltersChange={setFeedFilters}
+                  />
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 md:px-6" data-tutorial="community-feed">
-                  <CommunityFeed />
+                  <CommunityFeed 
+                    filters={feedFilters}
+                    onFiltersChange={setFeedFilters}
+                  />
                 </CardContent>
               </Card>
             </div>
