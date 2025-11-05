@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { PillFilter } from "@/components/ui/pill-filter";
 
 export interface CommunityFilters {
   tags: string[];
@@ -246,59 +247,32 @@ export const CommunityFeedFilters = ({
                 </div>
               </div>
 
-              {/* Content Types - Dropdown */}
+              {/* Content Types - Pill Filter */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   Content Type
                 </Label>
-                <Select
+                <PillFilter
+                  options={postTypeOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={filters.postTypes}
-                  onValueChange={(value) => onFiltersChange({ ...filters, postTypes: value })}
-                >
-                  <SelectTrigger className="h-8 text-xs bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    {postTypeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value} className="text-xs h-7">
-                        <div className="flex items-center gap-2">
-                          <option.icon className="h-3 w-3" />
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => onFiltersChange({ ...filters, postTypes: value as string })}
+                  mode="single"
+                />
               </div>
 
-              {/* Location Scope - Dropdown */}
+              {/* Location Scope - Pill Filter */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   Show Posts From
                 </Label>
-                <Select
+                <PillFilter
+                  options={locationScopeOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={filters.locationScope}
-                  onValueChange={(value) => onFiltersChange({ ...filters, locationScope: value })}
-                >
-                  <SelectTrigger className="h-8 text-xs bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    {locationScopeOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value} className="text-xs py-2">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <option.icon className="h-3 w-3" />
-                            <span className="font-medium">{option.label}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{option.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onValueChange={(value) => onFiltersChange({ ...filters, locationScope: value as string })}
+                  mode="single"
+                />
               </div>
 
               {/* Tags Search */}
