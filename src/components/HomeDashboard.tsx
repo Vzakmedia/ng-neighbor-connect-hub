@@ -156,7 +156,7 @@ const HomeDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Main Feed */}
         <div className="lg:col-span-2">
-              <Card className="shadow-card">
+              <Card className="shadow-card border-0">
                 <CardHeader className="pb-3">
                   <CommunityFeedHeaderSection 
                     filters={feedFilters}
