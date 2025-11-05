@@ -271,27 +271,17 @@ const CommunityServices = () => {
           <TabsTrigger value="goods">Goods ({filteredItems.length})</TabsTrigger>
         </TabsList>
         
-        {/* Mobile & tablet tabs */}
-        <div className="md:hidden w-full mb-4">
-          <div className="flex gap-2 w-full">
-            <Button
-              variant={activeTab === "services" ? "default" : "outline"}
-              onClick={() => setActiveTab("services")}
-              className="flex-1 h-12 sm:h-10"
-            >
-              <Wrench className="h-4 w-4 mr-2" />
-              <span className="text-sm">Services ({filteredServices.length})</span>
-            </Button>
-            <Button
-              variant={activeTab === "goods" ? "default" : "outline"}
-              onClick={() => setActiveTab("goods")}
-              className="flex-1 h-12 sm:h-10"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              <span className="text-sm">Goods ({filteredItems.length})</span>
-            </Button>
-          </div>
-        </div>
+        {/* Mobile tabs */}
+        <TabsList className="md:hidden flex mb-4">
+          <TabsTrigger value="services">
+            <Wrench className="h-4 w-4 mr-2" />
+            Services ({filteredServices.length})
+          </TabsTrigger>
+          <TabsTrigger value="goods">
+            <Package className="h-4 w-4 mr-2" />
+            Goods ({filteredItems.length})
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="services" className="space-y-3 md:space-y-4 mt-4 md:mt-6">
           {filteredServices.length === 0 ? (

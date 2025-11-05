@@ -49,27 +49,17 @@ export const AuthPage = () => {
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
-            {/* Mobile tabs - using buttons instead of TabsTrigger */}
-            <div className="md:hidden w-full mb-4">
-              <div className="flex justify-center gap-1 w-full">
-                <Button
-                  variant={activeTab === "login" ? "default" : "outline"}
-                  onClick={() => setActiveTab("login")}
-                  className="flex-1"
-                >
-                  <LogIn className="h-3 w-3 mr-1" />
-                  Login
-                </Button>
-                <Button
-                  variant={activeTab === "signup" ? "default" : "outline"}
-                  onClick={() => setActiveTab("signup")}
-                  className="flex-1"
-                >
-                  <UserPlus className="h-3 w-3 mr-1" />
-                  Sign Up
-                </Button>
-              </div>
-            </div>
+            {/* Mobile tabs */}
+            <TabsList className="md:hidden flex mb-4 w-full justify-center">
+              <TabsTrigger value="login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login
+              </TabsTrigger>
+              <TabsTrigger value="signup">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Sign Up
+              </TabsTrigger>
+            </TabsList>
             
             <TabsContent value="login" className="space-y-4 mt-6">
               <LoginForm onSwitchToReset={() => setActiveTab("reset")} />
