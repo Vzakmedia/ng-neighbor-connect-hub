@@ -82,7 +82,18 @@ export const PostFullScreenDialog = ({
     setShowComments(false);
   }, [post]);
 
-  if (!post) return null;
+  // Early return AFTER all hooks are called
+  if (!post) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="p-8 text-center text-muted-foreground">
+            No post selected
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const getPostTypeIcon = (type: string) => {
     switch (type) {
