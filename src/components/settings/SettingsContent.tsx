@@ -24,8 +24,12 @@ import {
   Users,
   HelpCircle,
   Music,
-  Lock
+  Lock,
+  Activity,
+  TrendingUp
 } from 'lucide-react';
+import HomeAutomations from '../HomeAutomations';
+import NeighborhoodInsights from '../NeighborhoodInsights';
 import { playNotification, playMessagingChime } from '@/utils/audioUtils';
 import { testNotificationSound, getAvailableNotificationSounds } from '@/utils/testNotificationSounds';
 import type { NotificationSoundType } from '@/utils/audioUtils';
@@ -287,6 +291,14 @@ const [audioSettings, setAudioSettings] = useState({
             <TabsTrigger value="support" className="text-xs px-2 py-2 whitespace-nowrap">
               <HelpCircle className="h-3 w-3 mr-1" />
               Support
+            </TabsTrigger>
+            <TabsTrigger value="automations" className="text-xs px-2 py-2 whitespace-nowrap">
+              <Activity className="h-3 w-3 mr-1" />
+              Automations
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="text-xs px-2 py-2 whitespace-nowrap">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              Insights
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1077,6 +1089,32 @@ const [audioSettings, setAudioSettings] = useState({
           <div className="space-y-6 w-full max-w-full overflow-hidden">
             <SupportTicketForm />
             <UserSupportTickets />
+          </div>
+        </TabsContent>
+
+        {/* Automations Tab */}
+        <TabsContent value="automations" className="w-full max-w-full">
+          <Card className="w-full max-w-full overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Activity className="h-5 w-5" />
+                Home Automations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-hidden">
+              <HomeAutomations />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Insights Tab */}
+        <TabsContent value="insights" className="w-full max-w-full">
+          <div className="space-y-4">
+            <Card className="w-full max-w-full overflow-hidden">
+              <CardContent className="overflow-x-hidden pt-6">
+                <NeighborhoodInsights />
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
