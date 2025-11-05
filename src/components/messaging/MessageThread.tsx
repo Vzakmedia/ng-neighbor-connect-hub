@@ -24,6 +24,7 @@ import MessageSelectionToolbar from './MessageSelectionToolbar';
 import AttachmentButton from './AttachmentButton';
 import AttachmentDisplay from './AttachmentDisplay';
 import { useTypingIndicator } from '@/hooks/messaging/useTypingIndicator';
+import { MessageReactions } from './MessageReactions';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -310,23 +311,32 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     )}
                   </div>
                   
-                  <div className={`flex items-center gap-1 mt-1.5 ${
-                    isOwn ? 'justify-end' : 'justify-start'
-                  }`}>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                    </span>
-                    {getMessageStatusIcon(message)}
-                    {isFailed && isOwn && onRetryMessage && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-5 w-5 ml-1"
-                        onClick={() => onRetryMessage(message.id)}
-                      >
-                        <RotateCw className="h-3 w-3" />
-                      </Button>
-                    )}
+                  <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                    <div className={`flex items-center gap-1 ${
+                      isOwn ? 'justify-end' : 'justify-start'
+                    }`}>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                      </span>
+                      {getMessageStatusIcon(message)}
+                      {isFailed && isOwn && onRetryMessage && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5 ml-1"
+                          onClick={() => onRetryMessage(message.id)}
+                        >
+                          <RotateCw className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Message Reactions */}
+                    <MessageReactions 
+                      messageId={message.id} 
+                      currentUserId={currentUserId}
+                      isOwnMessage={isOwn}
+                    />
                   </div>
 
                   {/* Single message delete option for own messages */}
