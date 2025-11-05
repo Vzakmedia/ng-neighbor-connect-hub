@@ -241,7 +241,7 @@ const UnifiedMessaging = () => {
           <TabsContent value="direct" className="h-full m-0">
             <div className="grid grid-cols-1 xl:grid-cols-5 h-full">
               {/* Left: conversations + search */}
-              <div className="xl:col-span-2 border-r flex flex-col min-h-0">
+              <div className="xl:col-span-1 border-r flex flex-col min-h-0">
                 <div className="p-4 border-b">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -289,7 +289,7 @@ const UnifiedMessaging = () => {
               </div>
 
               {/* Right: thread (xl and up) */}
-              <div className="hidden xl:flex xl:col-span-3 min-h-0">
+              <div className="hidden xl:flex xl:col-span-4 min-h-0">
                 {activeConversation ? (
                   <MessageThread
                     conversation={activeConversation}
