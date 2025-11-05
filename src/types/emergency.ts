@@ -48,7 +48,7 @@ export interface EmergencyFilters {
   severity: string;
   type: string;
   status: string;
-  category?: 'all' | 'safety' | 'outages' | 'weather' | 'fires' | 'traffic';
+  category?: 'all' | 'break_in' | 'theft' | 'accident' | 'suspicious_activity' | 'harassment' | 'fire' | 'flood' | 'power_outage' | 'road_closure' | 'other';
 }
 
 export interface EmergencyViewMode {

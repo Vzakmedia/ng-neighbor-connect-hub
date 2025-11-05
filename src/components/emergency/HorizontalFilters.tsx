@@ -1,21 +1,18 @@
 import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { ALERT_TYPES } from '@/types/emergency';
 
-export type FilterCategory = 'all' | 'safety' | 'outages' | 'weather' | 'fires' | 'traffic';
+export type FilterCategory = 'all' | 'break_in' | 'theft' | 'accident' | 'suspicious_activity' | 'harassment' | 'fire' | 'flood' | 'power_outage' | 'road_closure' | 'other';
 
 interface HorizontalFiltersProps {
   selectedCategory: FilterCategory;
   onCategoryChange: (category: FilterCategory) => void;
 }
 
-const FILTER_CATEGORIES = [
-  { value: 'all' as FilterCategory, label: 'All' },
-  { value: 'safety' as FilterCategory, label: 'Safety' },
-  { value: 'outages' as FilterCategory, label: 'Outages' },
-  { value: 'weather' as FilterCategory, label: 'Weather' },
-  { value: 'fires' as FilterCategory, label: 'Fires' },
-  { value: 'traffic' as FilterCategory, label: 'Traffic' },
-];
+const FILTER_CATEGORIES = ALERT_TYPES.map(type => ({
+  value: type.value as FilterCategory,
+  label: type.label
+}));
 
 const HorizontalFilters = ({ selectedCategory, onCategoryChange }: HorizontalFiltersProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
