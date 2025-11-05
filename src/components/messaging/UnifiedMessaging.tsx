@@ -291,10 +291,10 @@ const UnifiedMessaging = () => {
             </div>
 
             {/* Desktop: resizable panels */}
-            <ResizablePanelGroup direction="horizontal" className="hidden xl:flex h-full">
+            <ResizablePanelGroup direction="horizontal" className="hidden xl:flex h-full w-full">
               {/* Left: conversations + search */}
-              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <div className="flex flex-col h-full">
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="border-r">
+                <div className="flex flex-col h-full w-full">
                   <div className="p-4 border-b">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -330,7 +330,7 @@ const UnifiedMessaging = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 min-h-0">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     <ConversationList
                       conversations={conversations}
                       loading={conversationsLoading}
@@ -342,11 +342,11 @@ const UnifiedMessaging = () => {
                 </div>
               </ResizablePanel>
 
-              <ResizableHandle withHandle />
+              <ResizableHandle withHandle className="w-1 bg-border hover:bg-primary/20 transition-colors" />
 
               {/* Right: thread */}
-              <ResizablePanel defaultSize={75}>
-                <div className="flex h-full">
+              <ResizablePanel defaultSize={75} minSize={40}>
+                <div className="flex h-full w-full">
                   {activeConversation ? (
                     <MessageThread
                       conversation={activeConversation}
