@@ -17,6 +17,7 @@ import {
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
+import { ScrollToTop } from './ScrollToTop';
 import { CommunityFeedHeaderSection } from './community/feed/CommunityFeedHeaderSection';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useQueryClient } from '@tanstack/react-query';
@@ -356,6 +357,9 @@ const HomeDashboard = () => {
         open={createPostOpen}
         onOpenChange={setCreatePostOpen}
       />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   );
 };
