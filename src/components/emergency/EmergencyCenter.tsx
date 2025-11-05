@@ -145,14 +145,8 @@ const EmergencyCenter = () => {
   const userLocation = undefined;
 
   return (
-    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
+    <div className="space-y-3 px-2 md:px-0">
       <EmergencyHeader />
-
-      <EmergencyStatsComponent 
-        alerts={alerts}
-        panicAlerts={panicAlerts}
-        userId={user?.id}
-      />
 
       <HorizontalFilters 
         selectedCategory={selectedCategory}
