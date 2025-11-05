@@ -34,7 +34,11 @@ import CreatePostDialog from './CreatePostDialog';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { AdDisplay } from '@/components/advertising/display/AdDisplay';
+import { lazy, Suspense } from 'react';
+import { FeedErrorBoundary } from '@/components/FeedErrorBoundary';
+
+// Lazy load AdDisplay - not critical for initial render
+const AdDisplay = lazy(() => import('@/components/advertising/display/AdDisplay').then(m => ({ default: m.AdDisplay })));
 import { 
   useUpcomingEvents, 
   useSafetyAlerts, 
@@ -444,7 +448,17 @@ const HomeDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AdDisplay placement="inline" maxAds={9} />
+              <FeedErrorBoundary
+                fallback={
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    Ads temporarily unavailable
+                  </div>
+                }
+              >
+                <Suspense fallback={<div className="text-center p-4 text-muted-foreground">Loading ads...</div>}>
+                  <AdDisplay placement="inline" maxAds={9} />
+                </Suspense>
+              </FeedErrorBoundary>
             </CardContent>
           </Card>
         </TabsContent>
