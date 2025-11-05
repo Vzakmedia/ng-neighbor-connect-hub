@@ -18,7 +18,7 @@ import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
 import { ScrollToTop } from './ScrollToTop';
-import { CommunityFeedHeaderSection } from './community/feed/CommunityFeedHeaderSection';
+import { FeedTabNavigation } from './community/feed/FeedTabNavigation';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,9 +38,8 @@ const HomeDashboard = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { profile } = useProfile();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState<'for-you' | 'recent' | 'nearby' | 'trending'>('for-you');
   const [createPostOpen, setCreatePostOpen] = useState(false);
-  const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('state'); // Default to state for better content visibility
   const [feedFilters, setFeedFilters] = useState({
     locationScope: profile?.city ? 'city' : 'all',
     tags: [] as string[],
@@ -48,6 +47,54 @@ const HomeDashboard = () => {
     sortBy: 'newest',
     dateRange: 'all',
   });
+
+  // Handle tab changes and update filters accordingly
+  const handleTabChange = (tab: 'for-you' | 'recent' | 'nearby' | 'trending') => {
+    setActiveTab(tab);
+    
+    switch (tab) {
+      case 'for-you':
+        // Personalized feed based on user's location and preferences
+        setFeedFilters({
+          locationScope: profile?.city ? 'city' : 'state',
+          tags: [],
+          postTypes: 'all',
+          sortBy: 'newest',
+          dateRange: 'all',
+        });
+        break;
+      case 'recent':
+        // Most recent posts from all locations
+        setFeedFilters({
+          locationScope: 'all',
+          tags: [],
+          postTypes: 'all',
+          sortBy: 'newest',
+          dateRange: 'all',
+        });
+        break;
+      case 'nearby':
+        // Posts from user's immediate neighborhood
+        setFeedFilters({
+          locationScope: profile?.neighborhood ? 'neighborhood' : 'city',
+          tags: [],
+          postTypes: 'all',
+          sortBy: 'newest',
+          dateRange: 'all',
+        });
+        break;
+      case 'trending':
+        // Popular posts based on engagement
+        setFeedFilters({
+          locationScope: 'all',
+          tags: [],
+          postTypes: 'all',
+          sortBy: 'popular',
+          dateRange: 'week',
+        });
+        break;
+    }
+  };
   const dashboardStats = useDashboardStats();
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
@@ -131,24 +178,6 @@ const HomeDashboard = () => {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Welcome Section - now more compact */}
-      <div className="bg-gradient-primary rounded-lg p-3 sm:p-4 md:p-4 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-base sm:text-lg md:text-lg font-semibold mb-1">Good morning! 👋</h2>
-            <p className="text-white/90 text-xs sm:text-sm md:text-sm leading-tight">What's happening in your neighborhood today?</p>
-          </div>
-          <Button 
-            className="bg-white/20 hover:bg-white/30 text-white border-white/30 flex-shrink-0 text-xs sm:text-sm md:text-sm px-3 sm:px-4 md:px-4 py-2"
-            onClick={() => setCreatePostOpen(true)}
-          >
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4 md:h-4 md:w-4 mr-1 sm:mr-2 md:mr-2" />
-            <span className="hidden sm:inline">Create Post</span>
-            <span className="sm:hidden">Post</span>
-          </Button>
-        </div>
-      </div>
-
       {/* Mobile Sponsored Section */}
       <div className="lg:hidden">
         <AdDisplay placement="sidebar" maxAds={3} />
@@ -156,20 +185,22 @@ const HomeDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Main Feed */}
-        <div className="lg:col-span-2">
-              <Card className="shadow-card border-0">
-                <CardHeader className="pb-3">
-                  <CommunityFeedHeaderSection 
-                    filters={feedFilters}
-                    onFiltersChange={setFeedFilters}
-                  />
-                </CardHeader>
-                <CardContent className="px-3 sm:px-4 md:px-6" data-tutorial="community-feed">
-                  <CommunityFeed 
-                    filters={feedFilters}
-                    onFiltersChange={setFeedFilters}
-                  />
-                </CardContent>
+        <div className="lg:col-span-2 space-y-4">
+          {/* Tab Navigation */}
+          <FeedTabNavigation
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            onCreatePost={() => setCreatePostOpen(true)}
+          />
+          
+          {/* Feed Content */}
+          <Card className="shadow-card border-0">
+            <CardContent className="px-3 sm:px-4 md:px-6 pt-6" data-tutorial="community-feed">
+              <CommunityFeed 
+                filters={feedFilters}
+                onFiltersChange={setFeedFilters}
+              />
+            </CardContent>
           </Card>
         </div>
 
@@ -336,7 +367,7 @@ const HomeDashboard = () => {
                         <div 
                           key={index} 
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation active:bg-muted/70"
-                          onClick={() => setActiveTab('all')} // This could filter by hashtag in the future
+                          onClick={() => handleTabChange('trending')}
                         >
                           <span className="font-medium text-sm text-primary truncate mr-2">{topic.tag}</span>
                           <span className="text-xs text-muted-foreground flex-shrink-0">{topic.posts} posts</span>
