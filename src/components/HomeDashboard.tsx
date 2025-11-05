@@ -273,56 +273,6 @@ const HomeDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* Safety & Alerts */}
-              <Card className="shadow-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-base md:text-lg">
-                    <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 mr-2 text-destructive" />
-                    <span>Safety & Alerts</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 md:px-6" data-tutorial="safety-alerts">
-                  {alertsLoading ? (
-                    <div className="space-y-2">
-                      {Array.from({ length: 2 }).map((_, index) => (
-                        <div key={index} className="animate-pulse p-3 rounded-lg bg-muted/50">
-                          <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                          <div className="h-3 bg-muted rounded w-full mb-2"></div>
-                          <div className="h-3 bg-muted rounded w-1/3"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : safetyAlerts.length > 0 ? (
-                    <div className="space-y-2 md:space-y-3">
-                      {safetyAlerts.map((alert) => (
-                        <div 
-                          key={alert.id} 
-                          className="p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors touch-manipulation active:bg-muted/80"
-                          onClick={() => navigate('/safety')}
-                          title={`View details for ${alert.title}`}
-                        >
-                          <div className="flex items-start justify-between mb-1.5 md:mb-2">
-                            <h4 className="font-medium text-sm md:text-base">{alert.title}</h4>
-                            <Badge 
-                              variant={alert.severity === 'critical' || alert.severity === 'high' ? 'destructive' : alert.severity === 'medium' ? 'default' : 'secondary'}
-                              className="text-xs px-1.5 py-0.5"
-                            >
-                              {alert.severity}
-                            </Badge>
-                          </div>
-                          <p className="text-xs md:text-sm text-muted-foreground mb-1.5 md:mb-2">{alert.description}</p>
-                          <span className="text-xs text-muted-foreground">{alert.time}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No active safety alerts. Your area is secure!
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Marketplace Highlights */}
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
