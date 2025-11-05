@@ -1,19 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { 
   Calendar,
   ShoppingBag,
-  AlertTriangle,
   TrendingUp,
   Users,
   MapPin,
@@ -21,22 +13,12 @@ import {
   ArrowRight,
   Plus,
   MessageSquare,
-  Home,
-  Activity,
-  Settings,
-  ChevronDown,
-  Globe,
-  Filter
 } from 'lucide-react';
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
-import HomeAutomations from './HomeAutomations';
-import NeighborhoodInsights from './NeighborhoodInsights';
 import { CommunityFeedHeaderSection } from './community/feed/CommunityFeedHeaderSection';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { lazy, Suspense, useEffect } from 'react';
-import { FeedErrorBoundary } from '@/components/FeedErrorBoundary';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -166,38 +148,14 @@ const HomeDashboard = () => {
         </div>
       </div>
 
-        {/* Mobile Sponsored Section */}
-        <div className="lg:hidden">
-          <AdDisplay placement="sidebar" maxAds={3} />
-        </div>
+      {/* Mobile Sponsored Section */}
+      <div className="lg:hidden">
+        <AdDisplay placement="sidebar" maxAds={3} />
+      </div>
 
-        {/* Nextdoor-Style Dashboard Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
-        {/* Desktop Tabs */}
-        <TabsList className="hidden md:grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center">
-            <Home className="h-4 w-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="automations" className="flex items-center">
-            <Settings className="h-4 w-4 mr-2" />
-            Automations
-          </TabsTrigger>
-          <TabsTrigger value="insights" className="flex items-center">
-            <Activity className="h-4 w-4 mr-2" />
-            Insights
-          </TabsTrigger>
-          <TabsTrigger value="ads" className="flex items-center">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Adverts
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            {/* Main Feed */}
-            <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+        {/* Main Feed */}
+        <div className="lg:col-span-2">
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
                   <CommunityFeedHeaderSection 
@@ -211,11 +169,11 @@ const HomeDashboard = () => {
                     onFiltersChange={setFeedFilters}
                   />
                 </CardContent>
-              </Card>
-            </div>
+          </Card>
+        </div>
 
-            {/* Sidebar - Visible on desktop only due to space constraints */}
-            <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
+        {/* Sidebar - Visible on desktop only due to space constraints */}
+        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6">
               {/* Sponsored Ads Section */}
               <AdDisplay placement="sidebar" maxAds={3} />
 
@@ -393,88 +351,10 @@ const HomeDashboard = () => {
               </Card>
             </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="automations" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-          <HomeAutomations />
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-          <NeighborhoodInsights />
-          
-          {/* Trending Topics */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg sm:text-xl">
-                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                Trending Topics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {topicsLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index} className="animate-pulse">
-                      <div className="h-8 bg-muted rounded"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : trendingTopics.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {trendingTopics.map((topic, index) => (
-                    <div 
-                      key={topic.tag} 
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
-                      onClick={() => {
-                        // Navigate to community with search filter
-                        navigate('/community');
-                      }}
-                    >
-                      <span className="font-medium text-sm sm:text-base">{topic.tag}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {topic.posts}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No trending topics yet. Start a conversation!
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ads" className="space-y-4 sm:space-y-5 md:space-y-6 mt-4 sm:mt-5 md:mt-6">
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                Active Advertisements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FeedErrorBoundary
-                fallback={
-                  <div className="p-4 text-center text-muted-foreground text-sm">
-                    Ads temporarily unavailable
-                  </div>
-                }
-              >
-                <Suspense fallback={<div className="text-center p-4 text-muted-foreground">Loading ads...</div>}>
-                  <AdDisplay placement="inline" maxAds={9} />
-                </Suspense>
-              </FeedErrorBoundary>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Create Post Dialog */}
-      <CreatePostDialog 
-        open={createPostOpen} 
-        onOpenChange={setCreatePostOpen} 
+      <CreatePostDialog
+        open={createPostOpen}
+        onOpenChange={setCreatePostOpen}
       />
     </div>
   );
