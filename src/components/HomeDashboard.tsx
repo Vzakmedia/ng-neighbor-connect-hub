@@ -23,6 +23,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // Lazy load AdDisplay - not critical for initial render
 const AdDisplay = lazy(() => import('@/components/advertising/display/AdDisplay').then(m => ({ default: m.AdDisplay })));
@@ -113,6 +114,15 @@ const HomeDashboard = () => {
       }));
     }
   };
+
+  // Keyboard shortcuts for tab navigation (1-4 keys)
+  useKeyboardShortcuts([
+    { key: '1', callback: () => handleTabChange('for-you') },
+    { key: '2', callback: () => handleTabChange('recent') },
+    { key: '3', callback: () => handleTabChange('nearby') },
+    { key: '4', callback: () => handleTabChange('trending') },
+  ]);
+
   const dashboardStats = useDashboardStats();
   const { events: upcomingEvents, loading: eventsLoading } = useUpcomingEvents(3);
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
