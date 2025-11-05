@@ -55,6 +55,8 @@ export const useUpcomingEvents = (limit: number = 3) => {
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
 
+      const now = new Date().toISOString();
+
       let query = supabase
         .from('community_posts')
         .select(`
@@ -63,6 +65,7 @@ export const useUpcomingEvents = (limit: number = 3) => {
           content,
           location,
           created_at,
+          event_date,
           profiles!community_posts_user_id_fkey (
             full_name,
             neighborhood,
@@ -71,7 +74,8 @@ export const useUpcomingEvents = (limit: number = 3) => {
           )
         `)
         .eq('post_type', 'event')
-        .order('created_at', { ascending: false })
+        .gte('event_date', now)
+        .order('event_date', { ascending: true })
         .limit(limit);
 
       // Only show events created after user joined (clean slate)
@@ -107,24 +111,28 @@ export const useUpcomingEvents = (limit: number = 3) => {
         return acc;
       }, {} as Record<string, number>);
 
-      const formattedEvents: UpcomingEvent[] = (data || []).map((event) => ({
-        id: event.id,
-        title: event.title || 'Community Event',
-        date: new Date(event.created_at).toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        time: new Date(event.created_at).toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }),
-        location: event.location || (event.profiles as any)?.neighborhood || (event.profiles as any)?.city || 'TBA',
-        attendees: rsvpCounts[event.id] || 0,
-        type: 'community',
-        created_at: event.created_at
-      }));
+      const formattedEvents: UpcomingEvent[] = (data || []).map((event) => {
+        const eventDate = event.event_date ? new Date(event.event_date) : new Date(event.created_at);
+        
+        return {
+          id: event.id,
+          title: event.title || 'Community Event',
+          date: eventDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'short', 
+            day: 'numeric' 
+          }),
+          time: eventDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          }),
+          location: event.location || (event.profiles as any)?.neighborhood || (event.profiles as any)?.city || 'TBA',
+          attendees: rsvpCounts[event.id] || 0,
+          type: 'community',
+          created_at: event.created_at
+        };
+      });
 
       setEvents(formattedEvents);
     } catch (error) {
