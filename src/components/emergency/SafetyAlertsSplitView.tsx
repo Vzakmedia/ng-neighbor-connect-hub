@@ -15,32 +15,34 @@ const SafetyAlertsSplitView = ({
   onAlertClick,
 }: SafetyAlertsSplitViewProps) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-4 h-[calc(100vh-280px)]">
-      {/* Left: Alert List */}
-      <div className="order-2 lg:order-1">
-        <ScrollArea className="h-full pr-4">
-          <div className="space-y-3">
-            {alerts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No alerts in your area</p>
-              </div>
-            ) : (
-              alerts.map((alert) => (
-                <CompactAlertCard
-                  key={alert.id}
-                  alert={alert}
-                  userLocation={userLocation}
-                  onClick={() => onAlertClick(alert)}
-                />
-              ))
-            )}
-          </div>
-        </ScrollArea>
+    <div className="relative h-[calc(100vh-280px)] rounded-lg overflow-hidden">
+      {/* Full Background Map */}
+      <div className="absolute inset-0">
+        <SafetyMap alerts={alerts} onAlertClick={onAlertClick} />
       </div>
 
-      {/* Right: Map View */}
-      <div className="order-1 lg:order-2 h-[300px] lg:h-full rounded-lg overflow-hidden sticky top-4">
-        <SafetyMap alerts={alerts} onAlertClick={onAlertClick} />
+      {/* Floating Alert List - Left Side */}
+      <div className="absolute left-4 top-4 bottom-4 w-full max-w-md z-10">
+        <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-xl h-full">
+          <ScrollArea className="h-full p-4">
+            <div className="space-y-3">
+              {alerts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No alerts in your area</p>
+                </div>
+              ) : (
+                alerts.map((alert) => (
+                  <CompactAlertCard
+                    key={alert.id}
+                    alert={alert}
+                    userLocation={userLocation}
+                    onClick={() => onAlertClick(alert)}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );
