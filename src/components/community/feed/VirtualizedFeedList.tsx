@@ -189,7 +189,7 @@ const VirtualizedFeedListComponent = ({
     <>
       <div
         ref={parentRef}
-        className="h-full overflow-auto"
+        className="h-full overflow-auto hide-scrollbar"
         style={{
           contain: 'strict',
         }}
