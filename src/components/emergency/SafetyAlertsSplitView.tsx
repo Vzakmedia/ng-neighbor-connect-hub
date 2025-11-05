@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import HorizontalFilters, { FilterCategory } from './HorizontalFilters';
 import PanicButton from '../PanicButton';
 import ReportIncidentDialog from '../ReportIncidentDialog';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -55,31 +55,25 @@ const SafetyAlertsSplitView = ({
       </div>
 
       {/* Left Sidebar Card - Bottom drawer on mobile, left floating card on desktop */}
-      <div className={cn(
-        "absolute bottom-0 left-0 right-0 lg:left-4 lg:top-4 lg:bottom-4 lg:right-auto z-10 transition-all duration-300",
-        isCollapsed 
-          ? "lg:w-16" 
-          : "lg:w-full lg:max-w-md"
-      )}>
+      <div className="absolute bottom-0 left-0 right-0 lg:left-4 lg:top-4 lg:bottom-4 lg:right-auto lg:w-full lg:max-w-md z-10 transition-all duration-300">
         <Card className={cn(
           "bg-white/95 dark:bg-background/95 backdrop-blur-sm shadow-xl border-border transition-all duration-300",
           "rounded-t-2xl lg:rounded-lg",
           isCollapsed 
-            ? "h-16 lg:h-full" 
+            ? "h-auto" 
             : "h-[50vh] lg:h-full"
         )}>
           <div className="flex flex-col h-full">
             {/* Header with Toggle */}
             <div className="p-4 border-b border-border flex items-center justify-between">
-              {!isCollapsed && <h2 className="text-lg font-semibold">{locationText}</h2>}
+              <h2 className="text-lg font-semibold">{locationText}</h2>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className={cn(isCollapsed && "mx-auto")}
                 aria-label={isCollapsed ? "Expand alerts panel" : "Collapse alerts panel"}
               >
-                {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                {isCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </div>
 
