@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export type FilterCategory = 'all' | 'safety' | 'outages' | 'weather' | 'fires' | 'traffic';
 
@@ -33,7 +33,6 @@ const HorizontalFilters = ({ selectedCategory, onCategoryChange }: HorizontalFil
           </Button>
         ))}
       </div>
-      <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );
 };
