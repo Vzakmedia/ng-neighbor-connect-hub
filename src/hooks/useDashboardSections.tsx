@@ -66,7 +66,8 @@ export const useUpcomingEvents = (limit: number = 3) => {
           profiles!community_posts_user_id_fkey (
             full_name,
             neighborhood,
-            city
+            city,
+            state
           )
         `)
         .eq('post_type', 'event')
@@ -76,6 +77,15 @@ export const useUpcomingEvents = (limit: number = 3) => {
       // Only show events created after user joined (clean slate)
       if (userCreatedAt) {
         query = query.gte('created_at', userCreatedAt);
+      }
+
+      // Filter by location: neighborhood > city > state
+      if (profile.neighborhood) {
+        query = query.eq('profiles.neighborhood', profile.neighborhood);
+      } else if (profile.city) {
+        query = query.eq('profiles.city', profile.city);
+      } else if (profile.state) {
+        query = query.eq('profiles.state', profile.state);
       }
 
       const { data, error } = await query;
