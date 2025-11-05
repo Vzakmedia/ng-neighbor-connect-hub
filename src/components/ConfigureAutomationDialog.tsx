@@ -88,7 +88,7 @@ const ConfigureAutomationDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="settings" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="flex mb-4">
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>

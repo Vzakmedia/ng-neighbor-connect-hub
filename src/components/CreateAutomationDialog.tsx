@@ -298,7 +298,7 @@ const CreateAutomationDialog = ({
             <div className="space-y-4">
               <Label>Trigger Type</Label>
               <Tabs value={config.triggerType} onValueChange={(value: any) => setConfig(prev => ({ ...prev, triggerType: value }))}>
-                <TabsList className="grid grid-cols-3 w-full">
+                <TabsList className="flex mb-4">
                   <TabsTrigger value="event" className="flex items-center gap-2">
                     <Zap className="h-4 w-4" />
                     Event-based

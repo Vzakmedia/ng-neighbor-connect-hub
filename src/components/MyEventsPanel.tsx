@@ -368,7 +368,7 @@ const MyEventsPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-12">
+        <TabsList className="flex mb-4">
           <TabsTrigger value="overview" className="touch-manipulation text-sm">
             <Calendar className="h-4 w-4 mr-2" />
             Overview

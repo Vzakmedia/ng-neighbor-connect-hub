@@ -266,7 +266,7 @@ const CommunityServices = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Desktop tabs */}
-        <TabsList className="hidden md:grid w-full grid-cols-2">
+        <TabsList className="hidden md:flex mb-4">
           <TabsTrigger value="services">Services ({filteredServices.length})</TabsTrigger>
           <TabsTrigger value="goods">Goods ({filteredItems.length})</TabsTrigger>
         </TabsList>

@@ -372,7 +372,7 @@ const AdminModerationPanel = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="flex mb-4">
           <TabsTrigger value="reports">
             Reports ({filteredReports.filter(r => r.status === 'pending').length})
           </TabsTrigger>

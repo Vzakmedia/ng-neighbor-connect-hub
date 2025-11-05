@@ -329,7 +329,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
           <Separator />
 
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="flex mb-4 flex-wrap">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="location">Location</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>

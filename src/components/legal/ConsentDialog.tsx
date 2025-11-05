@@ -200,7 +200,7 @@ export const ConsentDialog = ({ open, onConsentGiven, onCancel }: ConsentDialogP
         </DialogHeader>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-3 flex-shrink-0 text-xs sm:text-sm">
+          <TabsList className="flex mb-4 flex-wrap text-xs sm:text-sm">
             <TabsTrigger value="overview" className="px-2 sm:px-4">Consent Overview</TabsTrigger>
             <TabsTrigger value="terms" className="px-2 sm:px-4">Terms & Conditions</TabsTrigger>
             <TabsTrigger value="privacy" className="px-2 sm:px-4">Privacy Policy</TabsTrigger>

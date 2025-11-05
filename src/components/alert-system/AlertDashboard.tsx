@@ -276,7 +276,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className }) => 
 
       {/* Detailed Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+        <TabsList className="flex mb-4 flex-wrap">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
           <TabsTrigger value="queue" className="text-xs sm:text-sm">Queue</TabsTrigger>
           <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>

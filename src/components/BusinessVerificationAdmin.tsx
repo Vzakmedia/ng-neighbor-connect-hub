@@ -249,7 +249,7 @@ const BusinessVerificationAdmin = () => {
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="flex mb-4">
           <TabsTrigger value="pending">Pending ({pendingApplications.length})</TabsTrigger>
           <TabsTrigger value="verified">Verified ({verifiedBusinesses.length})</TabsTrigger>
           <TabsTrigger value="rejected">Rejected ({rejectedApplications.length})</TabsTrigger>

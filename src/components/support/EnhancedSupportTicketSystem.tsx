@@ -255,7 +255,7 @@ export const EnhancedSupportTicketSystem = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="tickets" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="flex mb-4">
           <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
           <TabsTrigger value="emails">Email Inbox</TabsTrigger>
         </TabsList>

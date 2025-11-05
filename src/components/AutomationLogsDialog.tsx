@@ -186,7 +186,7 @@ const AutomationLogsDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="logs" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="flex mb-4">
             <TabsTrigger value="logs">Execution Logs</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
