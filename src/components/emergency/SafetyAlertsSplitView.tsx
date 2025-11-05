@@ -21,9 +21,9 @@ const SafetyAlertsSplitView = ({
         <SafetyMap alerts={alerts} onAlertClick={onAlertClick} />
       </div>
 
-      {/* Floating Alert List - Left Side */}
-      <div className="absolute left-4 top-4 bottom-4 w-full max-w-md z-10">
-        <div className="bg-background/95 backdrop-blur-sm rounded-lg shadow-xl h-full">
+      {/* Alert List - Bottom drawer on mobile, left floating card on desktop */}
+      <div className="absolute bottom-0 left-0 right-0 lg:left-4 lg:top-4 lg:bottom-4 lg:right-auto lg:w-full lg:max-w-md z-10">
+        <div className="bg-background/95 backdrop-blur-sm rounded-t-2xl lg:rounded-lg shadow-xl h-[40vh] lg:h-full">
           <ScrollArea className="h-full p-4">
             <div className="space-y-3">
               {alerts.length === 0 ? (
