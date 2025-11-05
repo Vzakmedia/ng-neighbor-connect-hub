@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export type FilterCategory = 'all' | 'safety' | 'outages' | 'weather' | 'fires' | 'traffic';
 
@@ -19,8 +18,8 @@ const FILTER_CATEGORIES = [
 
 const HorizontalFilters = ({ selectedCategory, onCategoryChange }: HorizontalFiltersProps) => {
   return (
-    <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex gap-2 pb-2">
+    <div className="w-full overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 pb-2 min-w-min">
         {FILTER_CATEGORIES.map((category) => (
           <Button
             key={category.value}
@@ -33,7 +32,7 @@ const HorizontalFilters = ({ selectedCategory, onCategoryChange }: HorizontalFil
           </Button>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 

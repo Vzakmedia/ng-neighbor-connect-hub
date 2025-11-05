@@ -76,7 +76,16 @@ All colors MUST be HSL.
     --sidebar-ring: 162 85% 30%;
   }
 }
-
+  
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 1;
