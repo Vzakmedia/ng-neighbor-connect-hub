@@ -15,17 +15,14 @@ interface PillFilterProps {
   pillClassName?: string;
 }
 
-export const PillFilter = React.forwardRef<
-  HTMLDivElement,
-  PillFilterProps
->(({ 
+export const PillFilter = ({ 
   options, 
   value, 
   onValueChange, 
   mode = "multiple",
   className,
   pillClassName 
-}, ref) => {
+}: PillFilterProps) => {
   // Convert single value to array for consistent handling
   const selectedValues = Array.isArray(value) ? value : [value];
 
@@ -45,7 +42,7 @@ export const PillFilter = React.forwardRef<
   };
 
   return (
-    <div ref={ref} className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-2", className)}>
       {options.map((option) => {
         const isSelected = selectedValues.includes(option.value);
         
@@ -75,6 +72,4 @@ export const PillFilter = React.forwardRef<
       })}
     </div>
   );
-});
-
-PillFilter.displayName = "PillFilter";
+};
