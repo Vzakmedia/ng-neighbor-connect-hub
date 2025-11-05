@@ -53,19 +53,7 @@ const EmergencyStatsComponent = ({ alerts, panicAlerts, userId }: EmergencyStats
     }
   ];
 
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-      {statItems.map((stat, index) => (
-        <Card key={index} className="touch-manipulation">
-          <CardContent className="p-3 md:p-4 text-center">
-            <stat.icon className={`h-5 w-5 md:h-6 md:w-6 mx-auto mb-2 ${stat.color}`} />
-            <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
-            <div className="text-xs md:text-sm text-muted-foreground leading-tight">{stat.label}</div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+  return null;
 };
 
 export default EmergencyStatsComponent;
