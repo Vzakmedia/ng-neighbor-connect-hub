@@ -33,6 +33,7 @@ import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
+import { CommunityFeedHeaderSection } from './community/feed/CommunityFeedHeaderSection';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { lazy, Suspense, useEffect } from 'react';
 import { FeedErrorBoundary } from '@/components/FeedErrorBoundary';
@@ -192,10 +193,7 @@ const HomeDashboard = () => {
             <div className="lg:col-span-2">
               <Card className="shadow-card">
                 <CardHeader className="pb-3">
-                  <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
-                    <CardTitle className="text-lg sm:text-xl md:text-xl">Community Updates</CardTitle>
-                    
-                  </div>
+                  <CommunityFeedHeaderSection />
                 </CardHeader>
                 <CardContent className="px-3 sm:px-4 md:px-6" data-tutorial="community-feed">
                   <CommunityFeed />

@@ -15,7 +15,21 @@ import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
 import { Capacitor } from "@capacitor/core";
 import { useQueryClient } from "@tanstack/react-query";
 
-export const CommunityFeed = () => {
+export interface CommunityFeedProps {
+  filters?: {
+    locationScope: string;
+    tags: string[];
+    postTypes: string;
+    sortBy: string;
+    dateRange: string;
+  };
+  onFiltersChange?: (filters: any) => void;
+}
+
+export const CommunityFeed = ({ 
+  filters: externalFilters,
+  onFiltersChange: externalOnFiltersChange 
+}: CommunityFeedProps = {}) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
@@ -37,13 +51,17 @@ export const CommunityFeed = () => {
   }, [isNative, connectionType]);
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
+  const [internalFilters, setInternalFilters] = useState({
     locationScope: (preferences?.default_location_filter || (profile?.city ? 'city' : 'all')) as string,
     tags: [] as string[],
     postTypes: 'all' as string,
     sortBy: 'newest' as string,
     dateRange: 'all' as string,
   });
+  
+  // Use external filters if provided, otherwise internal
+  const filters = externalFilters || internalFilters;
+  const setFilters = externalOnFiltersChange || setInternalFilters;
   const [unreadCounts, setUnreadCounts] = useState({ community: 0 });
 
   // Debounce search query to prevent excessive API calls
@@ -223,25 +241,6 @@ export const CommunityFeed = () => {
             <span className="text-blue-600 dark:text-blue-400 text-xs">Showing cached content</span>
           </div>
         )}
-      
-        <CommunityFeedHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          hasNewContent={false}
-          onRefresh={refetch}
-          refreshing={isFetching && !isFetchingNextPage}
-          unreadCount={unreadCounts.community}
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableTags={availableTags}
-          activeFiltersCount={activeFiltersCount}
-          onMarkAllRead={markAllCommunityPostsAsRead}
-          userLocation={{
-            state: profile?.state,
-            city: profile?.city,
-            neighborhood: profile?.neighborhood
-          }}
-        />
       </div>
     
       {/* VirtualizedFeedList manages its own scroll container */}
