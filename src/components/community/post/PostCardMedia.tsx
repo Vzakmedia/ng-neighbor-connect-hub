@@ -29,14 +29,14 @@ export const PostCardMedia = ({
     : "h-40 sm:h-48";
 
   return (
-    <div className={`grid ${gridClass} gap-1.5 -mx-3 sm:-mx-4`}>
+    <div className={`grid ${gridClass} gap-1`}>
       {images.slice(0, 4).map((url, index) => (
         !imageError[index] && (
           <div key={index} className="relative group overflow-hidden">
             <LazyImage
               src={url}
               alt={`Post image ${index + 1}`}
-              className={`w-full ${imageHeight} object-cover hover:opacity-90 transition-opacity cursor-pointer`}
+              className={`w-full ${imageHeight} object-cover hover:opacity-95 transition-opacity cursor-pointer`}
               onError={() => onImageError(index)}
               onClick={(e) => {
                 e.stopPropagation();
