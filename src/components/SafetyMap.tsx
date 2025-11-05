@@ -169,6 +169,44 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         }
       });
 
+      // Get user's current location and zoom to it
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            // Pan and zoom to user's location
+            map.current?.setCenter(userLocation);
+            map.current?.setZoom(14);
+            
+            // Add a marker for user's location
+            new (window as any).google.maps.marker.AdvancedMarkerElement({
+              position: userLocation,
+              map: map.current,
+              title: 'Your Location',
+              content: new (window as any).google.maps.marker.PinElement({
+                background: '#10B981', // green
+                borderColor: '#ffffff',
+                glyphColor: '#ffffff',
+                scale: 1.3,
+              }).element,
+            });
+          },
+          (error) => {
+            console.log('Geolocation error:', error.message);
+            // Stay with default Nigeria center if location access denied
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      }
+
       setMapLoaded(true);
     }).catch((error) => {
       console.error('Error loading Google Maps:', error);
