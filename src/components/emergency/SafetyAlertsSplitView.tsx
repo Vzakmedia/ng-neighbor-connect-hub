@@ -27,7 +27,7 @@ const SafetyAlertsSplitView = ({
           <ScrollArea className="h-full p-4">
             <div className="space-y-3">
               {alerts.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-2 text-sm text-muted-foreground">
                   <p>No alerts in your area</p>
                 </div>
               ) : (
