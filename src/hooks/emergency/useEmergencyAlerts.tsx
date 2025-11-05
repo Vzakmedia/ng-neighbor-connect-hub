@@ -100,20 +100,9 @@ export const useEmergencyAlerts = () => {
             query = query.eq('status', filters.status as any);
           }
 
-          // Category-based filtering
+          // Category-based filtering - direct alert_type match
           if (filters.category && filters.category !== 'all') {
-            const categoryMap: Record<string, string[]> = {
-              safety: ['break_in', 'theft', 'suspicious_activity', 'harassment'],
-              outages: ['power_outage'],
-              weather: ['flood'],
-              fires: ['fire'],
-              traffic: ['road_closure', 'accident']
-            };
-            
-            const types = categoryMap[filters.category];
-            if (types && types.length > 0) {
-              query = query.in('alert_type', types);
-            }
+            query = query.eq('alert_type', filters.category);
           }
 
           const { data, error } = await query;
