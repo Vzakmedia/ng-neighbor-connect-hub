@@ -247,8 +247,8 @@ export const CommunityFeed = ({
         )}
       </div>
     
-      {/* VirtualizedFeedList manages its own scroll container */}
-      <div className="h-[calc(100vh-280px)]">
+      {/* Feed content scrolls with the page */}
+      <div>
         <CommunityFeedContent
           events={events}
           loading={isLoading}

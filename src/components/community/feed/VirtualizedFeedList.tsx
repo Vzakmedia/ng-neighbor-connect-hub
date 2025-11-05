@@ -92,10 +92,10 @@ const VirtualizedFeedListComponent = ({
     return height;
   };
 
-  // Initialize virtualizer
+  // Initialize virtualizer with window scroll
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? events.length + 1 : events.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => (typeof window !== 'undefined' ? window : null) as any,
     estimateSize,
     overscan: isMobile ? 2 : 3, // Less overscan on mobile
     measureElement:
@@ -187,13 +187,7 @@ const VirtualizedFeedListComponent = ({
 
   return (
     <>
-      <div
-        ref={parentRef}
-        className="h-full overflow-auto hide-scrollbar"
-        style={{
-          contain: 'strict',
-        }}
-      >
+      <div className="w-full">
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
