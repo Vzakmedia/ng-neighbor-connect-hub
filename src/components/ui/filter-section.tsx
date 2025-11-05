@@ -12,17 +12,14 @@ interface FilterSectionProps {
   className?: string;
 }
 
-export const FilterSection = React.forwardRef<
-  HTMLDivElement,
-  FilterSectionProps
->(({ 
+export const FilterSection = ({
   title, 
   children, 
   defaultOpen = false,
   open: controlledOpen,
   onOpenChange,
   className 
-}, ref) => {
+}: FilterSectionProps) => {
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
   
   // Use controlled state if provided, otherwise internal state
@@ -31,7 +28,6 @@ export const FilterSection = React.forwardRef<
 
   return (
     <Collapsible
-      ref={ref}
       open={isOpen}
       onOpenChange={handleOpenChange}
       className={cn("border-b border-border/50", className)}
@@ -51,6 +47,6 @@ export const FilterSection = React.forwardRef<
       </CollapsibleContent>
     </Collapsible>
   );
-});
+};
 
 FilterSection.displayName = "FilterSection";
