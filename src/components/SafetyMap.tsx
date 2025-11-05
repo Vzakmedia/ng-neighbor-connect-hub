@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Locate } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
@@ -60,6 +62,9 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
+  const userMarker = useRef<any>(null);
+  const coverageCircle = useRef<any>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState<string>('');
@@ -173,18 +178,20 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const userLocation = {
+            const location = {
               lat: position.coords.latitude,
               lng: position.coords.longitude
             };
             
+            setUserLocation(location);
+            
             // Pan and zoom to user's location
-            map.current?.setCenter(userLocation);
+            map.current?.setCenter(location);
             map.current?.setZoom(14);
             
             // Add a marker for user's location
-            new (window as any).google.maps.marker.AdvancedMarkerElement({
-              position: userLocation,
+            userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
+              position: location,
               map: map.current,
               title: 'Your Location',
               content: new (window as any).google.maps.marker.PinElement({
@@ -193,6 +200,18 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 glyphColor: '#ffffff',
                 scale: 1.3,
               }).element,
+            });
+
+            // Add coverage radius circle (5km radius for neighborhood)
+            coverageCircle.current = new (window as any).google.maps.Circle({
+              strokeColor: '#10B981',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#10B981',
+              fillOpacity: 0.15,
+              map: map.current,
+              center: location,
+              radius: 5000, // 5km radius
             });
           },
           (error) => {
@@ -212,6 +231,67 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       console.error('Error loading Google Maps:', error);
     });
   }, [googleMapsApiKey]);
+
+  // Function to recenter map to user's location
+  const recenterToUserLocation = () => {
+    if (!userLocation || !map.current) {
+      // Try to get location again if not available
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            setUserLocation(location);
+            map.current?.setCenter(location);
+            map.current?.setZoom(14);
+            
+            // Update marker and circle if they don't exist
+            if (!userMarker.current) {
+              userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
+                position: location,
+                map: map.current,
+                title: 'Your Location',
+                content: new (window as any).google.maps.marker.PinElement({
+                  background: '#10B981',
+                  borderColor: '#ffffff',
+                  glyphColor: '#ffffff',
+                  scale: 1.3,
+                }).element,
+              });
+            } else {
+              userMarker.current.position = location;
+            }
+
+            if (!coverageCircle.current) {
+              coverageCircle.current = new (window as any).google.maps.Circle({
+                strokeColor: '#10B981',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#10B981',
+                fillOpacity: 0.15,
+                map: map.current,
+                center: location,
+                radius: 5000,
+              });
+            } else {
+              coverageCircle.current.setCenter(location);
+            }
+          },
+          (error) => {
+            console.error('Error getting location:', error.message);
+          }
+        );
+      }
+      return;
+    }
+
+    // Recenter to existing location
+    map.current.setCenter(userLocation);
+    map.current.setZoom(14);
+  };
 
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
@@ -329,8 +409,20 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     <div className="relative h-full">
       <div ref={mapContainer} className="absolute inset-0" />
       
+      {/* Recenter Button */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          size="icon"
+          onClick={recenterToUserLocation}
+          className="rounded-full shadow-lg bg-background hover:bg-accent text-foreground"
+          title="Recenter to my location"
+        >
+          <Locate className="h-5 w-5" />
+        </Button>
+      </div>
+
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-lg">
+      <div className="absolute bottom-4 left-4 bg-background p-3 rounded-lg shadow-lg">
         <h4 className="font-semibold text-sm mb-2">Alert Severity</h4>
         <div className="space-y-1">
           {[
@@ -348,10 +440,24 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
             </div>
           ))}
         </div>
+        {userLocation && (
+          <>
+            <div className="border-t border-border mt-2 pt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500 border border-white" />
+                <span className="text-xs">Your Location</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-3 h-3 rounded-full border-2 border-green-500 bg-green-500/15" />
+                <span className="text-xs">Coverage Area (5km)</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Alert count */}
-      <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow-lg">
+      <div className="absolute top-4 left-4 bg-background p-2 rounded-lg shadow-lg">
         <div className="text-sm font-semibold">
           {alerts.length} Active Alert{alerts.length !== 1 ? 's' : ''}
         </div>
