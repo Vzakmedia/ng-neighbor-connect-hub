@@ -55,7 +55,7 @@ const Navigation = () => {
   
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
-    { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
+    { id: 'community', icon: Users, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
@@ -67,7 +67,7 @@ const Navigation = () => {
   // Mobile-specific order with marketplace beside community and safety in first 4
   const mobileNavItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
-    { id: 'community', icon: MessageSquare, label: 'Community', count: unreadCounts.community, path: '/community' },
+    { id: 'community', icon: Users, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },

@@ -22,8 +22,8 @@ const LandingPage = () => {
   const features = [
     {
       icon: MessageSquare,
-      title: "Community Boards",
-      description: "Connect with neighbors through organized discussion boards for your area."
+      title: "Groups",
+      description: "Connect with neighbors through organized groups for your area."
     },
     {
       icon: Calendar,

@@ -258,15 +258,15 @@ const CommunityBoards = () => {
         fetchBoards();
 
         toast({
-          title: "Board created!",
+          title: "Group created!",
           description: `${newBoard.name} has been created successfully.`,
         });
       }
     } catch (error) {
-      console.error('Error creating board:', error);
+      console.error('Error creating group:', error);
       toast({
         title: "Error",
-        description: "Failed to create board. Please try again.",
+        description: "Failed to create group. Please try again.",
         variant: "destructive",
       });
     }
@@ -299,7 +299,7 @@ const CommunityBoards = () => {
     setInviteLinks([]);
   };
 
-  // Fetch discussion boards
+  // Fetch groups
   const fetchBoards = async () => {
     if (!user) return;
     
@@ -356,7 +356,7 @@ const CommunityBoards = () => {
       console.error('Error fetching boards:', error);
       toast({
         title: "Error",
-        description: "Failed to load discussion boards.",
+        description: "Failed to load groups.",
         variant: "destructive",
       });
     }
@@ -420,17 +420,17 @@ const CommunityBoards = () => {
       if (error) throw error;
 
       toast({
-        title: "Joined board!",
-        description: "You've successfully joined the board.",
+        title: "Joined group!",
+        description: "You've successfully joined the group.",
       });
 
       fetchBoards();
       fetchPublicBoards();
     } catch (error) {
-      console.error('Error joining board:', error);
+      console.error('Error joining group:', error);
       toast({
         title: "Error",
-        description: "Failed to join board.",
+        description: "Failed to join group.",
         variant: "destructive",
       });
     }
@@ -715,7 +715,7 @@ const CommunityBoards = () => {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Please log in to access community boards.</p>
+        <p className="text-muted-foreground">Please log in to access groups.</p>
       </div>
     );
   }
@@ -734,7 +734,7 @@ const CommunityBoards = () => {
       <div className={`${isMobile && showMobileConversation ? 'hidden' : 'flex'} w-80 border-r flex-col`}>
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Discussion Boards</h2>
+            <h2 className="text-lg font-semibold">Groups</h2>
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -758,8 +758,8 @@ const CommunityBoards = () => {
             {boards.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                <p>No boards yet</p>
-                <p className="text-sm">Join or create a board to get started</p>
+                <p>No groups yet</p>
+                <p className="text-sm">Join or create a group to get started</p>
               </div>
             ) : (
               boards.map((board) => (
@@ -949,7 +949,7 @@ const CommunityBoards = () => {
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
               <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-              <p>Select a board to start chatting</p>
+              <p>Select a group to start chatting</p>
             </div>
           </div>
         )}
@@ -959,16 +959,16 @@ const CommunityBoards = () => {
       <Dialog open={showCreateBoard} onOpenChange={setShowCreateBoard}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Board</DialogTitle>
+            <DialogTitle>Create New Group</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="board-name">Board Name</Label>
+              <Label htmlFor="board-name">Group Name</Label>
               <Input
                 id="board-name"
                 value={newBoardName}
                 onChange={(e) => setNewBoardName(e.target.value)}
-                placeholder="Enter board name"
+                placeholder="Enter group name"
               />
             </div>
             <div>
@@ -977,7 +977,7 @@ const CommunityBoards = () => {
                 id="board-description"
                 value={newBoardDescription}
                 onChange={(e) => setNewBoardDescription(e.target.value)}
-                placeholder="Describe what this board is about"
+                placeholder="Describe what this group is about"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -986,30 +986,30 @@ const CommunityBoards = () => {
                 checked={newBoardIsPublic}
                 onCheckedChange={setNewBoardIsPublic}
               />
-              <Label htmlFor="board-public">Make this board public</Label>
+              <Label htmlFor="board-public">Make this group public</Label>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowCreateBoard(false)}>
                 Cancel
               </Button>
               <Button onClick={createBoard} disabled={!newBoardName.trim()}>
-                Create Board
+                Create Group
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Discover Boards Dialog */}
+      {/* Discover Groups Dialog */}
       <Dialog open={showDiscoverBoards} onOpenChange={setShowDiscoverBoards}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Discover Boards</DialogTitle>
+            <DialogTitle>Discover Groups</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Search boards..."
+                placeholder="Search groups..."
                 className="flex-1"
               />
               <Button variant="outline">
