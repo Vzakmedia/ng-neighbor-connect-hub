@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Locate } from 'lucide-react';
+import { Locate, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
@@ -40,7 +40,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const isNative = Capacitor.isNativePlatform();
   const { user } = useAuth();
   const { profile } = useProfile();
-  const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, geocodeAddress } = useGoogleMapsCache();
+  const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, geocodeAddress, getPlaceId } = useGoogleMapsCache();
   
   
   // Use native map on mobile, web map otherwise
@@ -72,18 +72,18 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const map = useRef<any>(null);
   const markers = useRef<any[]>([]);
   const userMarker = useRef<any>(null);
-  const coverageCircle = useRef<any>(null);
+  const neighborhoodFeatureLayer = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current || !googleMapsApiKey) return;
 
-    // Initialize Google Maps with only marker library (lazy load others)
+    // Initialize Google Maps with marker and places libraries
     const loader = new Loader({
       apiKey: googleMapsApiKey,
       version: 'weekly',
-      libraries: ['marker'] // Only load marker library initially
+      libraries: ['marker', 'places'] // Load marker and places libraries
     });
 
     loader.load().then(async () => {
@@ -128,33 +128,66 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           
           if (location) {
             setUserLocation(location);
-              map.current?.setCenter(location);
-              map.current?.setZoom(14);
-              
-              // Add a marker for user's location
-              userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
-                position: location,
-                map: map.current,
-                title: 'Your Location',
-                content: new (window as any).google.maps.marker.PinElement({
-                  background: '#10B981', // green
-                  borderColor: '#ffffff',
-                  glyphColor: '#ffffff',
-                  scale: 1.3,
-                }).element,
-              });
+            map.current?.setCenter(location);
+            map.current?.setZoom(14);
+            
+            // Create custom Home icon marker
+            const homeIconDiv = document.createElement('div');
+            homeIconDiv.innerHTML = `
+              <div style="
+                background: #10B981;
+                border: 3px solid #ffffff;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              ">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+            `;
+            
+            userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
+              position: location,
+              map: map.current,
+              title: 'Your Home',
+              content: homeIconDiv,
+            });
 
-              // Add coverage radius circle (5km radius for neighborhood)
-              coverageCircle.current = new (window as any).google.maps.Circle({
-                strokeColor: '#10B981',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#10B981',
-                fillOpacity: 0.15,
-                map: map.current,
-                center: location,
-                radius: 5000, // 5km radius
-              });
+            // Try to show neighborhood boundary with Data-Driven Styling
+            try {
+              const placeId = await getPlaceId(fullAddress);
+              
+              if (placeId && map.current.getFeatureLayer) {
+                const featureLayer = map.current.getFeatureLayer('LOCALITY');
+                
+                if (featureLayer) {
+                  neighborhoodFeatureLayer.current = featureLayer;
+                  
+                  featureLayer.style = (options: any) => {
+                    if (options.feature.placeId === placeId) {
+                      return {
+                        strokeColor: '#10B981',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: '#10B981',
+                        fillOpacity: 0.15,
+                      };
+                    }
+                    return null;
+                  };
+                  
+                  console.log('✅ Neighborhood boundary loaded');
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Neighborhood boundary not available, using fallback');
+            }
             
             locationFound = true;
           }
@@ -175,29 +208,32 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
               map.current?.setCenter(location);
               map.current?.setZoom(14);
               
-              // Add a marker for user's location
+              // Create custom Home icon marker
+              const homeIconDiv = document.createElement('div');
+              homeIconDiv.innerHTML = `
+                <div style="
+                  background: #10B981;
+                  border: 3px solid #ffffff;
+                  border-radius: 50%;
+                  width: 48px;
+                  height: 48px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                ">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+              `;
+              
               userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
                 position: location,
                 map: map.current,
                 title: 'Your Current Location',
-                content: new (window as any).google.maps.marker.PinElement({
-                  background: '#10B981', // green
-                  borderColor: '#ffffff',
-                  glyphColor: '#ffffff',
-                  scale: 1.3,
-                }).element,
-              });
-
-              // Add coverage radius circle (5km radius for neighborhood)
-              coverageCircle.current = new (window as any).google.maps.Circle({
-                strokeColor: '#10B981',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#10B981',
-                fillOpacity: 0.15,
-                map: map.current,
-                center: location,
-                radius: 5000, // 5km radius
+                content: homeIconDiv,
               });
             },
             (error) => {
@@ -243,16 +279,13 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       
       if (location) {
         setUserLocation(location);
-          map.current.setCenter(location);
-          map.current.setZoom(14);
-          
-          // Update marker and circle
-          if (userMarker.current) {
-            userMarker.current.position = location;
-          }
-          if (coverageCircle.current) {
-            coverageCircle.current.setCenter(location);
-          }
+        map.current.setCenter(location);
+        map.current.setZoom(14);
+        
+        // Update marker position
+        if (userMarker.current) {
+          userMarker.current.position = location;
+        }
         
         locationFound = true;
         return;
@@ -272,36 +305,36 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           map.current?.setCenter(location);
           map.current?.setZoom(14);
           
-          // Update marker and circle if they don't exist
+          // Update marker if it doesn't exist
           if (!userMarker.current) {
+            const homeIconDiv = document.createElement('div');
+            homeIconDiv.innerHTML = `
+              <div style="
+                background: #10B981;
+                border: 3px solid #ffffff;
+                border-radius: 50%;
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+              ">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+            `;
+            
             userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
               position: location,
               map: map.current,
               title: 'Your Current Location',
-              content: new (window as any).google.maps.marker.PinElement({
-                background: '#10B981',
-                borderColor: '#ffffff',
-                glyphColor: '#ffffff',
-                scale: 1.3,
-              }).element,
+              content: homeIconDiv,
             });
           } else {
             userMarker.current.position = location;
-          }
-
-          if (!coverageCircle.current) {
-            coverageCircle.current = new (window as any).google.maps.Circle({
-              strokeColor: '#10B981',
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: '#10B981',
-              fillOpacity: 0.15,
-              map: map.current,
-              center: location,
-              radius: 5000,
-            });
-          } else {
-            coverageCircle.current.setCenter(location);
           }
         },
         (error) => {
@@ -453,12 +486,12 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           <>
             <div className="border-t border-border mt-2 pt-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500 border border-white" />
-                <span className="text-xs">Your Location</span>
+                <Home className="h-3 w-3 text-green-500" />
+                <span className="text-xs">Your Home</span>
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-3 h-3 rounded-full border-2 border-green-500 bg-green-500/15" />
-                <span className="text-xs">Coverage Area (5km)</span>
+                <span className="text-xs">Your Neighborhood</span>
               </div>
             </div>
           </>
