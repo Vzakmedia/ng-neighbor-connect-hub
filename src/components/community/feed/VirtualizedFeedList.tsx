@@ -92,12 +92,12 @@ const VirtualizedFeedListComponent = ({
     return height;
   };
 
-  // Initialize virtualizer with window scroll
+  // Initialize virtualizer with window scroll (null = window mode)
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? events.length + 1 : events.length,
-    getScrollElement: () => (typeof window !== 'undefined' ? window : null) as any,
+    getScrollElement: () => null,
     estimateSize,
-    overscan: isMobile ? 2 : 3, // Less overscan on mobile
+    overscan: isMobile ? 2 : 3,
     measureElement:
       typeof window !== 'undefined' &&
       navigator.userAgent.indexOf('Firefox') === -1
