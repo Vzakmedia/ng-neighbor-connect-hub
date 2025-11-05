@@ -1,4 +1,4 @@
-import React, { useEffect, memo, useState } from 'react';
+import React, { useRef, useEffect, memo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PostCard } from '../post/PostCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
@@ -28,6 +28,7 @@ const VirtualizedFeedListComponent = ({
   isFetchingNextPage = false,
   onPostVisible,
 }: VirtualizedFeedListProps) => {
+  const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
   // Dialog state
@@ -87,10 +88,10 @@ const VirtualizedFeedListComponent = ({
     return height;
   };
 
-  // Initialize virtualizer with window scroll (null = window mode)
+  // Initialize virtualizer with parent element for window scrolling
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? events.length + 1 : events.length,
-    getScrollElement: () => null,
+    getScrollElement: () => parentRef.current,
     estimateSize,
     overscan: isMobile ? 2 : 3,
     measureElement:
@@ -182,7 +183,7 @@ const VirtualizedFeedListComponent = ({
 
   return (
     <>
-      <div className="w-full">
+      <div ref={parentRef} className="w-full" style={{ minHeight: '400px' }}>
         <div
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
