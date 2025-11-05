@@ -225,7 +225,7 @@ const HomeDashboard = () => {
         </div>
 
         {/* Sidebar - Visible on desktop only due to space constraints */}
-        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 sticky top-4 self-start max-h-[calc(100vh-6rem)]">
               {/* Sponsored Ads Section */}
               <AdDisplay placement="sidebar" maxAds={3} />
 
