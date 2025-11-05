@@ -62,24 +62,12 @@ const Events = () => {
               </Button>
             </div>
             
-            {/* Mobile tab buttons */}
+            {/* Mobile tabs */}
             <div className="md:hidden flex items-center justify-between gap-2 mb-6">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {/* handled by Tabs component */}}
-                  size="icon"
-                >
-                  <Calendar className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {/* handled by Tabs component */}}
-                  size="icon"
-                >
-                  <Users className="h-4 w-4" />
-                </Button>
-              </div>
+              <TabsList className="flex">
+                <TabsTrigger value="all">All Events</TabsTrigger>
+                <TabsTrigger value="my-events">My Events</TabsTrigger>
+              </TabsList>
               
               <Button 
                 onClick={() => setCreateDialogOpen(true)}
