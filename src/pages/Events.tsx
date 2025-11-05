@@ -76,7 +76,7 @@ const Events = () => {
 
           <Tabs defaultValue="all" className="w-full">
             {/* Desktop tabs */}
-            <TabsList className="hidden md:grid w-full grid-cols-2">
+            <TabsList className="hidden md:flex mb-4">
               <TabsTrigger value="all">All Events</TabsTrigger>
               <TabsTrigger value="my-events">My Events</TabsTrigger>
             </TabsList>
