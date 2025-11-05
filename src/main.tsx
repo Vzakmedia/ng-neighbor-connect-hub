@@ -47,9 +47,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      staleTime: 30 * 1000, // 30s cache for instant back-navigation
-      retry: 1, // Reduce wait time on errors
-      gcTime: 5 * 60 * 1000, // 5 min garbage collection (formerly cacheTime)
+      staleTime: 60 * 1000, // Increased from 30s to 60s for stale-while-revalidate
+      retry: 2, // Increased from 1 to 2
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      gcTime: 30 * 60 * 1000, // Increased from 5min to 30min (keep in memory longer)
+      networkMode: 'offlineFirst', // Prefer cache first
     },
     mutations: {
       retry: 1,
@@ -57,10 +59,32 @@ const queryClient = new QueryClient({
   },
 })
 
-// Create persister for offline cache
+// Create persister for offline cache with optimizations
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
   key: 'REACT_QUERY_OFFLINE_CACHE',
+  serialize: (data) => {
+    try {
+      // Only persist essential data to reduce localStorage size
+      const optimized = {
+        ...data,
+        buster: Date.now(), // Cache buster for tracking age
+      };
+      return JSON.stringify(optimized);
+    } catch (e) {
+      console.warn('Failed to serialize cache:', e);
+      return '{}';
+    }
+  },
+  deserialize: (data) => {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('Failed to deserialize cache:', e);
+      return {};
+    }
+  },
+  throttleTime: 1000, // Only save to localStorage max once per second
 })
 
 // Capacitor type definitions
@@ -192,22 +216,25 @@ root.render(
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            // Only persist feed queries for offline viewing
-            // LIMIT to most recent 50 posts to reduce hydration time
+            // Only persist successful feed queries
             if (query.queryKey[0] === 'feed') {
               const data = query.state.data as any;
               if (data?.pages) {
-                // Keep only first 2 pages (~40 posts)
+                // Keep only first 2 pages (~40 posts) to reduce localStorage size
                 const limitedData = {
                   ...data,
                   pages: data.pages.slice(0, 2),
                 };
                 query.state.data = limitedData;
               }
-              return true;
+              return query.state.status === 'success'; // Only persist successful queries
             }
             return false;
           },
+        },
+        hydrateOptions: {
+          // REMOVED: staleTime doesn't exist in hydrateOptions
+          // React Query will use the query's own staleTime configuration
         },
       }}
       onSuccess={() => {

@@ -51,6 +51,7 @@ const POSTS_PER_PAGE = 20;
 export function useFeedQuery(filters: FeedFilters) {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const queryClient = useQueryClient();
 
   const queryKey = ['feed', {
     userId: user?.id,
@@ -61,7 +62,13 @@ export function useFeedQuery(filters: FeedFilters) {
     searchQuery: filters.searchQuery || '',
   }];
 
-  return useInfiniteQuery<FeedPage>({
+  // Check cache age to determine refetch strategy
+  const queryState = queryClient.getQueryState(queryKey);
+  const cacheAge = queryState?.dataUpdatedAt 
+    ? Date.now() - queryState.dataUpdatedAt 
+    : Infinity;
+
+  const query = useInfiniteQuery<FeedPage>({
     queryKey,
     queryFn: async ({ pageParam = 0 }) => {
       if (!user || !profile) {
@@ -243,9 +250,28 @@ export function useFeedQuery(filters: FeedFilters) {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
     enabled: !!user && !!profile,
-    staleTime: 30 * 1000,
-    gcTime: 10 * 60 * 1000,
+    
+    // STALE-WHILE-REVALIDATE CONFIGURATION
+    staleTime: 60 * 1000, // Increased from 30s to 60s (data considered fresh)
+    gcTime: 30 * 60 * 1000, // Increased from 10min to 30min (keep in memory longer)
+    
+    // Show cached data immediately while fetching fresh data
+    placeholderData: (previousData) => previousData,
+    
+    // Smart refetching based on cache age
+    refetchOnMount: cacheAge > 60000, // Only refetch if cache > 1 min old
+    refetchOnWindowFocus: cacheAge > 300000, // Only on focus if > 5 min old
+    refetchOnReconnect: true, // Always refetch on reconnect
+    
+    // Use network cache when available
+    networkMode: 'offlineFirst',
   });
+
+  // Return extended query with cache metadata
+  return {
+    ...query,
+    cacheAge, // Expose cache age for debugging
+  };
 }
 
 // Mutation hooks for optimistic updates

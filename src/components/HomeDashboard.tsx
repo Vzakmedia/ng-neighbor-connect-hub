@@ -34,8 +34,11 @@ import CreatePostDialog from './CreatePostDialog';
 import HomeAutomations from './HomeAutomations';
 import NeighborhoodInsights from './NeighborhoodInsights';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { FeedErrorBoundary } from '@/components/FeedErrorBoundary';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 // Lazy load AdDisplay - not critical for initial render
 const AdDisplay = lazy(() => import('@/components/advertising/display/AdDisplay').then(m => ({ default: m.AdDisplay })));
@@ -48,6 +51,9 @@ import {
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { profile } = useProfile();
   const [activeTab, setActiveTab] = useState('all');
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [viewScope, setViewScope] = useState<'neighborhood' | 'state'>('state'); // Default to state for better content visibility
@@ -56,6 +62,46 @@ const HomeDashboard = () => {
   const { alerts: safetyAlerts, loading: alertsLoading } = useSafetyAlerts(2);
   const { items: marketplaceHighlights, loading: marketplaceLoading } = useMarketplaceHighlights(3);
   const { topics: trendingTopics, loading: topicsLoading } = useTrendingTopics(4);
+
+  // Prefetch common feed filter combinations for instant switching
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    // Prefetch common filter combinations users might switch to
+    const commonFilters = [
+      { locationScope: 'neighborhood' as const },
+      { locationScope: 'city' as const },
+      { locationScope: 'state' as const },
+      { locationScope: 'all' as const },
+    ];
+
+    // Prefetch in the background after a short delay (don't block initial load)
+    const prefetchTimeout = setTimeout(() => {
+      commonFilters.forEach(filter => {
+        const queryKey = ['feed', {
+          userId: user.id,
+          locationScope: filter.locationScope,
+          tags: [],
+          postType: undefined,
+          sortBy: 'recent',
+          searchQuery: '',
+        }];
+        
+        // Only prefetch if not already cached
+        const existing = queryClient.getQueryData(queryKey);
+        if (!existing) {
+          // Note: prefetchInfiniteQuery doesn't support 'pages' parameter
+          // We just prefetch the first page by default
+          queryClient.prefetchInfiniteQuery({
+            queryKey,
+            initialPageParam: 0,
+          } as any); // Type assertion to bypass strict typing
+        }
+      });
+    }, 2000); // Prefetch after 2 seconds
+
+    return () => clearTimeout(prefetchTimeout);
+  }, [user, profile, queryClient]);
 
   // Create dynamic quick stats based on real data
   const quickStats = [

@@ -13,11 +13,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
 import { Capacitor } from "@capacitor/core";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const CommunityFeed = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { preferences } = useLocationPreferences();
+  const queryClient = useQueryClient();
   const { markCommunityPostAsRead, refreshUnreadCounts, markAllCommunityPostsAsRead } = useReadStatus();
   const isMobile = useIsMobile();
   const { connectionType } = useNativeNetwork();
@@ -56,6 +58,7 @@ export const CommunityFeed = () => {
     isLoading,
     refetch,
     isFetching,
+    isPlaceholderData, // NEW: Track if showing stale cached data
   } = useFeedQuery({
     locationScope: filters.locationScope as 'neighborhood' | 'city' | 'state' | 'all',
     tags: filters.tags,
@@ -188,6 +191,8 @@ export const CommunityFeed = () => {
 
   // Handle refresh for pull-to-refresh
   const handlePullRefresh = async () => {
+    // Invalidate cache to force fresh fetch
+    await queryClient.invalidateQueries({ queryKey: ['feed'] });
     await refetch();
   };
 
@@ -205,7 +210,18 @@ export const CommunityFeed = () => {
 
   const feedContent = (
     <div className="max-w-2xl mx-auto px-2 sm:px-4">
-      <NewPostsBanner />
+        <NewPostsBanner />
+
+        {/* Stale data indicator - show when displaying cached data while fetching fresh */}
+        {isFetching && !isLoading && isPlaceholderData && (
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-b border-blue-200 dark:border-blue-800 px-4 py-2 text-sm flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-blue-500 rounded-full animate-pulse" />
+              <span className="text-blue-700 dark:text-blue-300 font-medium">Updating feed...</span>
+            </div>
+            <span className="text-blue-600 dark:text-blue-400 text-xs">Showing cached content</span>
+          </div>
+        )}
       
       <CommunityFeedHeader
         searchQuery={searchQuery}
