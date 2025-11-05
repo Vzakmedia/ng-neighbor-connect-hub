@@ -30,8 +30,34 @@ export const NativeSafetyMap = ({
   const mapRef = useRef<HTMLElement>(null);
   const [map, setMap] = useState<GoogleMap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { toast } = useToast();
   const isNative = Capacitor.isNativePlatform();
+
+  // Get user's current location
+  useEffect(() => {
+    if (!isNative) return;
+
+    const getUserLocation = async () => {
+      try {
+        const { Geolocation } = await import('@capacitor/geolocation');
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 5000,
+        });
+        
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      } catch (error) {
+        console.log('Geolocation error:', error);
+        // Use default center if location access denied
+      }
+    };
+
+    getUserLocation();
+  }, [isNative]);
 
   // Initialize map
   useEffect(() => {
@@ -50,6 +76,9 @@ export const NativeSafetyMap = ({
           throw new Error('Failed to get Google Maps API key');
         }
 
+        // Use user location if available, otherwise use default center
+        const mapCenter = userLocation || center;
+
         // Create the map
         const newMap = await GoogleMap.create({
           id: 'safety-map',
@@ -57,10 +86,10 @@ export const NativeSafetyMap = ({
           apiKey: configData.apiKey,
           config: {
             center: {
-              lat: center.lat,
-              lng: center.lng,
+              lat: mapCenter.lat,
+              lng: mapCenter.lng,
             },
-            zoom: zoom,
+            zoom: userLocation ? 14 : zoom, // Zoom in more if we have user location
           },
         });
 
@@ -70,6 +99,19 @@ export const NativeSafetyMap = ({
             onMarkerClick(marker.markerId);
           }
         });
+
+        // Add marker for user's location if available
+        if (userLocation) {
+          await newMap.addMarkers([{
+            coordinate: {
+              lat: userLocation.lat,
+              lng: userLocation.lng,
+            },
+            title: 'Your Location',
+            snippet: 'You are here',
+            iconUrl: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+          }]);
+        }
 
         setMap(newMap);
         setIsLoading(false);
@@ -92,7 +134,7 @@ export const NativeSafetyMap = ({
         map.destroy();
       }
     };
-  }, [isNative, center.lat, center.lng, zoom, toast, onMarkerClick]);
+  }, [isNative, center.lat, center.lng, zoom, toast, onMarkerClick, userLocation]);
 
   // Update markers when they change
   useEffect(() => {
