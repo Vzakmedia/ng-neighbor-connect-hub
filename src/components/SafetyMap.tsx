@@ -8,6 +8,9 @@ import { Capacitor } from '@capacitor/core';
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useGoogleMapsCache } from '@/hooks/useGoogleMapsCache';
+import { LoadingSkeleton } from './community/feed/LoadingSkeleton';
+import { LoadingSpinner } from './common/LoadingSpinner';
 
 interface SafetyAlert {
   id: string;
@@ -37,6 +40,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const isNative = Capacitor.isNativePlatform();
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, geocodeAddress } = useGoogleMapsCache();
   
   
   // Use native map on mobile, web map otherwise
@@ -70,91 +74,16 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const userMarker = useRef<any>(null);
   const coverageCircle = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('');
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [retryCount, setRetryCount] = useState(0);
-  const [isRetrying, setIsRetrying] = useState(false);
-
-  useEffect(() => {
-    // Get Google Maps API key from edge function
-    const getGoogleMapsApiKey = async () => {
-      try {
-        console.log('🗺️ [SafetyMap] Fetching Google Maps API key... Attempt:', retryCount + 1);
-        setIsRetrying(true);
-        
-        const response = await fetch(
-          'https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/get-google-maps-token',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4`,
-            },
-          }
-        );
-        
-        console.log('🗺️ [SafetyMap] Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        console.log('🗺️ [SafetyMap] Edge function response:', { 
-          hasData: !!data, 
-          hasToken: !!data?.token,
-          error: data?.error
-        });
-        
-        if (data.error) {
-          console.error('❌ [SafetyMap] Error in response:', data.error);
-          throw new Error(data.error);
-        }
-        
-        if (!data.token) {
-          console.error('❌ [SafetyMap] No token in response, data:', data);
-          throw new Error('No API key in response');
-        }
-        
-        console.log('✅ [SafetyMap] Successfully received API key, length:', data.token.length);
-        setGoogleMapsApiKey(data.token);
-        setError('');
-        setIsRetrying(false);
-      } catch (error: any) {
-        console.error('❌ [SafetyMap] Error getting API key:', {
-          message: error.message,
-          stack: error.stack,
-          retryCount
-        });
-        
-        const errorMessage = error.message || 'Failed to load map configuration';
-        setError(errorMessage);
-        setIsRetrying(false);
-        
-        // Auto-retry up to 3 times with exponential backoff
-        if (retryCount < 3) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-          console.log(`🔄 [SafetyMap] Retrying in ${delay}ms... (${retryCount + 1}/3)`);
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-          }, delay);
-        }
-      }
-    };
-
-    getGoogleMapsApiKey();
-  }, [retryCount]);
 
   useEffect(() => {
     if (!mapContainer.current || !googleMapsApiKey) return;
 
-    // Initialize Google Maps with marker library
+    // Initialize Google Maps with only marker library (lazy load others)
     const loader = new Loader({
       apiKey: googleMapsApiKey,
       version: 'weekly',
-      libraries: ['places', 'marker']
+      libraries: ['marker'] // Only load marker library initially
     });
 
     loader.load().then(async () => {
@@ -183,7 +112,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       const zoomToUserLocation = async () => {
         let locationFound = false;
 
-        // Try to use profile address first
+        // Try to use profile address first with caching
         if (profile?.neighborhood || profile?.city || profile?.state) {
           const addressParts = [
             profile.neighborhood,
@@ -194,18 +123,11 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           
           const fullAddress = addressParts.join(', ');
           
-          try {
-            // Use Google Geocoding API to convert address to coordinates
-            const geocoder = new (window as any).google.maps.Geocoder();
-            const result = await geocoder.geocode({ address: fullAddress });
-            
-            if (result.results && result.results.length > 0) {
-              const location = {
-                lat: result.results[0].geometry.location.lat(),
-                lng: result.results[0].geometry.location.lng()
-              };
-              
-              setUserLocation(location);
+          // Use cached geocoding
+          const location = await geocodeAddress(fullAddress);
+          
+          if (location) {
+            setUserLocation(location);
               map.current?.setCenter(location);
               map.current?.setZoom(14);
               
@@ -233,11 +155,8 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 center: location,
                 radius: 5000, // 5km radius
               });
-              
-              locationFound = true;
-            }
-          } catch (error) {
-            console.log('Geocoding error:', error);
+            
+            locationFound = true;
           }
         }
 
@@ -308,7 +227,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
 
     let locationFound = false;
 
-    // Try to use profile address first
+    // Try to use profile address first with caching
     if (profile?.neighborhood || profile?.city || profile?.state) {
       const addressParts = [
         profile.neighborhood,
@@ -319,17 +238,11 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       
       const fullAddress = addressParts.join(', ');
       
-      try {
-        const geocoder = new (window as any).google.maps.Geocoder();
-        const result = await geocoder.geocode({ address: fullAddress });
-        
-        if (result.results && result.results.length > 0) {
-          const location = {
-            lat: result.results[0].geometry.location.lat(),
-            lng: result.results[0].geometry.location.lng()
-          };
-          
-          setUserLocation(location);
+      // Use cached geocoding
+      const location = await geocodeAddress(fullAddress);
+      
+      if (location) {
+        setUserLocation(location);
           map.current.setCenter(location);
           map.current.setZoom(14);
           
@@ -340,12 +253,9 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           if (coverageCircle.current) {
             coverageCircle.current.setCenter(location);
           }
-          
-          locationFound = true;
-          return;
-        }
-      } catch (error) {
-        console.log('Geocoding error:', error);
+        
+        locationFound = true;
+        return;
       }
     }
 
@@ -464,22 +374,19 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     });
   }, [alerts, onAlertClick, mapLoaded]);
 
-  if (error && retryCount >= 3) {
+  if (apiKeyError) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center p-6 max-w-md">
           <div className="text-4xl mb-3">🗺️</div>
           <h3 className="text-lg font-semibold mb-2">Map Not Available</h3>
-          <p className="text-sm text-muted-foreground mb-4">{error}</p>
+          <p className="text-sm text-muted-foreground mb-4">{apiKeyError}</p>
           <div className="space-y-2">
             <button
-              onClick={() => {
-                setError('');
-                setRetryCount(0);
-              }}
+              onClick={() => window.location.reload()}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 text-sm"
             >
-              Try Again
+              Reload Page
             </button>
             <div>
               <a 
@@ -497,17 +404,11 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     );
   }
 
-  if (!googleMapsApiKey || isRetrying) {
+  if (isLoadingApiKey || !googleMapsApiKey) {
     return (
       <div className="h-full flex items-center justify-center bg-muted">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">
-            {isRetrying ? `Loading map... (Attempt ${retryCount + 1}/3)` : 'Loading map...'}
-          </p>
-          {error && retryCount < 3 && (
-            <p className="text-xs text-muted-foreground mt-2">Retrying...</p>
-          )}
+          <LoadingSpinner size="lg" text="Loading map..." />
         </div>
       </div>
     );
