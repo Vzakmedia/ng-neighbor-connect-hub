@@ -42,44 +42,53 @@ const Events = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-4 md:py-6 px-3 md:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 mb-4 md:mb-6">
-            <h1 className="text-xl md:text-2xl font-bold truncate">Community Events</h1>
-            <Button 
-              onClick={() => setCreateDialogOpen(true)}
-              className="w-full sm:w-auto touch-manipulation min-h-[44px] text-sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
-          </div>
-          
-          {/* Mobile tab buttons */}
-          <div className="md:hidden flex items-center justify-center gap-2 mb-6">
-            <Button
-              variant="outline"
-              onClick={() => {/* handled by Tabs component */}}
-              size="icon"
-            >
-              <Calendar className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {/* handled by Tabs component */}}
-              size="icon"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-          </div>
-
           {/* Event Advertisements */}
           <AdDisplay placement="banner" maxAds={1} />
 
           <Tabs defaultValue="all" className="w-full">
-            {/* Desktop tabs */}
-            <TabsList className="hidden md:flex mb-4 justify-start">
-              <TabsTrigger value="all">All Events</TabsTrigger>
-              <TabsTrigger value="my-events">My Events</TabsTrigger>
-            </TabsList>
+            {/* Desktop tabs with Create Event button */}
+            <div className="hidden md:flex items-center justify-between mb-4">
+              <TabsList className="flex justify-start">
+                <TabsTrigger value="all">All Events</TabsTrigger>
+                <TabsTrigger value="my-events">My Events</TabsTrigger>
+              </TabsList>
+              
+              <Button 
+                onClick={() => setCreateDialogOpen(true)}
+                className="touch-manipulation min-h-[44px] text-sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </Button>
+            </div>
+            
+            {/* Mobile tab buttons */}
+            <div className="md:hidden flex items-center justify-between gap-2 mb-6">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {/* handled by Tabs component */}}
+                  size="icon"
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {/* handled by Tabs component */}}
+                  size="icon"
+                >
+                  <Users className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <Button 
+                onClick={() => setCreateDialogOpen(true)}
+                className="touch-manipulation min-h-[44px] text-sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create
+              </Button>
+            </div>
             
             <TabsContent value="all" className="space-y-6">
               <EventFeed key={refreshKey} />
