@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { EmergencyFilters, EmergencyViewMode, SafetyAlert, PanicAlert } from '@/types/emergency';
+import { useProfile } from '@/hooks/useProfile';
+import { EmergencyFilters, SafetyAlert, PanicAlert } from '@/types/emergency';
 import { useEmergencyAlerts } from '@/hooks/emergency/useEmergencyAlerts';
 import { useEmergencySubscriptions } from '@/hooks/emergency/useEmergencySubscriptions';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
@@ -9,25 +9,23 @@ import { useAlertSystem } from '@/hooks/useAlertSystem';
 // Component imports
 import EmergencyHeader from './EmergencyHeader';
 import EmergencyStatsComponent from './EmergencyStats';
-import EmergencyFiltersComponent from './EmergencyFilters';
-import EmergencyAlertList from './EmergencyAlertList';
+import HorizontalFilters, { FilterCategory } from './HorizontalFilters';
+import SafetyAlertsSplitView from './SafetyAlertsSplitView';
 import PanicAlertManager from './PanicAlertManager';
-import SafetyMap from '../SafetyMap';
 import AlertStatusManager from '../AlertStatusManager';
-import RealTimeAlertFeed from '../RealTimeAlertFeed';
-import { AlertDashboard } from '../alert-system/AlertDashboard';
 
 const EmergencyCenter = () => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { processAlert } = useAlertSystem();
   const [selectedAlert, setSelectedAlert] = useState<SafetyAlert | null>(null);
   const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
-  const [viewMode, setViewMode] = useState<EmergencyViewMode['mode']>('list');
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
   const [filters, setFilters] = useState<EmergencyFilters>({
     severity: 'all',
     type: 'all',
-    status: 'all'
+    status: 'all',
+    category: 'all'
   });
 
   const {
@@ -135,80 +133,37 @@ const EmergencyCenter = () => {
     fetchPanicAlerts(true);
   };
 
-  // Filter change handler that triggers refetch
-  const handleFilterChange = (newFilters: EmergencyFilters) => {
-    console.log('EmergencyCenter: Filters changed', newFilters);
+  const handleCategoryChange = (category: FilterCategory) => {
+    console.log('[EmergencyCenter] Category changed:', category);
+    setSelectedCategory(category);
+    const newFilters = { ...filters, category };
     setFilters(newFilters);
-    fetchAlerts(newFilters, true); // Force refresh on filter change
+    fetchAlerts(newFilters, true);
   };
+
+  // User location will be undefined for now - can be added when geolocation is implemented
+  const userLocation = undefined;
 
   return (
     <div className="space-y-4 md:space-y-6 px-2 md:px-0">
-      {/* Header with Panic Button */}
       <EmergencyHeader />
 
-      {/* Quick Stats */}
       <EmergencyStatsComponent 
         alerts={alerts}
         panicAlerts={panicAlerts}
         userId={user?.id}
       />
 
-      {/* View Toggle and Filters */}
-      <EmergencyFiltersComponent
-        filters={filters}
-        viewMode={viewMode}
-        onFilterChange={handleFilterChange}
-        onViewModeChange={setViewMode}
-        onRefresh={handleRefresh}
-        autoRefresh={autoRefresh}
-        onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
+      <HorizontalFilters 
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
       />
 
-      {/* Main Content */}
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as EmergencyViewMode['mode'])}>
-        <TabsList className="md:hidden grid w-full grid-cols-4">
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="map">Map</TabsTrigger>
-          <TabsTrigger value="feed">Feed</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
-        </TabsList>
-
-        {/* List View */}
-        <TabsContent value="list" className="space-y-4">
-          <EmergencyAlertList
-            alerts={alerts}
-            loading={loading}
-            onAlertClick={(alert: SafetyAlert) => setSelectedAlert(alert)}
-            getTimeSince={getTimeSince}
-          />
-        </TabsContent>
-
-        {/* Map View */}
-        <TabsContent value="map" className="space-y-4">
-          <div className="h-[600px] w-full rounded-lg border overflow-hidden">
-            <SafetyMap 
-              alerts={alerts}
-              onAlertClick={(alert: SafetyAlert) => setSelectedAlert(alert)}
-            />
-          </div>
-        </TabsContent>
-
-        {/* Live Feed */}
-        <TabsContent value="feed" className="space-y-4">
-          <RealTimeAlertFeed 
-            onAlertClick={(alert) => {
-              // Convert RealtimeAlert to SafetyAlert format - we'll just handle the basic case
-              setSelectedAlert(null); // For now, just clear selection as RealTimeAlertFeed has different structure
-            }}
-          />
-          </TabsContent>
-
-        {/* System Dashboard */}
-        <TabsContent value="system" className="space-y-4">
-          <AlertDashboard />
-        </TabsContent>
-      </Tabs>
+      <SafetyAlertsSplitView
+        alerts={alerts}
+        userLocation={userLocation}
+        onAlertClick={setSelectedAlert}
+      />
 
       {/* Alert Details Dialog */}
       {selectedAlert && (

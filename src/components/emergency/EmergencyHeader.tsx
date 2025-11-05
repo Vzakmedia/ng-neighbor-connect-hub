@@ -2,18 +2,29 @@ import { Shield, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PanicButton from '../PanicButton';
 import ReportIncidentDialog from '../ReportIncidentDialog';
+import { useProfile } from '@/hooks/useProfile';
 
 const EmergencyHeader = () => {
+  const { profile } = useProfile();
+  
+  const getLocationText = () => {
+    if (profile?.neighborhood) {
+      return `Alerts in ${profile.neighborhood}`;
+    } else if (profile?.city) {
+      return `Alerts in ${profile.city}`;
+    } else if (profile?.state) {
+      return `Alerts in ${profile.state}`;
+    }
+    return 'Safety Center';
+  };
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
           <Shield className="h-6 w-6 md:h-8 md:w-8 text-primary flex-shrink-0" />
-          <span className="truncate">Safety Center</span>
+          <span className="truncate">{getLocationText()}</span>
         </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Community safety alerts and emergency reporting
-        </p>
       </div>
       <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
         <PanicButton />
