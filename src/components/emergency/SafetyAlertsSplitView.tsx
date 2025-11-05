@@ -15,7 +15,7 @@ const SafetyAlertsSplitView = ({
   onAlertClick,
 }: SafetyAlertsSplitViewProps) => {
   return (
-    <div className="relative h-[calc(100vh-280px)] rounded-lg overflow-hidden">
+    <div className="relative h-[calc(100vh-140px)] md:rounded-lg overflow-hidden">
       {/* Full Background Map */}
       <div className="absolute inset-0">
         <SafetyMap alerts={alerts} onAlertClick={onAlertClick} />
