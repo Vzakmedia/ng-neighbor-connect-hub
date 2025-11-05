@@ -6,6 +6,8 @@ import { Locate } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface SafetyAlert {
   id: string;
@@ -33,6 +35,9 @@ interface SafetyMapProps {
 
 const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const isNative = Capacitor.isNativePlatform();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  
   
   // Use native map on mobile, web map otherwise
   if (isNative) {
@@ -174,98 +179,50 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         }
       });
 
-      // Get user's current location and zoom to it
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const location = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
-            
-            setUserLocation(location);
-            
-            // Pan and zoom to user's location
-            map.current?.setCenter(location);
-            map.current?.setZoom(14);
-            
-            // Add a marker for user's location
-            userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
-              position: location,
-              map: map.current,
-              title: 'Your Location',
-              content: new (window as any).google.maps.marker.PinElement({
-                background: '#10B981', // green
-                borderColor: '#ffffff',
-                glyphColor: '#ffffff',
-                scale: 1.3,
-              }).element,
-            });
+      // Get user's profile address and zoom to it, fallback to current location
+      const zoomToUserLocation = async () => {
+        let locationFound = false;
 
-            // Add coverage radius circle (5km radius for neighborhood)
-            coverageCircle.current = new (window as any).google.maps.Circle({
-              strokeColor: '#10B981',
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: '#10B981',
-              fillOpacity: 0.15,
-              map: map.current,
-              center: location,
-              radius: 5000, // 5km radius
-            });
-          },
-          (error) => {
-            console.log('Geolocation error:', error.message);
-            // Stay with default Nigeria center if location access denied
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-          }
-        );
-      }
-
-      setMapLoaded(true);
-    }).catch((error) => {
-      console.error('Error loading Google Maps:', error);
-    });
-  }, [googleMapsApiKey]);
-
-  // Function to recenter map to user's location
-  const recenterToUserLocation = () => {
-    if (!userLocation || !map.current) {
-      // Try to get location again if not available
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const location = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
+        // Try to use profile address first
+        if (profile?.neighborhood || profile?.city || profile?.state) {
+          const addressParts = [
+            profile.neighborhood,
+            profile.city,
+            profile.state,
+            'Nigeria'
+          ].filter(Boolean);
+          
+          const fullAddress = addressParts.join(', ');
+          
+          try {
+            // Use Google Geocoding API to convert address to coordinates
+            const geocoder = new (window as any).google.maps.Geocoder();
+            const result = await geocoder.geocode({ address: fullAddress });
             
-            setUserLocation(location);
-            map.current?.setCenter(location);
-            map.current?.setZoom(14);
-            
-            // Update marker and circle if they don't exist
-            if (!userMarker.current) {
+            if (result.results && result.results.length > 0) {
+              const location = {
+                lat: result.results[0].geometry.location.lat(),
+                lng: result.results[0].geometry.location.lng()
+              };
+              
+              setUserLocation(location);
+              map.current?.setCenter(location);
+              map.current?.setZoom(14);
+              
+              // Add a marker for user's location
               userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
                 position: location,
                 map: map.current,
                 title: 'Your Location',
                 content: new (window as any).google.maps.marker.PinElement({
-                  background: '#10B981',
+                  background: '#10B981', // green
                   borderColor: '#ffffff',
                   glyphColor: '#ffffff',
                   scale: 1.3,
                 }).element,
               });
-            } else {
-              userMarker.current.position = location;
-            }
 
-            if (!coverageCircle.current) {
+              // Add coverage radius circle (5km radius for neighborhood)
               coverageCircle.current = new (window as any).google.maps.Circle({
                 strokeColor: '#10B981',
                 strokeOpacity: 0.8,
@@ -274,23 +231,174 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 fillOpacity: 0.15,
                 map: map.current,
                 center: location,
-                radius: 5000,
+                radius: 5000, // 5km radius
               });
-            } else {
-              coverageCircle.current.setCenter(location);
+              
+              locationFound = true;
             }
-          },
-          (error) => {
-            console.error('Error getting location:', error.message);
+          } catch (error) {
+            console.log('Geocoding error:', error);
           }
-        );
+        }
+
+        // Fallback to geolocation if address not available or geocoding failed
+        if (!locationFound && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const location = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              };
+              
+              setUserLocation(location);
+              
+              // Pan and zoom to user's location
+              map.current?.setCenter(location);
+              map.current?.setZoom(14);
+              
+              // Add a marker for user's location
+              userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
+                position: location,
+                map: map.current,
+                title: 'Your Current Location',
+                content: new (window as any).google.maps.marker.PinElement({
+                  background: '#10B981', // green
+                  borderColor: '#ffffff',
+                  glyphColor: '#ffffff',
+                  scale: 1.3,
+                }).element,
+              });
+
+              // Add coverage radius circle (5km radius for neighborhood)
+              coverageCircle.current = new (window as any).google.maps.Circle({
+                strokeColor: '#10B981',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#10B981',
+                fillOpacity: 0.15,
+                map: map.current,
+                center: location,
+                radius: 5000, // 5km radius
+              });
+            },
+            (error) => {
+              console.log('Geolocation error:', error.message);
+              // Stay with default Nigeria center if both methods fail
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            }
+          );
+        }
+      };
+
+      zoomToUserLocation();
+
+      setMapLoaded(true);
+    }).catch((error) => {
+      console.error('Error loading Google Maps:', error);
+    });
+  }, [googleMapsApiKey, profile]);
+
+  // Function to recenter map to user's location
+  const recenterToUserLocation = async () => {
+    if (!map.current) return;
+
+    let locationFound = false;
+
+    // Try to use profile address first
+    if (profile?.neighborhood || profile?.city || profile?.state) {
+      const addressParts = [
+        profile.neighborhood,
+        profile.city,
+        profile.state,
+        'Nigeria'
+      ].filter(Boolean);
+      
+      const fullAddress = addressParts.join(', ');
+      
+      try {
+        const geocoder = new (window as any).google.maps.Geocoder();
+        const result = await geocoder.geocode({ address: fullAddress });
+        
+        if (result.results && result.results.length > 0) {
+          const location = {
+            lat: result.results[0].geometry.location.lat(),
+            lng: result.results[0].geometry.location.lng()
+          };
+          
+          setUserLocation(location);
+          map.current.setCenter(location);
+          map.current.setZoom(14);
+          
+          // Update marker and circle
+          if (userMarker.current) {
+            userMarker.current.position = location;
+          }
+          if (coverageCircle.current) {
+            coverageCircle.current.setCenter(location);
+          }
+          
+          locationFound = true;
+          return;
+        }
+      } catch (error) {
+        console.log('Geocoding error:', error);
       }
-      return;
     }
 
-    // Recenter to existing location
-    map.current.setCenter(userLocation);
-    map.current.setZoom(14);
+    // Fallback to geolocation
+    if (!locationFound && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          setUserLocation(location);
+          map.current?.setCenter(location);
+          map.current?.setZoom(14);
+          
+          // Update marker and circle if they don't exist
+          if (!userMarker.current) {
+            userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
+              position: location,
+              map: map.current,
+              title: 'Your Current Location',
+              content: new (window as any).google.maps.marker.PinElement({
+                background: '#10B981',
+                borderColor: '#ffffff',
+                glyphColor: '#ffffff',
+                scale: 1.3,
+              }).element,
+            });
+          } else {
+            userMarker.current.position = location;
+          }
+
+          if (!coverageCircle.current) {
+            coverageCircle.current = new (window as any).google.maps.Circle({
+              strokeColor: '#10B981',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#10B981',
+              fillOpacity: 0.15,
+              map: map.current,
+              center: location,
+              radius: 5000,
+            });
+          } else {
+            coverageCircle.current.setCenter(location);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error.message);
+        }
+      );
+    }
   };
 
   useEffect(() => {
