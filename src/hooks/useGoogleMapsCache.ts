@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 const CACHE_KEYS = {
   GOOGLE_MAPS_API_KEY: 'google_maps_api_key',
   GEOCODE_PREFIX: 'geocode_',
+  PLACE_ID_PREFIX: 'place_id_',
 } as const;
 
 const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -136,10 +137,45 @@ export const useGoogleMapsCache = () => {
     }
   };
 
+  const getPlaceId = async (address: string): Promise<string | null> => {
+    const cacheKey = `${CACHE_KEYS.PLACE_ID_PREFIX}${address}`;
+    
+    // Try cache first
+    const cached = getFromCache<string>(cacheKey);
+    if (cached) {
+      console.log('✅ [Place ID Cache] Using cached Place ID for:', address);
+      return cached;
+    }
+
+    // Geocode to get Place ID
+    try {
+      if (!(window as any).google?.maps?.Geocoder) {
+        throw new Error('Geocoder not available');
+      }
+
+      const geocoder = new (window as any).google.maps.Geocoder();
+      const result = await geocoder.geocode({ address });
+
+      if (result.results && result.results.length > 0) {
+        const placeId = result.results[0].place_id;
+        
+        console.log('✅ [Place ID Cache] Place ID fetched and cached:', address);
+        setToCache(cacheKey, placeId);
+        return placeId;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ [Place ID Cache] Error getting Place ID:', error);
+      return null;
+    }
+  };
+
   return {
     apiKey,
     isLoading,
     error,
     geocodeAddress,
+    getPlaceId,
   };
 };
