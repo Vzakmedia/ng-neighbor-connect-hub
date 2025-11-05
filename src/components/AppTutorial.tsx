@@ -112,7 +112,14 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
   const isMobileWeb = useIsMobile();
   const isMobileView = isNative || isMobileWeb;
 
-  // Use mobile tutorial for native and mobile web
+  // All hooks must be called before any conditional returns
+  const [currentStep, setCurrentStep] = useState(0);
+  const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const [isVisible, setIsVisible] = useState(false);
+  const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>([]);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Use mobile tutorial for native and mobile web - conditional render after all hooks
   if (isMobileView) {
     return (
       <MobileTutorial
@@ -124,11 +131,6 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
   }
 
   // Desktop tutorial below
-  const [currentStep, setCurrentStep] = useState(0);
-  const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
-  const [isVisible, setIsVisible] = useState(false);
-  const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>([]);
-  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Update tutorial steps on mount and resize
   useEffect(() => {
