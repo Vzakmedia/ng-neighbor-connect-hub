@@ -145,13 +145,15 @@ const EmergencyCenter = () => {
   const userLocation = undefined;
 
   return (
-    <div className="space-y-3 px-2 md:px-0">
-      <EmergencyHeader />
+    <div className="space-y-3">
+      <div className="px-2 md:px-0 space-y-3">
+        <EmergencyHeader />
 
-      <HorizontalFilters 
-        selectedCategory={selectedCategory}
-        onCategoryChange={handleCategoryChange}
-      />
+        <HorizontalFilters 
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+        />
+      </div>
 
       <SafetyAlertsSplitView
         alerts={alerts}
