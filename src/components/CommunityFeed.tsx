@@ -209,7 +209,8 @@ export const CommunityFeed = () => {
   });
 
   const feedContent = (
-    <div className="max-w-2xl mx-auto px-2 sm:px-4">
+    <div className="max-w-2xl mx-auto">
+      <div className="px-2 sm:px-4">
         <NewPostsBanner />
 
         {/* Stale data indicator - show when displaying cached data while fetching fresh */}
@@ -223,26 +224,28 @@ export const CommunityFeed = () => {
           </div>
         )}
       
-      <CommunityFeedHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        hasNewContent={false}
-        onRefresh={refetch}
-        refreshing={isFetching && !isFetchingNextPage}
-        unreadCount={unreadCounts.community}
-        filters={filters}
-        onFiltersChange={setFilters}
-        availableTags={availableTags}
-        activeFiltersCount={activeFiltersCount}
-        onMarkAllRead={markAllCommunityPostsAsRead}
-        userLocation={{
-          state: profile?.state,
-          city: profile?.city,
-          neighborhood: profile?.neighborhood
-        }}
-      />
-      
-      <div className="p-2 sm:p-4">
+        <CommunityFeedHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          hasNewContent={false}
+          onRefresh={refetch}
+          refreshing={isFetching && !isFetchingNextPage}
+          unreadCount={unreadCounts.community}
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableTags={availableTags}
+          activeFiltersCount={activeFiltersCount}
+          onMarkAllRead={markAllCommunityPostsAsRead}
+          userLocation={{
+            state: profile?.state,
+            city: profile?.city,
+            neighborhood: profile?.neighborhood
+          }}
+        />
+      </div>
+    
+      {/* VirtualizedFeedList manages its own scroll container */}
+      <div className="h-[calc(100vh-280px)]">
         <CommunityFeedContent
           events={events}
           loading={isLoading}

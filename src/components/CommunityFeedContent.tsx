@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { FeedList } from "./community/feed/FeedList";
+import { VirtualizedFeedList } from "./community/feed/VirtualizedFeedList";
 import { transformToCardData } from "@/lib/community/postTransformers";
 
 interface Event {
@@ -51,7 +51,7 @@ const CommunityFeedContentComponent = ({
   const transformedEvents = events.map(event => transformToCardData(event as any));
 
   return (
-    <FeedList
+    <VirtualizedFeedList
       events={transformedEvents}
       loading={loading}
       onLike={onLike}
