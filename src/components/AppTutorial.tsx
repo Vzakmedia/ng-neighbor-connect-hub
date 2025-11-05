@@ -112,28 +112,17 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
   const isMobileWeb = useIsMobile();
   const isMobileView = isNative || isMobileWeb;
 
-  // All hooks must be called before any conditional returns
+  // ALL hooks must be called before any conditional returns - Rules of Hooks
   const [currentStep, setCurrentStep] = useState(0);
   const [targetPosition, setTargetPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
   const [tutorialSteps, setTutorialSteps] = useState<TutorialStep[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Use mobile tutorial for native and mobile web - conditional render after all hooks
-  if (isMobileView) {
-    return (
-      <MobileTutorial
-        isOpen={isOpen}
-        onClose={onClose}
-        onComplete={onComplete}
-      />
-    );
-  }
-
-  // Desktop tutorial below
-
   // Update tutorial steps on mount and resize
   useEffect(() => {
+    if (isMobileView) return; // Skip for mobile
+    
     const updateSteps = () => {
       setTutorialSteps(getTutorialSteps());
     };
@@ -142,11 +131,13 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
     window.addEventListener('resize', updateSteps);
     
     return () => window.removeEventListener('resize', updateSteps);
-  }, []);
+  }, [isMobileView]);
 
   const currentStepData = tutorialSteps[currentStep];
 
   useEffect(() => {
+    if (isMobileView) return; // Skip for mobile
+    
     if (isOpen && currentStepData) {
       const timer = setTimeout(() => {
         updateTargetPosition();
@@ -168,7 +159,20 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
     } else {
       setIsVisible(false);
     }
-  }, [isOpen, currentStep]);
+  }, [isOpen, currentStep, isMobileView]);
+
+  // Use mobile tutorial for native and mobile web - conditional render after all hooks
+  if (isMobileView) {
+    return (
+      <MobileTutorial
+        isOpen={isOpen}
+        onClose={onClose}
+        onComplete={onComplete}
+      />
+    );
+  }
+
+  // Desktop tutorial below
 
   const updateTargetPosition = () => {
     if (!currentStepData?.targetSelector) return;
