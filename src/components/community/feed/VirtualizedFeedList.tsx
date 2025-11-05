@@ -29,7 +29,6 @@ const VirtualizedFeedListComponent = ({
   isFetchingNextPage = false,
   onPostVisible,
 }: VirtualizedFeedListProps) => {
-  const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
   // Dialog state
@@ -49,9 +48,6 @@ const VirtualizedFeedListComponent = ({
       onPostVisible(postId);
     }
   });
-
-  // Scroll restoration
-  useScrollRestoration(parentRef.current, 'community-feed');
 
   // Estimate post height based on content
   const estimateSize = (index: number) => {
