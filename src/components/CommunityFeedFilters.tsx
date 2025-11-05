@@ -2,14 +2,52 @@ import { useState, useMemo } from "react";
 import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal, Search, Globe, Home, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { PillFilter } from "@/components/ui/pill-filter";
-import { CommunityAdvancedFilters, AdvancedFilters } from "@/components/CommunityAdvancedFilters";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FilterSection } from "@/components/ui/filter-section";
+import { cn } from "@/lib/utils";
+
+// Nigerian states organized by geopolitical zones
+export const NIGERIAN_ZONES = {
+  "South West": ["Lagos", "Ogun", "Oyo", "Osun", "Ondo", "Ekiti"],
+  "South South": ["Rivers", "Bayelsa", "Delta", "Edo", "Cross River", "Akwa Ibom"],
+  "South East": ["Abia", "Anambra", "Ebonyi", "Enugu", "Imo"],
+  "North Central": ["Federal Capital Territory", "Benue", "Kogi", "Kwara", "Nasarawa", "Niger", "Plateau"],
+  "North East": ["Adamawa", "Bauchi", "Borno", "Gombe", "Taraba", "Yobe"],
+  "North West": ["Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Sokoto", "Zamfara"],
+};
+
+export const POST_CATEGORIES = [
+  "Community News",
+  "Lost & Found",
+  "Recommendations",
+  "Help Needed",
+  "Local Business",
+  "Events",
+  "Safety & Security",
+  "Announcements",
+  "Buy & Sell",
+  "Questions",
+];
+
+export const DATE_RANGES = [
+  "Today",
+  "This Week",
+  "This Month",
+  "Last 3 Months",
+  "Last 6 Months",
+  "This Year",
+];
+
+export interface AdvancedFilters {
+  states: string[];
+  categories: string[];
+  dateRanges: string[];
+}
 
 export interface CommunityFilters {
   tags: string[];
@@ -136,7 +174,8 @@ export const CommunityFeedFilters = ({
       locationScope: 'all',
       postTypes: 'all',
       dateRange: 'all',
-      sortBy: 'newest'
+      sortBy: 'newest',
+      advancedFilters: { states: [], categories: [], dateRanges: [] }
     });
   };
 
@@ -164,183 +203,315 @@ export const CommunityFeedFilters = ({
 
   return (
     <div className="space-y-3">
-      {/* Filter Button and Active Filters */}
+      {/* Filter Button and Sidebar */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
             <Button 
               variant="outline" 
               size="sm" 
-              className="relative gap-2 bg-card/50 border-border/50 hover:bg-accent/50 hover:border-accent transition-all duration-200"
+              className={cn(
+                "relative gap-2 bg-card/50 border-border/50 hover:bg-accent/50 hover:border-accent transition-all duration-200",
+                isOpen && "bg-accent border-accent-foreground"
+              )}
             >
               <SlidersHorizontal className="h-4 w-4" />
               <span className="font-medium hidden sm:inline">Filters</span>
               {activeFiltersCount > 0 && (
                 <Badge 
                   variant="default" 
-                  className="ml-1 h-5 min-w-5 text-xs bg-primary/90 hover:bg-primary animate-pulse"
+                  className="ml-1 h-5 min-w-5 text-xs bg-primary/90 hover:bg-primary"
                 >
                   {activeFiltersCount}
                 </Badge>
               )}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent 
-            className="w-full max-w-sm sm:w-80 p-0 bg-popover border shadow-lg z-50" 
-            align="start"
+          </SheetTrigger>
+          
+          <SheetContent 
+            side="right" 
+            className="w-full sm:max-w-md overflow-hidden flex flex-col p-0"
           >
-            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b">
+              <SheetTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <h4 className="font-semibold text-sm">Filters</h4>
+                  <SlidersHorizontal className="h-5 w-5 text-primary" />
+                  <span>Filters</span>
                 </div>
                 {activeFiltersCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearAllFilters}
-                    className="text-xs text-muted-foreground hover:text-destructive h-6 px-2"
+                    className="text-muted-foreground hover:text-destructive h-8"
                   >
-                    Reset
+                    Reset All
                   </Button>
                 )}
-              </div>
-              
-              {/* Sort & Period - Mobile responsive */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Sort</Label>
-                  <Select
-                    value={filters.sortBy}
-                    onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
-                  >
-                    <SelectTrigger className="h-8 sm:h-7 text-xs bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      {sortOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+              </SheetTitle>
+            </SheetHeader>
+            
+            <ScrollArea className="flex-1">
+              <div className="space-y-6 px-6 py-6">
+                {/* Sort & Period */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Sort</Label>
+                    <Select
+                      value={filters.sortBy}
+                      onValueChange={(value) => onFiltersChange({ ...filters, sortBy: value })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Period</Label>
+                    <Select
+                      value={filters.dateRange}
+                      onValueChange={(value) => onFiltersChange({ ...filters, dateRange: value })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dateRangeOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Content Type */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Content Type
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {postTypeOptions.map((option) => {
+                      const isSelected = filters.postTypes === option.value;
+                      return (
+                        <Badge
+                          key={option.value}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer transition-colors"
+                          onClick={() => onFiltersChange({ ...filters, postTypes: option.value })}
+                        >
                           {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Period</Label>
-                  <Select
-                    value={filters.dateRange}
-                    onValueChange={(value) => onFiltersChange({ ...filters, dateRange: value })}
-                  >
-                    <SelectTrigger className="h-8 sm:h-7 text-xs bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      {dateRangeOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="text-xs h-7">
+                {/* Location Scope */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Show Posts From
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {locationScopeOptions.map((option) => {
+                      const isSelected = filters.locationScope === option.value;
+                      return (
+                        <Badge
+                          key={option.value}
+                          variant={isSelected ? "default" : "outline"}
+                          className="cursor-pointer transition-colors"
+                          onClick={() => onFiltersChange({ ...filters, locationScope: option.value })}
+                        >
                           {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Content Types - Pill Filter */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  Content Type
-                </Label>
-                <PillFilter
-                  options={postTypeOptions.map(opt => ({ value: opt.value, label: opt.label }))}
-                  value={filters.postTypes}
-                  onValueChange={(value) => onFiltersChange({ ...filters, postTypes: value as string })}
-                  mode="single"
-                />
-              </div>
-
-              {/* Location Scope - Pill Filter */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  Show Posts From
-                </Label>
-                <PillFilter
-                  options={locationScopeOptions.map(opt => ({ value: opt.value, label: opt.label }))}
-                  value={filters.locationScope}
-                  onValueChange={(value) => onFiltersChange({ ...filters, locationScope: value as string })}
-                  mode="single"
-                />
-              </div>
-
-              {/* Tags Search */}
-              <div className="space-y-2">
-                <Label className="text-xs font-medium flex items-center gap-1">
-                  <Tag className="h-3 w-3" />
-                  Tags
-                </Label>
-                
-                {/* Search Input */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
-                  <Input
-                    placeholder="Search or add tags..."
-                    value={tagSearch}
-                    onChange={(e) => setTagSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && tagSearch.trim()) {
-                        handleTagAdd(tagSearch);
-                      }
-                    }}
-                    className="h-8 pl-7 text-xs bg-background"
-                  />
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Selected Tags */}
-                {filters.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {filters.tags.map(tag => (
-                      <Badge
-                        key={tag}
-                        variant="default"
-                        className="gap-1 px-2 py-1 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
-                      >
-                        #{tag}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-0 ml-1 hover:bg-primary/20 text-primary"
+                {/* Tags */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Tag className="h-4 w-4" />
+                    Tags
+                  </Label>
+                  
+                  {/* Tag Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search or add tags..."
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && tagSearch.trim()) {
+                          handleTagAdd(tagSearch);
+                        }
+                      }}
+                      className="pl-9"
+                    />
+                  </div>
+
+                  {/* Selected Tags */}
+                  {filters.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {filters.tags.map(tag => (
+                        <Badge
+                          key={tag}
+                          variant="default"
+                          className="gap-1 cursor-pointer hover:bg-destructive/20 transition-colors"
                           onClick={() => handleTagRemove(tag)}
                         >
-                          <X className="h-2 w-2" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                          #{tag}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
 
-                {/* Available Tags Suggestions */}
-                {tagSearch && filteredAvailableTags.length > 0 && (
-                  <div className="max-h-20 overflow-y-auto space-y-0.5 border rounded p-1 bg-muted/20">
-                    {filteredAvailableTags.slice(0, 4).map(tag => (
-                      <div
-                        key={tag}
-                        onClick={() => handleTagAdd(tag)}
-                        className="text-xs p-1.5 hover:bg-accent/50 rounded cursor-pointer transition-colors"
-                      >
-                        #{tag}
+                  {/* Tag Suggestions */}
+                  {tagSearch && filteredAvailableTags.length > 0 && (
+                    <div className="max-h-32 overflow-y-auto space-y-1 border rounded-md p-2 bg-muted/20">
+                      {filteredAvailableTags.slice(0, 10).map(tag => (
+                        <div
+                          key={tag}
+                          onClick={() => handleTagAdd(tag)}
+                          className="text-sm p-2 hover:bg-accent rounded cursor-pointer transition-colors"
+                        >
+                          #{tag}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Separator between basic and advanced filters */}
+                <Separator className="my-6" />
+
+                {/* Advanced Filters Section */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Advanced Filters</h3>
+                  
+                  {/* Location by Zone */}
+                  {Object.entries(NIGERIAN_ZONES).map(([zone, states]) => (
+                    <FilterSection 
+                      key={zone}
+                      title={`📍 ${zone}`}
+                      defaultOpen={zone === "South West"}
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {states.map((state) => {
+                          const isSelected = filters.advancedFilters?.states?.includes(state);
+                          return (
+                            <Badge
+                              key={state}
+                              variant={isSelected ? "default" : "outline"}
+                              className="cursor-pointer transition-colors"
+                              onClick={() => {
+                                const currentStates = filters.advancedFilters?.states || [];
+                                const newStates = isSelected
+                                  ? currentStates.filter(s => s !== state)
+                                  : [...currentStates, state];
+                                onFiltersChange({
+                                  ...filters,
+                                  advancedFilters: {
+                                    ...filters.advancedFilters,
+                                    states: newStates,
+                                    categories: filters.advancedFilters?.categories || [],
+                                    dateRanges: filters.advancedFilters?.dateRanges || [],
+                                  }
+                                });
+                              }}
+                            >
+                              {state}
+                            </Badge>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </FilterSection>
+                  ))}
+
+                  {/* Categories */}
+                  <FilterSection title="🏷️ Categories">
+                    <div className="flex flex-wrap gap-2">
+                      {POST_CATEGORIES.map((category) => {
+                        const isSelected = filters.advancedFilters?.categories?.includes(category);
+                        return (
+                          <Badge
+                            key={category}
+                            variant={isSelected ? "default" : "outline"}
+                            className="cursor-pointer transition-colors"
+                            onClick={() => {
+                              const currentCategories = filters.advancedFilters?.categories || [];
+                              const newCategories = isSelected
+                                ? currentCategories.filter(c => c !== category)
+                                : [...currentCategories, category];
+                              onFiltersChange({
+                                ...filters,
+                                advancedFilters: {
+                                  ...filters.advancedFilters,
+                                  states: filters.advancedFilters?.states || [],
+                                  categories: newCategories,
+                                  dateRanges: filters.advancedFilters?.dateRanges || [],
+                                }
+                              });
+                            }}
+                          >
+                            {category}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </FilterSection>
+
+                  {/* Date Ranges */}
+                  <FilterSection title="📅 Time Period">
+                    <div className="flex flex-wrap gap-2">
+                      {DATE_RANGES.map((range) => {
+                        const isSelected = filters.advancedFilters?.dateRanges?.includes(range);
+                        return (
+                          <Badge
+                            key={range}
+                            variant={isSelected ? "default" : "outline"}
+                            className="cursor-pointer transition-colors"
+                            onClick={() => {
+                              const currentRanges = filters.advancedFilters?.dateRanges || [];
+                              const newRanges = isSelected
+                                ? currentRanges.filter(r => r !== range)
+                                : [...currentRanges, range];
+                              onFiltersChange({
+                                ...filters,
+                                advancedFilters: {
+                                  ...filters.advancedFilters,
+                                  states: filters.advancedFilters?.states || [],
+                                  categories: filters.advancedFilters?.categories || [],
+                                  dateRanges: newRanges,
+                                }
+                              });
+                            }}
+                          >
+                            {range}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </FilterSection>
+                </div>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
 
         {/* Active Filters Display - Inline */}
         {activeFiltersCount > 0 && (
@@ -425,6 +596,78 @@ export const CommunityFeedFilters = ({
                   </Button>
                 </Badge>
               )}
+
+              {/* Advanced Filters - States */}
+              {filters.advancedFilters?.states && filters.advancedFilters.states.length > 0 && (
+                filters.advancedFilters.states.map((state) => (
+                  <Badge
+                    key={state}
+                    variant="secondary"
+                    className="gap-1 px-2 py-0.5 text-xs cursor-pointer hover:bg-destructive/20 transition-colors"
+                    onClick={() => {
+                      const newStates = filters.advancedFilters!.states.filter(s => s !== state);
+                      onFiltersChange({
+                        ...filters,
+                        advancedFilters: {
+                          ...filters.advancedFilters!,
+                          states: newStates,
+                        }
+                      });
+                    }}
+                  >
+                    📍 {state}
+                    <X className="h-2 w-2" />
+                  </Badge>
+                ))
+              )}
+
+              {/* Advanced Filters - Categories */}
+              {filters.advancedFilters?.categories && filters.advancedFilters.categories.length > 0 && (
+                filters.advancedFilters.categories.map((category) => (
+                  <Badge
+                    key={category}
+                    variant="secondary"
+                    className="gap-1 px-2 py-0.5 text-xs cursor-pointer hover:bg-destructive/20 transition-colors"
+                    onClick={() => {
+                      const newCategories = filters.advancedFilters!.categories.filter(c => c !== category);
+                      onFiltersChange({
+                        ...filters,
+                        advancedFilters: {
+                          ...filters.advancedFilters!,
+                          categories: newCategories,
+                        }
+                      });
+                    }}
+                  >
+                    🏷️ {category}
+                    <X className="h-2 w-2" />
+                  </Badge>
+                ))
+              )}
+
+              {/* Advanced Filters - Date Ranges */}
+              {filters.advancedFilters?.dateRanges && filters.advancedFilters.dateRanges.length > 0 && (
+                filters.advancedFilters.dateRanges.map((range) => (
+                  <Badge
+                    key={range}
+                    variant="secondary"
+                    className="gap-1 px-2 py-0.5 text-xs cursor-pointer hover:bg-destructive/20 transition-colors"
+                    onClick={() => {
+                      const newRanges = filters.advancedFilters!.dateRanges.filter(r => r !== range);
+                      onFiltersChange({
+                        ...filters,
+                        advancedFilters: {
+                          ...filters.advancedFilters!,
+                          dateRanges: newRanges,
+                        }
+                      });
+                    }}
+                  >
+                    📅 {range}
+                    <X className="h-2 w-2" />
+                  </Badge>
+                ))
+              )}
             </div>
 
             {/* Clear All Button - Only show if many filters */}
@@ -441,14 +684,6 @@ export const CommunityFeedFilters = ({
           </>
         )}
       </div>
-
-      {/* Advanced Filters Section */}
-      <CommunityAdvancedFilters
-        filters={filters.advancedFilters || { states: [], categories: [], dateRanges: [] }}
-        onFiltersChange={(advancedFilters) => 
-          onFiltersChange({ ...filters, advancedFilters })
-        }
-      />
     </div>
   );
 };
