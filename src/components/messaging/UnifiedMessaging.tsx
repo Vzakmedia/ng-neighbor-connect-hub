@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { Search, MessageCircle, ShoppingBag, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 const UnifiedMessaging = () => {
   const navigate = useNavigate();
@@ -239,9 +240,9 @@ const UnifiedMessaging = () => {
 
         <div className="flex-1 min-h-0">
           <TabsContent value="direct" className="h-full m-0">
-            <div className="grid grid-cols-1 xl:grid-cols-5 h-full">
-              {/* Left: conversations + search */}
-              <div className="xl:col-span-1 border-r flex flex-col min-h-0">
+            {/* Mobile: show only conversation list */}
+            <div className="xl:hidden h-full">
+              <div className="border-r flex flex-col min-h-0 h-full">
                 <div className="p-4 border-b">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -287,36 +288,93 @@ const UnifiedMessaging = () => {
                   />
                 </div>
               </div>
-
-              {/* Right: thread (xl and up) */}
-              <div className="hidden xl:flex xl:col-span-4 min-h-0">
-                {activeConversation ? (
-                  <MessageThread
-                    conversation={activeConversation}
-                    messages={messages}
-                    currentUserId={user?.id}
-                    onSendMessage={handleSendMessage}
-                    showReadReceipts={true}
-                    messagesEndRef={messagesEndRef}
-                    onMessageDeleted={() => {
-                      if (otherUserId) fetchMessages(otherUserId);
-                    }}
-                    onRetryMessage={retryMessage}
-                    onLoadOlder={() => {
-                      if (otherUserId) fetchOlderMessages(otherUserId);
-                    }}
-                    loadingOlder={loadingOlder}
-                    hasMoreMessages={hasMoreMessages}
-                  />
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <p className="text-sm">Select a conversation to start chatting</p>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
+
+            {/* Desktop: resizable panels */}
+            <ResizablePanelGroup direction="horizontal" className="hidden xl:flex h-full">
+              {/* Left: conversations + search */}
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search people by name or phone"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          if (e.target.value.trim()) performUserSearch(e.target.value);
+                          else setSearchResults([]);
+                        }}
+                        className="pl-10"
+                      />
+                    </div>
+                    {searchQuery && (
+                      <div className="mt-2 bg-background border rounded-lg shadow-sm max-h-56 overflow-y-auto">
+                        {isSearching ? (
+                          <div className="p-3 text-xs text-muted-foreground">Searching…</div>
+                        ) : searchResults.length > 0 ? (
+                          <div className="divide-y">
+                            {searchResults.map((u) => (
+                              <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
+                                <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
+                                 <div className="text-left">
+                                  <div className="text-sm font-medium">{u.full_name}</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-3 text-xs text-muted-foreground">No results</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <ConversationList
+                      conversations={conversations}
+                      loading={conversationsLoading}
+                      activeConversationId={activeConversation?.id}
+                      currentUserId={user?.id}
+                      onConversationSelect={selectConversation}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              {/* Right: thread */}
+              <ResizablePanel defaultSize={75}>
+                <div className="flex h-full">
+                  {activeConversation ? (
+                    <MessageThread
+                      conversation={activeConversation}
+                      messages={messages}
+                      currentUserId={user?.id}
+                      onSendMessage={handleSendMessage}
+                      showReadReceipts={true}
+                      messagesEndRef={messagesEndRef}
+                      onMessageDeleted={() => {
+                        if (otherUserId) fetchMessages(otherUserId);
+                      }}
+                      onRetryMessage={retryMessage}
+                      onLoadOlder={() => {
+                        if (otherUserId) fetchOlderMessages(otherUserId);
+                      }}
+                      loadingOlder={loadingOlder}
+                      hasMoreMessages={hasMoreMessages}
+                    />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <p className="text-sm">Select a conversation to start chatting</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </TabsContent>
 
           <TabsContent value="requests" className="h-full m-0">
