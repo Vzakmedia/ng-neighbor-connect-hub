@@ -26,6 +26,8 @@ import {
   MoreHorizontal,
   Clock,
   Facebook,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
@@ -84,6 +86,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const [isLiked, setIsLiked] = useState(product?.is_liked_by_user || false);
   const [messageText, setMessageText] = useState("Hi, is this still available?");
   const [showComments, setShowComments] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedItemId, setSavedItemId] = useState<string | null>(null);
 
   // Update carousel index when embla changes
   useEffect(() => {
@@ -107,8 +111,29 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       setLikesCount(product.likes_count || 0);
       setIsLiked(product.is_liked_by_user || false);
       setCurrentImageIndex(0);
+      
+      // Check if item is saved
+      const checkSavedStatus = async () => {
+        if (!user) {
+          setIsSaved(false);
+          setSavedItemId(null);
+          return;
+        }
+        
+        const { data } = await supabase
+          .from('saved_marketplace_items')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('item_id', product.id)
+          .maybeSingle();
+        
+        setIsSaved(!!data);
+        setSavedItemId(data?.id || null);
+      };
+      
+      checkSavedStatus();
     }
-  }, [product]);
+  }, [product, user]);
 
   // Real-time updates for likes
   useEffect(() => {
@@ -382,6 +407,62 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
+  const handleSaveToggle = async () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to save items",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isSaved && savedItemId) {
+        // Unsave the item
+        const { error } = await supabase
+          .from('saved_marketplace_items')
+          .delete()
+          .eq('id', savedItemId);
+
+        if (error) throw error;
+
+        setIsSaved(false);
+        setSavedItemId(null);
+        toast({
+          title: "Item removed",
+          description: "Item removed from your saved items",
+        });
+      } else {
+        // Save the item
+        const { data, error } = await supabase
+          .from('saved_marketplace_items')
+          .insert({
+            user_id: user.id,
+            item_id: product.id,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+
+        setIsSaved(true);
+        setSavedItemId(data.id);
+        toast({
+          title: "Item saved",
+          description: "Item added to your saved items",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling save status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update saved status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -622,6 +703,19 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     >
                       <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
                       <span className="text-xs">{likesCount > 0 ? likesCount : 'Like'}</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1 gap-1.5"
+                      onClick={handleSaveToggle}
+                    >
+                      {isSaved ? (
+                        <BookmarkCheck className="h-3.5 w-3.5 fill-primary text-primary" />
+                      ) : (
+                        <Bookmark className="h-3.5 w-3.5" />
+                      )}
+                      <span className="text-xs">{isSaved ? 'Saved' : 'Save'}</span>
                     </Button>
                     <Button 
                       variant="outline" 
