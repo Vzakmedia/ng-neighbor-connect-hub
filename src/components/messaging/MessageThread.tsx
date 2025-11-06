@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import OnlineAvatar from '@/components/OnlineAvatar';
@@ -42,6 +42,7 @@ interface MessageThreadProps {
   onLoadOlder?: () => void;
   loadingOlder?: boolean;
   hasMoreMessages?: boolean;
+  onMarkAsRead?: (messageId: string) => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -59,13 +60,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onRetryMessage,
   onLoadOlder,
   loadingOlder = false,
-  hasMoreMessages = true
+  hasMoreMessages = true,
+  onMarkAsRead
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+  const messageObserverRefs = useRef<Map<string, IntersectionObserver>>(new Map());
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
   const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
@@ -198,6 +201,19 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     overscan: 5,
   });
 
+  // Mark messages as read when they become visible
+  const handleMessageVisible = useCallback((messageId: string, isVisible: boolean) => {
+    if (!isVisible || !onMarkAsRead || !currentUserId) return;
+    
+    const message = messages.find(m => m.id === messageId);
+    if (!message) return;
+    
+    // Only mark as read if it's a message sent TO the current user and not already read
+    if (message.recipient_id === currentUserId && message.status !== 'read') {
+      onMarkAsRead(messageId);
+    }
+  }, [messages, currentUserId, onMarkAsRead]);
+
   // Intersection Observer for loading older messages
   useEffect(() => {
     if (!loadMoreTriggerRef.current || !onLoadOlder || !hasMoreMessages) return;
@@ -215,6 +231,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     
     return () => observer.disconnect();
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
+
+  // Cleanup message observers on unmount
+  useEffect(() => {
+    return () => {
+      messageObserverRefs.current.forEach(observer => observer.disconnect());
+      messageObserverRefs.current.clear();
+    };
+  }, []);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
@@ -269,6 +293,27 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             return (
               <div 
                 key={message.id}
+                ref={(el) => {
+                  if (!el || !onMarkAsRead) return;
+                  
+                  // Create intersection observer for this message
+                  const existingObserver = messageObserverRefs.current.get(message.id);
+                  if (existingObserver) {
+                    existingObserver.disconnect();
+                  }
+                  
+                  const observer = new IntersectionObserver(
+                    (entries) => {
+                      entries.forEach(entry => {
+                        handleMessageVisible(message.id, entry.isIntersecting);
+                      });
+                    },
+                    { threshold: 0.5 } // Mark as read when 50% visible
+                  );
+                  
+                  observer.observe(el);
+                  messageObserverRefs.current.set(message.id, observer);
+                }}
                 style={{
                   position: 'absolute',
                   top: 0,
