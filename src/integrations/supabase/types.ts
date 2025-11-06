@@ -3823,6 +3823,30 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_marketplace_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_posts: {
         Row: {
           created_at: string
