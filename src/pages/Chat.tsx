@@ -413,6 +413,7 @@ const Chat = () => {
           isSelectionMode={isSelectionMode}
           selectedMessages={selectedMessages}
           onSelectedMessagesChange={setSelectedMessages}
+          onMarkAsRead={markMessageAsRead}
           onMessageDeleted={() => {
             // Refetch messages when a message is deleted
             if (conversation) {
