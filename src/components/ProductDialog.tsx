@@ -390,8 +390,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
           className="h-[95vh] p-0 overflow-y-auto rounded-t-3xl sm:max-w-6xl sm:mx-auto"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 h-full">
-            {/* Left Column - Images Carousel */}
-            <div className="md:sticky md:top-0 md:h-screen md:overflow-hidden">
+            {/* Left Column - Images Carousel and Suggested Items */}
+            <div className="md:sticky md:top-0 md:h-screen md:overflow-y-auto">
               <div className="relative w-full h-[280px] md:h-[400px]">
                 {product.images && product.images.length > 0 ? (
                   <>
@@ -437,6 +437,18 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     <span className="text-muted-foreground text-sm">No image available</span>
                   </div>
                 )}
+              </div>
+
+              {/* Seller's Other Listings - Under Image */}
+              <div className="p-3">
+                <SellerOtherListings 
+                  sellerId={product.user_id}
+                  currentItemId={product.id}
+                  onItemClick={(item) => {
+                    const newUrl = `${window.location.origin}/marketplace?item=${item.id}`;
+                    window.location.href = newUrl;
+                  }}
+                />
               </div>
             </div>
 
@@ -579,21 +591,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                     </button>
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* Seller's Other Listings */}
-                <Separator />
-                <SellerOtherListings 
-                  sellerId={product.user_id}
-                  currentItemId={product.id}
-                  onItemClick={(item) => {
-                    // This will trigger a re-render with the new product
-                    // The parent component should handle this
-                    const newUrl = `${window.location.origin}/marketplace?item=${item.id}`;
-                    window.location.href = newUrl;
-                  }}
-                />
 
                 <Separator />
 
