@@ -34,6 +34,8 @@ import { supabase } from '@/integrations/supabase/client';
 import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { useNativeShare } from '@/hooks/mobile/useNativeShare';
 import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
+import { MarketplaceComments } from './marketplace/MarketplaceComments';
+import { MarketplaceMap } from './marketplace/MarketplaceMap';
 
 interface MarketplaceItem {
   id: string;
@@ -293,6 +295,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
   const isOwner = user?.id === product.user_id;
   const [messageText, setMessageText] = useState("Hi, is this still available?");
+  const [showComments, setShowComments] = useState(false);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user) {
@@ -569,17 +572,19 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 {/* Location Section */}
                 <div className="space-y-3">
                   <h3 className="font-semibold">Location</h3>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4" />
                     <span>{product.location}</span>
                   </div>
-                  {/* Map Placeholder */}
-                  <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center border">
-                    <div className="text-center text-muted-foreground">
-                      <MapPin className="h-8 w-8 mx-auto mb-2" />
-                      <p className="text-sm">Map preview</p>
-                    </div>
-                  </div>
+                  {/* Google Map */}
+                  <MarketplaceMap location={product.location} title={product.title} />
+                </div>
+
+                <Separator />
+
+                {/* Comments Section */}
+                <div id="marketplace-comments">
+                  <MarketplaceComments itemId={product.id} />
                 </div>
 
                 {/* Bottom Action Buttons */}
@@ -597,10 +602,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                       variant="outline" 
                       className="flex-1 gap-2"
                       onClick={() => {
-                        toast({
-                          title: "Coming soon",
-                          description: "Comment feature is coming soon",
-                        });
+                        const commentsSection = document.getElementById('marketplace-comments');
+                        commentsSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
                       <MessageCircle className="h-4 w-4" />
