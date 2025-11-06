@@ -170,6 +170,15 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     };
   }, [product?.id, user?.id]);
 
+  // Carousel navigation callbacks
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
+
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
   if (!product) return null;
 
   const formatPrice = (price: number) => {
@@ -192,14 +201,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       day: 'numeric',
     });
   };
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
 
   const handleLike = async () => {
     if (!user) {
