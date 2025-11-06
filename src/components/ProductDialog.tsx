@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -36,6 +36,8 @@ import { useNativeShare } from '@/hooks/mobile/useNativeShare';
 import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
 import { MarketplaceComments } from './marketplace/MarketplaceComments';
 import { MarketplaceMap } from './marketplace/MarketplaceMap';
+import { SellerOtherListings } from './marketplace/SellerOtherListings';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface MarketplaceItem {
   id: string;
@@ -75,12 +77,29 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const { toast } = useToast();
   const { share, canShare } = useNativeShare();
   const { copyToClipboard } = useNativeClipboard();
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [likesCount, setLikesCount] = useState(product?.likes_count || 0);
   const [isLiked, setIsLiked] = useState(product?.is_liked_by_user || false);
   const [messageText, setMessageText] = useState("Hi, is this still available?");
   const [showComments, setShowComments] = useState(false);
+
+  // Update carousel index when embla changes
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const onSelect = () => {
+      setCurrentImageIndex(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on('select', onSelect);
+    onSelect();
+
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
 
   // Update local state when product changes
   useEffect(() => {
@@ -149,17 +168,13 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     });
   };
 
-  const nextImage = () => {
-    if (product.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
-    }
-  };
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
-  const prevImage = () => {
-    if (product.images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
-    }
-  };
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
 
   const handleLike = async () => {
     if (!user) {
@@ -375,35 +390,43 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
           className="h-[95vh] p-0 overflow-y-auto rounded-t-3xl sm:max-w-6xl sm:mx-auto"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 h-full">
-            {/* Left Column - Images */}
+            {/* Left Column - Images Carousel */}
             <div className="md:sticky md:top-0 md:h-screen md:overflow-hidden">
-              <div className="relative w-full h-[300px] md:h-full">
+              <div className="relative w-full h-[280px] md:h-full">
                 {product.images && product.images.length > 0 ? (
                   <>
-                    <img
-                      src={product.images[currentImageIndex]}
-                      alt={product.title}
-                      className="w-full h-full object-cover md:rounded-tl-3xl"
-                    />
+                    <div className="overflow-hidden h-full" ref={emblaRef}>
+                      <div className="flex h-full">
+                        {product.images.map((image, index) => (
+                          <div key={index} className="flex-[0_0_100%] min-w-0">
+                            <img
+                              src={image}
+                              alt={`${product.title} - Image ${index + 1}`}
+                              className="w-full h-full object-cover md:rounded-tl-3xl"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     {product.images.length > 1 && (
                       <>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
-                          onClick={prevImage}
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full h-8 w-8"
+                          onClick={scrollPrev}
                         >
-                          <ChevronLeft className="h-5 w-5" />
+                          <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
-                          onClick={nextImage}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full h-8 w-8"
+                          onClick={scrollNext}
                         >
-                          <ChevronRight className="h-5 w-5" />
+                          <ChevronRight className="h-4 w-4" />
                         </Button>
-                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
+                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium">
                           {currentImageIndex + 1} / {product.images.length}
                         </div>
                       </>
@@ -411,7 +434,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                   </>
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center md:rounded-tl-3xl">
-                    <span className="text-muted-foreground">No image available</span>
+                    <span className="text-muted-foreground text-sm">No image available</span>
                   </div>
                 )}
               </div>
@@ -419,40 +442,40 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
             {/* Right Column - Content */}
             <div className="md:overflow-y-auto md:h-screen">
-              <div className="p-4 space-y-4 md:py-6 md:px-6">
+              <div className="p-3 space-y-3 md:py-4 md:px-4">
                 {/* Title and Price */}
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">{product.title}</h2>
+                  <h2 className="text-xl md:text-2xl font-bold mb-1">{product.title}</h2>
                   <div className="flex items-center gap-2 flex-wrap">
                     {product.price === 0 ? (
-                      <span className="text-3xl font-bold text-primary">FREE</span>
+                      <span className="text-2xl md:text-3xl font-bold text-primary">FREE</span>
                     ) : (
-                      <span className="text-3xl font-bold text-primary">
+                      <span className="text-2xl md:text-3xl font-bold text-primary">
                         {formatPrice(product.price)}
                       </span>
                     )}
                     {product.is_negotiable && (
-                      <Badge variant="outline" className="text-sm">Negotiable</Badge>
+                      <Badge variant="outline" className="text-xs">Negotiable</Badge>
                     )}
                   </div>
                 </div>
 
                 {/* Seller Info */}
-                <div className="flex items-start gap-3 py-3 border-y">
-                  <Avatar className="h-12 w-12">
+                <div className="flex items-start gap-2 py-2 border-y">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={product.profiles?.avatar_url} />
                     <AvatarFallback>
-                      <User className="h-5 w-5" />
+                      <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{product.profiles?.full_name || 'Anonymous'}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-sm">{product.profiles?.full_name || 'Anonymous'}</p>
                       {product.profiles?.is_verified && (
-                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                        <CheckCircle className="h-3.5 w-3.5 text-blue-500" />
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" />
                       <span>{product.location}</span>
                     </div>
@@ -460,7 +483,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 </div>
 
                 {/* Condition and Time */}
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-3 text-xs">
                   <Badge variant="secondary">
                     {product.condition}
                   </Badge>
@@ -472,8 +495,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
                 {/* Description */}
                 <div>
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  <h3 className="font-semibold text-sm mb-1">Description</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
                     {product.description}
                   </p>
                 </div>
@@ -482,8 +505,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
                 {/* Send Message Section */}
                 {!isOwner && (
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Send {product.profiles?.full_name?.split(' ')[0] || 'seller'} a message</h3>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm">Send {product.profiles?.full_name?.split(' ')[0] || 'seller'} a message</h3>
                     <div className="flex gap-2">
                       <Input
                         value={messageText}
@@ -512,71 +535,75 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                 <Separator />
 
                 {/* Share Listing Section */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Share listing</h3>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Share listing</h3>
+                  <div className="flex gap-3 overflow-x-auto pb-2">
                     <button 
                       onClick={handleContactSeller}
-                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                      className="flex flex-col items-center gap-1 min-w-[52px] touch-manipulation"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <MessageCircle className="h-5 w-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MessageCircle className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs text-center">Chat</span>
+                      <span className="text-[10px] text-center">Chat</span>
                     </button>
                     
                     <button 
                       onClick={handleShare}
-                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                      className="flex flex-col items-center gap-1 min-w-[52px] touch-manipulation"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Share2 className="h-5 w-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Share2 className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs text-center">Share</span>
+                      <span className="text-[10px] text-center">Share</span>
                     </button>
 
                     <button 
                       onClick={handleCopyLink}
-                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                      className="flex flex-col items-center gap-1 min-w-[52px] touch-manipulation"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Link className="h-5 w-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Link className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs text-center">Copy link</span>
+                      <span className="text-[10px] text-center">Copy</span>
                     </button>
 
                     <button 
                       onClick={handleEmailShare}
-                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                      className="flex flex-col items-center gap-1 min-w-[52px] touch-manipulation"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Mail className="h-5 w-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="text-xs text-center">Email</span>
-                    </button>
-
-                    <button 
-                      onClick={handleShare}
-                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <MoreHorizontal className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-xs text-center">More</span>
+                      <span className="text-[10px] text-center">Email</span>
                     </button>
                   </div>
                 </div>
 
                 <Separator />
 
+                {/* Seller's Other Listings */}
+                <Separator />
+                <SellerOtherListings 
+                  sellerId={product.user_id}
+                  currentItemId={product.id}
+                  onItemClick={(item) => {
+                    // This will trigger a re-render with the new product
+                    // The parent component should handle this
+                    const newUrl = `${window.location.origin}/marketplace?item=${item.id}`;
+                    window.location.href = newUrl;
+                  }}
+                />
+
+                <Separator />
+
                 {/* Location Section */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Location</h3>
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <MapPin className="h-4 w-4" />
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Location</h3>
+                  <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
+                    <MapPin className="h-3 w-3" />
                     <span>{product.location}</span>
                   </div>
-                  {/* Google Map */}
                   <MarketplaceMap location={product.location} title={product.title} />
                 </div>
 
@@ -589,40 +616,43 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
 
                 {/* Bottom Action Buttons */}
                 {!isOwner && (
-                  <div className="flex gap-2 pt-4 pb-6">
+                  <div className="flex gap-2 pt-2 pb-4">
                     <Button 
                       variant="outline" 
-                      className="flex-1 gap-2"
+                      size="sm"
+                      className="flex-1 gap-1.5"
                       onClick={handleLike}
                     >
-                      <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                      {likesCount > 0 ? likesCount : 'Like'}
+                      <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                      <span className="text-xs">{likesCount > 0 ? likesCount : 'Like'}</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="flex-1 gap-2"
+                      size="sm"
+                      className="flex-1 gap-1.5"
                       onClick={() => {
                         const commentsSection = document.getElementById('marketplace-comments');
                         commentsSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
-                      <MessageCircle className="h-4 w-4" />
-                      Comment
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      <span className="text-xs">Comment</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="flex-1 gap-2"
+                      size="sm"
+                      className="flex-1 gap-1.5"
                       onClick={handleShare}
                     >
-                      <Share2 className="h-4 w-4" />
-                      Share
+                      <Share2 className="h-3.5 w-3.5" />
+                      <span className="text-xs">Share</span>
                     </Button>
                   </div>
                 )}
 
                 {/* Owner Message */}
                 {isOwner && (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-2 text-muted-foreground text-sm">
                     <p>This is your listing</p>
                   </div>
                 )}
