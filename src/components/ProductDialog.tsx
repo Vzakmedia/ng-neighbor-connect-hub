@@ -79,6 +79,8 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [likesCount, setLikesCount] = useState(product?.likes_count || 0);
   const [isLiked, setIsLiked] = useState(product?.is_liked_by_user || false);
+  const [messageText, setMessageText] = useState("Hi, is this still available?");
+  const [showComments, setShowComments] = useState(false);
 
   // Update local state when product changes
   useEffect(() => {
@@ -294,8 +296,6 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
   };
 
   const isOwner = user?.id === product.user_id;
-  const [messageText, setMessageText] = useState("Hi, is this still available?");
-  const [showComments, setShowComments] = useState(false);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !user) {
