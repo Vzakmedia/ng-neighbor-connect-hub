@@ -392,17 +392,17 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 h-full">
             {/* Left Column - Images Carousel */}
             <div className="md:sticky md:top-0 md:h-screen md:overflow-hidden">
-              <div className="relative w-full h-[280px] md:h-full">
+              <div className="relative w-full h-[280px] md:h-[400px]">
                 {product.images && product.images.length > 0 ? (
                   <>
-                    <div className="overflow-hidden h-full" ref={emblaRef}>
+                    <div className="overflow-hidden h-full rounded-t-3xl md:rounded-tl-3xl md:rounded-tr-none" ref={emblaRef}>
                       <div className="flex h-full">
                         {product.images.map((image, index) => (
                           <div key={index} className="flex-[0_0_100%] min-w-0">
                             <img
                               src={image}
                               alt={`${product.title} - Image ${index + 1}`}
-                              className="w-full h-full object-cover md:rounded-tl-3xl"
+                              className="w-full h-full object-contain bg-muted/30"
                             />
                           </div>
                         ))}
