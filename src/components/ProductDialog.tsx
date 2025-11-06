@@ -369,256 +369,262 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent 
           side="bottom" 
-          className="h-[95vh] p-0 overflow-y-auto rounded-t-3xl"
+          className="h-[95vh] p-0 overflow-y-auto rounded-t-3xl sm:max-w-6xl sm:mx-auto"
         >
-          {/* Hero Image Section */}
-          <div className="relative w-full h-[300px] md:h-[400px]">
-            {product.images && product.images.length > 0 ? (
-              <>
-                <img
-                  src={product.images[currentImageIndex]}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-                {product.images.length > 1 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-0 h-full">
+            {/* Left Column - Images */}
+            <div className="md:sticky md:top-0 md:h-screen md:overflow-hidden">
+              <div className="relative w-full h-[300px] md:h-full">
+                {product.images && product.images.length > 0 ? (
                   <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
-                      onClick={prevImage}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
-                      onClick={nextImage}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
-                      {currentImageIndex + 1} / {product.images.length}
-                    </div>
+                    <img
+                      src={product.images[currentImageIndex]}
+                      alt={product.title}
+                      className="w-full h-full object-cover md:rounded-tl-3xl"
+                    />
+                    {product.images.length > 1 && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
+                          onClick={prevImage}
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-background/90 backdrop-blur-sm rounded-full"
+                          onClick={nextImage}
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
+                          {currentImageIndex + 1} / {product.images.length}
+                        </div>
+                      </>
+                    )}
                   </>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <span className="text-muted-foreground">No image available</span>
-              </div>
-            )}
-          </div>
-
-          {/* Content Section */}
-          <div className="p-4 space-y-4">
-            {/* Title and Price */}
-            <div>
-              <h2 className="text-2xl font-bold mb-2">{product.title}</h2>
-              <div className="flex items-center gap-2 flex-wrap">
-                {product.price === 0 ? (
-                  <span className="text-3xl font-bold text-primary">FREE</span>
                 ) : (
-                  <span className="text-3xl font-bold text-primary">
-                    {formatPrice(product.price)}
-                  </span>
-                )}
-                {product.is_negotiable && (
-                  <Badge variant="outline" className="text-sm">Negotiable</Badge>
+                  <div className="w-full h-full bg-muted flex items-center justify-center md:rounded-tl-3xl">
+                    <span className="text-muted-foreground">No image available</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Seller Info */}
-            <div className="flex items-start gap-3 py-3 border-y">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={product.profiles?.avatar_url} />
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold">{product.profiles?.full_name || 'Anonymous'}</p>
-                  {product.profiles?.is_verified && (
-                    <CheckCircle className="h-4 w-4 text-blue-500" />
-                  )}
+            {/* Right Column - Content */}
+            <div className="md:overflow-y-auto md:h-screen">
+              <div className="p-4 space-y-4 md:py-6 md:px-6">
+                {/* Title and Price */}
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">{product.title}</h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {product.price === 0 ? (
+                      <span className="text-3xl font-bold text-primary">FREE</span>
+                    ) : (
+                      <span className="text-3xl font-bold text-primary">
+                        {formatPrice(product.price)}
+                      </span>
+                    )}
+                    {product.is_negotiable && (
+                      <Badge variant="outline" className="text-sm">Negotiable</Badge>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span>{product.location}</span>
+
+                {/* Seller Info */}
+                <div className="flex items-start gap-3 py-3 border-y">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={product.profiles?.avatar_url} />
+                    <AvatarFallback>
+                      <User className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{product.profiles?.full_name || 'Anonymous'}</p>
+                      {product.profiles?.is_verified && (
+                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span>{product.location}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Condition and Time */}
-            <div className="flex items-center gap-4 text-sm">
-              <Badge variant="secondary">
-                {product.condition}
-              </Badge>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{formatDate(product.created_at)}</span>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {product.description}
-              </p>
-            </div>
-
-            <Separator />
-
-            {/* Send Message Section */}
-            {!isOwner && (
-              <div className="space-y-3">
-                <h3 className="font-semibold">Send {product.profiles?.full_name?.split(' ')[0] || 'seller'} a message</h3>
-                <div className="flex gap-2">
-                  <Input
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    placeholder="Hi, is this still available?"
-                    className="flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <Button 
-                    size="icon" 
-                    onClick={handleSendMessage}
-                    disabled={!messageText.trim()}
-                    className="rounded-full"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                {/* Condition and Time */}
+                <div className="flex items-center gap-4 text-sm">
+                  <Badge variant="secondary">
+                    {product.condition}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>{formatDate(product.created_at)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <Separator />
-
-            {/* Share Listing Section */}
-            <div className="space-y-3">
-              <h3 className="font-semibold">Share listing</h3>
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                <button 
-                  onClick={handleContactSeller}
-                  className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs text-center">Chat</span>
-                </button>
-                
-                <button 
-                  onClick={handleShare}
-                  className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Share2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs text-center">Share</span>
-                </button>
-
-                <button 
-                  onClick={handleCopyLink}
-                  className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Link className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs text-center">Copy link</span>
-                </button>
-
-                <button 
-                  onClick={handleEmailShare}
-                  className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs text-center">Email</span>
-                </button>
-
-                <button 
-                  onClick={handleShare}
-                  className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MoreHorizontal className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs text-center">More</span>
-                </button>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Location Section */}
-            <div className="space-y-3">
-              <h3 className="font-semibold">Location</h3>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{product.location}</span>
-              </div>
-              {/* Map Placeholder */}
-              <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center border">
-                <div className="text-center text-muted-foreground">
-                  <MapPin className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-sm">Map preview</p>
+                {/* Description */}
+                <div>
+                  <h3 className="font-semibold mb-2">Description</h3>
+                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {product.description}
+                  </p>
                 </div>
+
+                <Separator />
+
+                {/* Send Message Section */}
+                {!isOwner && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Send {product.profiles?.full_name?.split(' ')[0] || 'seller'} a message</h3>
+                    <div className="flex gap-2">
+                      <Input
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        placeholder="Hi, is this still available?"
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                      <Button 
+                        size="icon" 
+                        onClick={handleSendMessage}
+                        disabled={!messageText.trim()}
+                        className="rounded-full"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Share Listing Section */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Share listing</h3>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    <button 
+                      onClick={handleContactSeller}
+                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MessageCircle className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-xs text-center">Chat</span>
+                    </button>
+                    
+                    <button 
+                      onClick={handleShare}
+                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Share2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-xs text-center">Share</span>
+                    </button>
+
+                    <button 
+                      onClick={handleCopyLink}
+                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Link className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-xs text-center">Copy link</span>
+                    </button>
+
+                    <button 
+                      onClick={handleEmailShare}
+                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Mail className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-xs text-center">Email</span>
+                    </button>
+
+                    <button 
+                      onClick={handleShare}
+                      className="flex flex-col items-center gap-1 min-w-[60px] touch-manipulation"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MoreHorizontal className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-xs text-center">More</span>
+                    </button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Location Section */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Location</h3>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{product.location}</span>
+                  </div>
+                  {/* Map Placeholder */}
+                  <div className="w-full h-40 bg-muted rounded-lg flex items-center justify-center border">
+                    <div className="text-center text-muted-foreground">
+                      <MapPin className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-sm">Map preview</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Action Buttons */}
+                {!isOwner && (
+                  <div className="flex gap-2 pt-4 pb-6">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 gap-2"
+                      onClick={handleLike}
+                    >
+                      <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+                      {likesCount > 0 ? likesCount : 'Like'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 gap-2"
+                      onClick={() => {
+                        toast({
+                          title: "Coming soon",
+                          description: "Comment feature is coming soon",
+                        });
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Comment
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 gap-2"
+                      onClick={handleShare}
+                    >
+                      <Share2 className="h-4 w-4" />
+                      Share
+                    </Button>
+                  </div>
+                )}
+
+                {/* Owner Message */}
+                {isOwner && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>This is your listing</p>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Bottom Action Buttons */}
-            {!isOwner && (
-              <div className="flex gap-2 pt-4 pb-6 sticky bottom-0 bg-background">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 gap-2"
-                  onClick={handleLike}
-                >
-                  <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-                  {likesCount > 0 ? likesCount : 'Like'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1 gap-2"
-                  onClick={() => {
-                    toast({
-                      title: "Coming soon",
-                      description: "Comment feature is coming soon",
-                    });
-                  }}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Comment
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1 gap-2"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Button>
-              </div>
-            )}
-
-            {/* Owner Message */}
-            {isOwner && (
-              <div className="text-center py-4 text-muted-foreground">
-                <p>This is your listing</p>
-              </div>
-            )}
           </div>
         </SheetContent>
       </Sheet>
