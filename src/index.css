@@ -201,6 +201,17 @@ All colors MUST be HSL.
 
 /* Mobile touch enhancements */
 @media (max-width: 768px) {
+  /* Hide all scrollbars on mobile */
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.1);
+  }
+  
+  *::-webkit-scrollbar {
+    display: none;
+  }
+  
   .touch-manipulation {
     touch-action: manipulation;
   }
@@ -209,11 +220,6 @@ All colors MUST be HSL.
   button, 
   [role="button"] {
     min-height: 44px;
-  }
-  
-  /* Better tap highlights */
-  * {
-    -webkit-tap-highlight-color: hsl(var(--primary) / 0.1);
   }
   
   /* Smooth scrolling */
