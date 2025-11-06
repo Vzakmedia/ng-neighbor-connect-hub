@@ -2431,6 +2431,33 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_item_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          item_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          item_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       marketplace_item_likes: {
         Row: {
           created_at: string
