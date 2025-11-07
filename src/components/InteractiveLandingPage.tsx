@@ -217,13 +217,13 @@ const InteractiveLandingPage = () => {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-24 lg:py-32">
+      <section className="relative overflow-hidden min-h-screen">
         <motion.div style={{
           y: y1
         }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
         
-        <div className="w-full relative">
-          <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center">
+        <div className="w-full relative min-h-screen">
+          <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
             <motion.div initial={{
               opacity: 0,
               x: -50
@@ -232,7 +232,7 @@ const InteractiveLandingPage = () => {
               x: isVisible ? 0 : -50
             }} transition={{
               duration: 0.8
-            }} className="space-y-8 px-6 md:px-12 lg:px-16 xl:px-24">
+            }} className="space-y-8 px-6 md:px-12 lg:px-16 xl:px-24 py-12">
               <div className="space-y-6">
                 <motion.div initial={{
                   opacity: 0,
@@ -358,7 +358,7 @@ const InteractiveLandingPage = () => {
               </motion.div>
             </motion.div>
             
-            <motion.div className="relative h-screen" initial={{
+            <motion.div className="relative h-screen w-full" initial={{
               opacity: 0,
               x: 50
             }} animate={{
@@ -375,7 +375,7 @@ const InteractiveLandingPage = () => {
                 rotateY: 5
               }} transition={{
                 duration: 0.3
-              }} className="relative h-full">
+              }} className="relative h-screen w-full">
                 <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
                 
                 {/* Floating action indicators */}
