@@ -358,6 +358,14 @@ const InteractiveLandingPage = () => {
                          group-hover:brightness-105" />
           </motion.div>
         </div>
+        
+        {/* Fade-out gradient overlay at bottom */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-[200px] md:h-[300px] pointer-events-none z-20"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.3) 30%, rgba(255, 255, 255, 0.7) 60%, rgba(255, 255, 255, 1) 100%)'
+          }}
+        />
       </section>
 
       {/* Interactive Features Section */}
