@@ -234,7 +234,7 @@ const InteractiveLandingPage = () => {
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
                 
-                <motion.h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-tight px-2" initial={{
+                <motion.h1 initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -242,7 +242,7 @@ const InteractiveLandingPage = () => {
                   y: 0
                 }} transition={{
                   delay: 0.3
-                }}>
+                }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2 xl:text-7xl">
                   Connect with your{" "}
                   <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" animate={{
                     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
@@ -307,42 +307,36 @@ const InteractiveLandingPage = () => {
           </div>
           
           {/* Community Connection Visual - Outside constrained div */}
-          <motion.div 
-            initial={{
-              opacity: 0,
-              y: 30,
-              scale: 0.95
-            }} 
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0,
-              scale: 1
-            }}
-            whileHover={{
-              scale: 1.02,
-              transition: { duration: 0.3, ease: "easeOut" }
-            }}
-            viewport={{ once: false, margin: "-100px" }}
-            transition={{
-              delay: 0.8,
-              duration: 0.6,
+          <motion.div initial={{
+            opacity: 0,
+            y: 30,
+            scale: 0.95
+          }} animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1
+          }} whileInView={{
+            opacity: 1,
+            y: 0,
+            scale: 1
+          }} whileHover={{
+            scale: 1.02,
+            transition: {
+              duration: 0.3,
               ease: "easeOut"
-            }}
-            className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16 group"
-          >
-            <img 
-              src={communityConnect} 
-              alt="Community Connection Network" 
-              className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto 
+            }
+          }} viewport={{
+            once: false,
+            margin: "-100px"
+          }} transition={{
+            delay: 0.8,
+            duration: 0.6,
+            ease: "easeOut"
+          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16 group">
+            <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto 
                          rounded-lg
                          transition-all duration-300 ease-out
-                         group-hover:brightness-105" 
-            />
+                         group-hover:brightness-105" />
           </motion.div>
         </div>
       </section>
