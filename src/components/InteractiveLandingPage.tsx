@@ -380,26 +380,6 @@ const InteractiveLandingPage = () => {
                 <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-background via-background/50 to-transparent z-10 pointer-events-none" />
                 
                 <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
-                
-                {/* Floating action indicators */}
-                <motion.div className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-3 shadow-lg" animate={{
-                  y: [-5, 5, -5]
-                }} transition={{
-                  duration: 2,
-                  repeat: Infinity
-                }}>
-                  <Eye className="w-5 h-5 text-primary" />
-                </motion.div>
-                
-                <motion.div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-full p-3 shadow-lg" animate={{
-                  y: [5, -5, 5]
-                }} transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: 1
-                }}>
-                  <MousePointer className="w-5 h-5 text-primary" />
-                </motion.div>
               </motion.div>
             </motion.div>
           </div>
