@@ -538,24 +538,26 @@ const InteractiveLandingPage = () => {
               className="w-full"
             >
               <div className="relative px-12">
-                <CarouselContent className="-ml-4">
-                  {features.map((feature) => (
-                    <CarouselItem key={feature.id} className="pl-4 basis-auto">
-                      <TabsTrigger
-                        value={feature.id}
-                        className="min-w-[300px] flex-shrink-0 data-[state=active]:bg-primary/10 data-[state=active]:border-primary/30 data-[state=inactive]:bg-background data-[state=inactive]:border-border p-6 rounded-lg border-2 h-auto flex flex-col items-start gap-3 text-left transition-all cursor-grab active:cursor-grabbing"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <feature.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-base mb-2 text-foreground">{feature.title}</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed">{feature.shortDesc}</p>
-                        </div>
-                      </TabsTrigger>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
+                <TabsList className="w-full h-auto bg-transparent p-0">
+                  <CarouselContent className="-ml-4">
+                    {features.map((feature) => (
+                      <CarouselItem key={feature.id} className="pl-4 basis-auto">
+                        <TabsTrigger
+                          value={feature.id}
+                          className="min-w-[300px] flex-shrink-0 data-[state=active]:bg-primary/10 data-[state=active]:border-primary/30 data-[state=inactive]:bg-background data-[state=inactive]:border-border p-6 rounded-lg border-2 h-auto flex flex-col items-start gap-3 text-left transition-all cursor-grab active:cursor-grabbing"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <feature.icon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-base mb-2 text-foreground">{feature.title}</h4>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{feature.shortDesc}</p>
+                          </div>
+                        </TabsTrigger>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                </TabsList>
                 <CarouselPrevious className="absolute -left-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
                 <CarouselNext className="absolute -right-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
               </div>
