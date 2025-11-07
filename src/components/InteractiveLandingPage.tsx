@@ -10,6 +10,7 @@ import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
 import heroBackground from '@/assets/hero-background.png';
 import communityConnect from '@/assets/community-connect.png';
+import locationServicesImage from '@/assets/landing/location-services.jpg';
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -401,21 +402,25 @@ const InteractiveLandingPage = () => {
             }} viewport={{
               once: true
             }}>
-              <Card className={`p-8 ${features[activeFeature].bgColor} border-0 shadow-xl`}>
+              <Card className={`overflow-hidden ${features[activeFeature].bgColor} border-0 shadow-xl`}>
                 <CardContent className="space-y-6 p-0">
-                  <div className="flex items-center space-x-4">
-                    <motion.div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${features[activeFeature].color} flex items-center justify-center shadow-lg`} animate={{
-                      rotate: 360
-                    }} transition={{
-                      duration: 40,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}>
-                       {(() => {
-                        const IconComponent = features[activeFeature].icon;
-                        return <IconComponent className="w-8 h-8 text-white" />;
-                      })()}
-                     </motion.div>
+                  {/* Image at top */}
+                  <motion.div 
+                    className="w-full h-48 overflow-hidden"
+                    key={`${activeFeature}-image`}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <img 
+                      src={locationServicesImage} 
+                      alt={features[activeFeature].title}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                  
+                  {/* Content below image */}
+                  <div className="px-8 pb-8 space-y-4">
                     <div>
                       <motion.h3 className="text-2xl font-bold" key={activeFeature} initial={{
                         opacity: 0,
@@ -426,7 +431,7 @@ const InteractiveLandingPage = () => {
                       }}>
                         {features[activeFeature].title}
                       </motion.h3>
-                      <motion.p className="text-sm text-muted-foreground" key={`${activeFeature}-stats`} initial={{
+                      <motion.p className="text-sm text-muted-foreground mt-1" key={`${activeFeature}-stats`} initial={{
                         opacity: 0
                       }} animate={{
                         opacity: 1
@@ -436,18 +441,28 @@ const InteractiveLandingPage = () => {
                         {features[activeFeature].stats}
                       </motion.p>
                     </div>
+                    <motion.p className="text-muted-foreground leading-relaxed" key={`${activeFeature}-desc`} initial={{
+                      opacity: 0,
+                      y: 20
+                    }} animate={{
+                      opacity: 1,
+                      y: 0
+                    }} transition={{
+                      delay: 0.1
+                    }}>
+                      {features[activeFeature].description}
+                    </motion.p>
+                    <motion.div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
+                      <motion.div className={`h-full bg-gradient-to-r ${features[activeFeature].color} rounded-full`} initial={{
+                        width: "0%"
+                      }} animate={{
+                        width: "100%"
+                      }} transition={{
+                        duration: 6,
+                        ease: "linear"
+                      }} key={activeFeature} />
+                    </motion.div>
                   </div>
-                  <motion.p className="text-muted-foreground leading-relaxed" key={`${activeFeature}-desc`} initial={{
-                    opacity: 0,
-                    y: 20
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} transition={{
-                    delay: 0.1
-                  }}>
-                    {features[activeFeature].description}
-                  </motion.p>
                   <motion.div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
                     <motion.div className={`h-full bg-gradient-to-r ${features[activeFeature].color} rounded-full`} initial={{
                       width: "0%"
