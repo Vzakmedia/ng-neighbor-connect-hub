@@ -524,15 +524,10 @@ const InteractiveLandingPage = () => {
                 <TabsTrigger
                   key={feature.id}
                   value={feature.id}
-                  className="flex-1 min-w-[280px] data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=inactive]:bg-muted/30 p-6 rounded-xl h-auto flex flex-col items-start gap-3 text-left transition-all hover:scale-[1.02]"
+                  className="flex-1 min-w-[280px] data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=inactive]:bg-muted/30 p-6 rounded-xl h-auto flex flex-col items-start gap-2 text-left transition-all hover:scale-[1.02]"
                 >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center flex-shrink-0`}>
-                    <feature.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-base mb-1 text-foreground">{feature.title}</h4>
-                    <p className="text-sm text-muted-foreground">{feature.shortDesc}</p>
-                  </div>
+                  <h4 className="font-semibold text-base text-foreground">{feature.title}</h4>
+                  <p className="text-sm text-muted-foreground">{feature.shortDesc}</p>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -559,9 +554,6 @@ const InteractiveLandingPage = () => {
                         
                         {/* Content Section */}
                         <div className="p-8 lg:p-12 flex flex-col justify-center">
-                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6`}>
-                            <feature.icon className="h-8 w-8 text-white" />
-                          </div>
                           <h3 className="text-3xl font-bold mb-4">{feature.title}</h3>
                           <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
                         </div>
