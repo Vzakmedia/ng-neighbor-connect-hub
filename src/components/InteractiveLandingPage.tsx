@@ -351,7 +351,7 @@ const InteractiveLandingPage = () => {
             delay: 0.8,
             duration: 0.6,
             ease: "easeOut"
-          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16 group">
+          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16 group relative z-30">
             <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto 
                          rounded-lg
                          transition-all duration-300 ease-out
