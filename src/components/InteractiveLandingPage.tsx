@@ -364,70 +364,20 @@ const InteractiveLandingPage = () => {
               </motion.div>
               
               {/* Community Connection Visual */}
-              <motion.div 
-                initial={{
-                  opacity: 0,
-                  y: 30
-                }} 
-                animate={{
-                  opacity: 1,
-                  y: 0
-                }} 
-                transition={{
-                  delay: 0.8,
-                  duration: 0.6
-                }} 
-                className="pt-12 relative"
-              >
-                <motion.img 
+              <motion.div initial={{
+                opacity: 0,
+                y: 30
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: 0.8
+              }} className="pt-12">
+                <img 
                   src={communityConnect} 
                   alt="Community Connection Network" 
                   className="w-full max-w-4xl mx-auto"
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ 
-                    scale: 1, 
-                    opacity: 1,
-                  }}
-                  transition={{
-                    delay: 0.9,
-                    duration: 0.8,
-                    ease: "easeOut"
-                  }}
                 />
-                
-                {/* Animated overlay effect to simulate sequential reveal */}
-                <motion.div
-                  className="absolute inset-0 pointer-events-none"
-                  initial={{ clipPath: "inset(0 100% 0 0)" }}
-                  animate={{ clipPath: "inset(0 0% 0 0)" }}
-                  transition={{
-                    delay: 1.0,
-                    duration: 1.5,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <img 
-                    src={communityConnect} 
-                    alt="" 
-                    className="w-full max-w-4xl mx-auto opacity-100"
-                  />
-                </motion.div>
-                
-                {/* Pulse animation on the entire graphic */}
-                <motion.div
-                  className="absolute inset-0 pointer-events-none"
-                  animate={{
-                    opacity: [0, 0.3, 0],
-                  }}
-                  transition={{
-                    delay: 2.5,
-                    duration: 2,
-                    repeat: Infinity,
-                    repeatDelay: 3
-                  }}
-                >
-                  <div className="w-full max-w-4xl mx-auto h-full bg-primary/20 rounded-lg blur-xl" />
-                </motion.div>
               </motion.div>
             </motion.div>
           </div>
