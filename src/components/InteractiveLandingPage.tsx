@@ -376,8 +376,8 @@ const InteractiveLandingPage = () => {
                 rotateY: 5
               }} transition={{
                 duration: 0.3
-              }} className="relative">
-                <img src={landingBg} alt="Community Connection" className="rounded-2xl shadow-2xl" />
+              }} className="relative overflow-visible">
+                <img src={landingBg} alt="Community Connection" className="rounded-2xl" />
                 
                 {/* Floating action indicators */}
                 <motion.div className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-3 shadow-lg" animate={{
