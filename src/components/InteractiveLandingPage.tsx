@@ -10,7 +10,12 @@ import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
 import heroBackground from '@/assets/hero-background.png';
 import communityConnect from '@/assets/community-connect.png';
-import locationServicesImage from '@/assets/landing/location-services.jpg';
+import communityConnectionImg from '@/assets/landing/community-connection.jpg';
+import safetySecurityImg from '@/assets/landing/safety-security.jpg';
+import directMessagingImg from '@/assets/landing/direct-messaging.jpg';
+import localMarketplaceImg from '@/assets/landing/local-marketplace.jpg';
+import communityEventsImg from '@/assets/landing/community-events.jpg';
+import locationServicesImg from '@/assets/landing/location-services.jpg';
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -46,42 +51,48 @@ const InteractiveLandingPage = () => {
     description: "Connect with neighbors, share experiences, and build lasting relationships in your local community.",
     color: "from-primary to-primary/80",
     bgColor: "bg-primary/5",
-    stats: "50K+ neighbors connected"
+    stats: "50K+ neighbors connected",
+    image: communityConnectionImg
   }, {
     icon: Shield,
     title: "Safety & Security",
     description: "Share safety alerts, report incidents, and keep your neighborhood secure with emergency features.",
     color: "from-primary to-secondary",
     bgColor: "bg-primary/5",
-    stats: "99.9% emergency response rate"
+    stats: "99.9% emergency response rate",
+    image: safetySecurityImg
   }, {
     icon: MessageSquare,
     title: "Direct Messaging",
     description: "Secure, private messaging with neighbors including voice calls and video chat capabilities.",
     color: "from-secondary to-primary",
     bgColor: "bg-primary/5",
-    stats: "1M+ messages exchanged"
+    stats: "1M+ messages exchanged",
+    image: directMessagingImg
   }, {
     icon: ShoppingBag,
     title: "Local Marketplace",
     description: "Buy and sell items within your community. Find local goods and services easily.",
     color: "from-primary/90 to-primary/70",
     bgColor: "bg-primary/5",
-    stats: "₦500M+ in local trades"
+    stats: "₦500M+ in local trades",
+    image: localMarketplaceImg
   }, {
     icon: Calendar,
     title: "Community Events",
     description: "Discover, create, and attend local events. Stay connected with what's happening around you.",
     color: "from-primary/80 to-secondary/90",
     bgColor: "bg-primary/5",
-    stats: "10K+ events hosted"
+    stats: "10K+ events hosted",
+    image: communityEventsImg
   }, {
     icon: MapPin,
     title: "Location Services",
     description: "Find local services, businesses, and resources specific to your neighborhood.",
     color: "from-secondary/90 to-primary/90",
     bgColor: "bg-primary/5",
-    stats: "5K+ local businesses"
+    stats: "5K+ local businesses",
+    image: locationServicesImg
   }];
   const liveStats = [{
     number: "50,247",
@@ -413,7 +424,7 @@ const InteractiveLandingPage = () => {
                     transition={{ duration: 0.5 }}
                   >
                     <img 
-                      src={locationServicesImage} 
+                      src={features[activeFeature].image} 
                       alt={features[activeFeature].title}
                       className="w-full h-full object-cover"
                     />
@@ -463,16 +474,6 @@ const InteractiveLandingPage = () => {
                       }} key={activeFeature} />
                     </motion.div>
                   </div>
-                  <motion.div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
-                    <motion.div className={`h-full bg-gradient-to-r ${features[activeFeature].color} rounded-full`} initial={{
-                      width: "0%"
-                    }} animate={{
-                      width: "100%"
-                    }} transition={{
-                      duration: 6,
-                      ease: "linear"
-                    }} key={activeFeature} />
-                  </motion.div>
                 </CardContent>
               </Card>
             </motion.div>
