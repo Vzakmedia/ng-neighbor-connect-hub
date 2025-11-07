@@ -224,16 +224,16 @@ const InteractiveLandingPage = () => {
           backgroundImage: `url(${heroBackground})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          opacity: 0.35
+          opacity: 0.55
         }} />
         
-        {/* Gradient overlays for better text readability */}
+        {/* Gradient overlays for depth and vibrancy */}
         <motion.div style={{
           y: y1
-        }} className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-primary/10 to-blue-500/20" />
+        }} className="absolute inset-0 bg-gradient-to-br from-purple-600/30 via-primary/15 to-blue-600/25" />
         
-        {/* Additional overlay for left text area */}
-        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-background via-background/80 to-transparent" />
+        {/* Subtle overlay for text area readability */}
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-background/70 via-background/40 to-transparent" />
         
         <div className="w-full relative min-h-screen">
           <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
