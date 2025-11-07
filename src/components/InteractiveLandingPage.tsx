@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
@@ -76,7 +77,7 @@ const CountUpAnimation = ({ value, className }: { value: string; className?: str
 
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
+  const [activeFeature, setActiveFeature] = useState("community-connection");
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0
@@ -97,59 +98,53 @@ const InteractiveLandingPage = () => {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveFeature(prev => (prev + 1) % features.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, []);
   const features = [{
+    id: "community-connection",
     icon: Users,
     title: "Community Connection",
-    description: "Connect with neighbors, share experiences, and build lasting relationships in your local community.",
+    description: "Connect with neighbors, share experiences, and build lasting relationships in your local community through our intuitive platform.",
+    shortDesc: "Connect with verified neighbors in your area",
     color: "from-primary to-primary/80",
-    bgColor: "bg-primary/5",
-    stats: "50K+ neighbors connected",
     image: communityConnectionImg
   }, {
+    id: "safety-security",
     icon: Shield,
     title: "Safety & Security",
-    description: "Share safety alerts, report incidents, and keep your neighborhood secure with emergency features.",
-    color: "from-primary to-secondary",
-    bgColor: "bg-primary/5",
-    stats: "99.9% emergency response rate",
+    description: "Share safety alerts, report incidents, and keep your neighborhood secure with our advanced emergency response features.",
+    shortDesc: "Emergency alerts and verified user profiles",
+    color: "from-green-500 to-emerald-500",
     image: safetySecurityImg
   }, {
+    id: "direct-messaging",
     icon: MessageSquare,
     title: "Direct Messaging",
-    description: "Secure, private messaging with neighbors including voice calls and video chat capabilities.",
-    color: "from-secondary to-primary",
-    bgColor: "bg-primary/5",
-    stats: "1M+ messages exchanged",
+    description: "Secure, private messaging with neighbors including voice calls and video chat capabilities for seamless communication.",
+    shortDesc: "Secure messaging with your neighbors",
+    color: "from-purple-500 to-pink-500",
     image: directMessagingImg
   }, {
+    id: "local-marketplace",
     icon: ShoppingBag,
     title: "Local Marketplace",
-    description: "Buy and sell items within your community. Find local goods and services easily.",
-    color: "from-primary/90 to-primary/70",
-    bgColor: "bg-primary/5",
-    stats: "₦500M+ in local trades",
+    description: "Buy and sell items within your community. Find local goods and services easily with verified transactions.",
+    shortDesc: "Buy and sell within your neighborhood",
+    color: "from-orange-500 to-red-500",
     image: localMarketplaceImg
   }, {
+    id: "community-events",
     icon: Calendar,
     title: "Community Events",
-    description: "Discover, create, and attend local events. Stay connected with what's happening around you.",
-    color: "from-primary/80 to-secondary/90",
-    bgColor: "bg-primary/5",
-    stats: "10K+ events hosted",
+    description: "Discover, create, and attend local events. Stay connected with what's happening around you every day.",
+    shortDesc: "Discover local events and activities",
+    color: "from-yellow-500 to-orange-500",
     image: communityEventsImg
   }, {
+    id: "location-services",
     icon: MapPin,
     title: "Location Services",
-    description: "Find local services, businesses, and resources specific to your neighborhood.",
-    color: "from-secondary/90 to-primary/90",
-    bgColor: "bg-primary/5",
-    stats: "5K+ local businesses",
+    description: "Find local services, businesses, and resources specific to your neighborhood with our hyper-local features.",
+    shortDesc: "Hyper-local neighborhood features",
+    color: "from-indigo-500 to-purple-500",
     image: locationServicesImg
   }];
   const analyticsStats = [
@@ -494,134 +489,89 @@ const InteractiveLandingPage = () => {
         </div>
       </section>
 
-      {/* Interactive Features Section */}
-      <section id="features" className="py-24 bg-muted/30 relative">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
-          <motion.div className="text-center space-y-4 mb-16" initial={{
-            opacity: 0,
-            y: 50
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }}>
-            <Badge className="w-fit mx-auto">
-              <Zap className="w-3 h-3 mr-1" />
-              Features
-            </Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold">Everything you need for community living</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Discover powerful features designed to bring neighbors together and build stronger communities.
-            </p>
+      {/* Features Section with Tabs */}
+      <section id="features" className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-16"
+          >
+            <div className="flex-1">
+              <div className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                FEATURES
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+                Everything you need for community living
+              </h2>
+            </div>
+            <div className="flex-1 lg:max-w-md">
+              <p className="text-muted-foreground text-lg">
+                Powerful features designed to enhance your neighborhood experience and bring your community closer together.
+              </p>
+            </div>
           </motion.div>
-          
-          {/* Interactive Feature Showcase */}
-          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-            <motion.div initial={{
-              opacity: 0,
-              x: -50
-            }} whileInView={{
-              opacity: 1,
-              x: 0
-            }} viewport={{
-              once: true
-            }}>
-              <Card className={`overflow-hidden ${features[activeFeature].bgColor} border-0 shadow-xl`}>
-                <CardContent className="space-y-6 p-0">
-                  {/* Image at top */}
-                  <motion.div 
-                    className="w-full h-48 overflow-hidden"
-                    key={`${activeFeature}-image`}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <img 
-                      src={features[activeFeature].image} 
-                      alt={features[activeFeature].title}
-                      className="w-full h-full object-cover"
-                    />
-                  </motion.div>
-                  
-                  {/* Content below image */}
-                  <div className="px-8 pb-8 space-y-4">
-                    <div>
-                      <motion.h3 className="text-2xl font-bold" key={activeFeature} initial={{
-                        opacity: 0,
-                        y: 20
-                      }} animate={{
-                        opacity: 1,
-                        y: 0
-                      }}>
-                        {features[activeFeature].title}
-                      </motion.h3>
-                      <motion.p className="text-sm text-muted-foreground mt-1" key={`${activeFeature}-stats`} initial={{
-                        opacity: 0
-                      }} animate={{
-                        opacity: 1
-                      }} transition={{
-                        delay: 0.2
-                      }}>
-                        {features[activeFeature].stats}
-                      </motion.p>
-                    </div>
-                    <motion.p className="text-muted-foreground leading-relaxed" key={`${activeFeature}-desc`} initial={{
-                      opacity: 0,
-                      y: 20
-                    }} animate={{
-                      opacity: 1,
-                      y: 0
-                    }} transition={{
-                      delay: 0.1
-                    }}>
-                      {features[activeFeature].description}
-                    </motion.p>
-                    <motion.div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
-                      <motion.div className={`h-full bg-gradient-to-r ${features[activeFeature].color} rounded-full`} initial={{
-                        width: "0%"
-                      }} animate={{
-                        width: "100%"
-                      }} transition={{
-                        duration: 6,
-                        ease: "linear"
-                      }} key={activeFeature} />
-                    </motion.div>
+
+          {/* Tabs */}
+          <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full">
+            <TabsList className="w-full h-auto bg-transparent p-0 mb-12 flex-wrap lg:flex-nowrap gap-3">
+              {features.map((feature) => (
+                <TabsTrigger
+                  key={feature.id}
+                  value={feature.id}
+                  className="flex-1 min-w-[280px] data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=inactive]:bg-muted/30 p-6 rounded-xl h-auto flex flex-col items-start gap-3 text-left transition-all hover:scale-[1.02]"
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${feature.color} flex items-center justify-center flex-shrink-0`}>
+                    <feature.icon className="h-6 w-6 text-white" />
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            <motion.div className="grid grid-cols-2 gap-4" initial={{
-              opacity: 0,
-              x: 50
-            }} whileInView={{
-              opacity: 1,
-              x: 0
-            }} viewport={{
-              once: true
-            }}>
-              {features.map((feature, index) => {
-                const IconComponent = feature.icon;
-                return <motion.div key={index} className={`cursor-pointer transition-all duration-300 ${index === activeFeature ? 'scale-105' : 'hover:scale-102'}`} onClick={() => setActiveFeature(index)} whileHover={{
-                  y: -5
-                }} whileTap={{
-                  scale: 0.95
-                }}>
-                    <Card className={`p-6 text-center space-y-3 ${index === activeFeature ? feature.bgColor + ' border-primary/50' : 'hover:shadow-lg'}`}>
-                      <motion.div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mx-auto`} animate={{
-                      scale: index === activeFeature ? [1, 1.1, 1] : 1
-                    }} transition={{
-                      duration: 0.5
-                    }}>
-                        <IconComponent className="w-6 h-6 text-white" />
-                      </motion.div>
-                      <h4 className="font-semibold text-sm">{feature.title}</h4>
-                    </Card>
-                  </motion.div>;
-              })}
-            </motion.div>
-          </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-base mb-1 text-foreground">{feature.title}</h4>
+                    <p className="text-sm text-muted-foreground">{feature.shortDesc}</p>
+                  </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {features.map((feature) => (
+              <TabsContent key={feature.id} value={feature.id} className="mt-0">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="border-2 overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="grid lg:grid-cols-2 gap-0">
+                        {/* Image Section */}
+                        <div className="relative aspect-square lg:aspect-auto bg-gradient-to-br from-muted/50 to-muted">
+                          <img 
+                            src={feature.image} 
+                            alt={feature.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+                        </div>
+                        
+                        {/* Content Section */}
+                        <div className="p-8 lg:p-12 flex flex-col justify-center">
+                          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6`}>
+                            <feature.icon className="h-8 w-8 text-white" />
+                          </div>
+                          <h3 className="text-3xl font-bold mb-4">{feature.title}</h3>
+                          <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
       </section>
 
