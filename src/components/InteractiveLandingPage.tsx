@@ -221,7 +221,7 @@ const InteractiveLandingPage = () => {
           backgroundRepeat: 'no-repeat'
         }} />
         
-        <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center">
+        <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex flex-col items-center justify-center">
           <div className="w-full max-w-4xl px-1 sm:px-2 md:px-3 py-1 sm:py-2 md:py-3 mx-[100px] my-[100px]">
             <motion.div initial={{
               opacity: 0,
@@ -303,22 +303,21 @@ const InteractiveLandingPage = () => {
                   </Button>
                 </motion.div>
               </motion.div>
-              
-              
-              {/* Community Connection Visual */}
-              <motion.div initial={{
-                opacity: 0,
-                y: 30
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} transition={{
-                delay: 0.8
-              }} className="pt-6 sm:pt-8 px-2">
-                <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto h-auto" />
-              </motion.div>
             </motion.div>
           </div>
+          
+          {/* Community Connection Visual - Outside constrained div */}
+          <motion.div initial={{
+            opacity: 0,
+            y: 30
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: 0.8
+          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12">
+            <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto" />
+          </motion.div>
         </div>
       </section>
 
