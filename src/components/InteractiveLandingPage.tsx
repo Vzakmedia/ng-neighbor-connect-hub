@@ -178,18 +178,11 @@ const InteractiveLandingPage = () => {
             {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => {
               const href = item === 'About' ? '/about' : `#${item.toLowerCase()}`;
               const LinkComponent = item === 'About' ? Link : 'a';
-              
-              return (
-                <motion.div key={item}>
-                  <LinkComponent 
-                    href={item === 'About' ? undefined : href}
-                    to={item === 'About' ? href : undefined}
-                    className="text-sm font-medium hover:text-primary transition-colors"
-                  >
+              return <motion.div key={item}>
+                  <LinkComponent href={item === 'About' ? undefined : href} to={item === 'About' ? href : undefined} className="text-sm font-medium hover:text-primary transition-colors">
                     {item}
                   </LinkComponent>
-                </motion.div>
-              );
+                </motion.div>;
             })}
           </nav>
           
@@ -229,7 +222,7 @@ const InteractiveLandingPage = () => {
         }} />
         
         <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center">
-          <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+          <div className="w-full max-w-4xl px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 mx-[100px] my-[100px]">
             <motion.div initial={{
               opacity: 0,
               y: 30
@@ -322,11 +315,7 @@ const InteractiveLandingPage = () => {
               }} transition={{
                 delay: 0.8
               }} className="pt-6 sm:pt-8 px-2">
-                <img 
-                  src={communityConnect} 
-                  alt="Community Connection Network" 
-                  className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto h-auto"
-                />
+                <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto h-auto" />
               </motion.div>
             </motion.div>
           </div>
