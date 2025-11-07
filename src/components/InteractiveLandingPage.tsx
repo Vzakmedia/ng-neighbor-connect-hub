@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
@@ -79,6 +79,8 @@ const CountUpAnimation = ({ value, className }: { value: string; className?: str
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState("community-connection");
+  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0
@@ -88,17 +90,7 @@ const InteractiveLandingPage = () => {
   } = useScroll();
   const y1 = useTransform(scrollY, [0, 300], [0, -50]);
   const y2 = useTransform(scrollY, [0, 300], [0, 50]);
-  useEffect(() => {
-    setIsVisible(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({
-        x: e.clientX,
-        y: e.clientY
-      });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+
   const features = [{
     id: "community-connection",
     icon: Users,
@@ -148,6 +140,56 @@ const InteractiveLandingPage = () => {
     color: "from-indigo-500 to-purple-500",
     image: locationServicesImg
   }];
+
+  useEffect(() => {
+    setIsVisible(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: e.clientX,
+        y: e.clientY
+      });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Auto-scroll carousel functionality
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const autoScroll = setInterval(() => {
+      if (!isCarouselHovered) {
+        const currentIndex = carouselApi.selectedScrollSnap();
+        const slideCount = carouselApi.scrollSnapList().length;
+        
+        if (currentIndex === slideCount - 1) {
+          carouselApi.scrollTo(0);
+          setActiveFeature(features[0].id);
+        } else {
+          carouselApi.scrollNext();
+          setActiveFeature(features[currentIndex + 1].id);
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(autoScroll);
+  }, [carouselApi, isCarouselHovered, features]);
+
+  // Sync active feature with carousel position
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      const currentIndex = carouselApi.selectedScrollSnap();
+      setActiveFeature(features[currentIndex].id);
+    };
+
+    carouselApi.on("select", onSelect);
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi, features]);
+
   const analyticsStats = [
     {
       number: "50K+",
@@ -530,6 +572,7 @@ const InteractiveLandingPage = () => {
           {/* Feature Tabs Carousel */}
           <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full mb-12">
             <Carousel
+              setApi={setCarouselApi}
               opts={{
                 align: "start",
                 dragFree: true,
@@ -537,7 +580,11 @@ const InteractiveLandingPage = () => {
               }}
               className="w-full"
             >
-              <div className="relative px-12">
+              <div 
+                className="relative px-12"
+                onMouseEnter={() => setIsCarouselHovered(true)}
+                onMouseLeave={() => setIsCarouselHovered(false)}
+              >
                 <TabsList className="w-full h-auto bg-transparent p-0">
                   <CarouselContent className="-ml-4">
                     {features.map((feature) => (
