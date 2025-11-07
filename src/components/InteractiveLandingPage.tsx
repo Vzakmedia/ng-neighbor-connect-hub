@@ -229,7 +229,7 @@ const InteractiveLandingPage = () => {
         }} />
         
         <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center">
-          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-12 md:py-16">
+          <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
             <motion.div initial={{
               opacity: 0,
               y: 30
