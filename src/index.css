@@ -51,6 +51,7 @@ All colors MUST be HSL.
     /* Status colors */
     --online-green: 142 71% 45%;
     --offline-grey: 220 13% 60%;
+    --community-green: 134 61% 41%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(162 85% 30%), hsl(158 80% 35%));
@@ -142,6 +143,8 @@ All colors MUST be HSL.
     --border: 140 15% 15%;
     --input: 140 15% 15%;
     --ring: 158 80% 35%;
+    
+    --community-green: 134 61% 41%;
     
     --sidebar-background: 140 20% 5%;
     --sidebar-foreground: 0 0% 98%;
