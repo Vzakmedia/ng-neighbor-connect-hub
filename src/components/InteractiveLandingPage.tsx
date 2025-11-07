@@ -494,72 +494,76 @@ const InteractiveLandingPage = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
         
         <div className="container mx-auto px-4 relative z-10">
-          {/* Header */}
+          {/* FEATURES Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-16"
+            className="flex items-center gap-3 mb-8"
           >
-            <div className="flex-1">
-              <div className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                FEATURES
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">FEATURES</div>
+          </motion.div>
+
+          {/* Heading and Description Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="grid lg:grid-cols-2 gap-8 mb-12"
+          >
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
                 Everything you need for community living
               </h2>
             </div>
-            <div className="flex-1 lg:max-w-md">
+            <div className="flex items-center">
               <p className="text-muted-foreground text-lg">
                 Powerful features designed to enhance your neighborhood experience and bring your community closer together.
               </p>
             </div>
           </motion.div>
 
-          {/* Tabs */}
-          <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full">
-            <TabsList className="w-full h-auto bg-transparent p-0 mb-12 flex-wrap lg:flex-nowrap gap-3">
-              {features.map((feature) => (
-                <TabsTrigger
-                  key={feature.id}
-                  value={feature.id}
-                  className="flex-1 min-w-[280px] data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=inactive]:bg-muted/30 p-6 rounded-xl h-auto flex flex-col items-start gap-2 text-left transition-all hover:scale-[1.02]"
-                >
-                  <h4 className="font-semibold text-base text-foreground">{feature.title}</h4>
-                  <p className="text-sm text-muted-foreground">{feature.shortDesc}</p>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+          {/* Feature Tabs Carousel */}
+          <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full mb-12">
+            <div className="relative">
+              <TabsList className="w-full h-auto bg-transparent p-0 flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+                {features.map((feature) => (
+                  <TabsTrigger
+                    key={feature.id}
+                    value={feature.id}
+                    className="min-w-[300px] flex-shrink-0 data-[state=active]:bg-primary/10 data-[state=active]:border-primary/30 data-[state=inactive]:bg-background data-[state=inactive]:border-border p-6 rounded-lg border-2 h-auto flex flex-col items-start gap-3 text-left transition-all snap-start"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <feature.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-base mb-2 text-foreground">{feature.title}</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.shortDesc}</p>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
+            {/* Content Area - Image Only */}
             {features.map((feature) => (
               <TabsContent key={feature.id} value={feature.id} className="mt-0">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
+                  className="w-full"
                 >
-                  <Card className="border-2 overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="grid lg:grid-cols-2 gap-0">
-                        {/* Image Section */}
-                        <div className="relative aspect-square lg:aspect-auto bg-gradient-to-br from-muted/50 to-muted">
-                          <img 
-                            src={feature.image} 
-                            alt={feature.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
-                        </div>
-                        
-                        {/* Content Section */}
-                        <div className="p-8 lg:p-12 flex flex-col justify-center">
-                          <h3 className="text-3xl font-bold mb-4">{feature.title}</h3>
-                          <p className="text-muted-foreground text-lg leading-relaxed">{feature.description}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
+                    <img 
+                      src={feature.image} 
+                      alt={feature.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </motion.div>
               </TabsContent>
             ))}
