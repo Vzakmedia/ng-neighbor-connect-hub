@@ -241,7 +241,7 @@ const InteractiveLandingPage = () => {
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
                 
-                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-wide leading-[1.2] sm:leading-[1.3] px-2" initial={{
+                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-tight px-2" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
