@@ -222,7 +222,7 @@ const InteractiveLandingPage = () => {
         }} />
         
         <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex flex-col items-center justify-center">
-          <div className="w-full max-w-4xl px-1 sm:px-2 md:px-3 py-1 sm:py-2 md:py-3 mx-[100px] my-[100px]">
+          <div className="w-full max-w-4xl px-1 sm:px-2 md:px-3 py-1 sm:py-2 md:py-3 mx-[100px] my-[100px] mb-12 sm:mb-16 md:mb-20 lg:mb-24">
             <motion.div initial={{
               opacity: 0,
               y: 30
@@ -315,7 +315,7 @@ const InteractiveLandingPage = () => {
             y: 0
           }} transition={{
             delay: 0.8
-          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12">
+          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16">
             <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto" />
           </motion.div>
         </div>
