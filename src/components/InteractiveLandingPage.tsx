@@ -234,7 +234,7 @@ const InteractiveLandingPage = () => {
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
                 
-                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-tight px-2" initial={{
+                <motion.h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-tight px-2" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -255,7 +255,7 @@ const InteractiveLandingPage = () => {
                   {" "}like never before
                 </motion.h1>
                 
-                <motion.p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-2xl mx-auto leading-relaxed px-4" initial={{
+                <motion.p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-3xl mx-auto leading-relaxed px-4" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
