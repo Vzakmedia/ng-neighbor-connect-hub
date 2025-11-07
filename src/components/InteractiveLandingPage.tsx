@@ -7,6 +7,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
+import landingBg from '@/assets/landing-bg.png';
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -376,13 +377,7 @@ const InteractiveLandingPage = () => {
               }} transition={{
                 duration: 0.3
               }} className="relative">
-                <img src={communityHero} alt="Community Connection" className="rounded-2xl shadow-2xl" />
-                <motion.div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-2xl" animate={{
-                  opacity: [0.2, 0.4, 0.2]
-                }} transition={{
-                  duration: 3,
-                  repeat: Infinity
-                }} />
+                <img src={landingBg} alt="Community Connection" className="rounded-2xl shadow-2xl" />
                 
                 {/* Floating action indicators */}
                 <motion.div className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-3 shadow-lg" animate={{
