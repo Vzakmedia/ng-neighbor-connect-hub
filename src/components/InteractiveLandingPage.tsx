@@ -230,7 +230,7 @@ const InteractiveLandingPage = () => {
             scale: [1, 1.05, 1]
           }}
           transition={{
-            duration: 6,
+            duration: 10,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -245,10 +245,10 @@ const InteractiveLandingPage = () => {
             scale: [1, 1.08, 1]
           }}
           transition={{
-            duration: 7,
+            duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 2
+            delay: 3
           }}
         />
         
@@ -261,10 +261,10 @@ const InteractiveLandingPage = () => {
             scale: [1, 1.08, 1]
           }}
           transition={{
-            duration: 7,
+            duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 4
+            delay: 6
           }}
         />
         
@@ -277,10 +277,10 @@ const InteractiveLandingPage = () => {
             scale: [1, 1.05, 1]
           }}
           transition={{
-            duration: 6,
+            duration: 10,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 6
+            delay: 9
           }}
         />
         
