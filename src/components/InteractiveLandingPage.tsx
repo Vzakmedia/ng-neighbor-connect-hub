@@ -234,25 +234,22 @@ const InteractiveLandingPage = () => {
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
                 
-                <motion.h1 initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.3
-                }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2 xl:text-7xl">Connect with your  neighbors 
-like never before{" "}
-                  <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" animate={{
-                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                  }} transition={{
-                    duration: 3,
-                    repeat: Infinity
-                  }}>
-                    neighbors
-                  </motion.span>
-                  {" "}like never before
+                <motion.h1 
+                  initial={{
+                    opacity: 0,
+                    y: 20
+                  }} 
+                  animate={{
+                    opacity: 1,
+                    y: 0
+                  }} 
+                  transition={{
+                    delay: 0.3
+                  }} 
+                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-tight px-2"
+                >
+                  Connect with your neighbors<br />
+                  like never before
                 </motion.h1>
                 
                 <motion.p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-3xl mx-auto leading-relaxed px-4" initial={{
