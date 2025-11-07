@@ -240,20 +240,6 @@ const InteractiveLandingPage = () => {
               duration: 0.8
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
-                <motion.div initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.2
-                }} className="flex justify-center">
-                  <Badge className="w-fit text-xs sm:text-sm px-3 py-1">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Building Stronger Communities
-                  </Badge>
-                </motion.div>
                 
                 <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-tight px-2" initial={{
                   opacity: 0,
