@@ -307,16 +307,42 @@ const InteractiveLandingPage = () => {
           </div>
           
           {/* Community Connection Visual - Outside constrained div */}
-          <motion.div initial={{
-            opacity: 0,
-            y: 30
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            delay: 0.8
-          }} className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16">
-            <img src={communityConnect} alt="Community Connection Network" className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto" />
+          <motion.div 
+            initial={{
+              opacity: 0,
+              y: 30,
+              scale: 0.95
+            }} 
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1
+            }}
+            whileInView={{
+              opacity: 1,
+              y: 0,
+              scale: 1
+            }}
+            whileHover={{
+              scale: 1.02,
+              transition: { duration: 0.3, ease: "easeOut" }
+            }}
+            viewport={{ once: false, margin: "-100px" }}
+            transition={{
+              delay: 0.8,
+              duration: 0.6,
+              ease: "easeOut"
+            }}
+            className="w-full px-4 sm:px-6 md:px-8 lg:px-12 mt-8 sm:mt-12 md:mt-16 group"
+          >
+            <img 
+              src={communityConnect} 
+              alt="Community Connection Network" 
+              className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto 
+                         rounded-lg shadow-lg
+                         transition-all duration-300 ease-out
+                         group-hover:shadow-2xl group-hover:brightness-105" 
+            />
           </motion.div>
         </div>
       </section>
