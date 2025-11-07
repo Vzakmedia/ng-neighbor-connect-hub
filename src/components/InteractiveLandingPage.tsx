@@ -380,8 +380,7 @@ const InteractiveLandingPage = () => {
               }} transition={{
                 duration: 0.3
               }} className="relative h-screen w-full">
-                {/* Dark gradient overlay on left edge */}
-                <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-background via-background/50 to-transparent z-10 pointer-events-none" />
+                {/* Removed overlay to show pure background */}
                 
                 <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
               </motion.div>
