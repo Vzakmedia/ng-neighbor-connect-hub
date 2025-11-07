@@ -224,10 +224,11 @@ const InteractiveLandingPage = () => {
         {/* Glowing gradient semi-circle at top */}
         <motion.div 
           className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] md:w-[650px] md:h-[325px] lg:w-[800px] lg:h-[400px] rounded-b-full bg-gradient-to-b from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1 }}
+          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
           animate={{ 
             opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.05, 1]
+            scale: [1, 1.05, 1],
+            rotate: [0, 5, 0, -5, 0]
           }}
           transition={{
             duration: 10,
@@ -239,10 +240,11 @@ const InteractiveLandingPage = () => {
         {/* Glowing gradient on left edge */}
         <motion.div 
           className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[600px] md:w-[400px] md:h-[800px] rounded-r-full bg-gradient-to-r from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1 }}
+          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
           animate={{ 
             opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.08, 1]
+            scale: [1, 1.08, 1],
+            rotate: [0, -8, 0, 8, 0]
           }}
           transition={{
             duration: 10,
@@ -255,10 +257,11 @@ const InteractiveLandingPage = () => {
         {/* Glowing gradient on right edge */}
         <motion.div 
           className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-[300px] h-[600px] md:w-[400px] md:h-[800px] rounded-l-full bg-gradient-to-l from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1 }}
+          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
           animate={{ 
             opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.08, 1]
+            scale: [1, 1.08, 1],
+            rotate: [0, 8, 0, -8, 0]
           }}
           transition={{
             duration: 10,
@@ -271,10 +274,11 @@ const InteractiveLandingPage = () => {
         {/* Glowing gradient semi-circle at bottom */}
         <motion.div 
           className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[500px] h-[250px] md:w-[650px] md:h-[325px] lg:w-[800px] lg:h-[400px] rounded-t-full bg-gradient-to-t from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1 }}
+          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
           animate={{ 
             opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.05, 1]
+            scale: [1, 1.05, 1],
+            rotate: [0, -5, 0, 5, 0]
           }}
           transition={{
             duration: 10,
