@@ -466,7 +466,7 @@ const InteractiveLandingPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="bg-gradient-to-r from-purple-600 to-purple-500 border-none shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="bg-gradient-to-r from-primary to-primary/80 border-none shadow-2xl rounded-3xl overflow-hidden">
               <CardContent className="p-8 md:p-12">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
                   {analyticsStats.map((stat, index) => (
