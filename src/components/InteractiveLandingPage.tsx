@@ -242,7 +242,7 @@ const InteractiveLandingPage = () => {
                   y: 0
                 }} transition={{
                   delay: 0.3
-                }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2 xl:text-7xl">Connect with your neighbors 
+                }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2 xl:text-7xl">Connect with your neighbors 
 like never before{" "}
                   <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" animate={{
                     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
