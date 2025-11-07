@@ -4,11 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Sparkles, ChevronDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
-import landingBg from '@/assets/landing-bg.png';
+import { NetworkDiagram } from "./NetworkDiagram";
 const InteractiveLandingPage = () => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [mousePosition, setMousePosition] = useState({
@@ -217,170 +218,125 @@ const InteractiveLandingPage = () => {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen">
-        <motion.div style={{
-          y: y1
-        }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        
-        <div className="w-full relative min-h-screen">
-          <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
-            <motion.div initial={{
-              opacity: 0,
-              x: -50
-            }} animate={{
-              opacity: isVisible ? 1 : 0,
-              x: isVisible ? 0 : -50
-            }} transition={{
-              duration: 0.8
-            }} className="space-y-8 px-6 md:px-12 lg:px-16 xl:px-24 py-12">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-50 via-purple-100/30 to-background">
+        {/* Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
+            animate={{
+              scale: [1.2, 1, 1.2],
+              opacity: [0.5, 0.3, 0.5],
+            }}
+            transition={{ duration: 8, repeat: Infinity, delay: 1 }}
+          />
+        </div>
+
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-16 relative z-10">
+          <div className="flex flex-col items-center justify-center gap-12">
+            {/* Centered Content */}
+            <motion.div
+              initial={{ opacity: 0, y: -30 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : -30 }}
+              transition={{ duration: 0.8 }}
+              className="flex flex-col items-center text-center space-y-8 max-w-4xl"
+            >
+              <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Trusted by 50,000+ Nigerians
+              </Badge>
+
               <div className="space-y-6">
-                <motion.div initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.2
-                }}>
-                  <Badge className="w-fit text-sm">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Building Stronger Communities
-                  </Badge>
-                </motion.div>
-                
-                <motion.h1 className="text-4xl lg:text-6xl font-bold tracking-tight" initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.3
-                }}>
-                  Connect with your{" "}
-                  <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" animate={{
-                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                  }} transition={{
-                    duration: 3,
-                    repeat: Infinity
-                  }}>
-                    neighbors
-                  </motion.span>
-                  {" "}like never before
+                <motion.h1
+                  className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Connect with Your{" "}
+                  <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    Neighborhood
+                  </span>
                 </motion.h1>
-                
-                <motion.p className="text-xl text-muted-foreground max-w-lg" initial={{
-                  opacity: 0,
-                  y: 20
-                }} animate={{
-                  opacity: 1,
-                  y: 0
-                }} transition={{
-                  delay: 0.4
-                }}>
-                  Join thousands of Nigerians building safer, more connected communities. 
-                  Share resources, stay safe, and create lasting bonds with your neighbors.
+
+                <motion.p
+                  className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  The all-in-one platform for neighbors to chat, share, trade, and stay safe together. Built for Nigerian communities.
                 </motion.p>
               </div>
-              
-              <motion.div className="flex flex-col sm:flex-row gap-4" initial={{
-                opacity: 0,
-                y: 20
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} transition={{
-                delay: 0.5
-              }}>
-                <motion.div whileHover={{
-                  scale: 1.05
-                }} whileTap={{
-                  scale: 0.95
-                }}>
-                  <Link to="/auth">
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Join Your Community
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </motion.div>
-                
-                <motion.div whileHover={{
-                  scale: 1.05
-                }} whileTap={{
-                  scale: 0.95
-                }}>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto group">
-                    <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Watch Demo
-                  </Button>
-                </motion.div>
+
+              <motion.div
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-white group"
+                  onClick={() => navigate('/auth')}
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-primary/20 hover:bg-primary/5"
+                  onClick={() => {
+                    const featuresSection = document.getElementById('features');
+                    featuresSection?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Learn More
+                  <ChevronDown className="ml-2 w-4 h-4" />
+                </Button>
               </motion.div>
-              
-              {/* Live Stats */}
-              <motion.div className="flex flex-wrap gap-6 pt-8" initial={{
-                opacity: 0
-              }} animate={{
-                opacity: 1
-              }} transition={{
-                delay: 0.6
-              }}>
-                {liveStats.map((stat, index) => {
-                  const IconComponent = stat.icon;
-                  return <motion.div key={index} className="text-center group cursor-pointer" whileHover={{
-                    scale: 1.05
-                  }} initial={{
-                    opacity: 0,
-                    y: 20
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} transition={{
-                    delay: 0.7 + index * 0.1
-                  }}>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <IconComponent className="w-4 h-4 text-primary" />
-                        <motion.div className="text-2xl font-bold text-primary" animate={{
-                        scale: [1, 1.05, 1]
-                      }} transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: index * 0.5
-                      }}>
-                          {stat.number}
-                        </motion.div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{stat.label}</div>
-                    </motion.div>;
-                })}
+
+              {/* Trust Indicators */}
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background" />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">50k+ active users</span>
+                </div>
+                <Separator orientation="vertical" className="h-8 hidden sm:block" />
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">4.9/5 rating</span>
+                </div>
               </motion.div>
             </motion.div>
-            
-            <motion.div className="relative h-screen w-full" initial={{
-              opacity: 0,
-              x: 50
-            }} animate={{
-              opacity: isVisible ? 1 : 0,
-              x: isVisible ? 0 : 50
-            }} transition={{
-              duration: 0.8,
-              delay: 0.2
-            }} style={{
-              y: y2
-            }}>
-              <motion.div whileHover={{
-                scale: 1.02,
-                rotateY: 5
-              }} transition={{
-                duration: 0.3
-              }} className="relative h-screen w-full">
-                {/* Dark gradient overlay on left edge */}
-                <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-background via-background/50 to-transparent z-10 pointer-events-none" />
-                
-                <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
-              </motion.div>
+
+            {/* Network Diagram */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.9 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="w-full"
+            >
+              <NetworkDiagram />
             </motion.div>
           </div>
         </div>
