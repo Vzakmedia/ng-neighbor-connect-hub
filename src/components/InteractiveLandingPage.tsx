@@ -223,7 +223,8 @@ const InteractiveLandingPage = () => {
         <div className="absolute inset-0" style={{
           backgroundImage: `url(${heroBackground})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }} />
         
         <div className="w-full relative min-h-screen">
