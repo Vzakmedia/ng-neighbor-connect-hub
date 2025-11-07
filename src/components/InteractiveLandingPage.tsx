@@ -248,7 +248,7 @@ const InteractiveLandingPage = () => {
                   }} 
                   className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-tight px-2"
                 >
-                  Connect with your neighbors<br />
+                  Connect with your <span className="text-green-500">neighbors</span><br />
                   like never before
                 </motion.h1>
                 
