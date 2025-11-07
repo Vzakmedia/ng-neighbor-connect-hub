@@ -219,16 +219,21 @@ const InteractiveLandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen">
+        {/* Background image layer */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${heroBackground})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.35
+        }} />
+        
+        {/* Gradient overlays for better text readability */}
         <motion.div style={{
           y: y1
-        }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url(${heroBackground})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.15
-          }} />
-        </motion.div>
+        }} className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-primary/10 to-blue-500/20" />
+        
+        {/* Additional overlay for left text area */}
+        <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-background via-background/80 to-transparent" />
         
         <div className="w-full relative min-h-screen">
           <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
