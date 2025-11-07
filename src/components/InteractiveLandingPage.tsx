@@ -169,31 +169,31 @@ const InteractiveLandingPage = () => {
             scale: 0.95
           }}>
             <Link to="/" className="flex items-center space-x-2">
-              <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-8 w-8" />
-              <span className="font-bold text-xl">NeighborLink</span>
+              <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-10 w-10 md:h-12 md:w-12" />
+              <span className="font-bold text-2xl md:text-3xl">NeighborLink</span>
             </Link>
           </motion.div>
           
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-8">
             {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => {
               const href = item === 'About' ? '/about' : `#${item.toLowerCase()}`;
               const LinkComponent = item === 'About' ? Link : 'a';
               return <motion.div key={item}>
-                  <LinkComponent href={item === 'About' ? undefined : href} to={item === 'About' ? href : undefined} className="text-sm font-medium hover:text-primary transition-colors">
+                  <LinkComponent href={item === 'About' ? undefined : href} to={item === 'About' ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
                     {item}
                   </LinkComponent>
                 </motion.div>;
             })}
           </nav>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <motion.div whileHover={{
               scale: 1.05
             }} whileTap={{
               scale: 0.95
             }}>
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Login</Button>
+                <Button variant="ghost" size="default">Login</Button>
               </Link>
             </motion.div>
             <motion.div whileHover={{
@@ -202,7 +202,7 @@ const InteractiveLandingPage = () => {
               scale: 0.95
             }}>
               <Link to="/auth">
-                <Button size="sm" className="bg-gradient-to-r from-primary to-primary/80">
+                <Button size="default" className="bg-gradient-to-r from-primary to-primary/80">
                   Get Started
                 </Button>
               </Link>
