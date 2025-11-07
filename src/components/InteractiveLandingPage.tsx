@@ -227,17 +227,17 @@ const InteractiveLandingPage = () => {
           backgroundRepeat: 'no-repeat'
         }} />
         
-        <div className="w-full relative min-h-screen">
-          <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
+        <div className="w-full relative min-h-screen flex items-center justify-center">
+          <div className="w-full max-w-4xl mx-auto px-6 md:px-12 py-12">
             <motion.div initial={{
               opacity: 0,
-              x: -50
+              y: 30
             }} animate={{
               opacity: isVisible ? 1 : 0,
-              x: isVisible ? 0 : -50
+              y: isVisible ? 0 : 30
             }} transition={{
               duration: 0.8
-            }} className="space-y-8 px-6 md:px-12 lg:px-16 xl:px-24 py-12">
+            }} className="space-y-8 text-center">
               <div className="space-y-6">
                 <motion.div initial={{
                   opacity: 0,
@@ -247,7 +247,7 @@ const InteractiveLandingPage = () => {
                   y: 0
                 }} transition={{
                   delay: 0.2
-                }}>
+                }} className="flex justify-center">
                   <Badge className="w-fit text-sm">
                     <Sparkles className="w-3 h-3 mr-1" />
                     Building Stronger Communities
@@ -275,7 +275,7 @@ const InteractiveLandingPage = () => {
                   {" "}like never before
                 </motion.h1>
                 
-                <motion.p className="text-xl text-muted-foreground max-w-lg" initial={{
+                <motion.p className="text-xl text-muted-foreground max-w-2xl mx-auto" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -289,7 +289,7 @@ const InteractiveLandingPage = () => {
                 </motion.p>
               </div>
               
-              <motion.div className="flex flex-col sm:flex-row gap-4" initial={{
+              <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" initial={{
                 opacity: 0,
                 y: 20
               }} animate={{
@@ -325,7 +325,7 @@ const InteractiveLandingPage = () => {
               </motion.div>
               
               {/* Live Stats */}
-              <motion.div className="flex flex-wrap gap-6 pt-8" initial={{
+              <motion.div className="flex flex-wrap gap-6 pt-8 justify-center" initial={{
                 opacity: 0
               }} animate={{
                 opacity: 1
@@ -360,28 +360,6 @@ const InteractiveLandingPage = () => {
                       <div className="text-sm text-muted-foreground">{stat.label}</div>
                     </motion.div>;
                 })}
-              </motion.div>
-            </motion.div>
-            
-            <motion.div className="relative h-screen w-full" initial={{
-              opacity: 0,
-              x: 50
-            }} animate={{
-              opacity: isVisible ? 1 : 0,
-              x: isVisible ? 0 : 50
-            }} transition={{
-              duration: 0.8,
-              delay: 0.2
-            }} style={{
-              y: y2
-            }}>
-              <motion.div whileHover={{
-                scale: 1.02,
-                rotateY: 5
-              }} transition={{
-                duration: 0.3
-              }} className="relative h-screen w-full">
-                {/* Background image is set via inline styles on parent div */}
               </motion.div>
             </motion.div>
           </div>
