@@ -8,6 +8,7 @@ import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
+import heroBackground from '@/assets/hero-background.png';
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -220,7 +221,14 @@ const InteractiveLandingPage = () => {
       <section className="relative overflow-hidden min-h-screen">
         <motion.div style={{
           y: y1
-        }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+        }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url(${heroBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.15
+          }} />
+        </motion.div>
         
         <div className="w-full relative min-h-screen">
           <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center min-h-screen">
