@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
 import heroBackground from '@/assets/hero-background.png';
+import communityConnect from '@/assets/community-connect.png';
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -360,6 +361,23 @@ const InteractiveLandingPage = () => {
                       <div className="text-sm text-muted-foreground">{stat.label}</div>
                     </motion.div>;
                 })}
+              </motion.div>
+              
+              {/* Community Connection Visual */}
+              <motion.div initial={{
+                opacity: 0,
+                y: 30
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: 0.8
+              }} className="pt-12">
+                <img 
+                  src={communityConnect} 
+                  alt="Community Connection Network" 
+                  className="w-full max-w-4xl mx-auto"
+                />
               </motion.div>
             </motion.div>
           </div>
