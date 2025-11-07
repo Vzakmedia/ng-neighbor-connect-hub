@@ -339,9 +339,9 @@ const InteractiveLandingPage = () => {
               src={communityConnect} 
               alt="Community Connection Network" 
               className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto h-auto 
-                         rounded-lg shadow-lg
+                         rounded-lg
                          transition-all duration-300 ease-out
-                         group-hover:shadow-2xl group-hover:brightness-105" 
+                         group-hover:brightness-105" 
             />
           </motion.div>
         </div>
