@@ -94,6 +94,25 @@ const InteractiveLandingPage = () => {
     stats: "5K+ local businesses",
     image: locationServicesImg
   }];
+  const analyticsStats = [
+    {
+      number: "50K+",
+      label: "Active Neighbors"
+    },
+    {
+      number: "98%",
+      label: "Community Satisfaction"
+    },
+    {
+      number: "1,238",
+      label: "Neighborhoods"
+    },
+    {
+      number: "24/7",
+      label: "Safety Support"
+    }
+  ];
+
   const liveStats = [{
     number: "50,247",
     label: "Active Users",
@@ -378,6 +397,42 @@ const InteractiveLandingPage = () => {
             background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--background) / 0.3) 30%, hsl(var(--background) / 0.7) 60%, hsl(var(--background)) 100%)'
           }}
         />
+      </section>
+
+      {/* Analytics Section */}
+      <section className="py-16 px-4 relative">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Card className="bg-gradient-to-r from-purple-600 to-purple-500 border-none shadow-2xl rounded-3xl overflow-hidden">
+              <CardContent className="p-8 md:p-12">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+                  {analyticsStats.map((stat, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1, duration: 0.5 }}
+                      className="text-center"
+                    >
+                      <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2">
+                        {stat.number}
+                      </div>
+                      <div className="text-sm md:text-base text-white/90 font-medium">
+                        {stat.label}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </section>
 
       {/* Interactive Features Section */}
