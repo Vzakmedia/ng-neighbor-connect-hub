@@ -381,9 +381,7 @@ const InteractiveLandingPage = () => {
               }} transition={{
                 duration: 0.3
               }} className="relative h-screen w-full">
-                {/* Removed overlay to show pure background */}
-                
-                <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
+                {/* Background image is set via inline styles on parent div */}
               </motion.div>
             </motion.div>
           </div>
