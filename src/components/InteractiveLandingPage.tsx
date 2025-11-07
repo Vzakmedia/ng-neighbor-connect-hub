@@ -221,6 +221,9 @@ const InteractiveLandingPage = () => {
           backgroundRepeat: 'no-repeat'
         }} />
         
+        {/* Glowing gradient semi-circle at top */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] md:w-[650px] md:h-[325px] lg:w-[800px] lg:h-[400px] rounded-b-full bg-gradient-to-b from-[hsl(162,85%,30%)] to-transparent opacity-40 blur-3xl pointer-events-none" />
+        
         <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex flex-col items-center justify-center">
           <div className="w-full max-w-6xl lg:max-w-7xl px-4 sm:px-6 md:px-8 py-1 sm:py-2 md:py-3 mx-auto my-[100px] mb-12 sm:mb-16 md:mb-20 lg:mb-24">
             <motion.div initial={{
