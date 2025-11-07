@@ -222,9 +222,8 @@ const InteractiveLandingPage = () => {
           y: y1
         }} className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
         
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 relative">
-          <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="w-full relative">
+          <div className="grid lg:grid-cols-[40%_60%] gap-0 items-center">
             <motion.div initial={{
               opacity: 0,
               x: -50
@@ -233,7 +232,7 @@ const InteractiveLandingPage = () => {
               x: isVisible ? 0 : -50
             }} transition={{
               duration: 0.8
-            }} className="space-y-8">
+            }} className="space-y-8 px-6 md:px-12 lg:px-16 xl:px-24">
               <div className="space-y-6">
                 <motion.div initial={{
                   opacity: 0,
@@ -359,7 +358,7 @@ const InteractiveLandingPage = () => {
               </motion.div>
             </motion.div>
             
-            <motion.div className="relative" initial={{
+            <motion.div className="relative h-screen" initial={{
               opacity: 0,
               x: 50
             }} animate={{
@@ -376,8 +375,8 @@ const InteractiveLandingPage = () => {
                 rotateY: 5
               }} transition={{
                 duration: 0.3
-              }} className="relative overflow-visible">
-                <img src={landingBg} alt="Community Connection" className="rounded-2xl" />
+              }} className="relative h-full">
+                <img src={landingBg} alt="Community Connection" className="w-full h-full object-cover" />
                 
                 {/* Floating action indicators */}
                 <motion.div className="absolute top-4 right-4 bg-white/90 backdrop-blur rounded-full p-3 shadow-lg" animate={{
@@ -400,7 +399,6 @@ const InteractiveLandingPage = () => {
                 </motion.div>
               </motion.div>
             </motion.div>
-          </div>
           </div>
         </div>
       </section>
