@@ -32,15 +32,15 @@ const integrationIcons = [
 ];
 
 export const NetworkDiagram = () => {
-  const radius = 280;
-  const centerX = 400;
-  const centerY = 300;
+  const radius = 200; // Reduced from 280
+  const centerX = 350; // Adjusted for smaller viewport
+  const centerY = 250; // Reduced height
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto h-[600px] flex items-center justify-center">
+    <div className="relative w-full max-w-3xl mx-auto h-[500px] flex items-center justify-center">
       <svg
         className="absolute inset-0 w-full h-full"
-        viewBox="0 0 800 600"
+        viewBox="0 0 700 500"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -70,7 +70,7 @@ export const NetworkDiagram = () => {
         {/* Dashed connection lines from center to integration icons */}
         {integrationIcons.map((_, index) => {
           const angle = (index * 2 * Math.PI) / integrationIcons.length;
-          const iconRadius = 140;
+          const iconRadius = 100; // Reduced from 140
           const x = centerX + iconRadius * Math.cos(angle);
           const y = centerY + iconRadius * Math.sin(angle);
 
@@ -100,7 +100,7 @@ export const NetworkDiagram = () => {
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <motion.div
-          className="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-2xl border-4 border-white"
+          className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-2xl border-4 border-white"
           animate={{
             boxShadow: [
               "0 0 20px rgba(162, 85, 30, 0.3)",
@@ -110,7 +110,7 @@ export const NetworkDiagram = () => {
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <span className="text-5xl font-bold text-white">N.</span>
+          <span className="text-4xl font-bold text-white">N.</span>
         </motion.div>
       </motion.div>
 
@@ -125,8 +125,8 @@ export const NetworkDiagram = () => {
             key={`profile-${index}`}
             className="absolute"
             style={{
-              left: `${(x / 800) * 100}%`,
-              top: `${(y / 600) * 100}%`,
+              left: `${(x / 700) * 100}%`,
+              top: `${(y / 500) * 100}%`,
               transform: "translate(-50%, -50%)",
             }}
             initial={{ scale: 0, opacity: 0 }}
@@ -144,7 +144,7 @@ export const NetworkDiagram = () => {
                 delay: index * 0.2,
               }}
             >
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary/30 shadow-lg bg-white">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-primary/30 shadow-lg bg-white">
                 <img
                   src={profile.image}
                   alt={profile.name}
@@ -159,7 +159,7 @@ export const NetworkDiagram = () => {
       {/* Integration Icons */}
       {integrationIcons.map((item, index) => {
         const angle = (index * 2 * Math.PI) / integrationIcons.length;
-        const iconRadius = 140;
+        const iconRadius = 100; // Reduced from 140
         const x = centerX + iconRadius * Math.cos(angle);
         const y = centerY + iconRadius * Math.sin(angle);
 
@@ -168,8 +168,8 @@ export const NetworkDiagram = () => {
             key={`icon-${index}`}
             className="absolute"
             style={{
-              left: `${(x / 800) * 100}%`,
-              top: `${(y / 600) * 100}%`,
+              left: `${(x / 700) * 100}%`,
+              top: `${(y / 500) * 100}%`,
               transform: "translate(-50%, -50%)",
             }}
             initial={{ scale: 0, opacity: 0 }}
@@ -177,7 +177,7 @@ export const NetworkDiagram = () => {
             transition={{ duration: 0.4, delay: 0.6 + index * 0.05 }}
           >
             <motion.div
-              className="w-12 h-12 rounded-xl bg-white shadow-lg flex items-center justify-center border border-primary/20"
+              className="w-10 h-10 rounded-lg bg-white shadow-md flex items-center justify-center border border-primary/20"
               animate={{
                 y: [0, -8, 0],
               }}
@@ -187,7 +187,7 @@ export const NetworkDiagram = () => {
                 delay: index * 0.15,
               }}
             >
-              <item.Icon className="w-6 h-6 text-primary" />
+              <item.Icon className="w-5 h-5 text-primary" />
             </motion.div>
           </motion.div>
         );
