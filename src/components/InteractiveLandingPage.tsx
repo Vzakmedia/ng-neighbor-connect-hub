@@ -246,9 +246,9 @@ const InteractiveLandingPage = () => {
                   transition={{
                     delay: 0.3
                   }} 
-                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight leading-tight px-2"
+                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2"
                 >
-                  Connect with your <span className="text-green-500">neighbors</span><br />
+                  Connect with your <span className="text-[hsl(var(--community-green))]">neighbors</span><br />
                   like never before
                 </motion.h1>
                 
