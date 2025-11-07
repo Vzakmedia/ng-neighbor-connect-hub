@@ -248,14 +248,8 @@ const InteractiveLandingPage = () => {
                   }} 
                   className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2"
                 >
-                  Connect with your <span className="relative inline-block text-[hsl(var(--community-green))]">
+                  Connect with your <span className="inline-block text-white bg-[hsl(var(--community-green))] px-4 py-2 rounded-lg">
                     neighbors
-                    <motion.span 
-                      className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[hsl(var(--community-green))] to-[hsl(var(--primary))]"
-                      initial={{ width: "0%" }}
-                      animate={{ width: "100%" }}
-                      transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
-                    />
                   </span><br />
                   like never before
                 </motion.h1>
