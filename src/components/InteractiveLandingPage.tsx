@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
 import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
@@ -16,6 +16,64 @@ import directMessagingImg from '@/assets/landing/direct-messaging.jpg';
 import localMarketplaceImg from '@/assets/landing/local-marketplace.jpg';
 import communityEventsImg from '@/assets/landing/community-events.jpg';
 import locationServicesImg from '@/assets/landing/location-services.jpg';
+
+// Counter animation component
+const CountUpAnimation = ({ value, className }: { value: string; className?: string }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const count = useMotionValue(0);
+  const [displayValue, setDisplayValue] = useState("0");
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    // Parse the number from the value string
+    let targetNumber = 0;
+    let suffix = "";
+    let prefix = "";
+
+    if (value.includes("K+")) {
+      targetNumber = parseFloat(value.replace("K+", "")) * 1000;
+      suffix = "K+";
+    } else if (value.includes("%")) {
+      targetNumber = parseFloat(value.replace("%", ""));
+      suffix = "%";
+    } else if (value.includes("/")) {
+      // For "24/7" style values, just display immediately
+      setDisplayValue(value);
+      return;
+    } else if (value.includes(",")) {
+      targetNumber = parseFloat(value.replace(/,/g, ""));
+    } else {
+      targetNumber = parseFloat(value);
+    }
+
+    const controls = animate(count, targetNumber, {
+      duration: 2,
+      ease: "easeOut",
+      onUpdate: (latest) => {
+        if (suffix === "K+") {
+          setDisplayValue(Math.floor(latest / 1000) + "K+");
+        } else if (suffix === "%") {
+          setDisplayValue(Math.floor(latest) + "%");
+        } else if (value.includes(",")) {
+          setDisplayValue(Math.floor(latest).toLocaleString());
+        } else {
+          setDisplayValue(Math.floor(latest).toString());
+        }
+      }
+    });
+
+    return () => controls.stop();
+  }, [isInView, value, count]);
+
+  return (
+    <div ref={ref} className={className}>
+      {displayValue}
+    </div>
+  );
+};
+
 const InteractiveLandingPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
@@ -420,9 +478,10 @@ const InteractiveLandingPage = () => {
                       transition={{ delay: index * 0.1, duration: 0.5 }}
                       className="text-center"
                     >
-                      <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2">
-                        {stat.number}
-                      </div>
+                      <CountUpAnimation 
+                        value={stat.number}
+                        className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2"
+                      />
                       <div className="text-sm md:text-base text-white/90 font-medium">
                         {stat.label}
                       </div>
