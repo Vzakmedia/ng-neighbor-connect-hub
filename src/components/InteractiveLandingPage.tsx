@@ -311,43 +311,6 @@ const InteractiveLandingPage = () => {
                 </motion.div>
               </motion.div>
               
-              {/* Live Stats */}
-              <motion.div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 pt-6 sm:pt-8 justify-center px-2" initial={{
-                opacity: 0
-              }} animate={{
-                opacity: 1
-              }} transition={{
-                delay: 0.6
-              }}>
-                {liveStats.map((stat, index) => {
-                  const IconComponent = stat.icon;
-                  return <motion.div key={index} className="text-center group cursor-pointer" whileHover={{
-                    scale: 1.05
-                  }} initial={{
-                    opacity: 0,
-                    y: 20
-                  }} animate={{
-                    opacity: 1,
-                    y: 0
-                  }} transition={{
-                    delay: 0.7 + index * 0.1
-                  }}>
-                      <div className="flex items-center justify-center space-x-1.5 sm:space-x-2 mb-1">
-                        <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                        <motion.div className="text-xl sm:text-2xl font-bold text-primary" animate={{
-                        scale: [1, 1.05, 1]
-                      }} transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: index * 0.5
-                      }}>
-                          {stat.number}
-                        </motion.div>
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
-                    </motion.div>;
-                })}
-              </motion.div>
               
               {/* Community Connection Visual */}
               <motion.div initial={{
