@@ -162,7 +162,7 @@ const InteractiveLandingPage = () => {
       }} animate={{
         y: 0
       }} className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="w-full flex h-16 items-center justify-between px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="w-full flex h-20 md:h-24 items-center justify-between px-6 md:px-12 lg:px-16 xl:px-24">
           <motion.div whileHover={{
             scale: 1.05
           }} whileTap={{
