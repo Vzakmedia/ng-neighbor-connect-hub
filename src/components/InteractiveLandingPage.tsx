@@ -221,70 +221,23 @@ const InteractiveLandingPage = () => {
           backgroundRepeat: 'no-repeat'
         }} />
         
-        {/* Glowing gradient semi-circle at top */}
+        {/* Mouse-following pulsating gradient circle */}
         <motion.div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[250px] md:w-[650px] md:h-[325px] lg:w-[800px] lg:h-[400px] rounded-b-full bg-gradient-to-b from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
+          className="fixed w-[500px] h-[500px] md:w-[600px] md:h-[600px] lg:w-[700px] lg:h-[700px] rounded-full blur-[120px] pointer-events-none z-10"
+          style={{
+            background: 'radial-gradient(circle, hsl(162, 85%, 30%) 0%, hsl(162, 75%, 25%) 30%, transparent 70%)'
+          }}
           animate={{ 
-            opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.05, 1],
-            rotate: [0, 5, 0, -5, 0]
+            x: mousePosition.x - 250,
+            y: mousePosition.y - 250,
+            opacity: [0.15, 0.25, 0.15],
+            scale: [1, 1.1, 1]
           }}
           transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        
-        {/* Glowing gradient on left edge */}
-        <motion.div 
-          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[600px] md:w-[400px] md:h-[800px] rounded-r-full bg-gradient-to-r from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
-          animate={{ 
-            opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.08, 1],
-            rotate: [0, -8, 0, 8, 0]
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 3
-          }}
-        />
-        
-        {/* Glowing gradient on right edge */}
-        <motion.div 
-          className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-[300px] h-[600px] md:w-[400px] md:h-[800px] rounded-l-full bg-gradient-to-l from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
-          animate={{ 
-            opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.08, 1],
-            rotate: [0, 8, 0, -8, 0]
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 6
-          }}
-        />
-        
-        {/* Glowing gradient semi-circle at bottom */}
-        <motion.div 
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[500px] h-[250px] md:w-[650px] md:h-[325px] lg:w-[800px] lg:h-[400px] rounded-t-full bg-gradient-to-t from-[hsl(162,85%,30%)] to-transparent blur-[120px] pointer-events-none"
-          initial={{ opacity: 0.2, scale: 1, rotate: 0 }}
-          animate={{ 
-            opacity: [0.2, 0.3, 0.2],
-            scale: [1, 1.05, 1],
-            rotate: [0, -5, 0, 5, 0]
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 9
+            x: { type: "spring", stiffness: 50, damping: 30 },
+            y: { type: "spring", stiffness: 50, damping: 30 },
+            opacity: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+            scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
         />
         
