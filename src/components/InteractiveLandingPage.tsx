@@ -219,7 +219,7 @@ const InteractiveLandingPage = () => {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen">
+      <section className="relative overflow-hidden min-h-[calc(100vh-4rem)] md:min-h-screen">
         {/* Background image layer */}
         <div className="absolute inset-0" style={{
           backgroundImage: `url(${heroBackground})`,
@@ -228,8 +228,8 @@ const InteractiveLandingPage = () => {
           backgroundRepeat: 'no-repeat'
         }} />
         
-        <div className="w-full relative min-h-screen flex items-center justify-center">
-          <div className="w-full max-w-4xl mx-auto px-6 md:px-12 py-12">
+        <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center">
+          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-12 md:py-16">
             <motion.div initial={{
               opacity: 0,
               y: 30
@@ -238,8 +238,8 @@ const InteractiveLandingPage = () => {
               y: isVisible ? 0 : 30
             }} transition={{
               duration: 0.8
-            }} className="space-y-8 text-center">
-              <div className="space-y-6">
+            }} className="space-y-6 sm:space-y-8 text-center">
+              <div className="space-y-4 sm:space-y-6">
                 <motion.div initial={{
                   opacity: 0,
                   y: 20
@@ -249,13 +249,13 @@ const InteractiveLandingPage = () => {
                 }} transition={{
                   delay: 0.2
                 }} className="flex justify-center">
-                  <Badge className="w-fit text-sm">
+                  <Badge className="w-fit text-xs sm:text-sm px-3 py-1">
                     <Sparkles className="w-3 h-3 mr-1" />
                     Building Stronger Communities
                   </Badge>
                 </motion.div>
                 
-                <motion.h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-tight" initial={{
+                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-tight px-2" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -276,7 +276,7 @@ const InteractiveLandingPage = () => {
                   {" "}like never before
                 </motion.h1>
                 
-                <motion.p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl lg:max-w-2xl mx-auto leading-relaxed" initial={{
+                <motion.p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-2xl mx-auto leading-relaxed px-4" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -290,7 +290,7 @@ const InteractiveLandingPage = () => {
                 </motion.p>
               </div>
               
-              <motion.div className="flex flex-col sm:flex-row gap-4 justify-center" initial={{
+              <motion.div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4" initial={{
                 opacity: 0,
                 y: 20
               }} animate={{
@@ -305,7 +305,7 @@ const InteractiveLandingPage = () => {
                   scale: 0.95
                 }}>
                   <Link to="/auth">
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm sm:text-base">
                       <UserPlus className="mr-2 h-4 w-4" />
                       Join Your Community
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -318,7 +318,7 @@ const InteractiveLandingPage = () => {
                 }} whileTap={{
                   scale: 0.95
                 }}>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto group">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto group text-sm sm:text-base">
                     <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                     Watch Demo
                   </Button>
@@ -326,7 +326,7 @@ const InteractiveLandingPage = () => {
               </motion.div>
               
               {/* Live Stats */}
-              <motion.div className="flex flex-wrap gap-6 pt-8 justify-center" initial={{
+              <motion.div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 pt-6 sm:pt-8 justify-center px-2" initial={{
                 opacity: 0
               }} animate={{
                 opacity: 1
@@ -346,9 +346,9 @@ const InteractiveLandingPage = () => {
                   }} transition={{
                     delay: 0.7 + index * 0.1
                   }}>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <IconComponent className="w-4 h-4 text-primary" />
-                        <motion.div className="text-2xl font-bold text-primary" animate={{
+                      <div className="flex items-center justify-center space-x-1.5 sm:space-x-2 mb-1">
+                        <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                        <motion.div className="text-xl sm:text-2xl font-bold text-primary" animate={{
                         scale: [1, 1.05, 1]
                       }} transition={{
                         duration: 2,
@@ -358,7 +358,7 @@ const InteractiveLandingPage = () => {
                           {stat.number}
                         </motion.div>
                       </div>
-                      <div className="text-sm text-muted-foreground">{stat.label}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">{stat.label}</div>
                     </motion.div>;
                 })}
               </motion.div>
@@ -372,11 +372,11 @@ const InteractiveLandingPage = () => {
                 y: 0
               }} transition={{
                 delay: 0.8
-              }} className="pt-8">
+              }} className="pt-6 sm:pt-8 px-2">
                 <img 
                   src={communityConnect} 
                   alt="Community Connection Network" 
-                  className="w-full max-w-2xl lg:max-w-3xl mx-auto h-auto"
+                  className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto h-auto"
                 />
               </motion.div>
             </motion.div>
