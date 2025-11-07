@@ -241,7 +241,7 @@ const InteractiveLandingPage = () => {
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
                 
-                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold tracking-tight leading-tight px-2" initial={{
+                <motion.h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-tight px-2" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -251,7 +251,7 @@ const InteractiveLandingPage = () => {
                   delay: 0.3
                 }}>
                   Connect with your{" "}
-                  <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" animate={{
+                  <motion.span className="text-primary bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent font-black" animate={{
                     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
                   }} transition={{
                     duration: 3,
@@ -262,7 +262,7 @@ const InteractiveLandingPage = () => {
                   {" "}like never before
                 </motion.h1>
                 
-                <motion.p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-2xl mx-auto leading-relaxed px-4" initial={{
+                <motion.p className="text-base sm:text-lg md:text-xl lg:text-2xl text-foreground/90 font-semibold max-w-md sm:max-w-lg lg:max-w-2xl mx-auto leading-relaxed px-4" initial={{
                   opacity: 0,
                   y: 20
                 }} animate={{
@@ -325,7 +325,7 @@ const InteractiveLandingPage = () => {
                 <img 
                   src={communityConnect} 
                   alt="Community Connection Network" 
-                  className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto h-auto"
+                  className="w-full max-w-md sm:max-w-lg md:max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto h-auto drop-shadow-2xl"
                 />
               </motion.div>
             </motion.div>
