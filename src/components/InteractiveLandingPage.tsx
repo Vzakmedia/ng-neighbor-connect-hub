@@ -6,7 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles } from 'lucide-react';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
@@ -18,6 +18,9 @@ import directMessagingImg from '@/assets/landing/direct-messaging.jpg';
 import localMarketplaceImg from '@/assets/landing/local-marketplace.jpg';
 import communityEventsImg from '@/assets/landing/community-events.jpg';
 import locationServicesImg from '@/assets/landing/location-services.jpg';
+import sarahJohnsonImg from "@/assets/testimonials/sarah-johnson.jpg";
+import ahmedIbrahimImg from "@/assets/testimonials/ahmed-ibrahim.jpg";
+import graceOkaforImg from "@/assets/testimonials/grace-okafor.jpg";
 
 // Counter animation component
 const CountUpAnimation = ({ value, className }: { value: string; className?: string }) => {
@@ -232,26 +235,34 @@ const InteractiveLandingPage = () => {
   }];
   const testimonials = [{
     name: "Sarah Johnson",
-    location: "Victoria Island, Lagos",
-    content: "NeighborLink has transformed how I connect with my community. The safety features give me peace of mind.",
-    rating: 5,
-    avatar: "SJ",
-    verified: true
+    role: "CEO — Notion.so",
+    content: "I love how simple, yet very efficient Connect CRM is. The ability to customize properties has been a huge benefit to both my sales team and our reporting.",
+    image: sarahJohnsonImg
   }, {
     name: "Ahmed Ibrahim",
-    location: "Wuse II, Abuja",
+    role: "Product Manager — Google",
     content: "Found amazing local services and made great friends through this platform. Highly recommended!",
-    rating: 5,
-    avatar: "AI",
-    verified: true
+    image: ahmedIbrahimImg
   }, {
     name: "Grace Okafor",
-    location: "GRA, Port Harcourt",
+    role: "Designer — Apple",
     content: "The marketplace feature is fantastic. I've bought and sold items easily within my neighborhood.",
-    rating: 5,
-    avatar: "GO",
-    verified: true
+    image: graceOkaforImg
   }];
+
+  const [currentTestimonialIndex, setCurrentTestimonialIndex] = React.useState(0);
+
+  const handlePrevTestimonial = () => {
+    setCurrentTestimonialIndex((prev) => 
+      prev === 0 ? testimonials.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextTestimonial = () => {
+    setCurrentTestimonialIndex((prev) => 
+      prev === testimonials.length - 1 ? 0 : prev + 1
+    );
+  };
   const FloatingElements = () => <div className="fixed inset-0 pointer-events-none overflow-hidden">
       {Array.from({
       length: 20
@@ -645,76 +656,83 @@ const InteractiveLandingPage = () => {
           }} viewport={{
             once: true
           }}>
-            <Badge className="w-fit mx-auto">
-              <Heart className="w-3 h-3 mr-1" />
-              Testimonials
-            </Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold">Loved by communities nationwide</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              See what our users say about building stronger communities with NeighborLink.
-            </p>
+            <div className="space-y-4">
+              <Badge className="w-fit text-primary bg-primary/10">
+                TESTIMONIAL
+              </Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold leading-tight">
+                Don't just take it from us,<br />but from our users
+              </h2>
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-16 mb-8">
+              <div>
+                <h3 className="text-5xl font-bold">2k+</h3>
+                <p className="text-muted-foreground mt-1">Happy Customers</p>
+              </div>
+              <div>
+                <h3 className="text-5xl font-bold">4.8</h3>
+                <p className="text-muted-foreground mt-1">From 1,533 rating</p>
+              </div>
+            </div>
           </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => <motion.div key={index} initial={{
-              opacity: 0,
-              y: 50
-            }} whileInView={{
-              opacity: 1,
-              y: 0
-            }} viewport={{
-              once: true
-            }} transition={{
-              delay: index * 0.2
-            }} whileHover={{
-              y: -10,
-              scale: 1.02
-            }}>
-                <Card className="p-6 space-y-4 h-full hover:shadow-xl transition-shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex space-x-1">
-                      {[...Array(testimonial.rating)].map((_, i) => <motion.div key={i} initial={{
-                      opacity: 0,
-                      scale: 0
-                    }} animate={{
-                      opacity: 1,
-                      scale: 1
-                    }} transition={{
-                      delay: 0.5 + i * 0.1
-                    }}>
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        </motion.div>)}
-                    </div>
-                    {testimonial.verified && <Badge variant="secondary" className="text-xs">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Verified
-                      </Badge>}
+          <motion.div
+            key={currentTestimonialIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-2xl"
+          >
+            <Card className="p-8 space-y-6 bg-muted/30">
+              <p className="text-xl leading-relaxed">
+                "{testimonials[currentTestimonialIndex].content}"
+              </p>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={testimonials[currentTestimonialIndex].image} 
+                    alt={testimonials[currentTestimonialIndex].name}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-lg">
+                      {testimonials[currentTestimonialIndex].name}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {testimonials[currentTestimonialIndex].role}
+                    </p>
                   </div>
-                  
-                  <motion.p className="text-muted-foreground italic" initial={{
-                  opacity: 0
-                }} whileInView={{
-                  opacity: 1
-                }} transition={{
-                  delay: 0.3
-                }}>
-                    "{testimonial.content}"
-                  </motion.p>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{testimonial.name}</h4>
-                      <p className="text-sm text-muted-foreground">{testimonial.location}</p>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>)}
-          </div>
+                </div>
+
+                {/* Navigation Arrows */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handlePrevTestimonial}
+                    className="rounded-full"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleNextTestimonial}
+                    className="rounded-full"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </section>
+
 
       {/* Device Compatibility with Animations */}
       <section className="py-24 bg-muted/30">
