@@ -644,29 +644,23 @@ const InteractiveLandingPage = () => {
         </div>
       </section>
 
-      {/* Animated Testimonials */}
+      {/* Testimonials Section - Exact Mockup Format */}
       <section id="testimonials" className="py-24 overflow-hidden">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
-          <motion.div className="text-center space-y-4 mb-16" initial={{
-            opacity: 0,
-            y: 50
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }}>
+          {/* Top Row - Heading Left, Stats Right */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8">
+            {/* Left Side - Heading */}
             <div className="space-y-4">
               <Badge className="w-fit text-primary bg-primary/10">
                 TESTIMONIAL
               </Badge>
-              <h2 className="text-4xl lg:text-5xl font-bold leading-tight">
-                Don't just take it from us,<br />but from our users
+              <h2 className="text-4xl lg:text-5xl font-bold leading-tight max-w-lg">
+                Don't just take it from us, but from our users
               </h2>
             </div>
 
-            {/* Stats */}
-            <div className="flex gap-16 mb-8">
+            {/* Right Side - Stats */}
+            <div className="flex gap-16">
               <div>
                 <h3 className="text-5xl font-bold">2k+</h3>
                 <p className="text-muted-foreground mt-1">Happy Customers</p>
@@ -676,56 +670,58 @@ const InteractiveLandingPage = () => {
                 <p className="text-muted-foreground mt-1">From 1,533 rating</p>
               </div>
             </div>
-          </motion.div>
-          
+          </div>
+
+          {/* Full-Width Testimonial Card */}
           <motion.div
             key={currentTestimonialIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="max-w-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
           >
-            <Card className="p-8 space-y-6 bg-muted/30">
-              <p className="text-xl leading-relaxed">
-                "{testimonials[currentTestimonialIndex].content}"
-              </p>
+            <Card className="p-12 bg-gradient-to-br from-green-500/10 via-green-400/5 to-transparent border-green-500/20">
+              <div className="max-w-4xl mx-auto space-y-8">
+                <p className="text-2xl lg:text-3xl leading-relaxed font-normal">
+                  "{testimonials[currentTestimonialIndex].content}"
+                </p>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={testimonials[currentTestimonialIndex].image} 
-                    alt={testimonials[currentTestimonialIndex].name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-lg">
-                      {testimonials[currentTestimonialIndex].name}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {testimonials[currentTestimonialIndex].role}
-                    </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={testimonials[currentTestimonialIndex].image} 
+                      alt={testimonials[currentTestimonialIndex].name}
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-green-500/20"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-lg">
+                        {testimonials[currentTestimonialIndex].name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {testimonials[currentTestimonialIndex].role}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Navigation Arrows */}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handlePrevTestimonial}
-                    className="rounded-full"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleNextTestimonial}
-                    className="rounded-full"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  {/* Navigation Arrows */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handlePrevTestimonial}
+                      className="rounded-full hover:bg-green-500/10 border-green-500/20"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleNextTestimonial}
+                      className="rounded-full hover:bg-green-500/10 border-green-500/20"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
