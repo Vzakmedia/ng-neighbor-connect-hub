@@ -6,7 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft } from 'lucide-react';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
@@ -1012,76 +1012,164 @@ const InteractiveLandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-12">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
-          <div className="grid md:grid-cols-4 gap-8">
-            <motion.div className="space-y-4" initial={{
-              opacity: 0
-            }} whileInView={{
-              opacity: 1
-            }} viewport={{
-              once: true
-            }}>
+      <footer className="bg-gradient-to-b from-[#1a1333] to-[#0f0a1f] text-white">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-16">
+          {/* CTA Card at top of footer */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-muted/50 dark:bg-card rounded-2xl shadow-xl p-8 md:p-12 mb-16 text-center"
+          >
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+              Building stronger communities together
+            </h2>
+            <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8 text-muted-foreground">
+              Join thousands of Nigerians already creating safer, more connected neighborhoods with NeighborLink.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/auth">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Get Started Free
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+              
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link to="/about">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                    Our Mission
+                  </Button>
+                </Link>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Footer Navigation */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+            {/* Brand Column */}
+            <motion.div 
+              className="col-span-2 md:col-span-3 lg:col-span-1 space-y-4"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
               <div className="flex items-center space-x-2">
-                <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-6 w-6" />
-                <span className="font-bold">NeighborLink</span>
+                <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-8 w-8" />
+                <span className="font-bold text-xl">NeighborLink</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Building stronger, safer communities across Nigeria.
+              <p className="text-sm text-white/70">
+                Lagos, Nigeria
               </p>
             </motion.div>
             
+            {/* Features Column */}
             <div>
-              <h4 className="font-semibold mb-4">Platform</h4>
+              <h4 className="font-semibold mb-4 text-white">Features</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/auth" className="block text-muted-foreground hover:text-primary transition-colors">Web App</Link>
-                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">Mobile App</a>
-                <Link to="/api-docs" className="block text-muted-foreground hover:text-primary transition-colors">API Documentation</Link>
+                <Link to="/safety" className="block text-white/70 hover:text-primary transition-colors">Safety Alerts</Link>
+                <Link to="/community" className="block text-white/70 hover:text-primary transition-colors">Community Chat</Link>
+                <Link to="/events" className="block text-white/70 hover:text-primary transition-colors">Local Events</Link>
+                <Link to="/safety" className="block text-white/70 hover:text-primary transition-colors">Neighborhood Watch</Link>
               </div>
             </div>
             
+            {/* Platform Column */}
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
+              <h4 className="font-semibold mb-4 text-white">Platform</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/about" className="block text-muted-foreground hover:text-primary transition-colors">About Us</Link>
-                <a href="#contact" className="block text-muted-foreground hover:text-primary transition-colors">Contact</a>
-                <Link to="/careers" className="block text-muted-foreground hover:text-primary transition-colors">Careers</Link>
-                <Link to="/press" className="block text-muted-foreground hover:text-primary transition-colors">Press</Link>
+                <Link to="/auth" className="block text-white/70 hover:text-primary transition-colors">Web App</Link>
+                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Mobile App</a>
+                <Link to="/api-docs" className="block text-white/70 hover:text-primary transition-colors">API Documentation</Link>
               </div>
             </div>
             
+            {/* Resources Column */}
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
+              <h4 className="font-semibold mb-4 text-white">Resources</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/privacy" className="block text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
-                <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
-                <Link to="/community-guidelines" className="block text-muted-foreground hover:text-primary transition-colors">Community Guidelines & Security</Link>
+                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Blog</a>
+                <a href="#contact" className="block text-white/70 hover:text-primary transition-colors">Help Center</a>
+                <Link to="/community-guidelines" className="block text-white/70 hover:text-primary transition-colors">Community Guidelines</Link>
+                <Link to="/security" className="block text-white/70 hover:text-primary transition-colors">Security</Link>
+              </div>
+            </div>
+            
+            {/* Community Column */}
+            <div>
+              <h4 className="font-semibold mb-4 text-white">Community</h4>
+              <div className="space-y-2 text-sm">
+                <Link to="/community" className="block text-white/70 hover:text-primary transition-colors">Online Community</Link>
+                <Link to="/events" className="block text-white/70 hover:text-primary transition-colors">Events</Link>
+                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Webinars</a>
+              </div>
+            </div>
+            
+            {/* About Us Column */}
+            <div>
+              <h4 className="font-semibold mb-4 text-white">About Us</h4>
+              <div className="space-y-2 text-sm">
+                <Link to="/about" className="block text-white/70 hover:text-primary transition-colors">About Us</Link>
+                <Link to="/careers" className="block text-white/70 hover:text-primary transition-colors">Careers</Link>
+                <Link to="/press" className="block text-white/70 hover:text-primary transition-colors">Press</Link>
+                <a href="#contact" className="block text-white/70 hover:text-primary transition-colors">Contact</a>
               </div>
             </div>
           </div>
           
-          <Separator className="my-8" />
-          
-          <motion.div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0" initial={{
-            opacity: 0
-          }} whileInView={{
-            opacity: 1
-          }} viewport={{
-            once: true
-          }}>
-            <p className="text-sm text-muted-foreground">© 2025 NeighborLink. All rights reserved.</p>
-            <div className="flex space-x-4">
-              {[...Array(3)].map((_, i) => <motion.a key={i} href="#" className="text-muted-foreground hover:text-primary transition-colors" whileHover={{
-                scale: 1.2,
-                rotate: 360
-              }} transition={{
-                duration: 0.3
-              }}>
-                  <span className="sr-only">Social Media</span>
-                  <div className="w-5 h-5 bg-current rounded" />
-                </motion.a>)}
-            </div>
-          </motion.div>
+          {/* Bottom Bar */}
+          <div className="border-t border-white/10 pt-8">
+            <motion.div 
+              className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
+              <p className="text-sm text-white/70">© 2025 NeighborLink. All rights reserved.</p>
+              <div className="flex space-x-4">
+                <motion.a 
+                  href="#" 
+                  className="text-white/70 hover:text-primary transition-colors"
+                  whileHover={{ scale: 1.2 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Facebook className="w-5 h-5" />
+                  <span className="sr-only">Facebook</span>
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="text-white/70 hover:text-primary transition-colors"
+                  whileHover={{ scale: 1.2 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Instagram className="w-5 h-5" />
+                  <span className="sr-only">Instagram</span>
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="text-white/70 hover:text-primary transition-colors"
+                  whileHover={{ scale: 1.2 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Twitter className="w-5 h-5" />
+                  <span className="sr-only">Twitter</span>
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="text-white/70 hover:text-primary transition-colors"
+                  whileHover={{ scale: 1.2 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Linkedin className="w-5 h-5" />
+                  <span className="sr-only">LinkedIn</span>
+                </motion.a>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </footer>
       </div>
