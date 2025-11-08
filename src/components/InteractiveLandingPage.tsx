@@ -580,11 +580,11 @@ const InteractiveLandingPage = () => {
               }}
               className="w-full"
             >
-              <div 
-                className="relative px-12"
-                onMouseEnter={() => setIsCarouselHovered(true)}
-                onMouseLeave={() => setIsCarouselHovered(false)}
-              >
+            <div 
+              className="relative px-12 mb-16"
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+            >
                 <TabsList className="w-full h-auto bg-transparent p-0">
                   <CarouselContent className="-ml-4">
                     {features.map((feature) => (
