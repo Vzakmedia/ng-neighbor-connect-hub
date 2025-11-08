@@ -647,13 +647,22 @@ const InteractiveLandingPage = () => {
       {/* Testimonials Section - Exact Mockup Format */}
       <section id="testimonials" className="py-24 overflow-hidden">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+          {/* TESTIMONIAL Label with Line */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
+          >
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">TESTIMONIAL</div>
+          </motion.div>
+
           {/* Top Row - Heading Left, Stats Right */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-8">
             {/* Left Side - Heading */}
-            <div className="space-y-4">
-              <Badge className="w-fit text-primary bg-primary/10">
-                TESTIMONIAL
-              </Badge>
+            <div>
               <h2 className="text-4xl lg:text-5xl font-bold leading-tight max-w-lg">
                 Don't just take it from us, but from our users
               </h2>
