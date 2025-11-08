@@ -612,7 +612,7 @@ const InteractiveLandingPage = () => {
 
             {/* Content Area - Image Only */}
             {features.map((feature) => (
-              <TabsContent key={feature.id} value={feature.id} className="mt-0">
+              <TabsContent key={feature.id} value={feature.id} className="mt-12">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
