@@ -1049,7 +1049,7 @@ const InteractiveLandingPage = () => {
                 </motion.div>
                 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-background/80 hover:bg-background">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10 hover:border-white">
                     Download App
                   </Button>
                 </motion.div>
