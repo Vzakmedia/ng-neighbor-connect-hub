@@ -1019,37 +1019,41 @@ const InteractiveLandingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative bg-card rounded-2xl shadow-xl p-8 md:p-12 mb-16 text-center overflow-hidden"
+            className="relative bg-card rounded-2xl shadow-xl p-8 md:p-12 mb-16 overflow-hidden"
           >
             <div className="absolute inset-0 opacity-5" style={{
               backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
               backgroundSize: "50px 50px"
             }} />
             
-            <div className="relative space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
-                Ready to connect with your community?
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of Nigerians already building stronger, safer neighborhoods with NeighborLink.
-              </p>
+            <div className="relative grid md:grid-cols-2 gap-8 items-center">
+              {/* Left side - Heading and Description */}
+              <div className="space-y-3">
+                <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
+                  Building stronger communities together
+                </h2>
+                <p className="text-muted-foreground">
+                  Join thousands of Nigerians already creating safer, more connected neighborhoods.
+                </p>
+              </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              {/* Right side - Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 md:justify-end">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link to="/auth">
                     <Button size="lg" className="w-full sm:w-auto">
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Get Started Free
+                      Get Started
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                 </motion.div>
                 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Download App
-                  </Button>
+                  <Link to="/about">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                      Our Mission
+                    </Button>
+                  </Link>
                 </motion.div>
               </div>
             </div>
