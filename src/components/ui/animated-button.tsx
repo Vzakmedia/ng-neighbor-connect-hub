@@ -12,19 +12,17 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
       <Button 
         ref={ref}
         {...props} 
-        className={`overflow-hidden relative ${className || ''}`}
+        className={`overflow-hidden ${className || ''}`}
       >
-        <motion.div 
-          className="relative flex items-center justify-center"
+        <motion.span 
+          className="inline-flex items-center justify-center gap-2"
           initial={{ y: 0 }}
-          whileHover={{ y: -30 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
+          whileHover={{ y: "-100%" }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
         >
-          {/* First text (visible initially) */}
-          <span className="flex items-center justify-center gap-2">{children}</span>
-          {/* Second text (slides up from below) */}
-          <span className="flex items-center justify-center gap-2 absolute top-full left-0 w-full">{children}</span>
-        </motion.div>
+          <span className="inline-flex items-center justify-center gap-2">{children}</span>
+          <span className="inline-flex items-center justify-center gap-2 absolute top-full left-1/2 -translate-x-1/2 w-full">{children}</span>
+        </motion.span>
       </Button>
     );
   }
