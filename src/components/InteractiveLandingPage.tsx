@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { AnimatedButton } from "@/components/ui/animated-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
@@ -332,7 +331,7 @@ const InteractiveLandingPage = () => {
               scale: 0.95
             }}>
               <Link to="/auth">
-                <AnimatedButton variant="ghost" size="default">Login</AnimatedButton>
+                <Button variant="ghost" size="default">Login</Button>
               </Link>
             </motion.div>
             <motion.div whileHover={{
@@ -341,9 +340,9 @@ const InteractiveLandingPage = () => {
               scale: 0.95
             }}>
               <Link to="/auth">
-                <AnimatedButton size="default" className="bg-gradient-to-r from-primary to-primary/80">
+                <Button size="default" className="bg-gradient-to-r from-primary to-primary/80">
                   Get Started
-                </AnimatedButton>
+                </Button>
               </Link>
             </motion.div>
           </div>
@@ -442,11 +441,11 @@ const InteractiveLandingPage = () => {
                   scale: 0.95
                 }}>
                   <Link to="/auth">
-                    <AnimatedButton size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm sm:text-base">
+                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm sm:text-base">
                       <UserPlus className="mr-2 h-4 w-4" />
                       Join Your Community
                       <ArrowRight className="ml-2 h-4 w-4" />
-                    </AnimatedButton>
+                    </Button>
                   </Link>
                 </motion.div>
                 
@@ -455,10 +454,10 @@ const InteractiveLandingPage = () => {
                 }} whileTap={{
                   scale: 0.95
                 }}>
-                  <AnimatedButton size="lg" variant="outline" className="w-full sm:w-auto group text-sm sm:text-base">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto group text-sm sm:text-base">
                     <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                     Watch Demo
-                  </AnimatedButton>
+                  </Button>
                 </motion.div>
               </motion.div>
             </motion.div>
@@ -1042,17 +1041,17 @@ const InteractiveLandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 md:justify-end">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link to="/auth">
-                    <AnimatedButton size="lg" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto">
                       Get Started
                       <ArrowRight className="ml-2 h-4 w-4" />
-                    </AnimatedButton>
+                    </Button>
                   </Link>
                 </motion.div>
                 
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <AnimatedButton size="lg" variant="outline" className="w-full sm:w-auto bg-background/80 hover:bg-background">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-background/80 hover:bg-background">
                     Download App
-                  </AnimatedButton>
+                  </Button>
                 </motion.div>
               </div>
             </div>
