@@ -15,13 +15,31 @@ export const AnimatedButton = React.forwardRef<HTMLButtonElement, AnimatedButton
         className={`overflow-hidden ${className || ''}`}
       >
         <motion.span 
-          className="inline-flex items-center justify-center gap-2"
-          initial={{ y: 0 }}
-          whileHover={{ y: "-100%" }}
-          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative inline-block"
+          initial="rest"
+          whileHover="hover"
+          animate="rest"
         >
-          <span className="inline-flex items-center justify-center gap-2">{children}</span>
-          <span className="inline-flex items-center justify-center gap-2 absolute top-full left-1/2 -translate-x-1/2 w-full">{children}</span>
+          <motion.span 
+            className="inline-flex items-center justify-center gap-2"
+            variants={{
+              rest: { y: 0 },
+              hover: { y: "-100%" }
+            }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {children}
+          </motion.span>
+          <motion.span 
+            className="inline-flex items-center justify-center gap-2 absolute inset-0 top-full"
+            variants={{
+              rest: { y: 0 },
+              hover: { y: "-100%" }
+            }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {children}
+          </motion.span>
         </motion.span>
       </Button>
     );
