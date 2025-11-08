@@ -1012,40 +1012,46 @@ const InteractiveLandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-b from-[#1a1333] to-[#0f0a1f] text-white">
+      <footer className="bg-primary text-white">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-16">
           {/* CTA Card at top of footer */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-muted/50 dark:bg-card rounded-2xl shadow-xl p-8 md:p-12 mb-16 text-center"
+            className="relative bg-card rounded-2xl shadow-xl p-8 md:p-12 mb-16 text-center overflow-hidden"
           >
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-              Building stronger communities together
-            </h2>
-            <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8 text-muted-foreground">
-              Join thousands of Nigerians already creating safer, more connected neighborhoods with NeighborLink.
-            </p>
+            <div className="absolute inset-0 opacity-5" style={{
+              backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
+              backgroundSize: "50px 50px"
+            }} />
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/auth">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Get Started Free
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </motion.div>
+            <div className="relative space-y-6">
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
+                Ready to connect with your community?
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Join thousands of Nigerians already building stronger, safer neighborhoods with NeighborLink.
+              </p>
               
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/about">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/auth">
+                    <Button size="lg" className="w-full sm:w-auto">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Get Started Free
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </motion.div>
+                
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                    Our Mission
+                    <Phone className="mr-2 h-4 w-4" />
+                    Download App
                   </Button>
-                </Link>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
 
@@ -1071,10 +1077,10 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Features</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/safety" className="block text-white/70 hover:text-primary transition-colors">Safety Alerts</Link>
-                <Link to="/community" className="block text-white/70 hover:text-primary transition-colors">Community Chat</Link>
-                <Link to="/events" className="block text-white/70 hover:text-primary transition-colors">Local Events</Link>
-                <Link to="/safety" className="block text-white/70 hover:text-primary transition-colors">Neighborhood Watch</Link>
+                <Link to="/safety" className="block text-white/70 hover:text-white transition-colors">Safety Alerts</Link>
+                <Link to="/community" className="block text-white/70 hover:text-white transition-colors">Community Chat</Link>
+                <Link to="/events" className="block text-white/70 hover:text-white transition-colors">Local Events</Link>
+                <Link to="/safety" className="block text-white/70 hover:text-white transition-colors">Neighborhood Watch</Link>
               </div>
             </div>
             
@@ -1082,9 +1088,9 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Platform</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/auth" className="block text-white/70 hover:text-primary transition-colors">Web App</Link>
-                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Mobile App</a>
-                <Link to="/api-docs" className="block text-white/70 hover:text-primary transition-colors">API Documentation</Link>
+                <Link to="/auth" className="block text-white/70 hover:text-white transition-colors">Web App</Link>
+                <a href="#" className="block text-white/70 hover:text-white transition-colors">Mobile App</a>
+                <Link to="/api-docs" className="block text-white/70 hover:text-white transition-colors">API Documentation</Link>
               </div>
             </div>
             
@@ -1092,10 +1098,10 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Resources</h4>
               <div className="space-y-2 text-sm">
-                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Blog</a>
-                <a href="#contact" className="block text-white/70 hover:text-primary transition-colors">Help Center</a>
-                <Link to="/community-guidelines" className="block text-white/70 hover:text-primary transition-colors">Community Guidelines</Link>
-                <Link to="/security" className="block text-white/70 hover:text-primary transition-colors">Security</Link>
+                <a href="#" className="block text-white/70 hover:text-white transition-colors">Blog</a>
+                <a href="#contact" className="block text-white/70 hover:text-white transition-colors">Help Center</a>
+                <Link to="/community-guidelines" className="block text-white/70 hover:text-white transition-colors">Community Guidelines</Link>
+                <Link to="/security" className="block text-white/70 hover:text-white transition-colors">Security</Link>
               </div>
             </div>
             
@@ -1103,9 +1109,9 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Community</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/community" className="block text-white/70 hover:text-primary transition-colors">Online Community</Link>
-                <Link to="/events" className="block text-white/70 hover:text-primary transition-colors">Events</Link>
-                <a href="#" className="block text-white/70 hover:text-primary transition-colors">Webinars</a>
+                <Link to="/community" className="block text-white/70 hover:text-white transition-colors">Online Community</Link>
+                <Link to="/events" className="block text-white/70 hover:text-white transition-colors">Events</Link>
+                <a href="#" className="block text-white/70 hover:text-white transition-colors">Webinars</a>
               </div>
             </div>
             
@@ -1113,16 +1119,16 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">About Us</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/about" className="block text-white/70 hover:text-primary transition-colors">About Us</Link>
-                <Link to="/careers" className="block text-white/70 hover:text-primary transition-colors">Careers</Link>
-                <Link to="/press" className="block text-white/70 hover:text-primary transition-colors">Press</Link>
-                <a href="#contact" className="block text-white/70 hover:text-primary transition-colors">Contact</a>
+                <Link to="/about" className="block text-white/70 hover:text-white transition-colors">About Us</Link>
+                <Link to="/careers" className="block text-white/70 hover:text-white transition-colors">Careers</Link>
+                <Link to="/press" className="block text-white/70 hover:text-white transition-colors">Press</Link>
+                <a href="#contact" className="block text-white/70 hover:text-white transition-colors">Contact</a>
               </div>
             </div>
           </div>
           
           {/* Bottom Bar */}
-          <div className="border-t border-white/10 pt-8">
+          <div className="border-t border-white/20 pt-8">
             <motion.div 
               className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
               initial={{ opacity: 0 }}
@@ -1133,7 +1139,7 @@ const InteractiveLandingPage = () => {
               <div className="flex space-x-4">
                 <motion.a 
                   href="#" 
-                  className="text-white/70 hover:text-primary transition-colors"
+                  className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
@@ -1142,7 +1148,7 @@ const InteractiveLandingPage = () => {
                 </motion.a>
                 <motion.a 
                   href="#" 
-                  className="text-white/70 hover:text-primary transition-colors"
+                  className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
@@ -1151,7 +1157,7 @@ const InteractiveLandingPage = () => {
                 </motion.a>
                 <motion.a 
                   href="#" 
-                  className="text-white/70 hover:text-primary transition-colors"
+                  className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
@@ -1160,7 +1166,7 @@ const InteractiveLandingPage = () => {
                 </motion.a>
                 <motion.a 
                   href="#" 
-                  className="text-white/70 hover:text-primary transition-colors"
+                  className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
