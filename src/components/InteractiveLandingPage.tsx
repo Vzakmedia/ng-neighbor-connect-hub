@@ -507,39 +507,59 @@ const InteractiveLandingPage = () => {
       </section>
 
       {/* Analytics Section */}
-      <section className="py-16 px-4 relative">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 relative">
+        <div className="w-full">
+          {/* ANALYTICS Label with Line */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
           >
-            <Card className="bg-gradient-to-r from-primary to-primary/80 border-none shadow-2xl rounded-3xl overflow-hidden">
-              <CardContent className="p-8 md:p-12">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-                  {analyticsStats.map((stat, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.1, duration: 0.5 }}
-                      className="text-center"
-                    >
-                      <CountUpAnimation 
-                        value={stat.number}
-                        className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2"
-                      />
-                      <div className="text-sm md:text-base text-white/90 font-medium">
-                        {stat.label}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">ANALYTICS</div>
           </motion.div>
+
+          {/* Heading and Content */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                Community impact in numbers
+              </h2>
+            </div>
+            <div className="flex items-center">
+              <p className="text-muted-foreground text-lg">
+                Real-time statistics showcasing the power of community connection across Nigeria.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <Card className="bg-gradient-to-r from-primary to-primary/80 border-none shadow-2xl rounded-3xl overflow-hidden">
+            <CardContent className="p-8 md:p-12">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+                {analyticsStats.map((stat, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    className="text-center"
+                  >
+                    <CountUpAnimation 
+                      value={stat.number}
+                      className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2"
+                    />
+                    <div className="text-sm md:text-base text-white/90 font-medium">
+                      {stat.label}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -739,29 +759,36 @@ const InteractiveLandingPage = () => {
       </section>
 
 
-      {/* Device Compatibility with Animations */}
+      {/* Device Compatibility Section */}
       <section className="py-24 bg-muted/30">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 text-center">
-          <motion.div className="space-y-4 mb-12" initial={{
-            opacity: 0,
-            y: 50
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }}>
-            <Badge className="w-fit mx-auto">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Multi-Platform
-            </Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold">Available everywhere you are</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Access NeighborLink on any device. Seamless experience across web, mobile, and tablet.
-            </p>
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+          {/* MULTI-PLATFORM Label with Line */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
+          >
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">MULTI-PLATFORM</div>
           </motion.div>
+
+          {/* Heading and Description */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                Available everywhere you are
+              </h2>
+            </div>
+            <div className="flex items-center">
+              <p className="text-muted-foreground text-lg">
+                Access NeighborLink on any device. Seamless experience across web, mobile, and tablet.
+              </p>
+            </div>
+          </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8">
             {[{
               icon: Smartphone,
               title: "Mobile App",
@@ -790,7 +817,7 @@ const InteractiveLandingPage = () => {
                 y: -10,
                 scale: 1.05
               }}>
-                  <Card className="p-8 text-center space-y-4 hover:shadow-xl transition-shadow">
+                  <Card className="p-8 space-y-4 hover:shadow-xl transition-shadow h-full">
                     <motion.div animate={{
                     rotateY: [0, 180, 360]
                   }} transition={{
@@ -798,7 +825,7 @@ const InteractiveLandingPage = () => {
                     repeat: Infinity,
                     delay: index * 0.5
                   }}>
-                      <IconComponent className="w-12 h-12 text-primary mx-auto" />
+                      <IconComponent className="w-12 h-12 text-primary" />
                     </motion.div>
                     <h3 className="text-xl font-semibold">{device.title}</h3>
                     <p className="text-muted-foreground">{device.desc}</p>
@@ -906,26 +933,33 @@ const InteractiveLandingPage = () => {
       {/* Contact Section */}
       <section id="contact" className="py-24">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
-          <motion.div className="text-center space-y-4 mb-16" initial={{
-            opacity: 0,
-            y: 50
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} viewport={{
-            once: true
-          }}>
-            <Badge className="w-fit mx-auto">
-              <Globe className="w-3 h-3 mr-1" />
-              Contact Us
-            </Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold">Get in touch</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Have questions? We're here to help you build stronger communities.
-            </p>
+          {/* CONTACT Label with Line */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
+          >
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">CONTACT</div>
           </motion.div>
+
+          {/* Heading and Description */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                Get in touch
+              </h2>
+            </div>
+            <div className="flex items-center">
+              <p className="text-muted-foreground text-lg">
+                Have questions? We're here to help you build stronger communities.
+              </p>
+            </div>
+          </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8">
             {[{
               icon: Mail,
               title: "Email Support",
@@ -957,7 +991,7 @@ const InteractiveLandingPage = () => {
                 y: -5,
                 scale: 1.02
               }}>
-                  <Card className="p-6 text-center space-y-4 hover:shadow-lg transition-shadow">
+                  <Card className="p-8 space-y-4 hover:shadow-xl transition-all h-full">
                     <motion.div animate={{
                     scale: [1, 1.1, 1]
                   }} transition={{
@@ -965,10 +999,10 @@ const InteractiveLandingPage = () => {
                     repeat: Infinity,
                     delay: index * 0.5
                   }}>
-                      <IconComponent className="w-8 h-8 text-primary mx-auto" />
+                      <IconComponent className="w-12 h-12 text-primary" />
                     </motion.div>
-                    <h3 className="font-semibold">{contact.title}</h3>
-                    <p className="text-muted-foreground">{contact.info}</p>
+                    <h3 className="text-xl font-semibold">{contact.title}</h3>
+                    <p className="text-lg font-medium text-primary">{contact.info}</p>
                     <p className="text-sm text-muted-foreground">{contact.detail}</p>
                   </Card>
                 </motion.div>;
