@@ -2597,6 +2597,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
             <Mail className="h-4 w-4 mr-2" />
             Newsletter
           </TabsTrigger>
+          <TabsTrigger value="blog" className="w-full justify-start">
+            <FileText className="h-4 w-4 mr-2" />
+            Blog
+          </TabsTrigger>
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
             Settings
@@ -5963,6 +5967,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
         <TabsContent value="newsletter" className="space-y-6">
           <NewsletterSubscribersPanel />
+        </TabsContent>
+
+        <TabsContent value="blog" className="space-y-6">
+          <BlogManagementPanel />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
