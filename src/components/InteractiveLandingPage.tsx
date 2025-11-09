@@ -6,7 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
@@ -84,6 +84,7 @@ const InteractiveLandingPage = () => {
   const [activeFeature, setActiveFeature] = useState("community-connection");
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0
@@ -324,7 +325,7 @@ const InteractiveLandingPage = () => {
             })}
           </nav>
           
-          <div className="flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-3">
             <motion.div whileHover={{
               scale: 1.05
             }} whileTap={{
@@ -346,7 +347,82 @@ const InteractiveLandingPage = () => {
               </Link>
             </motion.div>
           </div>
+
+          {/* Mobile Menu Button */}
+          <motion.button
+            className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </motion.button>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{
+            opacity: isMobileMenuOpen ? 1 : 0,
+            height: isMobileMenuOpen ? 'auto' : 0
+          }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="md:hidden overflow-hidden border-t bg-background"
+        >
+          <nav className="flex flex-col space-y-1 p-6">
+            {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => {
+              const href = item === 'About' ? '/about' : `#${item.toLowerCase()}`;
+              const LinkComponent = item === 'About' ? Link : 'a';
+              return (
+                <motion.div
+                  key={item}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{
+                    opacity: isMobileMenuOpen ? 1 : 0,
+                    x: isMobileMenuOpen ? 0 : -20
+                  }}
+                  transition={{ delay: index * 0.1, duration: 0.3 }}
+                >
+                  <LinkComponent
+                    href={item === 'About' ? undefined : href}
+                    to={item === 'About' ? href : undefined}
+                    className="block py-3 px-4 text-lg font-medium hover:bg-muted rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item}
+                  </LinkComponent>
+                </motion.div>
+              );
+            })}
+            
+            <Separator className="my-2" />
+            
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{
+                opacity: isMobileMenuOpen ? 1 : 0,
+                x: isMobileMenuOpen ? 0 : -20
+              }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+              className="space-y-3 pt-2"
+            >
+              <Link to="/auth" className="block" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start text-lg" size="lg">
+                  Login
+                </Button>
+              </Link>
+              <Link to="/auth" className="block" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full text-lg" size="lg">
+                  Get Started
+                </Button>
+              </Link>
+            </motion.div>
+          </nav>
+        </motion.div>
       </motion.header>
 
       {/* Hero Section */}
