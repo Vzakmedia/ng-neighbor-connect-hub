@@ -1028,11 +1028,6 @@ const InteractiveLandingPage = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Zap className="w-4 h-4 text-primary" />
-                  <span>&lt; 100ms average response time</span>
-                </div>
               </div>
             </motion.div>
 
