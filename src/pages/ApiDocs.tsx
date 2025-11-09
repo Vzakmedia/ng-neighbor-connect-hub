@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { ArrowLeft, Code, Key, Book, ExternalLink, Search, Copy, Check, Shield, Database, MapPin, CreditCard, Bell, AlertTriangle, Zap, Sparkles, Settings, TestTube } from "lucide-react";
+import { ArrowLeft, Code, Key, Book, ExternalLink, Search, Copy, Check, Shield, Database, MapPin, CreditCard, Bell, AlertTriangle, Zap, Sparkles, Settings, TestTube, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 // Edge Function Type Definition
 interface EdgeFunction {
@@ -513,6 +513,7 @@ const edgeFunctions: EdgeFunction[] = [
 ];
 
 const ApiDocs = () => {
+  const [activeSection, setActiveSection] = useState('endpoints');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [authFilter, setAuthFilter] = useState('all');
@@ -559,6 +560,14 @@ const ApiDocs = () => {
     }
   };
 
+  const sidebarSections = [
+    { id: 'endpoints', label: 'Endpoints', icon: Code, count: edgeFunctions.length },
+    { id: 'authentication', label: 'Authentication', icon: Key },
+    { id: 'examples', label: 'Code Examples', icon: Book },
+    { id: 'errors', label: 'Error Handling', icon: AlertTriangle },
+    { id: 'sdks', label: 'Supabase Client', icon: Settings }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -583,100 +592,89 @@ const ApiDocs = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container px-4 py-12 max-w-7xl mx-auto">
-        <div className="space-y-8">
-          {/* Hero Section */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              NeighborLink API Documentation
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Build on top of NeighborLink's community platform with 26 powerful Supabase Edge Functions
-            </p>
-            <div className="flex gap-4 justify-center items-center text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span>All systems operational</span>
+      {/* Main Content with Sidebar */}
+      <div className="flex w-full">
+        {/* Sidebar Navigation */}
+        <aside className="w-64 border-r bg-muted/30 min-h-[calc(100vh-73px)] sticky top-[73px] hidden lg:block">
+          <nav className="p-4 space-y-2">
+            {sidebarSections.map((section) => {
+              const Icon = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                    activeSection === section.id
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4" />
+                    <span>{section.label}</span>
+                  </div>
+                  {section.count && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {section.count}
+                    </Badge>
+                  )}
+                  <ChevronRight className={cn(
+                    "h-4 w-4 ml-2 transition-transform",
+                    activeSection === section.id && "rotate-90"
+                  )} />
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Mobile Sidebar Select */}
+        <div className="lg:hidden container px-4 py-4">
+          <Select value={activeSection} onValueChange={setActiveSection}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sidebarSections.map((section) => (
+                <SelectItem key={section.id} value={section.id}>
+                  <div className="flex items-center gap-2">
+                    <section.icon className="h-4 w-4" />
+                    {section.label}
+                    {section.count && ` (${section.count})`}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 container px-4 py-12 max-w-5xl mx-auto">
+          <div className="space-y-8">
+            {/* Hero Section */}
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                NeighborLink API Documentation
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Build on top of NeighborLink's community platform with 26 powerful Supabase Edge Functions
+              </p>
+              <div className="flex gap-4 justify-center items-center text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span>All systems operational</span>
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <span>Base URL: https://cowiviqhrnmhttugozbz.supabase.co</span>
               </div>
-              <Separator orientation="vertical" className="h-4" />
-              <span>Base URL: https://cowiviqhrnmhttugozbz.supabase.co</span>
             </div>
-          </div>
 
-          <Separator />
-
-          {/* Quick Start */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold">Quick Start</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Key className="h-5 w-5 text-primary" />
-                    1. Authenticate
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Use Supabase Auth to get a JWT token for authenticated requests.
-                  </p>
-                  <div className="bg-muted p-3 rounded-lg text-xs font-mono">
-                    const &#123; data &#125; = await supabase.auth.getSession()
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Code className="h-5 w-5 text-primary" />
-                    2. Make API Call
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Invoke edge functions using the Supabase client.
-                  </p>
-                  <div className="bg-muted p-3 rounded-lg text-xs font-mono">
-                    supabase.functions.invoke('function-name')
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Book className="h-5 w-5 text-primary" />
-                    3. Handle Response
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Process the response data and handle errors appropriately.
-                  </p>
-                  <div className="bg-muted p-3 rounded-lg text-xs font-mono">
-                    if (error) &#123; /* handle */ &#125;
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-          {/* API Overview Tabs */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold">API Reference</h2>
-            <Tabs defaultValue="endpoints" className="w-full">
-              <TabsList className="flex mb-4 flex-wrap">
-                <TabsTrigger value="endpoints">Endpoints ({edgeFunctions.length})</TabsTrigger>
-                <TabsTrigger value="authentication">Authentication</TabsTrigger>
-                <TabsTrigger value="examples">Code Examples</TabsTrigger>
-                <TabsTrigger value="errors">Error Handling</TabsTrigger>
-                <TabsTrigger value="sdks">Supabase Client</TabsTrigger>
-              </TabsList>
-
-              {/* Endpoints Tab */}
-              <TabsContent value="endpoints" className="space-y-4">
+            <Separator />
+            {/* Content Sections */}
+            {activeSection === 'endpoints' && (
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold">API Endpoints</h2>
                 {/* Search and Filters */}
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="relative flex-1">
@@ -827,10 +825,12 @@ const ApiDocs = () => {
                     );
                   })}
                 </div>
-              </TabsContent>
+              </section>
+            )}
 
-              {/* Authentication Tab */}
-              <TabsContent value="authentication" className="space-y-4">
+            {/* Authentication Section */}
+            {activeSection === 'authentication' && (
+              <section className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Supabase JWT Authentication</CardTitle>
@@ -920,10 +920,12 @@ fetch('https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/function-name', {
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </section>
+            )}
 
-              {/* Examples Tab */}
-              <TabsContent value="examples" className="space-y-4">
+            {/* Examples Section */}
+            {activeSection === 'examples' && (
+              <section className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Common Integration Examples</CardTitle>
@@ -1036,10 +1038,12 @@ curl -X POST \\
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </section>
+            )}
 
-              {/* Error Handling Tab */}
-              <TabsContent value="errors" className="space-y-4">
+            {/* Error Handling Section */}
+            {activeSection === 'errors' && (
+              <section className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Error Handling</CardTitle>
@@ -1168,10 +1172,12 @@ curl -X POST \\
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </section>
+            )}
 
-              {/* SDKs Tab */}
-              <TabsContent value="sdks" className="space-y-4">
+            {/* SDKs Section */}
+            {activeSection === 'sdks' && (
+              <section className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Supabase Client Libraries</CardTitle>
@@ -1326,12 +1332,11 @@ curl -X POST \\
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </section>
+              </section>
+            )}
 
-          {/* Developer Resources */}
-          <section className="space-y-6">
+            {/* Developer Resources */}
+            <section className="space-y-6">
             <h2 className="text-2xl font-bold">Developer Resources</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card>
@@ -1394,8 +1399,9 @@ curl -X POST \\
               </Card>
             </div>
           </section>
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8 mt-12">
