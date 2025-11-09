@@ -681,6 +681,57 @@ export type Database = {
         }
         Relationships: []
       }
+      api_access_requests: {
+        Row: {
+          assigned_to: string | null
+          company: string
+          created_at: string
+          email: string
+          id: string
+          internal_notes: string | null
+          ip_address: unknown
+          message: string
+          name: string
+          request_type: string
+          resolved_at: string | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          company: string
+          created_at?: string
+          email: string
+          id?: string
+          internal_notes?: string | null
+          ip_address?: unknown
+          message: string
+          name: string
+          request_type: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          company?: string
+          created_at?: string
+          email?: string
+          id?: string
+          internal_notes?: string | null
+          ip_address?: unknown
+          message?: string
+          name?: string
+          request_type?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           created_at: string | null
