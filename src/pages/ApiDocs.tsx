@@ -2,14 +2,64 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Copy, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Copy, CheckCircle2, ArrowLeft, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Contact form validation schema
+const contactSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Name is required" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+  email: z
+    .string()
+    .trim()
+    .email({ message: "Please enter a valid email address" })
+    .max(255, { message: "Email must be less than 255 characters" }),
+  company: z
+    .string()
+    .trim()
+    .min(1, { message: "Company name is required" })
+    .max(100, { message: "Company name must be less than 100 characters" }),
+  requestType: z.enum(["enterprise", "technical", "partnership", "other"], {
+    required_error: "Please select a request type",
+  }),
+  message: z
+    .string()
+    .trim()
+    .min(10, { message: "Message must be at least 10 characters" })
+    .max(1000, { message: "Message must be less than 1000 characters" }),
+});
+
+type ContactFormData = z.infer<typeof contactSchema>;
 
 const ApiDocs = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+  });
+
+  const requestType = watch("requestType");
 
   const copyToClipboard = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
@@ -19,6 +69,31 @@ const ApiDocs = () => {
       description: "Code snippet has been copied to your clipboard.",
     });
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const onSubmit = async (data: ContactFormData) => {
+    setIsSubmitting(true);
+    
+    try {
+      // In a real implementation, this would send to your backend
+      // For now, we'll simulate the submission
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast({
+        title: "Message sent successfully!",
+        description: "Our team will get back to you within 24-48 hours.",
+      });
+      
+      reset();
+    } catch (error) {
+      toast({
+        title: "Failed to send message",
+        description: "Please try again or contact us directly at api@neighborlink.com",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const endpoints = [
@@ -364,19 +439,143 @@ curl -X GET 'https://api.neighborlink.com/v1/communities' \\
           </Card>
         </section>
 
+        {/* Contact Form */}
+        <section className="mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Our API Team</CardTitle>
+              <CardDescription>
+                Request enterprise API access or ask technical questions about integration
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Name Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      placeholder="John Doe"
+                      {...register("name")}
+                      className={errors.name ? "border-destructive" : ""}
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-destructive">{errors.name.message}</p>
+                    )}
+                  </div>
+
+                  {/* Email Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">
+                      Email <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@company.com"
+                      {...register("email")}
+                      className={errors.email ? "border-destructive" : ""}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email.message}</p>
+                    )}
+                  </div>
+
+                  {/* Company Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="company">
+                      Company <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="company"
+                      placeholder="ACME Inc."
+                      {...register("company")}
+                      className={errors.company ? "border-destructive" : ""}
+                    />
+                    {errors.company && (
+                      <p className="text-sm text-destructive">{errors.company.message}</p>
+                    )}
+                  </div>
+
+                  {/* Request Type Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="requestType">
+                      Request Type <span className="text-destructive">*</span>
+                    </Label>
+                    <Select onValueChange={(value) => setValue("requestType", value as any)}>
+                      <SelectTrigger className={errors.requestType ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Select a request type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="enterprise">Enterprise API Access</SelectItem>
+                        <SelectItem value="technical">Technical Question</SelectItem>
+                        <SelectItem value="partnership">Partnership Inquiry</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.requestType && (
+                      <p className="text-sm text-destructive">{errors.requestType.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Message Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="message">
+                    Message <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Tell us about your use case, expected API volume, or technical question..."
+                    rows={6}
+                    {...register("message")}
+                    className={errors.message ? "border-destructive" : ""}
+                  />
+                  {errors.message && (
+                    <p className="text-sm text-destructive">{errors.message.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {watch("message")?.length || 0} / 1000 characters
+                  </p>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    We typically respond within 24-48 hours
+                  </p>
+                  <Button type="submit" disabled={isSubmitting} className="gap-2">
+                    {isSubmitting ? (
+                      <>Sending...</>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Send Message
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Support */}
         <section>
           <Card>
             <CardHeader>
-              <CardTitle>Need Help?</CardTitle>
+              <CardTitle>Additional Resources</CardTitle>
               <CardDescription>
-                Our developer support team is here to help you build great applications
+                Join our community and explore more developer resources
               </CardDescription>
             </CardHeader>
             <CardContent className="flex gap-4">
               <Button variant="outline">Join Discord</Button>
-              <Button variant="outline">Contact Support</Button>
               <Button variant="outline">View Examples</Button>
+              <Button variant="outline">Status Page</Button>
             </CardContent>
           </Card>
         </section>
