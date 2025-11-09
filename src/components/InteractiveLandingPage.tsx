@@ -957,7 +957,7 @@ const InteractiveLandingPage = () => {
           </motion.div>
 
           {/* Heading and Description */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold leading-tight">
                 Integrate community data into your platform
@@ -965,7 +965,7 @@ const InteractiveLandingPage = () => {
             </div>
             <div className="flex items-center">
               <p className="text-muted-foreground text-lg">
-                Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features into their applications.
+                Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
               </p>
             </div>
           </div>
@@ -978,49 +978,43 @@ const InteractiveLandingPage = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              {[{
-                icon: Database,
-                title: "Community Data API",
-                desc: "Access verified neighborhood profiles and community statistics with real-time member activity and engagement metrics."
-              }, {
-                icon: Shield,
-                title: "Safety & Alerts API",
-                desc: "Integrate real-time safety alerts and incident reports with location-based emergency notifications."
-              }, {
-                icon: Calendar,
-                title: "Events & Marketplace API",
-                desc: "Pull local events and marketplace listings filtered by neighborhood, category, and date ranges."
-              }, {
-                icon: Zap,
-                title: "Messaging Integration",
-                desc: "White-label messaging capabilities with secure, encrypted communication channels for your platform."
-              }].map((feature, index) => {
-                const IconComponent = feature.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex gap-4"
-                  >
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <IconComponent className="w-6 h-6 text-primary" />
-                      </div>
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">What you can access:</h3>
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Community Data API</span>
+                      <span className="ml-2">— Verified neighborhood profiles and member activity metrics</span>
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold">{feature.title}</h3>
-                      <p className="text-muted-foreground">{feature.desc}</p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Safety & Alerts API</span>
+                      <span className="ml-2">— Real-time safety alerts and location-based emergency notifications</span>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Events & Marketplace API</span>
+                      <span className="ml-2">— Local events and marketplace listings filtered by neighborhood</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Messaging Integration</span>
+                      <span className="ml-2">— White-label messaging with secure, encrypted communication channels</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
 
-              <div className="flex gap-4 items-center pt-4">
+              <div className="flex flex-wrap gap-3 items-center pt-2">
                 <Link to="/api-docs">
                   <Button size="lg" className="gap-2">
                     Get API Access <ArrowRight className="w-4 h-4" />
@@ -1031,12 +1025,12 @@ const InteractiveLandingPage = () => {
                     RESTful API
                   </div>
                   <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    WebSocket Support
+                    WebSocket
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                 <Zap className="w-4 h-4 text-primary" />
                 <span>&lt; 100ms average response time</span>
               </div>
