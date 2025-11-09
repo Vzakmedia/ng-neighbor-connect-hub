@@ -1021,9 +1021,11 @@ const InteractiveLandingPage = () => {
               })}
 
               <div className="flex gap-4 items-center pt-4">
-                <Button size="lg" className="gap-2">
-                  Get API Access <ArrowRight className="w-4 h-4" />
-                </Button>
+                <Link to="/api-docs">
+                  <Button size="lg" className="gap-2">
+                    Get API Access <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
                 <div className="flex gap-2">
                   <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
                     RESTful API
