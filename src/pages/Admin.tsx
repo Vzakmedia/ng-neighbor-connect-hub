@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity, Search, Filter, CheckCircle, XCircle } from "lucide-react";
+import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Plug, Key, Code, Database, Globe, Activity, Search, Filter, CheckCircle, XCircle, Mail } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ import AdsSettingsPanel from '@/components/advertising/AdsSettingsPanel';
 import { DirectMessageDialog } from '@/components/DirectMessageDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
 import ReportIncidentDialog from '../components/ReportIncidentDialog';
+import NewsletterSubscribersPanel from '@/components/admin/NewsletterSubscribersPanel';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -2590,6 +2591,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
           <TabsTrigger value="content-management" className="w-full justify-start">
             <FileText className="h-4 w-4 mr-2" />
             Content Management
+          </TabsTrigger>
+          <TabsTrigger value="newsletter" className="w-full justify-start">
+            <Mail className="h-4 w-4 mr-2" />
+            Newsletter
           </TabsTrigger>
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
@@ -5953,6 +5958,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
         <TabsContent value="content-management" className="space-y-6">
           <ContentManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="newsletter" className="space-y-6">
+          <NewsletterSubscribersPanel />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
