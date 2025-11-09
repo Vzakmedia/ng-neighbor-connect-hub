@@ -66,6 +66,7 @@ import ApiRequestsAdmin from "./pages/ApiRequestsAdmin";
 import HelpCenter from "./pages/HelpCenter";
 import BlogPost from "./pages/BlogPost";
 import Blog from "./pages/Blog";
+import Contact from "./pages/Contact";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
@@ -240,6 +241,7 @@ const App = () => {
               <Route path="/api-docs" element={<ApiDocs />} />
               <Route path="/admin/api-requests" element={<ApiRequestsAdmin />} />
               <Route path="/help" element={<HelpCenter />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
             </Routes>
