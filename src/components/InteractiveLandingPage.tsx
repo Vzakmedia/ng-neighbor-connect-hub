@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/components/ui/carousel";
@@ -8,6 +12,8 @@ import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
 import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import communityHero from '@/assets/community-hero.jpg';
 import landingBg from '@/assets/landing-bg.png';
 import heroBackground from '@/assets/hero-background.png';
@@ -21,6 +27,17 @@ import locationServicesImg from '@/assets/landing/location-services.jpg';
 import sarahJohnsonImg from "@/assets/testimonials/sarah-johnson.jpg";
 import ahmedIbrahimImg from "@/assets/testimonials/ahmed-ibrahim.jpg";
 import graceOkaforImg from "@/assets/testimonials/grace-okafor.jpg";
+
+// Newsletter form validation schema
+const newsletterSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email({ message: "Please enter a valid email address" })
+    .max(255, { message: "Email must be less than 255 characters" }),
+});
+
+type NewsletterFormData = z.infer<typeof newsletterSchema>;
 
 // Counter animation component
 const CountUpAnimation = ({ value, className }: { value: string; className?: string }) => {
@@ -79,7 +96,97 @@ const CountUpAnimation = ({ value, className }: { value: string; className?: str
   );
 };
 
+// Newsletter subscription component
+const NewsletterForm = () => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<NewsletterFormData>({
+    resolver: zodResolver(newsletterSchema),
+  });
+
+  const onSubmit = async (data: NewsletterFormData) => {
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email: data.email.toLowerCase() }]);
+
+      if (error) {
+        // Check if it's a duplicate email error
+        if (error.code === '23505') {
+          toast({
+            title: "Already subscribed!",
+            description: "This email is already registered for our newsletter.",
+            variant: "default",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Successfully subscribed!",
+          description: "Thank you for subscribing to our newsletter.",
+        });
+        reset();
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      toast({
+        title: "Subscription failed",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto text-center space-y-4">
+      <div className="space-y-2">
+        <h3 className="text-2xl font-bold text-white">Stay Updated</h3>
+        <p className="text-white/70">
+          Subscribe to our newsletter for community updates, safety tips, and local news.
+        </p>
+      </div>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <div className="flex-1">
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            {...register("email")}
+            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/40"
+            disabled={isSubmitting}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-300 mt-1 text-left">{errors.email.message}</p>
+          )}
+        </div>
+        
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={isSubmitting}
+          className="sm:w-auto whitespace-nowrap"
+        >
+          {isSubmitting ? "Subscribing..." : "Subscribe"}
+          <Mail className="ml-2 h-4 w-4" />
+        </Button>
+      </form>
+    </div>
+  );
+};
+
 const InteractiveLandingPage = () => {
+  const { toast } = useToast();
   const [isVisible, setIsVisible] = useState(false);
   const [activeFeature, setActiveFeature] = useState("community-connection");
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
@@ -1110,6 +1217,16 @@ const InteractiveLandingPage = () => {
               </div>
             </div>
           </div>
+          
+          {/* Newsletter Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="border-t border-white/20 pt-12 mb-12"
+          >
+            <NewsletterForm />
+          </motion.div>
           
           {/* Bottom Bar */}
           <div className="border-t border-white/20 pt-8">
