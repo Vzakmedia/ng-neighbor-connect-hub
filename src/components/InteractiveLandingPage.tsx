@@ -1187,7 +1187,7 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Resources</h4>
               <div className="space-y-2 text-sm">
-                <a href="#" className="block text-white/70 hover:text-white transition-colors">Blog</a>
+                <Link to="/blog" className="block text-white/70 hover:text-white transition-colors">Blog</Link>
                 <a href="#contact" className="block text-white/70 hover:text-white transition-colors">Help Center</a>
                 <Link to="/community-guidelines" className="block text-white/70 hover:text-white transition-colors">Community Guidelines</Link>
                 <Link to="/security" className="block text-white/70 hover:text-white transition-colors">Security</Link>
