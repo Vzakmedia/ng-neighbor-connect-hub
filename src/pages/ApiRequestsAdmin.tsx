@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Filter, Search, Mail, Building, User, Calendar, CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Filter, Search, Mail, Building, User, Calendar, CheckCircle, Clock, AlertCircle, XCircle, Key, Copy } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface ApiRequest {
@@ -28,6 +28,8 @@ interface ApiRequest {
   resolved_at: string | null;
   created_at: string;
   updated_at: string;
+  company_id?: string;
+  api_key_id?: string;
 }
 
 interface StaffMember {
@@ -57,6 +59,11 @@ const ApiRequestsAdmin = () => {
   const [internalNotes, setInternalNotes] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [requestStatus, setRequestStatus] = useState<string>("");
+  
+  // API Key generation
+  const [generatingKey, setGeneratingKey] = useState(false);
+  const [generatedKey, setGeneratedKey] = useState<string>("");
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
 
   // Check if user is staff
   useEffect(() => {
@@ -144,6 +151,61 @@ const ApiRequestsAdmin = () => {
     setAssignedTo(request.assigned_to || "");
     setRequestStatus(request.status);
     setDialogOpen(true);
+  };
+
+  // Generate API key
+  const handleGenerateApiKey = async (request: ApiRequest) => {
+    setGeneratingKey(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-enterprise-api-key', {
+        body: {
+          company_name: request.company,
+          billing_email: request.email,
+          technical_contact_email: request.email,
+          request_id: request.id,
+          key_name: `${request.company} - Production Key`,
+          environment: 'production',
+          permissions: ['events:read', 'events:write', 'users:read'],
+          rate_limit_per_hour: 1000,
+          rate_limit_per_day: 10000,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setGeneratedKey(data.api_key);
+        setShowKeyDialog(true);
+        
+        // Refresh requests
+        const { data: updatedRequests } = await supabase
+          .from('api_access_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (updatedRequests) setRequests(updatedRequests);
+
+        toast({
+          title: "Success",
+          description: "API key generated successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate API key",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingKey(false);
+    }
   };
 
   // Update request
@@ -574,6 +636,48 @@ const ApiRequestsAdmin = () => {
                 </div>
               </div>
 
+              {/* API Key Generation Section */}
+              {selectedRequest && !selectedRequest.api_key_id && (
+                <div className="border-t pt-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold mb-1 flex items-center gap-2">
+                        <Key className="h-4 w-4" />
+                        Generate API Key
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Generate an enterprise API key for {selectedRequest.company}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => handleGenerateApiKey(selectedRequest)}
+                      disabled={generatingKey || requestStatus !== 'in_progress'}
+                      className="gap-2"
+                    >
+                      <Key className="h-4 w-4" />
+                      {generatingKey ? 'Generating...' : 'Generate Key'}
+                    </Button>
+                  </div>
+                  {requestStatus !== 'in_progress' && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      ℹ️ Request must be "In Progress" to generate API key
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedRequest?.api_key_id && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 text-success">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">API Key Already Generated</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    An API key has been generated for this request
+                  </p>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -585,6 +689,78 @@ const ApiRequestsAdmin = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* API Key Generation Success Dialog */}
+      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-success">
+              <CheckCircle className="h-5 w-5" />
+              API Key Generated Successfully
+            </DialogTitle>
+            <DialogDescription>
+              This is the only time you'll see this key. Save it securely now!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-muted/50 rounded-lg border-2 border-warning">
+              <div className="flex items-start gap-2 mb-3">
+                <AlertCircle className="h-5 w-5 text-warning mt-0.5" />
+                <div className="text-sm text-warning font-semibold">
+                  Warning: Store this key securely - it cannot be recovered!
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>API Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={generatedKey}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedKey);
+                      toast({
+                        title: "Copied!",
+                        description: "API key copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">Next Steps:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Copy and securely store this API key</li>
+                <li>Share it with the requester via secure channel</li>
+                <li>They should add it to their application as: <code className="bg-muted px-1 py-0.5 rounded">Authorization: Bearer {'{API_KEY}'}</code></li>
+                <li>Monitor usage in the API Keys dashboard</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowKeyDialog(false);
+                setGeneratedKey('');
+              }}
+            >
+              I've Saved the Key
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

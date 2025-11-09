@@ -683,8 +683,10 @@ export type Database = {
       }
       api_access_requests: {
         Row: {
+          api_key_id: string | null
           assigned_to: string | null
           company: string
+          company_id: string | null
           created_at: string
           email: string
           id: string
@@ -699,8 +701,10 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          api_key_id?: string | null
           assigned_to?: string | null
           company: string
+          company_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -715,8 +719,10 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          api_key_id?: string | null
           assigned_to?: string | null
           company?: string
+          company_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -730,7 +736,75 @@ export type Database = {
           updated_at?: string
           user_agent?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "api_access_requests_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "enterprise_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_access_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_key_usage_logs: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: unknown
+          method: string
+          request_size_bytes: number | null
+          response_size_bytes: number | null
+          response_time_ms: number | null
+          status_code: number
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown
+          method: string
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code: number
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown
+          method?: string
+          request_size_bytes?: number | null
+          response_size_bytes?: number | null
+          response_time_ms?: number | null
+          status_code?: number
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_usage_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "enterprise_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_config: {
         Row: {
@@ -1700,6 +1774,51 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          billing_email: string
+          created_at: string
+          domain: string | null
+          id: string
+          industry: string | null
+          is_active: boolean
+          name: string
+          plan_type: string
+          size: string | null
+          technical_contact_email: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          billing_email: string
+          created_at?: string
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean
+          name: string
+          plan_type?: string
+          size?: string | null
+          technical_contact_email: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          billing_email?: string
+          created_at?: string
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean
+          name?: string
+          plan_type?: string
+          size?: string | null
+          technical_contact_email?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       company_info: {
         Row: {
           content: string | null
@@ -2358,6 +2477,93 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      enterprise_api_keys: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          environment: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_name: string
+          key_prefix: string
+          last_used_at: string | null
+          permissions: Json
+          rate_limit_per_day: number
+          rate_limit_per_hour: number
+          request_id: string | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          environment?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_name: string
+          key_prefix: string
+          last_used_at?: string | null
+          permissions?: Json
+          rate_limit_per_day?: number
+          rate_limit_per_hour?: number
+          request_id?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          environment?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_name?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          permissions?: Json
+          rate_limit_per_day?: number
+          rate_limit_per_hour?: number
+          request_id?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enterprise_api_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enterprise_api_keys_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "api_access_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_rsvps: {
         Row: {
@@ -5688,6 +5894,7 @@ export type Database = {
         Args: { board_id: string; user_id: string }
         Returns: boolean
       }
+      check_rate_limit: { Args: { key_hash_input: string }; Returns: boolean }
       check_super_admin_security: {
         Args: { _ip_address?: unknown; _user_id: string }
         Returns: Json
@@ -6404,6 +6611,10 @@ export type Database = {
       has_staff_permission: {
         Args: { _access_type?: string; _permission: string; _user_id: string }
         Returns: boolean
+      }
+      increment_key_usage: {
+        Args: { key_hash_input: string }
+        Returns: undefined
       }
       is_board_admin: {
         Args: { board_id: string; user_id: string }
@@ -7217,6 +7428,19 @@ export type Database = {
         Returns: boolean
       }
       user_has_business: { Args: { target_user_id: string }; Returns: boolean }
+      validate_api_key: {
+        Args: { key_hash_input: string }
+        Returns: {
+          company_id: string
+          environment: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          permissions: Json
+          rate_limit_per_day: number
+          rate_limit_per_hour: number
+        }[]
+      }
       validate_content_input: {
         Args: { content_text: string; max_length?: number }
         Returns: boolean
