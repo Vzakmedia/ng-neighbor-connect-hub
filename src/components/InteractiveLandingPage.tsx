@@ -340,7 +340,7 @@ const InteractiveLandingPage = () => {
               scale: 0.95
             }}>
               <Link to="/auth">
-                <Button size="default" className="bg-gradient-to-r from-primary to-primary/80">
+                <Button size="default">
                   Get Started
                 </Button>
               </Link>
@@ -441,7 +441,7 @@ const InteractiveLandingPage = () => {
                   scale: 0.95
                 }}>
                   <Link to="/auth">
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm sm:text-base">
+                    <Button size="lg" className="w-full sm:w-auto text-sm sm:text-base">
                       <UserPlus className="mr-2 h-4 w-4" />
                       Join Your Community
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -738,7 +738,7 @@ const InteractiveLandingPage = () => {
                       variant="outline"
                       size="icon"
                       onClick={handlePrevTestimonial}
-                      className="rounded-full hover:bg-green-500/10 border-green-500/20"
+                      className="rounded-full"
                     >
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
@@ -746,7 +746,7 @@ const InteractiveLandingPage = () => {
                       variant="outline"
                       size="icon"
                       onClick={handleNextTestimonial}
-                      className="rounded-full hover:bg-green-500/10 border-green-500/20"
+                      className="rounded-full"
                     >
                       <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -908,7 +908,7 @@ const InteractiveLandingPage = () => {
               scale: 0.95
             }}>
               <Link to="/auth">
-                <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -921,7 +921,7 @@ const InteractiveLandingPage = () => {
             }} whileTap={{
               scale: 0.95
             }}>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-green-500 hover:bg-white hover:text-primary">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
                 <Phone className="mr-2 h-4 w-4" />
                 Download App
               </Button>
