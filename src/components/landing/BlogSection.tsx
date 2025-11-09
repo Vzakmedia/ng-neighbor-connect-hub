@@ -27,31 +27,57 @@ export const BlogSection = () => {
   if (!posts || posts.length === 0) {
     return (
       <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 bg-muted/30">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
+          {/* BLOG Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
           >
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <BookOpen className="w-8 h-8 text-primary" />
-              <h2 className="text-4xl md:text-5xl font-bold">From Our Blog</h2>
-            </div>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Insights, stories, and updates from the NeighborLink community
-            </p>
-            <Card className="max-w-md mx-auto p-8">
-              <CardContent className="text-center">
-                <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
-                <p className="text-muted-foreground">
-                  We're working on bringing you great content. Check back soon for community insights and stories!
-                </p>
-              </CardContent>
-            </Card>
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">BLOG</div>
           </motion.div>
+
+          {/* Two-column header */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            {/* Left column - Heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+                From Our Blog
+              </h2>
+            </motion.div>
+
+            {/* Right column - Description */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex items-center"
+            >
+              <p className="text-muted-foreground text-lg">
+                Insights, stories, and updates from the NeighborLink community
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Empty state card */}
+          <Card className="max-w-md p-8">
+            <CardContent className="text-center">
+              <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
+              <p className="text-muted-foreground">
+                We're working on bringing you great content. Check back soon for community insights and stories!
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
     );
@@ -59,32 +85,58 @@ export const BlogSection = () => {
 
   return (
     <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 bg-muted/30">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
+        {/* BLOG Label with Line */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-3 mb-8"
         >
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <BookOpen className="w-8 h-8 text-primary" />
-            <h2 className="text-4xl md:text-5xl font-bold">From Our Blog</h2>
-          </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Insights, stories, and updates from the NeighborLink community
-          </p>
+          <div className="w-0.5 h-6 bg-primary"></div>
+          <div className="text-primary text-sm font-medium tracking-wider">BLOG</div>
         </motion.div>
 
-        {/* Featured Post */}
-        {featuredPost && (
+        {/* Two-column header */}
+        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+          {/* Left column - Heading */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-12"
+            transition={{ duration: 0.6, delay: 0.1 }}
           >
+            <h2 className="text-4xl md:text-5xl font-bold leading-tight">
+              From Our Blog
+            </h2>
+          </motion.div>
+
+          {/* Right column - Description */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex items-center"
+          >
+            <p className="text-muted-foreground text-lg">
+              Insights, stories, and updates from the NeighborLink community
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="max-w-7xl mx-auto">
+
+          {/* Featured Post */}
+          {featuredPost && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-12"
+            >
             <Link to={`/blog/${featuredPost.slug}`}>
               <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group">
                 <div className="grid md:grid-cols-2 gap-6">
@@ -132,19 +184,19 @@ export const BlogSection = () => {
                 </div>
               </Card>
             </Link>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {/* Recent Posts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentPosts.map((post, index) => (
-            <motion.div
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
-            >
+          {/* Recent Posts Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recentPosts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
+              >
               <Link to={`/blog/${post.slug}`}>
                 <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 group">
                   {post.featured_image_url && (
@@ -192,6 +244,7 @@ export const BlogSection = () => {
               </Link>
             </motion.div>
           ))}
+          </div>
         </div>
       </div>
     </section>
