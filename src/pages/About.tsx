@@ -41,29 +41,85 @@ const About = () => {
 
       {/* Hero Section */}
       <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <Badge variant="secondary" className="mb-6">
-            About NeighborLink
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Building Safer, Stronger Communities
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            NeighborLink is Nigeria's leading community safety and engagement platform, 
-            connecting neighbors through innovative technology to build stronger, safer communities.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/auth">
-              <Button size="lg" className="shadow-lg">
-                Join Our Community
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/safety">
-              <Button variant="outline" size="lg">
-                Explore Safety Features
-              </Button>
-            </Link>
+        <div className="container mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Content */}
+            <div className="space-y-6">
+              <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+                Building Safer, Stronger Communities
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-lg">
+                NeighborLink is Nigeria's leading community safety and engagement platform, 
+                connecting neighbors through innovative technology.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link to="/auth">
+                  <Button size="lg" className="shadow-lg">
+                    Join Our Community
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/safety">
+                  <Button variant="outline" size="lg">
+                    Explore Safety Features
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex items-center gap-3 pt-4">
+                <div className="text-3xl font-bold">4.8</div>
+                <div className="flex flex-col">
+                  <div className="flex text-yellow-500">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-current" />
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Trusted by communities</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Visual */}
+            <div className="relative">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-8 shadow-2xl border border-primary/10">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-6 w-6 text-primary" />
+                      <span className="font-semibold">NeighborLink Dashboard</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground mb-1">Active Users</div>
+                      <div className="text-2xl font-bold">50,000+</div>
+                      <div className="text-xs text-green-500 flex items-center gap-1 mt-1">
+                        <span>↑ 8.4%</span>
+                        <span className="text-muted-foreground">vs last month</span>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-muted-foreground mb-1">Communities</div>
+                      <div className="text-2xl font-bold">1,200+</div>
+                      <div className="text-xs text-green-500 flex items-center gap-1 mt-1">
+                        <span>↑ 12%</span>
+                        <span className="text-muted-foreground">vs last month</span>
+                      </div>
+                    </Card>
+                  </div>
+
+                  <Card className="p-4">
+                    <div className="text-sm text-muted-foreground mb-2">Safety Alerts Response Time</div>
+                    <div className="text-3xl font-bold mb-4">2.3 min</div>
+                    <div className="h-32 flex items-end justify-between gap-2">
+                      {[45, 60, 55, 70, 65, 80, 75, 85].map((height, i) => (
+                        <div key={i} className="flex-1 bg-primary/20 rounded-t" style={{ height: `${height}%` }} />
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
