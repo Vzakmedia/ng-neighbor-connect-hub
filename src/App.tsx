@@ -62,6 +62,7 @@ import Press from "./pages/Press";
 import Careers from "./pages/Careers";
 import ApiDocs from "./pages/ApiDocs";
 import BlogPost from "./pages/BlogPost";
+import Blog from "./pages/Blog";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
@@ -233,6 +234,7 @@ const App = () => {
               <Route path="/press" element={<Press />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/api-docs" element={<ApiDocs />} />
+              <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
