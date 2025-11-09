@@ -1307,7 +1307,7 @@ const InteractiveLandingPage = () => {
                 <Link to="/about" className="block text-white/70 hover:text-white transition-colors">About Us</Link>
                 <Link to="/careers" className="block text-white/70 hover:text-white transition-colors">Careers</Link>
                 <Link to="/press" className="block text-white/70 hover:text-white transition-colors">Press</Link>
-                <a href="#contact" className="block text-white/70 hover:text-white transition-colors">Contact</a>
+                <Link to="/contact" className="block text-white/70 hover:text-white transition-colors">Contact</Link>
               </div>
             </div>
           </div>
