@@ -10,7 +10,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin, Menu, X } from 'lucide-react';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin, Menu, X, Database, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -941,10 +941,10 @@ const InteractiveLandingPage = () => {
       </section>
 
 
-      {/* Device Compatibility Section */}
+      {/* API Integration Section */}
       <section className="py-24 bg-muted/30">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
-          {/* MULTI-PLATFORM Label with Line */}
+          {/* API INTEGRATION Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -953,67 +953,188 @@ const InteractiveLandingPage = () => {
             className="flex items-center gap-3 mb-8"
           >
             <div className="w-0.5 h-6 bg-primary"></div>
-            <div className="text-primary text-sm font-medium tracking-wider">MULTI-PLATFORM</div>
+            <div className="text-primary text-sm font-medium tracking-wider">API INTEGRATION</div>
           </motion.div>
 
           {/* Heading and Description */}
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                Available everywhere you are
+                Integrate community data into your platform
               </h2>
             </div>
             <div className="flex items-center">
               <p className="text-muted-foreground text-lg">
-                Access NeighborLink on any device. Seamless experience across web, mobile, and tablet.
+                Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features into their applications.
               </p>
             </div>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {[{
-              icon: Smartphone,
-              title: "Mobile App",
-              desc: "Native iOS and Android apps with full feature access"
-            }, {
-              icon: Monitor,
-              title: "Web Platform",
-              desc: "Full-featured web application accessible from any browser"
-            }, {
-              icon: Tablet,
-              title: "Tablet Optimized",
-              desc: "Responsive design optimized for tablet interactions"
-            }].map((device, index) => {
-              const IconComponent = device.icon;
-              return <motion.div key={index} initial={{
-                opacity: 0,
-                y: 50
-              }} whileInView={{
-                opacity: 1,
-                y: 0
-              }} viewport={{
-                once: true
-              }} transition={{
-                delay: index * 0.2
-              }} whileHover={{
-                y: -10,
-                scale: 1.05
-              }}>
-                  <Card className="p-8 space-y-4 hover:shadow-xl transition-shadow h-full">
-                    <motion.div animate={{
-                    rotateY: [0, 180, 360]
-                  }} transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    delay: index * 0.5
-                  }}>
-                      <IconComponent className="w-12 h-12 text-primary" />
-                    </motion.div>
-                    <h3 className="text-xl font-semibold">{device.title}</h3>
-                    <p className="text-muted-foreground">{device.desc}</p>
-                  </Card>
-                </motion.div>;
-            })}
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Left Column - API Features */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="space-y-8"
+            >
+              {[{
+                icon: Database,
+                title: "Community Data API",
+                desc: "Access verified neighborhood profiles and community statistics with real-time member activity and engagement metrics."
+              }, {
+                icon: Shield,
+                title: "Safety & Alerts API",
+                desc: "Integrate real-time safety alerts and incident reports with location-based emergency notifications."
+              }, {
+                icon: Calendar,
+                title: "Events & Marketplace API",
+                desc: "Pull local events and marketplace listings filtered by neighborhood, category, and date ranges."
+              }, {
+                icon: Zap,
+                title: "Messaging Integration",
+                desc: "White-label messaging capabilities with secure, encrypted communication channels for your platform."
+              }].map((feature, index) => {
+                const IconComponent = feature.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex gap-4"
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <IconComponent className="w-6 h-6 text-primary" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold">{feature.title}</h3>
+                      <p className="text-muted-foreground">{feature.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              <div className="flex gap-4 items-center pt-4">
+                <Button size="lg" className="gap-2">
+                  Get API Access <ArrowRight className="w-4 h-4" />
+                </Button>
+                <div className="flex gap-2">
+                  <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    RESTful API
+                  </div>
+                  <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    WebSocket Support
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Zap className="w-4 h-4 text-primary" />
+                <span>&lt; 100ms average response time</span>
+              </div>
+            </motion.div>
+
+            {/* Right Column - API Dashboard Mockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative"
+            >
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+                className="relative rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-8 shadow-2xl overflow-hidden"
+              >
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+
+                {/* Dashboard Card */}
+                <div className="relative bg-white dark:bg-background rounded-xl p-6 shadow-lg space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold">API Dashboard</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-muted-foreground">Active</span>
+                    </div>
+                  </div>
+
+                  {/* API Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Monthly Calls</p>
+                      <p className="text-2xl font-bold">1.2M</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Success Rate</p>
+                      <p className="text-2xl font-bold">99.8%</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Active Endpoints</p>
+                      <p className="text-2xl font-bold">12</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Avg Response</p>
+                      <p className="text-2xl font-bold">87ms</p>
+                    </div>
+                  </div>
+
+                  {/* Recent API Calls */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Recent API Calls</p>
+                    <div className="space-y-2">
+                      {[
+                        { endpoint: 'GET /api/v1/communities', status: 200 },
+                        { endpoint: 'POST /api/v1/safety-alerts', status: 201 },
+                        { endpoint: 'GET /api/v1/events/nearby', status: 200 }
+                      ].map((call, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                          <code className="text-xs font-mono">{call.endpoint}</code>
+                          <div className="flex items-center gap-1">
+                            <span className="text-green-600 dark:text-green-400">{call.status}</span>
+                            <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Integration Partners */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Integration Partners</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 border-2 border-background flex items-center justify-center text-xs text-white font-medium">
+                            {String.fromCharCode(64 + i)}
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">50+ partners</span>
+                    </div>
+                  </div>
+
+                  {/* Code Snippet Preview */}
+                  <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-4 overflow-hidden">
+                    <pre className="text-xs text-green-400 font-mono">
+                      <code>{`const response = await fetch(
+  'https://api.neighborlink.com/v1/communities',
+  { headers: { 'Authorization': 'Bearer ...' } }
+);`}</code>
+                    </pre>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </section>
