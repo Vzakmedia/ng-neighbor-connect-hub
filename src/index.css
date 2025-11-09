@@ -161,6 +161,11 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem; /* Account for fixed header height */
+  }
+
   body {
     @apply bg-background text-foreground;
     /* iOS Safari specific fixes */
