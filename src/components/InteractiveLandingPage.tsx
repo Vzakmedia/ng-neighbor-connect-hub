@@ -955,27 +955,28 @@ const InteractiveLandingPage = () => {
             <div className="w-0.5 h-6 bg-primary"></div>
             <div className="text-primary text-sm font-medium tracking-wider">API INTEGRATION</div>
           </motion.div>
-
-          {/* Heading and Description */}
-          <div className="max-w-3xl mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
-              Integrate community data into your platform
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
-            </p>
-          </div>
           
           {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
-            {/* Left Column - API Features */}
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Left Column - All Content */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="space-y-6"
+              className="space-y-8"
             >
+              {/* Heading */}
+              <div>
+                <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                  Integrate community data into your platform
+                </h2>
+                <p className="text-muted-foreground text-lg">
+                  Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
+                </p>
+              </div>
+
+              {/* Features List */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">What you can access:</h3>
                 <ul className="space-y-3 text-muted-foreground leading-relaxed">
@@ -1010,7 +1011,8 @@ const InteractiveLandingPage = () => {
                 </ul>
               </div>
 
-              <div className="pt-4 space-y-4">
+              {/* Buttons and Badges */}
+              <div className="space-y-4">
                 <div className="flex flex-wrap gap-3 items-center">
                   <Link to="/api-docs">
                     <Button size="lg" className="gap-2">
@@ -1034,13 +1036,13 @@ const InteractiveLandingPage = () => {
               </div>
             </motion.div>
 
-            {/* Right Column - API Dashboard Mockup */}
+            {/* Right Column - Dashboard Mockup Only */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative lg:sticky lg:top-24"
+              className="relative"
             >
               <div className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-6 shadow-2xl overflow-hidden">
                 {/* Decorative elements */}
