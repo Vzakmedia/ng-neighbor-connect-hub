@@ -957,7 +957,7 @@ const InteractiveLandingPage = () => {
           </motion.div>
 
           {/* Heading and Description */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
             <div>
               <h2 className="text-4xl md:text-5xl font-bold leading-tight">
                 Integrate community data into your platform
@@ -971,7 +971,7 @@ const InteractiveLandingPage = () => {
           </div>
           
           {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-8 items-start">
             {/* Left Column - API Features */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -982,57 +982,59 @@ const InteractiveLandingPage = () => {
             >
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">What you can access:</h3>
-                <ul className="space-y-3 text-muted-foreground">
+                <ul className="space-y-3 text-muted-foreground leading-relaxed">
                   <li className="flex items-start gap-3">
-                    <span className="text-primary font-bold mt-1">•</span>
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
                     <div>
                       <span className="font-semibold text-foreground">Community Data API</span>
-                      <span className="ml-2">— Verified neighborhood profiles and member activity metrics</span>
+                      <span className="block mt-0.5">Verified neighborhood profiles and member activity metrics</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-primary font-bold mt-1">•</span>
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
                     <div>
                       <span className="font-semibold text-foreground">Safety & Alerts API</span>
-                      <span className="ml-2">— Real-time safety alerts and location-based emergency notifications</span>
+                      <span className="block mt-0.5">Real-time safety alerts and location-based emergency notifications</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-primary font-bold mt-1">•</span>
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
                     <div>
                       <span className="font-semibold text-foreground">Events & Marketplace API</span>
-                      <span className="ml-2">— Local events and marketplace listings filtered by neighborhood</span>
+                      <span className="block mt-0.5">Local events and marketplace listings filtered by neighborhood</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="text-primary font-bold mt-1">•</span>
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
                     <div>
                       <span className="font-semibold text-foreground">Messaging Integration</span>
-                      <span className="ml-2">— White-label messaging with secure, encrypted communication channels</span>
+                      <span className="block mt-0.5">White-label messaging with secure, encrypted communication channels</span>
                     </div>
                   </li>
                 </ul>
               </div>
 
-              <div className="flex flex-wrap gap-3 items-center pt-2">
-                <Link to="/api-docs">
-                  <Button size="lg" className="gap-2">
-                    Get API Access <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <div className="flex gap-2">
-                  <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    RESTful API
-                  </div>
-                  <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    WebSocket
+              <div className="pt-4 space-y-4">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Link to="/api-docs">
+                    <Button size="lg" className="gap-2">
+                      Get API Access <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      RESTful API
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      WebSocket
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                <Zap className="w-4 h-4 text-primary" />
-                <span>&lt; 100ms average response time</span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span>&lt; 100ms average response time</span>
+                </div>
               </div>
             </motion.div>
 
@@ -1042,61 +1044,57 @@ const InteractiveLandingPage = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="relative"
+              className="relative lg:sticky lg:top-24"
             >
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.3 }}
-                className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-8 shadow-2xl overflow-hidden"
-              >
+              <div className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-6 shadow-2xl overflow-hidden">
                 {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
 
                 {/* Dashboard Card */}
-                <div className="relative bg-white dark:bg-background rounded-xl p-6 shadow-lg space-y-6">
+                <div className="relative bg-white dark:bg-background rounded-xl p-5 shadow-lg space-y-5">
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold">API Dashboard</h3>
+                    <h3 className="text-lg font-bold">API Dashboard</h3>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm text-muted-foreground">Active</span>
+                      <span className="text-xs text-muted-foreground">Active</span>
                     </div>
                   </div>
 
                   {/* API Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Monthly Calls</p>
-                      <p className="text-2xl font-bold">1.2M</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Monthly Calls</p>
+                      <p className="text-xl font-bold">1.2M</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Success Rate</p>
-                      <p className="text-2xl font-bold">99.8%</p>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Success Rate</p>
+                      <p className="text-xl font-bold">99.8%</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Active Endpoints</p>
-                      <p className="text-2xl font-bold">12</p>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Active Endpoints</p>
+                      <p className="text-xl font-bold">12</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Avg Response</p>
-                      <p className="text-2xl font-bold">87ms</p>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Avg Response</p>
+                      <p className="text-xl font-bold">87ms</p>
                     </div>
                   </div>
 
                   {/* Recent API Calls */}
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-muted-foreground">Recent API Calls</p>
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Recent API Calls</p>
+                    <div className="space-y-1.5">
                       {[
-                        { endpoint: 'GET /api/v1/communities', status: 200 },
-                        { endpoint: 'POST /api/v1/safety-alerts', status: 201 },
-                        { endpoint: 'GET /api/v1/events/nearby', status: 200 }
+                        { endpoint: 'GET /v1/communities', status: 200 },
+                        { endpoint: 'POST /v1/safety-alerts', status: 201 },
+                        { endpoint: 'GET /v1/events/nearby', status: 200 }
                       ].map((call, idx) => (
                         <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
                           <code className="text-xs font-mono">{call.endpoint}</code>
                           <div className="flex items-center gap-1">
-                            <span className="text-green-600 dark:text-green-400">{call.status}</span>
+                            <span className="text-xs text-green-600 dark:text-green-400">{call.status}</span>
                             <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />
                           </div>
                         </div>
@@ -1104,32 +1102,19 @@ const InteractiveLandingPage = () => {
                     </div>
                   </div>
 
-                  {/* Integration Partners */}
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-muted-foreground">Integration Partners</p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-2">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 border-2 border-background flex items-center justify-center text-xs text-white font-medium">
-                            {String.fromCharCode(64 + i)}
-                          </div>
-                        ))}
-                      </div>
-                      <span className="text-sm text-muted-foreground">50+ partners</span>
-                    </div>
-                  </div>
-
                   {/* Code Snippet Preview */}
-                  <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-4 overflow-hidden">
-                    <pre className="text-xs text-green-400 font-mono">
+                  <div className="bg-slate-900 dark:bg-slate-950 rounded-lg p-3 overflow-hidden">
+                    <pre className="text-xs text-green-400 font-mono leading-relaxed">
                       <code>{`const response = await fetch(
-  'https://api.neighborlink.com/v1/communities',
-  { headers: { 'Authorization': 'Bearer ...' } }
+  'https://api.neighborlink.com/v1',
+  { headers: { 
+    'Authorization': 'Bearer ...' 
+  }}
 );`}</code>
                     </pre>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </div>
         </div>
