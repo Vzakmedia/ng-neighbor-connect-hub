@@ -264,29 +264,17 @@ const InteractiveLandingPage = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Auto-scroll carousel functionality
+  // Sync carousel scroll when activeFeature changes (tab click)
   useEffect(() => {
     if (!carouselApi) return;
 
-    const autoScroll = setInterval(() => {
-      if (!isCarouselHovered) {
-        const currentIndex = carouselApi.selectedScrollSnap();
-        const slideCount = carouselApi.scrollSnapList().length;
-        
-        if (currentIndex === slideCount - 1) {
-          carouselApi.scrollTo(0);
-          setActiveFeature(features[0].id);
-        } else {
-          carouselApi.scrollNext();
-          setActiveFeature(features[currentIndex + 1].id);
-        }
-      }
-    }, 5000);
+    const featureIndex = features.findIndex(f => f.id === activeFeature);
+    if (featureIndex !== -1 && featureIndex !== carouselApi.selectedScrollSnap()) {
+      carouselApi.scrollTo(featureIndex);
+    }
+  }, [activeFeature, carouselApi, features]);
 
-    return () => clearInterval(autoScroll);
-  }, [carouselApi, isCarouselHovered, features]);
-
-  // Sync active feature with carousel position
+  // Sync active feature with carousel position when user drags
   useEffect(() => {
     if (!carouselApi) return;
 
@@ -300,6 +288,22 @@ const InteractiveLandingPage = () => {
       carouselApi.off("select", onSelect);
     };
   }, [carouselApi, features]);
+
+  // Auto-scroll carousel functionality
+  useEffect(() => {
+    if (!carouselApi || isCarouselHovered) return;
+
+    const autoScroll = setInterval(() => {
+      const currentIndex = carouselApi.selectedScrollSnap();
+      const slideCount = carouselApi.scrollSnapList().length;
+      
+      const nextIndex = currentIndex === slideCount - 1 ? 0 : currentIndex + 1;
+      carouselApi.scrollTo(nextIndex);
+      setActiveFeature(features[nextIndex].id);
+    }, 5000);
+
+    return () => clearInterval(autoScroll);
+  }, [carouselApi, isCarouselHovered, features]);
 
   const analyticsStats = [
     {
@@ -785,21 +789,22 @@ const InteractiveLandingPage = () => {
 
           {/* Feature Tabs Carousel */}
           <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full mb-12">
-            <Carousel
-              setApi={setCarouselApi}
-              opts={{
-                align: "start",
-                dragFree: true,
-                containScroll: "trimSnaps",
-              }}
-              className="w-full"
-            >
             <div 
-              className="relative px-12 mb-16"
+              className="relative"
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
             >
-                <TabsList className="w-full h-auto bg-transparent p-0">
+              <Carousel
+                setApi={setCarouselApi}
+                opts={{
+                  align: "start",
+                  dragFree: false,
+                  containScroll: "keepSnaps",
+                  loop: false,
+                }}
+                className="w-full px-12"
+              >
+                <TabsList className="w-full h-auto bg-transparent p-0 mb-16">
                   <CarouselContent className="-ml-4">
                     {features.map((feature) => (
                       <CarouselItem key={feature.id} className="pl-4 basis-auto">
@@ -819,10 +824,10 @@ const InteractiveLandingPage = () => {
                     ))}
                   </CarouselContent>
                 </TabsList>
-                <CarouselPrevious className="absolute -left-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
-                <CarouselNext className="absolute -right-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
-              </div>
-            </Carousel>
+                <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background shadow-md" />
+                <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background shadow-md" />
+              </Carousel>
+            </div>
 
             {/* Content Area - Image Only */}
             {features.map((feature) => (
