@@ -18,8 +18,15 @@ import {
   ArrowRight,
   CheckCircle,
   ArrowLeft,
-  AlertTriangle
+  AlertTriangle,
+  Linkedin,
+  Twitter,
+  Mail
 } from "lucide-react";
+import founderCEO from "@/assets/team/founder-ceo.jpg";
+import founderCTO from "@/assets/team/founder-cto.jpg";
+import headCommunity from "@/assets/team/head-community.jpg";
+import headSafety from "@/assets/team/head-safety.jpg";
 
 const About = () => {
   return (
@@ -357,6 +364,136 @@ const About = () => {
                 <p className="text-muted-foreground">Communities served</p>
               </Card>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Meet Our Team</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              The passionate individuals dedicated to building safer, more connected communities across Nigeria
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Founder & CEO */}
+            <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
+              <div className="aspect-square overflow-hidden bg-muted">
+                <img 
+                  src={founderCEO} 
+                  alt="Chukwuemeka Okonkwo - Founder & CEO"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-1">Chukwuemeka Okonkwo</h3>
+                <p className="text-sm text-primary font-semibold mb-3">Founder & CEO</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Former tech executive with 15+ years in community development and smart city solutions. Passionate about leveraging technology for social impact.
+                </p>
+                <div className="flex gap-3">
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Co-Founder & CTO */}
+            <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
+              <div className="aspect-square overflow-hidden bg-muted">
+                <img 
+                  src={founderCTO} 
+                  alt="Dr. Amara Nwosu - Co-Founder & CTO"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-1">Dr. Amara Nwosu</h3>
+                <p className="text-sm text-primary font-semibold mb-3">Co-Founder & CTO</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  PhD in Computer Science specializing in distributed systems and real-time communications. Built scalable platforms serving millions of users.
+                </p>
+                <div className="flex gap-3">
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Head of Community Engagement */}
+            <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
+              <div className="aspect-square overflow-hidden bg-muted">
+                <img 
+                  src={headCommunity} 
+                  alt="Oluwaseun Adeleke - Head of Community"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-1">Oluwaseun Adeleke</h3>
+                <p className="text-sm text-primary font-semibold mb-3">Head of Community</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Community organizer with a decade of grassroots experience. Dedicated to fostering meaningful connections and empowering local leaders.
+                </p>
+                <div className="flex gap-3">
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Head of Safety & Security */}
+            <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
+              <div className="aspect-square overflow-hidden bg-muted">
+                <img 
+                  src={headSafety} 
+                  alt="Ngozi Okeke - Head of Safety"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-1">Ngozi Okeke</h3>
+                <p className="text-sm text-primary font-semibold mb-3">Head of Safety & Security</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Former law enforcement officer with expertise in community policing and crisis response. Committed to creating safer neighborhoods for all.
+                </p>
+                <div className="flex gap-3">
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Mail className="h-5 w-5" />
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
