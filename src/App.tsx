@@ -11,6 +11,7 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { initializeStatusBar } from '@/hooks/mobile/useNativeStatusBar';
 
 import { AuthProvider } from "@/hooks/useAuth";
+import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { RealtimeProvider } from "@/contexts/RealtimeContext";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
@@ -191,6 +192,7 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  <ScrollToTopOnNavigate />
                   <RealtimeProvider>
                     <PresenceProvider>
           
