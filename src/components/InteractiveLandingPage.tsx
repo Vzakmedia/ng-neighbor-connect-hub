@@ -1051,7 +1051,7 @@ const InteractiveLandingPage = () => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="relative rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 p-8 shadow-2xl overflow-hidden"
+                className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-8 shadow-2xl overflow-hidden"
               >
                 {/* Decorative elements */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
