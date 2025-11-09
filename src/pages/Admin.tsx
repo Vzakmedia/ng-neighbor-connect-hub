@@ -2804,6 +2804,14 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                     <Download className="h-4 w-4" />
                     <span className="text-xs">Export Data</span>
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-3 flex flex-col items-center space-y-1 hover:bg-accent transition-colors"
+                    onClick={() => navigate('/admin/api-requests')}
+                  >
+                    <Code className="h-4 w-4" />
+                    <span className="text-xs">API Requests</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
