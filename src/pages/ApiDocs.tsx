@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 // Contact form validation schema
 const contactSchema = z.object({
@@ -75,19 +76,56 @@ const ApiDocs = () => {
     setIsSubmitting(true);
     
     try {
-      // In a real implementation, this would send to your backend
-      // For now, we'll simulate the submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Insert request into Supabase
+      const { data: insertedData, error: insertError } = await supabase
+        .from('api_access_requests')
+        .insert({
+          name: data.name,
+          email: data.email,
+          company: data.company,
+          request_type: data.requestType,
+          message: data.message,
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw insertError;
+      }
+
+      console.log('Request saved to database:', insertedData);
+      
+      // Send email notification via edge function
+      const { error: emailError } = await supabase.functions.invoke(
+        'send-api-request-notification',
+        {
+          body: {
+            name: data.name,
+            email: data.email,
+            company: data.company,
+            requestType: data.requestType,
+            message: data.message,
+            requestId: insertedData.id,
+          },
+        }
+      );
+      
+      // Don't fail if email fails, request is already saved
+      if (emailError) {
+        console.error('Email notification failed:', emailError);
+      }
       
       toast({
-        title: "Message sent successfully!",
-        description: "Our team will get back to you within 24-48 hours.",
+        title: "Request submitted successfully!",
+        description: "Our team will review your request and get back to you within 24-48 hours.",
       });
       
       reset();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error submitting request:', error);
       toast({
-        title: "Failed to send message",
+        title: "Failed to submit request",
         description: "Please try again or contact us directly at api@neighborlink.com",
         variant: "destructive",
       });
