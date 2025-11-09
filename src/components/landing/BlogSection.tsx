@@ -25,7 +25,36 @@ export const BlogSection = () => {
   }
 
   if (!posts || posts.length === 0) {
-    return null;
+    return (
+      <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 bg-muted/30">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <BookOpen className="w-8 h-8 text-primary" />
+              <h2 className="text-4xl md:text-5xl font-bold">From Our Blog</h2>
+            </div>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+              Insights, stories, and updates from the NeighborLink community
+            </p>
+            <Card className="max-w-md mx-auto p-8">
+              <CardContent className="text-center">
+                <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
+                <p className="text-muted-foreground">
+                  We're working on bringing you great content. Check back soon for community insights and stories!
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+    );
   }
 
   return (
