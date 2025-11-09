@@ -183,6 +183,17 @@ const Blog = () => {
           </aside>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/30 py-8">
+        <div className="container px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            © 2025 NeighborLink. All rights reserved. | 
+            <Link to="/privacy" className="ml-1 hover:text-primary transition-colors">Privacy Policy</Link> | 
+            <Link to="/terms" className="ml-1 hover:text-primary transition-colors">Terms of Service</Link>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
