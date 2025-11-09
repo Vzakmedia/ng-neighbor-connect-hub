@@ -421,11 +421,11 @@ const InteractiveLandingPage = () => {
           </motion.div>
           
           <nav className="hidden md:flex items-center space-x-8">
-            {['Features', 'About', 'Help', 'Contact'].map((item, index) => {
-              const href = item === 'About' ? '/about' : item === 'Help' ? '/help' : `#${item.toLowerCase()}`;
-              const LinkComponent = (item === 'About' || item === 'Help') ? Link : 'a';
+            {['Features', 'About', 'Blog', 'Help', 'Contact'].map((item, index) => {
+              const href = item === 'About' ? '/about' : item === 'Help' ? '/help' : item === 'Blog' ? '/blog' : `#${item.toLowerCase()}`;
+              const LinkComponent = (item === 'About' || item === 'Help' || item === 'Blog') ? Link : 'a';
               return <motion.div key={item}>
-                  <LinkComponent href={(item === 'About' || item === 'Help') ? undefined : href} to={(item === 'About' || item === 'Help') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
+                  <LinkComponent href={(item === 'About' || item === 'Help' || item === 'Blog') ? undefined : href} to={(item === 'About' || item === 'Help' || item === 'Blog') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
                     {item}
                   </LinkComponent>
                 </motion.div>;
@@ -481,9 +481,9 @@ const InteractiveLandingPage = () => {
           className="md:hidden overflow-hidden border-t bg-background"
         >
           <nav className="flex flex-col space-y-1 p-6">
-            {['Features', 'About', 'Testimonials', 'Contact'].map((item, index) => {
-              const href = item === 'About' ? '/about' : `#${item.toLowerCase()}`;
-              const LinkComponent = item === 'About' ? Link : 'a';
+            {['Features', 'About', 'Blog', 'Testimonials', 'Contact'].map((item, index) => {
+              const href = item === 'About' ? '/about' : item === 'Blog' ? '/blog' : `#${item.toLowerCase()}`;
+              const LinkComponent = (item === 'About' || item === 'Blog') ? Link : 'a';
               return (
                 <motion.div
                   key={item}
@@ -1314,7 +1314,7 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Resources</h4>
               <div className="space-y-2 text-sm">
-                <a href="#blog" className="block text-white/70 hover:text-white transition-colors">Blog</a>
+                <Link to="/blog" className="block text-white/70 hover:text-white transition-colors">Blog</Link>
                 <Link to="/help" className="block text-white/70 hover:text-white transition-colors">Help Center</Link>
                 <Link to="/community-guidelines" className="block text-white/70 hover:text-white transition-colors">Community Guidelines</Link>
                 <Link to="/security" className="block text-white/70 hover:text-white transition-colors">Security</Link>
