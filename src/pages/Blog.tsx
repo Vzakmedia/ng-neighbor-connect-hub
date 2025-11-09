@@ -7,7 +7,6 @@ import Header from '@/components/Header';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookOpen } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
 
 const Blog = () => {
   const [filters, setFilters] = useState<{
@@ -22,16 +21,7 @@ const Blog = () => {
   const regularPosts = posts?.filter(post => post.id !== featuredPost?.id) || [];
 
   return (
-    <>
-      <Helmet>
-        <title>Blog - NeighborLink</title>
-        <meta 
-          name="description" 
-          content="Stay updated with the latest news, tips, and stories from the NeighborLink community." 
-        />
-      </Helmet>
-
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <Header />
         
         <div className="container mx-auto px-4 py-8 mt-16">
@@ -94,7 +84,6 @@ const Blog = () => {
           </div>
         </div>
       </div>
-    </>
   );
 };
 
