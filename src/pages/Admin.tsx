@@ -31,6 +31,7 @@ import { DirectMessageDialog } from '@/components/DirectMessageDialog';
 import { UserProfileDialog } from '@/components/UserProfileDialog';
 import ReportIncidentDialog from '../components/ReportIncidentDialog';
 import NewsletterSubscribersPanel from '@/components/admin/NewsletterSubscribersPanel';
+import { BlogManagementPanel } from '@/components/admin/BlogManagementPanel';
 
 const Admin = () => {
   const { user } = useAuth();
