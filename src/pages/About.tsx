@@ -10,12 +10,35 @@ import {
   Heart, 
   Star,
   ArrowRight,
-  CheckCircle 
+  CheckCircle,
+  ArrowLeft
 } from "lucide-react";
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                alt="NeighborLink Logo" 
+                className="h-8 w-8" 
+              />
+              <span className="font-bold text-xl">NeighborLink</span>
+            </div>
+            <Link to="/landing">
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto text-center">
@@ -251,16 +274,16 @@ const About = () => {
         </div>
       </section>
 
-      {/* Back to Home */}
-      <section className="py-8 px-4 border-t">
-        <div className="container mx-auto text-center">
-          <Link to="/">
-            <Button variant="ghost">
-              ← Back to Home
-            </Button>
-          </Link>
+      {/* Footer */}
+      <footer className="border-t bg-muted/30 py-8">
+        <div className="container px-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            © 2025 NeighborLink. All rights reserved. | 
+            <Link to="/privacy" className="ml-1 hover:text-primary transition-colors">Privacy Policy</Link> | 
+            <Link to="/terms" className="ml-1 hover:text-primary transition-colors">Terms of Service</Link>
+          </p>
         </div>
-      </section>
+      </footer>
     </div>
   );
 };
