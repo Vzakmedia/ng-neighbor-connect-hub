@@ -27,6 +27,7 @@ import locationServicesImg from '@/assets/landing/location-services.jpg';
 import sarahJohnsonImg from "@/assets/testimonials/sarah-johnson.jpg";
 import ahmedIbrahimImg from "@/assets/testimonials/ahmed-ibrahim.jpg";
 import graceOkaforImg from "@/assets/testimonials/grace-okafor.jpg";
+import { BlogSection } from '@/components/landing/BlogSection';
 
 // Newsletter form validation schema
 const newsletterSchema = z.object({
@@ -1098,6 +1099,9 @@ const InteractiveLandingPage = () => {
         </div>
       </section>
 
+      {/* Blog Section */}
+      <BlogSection />
+
       {/* Footer */}
       <footer className="bg-primary text-white">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-16">
@@ -1187,7 +1191,7 @@ const InteractiveLandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4 text-white">Resources</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/blog" className="block text-white/70 hover:text-white transition-colors">Blog</Link>
+                <a href="#blog" className="block text-white/70 hover:text-white transition-colors">Blog</a>
                 <a href="#contact" className="block text-white/70 hover:text-white transition-colors">Help Center</a>
                 <Link to="/community-guidelines" className="block text-white/70 hover:text-white transition-colors">Community Guidelines</Link>
                 <Link to="/security" className="block text-white/70 hover:text-white transition-colors">Security</Link>
