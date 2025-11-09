@@ -1,11 +1,28 @@
-import { ArrowLeft, MapPin, Clock, Users, Heart, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { 
+  Shield, 
+  Users, 
+  MessageCircle, 
+  MapPin, 
+  Heart, 
+  Star,
+  ArrowRight,
+  CheckCircle,
+  Briefcase,
+  Clock,
+  TrendingUp,
+  Lightbulb,
+  Globe,
+  Coffee,
+  GraduationCap
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import teamCollaboration from "@/assets/careers/team-collaboration.jpg";
+import officeSpace from "@/assets/careers/office-space.jpg";
 
 const Careers = () => {
   const [openPositions, setOpenPositions] = useState<any[]>([]);
@@ -68,6 +85,24 @@ const Careers = () => {
       type: "Full-time",
       remote: true,
       description: "Build and nurture relationships with neighborhood communities, organize events, and drive user engagement across our platform."
+    },
+    {
+      id: 5,
+      title: "Backend Engineer",
+      department: "Engineering",
+      location: "Remote",
+      type: "Full-time",
+      remote: true,
+      description: "Build robust, scalable APIs and microservices to power our community safety platform using Node.js and PostgreSQL."
+    },
+    {
+      id: 6,
+      title: "Data Analyst",
+      department: "Analytics",
+      location: "Lagos, Nigeria",
+      type: "Full-time",
+      remote: true,
+      description: "Analyze community data to drive insights and improve safety outcomes across Nigerian neighborhoods."
     }
   ];
 
@@ -75,39 +110,53 @@ const Careers = () => {
     {
       icon: Heart,
       title: "Health & Wellness",
-      description: "Comprehensive health insurance, mental health support, and wellness programs"
+      description: "Comprehensive health insurance, mental health support, and wellness programs for you and your family"
     },
     {
-      icon: Users,
-      title: "Team Culture",
-      description: "Collaborative environment with diverse, passionate colleagues working toward meaningful impact"
+      icon: TrendingUp,
+      title: "Competitive Salary",
+      description: "Industry-leading compensation packages with performance bonuses and equity options"
     },
     {
-      icon: Briefcase,
-      title: "Professional Growth",
-      description: "Learning budget, conference attendance, and clear career progression paths"
+      icon: GraduationCap,
+      title: "Learning & Development",
+      description: "Annual learning budget, conference tickets, and access to premium courses and certifications"
     },
     {
       icon: Clock,
-      title: "Work-Life Balance",
-      description: "Flexible working hours, remote work options, and generous time off policies"
+      title: "Flexible Schedule",
+      description: "Work-life balance with flexible hours, remote options, and generous paid time off"
+    },
+    {
+      icon: Coffee,
+      title: "Great Perks",
+      description: "Free meals, gym membership, team outings, and modern office spaces in prime locations"
+    },
+    {
+      icon: Globe,
+      title: "Remote-First",
+      description: "Work from anywhere in Nigeria with home office setup stipend and co-working credits"
     }
   ];
 
   const values = [
     {
+      icon: Shield,
       title: "Community First",
       description: "We put the needs of Nigerian communities at the center of everything we do."
     },
     {
+      icon: Users,
       title: "Safety & Trust",
       description: "Building secure, reliable platforms that people can depend on in critical moments."
     },
     {
+      icon: Lightbulb,
       title: "Innovation with Purpose",
       description: "Leveraging technology to solve real-world problems and improve lives."
     },
     {
+      icon: CheckCircle,
       title: "Inclusive Excellence",
       description: "Creating diverse teams where everyone can thrive and contribute their best work."
     }
@@ -116,174 +165,286 @@ const Careers = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <Link to="/landing" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <img 
                 src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
                 alt="NeighborLink Logo" 
                 className="h-8 w-8" 
               />
               <span className="font-bold text-xl">NeighborLink</span>
-            </div>
-            <Link to="/landing">
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
-              </Button>
             </Link>
+            <nav className="hidden md:flex items-center gap-6">
+              <Link to="/about" className="text-sm hover:text-primary transition-colors">About</Link>
+              <Link to="/careers" className="text-sm font-semibold text-primary">Careers</Link>
+            </nav>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container px-4 py-12 max-w-6xl mx-auto">
-        <div className="space-y-8">
-          {/* Hero Section */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold">Join Our Mission</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Help us build stronger, safer communities across Nigeria. Make a meaningful impact while growing your career.
+      {/* Hero Section */}
+      <section className="relative py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge className="w-fit">Join Our Team</Badge>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                Build the Future of Community Safety
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Join a passionate team dedicated to creating safer, more connected neighborhoods across Nigeria. Make a real impact while growing your career.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" className="gap-2">
+                  View Open Positions
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button size="lg" variant="outline">
+                  Learn About Our Culture
+                </Button>
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-4 pt-6">
+                <div>
+                  <div className="text-3xl font-bold text-primary">50+</div>
+                  <div className="text-sm text-muted-foreground">Team Members</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">5</div>
+                  <div className="text-sm text-muted-foreground">Office Locations</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-primary">4.9</div>
+                  <div className="text-sm text-muted-foreground">Glassdoor Rating</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
+              <img 
+                src={teamCollaboration} 
+                alt="NeighborLink Team Collaboration"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Values */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Values</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              The principles that guide everything we do at NeighborLink
             </p>
           </div>
 
-          <Separator />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value, index) => (
+              <Card key={index} className="text-center hover-scale transition-all duration-300 border-2">
+                <CardContent className="pt-8 pb-6">
+                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <value.icon className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2">{value.title}</h3>
+                  <p className="text-sm text-muted-foreground">{value.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          {/* Company Values */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Our Values</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {values.map((value, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{value.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{value.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Why Work With Us */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Work With Us</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              We invest in our team with competitive benefits and a culture of growth
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {benefits.map((benefit, index) => (
+              <Card key={index} className="hover-scale transition-all duration-300">
+                <CardContent className="pt-6">
+                  <benefit.icon className="h-8 w-8 text-primary mb-3" />
+                  <h3 className="font-semibold text-lg mb-2">{benefit.title}</h3>
+                  <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Office Image */}
+          <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
+            <img 
+              src={officeSpace} 
+              alt="NeighborLink Office Space"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+              <div className="p-8 text-white">
+                <h3 className="text-2xl font-bold mb-2">Modern Workspaces</h3>
+                <p className="text-white/90">State-of-the-art offices in Lagos, Abuja, and Port Harcourt</p>
+              </div>
             </div>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* Open Positions */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold">Open Positions</h2>
-            <div className="grid gap-6">
-              {(openPositions.length > 0 ? openPositions : staticPositions).map((position) => (
-                <Card key={position.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                      <div className="space-y-2">
-                        <CardTitle className="text-xl">{position.title}</CardTitle>
+      {/* Open Positions */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Open Positions</h2>
+            <p className="text-muted-foreground text-lg">
+              Find your next role and join our mission
+            </p>
+          </div>
+
+          <div className="grid gap-6">
+            {(openPositions.length > 0 ? openPositions : staticPositions).map((position) => (
+              <Card key={position.id} className="hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="space-y-3 flex-1">
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">{position.title}</h3>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary">{position.department}</Badge>
+                          <Badge variant="secondary" className="gap-1">
+                            <Briefcase className="h-3 w-3" />
+                            {position.department}
+                          </Badge>
+                          <Badge variant="outline" className="gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {position.location}
+                          </Badge>
                           <Badge variant="outline">{position.type}</Badge>
-                          {position.remote && <Badge variant="outline">Remote OK</Badge>}
+                          {position.remote && <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">Remote OK</Badge>}
                         </div>
                       </div>
-                      <Button>Apply Now</Button>
+                      <p className="text-muted-foreground">{position.description}</p>
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="mr-1 h-4 w-4" />
-                      {position.location}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{position.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold mb-2">Don't See Your Role?</h3>
-                <p className="text-muted-foreground mb-4">
-                  We're always looking for talented individuals who are passionate about community impact.
-                </p>
-                <Button variant="outline">
-                  Send Us Your Resume
-                </Button>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Benefits */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Why Work With Us</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {benefits.map((benefit, index) => (
-                <Card key={index} className="text-center">
-                  <CardContent className="pt-6">
-                    <benefit.icon className="h-8 w-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-2">{benefit.title}</h3>
-                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          {/* Application Process */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Application Process</h2>
-            <div className="grid md:grid-cols-4 gap-6">
-              {[
-                {
-                  step: "1",
-                  title: "Apply Online",
-                  description: "Submit your application through our careers portal"
-                },
-                {
-                  step: "2",
-                  title: "Initial Review",
-                  description: "Our team reviews your application and experience"
-                },
-                {
-                  step: "3",
-                  title: "Interview Process",
-                  description: "Technical and cultural fit interviews with our team"
-                },
-                {
-                  step: "4",
-                  title: "Welcome Aboard",
-                  description: "Join our mission to build stronger communities"
-                }
-              ].map((item, index) => (
-                <div key={index} className="text-center space-y-2">
-                  <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg mx-auto">
-                    {item.step}
+                    <Button className="lg:self-start gap-2">
+                      Apply Now
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <h3 className="font-semibold">{item.title}</h3>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Don't See Your Role */}
+          <Card className="mt-8 border-2 border-primary/20">
+            <CardContent className="p-8 text-center">
+              <MessageCircle className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">Don't See Your Role?</h3>
+              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+                We're always looking for talented individuals who are passionate about community impact. Send us your resume and let's talk about how you can contribute.
+              </p>
+              <Button variant="outline" size="lg">
+                Send Us Your Resume
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Application Process */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Hiring Process</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              A transparent, efficient process designed to find the best mutual fit
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Apply Online",
+                description: "Submit your application and resume through our careers portal",
+                icon: Users
+              },
+              {
+                step: "02",
+                title: "Initial Review",
+                description: "Our team reviews your application and experience within 3-5 days",
+                icon: CheckCircle
+              },
+              {
+                step: "03",
+                title: "Interviews",
+                description: "Meet the team through technical and cultural fit interviews",
+                icon: MessageCircle
+              },
+              {
+                step: "04",
+                title: "Welcome Aboard",
+                description: "Receive your offer and join our mission to build safer communities",
+                icon: Heart
+              }
+            ].map((item, index) => (
+              <div key={index} className="relative">
+                <div className="text-center space-y-4">
+                  <div className="relative inline-block">
+                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
+                      <item.icon className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary">{item.step}</span>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-lg">{item.title}</h3>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Contact */}
-          <section className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Questions About Careers?</h2>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground mb-4">
-                  Have questions about our roles, culture, or application process? We'd love to hear from you.
-                </p>
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    Email us at: <span className="font-mono">careers@neighborlink.ng</span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    We typically respond within 2 business days
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+                
+                {/* Connector Line */}
+                {index < 3 && (
+                  <div className="hidden lg:block absolute top-8 left-[60%] w-full h-0.5 bg-border" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-4xl">
+          <Card className="border-2">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageCircle className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-3xl font-bold mb-4">Questions About Careers?</h2>
+              <p className="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
+                Have questions about our roles, culture, or application process? Our team is here to help.
+              </p>
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 text-lg">
+                  <span className="text-muted-foreground">Email us at:</span>
+                  <span className="font-mono font-semibold text-primary">careers@neighborlink.ng</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  We typically respond within 1-2 business days
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8">
