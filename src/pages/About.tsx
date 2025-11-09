@@ -184,42 +184,123 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="py-16 px-4 bg-muted/50">
-        <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Values</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The principles that guide everything we do at NeighborLink
+      <section className="py-20 px-4 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
+        <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-primary/5 blur-[100px] rounded-full" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-primary/5 blur-[100px] rounded-full" />
+        
+        <div className="container mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">Our Core Values</h2>
+            <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+              Building safer, stronger communities through innovation, trust, and commitment to our neighbors across Nigeria
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-8 text-center">
-              <Heart className="h-12 w-12 text-primary mx-auto mb-6" />
-              <h3 className="text-xl font-semibold mb-4">Community First</h3>
-              <p className="text-muted-foreground">
-                Every decision we make is guided by what's best for our communities. 
-                We prioritize user needs and community safety above all else.
-              </p>
-            </Card>
-            
-            <Card className="p-8 text-center">
-              <Shield className="h-12 w-12 text-primary mx-auto mb-6" />
-              <h3 className="text-xl font-semibold mb-4">Privacy & Security</h3>
-              <p className="text-muted-foreground">
-                We protect your data with bank-level security and give you complete 
-                control over your privacy settings and information sharing.
-              </p>
-            </Card>
-            
-            <Card className="p-8 text-center">
-              <Star className="h-12 w-12 text-primary mx-auto mb-6" />
-              <h3 className="text-xl font-semibold mb-4">Innovation</h3>
-              <p className="text-muted-foreground">
-                We continuously innovate to solve real community challenges and 
-                make neighborhood connections more meaningful and effective.
-              </p>
-            </Card>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Community First Card */}
+            <div className="group animate-fade-in">
+              <Card className="bg-white/95 backdrop-blur-sm p-6 rounded-3xl overflow-hidden hover-scale shadow-2xl border-0">
+                <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
+                  <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 rotate-[-5deg] group-hover:rotate-0 transition-transform duration-300">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
+                        <span className="font-semibold text-sm">Community Hub</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-primary/10 rounded-lg p-3">
+                          <div className="text-xs text-muted-foreground">Members</div>
+                          <div className="text-lg font-bold text-primary">1,200+</div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="text-xs text-muted-foreground">Active</div>
+                          <div className="text-lg font-bold text-green-600">850+</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <Heart className="h-3 w-3 text-red-500 fill-current" />
+                        <span className="text-muted-foreground">Community engagement</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-center">Community First</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  Every decision we make is guided by what's best for our communities. We prioritize user needs and community safety above all else.
+                </p>
+              </Card>
+            </div>
+
+            {/* Privacy & Security Card */}
+            <div className="group animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <Card className="bg-white/95 backdrop-blur-sm p-6 rounded-3xl overflow-hidden hover-scale shadow-2xl border-0">
+                <div className="aspect-[4/3] bg-gradient-to-br from-green-500/10 to-emerald-500/5 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent" />
+                  <div className="relative z-10 bg-gray-900 text-white rounded-2xl shadow-xl p-6 rotate-[5deg] group-hover:rotate-0 transition-transform duration-300">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Shield className="h-6 w-6 text-green-400" />
+                        <div className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Secured</div>
+                      </div>
+                      <div className="text-sm font-semibold">Privacy Settings</div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Data Encryption</span>
+                          <div className="w-12 h-2 bg-green-500 rounded-full" />
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">2FA Enabled</span>
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400">Location Privacy</span>
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-center">Privacy & Security</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  We protect your data with bank-level security and give you complete control over your privacy settings and information sharing.
+                </p>
+              </Card>
+            </div>
+
+            {/* Innovation Card */}
+            <div className="group animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <Card className="bg-white/95 backdrop-blur-sm p-6 rounded-3xl overflow-hidden hover-scale shadow-2xl border-0">
+                <div className="aspect-[4/3] bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent" />
+                  <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 rotate-[-3deg] group-hover:rotate-0 transition-transform duration-300">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-green-500" />
+                        <span className="font-semibold text-sm">Live Tracking</span>
+                      </div>
+                      <div className="bg-gray-100 rounded-lg h-24 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-blue-200 opacity-30" />
+                        <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                        <div className="absolute bottom-4 right-4">
+                          <div className="bg-primary text-white text-xs px-2 py-1 rounded-full">Tracking ID: #TKP01</div>
+                        </div>
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                          <path d="M 20 80 Q 30 40 50 50 T 80 20" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-500" />
+                        </svg>
+                      </div>
+                      <div className="text-xs text-muted-foreground">Real-time updates</div>
+                    </div>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-center">Innovation</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  We continuously innovate to solve real community challenges and make neighborhood connections more meaningful and effective.
+                </p>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
