@@ -2,6 +2,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { 
   Shield, 
   Users, 
@@ -352,6 +358,83 @@ const About = () => {
               </Card>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground text-lg">
+              Get answers to common questions about NeighborLink
+            </p>
+          </div>
+
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            <AccordionItem value="item-1" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">What is NeighborLink?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                NeighborLink is a comprehensive community safety and engagement platform that connects neighbors, enhances security through real-time alerts, and fosters stronger community bonds. Our platform combines safety features, communication tools, and community resources all in one place.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">How does the safety alert system work?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Our safety alert system allows community members to instantly report suspicious activities, emergencies, or safety concerns. Alerts are sent in real-time to nearby neighbors and can include location tracking, photos, and detailed descriptions. The system also integrates with local authorities for immediate response when needed.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">Is NeighborLink available in my area?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                NeighborLink is currently available across all 36 Nigerian states and serves over 1,200 communities. Simply download the app and enter your location to see if your neighborhood is active. If not, you can be the first to bring NeighborLink to your community!
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">How much does NeighborLink cost?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                NeighborLink offers a free basic plan that includes essential safety features, community messaging, and local alerts. Premium plans are available for enhanced features like advanced analytics, priority support, and extended alert history. We believe everyone deserves access to community safety tools.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">How is my privacy protected?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                We take privacy seriously. All data is encrypted end-to-end, and you have complete control over what information you share. Location data is only shared when you choose to send an alert, and you can adjust your privacy settings at any time. We never sell your personal information to third parties.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-6" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">Can I use NeighborLink for my community organization?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                Absolutely! NeighborLink is perfect for community organizations, neighborhood watch groups, and local associations. We offer special features for community leaders including group management tools, event coordination, and community-wide announcements. Contact us to learn more about our organization plans.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-7" className="bg-background border rounded-lg px-6">
+              <AccordionTrigger className="text-left hover:no-underline">
+                <span className="font-semibold">What devices are supported?</span>
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                NeighborLink is available on iOS (iPhone and iPad) and Android devices. You can download our app from the App Store or Google Play Store. We also offer a web version accessible from any modern browser for added convenience.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
 
