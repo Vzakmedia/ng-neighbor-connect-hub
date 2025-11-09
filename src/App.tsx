@@ -61,6 +61,7 @@ import CommunityGuidelines from "./pages/CommunityGuidelines";
 import Press from "./pages/Press";
 import Careers from "./pages/Careers";
 import ApiDocs from "./pages/ApiDocs";
+import ApiRequestsAdmin from "./pages/ApiRequestsAdmin";
 import BlogPost from "./pages/BlogPost";
 import Blog from "./pages/Blog";
 
@@ -234,6 +235,7 @@ const App = () => {
               <Route path="/press" element={<Press />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/api-docs" element={<ApiDocs />} />
+              <Route path="/admin/api-requests" element={<ApiRequestsAdmin />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
             </Routes>
