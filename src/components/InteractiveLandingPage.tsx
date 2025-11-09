@@ -971,9 +971,6 @@ const InteractiveLandingPage = () => {
                 <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
                   Integrate community data into your platform
                 </h2>
-                <p className="text-muted-foreground text-lg">
-                  Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
-                </p>
               </div>
 
               {/* Features List */}
