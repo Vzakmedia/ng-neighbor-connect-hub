@@ -65,7 +65,7 @@ const BlogPost = () => {
         
         <article className="container mx-auto px-4 py-8 mt-16">
           {/* Back Button */}
-          <Link to="/blog">
+          <Link to="/#blog">
             <Button variant="ghost" className="mb-6 gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back to Blog
