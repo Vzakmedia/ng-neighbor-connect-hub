@@ -245,6 +245,24 @@ export const BlogSection = () => {
             </motion.div>
           ))}
           </div>
+
+          {/* View All Posts Button */}
+          {posts && posts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex justify-center mt-12"
+            >
+              <Link to="/blog">
+                <Button size="lg" variant="outline" className="group">
+                  View All Posts
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </motion.div>
+          )}
         </div>
       </div>
     </section>
