@@ -851,29 +851,6 @@ const InteractiveLandingPage = () => {
           backgroundSize: "50px 50px"
         }} />
         
-        <div className="absolute inset-0 opacity-20">
-          {Array.from({
-            length: 30
-          }).map((_, i) => <motion.div key={i} className="absolute text-white" style={{
-            left: `${i * 13 % 100}%`,
-            top: `${i * 17 % 100}%`,
-            fontSize: '24px'
-          }} animate={{
-            y: [-10, 10, -10],
-            opacity: [0.3, 0.7, 0.3]
-          }} transition={{
-            duration: 3 + i % 3,
-            repeat: Infinity,
-            delay: i % 5 * 0.5
-          }}>
-              {i % 6 === 0 && <Users className="w-6 h-6" />}
-              {i % 6 === 1 && <Shield className="w-6 h-6" />}
-              {i % 6 === 2 && <MessageSquare className="w-6 h-6" />}
-              {i % 6 === 3 && <Heart className="w-6 h-6" />}
-              {i % 6 === 4 && <MapPin className="w-6 h-6" />}
-              {i % 6 === 5 && <Calendar className="w-6 h-6" />}
-            </motion.div>)}
-        </div>
         
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 text-center space-y-8 relative">
           <motion.div initial={{
