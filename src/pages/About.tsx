@@ -306,81 +306,48 @@ const About = () => {
       </section>
 
       {/* Story Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Story</h2>
-              <p className="text-lg text-muted-foreground">
-                How NeighborLink came to be and where we're going
-              </p>
+      <section className="py-20 px-4 bg-background">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left Column - Story Text */}
+            <div className="space-y-6">
+              <h2 className="text-5xl md:text-6xl font-bold">Our Story</h2>
+              <div className="space-y-4 text-muted-foreground">
+                <p className="text-lg leading-relaxed">
+                  NeighborLink was born from a simple observation: in an increasingly connected world, 
+                  many people don't know their neighbors. This disconnect weakens communities and 
+                  makes neighborhoods less safe and resilient.
+                </p>
+                
+                <p className="text-lg leading-relaxed">
+                  Founded in Lagos in 2024, we started with a vision to rebuild the social fabric 
+                  of Nigerian communities using technology. Our founders, having experienced both 
+                  the challenges and the incredible potential of neighborhood communities, 
+                  set out to create a platform that makes it easy for neighbors to connect and support each other.
+                </p>
+              </div>
             </div>
-            
-            <div className="prose prose-lg max-w-none">
-              <Card className="p-8">
-                <CardContent className="p-0">
-                  <p className="text-lg mb-6">
-                    NeighborLink was born from a simple observation: in an increasingly connected world, 
-                    many people don't know their neighbors. This disconnect weakens communities and 
-                    makes neighborhoods less safe and resilient.
-                  </p>
-                  
-                  <p className="text-lg mb-6">
-                    Founded in Lagos in 2024, we started with a vision to rebuild the social fabric 
-                    of Nigerian communities using technology. Our founders, having experienced both 
-                    the challenges and the incredible potential of neighborhood communities, 
-                    set out to create a platform that would make it easy for neighbors to connect, 
-                    communicate, and support each other.
-                  </p>
-                  
-                  <p className="text-lg mb-8">
-                    Today, NeighborLink serves communities across Nigeria, from bustling urban 
-                    neighborhoods in Lagos and Abuja to tight-knit communities in smaller cities. 
-                    We're proud to be building stronger, safer communities one neighborhood at a time.
-                  </p>
-                  
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-semibold mb-2">Community-Driven Development</h4>
-                        <p className="text-muted-foreground">
-                          We build features based on real community needs and feedback
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-semibold mb-2">Local Partnerships</h4>
-                        <p className="text-muted-foreground">
-                          We work with local organizations and authorities to enhance community safety
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-semibold mb-2">Nigerian-First Design</h4>
-                        <p className="text-muted-foreground">
-                          Built specifically for Nigerian communities and cultural contexts
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3">
-                      <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-semibold mb-2">Continuous Innovation</h4>
-                        <p className="text-muted-foreground">
-                          Always improving and adding new features to serve our communities better
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
+
+            {/* Right Column - Stats Grid */}
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-8 text-center border-2 hover-scale transition-all duration-300">
+                <div className="text-5xl md:text-6xl font-bold mb-3">2024</div>
+                <p className="text-muted-foreground">Founded in Lagos</p>
+              </Card>
+
+              <Card className="p-8 text-center border-2 hover-scale transition-all duration-300">
+                <div className="text-5xl md:text-6xl font-bold mb-3">50K+</div>
+                <p className="text-muted-foreground">Active users</p>
+              </Card>
+
+              <Card className="p-8 text-center border-2 hover-scale transition-all duration-300">
+                <div className="text-5xl md:text-6xl font-bold mb-3">36</div>
+                <p className="text-muted-foreground">Nigerian states</p>
+              </Card>
+
+              <Card className="p-8 text-center border-2 hover-scale transition-all duration-300">
+                <div className="text-5xl md:text-6xl font-bold mb-3">1.2K+</div>
+                <p className="text-muted-foreground">Communities served</p>
               </Card>
             </div>
           </div>
