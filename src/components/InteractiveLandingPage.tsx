@@ -957,17 +957,13 @@ const InteractiveLandingPage = () => {
           </motion.div>
 
           {/* Heading and Description */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-bold leading-tight">
-                Integrate community data into your platform
-              </h2>
-            </div>
-            <div className="flex items-center">
-              <p className="text-muted-foreground text-lg">
-                Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
-              </p>
-            </div>
+          <div className="max-w-3xl mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+              Integrate community data into your platform
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Access verified neighborhood data, community insights, and safety alerts through our powerful API. Built for developers who want to integrate trusted local community features.
+            </p>
           </div>
           
           {/* Two Column Layout */}
