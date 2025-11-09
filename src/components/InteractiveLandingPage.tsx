@@ -274,7 +274,7 @@ const InteractiveLandingPage = () => {
     }
   }, [activeFeature, carouselApi, features]);
 
-  // Sync active feature with carousel position when user drags
+  // Sync active feature with carousel position when user interacts
   useEffect(() => {
     if (!carouselApi) return;
 
@@ -289,21 +289,16 @@ const InteractiveLandingPage = () => {
     };
   }, [carouselApi, features]);
 
-  // Auto-scroll carousel functionality
+  // Auto-scroll carousel functionality - loops through all features
   useEffect(() => {
     if (!carouselApi || isCarouselHovered) return;
 
     const autoScroll = setInterval(() => {
-      const currentIndex = carouselApi.selectedScrollSnap();
-      const slideCount = carouselApi.scrollSnapList().length;
-      
-      const nextIndex = currentIndex === slideCount - 1 ? 0 : currentIndex + 1;
-      carouselApi.scrollTo(nextIndex);
-      setActiveFeature(features[nextIndex].id);
+      carouselApi.scrollNext();
     }, 5000);
 
     return () => clearInterval(autoScroll);
-  }, [carouselApi, isCarouselHovered, features]);
+  }, [carouselApi, isCarouselHovered]);
 
   const analyticsStats = [
     {
@@ -798,9 +793,7 @@ const InteractiveLandingPage = () => {
                 setApi={setCarouselApi}
                 opts={{
                   align: "start",
-                  dragFree: false,
-                  containScroll: "keepSnaps",
-                  loop: false,
+                  loop: true,
                 }}
                 className="w-full px-12"
               >
