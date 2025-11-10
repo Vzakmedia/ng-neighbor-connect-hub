@@ -342,26 +342,28 @@ const HomeDashboard = () => {
                       {marketplaceHighlights.slice(0, 2).map((item) => (
                         <div 
                           key={item.id} 
-                          className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors touch-manipulation active:bg-muted/70"
+                          className="flex items-start gap-3 p-2.5 md:p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors touch-manipulation active:bg-muted/70"
                           onClick={() => navigate('/marketplace')}
                           title={`View ${item.title}`}
                         >
                           <img 
                             src={item.image} 
                             alt={item.title}
-                            className="w-12 h-12 object-cover rounded-md"
+                            className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-md flex-shrink-0"
                           />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm md:text-base truncate">{item.title}</h4>
-                            <p className="text-sm md:text-base font-semibold text-community-green">{item.price}</p>
-                            <div className="flex items-center text-xs md:text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              <span className="truncate">{item.location}</span>
+                          <div className="flex-1 min-w-0 flex flex-col gap-1">
+                            <h4 className="font-medium text-sm md:text-base line-clamp-1">{item.title}</h4>
+                            <p className="text-base md:text-lg font-semibold text-community-green">{item.price}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center text-xs md:text-sm text-muted-foreground">
+                                <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                                <span className="truncate">{item.location}</span>
+                              </div>
+                              <Badge variant="outline" className="text-xs flex-shrink-0">
+                                {item.category}
+                              </Badge>
                             </div>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            {item.category}
-                          </Badge>
                         </div>
                       ))}
                     </div>
