@@ -31,10 +31,6 @@ const UnifiedMessaging = () => {
   const onConversationUpdateRef = useRef<(() => void) | null>(null);
   const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
   const renderCountRef = useRef(0);
-  
-  // Fix 6: Debug render counting - MUST be at top
-  renderCountRef.current++;
-  console.log('UnifiedMessaging render #', renderCountRef.current);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
   const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
@@ -233,6 +229,10 @@ const UnifiedMessaging = () => {
   useEffect(() => {
     document.title = 'Messages | Conversations';
   }, []);
+  
+  // Fix 6: Debug render counting - AFTER all hooks
+  renderCountRef.current++;
+  console.log('UnifiedMessaging render #', renderCountRef.current);
 
   return (
     <div className="h-[calc(100vh-8rem)]">
