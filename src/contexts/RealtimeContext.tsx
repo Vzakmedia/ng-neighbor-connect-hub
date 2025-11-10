@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Event callback types
 type CommunityPostCallback = (payload: any) => void;
@@ -41,6 +42,7 @@ export const useRealtimeContext = () => {
 export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   // Callback registries
   const communityPostCallbacks = useRef<Set<CommunityPostCallback>>(new Set());
@@ -97,8 +99,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     // 2. Direct Messages Subscription - REMOVED
     // Messages are handled by local broadcast channels in useDirectMessages hook
     // to prevent double subscriptions and infinite loops
-    if (isMessagingRoute) {
-      // 3. Conversations Subscription
+    
+    // 3. Conversations Subscription - DISABLED ON MOBILE
+    // On mobile, conversation updates cause looping and UI freezes
+    if (isMessagingRoute && !isMobile) {
       const conversationsSub = createSafeSubscription(
         (channel) => channel
           .on('postgres_changes', {

@@ -94,53 +94,22 @@ const UnifiedMessaging = () => {
     await markConversationAsRead(conv.id);
   }, [navigate, user?.id, fetchMessages, markConversationAsRead]);
 
-  // Step 3: Stabilize onNewMessage using conversationsRef
+  // No-op: Message handling moved to useDirectMessages broadcast channel
   const onNewMessage = useCallback((message: Message) => {
-    if (!activeConversation) {
-      // Don't fetch conversations on mobile - let user manually refresh
-      const isMobile = window.innerWidth < 768;
-      if (isMobile) return;
-      
-      // Use ref to avoid dependency on conversations array
-      const existingConv = conversationsRef.current.find(c => 
-        (c.user1_id === message.sender_id && c.user2_id === message.recipient_id) ||
-        (c.user1_id === message.recipient_id && c.user2_id === message.sender_id)
-      );
-      if (!existingConv) {
-        fetchConversations(); // Only fetch if truly new
-      }
-      return;
-    }
-    const belongsToActive = (message.sender_id === activeConversation.user1_id && message.recipient_id === activeConversation.user2_id) ||
-                            (message.sender_id === activeConversation.user2_id && message.recipient_id === activeConversation.user1_id);
-    if (belongsToActive) {
-      // Append message directly to state - no refetch needed
-      addMessage(message);
-      // If user is recipient, mark as read
-      if (user && message.recipient_id === user.id) {
-        markConversationAsRead(activeConversation.id);
-        (async () => {
-          try {
-            await supabase.rpc('mark_messages_as_delivered', {
-              recipient_user_id: user.id,
-              sender_user_id: message.sender_id
-            });
-          } catch {}
-        })();
-      }
-      const isMobile = window.innerWidth < 768;
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ 
-        behavior: isMobile ? 'auto' : 'smooth' 
-      }), 100);
-    }
-    // Don't refresh conversation list on mobile for other messages
-  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations]); // Removed 'conversations'
+    // This is now a no-op - messages are handled by useDirectMessages
+  }, []);
 
   const onMessageUpdate = useCallback((message: Message) => {
     updateMessage(message);
   }, [updateMessage]);
 
-  // Step 6: Prevent conversation list updates on mobile completely
+  // Stabilize fetchConversations with ref
+  const fetchConversationsRef = useRef(fetchConversations);
+  useEffect(() => {
+    fetchConversationsRef.current = fetchConversations;
+  }, [fetchConversations]);
+
+  // Stable callback - no fetchConversations dependency
   const onConversationUpdate = useCallback(() => {
     const isMobile = window.innerWidth < 768;
     
@@ -159,8 +128,8 @@ const UnifiedMessaging = () => {
       return;
     }
     lastConversationUpdateRef.current = now;
-    fetchConversations();
-  }, [fetchConversations]); // Removed activeConversation dependency
+    fetchConversationsRef.current();
+  }, []); // No dependencies - stable callback
 
   // Step 4: Fix onReadReceipt to not depend on messages array
   const onReadReceipt = useCallback((messageId: string) => {
@@ -168,13 +137,22 @@ const UnifiedMessaging = () => {
     updateMessage({ id: messageId, status: 'read' } as Message);
   }, [updateMessage]); // No messages dependency
 
-  // Update refs when callbacks change
+  // Update individual refs only when their specific callback changes
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
+  }, [onNewMessage]);
+
+  useEffect(() => {
     onMessageUpdateRef.current = onMessageUpdate;
+  }, [onMessageUpdate]);
+
+  useEffect(() => {
     onConversationUpdateRef.current = onConversationUpdate;
+  }, [onConversationUpdate]);
+
+  useEffect(() => {
     onReadReceiptRef.current = onReadReceipt;
-  }, [onNewMessage, onMessageUpdate, onConversationUpdate, onReadReceipt]);
+  }, [onReadReceipt]);
 
   // Stable subscription callbacks using refs (messages handled by useDirectMessages broadcast)
   useMessageSubscriptions({

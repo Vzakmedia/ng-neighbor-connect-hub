@@ -21,6 +21,11 @@ export const useConversations = (userId: string | undefined) => {
   const { toast } = useToast();
   const lastFetchTimeRef = useRef<number>(0);
   const FETCH_COOLDOWN_MS = 500;
+  
+  // Circuit breaker to prevent runaway fetching
+  const failureCountRef = useRef(0);
+  const MAX_FAILURES = 3;
+  const isCircuitOpenRef = useRef(false);
 
   // Step 5: Stabilize fetchConversations - only depend on userId
   const fetchConversations = useCallback(async () => {
@@ -28,6 +33,12 @@ export const useConversations = (userId: string | undefined) => {
       console.log('No userId provided to fetchConversations');
       setConversations([]);
       setLoading(false);
+      return;
+    }
+
+    // Circuit breaker check
+    if (isCircuitOpenRef.current) {
+      console.log('Circuit breaker open - skipping fetch');
       return;
     }
 
@@ -105,10 +116,26 @@ export const useConversations = (userId: string | undefined) => {
       setConversations(formattedConversations);
       console.log('Conversations loaded:', formattedConversations.length);
       console.timeEnd('fetchConversations');
+      
+      // Reset failure count on success
+      failureCountRef.current = 0;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       console.timeEnd('fetchConversations');
       setConversations([]); // Set empty array on error to prevent infinite loading
+      
+      // Increment failure count and open circuit breaker if needed
+      failureCountRef.current++;
+      if (failureCountRef.current >= MAX_FAILURES) {
+        isCircuitOpenRef.current = true;
+        console.error('Circuit breaker opened - too many failures');
+        setTimeout(() => {
+          isCircuitOpenRef.current = false;
+          failureCountRef.current = 0;
+          console.log('Circuit breaker reset');
+        }, 30000); // Reset after 30 seconds
+      }
+      
       // Only show toast for actual errors, not connection issues
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as any).message;
@@ -187,10 +214,9 @@ export const useConversations = (userId: string | undefined) => {
       });
     } catch (error) {
       console.error('Error marking conversation as read:', error);
-      // Revert optimistic update on error
-      fetchConversations();
+      // Don't revert - user already sees it as read, no need to cause a flash
     }
-  }, [userId, fetchConversations]);
+  }, [userId]);
 
   return {
     conversations,
