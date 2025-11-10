@@ -138,7 +138,8 @@ const isNativeApp = () => {
 
 const isLovablePreview = () => {
   return window.location.hostname.includes('lovableproject.com') || 
-         window.location.hostname.includes('lovable.app');
+         window.location.hostname.includes('lovable.app') ||
+         window.location.hostname.includes('id-preview--');
 };
 
 // Defer service worker registration to not block initial load
