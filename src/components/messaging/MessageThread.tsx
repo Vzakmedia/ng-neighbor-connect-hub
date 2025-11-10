@@ -68,7 +68,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
-  const messageObserverRefs = useRef<Map<string, IntersectionObserver>>(new Map());
+  const messageVisibilityMap = useRef<Map<string, boolean>>(new Map());
+  const readReceiptBatchRef = useRef<Set<string>>(new Set());
+  const readReceiptTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sharedObserverRef = useRef<IntersectionObserver | null>(null);
+  const isMobile = window.innerWidth < 768;
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
   const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
@@ -125,9 +129,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     
     const status: MessageStatus = message.status || 'sent';
     
-    switch (status) {
+                    switch (status) {
       case 'sending':
-        return <Clock className="h-3 w-3 text-muted-foreground animate-pulse" />;
+        return <Clock className={`h-3 w-3 text-muted-foreground ${!isMobile ? 'animate-pulse' : ''}`} />;
       case 'failed':
         return <AlertCircle className="h-3 w-3 text-destructive" />;
       case 'sent':
@@ -193,26 +197,66 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
-  // Virtual scrolling setup
+  // Virtual scrolling setup - optimized for mobile
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 120, // Increased to account for content + spacing
-    overscan: 5,
+    estimateSize: () => 120,
+    overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
   });
 
-  // Mark messages as read when they become visible
-  const handleMessageVisible = useCallback((messageId: string, isVisible: boolean) => {
-    if (!isVisible || !onMarkAsRead || !currentUserId) return;
+  // Batch process read receipts
+  const processBatchedReadReceipts = useCallback(() => {
+    if (!onMarkAsRead || !currentUserId) return;
     
-    const message = messages.find(m => m.id === messageId);
-    if (!message) return;
+    const batch = Array.from(readReceiptBatchRef.current);
+    batch.forEach(messageId => {
+      const message = messages.find(m => m.id === messageId);
+      if (message && message.recipient_id === currentUserId && message.status !== 'read') {
+        onMarkAsRead(messageId);
+      }
+    });
     
-    // Only mark as read if it's a message sent TO the current user and not already read
-    if (message.recipient_id === currentUserId && message.status !== 'read') {
-      onMarkAsRead(messageId);
-    }
+    readReceiptBatchRef.current.clear();
   }, [messages, currentUserId, onMarkAsRead]);
+
+  // Single shared IntersectionObserver for all messages
+  useEffect(() => {
+    if (!onMarkAsRead) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          const messageId = entry.target.getAttribute('data-message-id');
+          if (!messageId) return;
+          
+          const wasVisible = messageVisibilityMap.current.get(messageId);
+          const isVisible = entry.isIntersecting;
+          
+          if (!wasVisible && isVisible) {
+            messageVisibilityMap.current.set(messageId, true);
+            readReceiptBatchRef.current.add(messageId);
+            
+            // Batch update after 1 second
+            if (readReceiptTimerRef.current) clearTimeout(readReceiptTimerRef.current);
+            readReceiptTimerRef.current = setTimeout(() => {
+              processBatchedReadReceipts();
+            }, 1000);
+          } else if (wasVisible && !isVisible) {
+            messageVisibilityMap.current.set(messageId, false);
+          }
+        });
+      },
+      { threshold: 0.5, rootMargin: '50px' }
+    );
+    
+    sharedObserverRef.current = observer;
+    
+    return () => {
+      observer.disconnect();
+      if (readReceiptTimerRef.current) clearTimeout(readReceiptTimerRef.current);
+    };
+  }, [onMarkAsRead, processBatchedReadReceipts]);
 
   // Intersection Observer for loading older messages
   useEffect(() => {
@@ -232,13 +276,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     return () => observer.disconnect();
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
 
-  // Cleanup message observers on unmount
+  // Auto-scroll to bottom - instant on mobile for better performance
   useEffect(() => {
-    return () => {
-      messageObserverRefs.current.forEach(observer => observer.disconnect());
-      messageObserverRefs.current.clear();
-    };
-  }, []);
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: isMobile ? 'auto' : 'smooth' 
+      });
+    }, 100);
+  }, [messages.length]);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
@@ -293,26 +338,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             return (
               <div 
                 key={message.id}
+                data-message-id={message.id}
                 ref={(el) => {
-                  if (!el || !onMarkAsRead) return;
-                  
-                  // Create intersection observer for this message
-                  const existingObserver = messageObserverRefs.current.get(message.id);
-                  if (existingObserver) {
-                    existingObserver.disconnect();
-                  }
-                  
-                  const observer = new IntersectionObserver(
-                    (entries) => {
-                      entries.forEach(entry => {
-                        handleMessageVisible(message.id, entry.isIntersecting);
-                      });
-                    },
-                    { threshold: 0.5 } // Mark as read when 50% visible
-                  );
-                  
-                  observer.observe(el);
-                  messageObserverRefs.current.set(message.id, observer);
+                  if (!el || !sharedObserverRef.current) return;
+                  sharedObserverRef.current.observe(el);
                 }}
                 style={{
                   position: 'absolute',
