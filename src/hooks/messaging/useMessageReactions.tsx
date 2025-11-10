@@ -33,8 +33,11 @@ export const useMessageReactions = (messageId: string, currentUserId?: string) =
 
       if (error) throw error;
       setReactions(data || []);
-    } catch (error) {
-      console.error('Error fetching reactions:', error);
+    } catch (error: any) {
+      // Silently fail for network errors to prevent UI disruption
+      if (error?.message && !error.message.includes('Failed to fetch')) {
+        console.error('Error fetching reactions:', error);
+      }
     }
   };
 

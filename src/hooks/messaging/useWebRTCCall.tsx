@@ -205,8 +205,11 @@ export const useWebRTCCall = (conversationId: string) => {
       }
     };
 
-    // Polling fallback for when realtime fails
+    // Polling fallback for when realtime fails - only for WebRTC calls
     const startPollingFallback = async () => {
+      // Only poll if we're actually in a call
+      if (!isInCall) return;
+      
       try {
         const { data, error } = await supabase
           .from('call_signaling')
@@ -217,7 +220,10 @@ export const useWebRTCCall = (conversationId: string) => {
           .limit(5);
 
         if (error) {
-          console.error('Polling error:', error);
+          // Silently fail for network errors during polling
+          if (!error.message?.includes('Failed to fetch')) {
+            console.error('Polling error:', error);
+          }
           return;
         }
 
@@ -229,8 +235,11 @@ export const useWebRTCCall = (conversationId: string) => {
             break; // Only process one message per poll
           }
         }
-      } catch (error) {
-        console.error('Error in polling fallback:', error);
+      } catch (error: any) {
+        // Silently ignore network errors to prevent console spam
+        if (error?.message && !error.message.includes('Failed to fetch')) {
+          console.error('Error in polling fallback:', error);
+        }
       }
     };
 
