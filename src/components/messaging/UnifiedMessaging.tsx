@@ -134,8 +134,11 @@ const UnifiedMessaging = () => {
   }, [updateMessage]);
 
   const onConversationUpdate = useCallback(() => {
+    const isMobile = window.innerWidth < 768;
+    const debounceTime = isMobile ? 1000 : 500; // More aggressive debouncing on mobile
     const now = Date.now();
-    if (now - lastConversationUpdateRef.current < 500) {
+    
+    if (now - lastConversationUpdateRef.current < debounceTime) {
       console.log('Skipping conversation update - debounced');
       return;
     }
