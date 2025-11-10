@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +19,8 @@ export const useConversations = (userId: string | undefined) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const lastFetchTimeRef = useRef<number>(0);
+  const FETCH_COOLDOWN_MS = 500;
 
   const fetchConversations = useCallback(async () => {
     if (!userId) {
@@ -27,6 +29,14 @@ export const useConversations = (userId: string | undefined) => {
       setLoading(false);
       return;
     }
+
+    // Debounce to prevent rapid successive calls
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
+      console.log('Skipping fetch - cooldown active');
+      return;
+    }
+    lastFetchTimeRef.current = now;
 
     try {
       setLoading(true);
@@ -109,7 +119,7 @@ export const useConversations = (userId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [userId, toast]);
+  }, [userId]);
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
@@ -147,7 +157,7 @@ export const useConversations = (userId: string | undefined) => {
       });
       return null;
     }
-  }, [userId, toast]);
+  }, [userId]);
 
   const markConversationAsRead = useCallback(async (conversationId: string) => {
     if (!userId) return;
