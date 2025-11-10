@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import OnlineAvatar from '@/components/OnlineAvatar';
@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle, RotateCw } from 'lucide-react';
+import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle, RotateCw, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message, MessageStatus } from '@/hooks/useDirectMessages';
@@ -65,6 +65,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -107,10 +111,89 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  // Filter messages based on search query
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) return messages;
+    
+    const query = searchQuery.toLowerCase();
+    return messages.filter(msg => 
+      msg.content?.toLowerCase().includes(query)
+    );
+  }, [messages, searchQuery]);
+
+  // Get search result indices
+  const searchResultIndices = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase();
+    return messages
+      .map((msg, idx) => ({ msg, idx }))
+      .filter(({ msg }) => msg.content?.toLowerCase().includes(query))
+      .map(({ idx }) => idx);
+  }, [messages, searchQuery]);
+
+  const searchResultCount = searchResultIndices.length;
+
+  // Navigate to specific search result
+  const scrollToSearchResult = useCallback((index: number) => {
+    if (searchResultIndices.length === 0) return;
+    
+    const messageIndex = searchResultIndices[index];
+    const message = messages[messageIndex];
+    
+    if (message && parentRef.current) {
+      const messageEl = parentRef.current.querySelector(`[data-message-id="${message.id}"]`);
+      messageEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [searchResultIndices, messages]);
+
+  const handleNextResult = useCallback(() => {
+    if (searchResultCount === 0) return;
+    const nextIndex = (currentSearchIndex + 1) % searchResultCount;
+    setCurrentSearchIndex(nextIndex);
+    scrollToSearchResult(nextIndex);
+  }, [currentSearchIndex, searchResultCount, scrollToSearchResult]);
+
+  const handlePreviousResult = useCallback(() => {
+    if (searchResultCount === 0) return;
+    const prevIndex = currentSearchIndex === 0 ? searchResultCount - 1 : currentSearchIndex - 1;
+    setCurrentSearchIndex(prevIndex);
+    scrollToSearchResult(prevIndex);
+  }, [currentSearchIndex, searchResultCount, scrollToSearchResult]);
+
+  const toggleSearch = useCallback(() => {
+    setShowSearch(prev => !prev);
+    if (!showSearch) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      setSearchQuery('');
+      setCurrentSearchIndex(0);
+    }
+  }, [showSearch]);
+
+  // Highlight matching text in message
+  const highlightText = useCallback((text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, i) => 
+      part.toLowerCase() === query.toLowerCase() 
+        ? <mark key={i} className="bg-primary/30 text-foreground rounded px-0.5">{part}</mark>
+        : part
+    );
+  }, []);
+
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && !showSearch) {
       textareaRef.current.focus();
     }
+  }, [conversation.id, showSearch]);
+
+  // Reset search when conversation changes
+  useEffect(() => {
+    setSearchQuery('');
+    setShowSearch(false);
+    setCurrentSearchIndex(0);
   }, [conversation.id]);
 
   const getInitials = (fullName: string | null) => {
@@ -198,8 +281,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   };
 
   // Virtual scrolling setup - optimized for mobile
+  const displayMessages = searchQuery.trim() ? filteredMessages : messages;
   const virtualizer = useVirtualizer({
-    count: messages.length,
+    count: displayMessages.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 120,
     overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
@@ -303,7 +387,63 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           <div className="flex-1">
             <h3 className="font-semibold text-base">{conversation.other_user_name || 'Unknown User'}</h3>
           </div>
+          
+          {/* Search Button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSearch}
+            className="h-8 w-8"
+          >
+            {showSearch ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+          </Button>
         </div>
+        
+        {/* Search Bar */}
+        {showSearch && (
+          <div className="mt-3 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentSearchIndex(0);
+                }}
+                placeholder="Search messages..."
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            
+            {searchQuery && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {searchResultCount > 0 ? `${currentSearchIndex + 1}/${searchResultCount}` : 'No results'}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePreviousResult}
+                  disabled={searchResultCount === 0}
+                  className="h-7 w-7"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextResult}
+                  disabled={searchResultCount === 0}
+                  className="h-7 w-7"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="px-2 md:px-4">
         <ConnectionStatusBanner />
@@ -330,7 +470,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           )}
           
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const message = messages[virtualRow.index];
+            const message = displayMessages[virtualRow.index];
+            const isSearchResult = searchQuery.trim() && searchResultIndices.includes(messages.indexOf(message));
+            const isCurrentSearchResult = isSearchResult && searchResultIndices[currentSearchIndex] === messages.indexOf(message);
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
             const isFailed = message.status === 'failed';
@@ -371,9 +513,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                           ? 'bg-destructive/10 text-foreground border border-destructive/30'
                           : 'bg-primary text-primary-foreground' 
                         : 'bg-muted'
-                    } ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                    } ${isSelected ? 'ring-2 ring-primary' : ''} ${isCurrentSearchResult ? 'ring-2 ring-accent' : ''}`}
                   >
-                    {message.content && <p className="text-sm md:text-base leading-relaxed break-words">{message.content}</p>}
+                    {message.content && (
+                      <p className="text-sm md:text-base leading-relaxed break-words">
+                        {searchQuery.trim() ? highlightText(message.content, searchQuery) : message.content}
+                      </p>
+                    )}
                     {message.attachments && message.attachments.length > 0 && (
                       <AttachmentDisplay 
                         attachments={message.attachments}
