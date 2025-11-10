@@ -16,9 +16,11 @@ export const BlogSection = () => {
 
   if (isLoading) {
     return (
-      <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24">
-        <div className="flex justify-center">
-          <LoadingSpinner />
+      <section id="blog" className="py-24">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center">
+            <LoadingSpinner />
+          </div>
         </div>
       </section>
     );
@@ -26,8 +28,8 @@ export const BlogSection = () => {
 
   if (!posts || posts.length === 0) {
     return (
-      <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 bg-muted/30">
-        <div className="w-full">
+      <section id="blog" className="py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
           {/* BLOG Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -84,8 +86,8 @@ export const BlogSection = () => {
   }
 
   return (
-    <section id="blog" className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 bg-muted/30">
-      <div className="w-full">
+    <section id="blog" className="py-24 bg-muted/30">
+      <div className="container mx-auto px-4">
         {/* BLOG Label with Line */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
