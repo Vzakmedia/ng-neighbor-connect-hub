@@ -30,6 +30,7 @@ const UnifiedMessaging = () => {
   const onMessageUpdateRef = useRef<((message: Message) => void) | null>(null);
   const onConversationUpdateRef = useRef<(() => void) | null>(null);
   const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
+  const renderCountRef = useRef(0); // Fix 6: Debug render counting
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
   const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
@@ -69,13 +70,8 @@ const UnifiedMessaging = () => {
     }
   };
 
-  // Step 2: REMOVED - Don't sync activeConversation automatically
-  // This was causing constant re-renders on mobile
-  
-  // Keep conversationsRef in sync
-  useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
+  // Fix 5: Remove unnecessary effect - update ref during render instead
+  conversationsRef.current = conversations;
 
   const otherUserId = useMemo(() => {
     if (!user || !activeConversation) return undefined;
@@ -103,13 +99,7 @@ const UnifiedMessaging = () => {
     updateMessage(message);
   }, [updateMessage]);
 
-  // Stabilize fetchConversations with ref
-  const fetchConversationsRef = useRef(fetchConversations);
-  useEffect(() => {
-    fetchConversationsRef.current = fetchConversations;
-  }, [fetchConversations]);
-
-  // Stable callback - no fetchConversations dependency
+  // Fix 2: Remove fetchConversationsRef pattern - use fetchConversations directly
   const onConversationUpdate = useCallback(() => {
     const isMobile = window.innerWidth < 768;
     
@@ -128,8 +118,8 @@ const UnifiedMessaging = () => {
       return;
     }
     lastConversationUpdateRef.current = now;
-    fetchConversationsRef.current();
-  }, []); // No dependencies - stable callback
+    fetchConversations(); // Call directly - debouncing inside fetchConversations will prevent loops
+  }, [fetchConversations]); // Depend on fetchConversations - it's now stable
 
   // Step 4: Fix onReadReceipt to not depend on messages array
   const onReadReceipt = useCallback((messageId: string) => {
@@ -239,6 +229,10 @@ const UnifiedMessaging = () => {
   useEffect(() => {
     document.title = 'Messages | Conversations';
   }, []);
+
+  // Fix 6: Debug render counting
+  renderCountRef.current++;
+  console.log('UnifiedMessaging render #', renderCountRef.current);
 
   return (
     <div className="h-[calc(100vh-8rem)]">

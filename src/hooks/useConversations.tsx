@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,8 +19,15 @@ export const useConversations = (userId: string | undefined) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const toastRef = useRef(toast); // Fix 1: Stabilize toast
   const lastFetchTimeRef = useRef<number>(0);
   const FETCH_COOLDOWN_MS = 500;
+  const renderCountRef = useRef(0); // Fix 6: Debug render counting
+  
+  // Update toast ref when it changes
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
   
   // Circuit breaker to prevent runaway fetching
   const failureCountRef = useRef(0);
@@ -113,8 +120,17 @@ export const useConversations = (userId: string | undefined) => {
         };
       });
 
-      setConversations(formattedConversations);
-      console.log('Conversations loaded:', formattedConversations.length);
+      // Fix 4: Deep comparison to prevent unnecessary re-renders
+      setConversations(prev => {
+        const prevJson = JSON.stringify(prev);
+        const newJson = JSON.stringify(formattedConversations);
+        if (prevJson === newJson) {
+          console.log('Conversations unchanged - skipping state update');
+          return prev; // Same reference = no re-render
+        }
+        console.log('Conversations updated:', formattedConversations.length);
+        return formattedConversations;
+      });
       console.timeEnd('fetchConversations');
       
       // Reset failure count on success
@@ -140,7 +156,7 @@ export const useConversations = (userId: string | undefined) => {
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as any).message;
         if (!errorMessage.includes('timeout') && !errorMessage.includes('network') && !errorMessage.includes('Failed to fetch')) {
-          toast({
+          toastRef.current({
             title: "Error",
             description: "Could not load conversations.",
             variant: "destructive",
@@ -150,7 +166,11 @@ export const useConversations = (userId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]); // Only depend on userId, removed toast
+  }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
+  
+  // Fix 6: Debug render counting
+  renderCountRef.current++;
+  console.log('useConversations render #', renderCountRef.current);
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
@@ -181,7 +201,7 @@ export const useConversations = (userId: string | undefined) => {
       return newConversation.id;
     } catch (error) {
       console.error('Error creating conversation:', error);
-      toast({
+      toastRef.current({
         title: "Error",
         description: "Could not create conversation.",
         variant: "destructive",
