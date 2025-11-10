@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import {
@@ -13,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Send, Check, CheckCheck, ArrowLeft, MoreVertical, Trash2, CheckSquare, Clock, AlertCircle, RotateCw, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Send, Check, CheckCheck, Clock, AlertCircle, RotateCw, MoreVertical, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message, MessageStatus } from '@/hooks/useDirectMessages';
@@ -25,6 +23,8 @@ import AttachmentButton from './AttachmentButton';
 import AttachmentDisplay from './AttachmentDisplay';
 import { useTypingIndicator } from '@/hooks/messaging/useTypingIndicator';
 import { MessageReactions } from './MessageReactions';
+import MessageThreadHeader from './MessageThreadHeader';
+import MessageSearch from './MessageSearch';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -371,80 +371,30 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
-      <div className="px-4 md:px-6 py-3 border-b bg-background">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <OnlineAvatar
-            userId={conversation.other_user_id}
-            src={conversation.other_user_avatar || ''}
-            fallback={getInitials(conversation.other_user_name)}
-            size="md"
+      <MessageThreadHeader 
+        conversation={conversation}
+        showSearch={showSearch}
+        onBack={onBack}
+        onToggleSearch={toggleSearch}
+      />
+      
+      {showSearch && (
+        <div className="px-4 md:px-6">
+          <MessageSearch 
+            searchQuery={searchQuery}
+            currentSearchIndex={currentSearchIndex}
+            searchResultCount={searchResultCount}
+            onSearchChange={(value) => {
+              setSearchQuery(value);
+              setCurrentSearchIndex(0);
+            }}
+            onPrevious={handlePreviousResult}
+            onNext={handleNextResult}
+            inputRef={searchInputRef}
           />
-          <div className="flex-1">
-            <h3 className="font-semibold text-base">{conversation.other_user_name || 'Unknown User'}</h3>
-          </div>
-          
-          {/* Search Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSearch}
-            className="h-8 w-8"
-          >
-            {showSearch ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-          </Button>
         </div>
-        
-        {/* Search Bar */}
-        {showSearch && (
-          <div className="mt-3 flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentSearchIndex(0);
-                }}
-                placeholder="Search messages..."
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            
-            {searchQuery && (
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {searchResultCount > 0 ? `${currentSearchIndex + 1}/${searchResultCount}` : 'No results'}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePreviousResult}
-                  disabled={searchResultCount === 0}
-                  className="h-7 w-7"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleNextResult}
-                  disabled={searchResultCount === 0}
-                  className="h-7 w-7"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      )}
+      
       <div className="px-2 md:px-4">
         <ConnectionStatusBanner />
       </div>
