@@ -94,26 +94,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       subscriptions.push(communityPostsSub);
     }
 
-    // 2. Direct Messages Subscription - only on messaging routes
+    // 2. Direct Messages Subscription - REMOVED
+    // Messages are handled by local broadcast channels in useDirectMessages hook
+    // to prevent double subscriptions and infinite loops
     if (isMessagingRoute) {
-      const messagesSub = createSafeSubscription(
-        (channel) => channel
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'direct_messages',
-            filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`
-          }, (payload) => {
-            messageCallbacks.current.forEach(cb => cb(payload));
-          }),
-        {
-          channelName: 'unified-messages',
-          pollInterval: 15000,
-          debugName: 'RealtimeProvider-Messages'
-        }
-      );
-      subscriptions.push(messagesSub);
-
       // 3. Conversations Subscription
       const conversationsSub = createSafeSubscription(
         (channel) => channel

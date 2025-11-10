@@ -176,11 +176,11 @@ const UnifiedMessaging = () => {
     onReadReceiptRef.current = onReadReceipt;
   }, [onNewMessage, onMessageUpdate, onConversationUpdate, onReadReceipt]);
 
-  // Stable subscription callbacks using refs
+  // Stable subscription callbacks using refs (messages handled by useDirectMessages broadcast)
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: useCallback((msg: Message) => onNewMessageRef.current?.(msg), []),
-    onMessageUpdate: useCallback((msg: Message) => onMessageUpdateRef.current?.(msg), []),
+    onNewMessage: useCallback(() => {}, []), // No-op: handled by useDirectMessages
+    onMessageUpdate: useCallback(() => {}, []), // No-op: handled by useDirectMessages
     onConversationUpdate: useCallback(() => onConversationUpdateRef.current?.(), []),
     onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
