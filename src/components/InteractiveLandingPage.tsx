@@ -422,10 +422,10 @@ const InteractiveLandingPage = () => {
           
           <nav className="hidden md:flex items-center space-x-8">
             {['Features', 'About', 'Blog', 'Help', 'Contact'].map((item, index) => {
-              const href = item === 'About' ? '/about' : item === 'Help' ? '/help' : item === 'Blog' ? '/blog' : `#${item.toLowerCase()}`;
-              const LinkComponent = (item === 'About' || item === 'Help' || item === 'Blog') ? Link : 'a';
+              const href = item === 'About' ? '/about' : item === 'Help' ? '/help' : item === 'Blog' ? '/blog' : item === 'Contact' ? '/contact' : `#${item.toLowerCase()}`;
+              const LinkComponent = (item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? Link : 'a';
               return <motion.div key={item}>
-                  <LinkComponent href={(item === 'About' || item === 'Help' || item === 'Blog') ? undefined : href} to={(item === 'About' || item === 'Help' || item === 'Blog') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
+                  <LinkComponent href={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? undefined : href} to={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
                     {item}
                   </LinkComponent>
                 </motion.div>;
