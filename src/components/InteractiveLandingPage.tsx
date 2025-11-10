@@ -1135,13 +1135,13 @@ const InteractiveLandingPage = () => {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-6 shadow-2xl overflow-hidden">
+              <div className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-6 shadow-2xl overflow-hidden min-h-[600px] flex items-center">
                 {/* Decorative elements */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
 
                 {/* Guidelines Card */}
-                <div className="relative bg-white dark:bg-background rounded-xl p-5 shadow-lg space-y-5">
+                <div className="relative bg-white dark:bg-background rounded-xl p-6 shadow-lg space-y-6 w-full">
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold">Community Standards</h3>
@@ -1152,40 +1152,59 @@ const InteractiveLandingPage = () => {
                   </div>
 
                   {/* Quick Stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-0.5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Active Users</p>
-                      <p className="text-xl font-bold">50K+</p>
+                      <p className="text-2xl font-bold">50K+</p>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Trust Score</p>
-                      <p className="text-xl font-bold">4.9/5</p>
+                      <p className="text-2xl font-bold">4.9/5</p>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Communities</p>
-                      <p className="text-xl font-bold">1,200</p>
+                      <p className="text-2xl font-bold">1,200</p>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Moderators</p>
-                      <p className="text-xl font-bold">500+</p>
+                      <p className="text-2xl font-bold">500+</p>
                     </div>
                   </div>
 
                   {/* Recent Guidelines */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Core Principles</p>
-                    <div className="space-y-1.5">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Core Principles</p>
+                    <div className="space-y-2">
                       {[
                         { principle: 'Be Respectful', icon: '✓' },
                         { principle: 'Stay Safe', icon: '✓' },
                         { principle: 'Be Helpful', icon: '✓' },
                         { principle: 'Stay Local', icon: '✓' }
                       ].map((item, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs p-2 rounded bg-muted/50">
+                        <div key={i} className="flex items-center justify-between text-sm p-3 rounded bg-muted/50">
                           <span className="font-medium">{item.principle}</span>
                           <span className="text-green-600 font-bold">{item.icon}</span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Additional Info */}
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-3">Member Safety Features</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                        <span>Identity Verification</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                        <span>24/7 Moderation</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                        <span>Community Reporting</span>
+                      </div>
                     </div>
                   </div>
                 </div>
