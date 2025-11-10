@@ -23,6 +23,11 @@ const UnifiedMessaging = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastConversationUpdateRef = useRef<number>(0);
+  const onNewMessageRef = useRef<((message: Message) => void) | null>(null);
+  const onMessageUpdateRef = useRef<((message: Message) => void) | null>(null);
+  const onConversationUpdateRef = useRef<(() => void) | null>(null);
+  const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
   const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
@@ -58,12 +63,18 @@ const UnifiedMessaging = () => {
     }
   };
 
-  // Keep activeConversation in sync if list updates
+  // Keep activeConversation in sync if list updates (only on actual changes)
   useEffect(() => {
     if (!activeConversation || conversations.length === 0) return;
     const updated = conversations.find(c => c.id === activeConversation.id);
-    if (updated) setActiveConversation(updated);
-  }, [conversations, activeConversation?.id]);
+    if (updated && (
+      updated.user1_has_unread !== activeConversation.user1_has_unread ||
+      updated.user2_has_unread !== activeConversation.user2_has_unread ||
+      updated.last_message_at !== activeConversation.last_message_at
+    )) {
+      setActiveConversation(updated);
+    }
+  }, [conversations]);
 
   const otherUserId = useMemo(() => {
     if (!user || !activeConversation) return undefined;
@@ -84,8 +95,14 @@ const UnifiedMessaging = () => {
 
   const onNewMessage = useCallback((message: Message) => {
     if (!activeConversation) {
-      // Update conversation list to show new conversation
-      fetchConversations();
+      // Check if conversation already exists before fetching
+      const existingConv = conversations.find(c => 
+        (c.user1_id === message.sender_id && c.user2_id === message.recipient_id) ||
+        (c.user1_id === message.recipient_id && c.user2_id === message.sender_id)
+      );
+      if (!existingConv) {
+        fetchConversations(); // Only fetch if truly new
+      }
       return;
     }
     const belongsToActive = (message.sender_id === activeConversation.user1_id && message.recipient_id === activeConversation.user2_id) ||
@@ -110,13 +127,19 @@ const UnifiedMessaging = () => {
       // Only refresh conversation list for unread badges, not messages
       fetchConversations();
     }
-  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations]);
+  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations, conversations]);
 
   const onMessageUpdate = useCallback((message: Message) => {
     updateMessage(message);
   }, [updateMessage]);
 
   const onConversationUpdate = useCallback(() => {
+    const now = Date.now();
+    if (now - lastConversationUpdateRef.current < 500) {
+      console.log('Skipping conversation update - debounced');
+      return;
+    }
+    lastConversationUpdateRef.current = now;
     fetchConversations();
   }, [fetchConversations]);
 
@@ -128,12 +151,21 @@ const UnifiedMessaging = () => {
     });
   }, [messages, updateMessage]);
 
+  // Update refs when callbacks change
+  useEffect(() => {
+    onNewMessageRef.current = onNewMessage;
+    onMessageUpdateRef.current = onMessageUpdate;
+    onConversationUpdateRef.current = onConversationUpdate;
+    onReadReceiptRef.current = onReadReceipt;
+  }, [onNewMessage, onMessageUpdate, onConversationUpdate, onReadReceipt]);
+
+  // Stable subscription callbacks using refs
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage,
-    onMessageUpdate,
-    onConversationUpdate,
-    onReadReceipt
+    onNewMessage: useCallback((msg: Message) => onNewMessageRef.current?.(msg), []),
+    onMessageUpdate: useCallback((msg: Message) => onMessageUpdateRef.current?.(msg), []),
+    onConversationUpdate: useCallback(() => onConversationUpdateRef.current?.(), []),
+    onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
 
   const handleSendMessage = async (content: string, attachments?: Array<{ id: string; type: 'image' | 'video' | 'file'; name: string; url: string; size: number; mimeType: string; }>) => {
