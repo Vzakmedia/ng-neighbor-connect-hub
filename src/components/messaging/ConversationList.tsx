@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import ConversationItem from './ConversationItem';
 import { type Conversation } from '@/hooks/useConversations';
@@ -20,16 +20,13 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Fix 3: Memoize virtualizer to prevent constant re-initialization
-  const virtualizer = useMemo(
-    () => useVirtualizer({
-      count: conversations.length,
-      getScrollElement: () => parentRef.current,
-      estimateSize: () => 80,
-      overscan: 3,
-    }),
-    [conversations.length] // Only recreate if count changes
-  );
+  // useVirtualizer is a hook - must be called at top level, not in useMemo
+  const virtualizer = useVirtualizer({
+    count: conversations.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 3,
+  });
 
   if (loading) {
     return (
