@@ -22,6 +22,7 @@ export const useConversations = (userId: string | undefined) => {
   const lastFetchTimeRef = useRef<number>(0);
   const FETCH_COOLDOWN_MS = 500;
 
+  // Step 5: Stabilize fetchConversations - only depend on userId
   const fetchConversations = useCallback(async () => {
     if (!userId) {
       console.log('No userId provided to fetchConversations');
@@ -40,6 +41,7 @@ export const useConversations = (userId: string | undefined) => {
 
     try {
       setLoading(true);
+      console.time('fetchConversations');
       console.log('Fetching conversations for user:', userId);
       const { data, error } = await supabase
         .from('direct_conversations')
@@ -102,8 +104,10 @@ export const useConversations = (userId: string | undefined) => {
 
       setConversations(formattedConversations);
       console.log('Conversations loaded:', formattedConversations.length);
+      console.timeEnd('fetchConversations');
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      console.timeEnd('fetchConversations');
       setConversations([]); // Set empty array on error to prevent infinite loading
       // Only show toast for actual errors, not connection issues
       if (error && typeof error === 'object' && 'message' in error) {
@@ -119,7 +123,7 @@ export const useConversations = (userId: string | undefined) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId]); // Only depend on userId, removed toast
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
