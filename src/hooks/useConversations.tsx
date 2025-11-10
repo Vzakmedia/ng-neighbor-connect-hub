@@ -24,10 +24,6 @@ export const useConversations = (userId: string | undefined) => {
   const FETCH_COOLDOWN_MS = 500;
   const renderCountRef = useRef(0);
   
-  // Fix 6: Debug render counting - MUST be at top before any conditional logic
-  renderCountRef.current++;
-  console.log('useConversations render #', renderCountRef.current);
-  
   // Update toast ref when it changes
   useEffect(() => {
     toastRef.current = toast;
@@ -171,6 +167,10 @@ export const useConversations = (userId: string | undefined) => {
       setLoading(false);
     }
   }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
+  
+  // Fix 6: Debug render counting - AFTER all hooks
+  renderCountRef.current++;
+  console.log('useConversations render #', renderCountRef.current);
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
