@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import OnlineAvatar from '@/components/OnlineAvatar';
@@ -670,4 +670,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   );
 };
 
-export default MessageThread;
+// Step 8: Optimize MessageThread re-renders with React.memo
+export default memo(MessageThread, (prev, next) => {
+  return (
+    prev.conversation.id === next.conversation.id &&
+    prev.messages.length === next.messages.length &&
+    prev.currentUserId === next.currentUserId &&
+    prev.isSelectionMode === next.isSelectionMode
+  );
+});

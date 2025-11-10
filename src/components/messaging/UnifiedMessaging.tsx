@@ -24,6 +24,8 @@ const UnifiedMessaging = () => {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastConversationUpdateRef = useRef<number>(0);
+  const hasInitialFetchRef = useRef(false);
+  const conversationsRef = useRef<Conversation[]>([]);
   const onNewMessageRef = useRef<((message: Message) => void) | null>(null);
   const onMessageUpdateRef = useRef<((message: Message) => void) | null>(null);
   const onConversationUpdateRef = useRef<(() => void) | null>(null);
@@ -39,12 +41,16 @@ const UnifiedMessaging = () => {
   const [activeTab, setActiveTab] = useState('direct');
   const [requestCount, setRequestCount] = useState(0);
 
+  // Step 1: Fix infinite loop - only fetch once on mount
   useEffect(() => {
-    if (user) {
+    if (user && !hasInitialFetchRef.current) {
+      console.time('InitialFetch');
+      hasInitialFetchRef.current = true;
       fetchConversations();
       fetchRequestCount();
+      console.timeEnd('InitialFetch');
     }
-  }, [user, fetchConversations]);
+  }, [user]); // Removed fetchConversations from dependencies
 
   const fetchRequestCount = async () => {
     if (!user) return;
@@ -63,17 +69,12 @@ const UnifiedMessaging = () => {
     }
   };
 
-  // Keep activeConversation in sync if list updates (only on actual changes)
+  // Step 2: REMOVED - Don't sync activeConversation automatically
+  // This was causing constant re-renders on mobile
+  
+  // Keep conversationsRef in sync
   useEffect(() => {
-    if (!activeConversation || conversations.length === 0) return;
-    const updated = conversations.find(c => c.id === activeConversation.id);
-    if (updated && (
-      updated.user1_has_unread !== activeConversation.user1_has_unread ||
-      updated.user2_has_unread !== activeConversation.user2_has_unread ||
-      updated.last_message_at !== activeConversation.last_message_at
-    )) {
-      setActiveConversation(updated);
-    }
+    conversationsRef.current = conversations;
   }, [conversations]);
 
   const otherUserId = useMemo(() => {
@@ -93,14 +94,15 @@ const UnifiedMessaging = () => {
     await markConversationAsRead(conv.id);
   }, [navigate, user?.id, fetchMessages, markConversationAsRead]);
 
+  // Step 3: Stabilize onNewMessage using conversationsRef
   const onNewMessage = useCallback((message: Message) => {
     if (!activeConversation) {
       // Don't fetch conversations on mobile - let user manually refresh
       const isMobile = window.innerWidth < 768;
       if (isMobile) return;
       
-      // Check if conversation already exists before fetching
-      const existingConv = conversations.find(c => 
+      // Use ref to avoid dependency on conversations array
+      const existingConv = conversationsRef.current.find(c => 
         (c.user1_id === message.sender_id && c.user2_id === message.recipient_id) ||
         (c.user1_id === message.recipient_id && c.user2_id === message.sender_id)
       );
@@ -132,23 +134,24 @@ const UnifiedMessaging = () => {
       }), 100);
     }
     // Don't refresh conversation list on mobile for other messages
-  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, conversations]);
+  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations]); // Removed 'conversations'
 
   const onMessageUpdate = useCallback((message: Message) => {
     updateMessage(message);
   }, [updateMessage]);
 
+  // Step 6: Prevent conversation list updates on mobile completely
   const onConversationUpdate = useCallback(() => {
     const isMobile = window.innerWidth < 768;
     
-    // On mobile, skip conversation updates entirely when viewing a conversation
-    // This prevents flickering and unnecessary refreshes
-    if (isMobile && activeConversation) {
-      console.log('Skipping conversation update on mobile - active conversation');
+    // On mobile, NEVER update conversation list while chatting
+    if (isMobile) {
+      console.log('Blocked conversation update on mobile');
       return;
     }
     
-    const debounceTime = isMobile ? 2000 : 500; // Even more aggressive on mobile
+    // Desktop: still use debouncing
+    const debounceTime = 500;
     const now = Date.now();
     
     if (now - lastConversationUpdateRef.current < debounceTime) {
@@ -157,15 +160,13 @@ const UnifiedMessaging = () => {
     }
     lastConversationUpdateRef.current = now;
     fetchConversations();
-  }, [fetchConversations, activeConversation]);
+  }, [fetchConversations]); // Removed activeConversation dependency
 
+  // Step 4: Fix onReadReceipt to not depend on messages array
   const onReadReceipt = useCallback((messageId: string) => {
-    // Update message status to 'read' instantly
-    updateMessage({
-      ...messages.find(m => m.id === messageId)!,
-      status: 'read'
-    });
-  }, [messages, updateMessage]);
+    // Just update the status directly without dependencies
+    updateMessage({ id: messageId, status: 'read' } as Message);
+  }, [updateMessage]); // No messages dependency
 
   // Update refs when callbacks change
   useEffect(() => {
