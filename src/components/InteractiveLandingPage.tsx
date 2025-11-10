@@ -1110,6 +1110,161 @@ const InteractiveLandingPage = () => {
         </div>
       </section>
 
+      {/* Community Guidelines Section */}
+      <section className="py-24 bg-muted/30">
+        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+          {/* COMMUNITY GUIDELINES Label with Line */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3 mb-8"
+          >
+            <div className="w-0.5 h-6 bg-primary"></div>
+            <div className="text-primary text-sm font-medium tracking-wider">COMMUNITY GUIDELINES</div>
+          </motion.div>
+          
+          {/* Two Column Layout - Flipped */}
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Left Column - Visual/Mockup */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative"
+            >
+              <div className="relative rounded-2xl bg-gradient-to-br from-primary to-primary/60 p-6 shadow-2xl overflow-hidden">
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+
+                {/* Guidelines Card */}
+                <div className="relative bg-white dark:bg-background rounded-xl p-5 shadow-lg space-y-5">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Community Standards</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-muted-foreground">Active</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Active Users</p>
+                      <p className="text-xl font-bold">50K+</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Trust Score</p>
+                      <p className="text-xl font-bold">4.9/5</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Communities</p>
+                      <p className="text-xl font-bold">1,200</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-muted-foreground">Moderators</p>
+                      <p className="text-xl font-bold">500+</p>
+                    </div>
+                  </div>
+
+                  {/* Recent Guidelines */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Core Principles</p>
+                    <div className="space-y-1.5">
+                      {[
+                        { principle: 'Be Respectful', icon: '✓' },
+                        { principle: 'Stay Safe', icon: '✓' },
+                        { principle: 'Be Helpful', icon: '✓' },
+                        { principle: 'Stay Local', icon: '✓' }
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs p-2 rounded bg-muted/50">
+                          <span className="font-medium">{item.principle}</span>
+                          <span className="text-green-600 font-bold">{item.icon}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right Column - Content */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="space-y-8"
+            >
+              {/* Heading */}
+              <div>
+                <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                  Building stronger, safer neighborhoods together
+                </h2>
+              </div>
+
+              {/* Guidelines List */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Our Core Guidelines:</h3>
+                <ul className="space-y-3 text-muted-foreground leading-relaxed">
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Respect & Kindness</span>
+                      <span className="block mt-0.5">Treat all neighbors with respect. Disagreements are okay, but harassment and hate speech are not tolerated.</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Privacy & Safety</span>
+                      <span className="block mt-0.5">Protect your privacy and others'. Don't share personal information without consent. Report safety concerns immediately.</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Helpful & Constructive</span>
+                      <span className="block mt-0.5">Share helpful information, recommend local businesses, and contribute positively to your community.</span>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-primary font-bold mt-1.5 text-lg">•</span>
+                    <div>
+                      <span className="font-semibold text-foreground">Stay Relevant</span>
+                      <span className="block mt-0.5">Keep posts relevant to your neighborhood. No spam, commercial solicitation, or political campaigning.</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Buttons and Badges */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Link to="/community-guidelines">
+                    <Button size="lg" className="gap-2">
+                      Read Full Guidelines <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      Safe Space
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      Verified Members
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section id="contact" className="py-24">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
