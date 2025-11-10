@@ -28,6 +28,7 @@ import sarahJohnsonImg from "@/assets/testimonials/sarah-johnson.jpg";
 import ahmedIbrahimImg from "@/assets/testimonials/ahmed-ibrahim.jpg";
 import graceOkaforImg from "@/assets/testimonials/grace-okafor.jpg";
 import { BlogSection } from '@/components/landing/BlogSection';
+import BackToTop from '@/components/BackToTop';
 
 // Newsletter form validation schema
 const newsletterSchema = z.object({
@@ -1547,6 +1548,8 @@ const InteractiveLandingPage = () => {
           </div>
         </div>
       </footer>
+      
+      <BackToTop />
       </div>
     </div>;
 };
