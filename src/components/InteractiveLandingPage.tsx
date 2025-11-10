@@ -691,7 +691,7 @@ const InteractiveLandingPage = () => {
 
       {/* Analytics Section */}
       <section className="py-24 px-6 md:px-12 lg:px-16 xl:px-24 relative">
-        <div className="w-full">
+        <div className="container mx-auto px-4">
           {/* ANALYTICS Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -848,7 +848,7 @@ const InteractiveLandingPage = () => {
 
       {/* Testimonials Section - Exact Mockup Format */}
       <section id="testimonials" className="py-24 overflow-hidden">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="container mx-auto px-4">
           {/* TESTIMONIAL Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -943,7 +943,7 @@ const InteractiveLandingPage = () => {
 
       {/* API Integration Section */}
       <section className="py-24 bg-muted/30">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="container mx-auto px-4">
           {/* API INTEGRATION Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1112,7 +1112,7 @@ const InteractiveLandingPage = () => {
 
       {/* Community Guidelines Section */}
       <section className="py-24 bg-muted/30">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="container mx-auto px-4">
           {/* COMMUNITY GUIDELINES Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1286,7 +1286,7 @@ const InteractiveLandingPage = () => {
 
       {/* Contact Section */}
       <section id="contact" className="py-24">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24">
+        <div className="container mx-auto px-4">
           {/* CONTACT Label with Line */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1370,7 +1370,7 @@ const InteractiveLandingPage = () => {
 
       {/* Footer */}
       <footer className="bg-primary text-white">
-        <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-16">
+        <div className="container mx-auto px-4 py-16">
           {/* CTA Card at top of footer */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
