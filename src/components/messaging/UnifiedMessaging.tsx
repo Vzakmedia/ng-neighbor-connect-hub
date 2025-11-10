@@ -95,6 +95,10 @@ const UnifiedMessaging = () => {
 
   const onNewMessage = useCallback((message: Message) => {
     if (!activeConversation) {
+      // Don't fetch conversations on mobile - let user manually refresh
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return;
+      
       // Check if conversation already exists before fetching
       const existingConv = conversations.find(c => 
         (c.user1_id === message.sender_id && c.user2_id === message.recipient_id) ||
@@ -122,12 +126,13 @@ const UnifiedMessaging = () => {
           } catch {}
         })();
       }
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } else {
-      // Only refresh conversation list for unread badges, not messages
-      fetchConversations();
+      const isMobile = window.innerWidth < 768;
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ 
+        behavior: isMobile ? 'auto' : 'smooth' 
+      }), 100);
     }
-  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, fetchConversations, conversations]);
+    // Don't refresh conversation list on mobile for other messages
+  }, [activeConversation?.id, activeConversation?.user1_id, activeConversation?.user2_id, user?.id, addMessage, markConversationAsRead, conversations]);
 
   const onMessageUpdate = useCallback((message: Message) => {
     updateMessage(message);
@@ -135,7 +140,15 @@ const UnifiedMessaging = () => {
 
   const onConversationUpdate = useCallback(() => {
     const isMobile = window.innerWidth < 768;
-    const debounceTime = isMobile ? 1000 : 500; // More aggressive debouncing on mobile
+    
+    // On mobile, skip conversation updates entirely when viewing a conversation
+    // This prevents flickering and unnecessary refreshes
+    if (isMobile && activeConversation) {
+      console.log('Skipping conversation update on mobile - active conversation');
+      return;
+    }
+    
+    const debounceTime = isMobile ? 2000 : 500; // Even more aggressive on mobile
     const now = Date.now();
     
     if (now - lastConversationUpdateRef.current < debounceTime) {
@@ -144,7 +157,7 @@ const UnifiedMessaging = () => {
     }
     lastConversationUpdateRef.current = now;
     fetchConversations();
-  }, [fetchConversations]);
+  }, [fetchConversations, activeConversation]);
 
   const onReadReceipt = useCallback((messageId: string) => {
     // Update message status to 'read' instantly
