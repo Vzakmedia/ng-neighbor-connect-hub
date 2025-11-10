@@ -6,7 +6,7 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
-import { Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone } from 'lucide-react';
+import { Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone, Mail } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
@@ -46,6 +46,15 @@ const Header = () => {
               />
               <span className="font-semibold text-lg text-community-primary">NeighborLink</span>
             </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate('/contact')}
+              className="flex items-center space-x-2"
+            >
+              <Mail className="h-4 w-4" />
+              <span>Contact</span>
+            </Button>
           </div>
 
           <div className="flex-1 flex items-center justify-center px-4">
