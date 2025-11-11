@@ -42,6 +42,12 @@ export const useDirectMessages = (userId: string | undefined) => {
   // Message cache for last 50 messages per conversation
   const messageCache = useRef<Map<string, Message[]>>(new Map());
   const broadcastChannelRef = useRef<any>(null);
+  const messagesRef = useRef<Message[]>([]);
+
+  // Update messagesRef whenever messages change
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Auto-retry queued messages when connection is restored
   useEffect(() => {
@@ -411,8 +417,8 @@ export const useDirectMessages = (userId: string | undefined) => {
         )
       );
       
-      // Broadcast read receipts for all unread messages
-      const unreadMessages = messages.filter(m => 
+      // Use messagesRef instead of messages to avoid dependency
+      const unreadMessages = messagesRef.current.filter(m => 
         m.recipient_id === userId && m.status !== 'read'
       );
       
@@ -445,7 +451,7 @@ export const useDirectMessages = (userId: string | undefined) => {
       console.error('Error marking conversation as read:', error);
       return false;
     }
-  }, [userId, messages]);
+  }, [userId]);
 
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
