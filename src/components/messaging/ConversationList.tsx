@@ -21,16 +21,13 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
   const parentRef = useRef<HTMLDivElement>(null);
 
   // CRITICAL: All hooks must be called before any conditional returns
-  // Memoize virtualizer to prevent re-initialization on every render
-  const virtualizer = useMemo(
-    () => useVirtualizer({
-      count: conversations.length,
-      getScrollElement: () => parentRef.current,
-      estimateSize: () => 80,
-      overscan: 3,
-    }),
-    [conversations.length]
-  );
+  // useVirtualizer is already optimized internally - no need to wrap in useMemo
+  const virtualizer = useVirtualizer({
+    count: conversations.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 3,
+  });
 
   // Early returns come AFTER all hooks
   if (loading) {
