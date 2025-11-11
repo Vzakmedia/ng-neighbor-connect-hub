@@ -22,12 +22,17 @@ export const useConversations = (userId: string | undefined) => {
   const toastRef = useRef(toast);
   const lastFetchTimeRef = useRef<number>(0);
   const FETCH_COOLDOWN_MS = 500;
-  const renderCountRef = useRef(0);
+  const conversationsRef = useRef<Conversation[]>([]);
   
   // Update toast ref when it changes
   useEffect(() => {
     toastRef.current = toast;
   }, [toast]);
+  
+  // Update conversations ref when conversations change
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
   
   // Circuit breaker to prevent runaway fetching
   const failureCountRef = useRef(0);
@@ -52,8 +57,8 @@ export const useConversations = (userId: string | undefined) => {
     // Debounce to prevent rapid successive calls
     const now = Date.now();
     if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
-      console.log('Skipping fetch - cooldown active');
-      return [];
+      console.log('Skipping fetch - cooldown active, returning cached conversations');
+      return conversationsRef.current; // ✅ Return cached data instead of empty array
     }
     lastFetchTimeRef.current = now;
 
