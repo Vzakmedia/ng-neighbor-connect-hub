@@ -20,6 +20,7 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // CRITICAL: All hooks must be called before any conditional returns
   // Memoize virtualizer to prevent re-initialization on every render
   const virtualizer = useMemo(
     () => useVirtualizer({
@@ -31,6 +32,7 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
     [conversations.length]
   );
 
+  // Early returns come AFTER all hooks
   if (loading) {
     return (
       <div className="p-4 text-center text-muted-foreground">
