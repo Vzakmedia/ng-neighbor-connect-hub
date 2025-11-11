@@ -125,7 +125,6 @@ const UnifiedMessaging = () => {
     userId: user?.id,
     onNewMessage: useCallback(() => {}, []), // No-op: handled by useDirectMessages
     onMessageUpdate: useCallback(() => {}, []), // No-op: handled by useDirectMessages
-    onConversationUpdate: useCallback(() => onConversationUpdateRef.current?.(), []),
     onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
 
@@ -181,6 +180,7 @@ const UnifiedMessaging = () => {
 
   const startConversationWithUser = async (targetUserId: string) => {
     console.log('[startConversation] Starting with user:', targetUserId);
+    console.log('[startConversation] Current conversations count:', conversations.length);
     
     // Guard: Prevent multiple simultaneous calls
     if (isStartingConversationRef.current) {
