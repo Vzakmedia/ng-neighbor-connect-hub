@@ -100,9 +100,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     // Messages are handled by local broadcast channels in useDirectMessages hook
     // to prevent double subscriptions and infinite loops
     
-    // 3. Conversations Subscription - DISABLED ON MOBILE
-    // On mobile, conversation updates cause looping and UI freezes
-    if (isMessagingRoute && !isMobile) {
+    // 3. Conversations Subscription - DISABLED COMPLETELY
+    // Conversation updates cause infinite loops - users can manually refresh
+    // by navigating away and back or using pull-to-refresh
+    if (false) {
       const conversationsSub = createSafeSubscription(
         (channel) => channel
           .on('postgres_changes', {

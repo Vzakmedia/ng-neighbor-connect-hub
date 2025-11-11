@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import ConversationItem from './ConversationItem';
 import { type Conversation } from '@/hooks/useConversations';
@@ -20,13 +20,16 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // useVirtualizer is a hook - must be called at top level, not in useMemo
-  const virtualizer = useVirtualizer({
-    count: conversations.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
-    overscan: 3,
-  });
+  // Memoize virtualizer to prevent re-initialization on every render
+  const virtualizer = useMemo(
+    () => useVirtualizer({
+      count: conversations.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 80,
+      overscan: 3,
+    }),
+    [conversations.length]
+  );
 
   if (loading) {
     return (
@@ -88,13 +91,11 @@ const ConversationList: React.FC<ConversationListProps> = React.memo(({
     </div>
   );
 }, (prev, next) => {
-  return prev.conversations.length === next.conversations.length &&
+  // Simplified comparison - rely on reference equality for conversations
+  return prev.conversations === next.conversations &&
          prev.activeConversationId === next.activeConversationId &&
          prev.loading === next.loading &&
-         prev.conversations.every((conv, i) => 
-           conv.id === next.conversations[i]?.id &&
-           conv.last_message_at === next.conversations[i]?.last_message_at
-         );
+         prev.onConversationSelect === next.onConversationSelect;
 });
 
 ConversationList.displayName = 'ConversationList';
