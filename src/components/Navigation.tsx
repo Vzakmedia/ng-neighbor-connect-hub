@@ -222,7 +222,16 @@ const Navigation = () => {
           <div className="w-16 flex items-center justify-center border-l">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation h-full w-full">
+                <button 
+                  onClick={async () => {
+                    try {
+                      await Haptics.impact({ style: ImpactStyle.Light });
+                    } catch (error) {
+                      // Haptics not available
+                    }
+                  }}
+                  className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation h-full w-full"
+                >
                   <div className="h-5 w-5 flex items-center justify-center">
                     <div className="grid grid-cols-2 gap-0.5">
                       <div className="w-1 h-1 bg-current rounded-full"></div>
@@ -278,7 +287,14 @@ const Navigation = () => {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem 
-                  onClick={() => setCreatePostOpen(true)}
+                  onClick={async () => {
+                    try {
+                      await Haptics.impact({ style: ImpactStyle.Light });
+                    } catch (error) {
+                      // Haptics not available
+                    }
+                    setCreatePostOpen(true);
+                  }}
                   className="flex items-center py-3 text-primary"
                   data-tutorial="create-post-mobile"
                 >
