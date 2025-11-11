@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ShoppingBag, Briefcase, MapPin, Globe } from 'lucide-react';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Marketplace from '@/components/Marketplace';
@@ -99,39 +99,70 @@ const MarketplacePage = () => {
           
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Desktop tabs */}
-            <div className="hidden md:flex items-center gap-4">
-              <TabsList className="flex mb-4">
+            {/* Desktop navigation with inline filters */}
+            <div className="hidden md:flex items-center gap-6 mb-6 flex-wrap">
+              {/* Main Tabs */}
+              <TabsList className="flex">
                 <TabsTrigger value="marketplace">Services & Goods</TabsTrigger>
                 <TabsTrigger value="businesses">Local Businesses</TabsTrigger>
               </TabsList>
               
+              {/* Inline Filter Pills - Only show when on marketplace tab */}
               {activeTab === 'marketplace' && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {marketSubTab === 'services' ? 'Services' : 'Goods'} 
-                      {' • '}
-                      {viewScope === 'neighborhood' ? 'My City' : 'Entire State'}
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="z-50 bg-background">
-                    <DropdownMenuItem onClick={() => setMarketSubTab('services')}>
+                <>
+                  {/* Vertical Divider */}
+                  <div className="h-8 w-px bg-border" />
+                  
+                  {/* Type Filter: Services/Goods */}
+                  <ToggleGroup 
+                    type="single" 
+                    value={marketSubTab} 
+                    onValueChange={(value) => value && setMarketSubTab(value as 'services' | 'goods')}
+                    className="border rounded-lg p-1 bg-muted/30"
+                  >
+                    <ToggleGroupItem 
+                      value="services" 
+                      aria-label="Services"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      <Briefcase className="h-4 w-4 mr-2" />
                       Services
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setMarketSubTab('goods')}>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="goods" 
+                      aria-label="Goods"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      <ShoppingBag className="h-4 w-4 mr-2" />
                       Goods
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setViewScope('neighborhood')}>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  
+                  {/* Location Filter: My City/Entire State */}
+                  <ToggleGroup 
+                    type="single" 
+                    value={viewScope} 
+                    onValueChange={(value) => value && setViewScope(value as 'neighborhood' | 'state')}
+                    className="border rounded-lg p-1 bg-muted/30"
+                  >
+                    <ToggleGroupItem 
+                      value="neighborhood" 
+                      aria-label="My City"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
                       My City
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setViewScope('state')}>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem 
+                      value="state" 
+                      aria-label="Entire State"
+                      className="data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
                       Entire State
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </>
               )}
             </div>
             
