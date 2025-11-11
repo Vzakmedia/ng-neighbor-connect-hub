@@ -225,11 +225,10 @@ export function MarketplaceFilterDialog({
   );
 
   const TriggerButton = (
-    <Button variant="outline" size="default" className="gap-2">
+    <Button variant="outline" size="icon" className="relative">
       <Filter className="w-4 h-4" />
-      Filters
       {activeFilterCount > 0 && (
-        <Badge variant="default" className="ml-1 h-5 min-w-5 px-1.5">
+        <Badge variant="default" className="absolute -top-2 -right-2 h-5 min-w-5 px-1.5">
           {activeFilterCount}
         </Badge>
       )}
