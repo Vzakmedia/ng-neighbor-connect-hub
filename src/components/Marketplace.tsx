@@ -520,7 +520,6 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
       {/* Header */}
       <div className="hidden md:flex flex-col gap-4 lg:gap-0 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Marketplace</h1>
           <p className="text-sm md:text-base text-muted-foreground">Discover local services and goods in your neighborhood</p>
         </div>
       </div>
