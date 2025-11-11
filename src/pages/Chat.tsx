@@ -34,6 +34,7 @@ const Chat = () => {
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastConversationIdRef = useRef<string | null>(null);
 
   const { deleteMessages, deleteConversation } = useMessageActions();
 
@@ -49,6 +50,16 @@ const Chat = () => {
   } = useDirectMessages(user?.id);
 
   const { conversations, fetchConversations } = useConversations(user?.id);
+
+  // Create refs after hooks are declared
+  const fetchMessagesRef = useRef(fetchMessages);
+  const markAsReadRef = useRef(markConversationAsRead);
+
+  // Update refs when functions change
+  useEffect(() => {
+    fetchMessagesRef.current = fetchMessages;
+    markAsReadRef.current = markConversationAsRead;
+  }, [fetchMessages, markConversationAsRead]);
 
   // WebRTC call functionality
   const {
@@ -125,6 +136,14 @@ const Chat = () => {
       return;
     }
 
+    // Guard: Skip if we're already loading this conversation
+    if (lastConversationIdRef.current === conversationId) {
+      console.log('Already loading/loaded this conversation, skipping...');
+      return;
+    }
+
+    lastConversationIdRef.current = conversationId;
+
     // Find the conversation
     const findConversation = async () => {
       setLoading(true);
@@ -163,9 +182,9 @@ const Chat = () => {
         console.log('Conversation found:', formattedConversation);
         setConversation(formattedConversation);
         
-        // Fetch messages for this conversation
-        await fetchMessages(otherUserId);
-        await markConversationAsRead(conversationId);
+        // Use refs to avoid dependency issues
+        await fetchMessagesRef.current(otherUserId);
+        await markAsReadRef.current(conversationId);
         
         // Mark messages as delivered when opening conversation
         try {
@@ -186,7 +205,14 @@ const Chat = () => {
     };
 
     findConversation();
-  }, [conversationId, user?.id, navigate, fetchMessages, markConversationAsRead]);
+  }, [conversationId, user?.id, navigate]);
+
+  // Reset guard when leaving the page
+  useEffect(() => {
+    return () => {
+      lastConversationIdRef.current = null;
+    };
+  }, []);
 
   // Separate useEffect for polling to prevent re-initialization
   useEffect(() => {
