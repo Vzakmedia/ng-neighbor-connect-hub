@@ -64,16 +64,16 @@ const Navigation = () => {
     { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
   ];
 
-  // Mobile-specific order with marketplace beside community and safety in first 4
+  // Mobile-specific order with Messages in middle of first 5 items
   const mobileNavItems = [
     { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
     { id: 'community', icon: Users, label: 'Groups', count: unreadCounts.community, path: '/community' },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
     { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
     { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
     { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -170,15 +170,15 @@ const Navigation = () => {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-50">
         <div className="flex h-16">
-          {/* Main nav items - 4 columns */}
-          <div className="flex-1 grid grid-cols-4">
-            {mobileNavItems.slice(0, 4).filter(item => {
+          {/* Main nav items - 5 columns */}
+          <div className="flex-1 grid grid-cols-5">
+            {mobileNavItems.slice(0, 5).filter(item => {
               // Hide User Directory for non-staff users on mobile
               if (item.id === 'users' && !hasStaffRole) {
                 return false;
               }
               return true;
-            }).slice(0, 4).map((item) => {
+            }).slice(0, 5).map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -198,7 +198,10 @@ const Navigation = () => {
                       </Badge>
                     )}
                   </div>
-                  <span className="text-xs font-medium">{item.label}</span>
+                  {/* Show label only when active */}
+                  {location.pathname === item.path && (
+                    <span className="text-xs font-medium">{item.label}</span>
+                  )}
                 </button>
               );
             })}
@@ -221,7 +224,7 @@ const Navigation = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" side="top" className="mb-2">
-                {mobileNavItems.slice(4).filter(item => {
+                {mobileNavItems.slice(5).filter(item => {
                   // Hide User Directory for non-staff users
                   if (item.id === 'users' && !hasStaffRole) {
                     return false;
