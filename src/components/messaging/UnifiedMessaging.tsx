@@ -99,27 +99,12 @@ const UnifiedMessaging = () => {
     updateMessage(message);
   }, [updateMessage]);
 
-  // Fix 2: Remove fetchConversationsRef pattern - use fetchConversations directly
+  // DISABLED: Automatic conversation updates cause infinite loops
+  // Conversations will update on manual actions only (navigation, pull-to-refresh)
   const onConversationUpdate = useCallback(() => {
-    const isMobile = window.innerWidth < 768;
-    
-    // On mobile, NEVER update conversation list while chatting
-    if (isMobile) {
-      console.log('Blocked conversation update on mobile');
-      return;
-    }
-    
-    // Desktop: still use debouncing
-    const debounceTime = 500;
-    const now = Date.now();
-    
-    if (now - lastConversationUpdateRef.current < debounceTime) {
-      console.log('Skipping conversation update - debounced');
-      return;
-    }
-    lastConversationUpdateRef.current = now;
-    fetchConversations(); // Call directly - debouncing inside fetchConversations will prevent loops
-  }, [fetchConversations]); // Depend on fetchConversations - it's now stable
+    console.log('Conversation update blocked - automatic updates disabled');
+    return;
+  }, []); // Empty dependencies - never changes, never fetches
 
   // Step 4: Fix onReadReceipt to not depend on messages array
   const onReadReceipt = useCallback((messageId: string) => {
@@ -127,22 +112,13 @@ const UnifiedMessaging = () => {
     updateMessage({ id: messageId, status: 'read' } as Message);
   }, [updateMessage]); // No messages dependency
 
-  // Update individual refs only when their specific callback changes
+  // Consolidated ref updates - single effect
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
-  }, [onNewMessage]);
-
-  useEffect(() => {
     onMessageUpdateRef.current = onMessageUpdate;
-  }, [onMessageUpdate]);
-
-  useEffect(() => {
     onConversationUpdateRef.current = onConversationUpdate;
-  }, [onConversationUpdate]);
-
-  useEffect(() => {
     onReadReceiptRef.current = onReadReceipt;
-  }, [onReadReceipt]);
+  }, [onNewMessage, onMessageUpdate, onConversationUpdate, onReadReceipt]);
 
   // Stable subscription callbacks using refs (messages handled by useDirectMessages broadcast)
   useMessageSubscriptions({
@@ -230,9 +206,6 @@ const UnifiedMessaging = () => {
     document.title = 'Messages | Conversations';
   }, []);
   
-  // Fix 6: Debug render counting - AFTER all hooks
-  renderCountRef.current++;
-  console.log('UnifiedMessaging render #', renderCountRef.current);
 
   return (
     <div className="h-[calc(100vh-8rem)]">

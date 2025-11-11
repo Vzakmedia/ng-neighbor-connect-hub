@@ -120,15 +120,24 @@ export const useConversations = (userId: string | undefined) => {
         };
       });
 
-      // Fix 4: Deep comparison to prevent unnecessary re-renders
+      // Optimized comparison - check length and key fields only
       setConversations(prev => {
-        const prevJson = JSON.stringify(prev);
-        const newJson = JSON.stringify(formattedConversations);
-        if (prevJson === newJson) {
-          console.log('Conversations unchanged - skipping state update');
+        if (prev.length !== formattedConversations.length) {
+          return formattedConversations;
+        }
+        
+        // Quick check: compare IDs and timestamps only
+        const hasChanges = prev.some((conv, i) => 
+          conv.id !== formattedConversations[i]?.id ||
+          conv.last_message_at !== formattedConversations[i]?.last_message_at ||
+          conv.user1_has_unread !== formattedConversations[i]?.user1_has_unread ||
+          conv.user2_has_unread !== formattedConversations[i]?.user2_has_unread
+        );
+        
+        if (!hasChanges) {
           return prev; // Same reference = no re-render
         }
-        console.log('Conversations updated:', formattedConversations.length);
+        
         return formattedConversations;
       });
       console.timeEnd('fetchConversations');
@@ -168,9 +177,6 @@ export const useConversations = (userId: string | undefined) => {
     }
   }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
   
-  // Fix 6: Debug render counting - AFTER all hooks
-  renderCountRef.current++;
-  console.log('useConversations render #', renderCountRef.current);
 
   const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
     if (!userId) return null;
