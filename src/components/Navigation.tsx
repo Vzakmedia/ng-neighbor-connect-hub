@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -77,6 +78,16 @@ const Navigation = () => {
   ];
 
   const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const handleMobileNavigation = async (path: string) => {
+    // Trigger haptic feedback on mobile
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (error) {
+      // Haptics not available (e.g., on web), silently continue
+    }
     navigate(path);
   };
 
@@ -183,7 +194,7 @@ const Navigation = () => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavigation(item.path)}
+                  onClick={() => handleMobileNavigation(item.path)}
                   className={`flex flex-col items-center justify-center space-y-1 transition-colors touch-manipulation ${
                     location.pathname === item.path
                       ? 'text-primary bg-primary/5'
@@ -235,7 +246,14 @@ const Navigation = () => {
                   return (
                     <DropdownMenuItem
                       key={item.id}
-                      onClick={() => handleNavigation(item.path)}
+                      onClick={async () => {
+                        try {
+                          await Haptics.impact({ style: ImpactStyle.Light });
+                        } catch (error) {
+                          // Haptics not available
+                        }
+                        handleNavigation(item.path);
+                      }}
                       className="flex items-center py-3"
                     >
                       <Icon className="mr-3 h-4 w-4" />
