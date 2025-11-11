@@ -40,6 +40,7 @@ import MarketplaceMessageDialog from './MarketplaceMessageDialog';
 import { ProductDialog } from './ProductDialog';
 import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 import CreateServiceDialog from './CreateServiceDialog';
+import { MarketplaceFilterDialog } from './marketplace/MarketplaceFilterDialog';
 import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 
 
@@ -106,6 +107,14 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    category: ['all'],
+    priceRange: [] as string[],
+    rating: [] as string[],
+    condition: [] as string[],
+    availability: [] as string[],
+    negotiable: [] as string[],
+  });
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [galleryTitle, setGalleryTitle] = useState('');
@@ -138,12 +147,15 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   ];
 
   useEffect(() => {
+    const category = filters.category[0] || 'all';
+    setSelectedCategory(category);
+    
     if (activeSubTab === 'services') {
       fetchServices();
     } else {
       fetchItems();
     }
-  }, [activeSubTab, selectedCategory, searchTerm, locationScope]);
+  }, [filters, searchTerm, activeSubTab, locationScope]);
 
 
   // Handle URL parameter for specific item
@@ -524,90 +536,46 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
         </div>
       </div>
 
-      {/* Services/Goods selection controlled from parent dropdown on page header */}
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-3 md:gap-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="flex flex-1 sm:flex-[2] gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder={`Search ${activeSubTab}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 md:h-10 w-full"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-36 md:w-44 h-12 md:h-10">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-md">
-                {currentCategories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <SelectItem key={category.value} value={category.value} className="py-3">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        {category.label}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            {activeSubTab === 'services' ? (
-              <CreateServiceDialog
-                onServiceCreated={() => fetchServices()}
-                trigger={
-                  <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden xs:inline md:inline">Create</span>
-                  </Button>
-                }
-              />
-            ) : (
-              <CreateMarketplaceItemDialog
-                onItemCreated={() => fetchItems()}
-                trigger={
-                  <Button className="flex items-center gap-1 h-12 md:h-10 px-3 md:px-4 flex-shrink-0">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden xs:inline md:inline">Create</span>
-                  </Button>
-                }
-              />
-            )}
-          </div>
-          <Button variant="outline" className="hidden sm:flex items-center gap-2 h-12 md:h-10 w-full sm:w-auto">
-            <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">More Filters</span>
-            <span className="sm:hidden">Filters</span>
-          </Button>
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            type="text"
+            placeholder={`Search ${activeSubTab}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-full"
+          />
         </div>
-      </div>
-
-      {/* Category Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-        {currentCategories.slice(1, 7).map((category) => {
-          const Icon = category.icon;
-          const isActive = selectedCategory === category.value;
-          return (
-            <Card
-              key={category.value}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                isActive ? 'ring-2 ring-primary bg-primary/5' : ''
-              }`}
-              onClick={() => setSelectedCategory(category.value)}
-            >
-              <CardContent className="p-4 text-center">
-                <Icon className={`h-8 w-8 mx-auto mb-2 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                <p className="text-sm font-medium">{category.label}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
+        <MarketplaceFilterDialog
+          activeSubTab={activeSubTab}
+          onFilterChange={setFilters}
+          initialFilters={filters}
+        />
+        {activeSubTab === 'services' ? (
+          <CreateServiceDialog
+            onServiceCreated={() => fetchServices()}
+            trigger={
+              <Button className="gap-2 shrink-0">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Create Listing</span>
+                <span className="sm:hidden">Create</span>
+              </Button>
+            }
+          />
+        ) : (
+          <CreateMarketplaceItemDialog
+            onItemCreated={() => fetchItems()}
+            trigger={
+              <Button className="gap-2 shrink-0">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Create Listing</span>
+                <span className="sm:hidden">Create</span>
+              </Button>
+            }
+          />
+        )}
       </div>
 
       {/* Results Grid */}
