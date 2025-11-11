@@ -30,7 +30,6 @@ const UnifiedMessaging = () => {
   const onMessageUpdateRef = useRef<((message: Message) => void) | null>(null);
   const onConversationUpdateRef = useRef<(() => void) | null>(null);
   const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
-  const renderCountRef = useRef(0);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
   const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
@@ -182,15 +181,23 @@ const UnifiedMessaging = () => {
   const startConversationWithUser = async (targetUserId: string) => {
     const convId = await createOrFindConversation(targetUserId);
     if (!convId) return;
-    const conv = conversations.find(c => c.id === convId);
+    
+    // First check current conversations
+    let conv = conversations.find(c => c.id === convId);
+    
+    if (!conv) {
+      // Fetch fresh data and search in the result
+      const freshConversations = await fetchConversations();
+      conv = freshConversations.find(c => c.id === convId);
+    }
+    
     if (conv) {
       await selectConversation(conv);
     } else {
-      await fetchConversations();
-      const newConv = conversations.find(c => c.id === convId);
-      if (newConv) await selectConversation(newConv);
-      else navigate(`/chat/${convId}`);
+      // Fallback: navigate directly
+      navigate(`/chat/${convId}`);
     }
+    
     setSearchQuery('');
     setSearchResults([]);
   };

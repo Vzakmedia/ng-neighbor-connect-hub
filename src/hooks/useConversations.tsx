@@ -35,25 +35,25 @@ export const useConversations = (userId: string | undefined) => {
   const isCircuitOpenRef = useRef(false);
 
   // Step 5: Stabilize fetchConversations - only depend on userId
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (): Promise<Conversation[]> => {
     if (!userId) {
       console.log('No userId provided to fetchConversations');
       setConversations([]);
       setLoading(false);
-      return;
+      return [];
     }
 
     // Circuit breaker check
     if (isCircuitOpenRef.current) {
       console.log('Circuit breaker open - skipping fetch');
-      return;
+      return [];
     }
 
     // Debounce to prevent rapid successive calls
     const now = Date.now();
     if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
       console.log('Skipping fetch - cooldown active');
-      return;
+      return [];
     }
     lastFetchTimeRef.current = now;
 
@@ -144,10 +144,14 @@ export const useConversations = (userId: string | undefined) => {
       
       // Reset failure count on success
       failureCountRef.current = 0;
+      
+      return formattedConversations;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       console.timeEnd('fetchConversations');
       setConversations([]); // Set empty array on error to prevent infinite loading
+      
+      return [];
       
       // Increment failure count and open circuit breaker if needed
       failureCountRef.current++;
