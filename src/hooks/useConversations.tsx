@@ -29,11 +29,6 @@ export const useConversations = (userId: string | undefined) => {
     toastRef.current = toast;
   }, [toast]);
   
-  // Update conversations ref when conversations change
-  useEffect(() => {
-    conversationsRef.current = conversations;
-  }, [conversations]);
-  
   // Circuit breaker to prevent runaway fetching
   const failureCountRef = useRef(0);
   const MAX_FAILURES = 3;
@@ -124,6 +119,9 @@ export const useConversations = (userId: string | undefined) => {
           other_user_phone: otherUser?.phone || null,
         };
       });
+
+      // ✅ Update ref immediately before setting state
+      conversationsRef.current = formattedConversations;
 
       // Optimized comparison - check length and key fields only
       setConversations(prev => {

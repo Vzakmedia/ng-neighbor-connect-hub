@@ -395,9 +395,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         </div>
       )}
       
-      <div className="px-2 md:px-4">
-        <ConnectionStatusBanner />
-      </div>
       {/* Messages - virtualized scrolling */}
       <div ref={parentRef} className="flex-1 overflow-y-auto px-3 md:px-6">
         <div 
