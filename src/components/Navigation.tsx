@@ -200,7 +200,7 @@ const Navigation = () => {
                   </div>
                   {/* Show label only when active */}
                   {location.pathname === item.path && (
-                    <span className="text-xs font-medium">{item.label}</span>
+                    <span className="text-xs font-medium animate-fade-in">{item.label}</span>
                   )}
                 </button>
               );
