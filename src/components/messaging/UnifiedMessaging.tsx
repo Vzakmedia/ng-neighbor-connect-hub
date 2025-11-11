@@ -30,6 +30,7 @@ const UnifiedMessaging = () => {
   const onMessageUpdateRef = useRef<((message: Message) => void) | null>(null);
   const onConversationUpdateRef = useRef<(() => void) | null>(null);
   const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
+  const isStartingConversationRef = useRef(false);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
   const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
@@ -179,27 +180,63 @@ const UnifiedMessaging = () => {
   };
 
   const startConversationWithUser = async (targetUserId: string) => {
-    const convId = await createOrFindConversation(targetUserId);
-    if (!convId) return;
+    console.log('[startConversation] Starting with user:', targetUserId);
     
-    // First check current conversations
-    let conv = conversations.find(c => c.id === convId);
+    // Guard: Prevent multiple simultaneous calls
+    if (isStartingConversationRef.current) {
+      console.warn('[startConversation] BLOCKED: Already in progress');
+      return;
+    }
     
-    if (!conv) {
-      // Fetch fresh data and search in the result
+    isStartingConversationRef.current = true;
+    
+    try {
+      console.log('[startConversation] Creating/finding conversation...');
+      const convId = await createOrFindConversation(targetUserId);
+      
+      if (!convId) {
+        console.error('[startConversation] Failed to get conversation ID');
+        return;
+      }
+      
+      console.log('[startConversation] Conversation ID:', convId);
+      
+      // First check current conversations
+      let conv = conversations.find(c => c.id === convId);
+      
+      if (conv) {
+        console.log('[startConversation] Found in current state, selecting...');
+        await selectConversation(conv);
+        setSearchQuery('');
+        setSearchResults([]);
+        console.log('[startConversation] ✅ Complete (found in state)');
+        return; // ✅ CRITICAL: Exit here to prevent unnecessary fetch
+      }
+      
+      console.log('[startConversation] Not in current state, fetching fresh data...');
       const freshConversations = await fetchConversations();
+      console.log('[startConversation] Fetched conversations:', freshConversations.length);
+      
       conv = freshConversations.find(c => c.id === convId);
+      
+      if (conv) {
+        console.log('[startConversation] Found in fresh data, selecting...');
+        await selectConversation(conv);
+        console.log('[startConversation] ✅ Complete (found in fresh data)');
+      } else {
+        console.warn('[startConversation] Not found even after fetch, navigating directly...');
+        navigate(`/chat/${convId}`);
+        console.log('[startConversation] ✅ Complete (navigated)');
+      }
+      
+      setSearchQuery('');
+      setSearchResults([]);
+    } catch (error) {
+      console.error('[startConversation] Error:', error);
+    } finally {
+      isStartingConversationRef.current = false;
+      console.log('[startConversation] Guard released');
     }
-    
-    if (conv) {
-      await selectConversation(conv);
-    } else {
-      // Fallback: navigate directly
-      navigate(`/chat/${convId}`);
-    }
-    
-    setSearchQuery('');
-    setSearchResults([]);
   };
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
