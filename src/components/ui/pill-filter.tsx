@@ -57,7 +57,7 @@ export const PillFilter = ({
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               "touch-manipulation min-w-[60px] text-center",
               // Selected state (black bg, white text)
-              isSelected && "bg-black dark:bg-white text-white dark:text-black shadow-sm",
+              isSelected && "bg-black dark:bg-white text-white dark:text-black shadow-md",
               // Unselected state (light gray bg)
               !isSelected && "bg-muted text-muted-foreground",
               // Hover states
