@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationStore } from '@/store/notificationStore';
 import { cn } from '@/lib/utils';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
 
 interface NotificationBellProps {
   onClick: () => void;
@@ -12,12 +14,23 @@ interface NotificationBellProps {
 export const NotificationBell = ({ onClick, className }: NotificationBellProps) => {
   const unreadCount = useNotificationStore(state => state.unreadCount);
 
+  const handleClick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (error) {
+        console.error('Haptics error:', error);
+      }
+    }
+    onClick();
+  };
+
   return (
     <Button
       variant="ghost"
       size="icon"
       className={cn("relative", className)}
-      onClick={onClick}
+      onClick={handleClick}
       aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
     >
       <Bell className="h-5 w-5" />
