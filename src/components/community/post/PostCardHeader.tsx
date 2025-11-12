@@ -55,10 +55,10 @@ export const PostCardHeader = ({
   };
 
   return (
-    <CardHeader className="p-4">
-      <div className="flex items-center gap-3">
+    <CardHeader className="p-3 sm:p-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <div 
-          className="cursor-pointer"
+          className="cursor-pointer shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             onAvatarClick(author.user_id);
@@ -68,27 +68,24 @@ export const PostCardHeader = ({
             userId={author.user_id}
             src={author.avatar_url}
             fallback={author.full_name?.[0] || "U"}
-            className="h-10 w-10"
+            className="h-9 w-9 sm:h-10 sm:w-10"
           />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-medium truncate">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
+            <span className="font-medium truncate max-w-[120px] sm:max-w-none">
               {author.full_name || "Anonymous"}
             </span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground truncate">{getLocation()}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground hidden sm:inline">·</span>
+            <span className="text-muted-foreground truncate max-w-[100px] sm:max-w-none">{getLocation()}</span>
+            <span className="text-muted-foreground hidden sm:inline">·</span>
+            <span className="text-muted-foreground text-[10px] sm:text-xs shrink-0">
               {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
             </span>
-            {getVisibilityIcon()}
+            <span className="shrink-0">{getVisibilityIcon()}</span>
             {rsvpEnabled && (
-              <>
-                <span className="text-muted-foreground">·</span>
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              </>
+              <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground shrink-0" />
             )}
           </div>
         </div>
