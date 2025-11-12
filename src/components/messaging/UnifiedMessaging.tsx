@@ -254,23 +254,23 @@ const UnifiedMessaging = () => {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="px-4 py-2 border-b">
-          <TabsList className="flex mb-4 justify-start">
-            <TabsTrigger value="direct" className="flex items-center space-x-2">
-              <MessageCircle className="w-4 h-4" />
+        <div className="px-2 sm:px-4 py-2 border-b overflow-x-auto">
+          <TabsList className="w-full">
+            <TabsTrigger value="direct" className="flex items-center gap-1.5 sm:gap-2">
+              <MessageCircle className="w-4 h-4 shrink-0" />
               <span>Messages</span>
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center space-x-2">
-              <UserPlus className="w-4 h-4" />
+            <TabsTrigger value="requests" className="flex items-center gap-1.5 sm:gap-2">
+              <UserPlus className="w-4 h-4 shrink-0" />
               <span>Requests</span>
               {requestCount > 0 && (
-                <Badge variant="secondary" className="ml-1">
+                <Badge variant="secondary" className="ml-1 shrink-0">
                   {requestCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="marketplace" className="flex items-center space-x-2">
-              <ShoppingBag className="w-4 h-4" />
+            <TabsTrigger value="marketplace" className="flex items-center gap-1.5 sm:gap-2">
+              <ShoppingBag className="w-4 h-4 shrink-0" />
               <span>Marketplace</span>
             </TabsTrigger>
           </TabsList>
