@@ -26,6 +26,7 @@ import { useTutorial } from "@/hooks/useTutorial";
 import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
 import MessagingNotificationProvider from "@/components/messaging/MessagingNotificationProvider";
 import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
+import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -100,6 +101,12 @@ const TutorialWrapper = () => {
 // Component that shows toast notifications for new community posts
 const CommunityPostToastWrapper = () => {
   useCommunityPostToasts();
+  return null;
+};
+
+// Component that shows toast notifications for new direct messages
+const DirectMessageToastWrapper = () => {
+  useDirectMessageToasts();
   return null;
 };
 
@@ -211,6 +218,7 @@ const App = () => {
           <MessagingNotificationProvider />
           <TutorialWrapper />
           <CommunityPostToastWrapper />
+          <DirectMessageToastWrapper />
           <Routes>
               <Route path="/" element={<PlatformRoot />} />
               <Route path="/dashboard" element={<Index />} />
