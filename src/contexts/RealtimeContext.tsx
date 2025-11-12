@@ -221,7 +221,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
           event: 'INSERT',
           schema: 'public',
           table: 'alert_notifications',
-          filter: `user_id.eq.${user.id}`
+          filter: `recipient_id.eq.${user.id}`
         }, (payload) => {
           alertCallbacks.current.forEach(cb => cb(payload));
         }),
