@@ -202,7 +202,7 @@ const Navigation = () => {
                   }`}
                 >
                   <div className="relative">
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-6 w-6" />
                     {item.count > 0 && (
                       <Badge className="absolute -top-1 -right-1 h-3 w-3 rounded-full p-0 flex items-center justify-center text-xs border border-background">
                         {item.count > 9 ? '9+' : item.count}
@@ -232,7 +232,7 @@ const Navigation = () => {
                   }}
                   className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation h-full w-full"
                 >
-                  <div className="h-5 w-5 flex items-center justify-center">
+                  <div className="h-6 w-6 flex items-center justify-center">
                     <div className="grid grid-cols-2 gap-0.5">
                       <div className="w-1 h-1 bg-current rounded-full"></div>
                       <div className="w-1 h-1 bg-current rounded-full"></div>
