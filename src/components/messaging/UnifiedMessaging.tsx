@@ -279,7 +279,7 @@ const UnifiedMessaging = () => {
         <div className="flex-1 min-h-0">
           <TabsContent value="direct" className="h-full m-0">
             {/* Mobile: show only conversation list */}
-            <div className="xl:hidden h-full">
+            <div className="2xl:hidden h-full">
               <div className="border-r flex flex-col min-h-0 h-full">
                 <div className="p-4 border-b">
                   <div className="relative">
@@ -329,7 +329,7 @@ const UnifiedMessaging = () => {
             </div>
 
             {/* Desktop: resizable panels */}
-            <ResizablePanelGroup direction="horizontal" className="hidden xl:flex h-full w-full">
+            <ResizablePanelGroup direction="horizontal" className="hidden 2xl:flex h-full w-full">
               {/* Left: conversations + search */}
               <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="border-r">
                 <div className="flex flex-col h-full w-full">
