@@ -254,8 +254,8 @@ const UnifiedMessaging = () => {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <TabsList className="w-full">
+        <div className="px-4 sm:px-6 py-4 border-b overflow-hidden">
+          <TabsList className="w-full -mx-1">
             <TabsTrigger value="direct" className="flex items-center gap-1.5 sm:gap-2">
               <MessageCircle className="w-4 h-4 shrink-0" />
               <span>Messages</span>
