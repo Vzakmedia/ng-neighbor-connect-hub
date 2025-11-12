@@ -25,6 +25,7 @@ import AppTutorial from "@/components/AppTutorial";
 import { useTutorial } from "@/hooks/useTutorial";
 import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
 import MessagingNotificationProvider from "@/components/messaging/MessagingNotificationProvider";
+import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -94,6 +95,12 @@ const TutorialWrapper = () => {
       onComplete={completeTutorial} 
     />
   );
+};
+
+// Component that shows toast notifications for new community posts
+const CommunityPostToastWrapper = () => {
+  useCommunityPostToasts();
+  return null;
 };
 
 const App = () => {
@@ -203,6 +210,7 @@ const App = () => {
           <OnboardingNotificationManager />
           <MessagingNotificationProvider />
           <TutorialWrapper />
+          <CommunityPostToastWrapper />
           <Routes>
               <Route path="/" element={<PlatformRoot />} />
               <Route path="/dashboard" element={<Index />} />
