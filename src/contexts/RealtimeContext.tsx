@@ -75,26 +75,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
 
     const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
-    // 1. Community Posts Subscription - only on community routes
-    if (isCommunityRoute) {
-      const communityPostsSub = createSafeSubscription(
-        (channel) => channel
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'community_posts',
-            filter: `post_type=neq.private_message`
-          }, (payload) => {
-            communityPostCallbacks.current.forEach(cb => cb(payload));
-          }),
-        {
-          channelName: 'unified-community-posts',
-          pollInterval: 30000,
-          debugName: 'RealtimeProvider-CommunityPosts'
-        }
-      );
-      subscriptions.push(communityPostsSub);
-    }
+    // Community posts subscription moved to always-active section below
 
     // 2. Direct Messages Subscription - REMOVED
     // Messages are handled by local broadcast channels in useDirectMessages hook
@@ -232,6 +213,25 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     subscriptions.push(alertsSub);
+
+    // 5. Community Posts Subscription - always active for navigation badge updates
+    const communityPostsSub = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts',
+          filter: `post_type=neq.private_message`
+        }, (payload) => {
+          communityPostCallbacks.current.forEach(cb => cb(payload));
+        }),
+      {
+        channelName: 'unified-community-posts',
+        pollInterval: 30000,
+        debugName: 'RealtimeProvider-CommunityPosts'
+      }
+    );
+    subscriptions.push(communityPostsSub);
 
     // Store all subscriptions
     subscriptionsRef.current = subscriptions;
