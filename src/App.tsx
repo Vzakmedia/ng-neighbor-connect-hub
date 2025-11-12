@@ -23,7 +23,6 @@ import { OnboardingNotificationManager } from "@/components/OnboardingNotificati
 
 import AppTutorial from "@/components/AppTutorial";
 import { useTutorial } from "@/hooks/useTutorial";
-import FloatingCreatePostButton from "@/components/FloatingCreatePostButton";
 import MessagingNotificationProvider from "@/components/messaging/MessagingNotificationProvider";
 import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
@@ -262,7 +261,6 @@ const App = () => {
               <Route path="/blog/:slug" element={<BlogPost />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
-            <FloatingCreatePostButton />
                     </PresenceProvider>
                   </RealtimeProvider>
                  </BrowserRouter>
