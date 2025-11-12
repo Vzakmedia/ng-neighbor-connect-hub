@@ -254,7 +254,7 @@ const UnifiedMessaging = () => {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="border-b overflow-hidden">
+        <div className="px-4 py-3 border-b">
           <TabsList className="w-full">
             <TabsTrigger value="direct" className="flex items-center gap-1.5 sm:gap-2">
               <MessageCircle className="w-4 h-4 shrink-0" />
@@ -281,7 +281,7 @@ const UnifiedMessaging = () => {
             {/* Mobile: show only conversation list */}
             <div className="xl:hidden h-full">
               <div className="border-r flex flex-col min-h-0 h-full">
-                <div className="p-4 pt-8 border-b">
+                <div className="p-4 border-b">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
