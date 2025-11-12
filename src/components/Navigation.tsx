@@ -195,7 +195,7 @@ const Navigation = () => {
                 <button
                   key={item.id}
                   onClick={() => handleMobileNavigation(item.path)}
-                  className={`flex flex-col items-center justify-center space-y-1 transition-colors touch-manipulation ${
+                  className={`flex flex-col items-center justify-center space-y-1 transition-all touch-manipulation active:scale-95 ${
                     location.pathname === item.path
                       ? 'text-primary bg-primary/5'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -230,7 +230,7 @@ const Navigation = () => {
                       // Haptics not available
                     }
                   }}
-                  className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-colors touch-manipulation h-full w-full"
+                  className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-all touch-manipulation active:scale-95 h-full w-full"
                 >
                   <div className="h-6 w-6 flex items-center justify-center">
                     <div className="grid grid-cols-2 gap-0.5">
