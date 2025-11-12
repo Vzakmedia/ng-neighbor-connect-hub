@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,40 @@ const Navigation = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [hasStaffRole, setHasStaffRole] = useState(false);
   const { unreadCount } = useNotifications();
+  const [animatingBadges, setAnimatingBadges] = useState<Record<string, boolean>>({});
+  const prevCountsRef = useRef<Record<string, number>>({});
+
+  // Detect unread count increases and trigger animation
+  useEffect(() => {
+    const newAnimating: Record<string, boolean> = {};
+    
+    if (prevCountsRef.current.community !== undefined && 
+        unreadCounts.community > prevCountsRef.current.community) {
+      newAnimating.community = true;
+    }
+    
+    if (prevCountsRef.current.messages !== undefined && 
+        unreadCounts.messages > prevCountsRef.current.messages) {
+      newAnimating.messages = true;
+    }
+    
+    if (Object.keys(newAnimating).length > 0) {
+      setAnimatingBadges(newAnimating);
+      
+      // Remove animation after it completes
+      const timer = setTimeout(() => {
+        setAnimatingBadges({});
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Update previous counts
+    prevCountsRef.current = {
+      community: unreadCounts.community,
+      messages: unreadCounts.messages
+    };
+  }, [unreadCounts.community, unreadCounts.messages]);
 
   useEffect(() => {
     const checkStaffRole = async () => {
@@ -132,7 +166,10 @@ const Navigation = () => {
                   {item.count > 0 && (
                     <>
                       {/* Desktop badge */}
-                      <Badge variant="secondary" className="hidden lg:block ml-auto">
+                      <Badge 
+                        variant="secondary" 
+                        className={`hidden lg:block ml-auto ${animatingBadges[item.id] ? 'animate-bounce-subtle' : ''}`}
+                      >
                         {item.count}
                       </Badge>
                       {/* Tablet notification dot */}
@@ -204,7 +241,9 @@ const Navigation = () => {
                   <div className="relative">
                     <Icon className="h-6 w-6" />
                     {item.count > 0 && (
-                      <Badge className="absolute -top-1 -right-1 h-3 w-3 rounded-full p-0 flex items-center justify-center text-xs border border-background">
+                      <Badge 
+                        className={`absolute -top-1 -right-1 h-3 w-3 rounded-full p-0 flex items-center justify-center text-xs border border-background ${animatingBadges[item.id] ? 'animate-bounce-subtle' : ''}`}
+                      >
                         {item.count > 9 ? '9+' : item.count}
                       </Badge>
                     )}
