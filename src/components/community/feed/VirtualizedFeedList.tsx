@@ -228,7 +228,7 @@ const VirtualizedFeedListComponent = ({
                   <div
                     ref={observePost}
                     data-post-id={post.id}
-                    className="mb-4 sm:mb-6 animate-fade-in"
+                    className="mb-3 sm:mb-4 md:mb-6 animate-fade-in"
                   >
                     <PostCard
                       post={post}

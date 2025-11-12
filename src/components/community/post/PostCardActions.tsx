@@ -23,8 +23,8 @@ export const PostCardActions = ({
   onToggleComments 
 }: PostCardActionsProps) => {
   return (
-    <div className="flex items-center justify-between py-3 px-1">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between py-2 sm:py-3 px-0.5 sm:px-1">
+      <div className="flex items-center gap-2 sm:gap-4">
         <Button
           variant="ghost"
           size="sm"
@@ -32,10 +32,10 @@ export const PostCardActions = ({
             e.stopPropagation();
             onLike();
           }}
-          className={`gap-1.5 hover-scale text-sm min-w-0 px-2 ${post.isLiked ? 'text-red-500' : ''}`}
+          className={`gap-1 sm:gap-1.5 hover-scale text-xs sm:text-sm min-w-0 px-1.5 sm:px-2 ${post.isLiked ? 'text-red-500' : ''}`}
         >
-          <Heart className={`h-5 w-5 shrink-0 ${post.isLiked ? 'fill-current' : ''}`} />
-          <span>{post.likes_count || 0}</span>
+          <Heart className={`h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 ${post.isLiked ? 'fill-current' : ''}`} />
+          <span className="text-xs sm:text-sm">{post.likes_count || 0}</span>
         </Button>
 
         <Button
@@ -45,10 +45,10 @@ export const PostCardActions = ({
             e.stopPropagation();
             onToggleComments();
           }}
-          className="gap-1.5 hover-scale text-sm min-w-0 px-2"
+          className="gap-1 sm:gap-1.5 hover-scale text-xs sm:text-sm min-w-0 px-1.5 sm:px-2"
         >
-          <MessageCircle className="h-5 w-5 shrink-0" />
-          <span>{post.comments_count || 0}</span>
+          <MessageCircle className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
+          <span className="text-xs sm:text-sm">{post.comments_count || 0}</span>
         </Button>
 
         <Button
@@ -58,13 +58,13 @@ export const PostCardActions = ({
             e.stopPropagation();
             onShare();
           }}
-          className="hover-scale text-sm min-w-0 px-2"
+          className="hover-scale text-xs sm:text-sm min-w-0 px-1.5 sm:px-2"
         >
-          <Share2 className="h-5 w-5 shrink-0" />
+          <Share2 className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
         </Button>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -72,9 +72,9 @@ export const PostCardActions = ({
             e.stopPropagation();
             onSave();
           }}
-          className={`hover-scale px-2 ${post.isSaved ? 'text-primary' : ''}`}
+          className={`hover-scale px-1.5 sm:px-2 ${post.isSaved ? 'text-primary' : ''}`}
         >
-          <Bookmark className={`h-5 w-5 shrink-0 ${post.isSaved ? 'fill-current' : ''}`} />
+          <Bookmark className={`h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 ${post.isSaved ? 'fill-current' : ''}`} />
         </Button>
 
         {post.rsvp_enabled && onRSVP && (
@@ -85,9 +85,9 @@ export const PostCardActions = ({
               e.stopPropagation();
               onRSVP();
             }}
-            className="hover-scale px-2"
+            className="hover-scale px-1.5 sm:px-2"
           >
-            <Calendar className="h-5 w-5 shrink-0" />
+            <Calendar className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
           </Button>
         )}
       </div>
