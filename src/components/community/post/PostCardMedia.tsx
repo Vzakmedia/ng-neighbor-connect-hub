@@ -8,6 +8,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from '@/components/ui/carousel';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useNativeHaptics } from '@/hooks/mobile/useNativeHaptics';
 
 interface PostCardMediaProps {
   images: string[];
@@ -25,6 +27,8 @@ export const PostCardMedia = ({
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  const isMobile = useIsMobile();
+  const { impact } = useNativeHaptics();
 
   useEffect(() => {
     if (!api) return;
@@ -34,8 +38,10 @@ export const PostCardMedia = ({
 
     api.on('select', () => {
       setCurrent(api.selectedScrollSnap());
+      // Add haptic feedback on slide change for native apps
+      impact('light');
     });
-  }, [api]);
+  }, [api, impact]);
 
   if (!images || images.length === 0) return null;
 
@@ -64,13 +70,18 @@ export const PostCardMedia = ({
 
   // Multiple images - use carousel
   return (
-    <div className="relative group">
+    <div className="relative group touch-pan-y">
       <Carousel
         setApi={setApi}
         className="w-full"
         opts={{
           align: 'start',
           loop: true,
+          dragFree: false,
+          skipSnaps: false,
+          containScroll: 'trimSnaps',
+          watchDrag: true,
+          duration: 20,
         }}
       >
         <CarouselContent className="-ml-0">
@@ -92,25 +103,29 @@ export const PostCardMedia = ({
           ))}
         </CarouselContent>
 
-        {/* Navigation Arrows - Show on hover */}
-        <CarouselPrevious 
-          className="left-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          onClick={(e) => e.stopPropagation()}
-        />
-        <CarouselNext 
-          className="right-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          onClick={(e) => e.stopPropagation()}
-        />
+        {/* Navigation Arrows - Show on hover (desktop only) */}
+        {!isMobile && (
+          <>
+            <CarouselPrevious 
+              className="left-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <CarouselNext 
+              className="right-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </>
+        )}
 
         {/* Dot Indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
           {Array.from({ length: count }).map((_, index) => (
             <button
               key={index}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`${isMobile ? 'h-2' : 'h-1.5'} rounded-full transition-all duration-300 ${
                 index === current 
-                  ? 'w-6 bg-white' 
-                  : 'w-1.5 bg-white/50 hover:bg-white/75'
+                  ? `${isMobile ? 'w-8' : 'w-6'} bg-white` 
+                  : `${isMobile ? 'w-2' : 'w-1.5'} bg-white/50 hover:bg-white/75`
               }`}
               onClick={(e) => {
                 e.stopPropagation();
