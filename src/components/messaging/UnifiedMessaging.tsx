@@ -254,8 +254,9 @@ const UnifiedMessaging = () => {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="px-4 sm:px-6 py-3 border-b overflow-x-auto scroll-smooth" style={{ scrollPaddingLeft: '1rem', scrollPaddingRight: '1rem' }}>
-          <TabsList className="w-full justify-start">
+        <div className="px-4 sm:px-6 py-4 border-b">
+          <div className="overflow-x-auto scrollbar-hide -mx-2 px-2">
+            <TabsList className="w-auto inline-flex justify-start min-w-full">
             <TabsTrigger value="direct" className="flex items-center gap-1.5 sm:gap-2">
               <MessageCircle className="w-4 h-4 shrink-0" />
               <span>Messages</span>
@@ -273,7 +274,8 @@ const UnifiedMessaging = () => {
               <ShoppingBag className="w-4 h-4 shrink-0" />
               <span>Marketplace</span>
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0">
