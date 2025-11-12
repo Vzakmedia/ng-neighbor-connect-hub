@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PostCardData } from '@/types/community';
@@ -39,6 +39,13 @@ const PostCardComponent = ({
   const handleImageError = (index: number) => {
     setImageError(prev => ({ ...prev, [index]: true }));
   };
+
+  const handleDoubleTapLike = useCallback(() => {
+    // Only trigger like if not already liked
+    if (!post.isLiked) {
+      onLike();
+    }
+  }, [post.isLiked, onLike]);
 
   // Get visibility indicator
   const getVisibilityBadge = () => {
@@ -110,6 +117,7 @@ const PostCardComponent = ({
         imageError={imageError}
         onImageError={handleImageError}
         onImageClick={onImageClick}
+        onDoubleTapLike={handleDoubleTapLike}
       />
       
       <div className="px-4">
