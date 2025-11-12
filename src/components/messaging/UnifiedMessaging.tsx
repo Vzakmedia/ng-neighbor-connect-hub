@@ -79,8 +79,8 @@ const UnifiedMessaging = () => {
   }, [user?.id, activeConversation?.id]);
 
   const selectConversation = useCallback(async (conv: Conversation) => {
-    if (window.innerWidth < 1280) {
-      // On small screens, use full chat page
+    if (window.innerWidth < 768) {
+      // On mobile, navigate to full chat page
       navigate(`/chat/${conv.id}`);
       return;
     }
@@ -278,8 +278,8 @@ const UnifiedMessaging = () => {
 
         <div className="flex-1 min-h-0">
           <TabsContent value="direct" className="h-full m-0">
-            {/* Mobile: show only conversation list */}
-            <div className="xl:hidden h-full">
+            {/* Mobile/Tablet: show only conversation list */}
+            <div className="md:hidden h-full">
               <div className="border-r flex flex-col min-h-0 h-full">
                 <div className="p-4 border-b">
                   <div className="relative">
@@ -328,8 +328,8 @@ const UnifiedMessaging = () => {
               </div>
             </div>
 
-            {/* Desktop: resizable panels */}
-            <ResizablePanelGroup direction="horizontal" className="hidden xl:flex h-full w-full">
+            {/* Desktop only: resizable panels (768px+) */}
+            <ResizablePanelGroup direction="horizontal" className="hidden md:flex h-full w-full">
               {/* Left: conversations + search */}
               <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="border-r">
                 <div className="flex flex-col h-full w-full">
