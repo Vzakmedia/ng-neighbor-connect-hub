@@ -93,16 +93,14 @@ export const PostCardMedia = ({
         </CarouselContent>
 
         {/* Navigation Arrows - Show on hover */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
-          <CarouselPrevious 
-            className="left-2 bg-background/80 hover:bg-background border-0 shadow-lg pointer-events-auto z-10"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <CarouselNext 
-            className="right-2 bg-background/80 hover:bg-background border-0 shadow-lg pointer-events-auto z-10"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+        <CarouselPrevious 
+          className="left-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <CarouselNext 
+          className="right-2 bg-background/80 hover:bg-background border-0 shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          onClick={(e) => e.stopPropagation()}
+        />
 
         {/* Dot Indicators */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
