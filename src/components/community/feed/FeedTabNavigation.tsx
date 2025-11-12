@@ -34,39 +34,39 @@ export const FeedTabNavigation = ({
   };
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between gap-2 md:gap-4">
+      <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
         <ToggleGroup 
           type="single" 
           value={activeTab}
           onValueChange={(value) => value && onTabChange(value as FeedTab)}
-          className="justify-start"
+          className="justify-start flex-nowrap"
         >
           <ToggleGroupItem 
             value="for-you" 
             variant="outline"
-            className="rounded-full px-4 py-2 text-sm data-[state=on]:border-foreground data-[state=on]:bg-background"
+            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
           >
             For you
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="recent" 
             variant="outline"
-            className="rounded-full px-4 py-2 text-sm data-[state=on]:border-foreground data-[state=on]:bg-background"
+            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
           >
             Recent
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="nearby" 
             variant="outline"
-            className="rounded-full px-4 py-2 text-sm data-[state=on]:border-foreground data-[state=on]:bg-background"
+            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
           >
             Nearby
           </ToggleGroupItem>
           <ToggleGroupItem 
             value="trending" 
             variant="outline"
-            className="rounded-full px-4 py-2 text-sm data-[state=on]:border-foreground data-[state=on]:bg-background"
+            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
           >
             Trending
           </ToggleGroupItem>
@@ -77,7 +77,7 @@ export const FeedTabNavigation = ({
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full px-3 py-2 h-auto"
+              className="rounded-full px-2 md:px-3 py-1.5 md:py-2 h-auto flex-shrink-0 touch-manipulation active:scale-95 transition-all"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -110,7 +110,7 @@ export const FeedTabNavigation = ({
         {selectedLocationScope && (
           <Badge 
             variant="secondary"
-            className="rounded-full px-3 py-1.5 text-sm flex items-center gap-1.5 bg-primary/10 text-primary border-primary/20"
+            className="rounded-full px-2 md:px-3 py-1 md:py-1.5 text-xs md:text-sm flex items-center gap-1 md:gap-1.5 bg-primary/10 text-primary border-primary/20 whitespace-nowrap flex-shrink-0"
           >
             {locationScopeLabels[selectedLocationScope]}
             <button
@@ -125,11 +125,11 @@ export const FeedTabNavigation = ({
 
       <Button 
         onClick={onCreatePost}
-        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 py-2 flex-shrink-0"
+        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-3 md:px-4 py-1.5 md:py-2 flex-shrink-0 touch-manipulation active:scale-95 transition-all"
         size="sm"
       >
-        <Plus className="h-4 w-4 mr-1" />
-        Post
+        <Plus className="h-4 w-4 md:mr-1" />
+        <span className="hidden md:inline">Post</span>
       </Button>
     </div>
   );
