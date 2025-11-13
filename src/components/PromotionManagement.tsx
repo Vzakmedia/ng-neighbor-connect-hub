@@ -313,7 +313,7 @@ export const PromotionManagement = () => {
                     />
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+                        <CalendarIcon className="h-4 w-4" />
                         <span className="text-sm">
                           {new Date(campaign.start_date).toLocaleDateString()} - {new Date(campaign.end_date).toLocaleDateString()}
                         </span>
@@ -376,28 +376,28 @@ export const PromotionManagement = () => {
                     <div className="mt-4 grid grid-cols-4 gap-4">
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <Eye className="h-4 w-4" />
+                          <EyeIcon className="h-4 w-4" />
                           <span className="font-semibold">{analytics[post.id].impressions}</span>
                         </div>
                         <p className="text-xs text-gray-500">Impressions</p>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <MousePointer className="h-4 w-4" />
+                          <CursorArrowRaysIcon className="h-4 w-4" />
                           <span className="font-semibold">{analytics[post.id].clicks}</span>
                         </div>
                         <p className="text-xs text-gray-500">Clicks</p>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <TrendingUp className="h-4 w-4" />
+                          <ArrowTrendingUpIcon className="h-4 w-4" />
                           <span className="font-semibold">{(analytics[post.id].click_through_rate * 100).toFixed(1)}%</span>
                         </div>
                         <p className="text-xs text-gray-500">CTR</p>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <DollarSign className="h-4 w-4" />
+                          <CurrencyDollarIcon className="h-4 w-4" />
                           <span className="font-semibold">₦{analytics[post.id].spend}</span>
                         </div>
                         <p className="text-xs text-gray-500">Spent</p>
@@ -415,7 +415,7 @@ export const PromotionManagement = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <UsersIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{campaigns.length}</div>
@@ -424,7 +424,7 @@ export const PromotionManagement = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <ArrowTrendingUpIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -435,7 +435,7 @@ export const PromotionManagement = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <CurrencyDollarIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -446,7 +446,7 @@ export const PromotionManagement = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Impressions</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <EyeIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">

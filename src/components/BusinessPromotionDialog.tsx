@@ -31,7 +31,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
   const promotionPlans = {
     basic: {
       name: 'Basic Promotion',
-      icon: <Megaphone className="h-5 w-5" />,
+      icon: <MegaphoneIcon className="h-5 w-5" />,
       prices: { 7: '₦5,000', 14: '₦8,000', 30: '₦14,000' },
       features: [
         'Featured in search results',
@@ -42,7 +42,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
     },
     premium: {
       name: 'Premium Promotion',
-      icon: <Star className="h-5 w-5" />,
+      icon: <StarIcon className="h-5 w-5" />,
       prices: { 7: '₦10,000', 14: '₦18,000', 30: '₦32,000' },
       features: [
         'Top of search results',
@@ -55,7 +55,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
     },
     featured: {
       name: 'Featured Promotion',
-      icon: <Zap className="h-5 w-5" />,
+      icon: <BoltIcon className="h-5 w-5" />,
       prices: { 7: '₦20,000', 14: '₦35,000', 30: '₦60,000' },
       features: [
         'Premium banner placement',
@@ -133,7 +133,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <ArrowTrendingUpIcon className="h-5 w-5" />
             Promote Your Business
           </DialogTitle>
           <DialogDescription>
@@ -178,7 +178,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
                             <CardTitle className="text-lg">{plan.name}</CardTitle>
                           </div>
                           {promotionType === key && (
-                            <CheckCircle className="h-5 w-5 text-primary" />
+                            <CheckCircleIcon className="h-5 w-5 text-primary" />
                           )}
                         </div>
                       </CardHeader>
@@ -194,7 +194,7 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
                         <div className="space-y-1">
                           {plan.features.map((feature, index) => (
                             <div key={index} className="flex items-center gap-2 text-sm">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
+                              <CheckCircleIcon className="h-3 w-3 text-green-500" />
                               <span>{feature}</span>
                             </div>
                           ))}
