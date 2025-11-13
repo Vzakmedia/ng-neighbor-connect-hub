@@ -9,24 +9,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Building, 
-  Star, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Clock, 
-  BarChart3, 
-  Users, 
-  ShoppingBag, 
-  Calendar,
-  Edit,
-  Upload,
-  Eye,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock3
-} from 'lucide-react';
+  BuildingOfficeIcon, 
+  StarIcon, 
+  MapPinIcon, 
+  PhoneIcon, 
+  EnvelopeIcon, 
+  ClockIcon, 
+  ChartBarIcon, 
+  UsersIcon, 
+  ShoppingBagIcon, 
+  CalendarIcon,
+  PencilIcon,
+  ArrowUpTrayIcon,
+  EyeIcon,
+  ArrowTrendingUpIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon,
+  ClockIcon as Clock3Icon
+} from '@heroicons/react/24/outline';
 import BusinessPromotionDialog from './BusinessPromotionDialog';
 import { formatTimeAgo } from '@/lib/utils';
 import BusinessAnalyticsDashboard from '@/components/BusinessAnalyticsDashboard';

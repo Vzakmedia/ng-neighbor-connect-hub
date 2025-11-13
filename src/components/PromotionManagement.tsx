@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Calendar, TrendingUp, DollarSign, Users, Eye, MousePointer } from 'lucide-react';
+import { CalendarIcon, ArrowTrendingUpIcon, CurrencyDollarIcon, UsersIcon, EyeIcon, CursorArrowRaysIcon } from '@heroicons/react/24/outline';
 
 interface PromotionCampaign {
   id: string;
