@@ -7,15 +7,15 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  AlertTriangle, 
-  Shield, 
-  Clock, 
-  MapPin, 
-  Activity,
-  Bell,
-  Eye,
-  MessageSquare
-} from 'lucide-react';
+  ExclamationTriangleIcon, 
+  ShieldCheckIcon, 
+  ClockIcon, 
+  MapPinIcon, 
+  ChartBarIcon,
+  BellIcon,
+  EyeIcon,
+  ChatBubbleLeftIcon
+} from '@heroicons/react/24/outline';
 
 interface RealtimeAlert {
   id: string;

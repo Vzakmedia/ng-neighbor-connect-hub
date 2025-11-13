@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, Clock, Phone, Shield, AlertTriangle } from 'lucide-react';
+import { MapPinIcon, ClockIcon, PhoneIcon, ShieldCheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { PanicAlert } from '@/types/emergency';
 import PanicAlertStatusManager from '../PanicAlertStatusManager';
 
