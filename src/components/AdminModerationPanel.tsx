@@ -8,17 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Flag, 
-  Trash2, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  Star,
-  MessageCircle,
-  AlertTriangle,
-  Search,
-  Filter
-} from 'lucide-react';
+  FlagIcon, 
+  TrashIcon, 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  EyeIcon, 
+  StarIcon,
+  ChatBubbleLeftIcon,
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon
+} from '@heroicons/react/24/outline';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatTimeAgo } from '@/lib/utils';
@@ -292,9 +292,9 @@ const AdminModerationPanel = () => {
   };
 
   const getContentTypeIcon = (type: string) => {
-    if (type?.includes('review')) return <Star className="h-4 w-4" />;
-    if (type?.includes('comment')) return <MessageCircle className="h-4 w-4" />;
-    return <Flag className="h-4 w-4" />;
+    if (type?.includes('review')) return <StarIcon className="h-4 w-4" />;
+    if (type?.includes('comment')) return <ChatBubbleLeftIcon className="h-4 w-4" />;
+    return <FlagIcon className="h-4 w-4" />;
   };
 
   const getContentTypeLabel = (type: string) => {
@@ -313,19 +313,19 @@ const AdminModerationPanel = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="h-6 w-6 text-destructive" />
+        <ExclamationTriangleIcon className="h-6 w-6 text-destructive" />
         <h2 className="text-2xl font-bold">Content Moderation</h2>
       </div>
 
       {/* Search and Filter Controls */}
       <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <Filter className="h-4 w-4" />
+          <FunnelIcon className="h-4 w-4" />
           Filters
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
             <Input
               placeholder="Search reports..."
               value={searchQuery}
@@ -438,14 +438,14 @@ const AdminModerationPanel = () => {
                           variant="outline"
                           onClick={() => handleReportAction(report.id, 'reviewed')}
                         >
-                          <Eye className="h-4 w-4 mr-1" />
+                          <EyeIcon className="h-4 w-4 mr-1" />
                           Mark Reviewed
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleReportAction(report.id, 'resolved')}
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
+                          <CheckCircleIcon className="h-4 w-4 mr-1" />
                           Resolve
                         </Button>
                         <Button
@@ -453,7 +453,7 @@ const AdminModerationPanel = () => {
                           variant="destructive"
                           onClick={() => handleReportAction(report.id, 'dismissed')}
                         >
-                          <XCircle className="h-4 w-4 mr-1" />
+                          <XCircleIcon className="h-4 w-4 mr-1" />
                           Dismiss
                         </Button>
                       </div>
