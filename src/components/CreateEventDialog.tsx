@@ -303,7 +303,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
               />
               <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
+                <UsersIcon className="h-4 w-4" />
                 Enable RSVP for this event
               </Label>
             </div>
@@ -329,7 +329,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 htmlFor="file-upload"
                 className="flex flex-col items-center justify-center cursor-pointer space-y-2"
               >
-                <Upload className="h-8 w-8 text-muted-foreground" />
+                <ArrowUpTrayIcon className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground text-center">
                   {uploading ? "Uploading..." : "Click to upload images, videos, or documents"}
                 </p>
@@ -347,9 +347,9 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                   <div key={index} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       {file.type.startsWith('image/') ? (
-                        <ImageIcon className="h-4 w-4" />
+                        <PhotoIcon className="h-4 w-4" />
                       ) : (
-                        <FileIcon className="h-4 w-4" />
+                        <DocumentIcon className="h-4 w-4" />
                       )}
                       <span className="text-sm">{file.name}</span>
                       <span className="text-xs text-muted-foreground">
@@ -362,7 +362,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                       size="sm"
                       onClick={() => removeFile(index)}
                     >
-                      <X className="h-4 w-4" />
+                      <XMarkIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

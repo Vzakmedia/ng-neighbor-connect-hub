@@ -338,7 +338,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
                     </>
                   ) : (
                     <>
-                      <Plus className="h-4 w-4" />
+                      <PlusIcon className="h-4 w-4" />
                       Add Images
                     </>
                   )}

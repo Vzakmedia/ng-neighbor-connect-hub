@@ -300,15 +300,15 @@ const CreateAutomationDialog = ({
               <Tabs value={config.triggerType} onValueChange={(value: any) => setConfig(prev => ({ ...prev, triggerType: value }))}>
                 <TabsList className="flex mb-4">
                   <TabsTrigger value="event" className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
+                    <BoltIcon className="h-4 w-4" />
                     Event-based
                   </TabsTrigger>
                   <TabsTrigger value="schedule" className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
+                    <ClockIcon className="h-4 w-4" />
                     Scheduled
                   </TabsTrigger>
                   <TabsTrigger value="manual" className="flex items-center gap-2">
-                    <Play className="h-4 w-4" />
+                    <PlayIcon className="h-4 w-4" />
                     Manual
                   </TabsTrigger>
                 </TabsList>
@@ -428,19 +428,19 @@ const CreateAutomationDialog = ({
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <Button variant="outline" onClick={() => addCondition('user_role')}>
-                        <Shield className="h-4 w-4 mr-2" />
+                        <ShieldCheckIcon className="h-4 w-4 mr-2" />
                         User Role
                       </Button>
                       <Button variant="outline" onClick={() => addCondition('time_range')}>
-                        <Clock className="h-4 w-4 mr-2" />
+                        <ClockIcon className="h-4 w-4 mr-2" />
                         Time Range
                       </Button>
                       <Button variant="outline" onClick={() => addCondition('location')}>
-                        <Calendar className="h-4 w-4 mr-2" />
+                        <CalendarIcon className="h-4 w-4 mr-2" />
                         Location
                       </Button>
                       <Button variant="outline" onClick={() => addCondition('custom_field')}>
-                        <Plus className="h-4 w-4 mr-2" />
+                        <PlusIcon className="h-4 w-4 mr-2" />
                         Custom Field
                       </Button>
                     </div>
@@ -510,35 +510,35 @@ const CreateAutomationDialog = ({
             
             <div className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={() => addAction('send_email')}>
-                <Mail className="h-4 w-4 mr-2" />
+                <EnvelopeIcon className="h-4 w-4 mr-2" />
                 Send Email
               </Button>
               <Button variant="outline" onClick={() => addAction('send_notification')}>
-                <Bell className="h-4 w-4 mr-2" />
+                <BellIcon className="h-4 w-4 mr-2" />
                 Send Notification
               </Button>
               <Button variant="outline" onClick={() => addAction('update_database')}>
-                <Database className="h-4 w-4 mr-2" />
+                <CircleStackIcon className="h-4 w-4 mr-2" />
                 Update Database
               </Button>
               <Button variant="outline" onClick={() => addAction('webhook')}>
-                <Zap className="h-4 w-4 mr-2" />
+                <BoltIcon className="h-4 w-4 mr-2" />
                 Call Webhook
               </Button>
               <Button variant="outline" onClick={() => addAction('send_sms')}>
-                <MessageSquare className="h-4 w-4 mr-2" />
+                <ChatBubbleBottomCenterTextIcon className="h-4 w-4 mr-2" />
                 Send SMS
               </Button>
               <Button variant="outline" onClick={() => addAction('create_task')}>
-                <Plus className="h-4 w-4 mr-2" />
+                <PlusIcon className="h-4 w-4 mr-2" />
                 Create Task
               </Button>
               <Button variant="outline" onClick={() => addAction('backup_data')}>
-                <Database className="h-4 w-4 mr-2" />
+                <CircleStackIcon className="h-4 w-4 mr-2" />
                 Backup Data
               </Button>
               <Button variant="outline" onClick={() => addAction('generate_report')}>
-                <Calendar className="h-4 w-4 mr-2" />
+                <CalendarIcon className="h-4 w-4 mr-2" />
                 Generate Report
               </Button>
             </div>

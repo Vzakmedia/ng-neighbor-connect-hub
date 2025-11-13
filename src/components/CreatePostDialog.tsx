@@ -298,7 +298,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      <InformationCircleIcon className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p className="text-xs">Your post will be visible to users based on your profile location and the scope you select below.</p>
@@ -321,7 +321,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="neighborhood" id="neighborhood" />
                     <Label htmlFor="neighborhood" className="flex items-center gap-2 flex-1">
-                      <Users className="h-4 w-4" />
+                      <UsersIcon className="h-4 w-4" />
                       <div className="flex-1">
                         <div>My Ward Only</div>
                         <div className="text-xs text-muted-foreground">
@@ -333,7 +333,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="city" id="city" />
                     <Label htmlFor="city" className="flex items-center gap-2 flex-1">
-                      <Building className="h-4 w-4" />
+                      <BuildingOfficeIcon className="h-4 w-4" />
                       <div className="flex-1">
                         <div>My LGA</div>
                         <div className="text-xs text-muted-foreground">
@@ -345,7 +345,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="state" id="state" />
                     <Label htmlFor="state" className="flex items-center gap-2 flex-1">
-                      <Home className="h-4 w-4" />
+                      <HomeIcon className="h-4 w-4" />
                       <div className="flex-1">
                         <div>My State</div>
                         <div className="text-xs text-muted-foreground">
@@ -357,7 +357,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="all" id="all" />
                     <Label htmlFor="all" className="flex items-center gap-2 flex-1">
-                      <Globe className="h-4 w-4" />
+                      <GlobeAltIcon className="h-4 w-4" />
                       <div className="flex-1">
                         <div>Everyone</div>
                         <div className="text-xs text-muted-foreground">
