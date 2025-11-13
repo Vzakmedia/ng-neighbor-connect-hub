@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUpIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 
 export const ScrollToTop = () => {
@@ -38,7 +38,7 @@ export const ScrollToTop = () => {
       size="icon"
       aria-label="Scroll to top"
     >
-      <ArrowUp className="h-5 w-5" />
+      <ArrowUpIcon className="h-5 w-5" />
     </Button>
   );
 };
