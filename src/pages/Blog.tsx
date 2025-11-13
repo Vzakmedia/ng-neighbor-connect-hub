@@ -5,7 +5,7 @@ import { usePublishedBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogSidebar } from '@/components/blog/BlogSidebar';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { BookOpen, ArrowLeft, X } from 'lucide-react';
+import { Newspaper as BookOpen, ArrowLeft, X } from '@/lib/icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

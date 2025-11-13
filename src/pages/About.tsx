@@ -19,10 +19,10 @@ import {
   CheckCircle,
   ArrowLeft,
   AlertTriangle,
-  Linkedin,
-  Twitter,
+  Share2 as Linkedin,
+  Facebook as Twitter,
   Mail
-} from "lucide-react";
+} from '@/lib/icons';
 import founderCEO from "@/assets/team/founder-ceo.jpg";
 import founderCTO from "@/assets/team/founder-cto.jpg";
 import headCommunity from "@/assets/team/head-community.jpg";

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ShoppingBag, Briefcase, MapPin, Globe } from 'lucide-react';
+import { ShoppingBag, Briefcase, MapPin, Globe } from '@/lib/icons';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Marketplace from '@/components/Marketplace';
