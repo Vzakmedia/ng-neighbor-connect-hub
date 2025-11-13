@@ -44,25 +44,25 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
   const statusConfig = {
     active: { 
       label: 'Active', 
-      icon: AlertTriangle, 
+      icon: ExclamationTriangleIcon, 
       color: 'bg-red-100 text-red-800 border-red-200',
       description: 'Alert is currently active and ongoing'
     },
     investigating: { 
       label: 'Under Investigation', 
-      icon: Search, 
+      icon: MagnifyingGlassIcon, 
       color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       description: 'Alert is being investigated by authorities'
     },
     resolved: { 
       label: 'Resolved', 
-      icon: CheckCircle, 
+      icon: CheckCircleIcon, 
       color: 'bg-green-100 text-green-800 border-green-200',
       description: 'Alert has been resolved and is no longer active'
     },
     false_alarm: { 
       label: 'False Alarm', 
-      icon: XCircle, 
+      icon: XCircleIcon, 
       color: 'bg-gray-100 text-gray-800 border-gray-200',
       description: 'Alert was determined to be a false alarm'
     }

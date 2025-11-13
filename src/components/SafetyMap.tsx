@@ -459,7 +459,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           className="rounded-full shadow-lg bg-background hover:bg-accent text-foreground border border-border"
           title="Recenter to my location"
         >
-          <Locate className="h-5 w-5" />
+          <MapPinIcon className="h-5 w-5" />
         </Button>
       </div>
 
@@ -486,7 +486,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
           <>
             <div className="border-t border-border mt-2 pt-2">
               <div className="flex items-center gap-2">
-                <Home className="h-3 w-3 text-green-500" />
+                <HomeIcon className="h-3 w-3 text-green-500" />
                 <span className="text-xs">Your Home</span>
               </div>
               <div className="flex items-center gap-2 mt-1">

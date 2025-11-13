@@ -25,31 +25,31 @@ const EmergencyStatsComponent = ({ alerts, panicAlerts, userId }: EmergencyStats
       label: 'Active Alerts', 
       value: stats.activeAlerts, 
       color: 'text-red-600', 
-      icon: AlertTriangle 
+      icon: ExclamationTriangleIcon 
     },
     { 
       label: 'Resolved Today', 
       value: stats.resolvedToday, 
       color: 'text-green-600', 
-      icon: CheckCircle 
+      icon: CheckCircleIcon 
     },
     { 
       label: 'Under Investigation', 
       value: stats.investigating, 
       color: 'text-yellow-600', 
-      icon: Search 
+      icon: MagnifyingGlassIcon 
     },
     { 
       label: 'My Panic Alerts', 
       value: stats.myPanicAlerts, 
       color: 'text-purple-600', 
-      icon: AlertTriangle 
+      icon: ExclamationTriangleIcon 
     },
     { 
       label: 'Total Reports', 
       value: stats.totalReports, 
       color: 'text-blue-600', 
-      icon: Shield 
+      icon: ShieldCheckIcon 
     }
   ];
 
