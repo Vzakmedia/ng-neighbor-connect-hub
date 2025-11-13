@@ -1,4 +1,4 @@
-import { Search, Filter } from 'lucide-react';
+import { MagnifyingGlassIcon as SearchIcon, FunnelIcon as FilterIcon } from '@heroicons/react/24/outline';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -23,12 +23,12 @@ export const AdminFilterBar = ({
   return (
     <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <Filter className="h-4 w-4" />
+        <FilterIcon className="h-4 w-4" />
         Filters
       </div>
       <div className="flex items-center gap-4 flex-wrap">
         <div className="relative min-w-64">
-          <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+          <SearchIcon className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
           <Input
             placeholder="Search..."
             value={searchQuery}

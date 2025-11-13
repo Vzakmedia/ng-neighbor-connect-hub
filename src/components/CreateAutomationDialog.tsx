@@ -18,21 +18,21 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Play, 
-  Clock, 
-  Zap, 
-  Bell, 
-  Mail, 
-  Database, 
-  Shield, 
-  ChevronLeft, 
-  ChevronRight,
-  Check,
-  Settings,
-  Calendar,
-  MessageSquare,
-  Plus
-} from 'lucide-react';
+  PlayIcon, 
+  ClockIcon, 
+  BoltIcon as ZapIcon, 
+  BellIcon, 
+  EnvelopeIcon as MailIcon, 
+  CircleStackIcon as DatabaseIcon, 
+  ShieldCheckIcon as ShieldIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon,
+  CheckIcon,
+  Cog6ToothIcon as SettingsIcon,
+  CalendarIcon,
+  ChatBubbleLeftIcon as MessageSquareIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 
 interface CreateAutomationDialogProps {
   open: boolean;

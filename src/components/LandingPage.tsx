@@ -2,17 +2,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Users, 
-  Shield, 
-  ShoppingBag, 
-  Calendar,
-  ArrowRight,
-  MessageSquare,
-  Star,
-  Heart,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+  UsersIcon, 
+  ShieldCheckIcon as ShieldIcon, 
+  ShoppingBagIcon, 
+  CalendarIcon,
+  ArrowRightIcon,
+  ChatBubbleLeftIcon as MessageSquareIcon,
+  StarIcon,
+  HeartIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import communityHero from '@/assets/community-hero.jpg';
 
