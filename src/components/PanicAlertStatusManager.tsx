@@ -55,25 +55,25 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
   const statusConfig = {
     active: { 
       label: 'Active Emergency', 
-      icon: AlertTriangle, 
+      icon: ExclamationTriangleIcon, 
       color: 'bg-red-100 text-red-800 border-red-200',
       description: 'Emergency is currently active and requires attention'
     },
     investigating: { 
       label: 'Being Investigated', 
-      icon: Search, 
+      icon: MagnifyingGlassIcon, 
       color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       description: 'Emergency contacts are investigating the situation'
     },
     resolved: { 
       label: 'Resolved', 
-      icon: CheckCircle, 
+      icon: CheckCircleIcon, 
       color: 'bg-green-100 text-green-800 border-green-200',
       description: 'Emergency has been resolved and person is safe'
     },
     false_alarm: { 
       label: 'False Alarm', 
-      icon: XCircle, 
+      icon: XCircleIcon, 
       color: 'bg-gray-100 text-gray-800 border-gray-200',
       description: 'Emergency was determined to be a false alarm'
     }
@@ -136,7 +136,7 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
     <Card className={className}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Shield className="h-4 w-4" />
+          <ShieldCheckIcon className="h-4 w-4" />
           Panic Alert Status Management
         </CardTitle>
       </CardHeader>
@@ -144,12 +144,12 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
         {/* Alert Information */}
         <div className="p-3 bg-muted/30 rounded-lg space-y-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
             <span className="font-medium">Emergency Type:</span>
             <Badge variant="outline">{panicAlert.situation_type.replace('_', ' ')}</Badge>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-3 w-3" />
+            <ClockIcon className="h-3 w-3" />
             <span>Created {getTimeSince(panicAlert.created_at)}</span>
           </div>
           {panicAlert.address && (
@@ -184,7 +184,7 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
         {panicAlert.is_resolved && panicAlert.resolved_at && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-2 text-green-800">
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircleIcon className="h-4 w-4" />
               <span className="font-medium">Resolved {getTimeSince(panicAlert.resolved_at)}</span>
             </div>
           </div>
@@ -214,7 +214,7 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
           {selectedStatus !== currentStatus && (
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1">
-                <MessageSquare className="h-4 w-4" />
+                <ChatBubbleLeftIcon className="h-4 w-4" />
                 Status Update Note (Optional)
               </label>
               <Textarea
@@ -238,7 +238,7 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
         {/* Help Text */}
         <div className="text-xs text-muted-foreground p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2 mb-1">
-            <User className="h-3 w-3" />
+            <UserIcon className="h-3 w-3" />
             <span className="font-medium">Who can update this status:</span>
           </div>
           <ul className="space-y-1 ml-5">

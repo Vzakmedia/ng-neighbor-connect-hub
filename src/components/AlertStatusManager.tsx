@@ -178,7 +178,7 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Shield className="h-4 w-4" />
+          <ShieldCheckIcon className="h-4 w-4" />
           Alert Status Management
         </CardTitle>
       </CardHeader>
@@ -224,7 +224,7 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
             {selectedStatus !== alert.status && (
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-1">
-                  <MessageSquare className="h-4 w-4" />
+                  <ChatBubbleLeftIcon className="h-4 w-4" />
                   Status Update Note (Optional)
                 </label>
                 <Textarea
@@ -250,7 +250,7 @@ const AlertStatusManager: React.FC<AlertStatusManagerProps> = ({
         {!canUpdateStatus && (
           <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
+              <ShieldCheckIcon className="h-4 w-4" />
               Only the alert creator or moderators can update the status.
             </div>
           </div>

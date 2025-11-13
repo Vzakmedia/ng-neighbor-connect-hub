@@ -232,7 +232,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
+            <ChartBarIcon className="h-5 w-5 text-primary" />
             <h3 className="font-semibold">Live Activity Feed</h3>
           </div>
           <Button 
@@ -241,7 +241,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
             onClick={requestNotificationPermission}
             className="text-xs"
           >
-            <Bell className="h-3 w-3 mr-1" />
+            <BellIcon className="h-3 w-3 mr-1" />
             Enable Alerts
           </Button>
         </div>
@@ -259,7 +259,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
                 <Avatar className="w-8 h-8">
                   <AvatarImage src={alert.profiles?.avatar_url} />
                   <AvatarFallback>
-                    <AlertTriangle className="h-4 w-4" />
+                    <ExclamationTriangleIcon className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -272,9 +272,9 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
+                  <MapPinIcon className="h-3 w-3" />
                   <span className="truncate">{alert.address || 'Location not specified'}</span>
-                  <Clock className="h-3 w-3 ml-auto" />
+                  <ClockIcon className="h-3 w-3 ml-auto" />
                   <span>{getTimeSince(alert.created_at)}</span>
                 </div>
               </div>
@@ -290,7 +290,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
               <Avatar className="w-8 h-8">
                 <AvatarImage src={response.profiles?.avatar_url} />
                 <AvatarFallback>
-                  <MessageSquare className="h-4 w-4" />
+                  <ChatBubbleLeftIcon className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
               
@@ -300,9 +300,9 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
                   {' '}responded to an alert
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MessageSquare className="h-3 w-3" />
+                  <ChatBubbleLeftIcon className="h-3 w-3" />
                   <span className="truncate">{response.comment}</span>
-                  <Clock className="h-3 w-3 ml-auto" />
+                  <ClockIcon className="h-3 w-3 ml-auto" />
                   <span>{getTimeSince(response.created_at)}</span>
                 </div>
               </div>
@@ -311,7 +311,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
 
           {recentAlerts.length === 0 && recentResponses.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <ChartBarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No recent activity</p>
             </div>
           )}
