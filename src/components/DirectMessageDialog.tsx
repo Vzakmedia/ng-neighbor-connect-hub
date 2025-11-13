@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Check, CheckCheck, Clock, AlertCircle, RotateCw } from 'lucide-react';
+import { PaperAirplaneIcon, CheckIcon, CheckBadgeIcon, ClockIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages, MessageStatus } from '@/hooks/useDirectMessages';
