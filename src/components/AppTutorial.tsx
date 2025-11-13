@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, ArrowLeft, ArrowRight, Navigation, SkipForward } from 'lucide-react';
+import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, MapIcon, ForwardIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -352,7 +352,7 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
                   <Badge variant="outline" className="text-xs">
                     Step {currentStep + 1} of {tutorialSteps.length}
                   </Badge>
-                  <Navigation className="h-4 w-4 text-primary" />
+                  <MapIcon className="h-4 w-4 text-primary" />
                 </div>
                 <Button
                   variant="ghost"
@@ -360,7 +360,7 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
                   onClick={skipTutorial}
                   className="h-6 w-6 text-muted-foreground hover:text-foreground"
                 >
-                  <X className="h-4 w-4" />
+                  <XMarkIcon className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -388,7 +388,7 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
                     onClick={skipTutorial}
                     className="text-xs"
                   >
-                    <SkipForward className="h-3 w-3 mr-1" />
+                    <ForwardIcon className="h-3 w-3 mr-1" />
                     Skip Tour
                   </Button>
                 </div>
@@ -401,7 +401,7 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
                       onClick={prevStep}
                       className="text-xs"
                     >
-                      <ArrowLeft className="h-3 w-3 mr-1" />
+                      <ArrowLeftIcon className="h-3 w-3 mr-1" />
                       Back
                     </Button>
                   )}
@@ -415,7 +415,7 @@ const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }
                     ) : (
                       <>
                         Next
-                        <ArrowRight className="h-3 w-3 ml-1" />
+                        <ArrowRightIcon className="h-3 w-3 ml-1" />
                       </>
                     )}
                   </Button>

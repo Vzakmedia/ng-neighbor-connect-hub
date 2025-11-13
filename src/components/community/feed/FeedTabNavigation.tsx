@@ -1,4 +1,4 @@
-import { Plus, MoreHorizontal, X } from "lucide-react";
+import { PlusIcon, EllipsisHorizontalIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -79,7 +79,7 @@ export const FeedTabNavigation = ({
               size="sm"
               className="rounded-full px-2 md:px-3 py-1.5 md:py-2 h-auto flex-shrink-0 touch-manipulation active:scale-95 transition-all"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <EllipsisHorizontalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
@@ -117,7 +117,7 @@ export const FeedTabNavigation = ({
               onClick={() => onLocationScopeChange(null)}
               className="ml-1 hover:bg-primary/20 rounded-full p-0.5"
             >
-              <X className="h-3 w-3" />
+              <XMarkIcon className="h-3 w-3" />
             </button>
           </Badge>
         )}
@@ -128,7 +128,7 @@ export const FeedTabNavigation = ({
         className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-3 md:px-4 py-1.5 md:py-2 flex-shrink-0 touch-manipulation active:scale-95 transition-all"
         size="sm"
       >
-        <Plus className="h-4 w-4 md:mr-1" />
+        <PlusIcon className="h-4 w-4 md:mr-1" />
         <span className="hidden md:inline">Post</span>
       </Button>
     </div>

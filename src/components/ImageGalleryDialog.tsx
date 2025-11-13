@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ImageGalleryDialogProps {
   isOpen: boolean;
@@ -64,7 +64,7 @@ export const ImageGalleryDialog = ({
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
                   onClick={prevImage}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeftIcon className="h-5 w-5" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -72,7 +72,7 @@ export const ImageGalleryDialog = ({
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
                   onClick={nextImage}
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRightIcon className="h-5 w-5" />
                 </Button>
               </>
             )}
