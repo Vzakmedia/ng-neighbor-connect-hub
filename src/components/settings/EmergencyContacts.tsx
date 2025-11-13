@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   Plus, 
-  Edit2, 
+  Edit as Edit2, 
   Trash2, 
   Phone, 
   MessageSquare, 
@@ -27,11 +27,11 @@ import {
   Lock,
   CheckCircle,
   Copy,
-  LockKeyhole,
+  Lock as LockKeyhole,
   Search,
   UserCheck,
   Loader2
-} from 'lucide-react';
+} from '@/lib/icons';
 
 type ContactMethod = 'in_app' | 'sms' | 'whatsapp' | 'phone_call';
 
