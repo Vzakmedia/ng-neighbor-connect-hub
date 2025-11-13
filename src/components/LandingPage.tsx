@@ -12,7 +12,7 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight
-} from 'lucide-react';
+} from '@/lib/icons';
 import { useState } from 'react';
 import communityHero from '@/assets/community-hero.jpg';
 

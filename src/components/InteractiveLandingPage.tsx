@@ -10,7 +10,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, X, Menu, Database, CheckCircle2, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, X, Menu, Database, CheckCircle2 } from '@/lib/icons';
+import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -1513,7 +1514,7 @@ const InteractiveLandingPage = () => {
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Facebook className="w-5 h-5" />
+                  <FaFacebook className="w-5 h-5" />
                   <span className="sr-only">Facebook</span>
                 </motion.a>
                 <motion.a 
@@ -1522,7 +1523,7 @@ const InteractiveLandingPage = () => {
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Instagram className="w-5 h-5" />
+                  <FaInstagram className="w-5 h-5" />
                   <span className="sr-only">Instagram</span>
                 </motion.a>
                 <motion.a 
@@ -1531,7 +1532,7 @@ const InteractiveLandingPage = () => {
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Twitter className="w-5 h-5" />
+                  <FaTwitter className="w-5 h-5" />
                   <span className="sr-only">Twitter</span>
                 </motion.a>
                 <motion.a 
@@ -1540,7 +1541,7 @@ const InteractiveLandingPage = () => {
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Linkedin className="w-5 h-5" />
+                  <FaLinkedin className="w-5 h-5" />
                   <span className="sr-only">LinkedIn</span>
                 </motion.a>
               </div>

@@ -24,7 +24,7 @@ import {
   TestTube,
   Calendar,
   ShoppingBag
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface UserAutomation {
   automation_id: string;
