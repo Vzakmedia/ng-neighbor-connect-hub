@@ -490,7 +490,7 @@ const BusinessListings = () => {
               </div>
               <BusinessRegistrationDialog onBusinessRegistered={fetchBusinesses}>
                 <Button className="flex items-center gap-2 h-12 lg:h-10 w-full lg:w-auto">
-                  <Plus className="h-4 w-4" />
+                  <PlusIcon className="h-4 w-4" />
                   Register Business
                 </Button>
               </BusinessRegistrationDialog>
@@ -503,7 +503,7 @@ const BusinessListings = () => {
       {businesses.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
-            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <BuildingOfficeIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
               {searchTerm || selectedCategory !== 'all' || selectedState !== 'all' || selectedCity !== 'all' || selectedNeighborhood !== 'all'
                 ? 'No businesses found matching your criteria' 
@@ -527,7 +527,7 @@ const BusinessListings = () => {
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-sm md:text-base truncate">{business.business_name}</CardTitle>
                       {business.is_verified && (
-                        <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
+                        <ShieldCheckIcon className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
                     </div>
                     <Badge variant="outline" className="text-xs mt-1">
@@ -548,14 +548,14 @@ const BusinessListings = () => {
 
                 {(business.city || business.state) && (
                   <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                    <MapPinIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                     <span className="truncate">{business.city}{business.city && business.state && ', '}{business.state}</span>
                   </div>
                 )}
 
                 {business.operating_hours && (
                   <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                    <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                    <ClockIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                     <span>View Hours</span>
                   </div>
                 )}
@@ -589,7 +589,7 @@ const BusinessListings = () => {
                           }
                         }}
                       >
-                        <Phone className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                        <PhoneIcon className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                         Call
                       </Button>
                       <Button 
@@ -616,7 +616,7 @@ const BusinessListings = () => {
                           }
                         }}
                       >
-                        <Mail className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                        <EnvelopeIcon className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                         Email
                       </Button>
                     </>

@@ -244,7 +244,7 @@ export const UserDirectory = () => {
         {filteredProfiles.length === 0 && !loading && (
           <Card>
             <CardContent className="p-8 text-center">
-              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <MagnifyingGlassIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No users found</h3>
               <p className="text-muted-foreground">
                 {searchTerm.trim() 
