@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Filter, X, Calendar, MapPin, Tag, Users, SlidersHorizontal, Search, Globe, Home, Building } from "lucide-react";
+import { FunnelIcon, XMarkIcon, CalendarIcon, MapPinIcon, TagIcon, UsersIcon, AdjustmentsHorizontalIcon, MagnifyingGlassIcon, GlobeAltIcon, HomeIcon, BuildingOfficeIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -87,7 +87,7 @@ export const CommunityFeedFilters = ({
         value: 'all', 
         label: 'All Areas', 
         shortLabel: 'All', 
-        icon: Globe, 
+        icon: GlobeAltIcon, 
         description: 'See posts from everywhere',
         fullLabel: 'All Areas'
       },
@@ -98,7 +98,7 @@ export const CommunityFeedFilters = ({
         value: 'neighborhood',
         label: 'My Ward',
         shortLabel: 'Ward',
-        icon: Home,
+        icon: HomeIcon,
         description: `People in ${userLocation.neighborhood} ward`,
         fullLabel: `${userLocation.neighborhood} Ward`
       });
@@ -109,7 +109,7 @@ export const CommunityFeedFilters = ({
         value: 'city',
         label: 'My LGA',
         shortLabel: 'LGA',
-        icon: Building,
+        icon: BuildingOfficeIcon,
         description: `People in ${userLocation.city} LGA`,
         fullLabel: `${userLocation.city} LGA`
       });
@@ -120,7 +120,7 @@ export const CommunityFeedFilters = ({
         value: 'state',
         label: 'My State',
         shortLabel: 'State',
-        icon: MapPin,
+        icon: MapPinIcon,
         description: `People in ${userLocation.state} state`,
         fullLabel: `${userLocation.state} State`
       });
@@ -130,9 +130,9 @@ export const CommunityFeedFilters = ({
   }, [userLocation]);
 
   const postTypeOptions = [
-    { value: 'all', label: 'All Types', shortLabel: 'All', icon: Users },
-    { value: 'events', label: 'Events', shortLabel: 'Events', icon: Calendar },
-    { value: 'general', label: 'General Posts', shortLabel: 'Posts', icon: Users }
+    { value: 'all', label: 'All Types', shortLabel: 'All', icon: UsersIcon },
+    { value: 'events', label: 'Events', shortLabel: 'Events', icon: CalendarIcon },
+    { value: 'general', label: 'General Posts', shortLabel: 'Posts', icon: UsersIcon }
   ];
 
   const dateRangeOptions = [
@@ -215,7 +215,7 @@ export const CommunityFeedFilters = ({
                 isOpen && "bg-accent border-accent-foreground"
               )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <AdjustmentsHorizontalIcon className="h-4 w-4" />
               <span className="font-medium hidden sm:inline">Filters</span>
               {activeFiltersCount > 0 && (
                 <Badge 
@@ -235,7 +235,7 @@ export const CommunityFeedFilters = ({
             <SheetHeader className="px-6 pt-6 pb-4 border-b">
               <SheetTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-5 w-5 text-primary" />
+                  <AdjustmentsHorizontalIcon className="h-5 w-5 text-primary" />
                   <span>Filters</span>
                 </div>
                 {activeFiltersCount > 0 && (
@@ -297,7 +297,7 @@ export const CommunityFeedFilters = ({
                 {/* Content Type */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+                    <UsersIcon className="h-4 w-4" />
                     Content Type
                   </Label>
                   <div className="flex flex-wrap gap-2">
@@ -320,7 +320,7 @@ export const CommunityFeedFilters = ({
                 {/* Location Scope */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                    <MapPinIcon className="h-4 w-4" />
                     Show Posts From
                   </Label>
                   <div className="flex flex-wrap gap-2">
@@ -343,13 +343,13 @@ export const CommunityFeedFilters = ({
                 {/* Tags */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
+                    <TagIcon className="h-4 w-4" />
                     Tags
                   </Label>
                   
                   {/* Tag Search */}
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search or add tags..."
                       value={tagSearch}
@@ -374,7 +374,7 @@ export const CommunityFeedFilters = ({
                           onClick={() => handleTagRemove(tag)}
                         >
                           #{tag}
-                          <X className="h-3 w-3" />
+                          <XMarkIcon className="h-3 w-3" />
                         </Badge>
                       ))}
                     </div>
@@ -524,7 +524,7 @@ export const CommunityFeedFilters = ({
                   variant="default"
                   className="gap-1 px-2 py-0.5 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
                 >
-                  <Tag className="h-2 w-2" />
+                  <TagIcon className="h-2 w-2" />
                   #{tag.length > 6 ? tag.substring(0, 6) + '...' : tag}
                   <Button
                     variant="ghost"
@@ -532,7 +532,7 @@ export const CommunityFeedFilters = ({
                     className="h-auto p-0 ml-1 hover:bg-primary/20 text-primary hover:text-primary/80"
                     onClick={() => clearFilter('tags', tag)}
                   >
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Button>
                 </Badge>
               ))}
@@ -543,7 +543,7 @@ export const CommunityFeedFilters = ({
                   variant="default"
                   className="gap-1 px-2 py-0.5 text-xs bg-accent/20 text-accent-foreground border-accent/30 hover:bg-accent/30 transition-colors"
                 >
-                  <MapPin className="h-2 w-2" />
+                  <MapPinIcon className="h-2 w-2" />
                   <span className="hidden sm:inline">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.fullLabel || locationScopeOptions.find(opt => opt.value === filters.locationScope)?.label}</span>
                   <span className="sm:hidden">{locationScopeOptions.find(opt => opt.value === filters.locationScope)?.shortLabel}</span>
                   <Button
@@ -552,7 +552,7 @@ export const CommunityFeedFilters = ({
                     className="h-auto p-0 ml-1 hover:bg-accent/30"
                     onClick={() => clearFilter('locationScope')}
                   >
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Button>
                 </Badge>
               )}
@@ -563,7 +563,7 @@ export const CommunityFeedFilters = ({
                   variant="default"
                   className="gap-1 px-2 py-0.5 text-xs bg-secondary/50 text-secondary-foreground border-secondary/30 hover:bg-secondary/70 transition-colors"
                 >
-                  <Users className="h-2 w-2" />
+                  <UsersIcon className="h-2 w-2" />
                   <span className="hidden sm:inline">{postTypeOptions.find(opt => opt.value === filters.postTypes)?.label}</span>
                   <span className="sm:hidden">{postTypeOptions.find(opt => opt.value === filters.postTypes)?.shortLabel}</span>
                   <Button
@@ -572,7 +572,7 @@ export const CommunityFeedFilters = ({
                     className="h-auto p-0 ml-1 hover:bg-secondary/70"
                     onClick={() => clearFilter('postTypes')}
                   >
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Button>
                 </Badge>
               )}
@@ -583,7 +583,7 @@ export const CommunityFeedFilters = ({
                   variant="default" 
                   className="gap-1 px-2 py-0.5 text-xs bg-muted/50 text-muted-foreground border-muted/30 hover:bg-muted/70 transition-colors"
                 >
-                  <Calendar className="h-2 w-2" />
+                  <CalendarIcon className="h-2 w-2" />
                   <span className="hidden sm:inline">{dateRangeOptions.find(opt => opt.value === filters.dateRange)?.label}</span>
                   <span className="sm:hidden">{filters.dateRange}</span>
                   <Button
@@ -592,7 +592,7 @@ export const CommunityFeedFilters = ({
                     className="h-auto p-0 ml-1 hover:bg-muted/70"
                     onClick={() => clearFilter('dateRange')}
                   >
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Button>
                 </Badge>
               )}
@@ -616,7 +616,7 @@ export const CommunityFeedFilters = ({
                     }}
                   >
                     📍 {state}
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Badge>
                 ))
               )}
@@ -640,7 +640,7 @@ export const CommunityFeedFilters = ({
                     }}
                   >
                     🏷️ {category}
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Badge>
                 ))
               )}
@@ -664,7 +664,7 @@ export const CommunityFeedFilters = ({
                     }}
                   >
                     📅 {range}
-                    <X className="h-2 w-2" />
+                    <XMarkIcon className="h-2 w-2" />
                   </Badge>
                 ))
               )}

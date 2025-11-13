@@ -6,7 +6,17 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import CreateCommunityAdDialog from '@/components/CreateCommunityAdDialog';
-import { Search, Menu, MapPin, User, LogOut, Settings, MessageCircle, Shield, Megaphone } from 'lucide-react';
+import { 
+  MagnifyingGlassIcon, 
+  Bars3Icon, 
+  MapPinIcon, 
+  UserIcon, 
+  ArrowRightOnRectangleIcon, 
+  Cog6ToothIcon, 
+  ChatBubbleLeftIcon, 
+  ShieldCheckIcon, 
+  MegaphoneIcon 
+} from '@heroicons/react/24/outline';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
@@ -50,7 +60,7 @@ const Header = () => {
 
           <div className="flex-1 flex items-center justify-center px-4">
             <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input 
                 type="text" 
                 placeholder="Search neighborhood..." 
@@ -61,14 +71,14 @@ const Header = () => {
 
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
+              <MapPinIcon className="h-4 w-4" />
               <span>{getLocation()}</span>
             </div>
             
             <ThemeToggle />
             
             <Button variant="ghost" size="icon" className="relative" onClick={handleMessagesClick} data-tutorial="messages">
-              <MessageCircle className="h-5 w-5" />
+              <ChatBubbleLeftIcon className="h-5 w-5" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
                   {unreadCounts.messages}
@@ -102,27 +112,27 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <CreateCommunityAdDialog>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Megaphone className="mr-2 h-4 w-4" />
+                      <MegaphoneIcon className="mr-2 h-4 w-4" />
                       Create Ad
                     </DropdownMenuItem>
                   </CreateCommunityAdDialog>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
+                    <UserIcon className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Cog6ToothIcon className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <Shield className="mr-2 h-4 w-4" />
+                      <ShieldCheckIcon className="mr-2 h-4 w-4" />
                       Admin Panel
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -148,7 +158,7 @@ const Header = () => {
             <ThemeToggle />
             
             <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick} data-tutorial="messages">
-              <MessageCircle className="h-4 w-4" />
+              <ChatBubbleLeftIcon className="h-4 w-4" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
                   {unreadCounts.messages}
@@ -182,27 +192,27 @@ const Header = () => {
                   <DropdownMenuSeparator />
                   <CreateCommunityAdDialog>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Megaphone className="mr-2 h-4 w-4" />
+                      <MegaphoneIcon className="mr-2 h-4 w-4" />
                       Create Ad
                     </DropdownMenuItem>
                   </CreateCommunityAdDialog>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
+                    <UserIcon className="mr-2 h-4 w-4" />
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Cog6ToothIcon className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <Shield className="mr-2 h-4 w-4" />
+                      <ShieldCheckIcon className="mr-2 h-4 w-4" />
                       Admin Panel
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>

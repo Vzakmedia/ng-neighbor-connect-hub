@@ -1,4 +1,4 @@
-import { Search, RefreshCw, Check } from "lucide-react";
+import { MagnifyingGlassIcon, ArrowPathIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ export const CommunityFeedHeader = ({
                 onClick={onMarkAllRead}
                 className="h-6 text-xs"
               >
-                <Check className="h-3 w-3 mr-1" />
+                <CheckIcon className="h-3 w-3 mr-1" />
                 Mark all read
               </Button>
             )}
@@ -61,7 +61,7 @@ export const CommunityFeedHeader = ({
         
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search posts..."
               value={searchQuery}

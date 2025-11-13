@@ -1,4 +1,5 @@
-import { Bell } from 'lucide-react';
+import { BellIcon } from '@heroicons/react/24/outline';
+import { BellIcon as BellSolid } from '@heroicons/react/24/solid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationStore } from '@/store/notificationStore';
@@ -33,7 +34,7 @@ export const NotificationBell = ({ onClick, className }: NotificationBellProps) 
       onClick={handleClick}
       aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
     >
-      <Bell className="h-5 w-5" />
+      <BellIcon className="h-5 w-5" />
       {unreadCount > 0 && (
         <Badge
           variant="destructive"
