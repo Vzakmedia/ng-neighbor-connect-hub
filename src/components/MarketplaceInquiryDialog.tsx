@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageCircle, DollarSign } from 'lucide-react';
+import { ChatBubbleLeftIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 interface MarketplaceInquiryDialogProps {
   item: {
@@ -151,20 +151,20 @@ const MarketplaceInquiryDialog = ({ item, children, onInquiryCreated }: Marketpl
               <SelectContent>
                 <SelectItem value="purchase">
                   <div className="flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" />
+                    <ChatBubbleLeftIcon className="h-4 w-4" />
                     Purchase Inquiry
                   </div>
                 </SelectItem>
                 <SelectItem value="question">
                   <div className="flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" />
+                    <ChatBubbleLeftIcon className="h-4 w-4" />
                     Ask a Question
                   </div>
                 </SelectItem>
                 {item.is_negotiable && (
                   <SelectItem value="offer">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
+                      <CurrencyDollarIcon className="h-4 w-4" />
                       Make an Offer
                     </div>
                   </SelectItem>

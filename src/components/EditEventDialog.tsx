@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation, Upload, FileIcon, ImageIcon, Users } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, PlusIcon, XMarkIcon, MapIcon, ArrowUpTrayIcon, DocumentIcon, PhotoIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -205,7 +205,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <CalendarIcon className="h-5 w-5" />
             Edit Event
           </DialogTitle>
         </DialogHeader>
@@ -243,7 +243,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
             />
             {location && coordinates && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+                <MapPinIcon className="h-3 w-3" />
                 <span>{location}</span>
                 <Button
                   type="button"
@@ -278,7 +278,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                 onClick={handleAddTag}
                 disabled={!currentTag.trim()}
               >
-                <Plus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
             
@@ -294,7 +294,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                       className="h-auto p-0 ml-1"
                       onClick={() => handleRemoveTag(tag)}
                     >
-                      <X className="h-3 w-3" />
+                      <XMarkIcon className="h-3 w-3" />
                     </Button>
                   </Badge>
                 ))}
@@ -319,7 +319,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                 htmlFor="file-upload-edit"
                 className="flex flex-col items-center justify-center cursor-pointer space-y-2"
               >
-                <Upload className="h-8 w-8 text-muted-foreground" />
+                <ArrowUpTrayIcon className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground text-center">
                   {uploading ? "Uploading..." : "Click to upload images, videos, or documents"}
                 </p>
@@ -337,9 +337,9 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                   <div key={index} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       {file.type?.startsWith('image/') ? (
-                        <ImageIcon className="h-4 w-4" />
+                        <PhotoIcon className="h-4 w-4" />
                       ) : (
-                        <FileIcon className="h-4 w-4" />
+                        <DocumentIcon className="h-4 w-4" />
                       )}
                       <span className="text-sm">{file.name}</span>
                       <span className="text-xs text-muted-foreground">
@@ -352,7 +352,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
                       size="sm"
                       onClick={() => removeFile(index)}
                     >
-                      <X className="h-4 w-4" />
+                      <XMarkIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

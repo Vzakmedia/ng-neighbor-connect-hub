@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, MapPin, Users, Edit, Eye, Clock, Download, Trash2 } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, UsersIcon, PencilIcon, EyeIcon, ClockIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { formatTimeAgo } from '@/lib/utils';
 import EditEventDialog from '@/components/EditEventDialog';
 import { PromotePostButton } from '@/components/PromotePostButton';
@@ -347,7 +347,7 @@ const MyEventsPanel = () => {
   if (events.length === 0) {
     return (
       <div className="text-center p-8">
-        <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <CalendarIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No Events Created</h3>
         <p className="text-muted-foreground">
           You haven't created any events yet. Create your first event to get started!
@@ -370,11 +370,11 @@ const MyEventsPanel = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex mb-4">
           <TabsTrigger value="overview" className="touch-manipulation text-sm">
-            <Calendar className="h-4 w-4 mr-2" />
+            <CalendarIcon className="h-4 w-4 mr-2" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="rsvps" className="touch-manipulation text-sm">
-            <Users className="h-4 w-4 mr-2" />
+            <UsersIcon className="h-4 w-4 mr-2" />
             RSVPs
           </TabsTrigger>
         </TabsList>
@@ -388,12 +388,12 @@ const MyEventsPanel = () => {
                     <CardTitle className="text-base md:text-lg line-clamp-2">{event.title}</CardTitle>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm text-muted-foreground mt-2">
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                        <ClockIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                         <span>{formatTimeAgo(event.created_at)}</span>
                       </div>
                       {event.location && (
                         <div className="flex items-center gap-1 min-w-0">
-                          <MapPin className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <MapPinIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                           <span className="truncate">{event.location}</span>
                         </div>
                       )}
@@ -409,7 +409,7 @@ const MyEventsPanel = () => {
                         onClick={() => handleEditEvent(event)}
                         className="flex-1 min-h-[44px] touch-manipulation text-xs"
                       >
-                        <Edit className="h-4 w-4 mr-1" />
+                        <PencilIcon className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
                       <Button
@@ -418,7 +418,7 @@ const MyEventsPanel = () => {
                         onClick={() => handleViewRsvps(event.id)}
                         className="flex-1 min-h-[44px] touch-manipulation text-xs"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
+                        <EyeIcon className="h-4 w-4 mr-1" />
                         RSVPs
                       </Button>
                     </div>
@@ -441,7 +441,7 @@ const MyEventsPanel = () => {
                           onClick={() => exportRSVPs(event.id, event.title)}
                           className="flex-1 min-h-[44px] touch-manipulation text-xs"
                         >
-                          <Download className="h-4 w-4 mr-1" />
+                          <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                           Export
                         </Button>
                       )}
@@ -459,7 +459,7 @@ const MyEventsPanel = () => {
                         onClick={() => handleDeleteEvent(event.id, event.title)}
                         className="min-h-[44px] touch-manipulation text-xs px-3"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <TrashIcon className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -472,7 +472,7 @@ const MyEventsPanel = () => {
                       onClick={() => handleEditEvent(event)}
                       className="touch-manipulation"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
                     <Button
@@ -481,7 +481,7 @@ const MyEventsPanel = () => {
                       onClick={() => handleViewRsvps(event.id)}
                       className="touch-manipulation"
                     >
-                      <Eye className="h-4 w-4 mr-1" />
+                      <EyeIcon className="h-4 w-4 mr-1" />
                       View RSVPs
                     </Button>
                     <PromotePostButton
@@ -498,7 +498,7 @@ const MyEventsPanel = () => {
                         onClick={() => exportRSVPs(event.id, event.title)}
                         className="touch-manipulation"
                       >
-                        <Download className="h-4 w-4 mr-1" />
+                        <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                         Export RSVPs
                       </Button>
                     )}
@@ -516,7 +516,7 @@ const MyEventsPanel = () => {
                       onClick={() => handleDeleteEvent(event.id, event.title)}
                       className="touch-manipulation"
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
+                      <TrashIcon className="h-4 w-4 mr-1" />
                       Delete
                     </Button>
                   </div>
@@ -572,7 +572,7 @@ const MyEventsPanel = () => {
             {eventsWithRsvps.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
-                  <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                  <UsersIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Click "View RSVPs" on any event to load RSVP data</p>
                 </CardContent>
               </Card>
@@ -594,7 +594,7 @@ const MyEventsPanel = () => {
                             size="sm"
                             onClick={() => exportRSVPs(event.id, event.title)}
                           >
-                            <Download className="h-4 w-4 mr-1" />
+                            <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
                             Export RSVPs
                           </Button>
                         )}
