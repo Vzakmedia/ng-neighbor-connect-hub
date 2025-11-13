@@ -118,15 +118,15 @@ export const DirectMessageDialog = ({
 
     switch (status) {
       case 'sending':
-        return <Clock className="h-3 w-3 text-muted-foreground animate-pulse" />;
+        return <ClockIcon className="h-3 w-3 text-muted-foreground animate-pulse" />;
       case 'failed':
-        return <AlertCircle className="h-3 w-3 text-destructive" />;
+        return <ExclamationCircleIcon className="h-3 w-3 text-destructive" />;
       case 'sent':
-        return <Check className="h-3 w-3 text-muted-foreground" />;
+        return <CheckIcon className="h-3 w-3 text-muted-foreground" />;
       case 'delivered':
-        return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
+        return <CheckBadgeIcon className="h-3 w-3 text-muted-foreground" />;
       case 'read':
-        return <CheckCheck className="h-3 w-3 text-primary" />;
+        return <CheckBadgeIcon className="h-3 w-3 text-primary" />;
       default:
         return null;
     }
@@ -193,7 +193,7 @@ export const DirectMessageDialog = ({
                         className="h-6 w-6"
                         onClick={() => retryMessage(message.id)}
                       >
-                        <RotateCw className="h-3 w-3" />
+                        <ArrowPathIcon className="h-3 w-3" />
                       </Button>
                     )}
                   </div>
@@ -219,7 +219,7 @@ export const DirectMessageDialog = ({
               disabled={!newMessage.trim() || loading}
               size="icon"
             >
-              <Send className="h-4 w-4" />
+              <PaperAirplaneIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
