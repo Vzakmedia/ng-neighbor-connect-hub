@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUpIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 
 const BackToTop = () => {
@@ -43,7 +43,7 @@ const BackToTop = () => {
             className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow"
             aria-label="Back to top"
           >
-            <ArrowUp className="h-5 w-5" />
+            <ArrowUpIcon className="h-5 w-5" />
           </Button>
         </motion.div>
       )}
