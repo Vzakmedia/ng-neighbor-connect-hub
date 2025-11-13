@@ -548,10 +548,10 @@ const CreateAutomationDialog = ({
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
-                      {action.type === 'send_email' && <Mail className="h-4 w-4" />}
-                      {action.type === 'send_notification' && <Bell className="h-4 w-4" />}
-                      {action.type === 'update_database' && <Database className="h-4 w-4" />}
-                      {action.type === 'webhook' && <Zap className="h-4 w-4" />}
+                      {action.type === 'send_email' && <EnvelopeIcon className="h-4 w-4" />}
+                      {action.type === 'send_notification' && <BellIcon className="h-4 w-4" />}
+                      {action.type === 'update_database' && <CircleStackIcon className="h-4 w-4" />}
+                      {action.type === 'webhook' && <BoltIcon className="h-4 w-4" />}
                       {action.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </CardTitle>
                     <Button 
@@ -774,7 +774,7 @@ const CreateAutomationDialog = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <Cog6ToothIcon className="h-5 w-5" />
             Create New Automation
           </DialogTitle>
         </DialogHeader>
@@ -794,7 +794,7 @@ const CreateAutomationDialog = ({
                   'bg-muted text-muted-foreground'
                 }`}>
                   {isCompleted ? (
-                    <Check className="h-4 w-4" />
+                    <CheckIcon className="h-4 w-4" />
                   ) : (
                     <StepIcon className="h-4 w-4" />
                   )}
@@ -825,7 +825,7 @@ const CreateAutomationDialog = ({
             onClick={handlePrevious}
             disabled={currentStep === 0}
           >
-            <ChevronLeft className="h-4 w-4 mr-2" />
+            <ChevronLeftIcon className="h-4 w-4 mr-2" />
             Previous
           </Button>
           
@@ -844,7 +844,7 @@ const CreateAutomationDialog = ({
                 disabled={!canProceed()}
               >
                 Next
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <ChevronRightIcon className="h-4 w-4 ml-2" />
               </Button>
             )}
           </div>
