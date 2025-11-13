@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Upload, X, Plus, Camera } from 'lucide-react';
+import { PencilIcon, ArrowUpTrayIcon, XMarkIcon, PlusIcon, CameraIcon } from '@heroicons/react/24/outline';
 
 interface Service {
   id: string;
@@ -446,7 +446,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
                         className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => handleRemoveImage(imageUrl, index)}
                       >
-                        <X className="h-3 w-3" />
+                        <XMarkIcon className="h-3 w-3" />
                       </Button>
                     </div>
                   </CardContent>

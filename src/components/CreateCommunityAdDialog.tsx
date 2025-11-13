@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, Target, Clock, DollarSign, MapPin, Users, Upload, X, Image } from 'lucide-react';
+import { MegaphoneIcon, CursorArrowRaysIcon, ClockIcon, CurrencyDollarIcon, MapPinIcon, UsersIcon, ArrowUpTrayIcon, XMarkIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
 import ContentSuggestionPanel from './ContentSuggestionPanel';
 
@@ -409,7 +409,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                             className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => removeImage(index)}
                           >
-                            <X className="h-3 w-3" />
+                            <XMarkIcon className="h-3 w-3" />
                           </Button>
                         </div>
                       ))}

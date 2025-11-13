@@ -408,7 +408,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                           className="ml-1 h-auto p-0 text-xs"
                           onClick={() => removeTag(tag)}
                         >
-                          <X className="h-3 w-3" />
+                        <XMarkIcon className="h-3 w-3" />
                         </Button>
                       </Badge>
                     ))}
@@ -428,12 +428,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 <div className="flex items-center gap-2">
                   {isNative ? (
                     <Button type="button" variant="outline" onClick={handleNativeImagePick}>
-                      <ImagePlus className="h-4 w-4 mr-2" />
+                    <PhotoIcon className="h-4 w-4 mr-2" />
                       Add Images
                     </Button>
                   ) : (
                     <Button type="button" variant="outline" className="relative">
-                      <ImagePlus className="h-4 w-4 mr-2" />
+                      <PhotoIcon className="h-4 w-4 mr-2" />
                       Add Images
                       <input
                         type="file"
@@ -465,7 +465,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                           className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => removeImage(index)}
                         >
-                          <X className="h-3 w-3" />
+                          <XMarkIcon className="h-3 w-3" />
                         </Button>
                       </div>
                     ))}

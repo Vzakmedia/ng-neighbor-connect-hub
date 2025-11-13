@@ -18,21 +18,21 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Play, 
-  Clock, 
-  Zap, 
-  Bell, 
-  Mail, 
-  Database, 
-  Shield, 
-  ChevronLeft, 
-  ChevronRight,
-  Check,
-  Settings,
-  Calendar,
-  MessageSquare,
-  Plus
-} from 'lucide-react';
+  PlayIcon, 
+  ClockIcon, 
+  BoltIcon, 
+  BellIcon, 
+  EnvelopeIcon, 
+  CircleStackIcon, 
+  ShieldCheckIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon,
+  CheckIcon,
+  Cog6ToothIcon,
+  CalendarIcon,
+  ChatBubbleBottomCenterTextIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
 
 interface CreateAutomationDialogProps {
   open: boolean;
@@ -105,12 +105,12 @@ const CreateAutomationDialog = ({
   });
 
   const steps = [
-    { id: 'basic', title: 'Basic Info', icon: Settings },
-    { id: 'trigger', title: 'Trigger', icon: Zap },
-    { id: 'conditions', title: 'Conditions', icon: Shield },
-    { id: 'actions', title: 'Actions', icon: Play },
-    { id: 'settings', title: 'Settings', icon: Bell },
-    { id: 'review', title: 'Review', icon: Check }
+    { id: 'basic', title: 'Basic Info', icon: Cog6ToothIcon },
+    { id: 'trigger', title: 'Trigger', icon: BoltIcon },
+    { id: 'conditions', title: 'Conditions', icon: ShieldCheckIcon },
+    { id: 'actions', title: 'Actions', icon: PlayIcon },
+    { id: 'settings', title: 'Settings', icon: BellIcon },
+    { id: 'review', title: 'Review', icon: CheckIcon }
   ];
 
   const handleNext = () => {

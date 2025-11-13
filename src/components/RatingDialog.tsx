@@ -14,7 +14,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Star } from 'lucide-react';
+import { StarIcon } from '@heroicons/react/24/outline';
+import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
 interface RatingDialogProps {
   itemId: string;
@@ -118,13 +119,11 @@ const RatingDialog = ({ itemId, itemType, itemTitle, children, onReviewSubmitted
             onMouseLeave={() => setHoveredStar(0)}
             onClick={() => setRating(star)}
           >
-            <Star
-              className={`h-6 w-6 ${
-                star <= (hoveredStar || rating)
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-300'
-              }`}
-            />
+            {star <= (hoveredStar || rating) ? (
+              <StarSolid className="h-6 w-6 text-yellow-400" />
+            ) : (
+              <StarIcon className="h-6 w-6 text-gray-300" />
+            )}
           </button>
         ))}
       </div>

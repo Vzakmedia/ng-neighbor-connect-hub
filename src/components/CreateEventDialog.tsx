@@ -286,7 +286,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                       className="h-auto p-0 ml-1"
                       onClick={() => handleRemoveTag(tag)}
                     >
-                      <X className="h-3 w-3" />
+                      <XMarkIcon className="h-3 w-3" />
                     </Button>
                   </Badge>
                 ))}
