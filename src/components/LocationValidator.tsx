@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
+import { MapPin, AlertTriangle, CheckCircle } from '@/lib/icons';
 import { nigeriaLocationService } from '@/services/nigeriaLocationService';
 
 interface LocationValidatorProps {

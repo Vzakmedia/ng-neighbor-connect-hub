@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, Image as ImageIcon, Video as VideoIcon, Eye } from 'lucide-react';
+import { Download, FileText, ImageIcon, Video as VideoIcon, Eye } from '@/lib/icons';
 import { type Attachment } from '@/hooks/useFileUpload';
 import ProductCard from './ProductCard';
 

@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from '@/lib/icons';
 
 interface AsyncStateHandlerProps {
   loading: boolean;

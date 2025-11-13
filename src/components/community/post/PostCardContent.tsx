@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin } from '@/lib/icons';
 import { Badge } from '@/components/ui/badge';
 import { truncateText } from '@/lib/community/postUtils';
 

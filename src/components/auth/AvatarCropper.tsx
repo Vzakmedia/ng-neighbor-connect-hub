@@ -3,7 +3,7 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-im
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/lib/icons';
 
 interface AvatarCropperProps {
   isOpen: boolean;

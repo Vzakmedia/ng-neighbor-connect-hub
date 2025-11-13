@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from '@/lib/icons';
 
 interface RateLimiterProps {
   action: string;

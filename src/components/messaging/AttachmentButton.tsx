@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Paperclip, Image, Video, FileText, Camera } from 'lucide-react';
+import { Paperclip, ImageIcon, Video, FileText, Camera } from '@/lib/icons';
 
 interface AttachmentButtonProps {
   onFileSelect: (files: File[]) => void;
@@ -60,7 +60,7 @@ const AttachmentButton: React.FC<AttachmentButtonProps> = ({
             onClick={handleImageSelect}
             className="flex items-center gap-2 cursor-pointer"
           >
-            <Image className="h-4 w-4 text-green-600" />
+            <ImageIcon className="h-4 w-4 text-green-600" />
             Photos
           </DropdownMenuItem>
           <DropdownMenuItem 

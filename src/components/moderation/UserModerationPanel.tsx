@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, LogOut, ShieldAlert, Trash2, UserSearch } from "lucide-react";
+import { CheckCircle2, User as LogOut, ShieldAlert, Trash2, Search as UserSearch } from '@/lib/icons';
 
 type Role = "super_admin" | "admin" | "moderator" | "manager" | "support" | "staff" | "user" | "banned";
 

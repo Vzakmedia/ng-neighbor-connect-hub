@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Phone, PhoneOff, VideoIcon } from 'lucide-react';
+import { Phone, X as PhoneOff, Video as VideoIcon } from '@/lib/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createRingtonePlayer, initializeAudioOnInteraction } from '@/utils/audioUtils';
 

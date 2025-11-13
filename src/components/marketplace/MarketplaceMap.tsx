@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { MapPin } from 'lucide-react';
+import { MapPin } from '@/lib/icons';
 
 interface MarketplaceMapProps {
   location: string;

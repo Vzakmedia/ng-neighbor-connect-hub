@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
-import { Search, MessageCircle, ShoppingBag, UserPlus } from 'lucide-react';
+import { Search, MessageCircle, ShoppingBag, UserPlus } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 

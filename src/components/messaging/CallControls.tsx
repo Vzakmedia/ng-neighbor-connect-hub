@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Volume2 } from 'lucide-react';
+import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Mic, VolumeX as MicOff, Volume2 } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 interface CallControlsProps {

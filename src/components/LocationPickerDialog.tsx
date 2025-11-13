@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation } from '@/lib/icons';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
 import { Capacitor } from '@capacitor/core';

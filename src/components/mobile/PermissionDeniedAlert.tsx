@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Settings, AlertTriangle } from 'lucide-react';
+import { Settings, AlertTriangle } from '@/lib/icons';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 
 interface PermissionDeniedAlertProps {

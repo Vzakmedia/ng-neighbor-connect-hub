@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Link, Unlink } from 'lucide-react';
+import { Link, Unlock as Unlink } from '@/lib/icons';
 
 interface GoogleCalendarConnectionStatusProps {
   isSignedIn: boolean;
