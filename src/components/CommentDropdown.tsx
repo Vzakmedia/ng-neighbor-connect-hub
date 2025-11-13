@@ -271,7 +271,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-          <MessageCircle className="h-4 w-4 mr-1" />
+          <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
           {commentCount}
         </Button>
       </PopoverTrigger>
@@ -325,7 +325,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
                           onClick={() => toggleCommentLike(comment.id)}
                           className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
                         >
-                          <Heart className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
+                          <HeartIcon className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
                           {comment.likes_count > 0 && comment.likes_count}
                         </Button>
                       </div>
@@ -365,7 +365,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
                     disabled={!newComment.trim()}
                     className="text-xs"
                   >
-                    <Send className="h-3 w-3 mr-1" />
+                    <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                     Post
                   </Button>
                 </div>

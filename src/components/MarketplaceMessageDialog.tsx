@@ -134,7 +134,7 @@ const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogPr
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+            <ChatBubbleLeftIcon className="h-5 w-5" />
             Message Seller
           </DialogTitle>
           <DialogDescription>
@@ -155,7 +155,7 @@ const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogPr
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                    <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+                    <ShoppingBagIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

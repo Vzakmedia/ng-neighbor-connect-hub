@@ -31,15 +31,15 @@ const getMessageStatusIcon = (status: MessageStatus, showReadReceipts: boolean, 
   
   switch (status) {
     case 'sending':
-      return <Clock className={`h-3 w-3 text-muted-foreground ${!isMobile ? 'animate-pulse' : ''}`} />;
+      return <ClockIcon className={`h-3 w-3 text-muted-foreground ${!isMobile ? 'animate-pulse' : ''}`} />;
     case 'failed':
-      return <AlertCircle className="h-3 w-3 text-destructive" />;
+      return <ExclamationCircleIcon className="h-3 w-3 text-destructive" />;
     case 'sent':
-      return <Check className="h-3 w-3 text-muted-foreground" />;
+      return <CheckIcon className="h-3 w-3 text-muted-foreground" />;
     case 'delivered':
-      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
+      return <CheckBadgeIcon className="h-3 w-3 text-muted-foreground" />;
     case 'read':
-      return <CheckCheck className="h-3 w-3 text-primary" />;
+      return <CheckBadgeIcon className="h-3 w-3 text-primary" />;
     default:
       return null;
   }
@@ -130,7 +130,7 @@ const MessageItem = React.memo<MessageItemProps>(({
               onClick={() => onRetry(message.id)}
               className="h-6 px-2 text-xs"
             >
-              <RotateCw className="h-3 w-3 mr-1" />
+              <ArrowPathIcon className="h-3 w-3 mr-1" />
               Retry
             </Button>
           )}
@@ -139,12 +139,12 @@ const MessageItem = React.memo<MessageItemProps>(({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <MoreVertical className="h-3 w-3" />
+                  <EllipsisVerticalIcon className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align={isOwn ? "end" : "start"}>
                 <DropdownMenuItem onClick={() => onDelete(message.id)} className="text-destructive">
-                  <Trash2 className="h-3 w-3 mr-2" />
+                  <TrashIcon className="h-3 w-3 mr-2" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
