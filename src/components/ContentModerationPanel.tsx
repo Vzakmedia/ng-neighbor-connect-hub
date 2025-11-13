@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { AlertCircle, CheckCircle, XCircle, Clock, Eye, User, MapPin, Calendar, Search, Filter } from 'lucide-react';
+import { ExclamationCircleIcon, CheckCircleIcon, XCircleIcon, ClockIcon, EyeIcon, UserIcon, MapPinIcon, CalendarIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -180,13 +180,13 @@ export default function ContentModerationPanel() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <ClockIcon className="h-4 w-4 text-yellow-500" />;
       case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
       case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircleIcon className="h-4 w-4 text-red-500" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+        return <ExclamationCircleIcon className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -278,15 +278,15 @@ export default function ContentModerationPanel() {
             <CardTitle className="text-lg">{service.title}</CardTitle>
             <CardDescription className="flex items-center gap-4 mt-2">
               <span className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
                 {service.profiles?.full_name || 'Unknown User'}
               </span>
               <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
+                <MapPinIcon className="h-4 w-4" />
                 {service.location}
               </span>
               <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+                <CalendarIcon className="h-4 w-4" />
                 {new Date(service.created_at).toLocaleDateString()}
               </span>
             </CardDescription>
@@ -331,7 +331,7 @@ export default function ContentModerationPanel() {
               className="flex-1"
               size="sm"
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircleIcon className="h-4 w-4 mr-2" />
               Approve
             </Button>
             
@@ -339,7 +339,7 @@ export default function ContentModerationPanel() {
               onConfirm={() => handleApproval(service.id, 'service', 'rejected')}
             >
               <Button variant="destructive" className="flex-1" size="sm">
-                <XCircle className="h-4 w-4 mr-2" />
+                <XCircleIcon className="h-4 w-4 mr-2" />
                 Reject
               </Button>
             </RejectionDialog>
@@ -357,15 +357,15 @@ export default function ContentModerationPanel() {
             <CardTitle className="text-lg">{item.title}</CardTitle>
             <CardDescription className="flex items-center gap-4 mt-2">
               <span className="flex items-center gap-1">
-                <User className="h-4 w-4" />
+                <UserIcon className="h-4 w-4" />
                 {item.profiles?.full_name || 'Unknown User'}
               </span>
               <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
+                <MapPinIcon className="h-4 w-4" />
                 {item.location}
               </span>
               <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+                <CalendarIcon className="h-4 w-4" />
                 {new Date(item.created_at).toLocaleDateString()}
               </span>
             </CardDescription>
@@ -411,7 +411,7 @@ export default function ContentModerationPanel() {
               className="flex-1"
               size="sm"
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircleIcon className="h-4 w-4 mr-2" />
               Approve
             </Button>
             
@@ -419,7 +419,7 @@ export default function ContentModerationPanel() {
               onConfirm={() => handleApproval(item.id, 'item', 'rejected')}
             >
               <Button variant="destructive" className="flex-1" size="sm">
-                <XCircle className="h-4 w-4 mr-2" />
+                <XCircleIcon className="h-4 w-4 mr-2" />
                 Reject
               </Button>
             </RejectionDialog>
@@ -502,11 +502,11 @@ export default function ContentModerationPanel() {
       <Tabs defaultValue="services" className="space-y-4">
         <TabsList>
           <TabsTrigger value="services" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
+            <EyeIcon className="h-4 w-4" />
             Services ({filteredServices.length})
           </TabsTrigger>
           <TabsTrigger value="items" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
+            <EyeIcon className="h-4 w-4" />
             Marketplace Items ({filteredItems.length})
           </TabsTrigger>
         </TabsList>
@@ -515,7 +515,7 @@ export default function ContentModerationPanel() {
           {filteredServices.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
-                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                <CheckCircleIcon className="h-16 w-16 text-green-500 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">All Services Reviewed</h3>
                 <p className="text-muted-foreground text-center max-w-sm">
                   There are no pending services to review at the moment. New services will appear here when submitted.
@@ -533,7 +533,7 @@ export default function ContentModerationPanel() {
           {filteredItems.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
-                <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+                <CheckCircleIcon className="h-16 w-16 text-green-500 mb-4" />
                 <h3 className="text-lg font-semibold mb-2">All Items Reviewed</h3>
                 <p className="text-muted-foreground text-center max-w-sm">
                   There are no pending marketplace items to review at the moment. New items will appear here when submitted.
