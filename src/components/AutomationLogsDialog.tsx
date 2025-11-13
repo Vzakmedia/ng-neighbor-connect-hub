@@ -24,7 +24,7 @@ import {
   CheckCircle,
   Clock,
   Search
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface AutomationLogsDialogProps {
   open: boolean;

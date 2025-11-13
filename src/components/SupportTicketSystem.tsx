@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, MessageSquare, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, MessageSquare, Clock, CheckCircle, AlertCircle } from '@/lib/icons';
 
 interface SupportTicket {
   id: string;

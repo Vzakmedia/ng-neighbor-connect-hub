@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Plus,
   MessageSquare,
-} from 'lucide-react';
+} from '@/lib/icons';
 import CommunityFeed from './CommunityFeed';
 import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';

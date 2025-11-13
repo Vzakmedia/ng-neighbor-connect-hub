@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, Database, Wifi, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Database, Wifi, Zap } from '@/lib/icons';
 import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
 
 interface TestResult {

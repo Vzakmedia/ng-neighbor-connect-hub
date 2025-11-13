@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Copy, Plus, Users, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Copy, Plus, Users, Clock, CheckCircle, XCircle } from "@/lib/icons";
 
 interface StaffInvitation {
   id: string;

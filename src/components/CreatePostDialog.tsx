@@ -35,14 +35,14 @@ import {
   Building,
   Home,
   Globe
-} from 'lucide-react';
+} from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info } from '@/lib/icons';
 
 interface CreatePostDialogProps {
   open: boolean;

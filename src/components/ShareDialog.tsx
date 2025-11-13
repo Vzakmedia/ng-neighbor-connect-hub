@@ -9,7 +9,7 @@ import {
   Check,
   Mail,
   MessageCircle
-} from 'lucide-react';
+} from '@/lib/icons';
 import { 
   FaFacebook, 
   FaTwitter, 
