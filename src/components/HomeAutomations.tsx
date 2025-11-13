@@ -10,21 +10,21 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  BoltIcon as ZapIcon, 
-  BellIcon, 
-  EnvelopeIcon as MailIcon, 
-  DevicePhoneMobileIcon as SmartphoneIcon, 
-  GlobeAltIcon as GlobeIcon, 
-  ClockIcon,
-  Cog6ToothIcon as SettingsIcon,
-  PlusIcon,
-  BoltIcon as ActivityIcon,
-  ExclamationTriangleIcon as AlertTriangleIcon,
-  HomeIcon,
-  BeakerIcon as TestTubeIcon,
-  CalendarIcon,
-  ShoppingBagIcon
-} from '@heroicons/react/24/outline';
+  Zap, 
+  Bell, 
+  Mail, 
+  Smartphone, 
+  Globe, 
+  Clock,
+  Settings,
+  Plus,
+  Activity,
+  AlertTriangle,
+  Home,
+  TestTube,
+  Calendar,
+  ShoppingBag
+} from 'lucide-react';
 
 interface UserAutomation {
   automation_id: string;
