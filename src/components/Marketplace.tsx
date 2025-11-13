@@ -9,29 +9,26 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  StarIcon,
-  MapPinIcon,
-  ClockIcon,
-  PlusIcon,
-  UsersIcon,
-  ShoppingBagIcon,
-  WrenchIcon,
-  AcademicCapIcon,
-  HeartIcon,
-  BoltIcon,
-  TruckIcon,
-  HomeIcon,
-  CameraIcon,
-  PuzzlePieceIcon,
-  CalendarIcon,
-  ChatBubbleLeftIcon,
-  ChevronDownIcon
-} from '@heroicons/react/24/outline';
-import { 
-  HeartIcon as HeartSolid 
-} from '@heroicons/react/24/solid';
+  Search,
+  Filter,
+  Star,
+  MapPin,
+  Clock,
+  Plus,
+  Users,
+  ShoppingBag,
+  Wrench,
+  GraduationCap,
+  Heart,
+  Zap,
+  Car,
+  Home,
+  Camera,
+  Gamepad2,
+  Calendar,
+  MessageSquare,
+  ChevronDown
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
