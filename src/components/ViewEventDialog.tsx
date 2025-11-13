@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
   FileIcon,
   ExternalLink
-} from 'lucide-react';
+} from '@/lib/icons';
 import { formatTimeAgo } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Download, Search, MoreHorizontal, UserCheck, UserX, Trash2, TrendingUp, Users, Mail, Calendar } from 'lucide-react';
+import { Download, Search, MoreHorizontal, UserCheck, UserX, Users, Trash2, TrendingUp, Mail, Calendar } from '@/lib/icons';
 import { format } from 'date-fns';
 
 interface Subscriber {

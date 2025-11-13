@@ -22,7 +22,7 @@ import {
   Clock,
   Save,
   AlertTriangle
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface ConfigureAutomationDialogProps {
   open: boolean;

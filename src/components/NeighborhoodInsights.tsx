@@ -10,7 +10,7 @@ import {
   Clock,
   BarChart3,
   Zap
-} from 'lucide-react';
+} from '@/lib/icons';
 
 const NeighborhoodInsights = () => {
   const insights = [

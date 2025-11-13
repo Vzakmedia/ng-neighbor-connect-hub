@@ -10,7 +10,7 @@ import {
   ArrowRight,
   MessageSquare,
   X
-} from 'lucide-react';
+} from '@/lib/icons';
 import communityHero from '@/assets/community-hero.jpg';
 import { useProfile } from '@/hooks/useProfile';
 

@@ -12,7 +12,7 @@ import {
   Shield,
   Clock,
   CheckCircle
-} from 'lucide-react';
+} from '@/lib/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';

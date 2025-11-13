@@ -5,6 +5,12 @@ import {
   UserIcon,
   UserPlusIcon,
   UserCircleIcon,
+  NoSymbolIcon,
+  AtSymbolIcon,
+  ChatBubbleLeftEllipsisIcon,
+  FaceSmileIcon,
+  UserMinusIcon,
+  CheckIcon,
   ShieldCheckIcon,
   ShieldExclamationIcon,
   ChatBubbleLeftIcon,
@@ -41,11 +47,13 @@ import {
   CursorArrowRaysIcon,
   SparklesIcon,
   XMarkIcon,
+  XCircleIcon,
   Bars3Icon,
   CircleStackIcon,
   PlusIcon,
   MinusIcon,
   PencilIcon,
+  PencilSquareIcon,
   TrashIcon,
   Cog6ToothIcon,
   MagnifyingGlassIcon,
@@ -71,6 +79,7 @@ import {
   CameraIcon,
   PhotoIcon,
   DocumentIcon,
+  BookmarkSlashIcon,
   FolderIcon,
   ArchiveBoxIcon,
   LinkIcon,
@@ -98,6 +107,8 @@ import {
   CreditCardIcon,
   GiftIcon,
   TagIcon,
+  PlusCircleIcon,
+  HashtagIcon,
   BookmarkIcon,
   FlagIcon,
   ShareIcon,
@@ -134,6 +145,13 @@ import {
   TruckIcon,
   HomeModernIcon,
   CubeIcon,
+  DocumentCheckIcon,
+  DocumentPlusIcon,
+  ListBulletIcon as UnorderedListIcon,
+  Bars3BottomLeftIcon,
+  ChatBubbleBottomCenterTextIcon,
+  ArrowUturnLeftIcon,
+  ArrowUturnRightIcon,
 } from '@heroicons/react/24/outline';
 
 // Export with Lucide-compatible names
@@ -286,3 +304,33 @@ export const Package = CubeIcon;
 // Loader icon (using ArrowPath with animation)
 export const Loader = ArrowPathIcon;
 export const Loader2 = ArrowPathIcon;
+
+// Additional missing icons
+export const XCircle = XCircleIcon;
+export const UserCheck = UserPlusIcon; // Closest equivalent
+export const UserX = UserMinusIcon;
+export const UserMinus = UserMinusIcon;
+export const Save = DocumentCheckIcon;
+export const RefreshCw = ArrowPathIcon; // Alternative spelling
+export const Bold = PencilSquareIcon; // Text formatting - use generic icon
+export const Italic = PencilSquareIcon;
+export const ListOrdered = UnorderedListIcon;
+export const Heading = Bars3BottomLeftIcon;
+export const Heading2 = Bars3BottomLeftIcon;
+export const Heading3 = Bars3BottomLeftIcon;
+export const Quote = ChatBubbleBottomCenterTextIcon;
+export const Undo = ArrowUturnLeftIcon;
+export const Redo = ArrowUturnRightIcon;
+export const HeadphonesIcon = SpeakerWaveIcon; // Closest equivalent
+export const Check = CheckIcon;
+export const ImagePlus = PlusCircleIcon; // Alternative for adding images
+export const BookmarkCheck = BookmarkSlashIcon; // Closest equivalent
+export const Target = FlagIcon; // Closest equivalent
+export const Facebook = ShareIcon; // Use generic share icon for social
+export const Hash = HashtagIcon;
+export const Crown = StarIcon; // Closest equivalent
+export const Pin = MapPinIcon;
+export const Reply = ChatBubbleLeftEllipsisIcon;
+export const AtSign = AtSymbolIcon;
+export const Smile = FaceSmileIcon;
+export const Ban = NoSymbolIcon;

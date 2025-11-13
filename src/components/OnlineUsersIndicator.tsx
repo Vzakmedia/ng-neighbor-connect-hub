@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { usePresence } from '@/contexts/PresenceContext';
-import { Users } from 'lucide-react';
+import { Users } from '@/lib/icons';
 
 export const OnlineUsersIndicator: React.FC = () => {
   const { onlineUsers, totalOnlineUsers, getUserPresence } = usePresence();
