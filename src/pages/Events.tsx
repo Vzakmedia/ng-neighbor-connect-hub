@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Calendar, Users } from 'lucide-react';
+import { Plus, Calendar, Users } from '@/lib/icons';
 import EventFeed from '@/components/EventFeed';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import MyEventsPanel from '@/components/MyEventsPanel';

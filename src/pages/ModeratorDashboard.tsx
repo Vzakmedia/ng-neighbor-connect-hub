@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, Users, MessageSquare, Flag, AlertTriangle, Eye, CheckCircle, XCircle, Clock, Search, ArrowLeft } from "lucide-react";
+import { Shield, Users, MessageSquare, Flag, AlertTriangle, Eye, CheckCircle, XCircle, Clock, Search, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, 
   HelpCircle, 
-  BookOpen, 
+  Newspaper as BookOpen, 
   MessageCircle, 
   Mail, 
   Phone, 
@@ -19,7 +19,7 @@ import {
   FileText,
   ArrowLeft,
   ExternalLink
-} from "lucide-react";
+} from '@/lib/icons';
 
 const HelpCenter = () => {
   const [searchQuery, setSearchQuery] = useState("");

@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, Calendar, Eye } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, Eye } from '@/lib/icons';
 import { formatDate } from '@/services/blogService';
 
 const BlogPost = () => {

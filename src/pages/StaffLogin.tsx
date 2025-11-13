@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Users, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Shield, Users, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from '@/lib/icons';
 
 interface InvitationInfo {
   id: string;

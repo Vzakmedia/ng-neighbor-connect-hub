@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft } from "lucide-react";
+import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
