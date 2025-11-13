@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import HorizontalFilters, { FilterCategory } from './HorizontalFilters';
 import PanicButton from '../PanicButton';
 import ReportIncidentDialog from '../ReportIncidentDialog';
-import { Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlusIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -47,7 +47,7 @@ const SafetyAlertsSplitView = ({
               size="sm" 
               className="bg-background hover:bg-accent shadow-lg border-border h-10 px-4 flex items-center gap-2"
             >
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Report Incident</span>
             </Button>
           }
@@ -78,7 +78,7 @@ const SafetyAlertsSplitView = ({
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 aria-label={isCollapsed ? "Expand alerts panel" : "Collapse alerts panel"}
               >
-                {isCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {isCollapsed ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
               </Button>
             </div>
 

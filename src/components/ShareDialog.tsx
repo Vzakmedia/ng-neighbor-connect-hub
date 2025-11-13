@@ -5,11 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { 
-  Copy, 
-  Check,
-  Mail,
-  MessageCircle
-} from 'lucide-react';
+  ClipboardIcon, 
+  CheckIcon,
+  EnvelopeIcon,
+  ChatBubbleLeftIcon
+} from '@heroicons/react/24/outline';
 import { 
   FaFacebook, 
   FaTwitter, 
