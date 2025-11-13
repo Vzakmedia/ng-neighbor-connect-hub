@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { performanceMonitor } from '@/utils/performanceMonitoring';
-import { Activity, Zap, Database, Clock } from 'lucide-react';
+import { ChartBarIcon, BoltIcon, CircleStackIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { Progress } from '@/components/ui/progress';
 
 export const PerformanceDashboard = () => {
@@ -41,7 +41,7 @@ export const PerformanceDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">App Launch Time</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <BoltIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatTime(metrics.appLaunchTime)}</div>
@@ -54,7 +54,7 @@ export const PerformanceDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">First Render</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatTime(metrics.firstRenderTime)}</div>
@@ -67,7 +67,7 @@ export const PerformanceDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Memory Usage</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+            <CircleStackIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -82,7 +82,7 @@ export const PerformanceDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">API Endpoints</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <ChartBarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Object.keys(latencies).length}</div>

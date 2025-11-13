@@ -264,19 +264,19 @@ const BusinessVerificationAdmin = () => {
               </CardContent>
             </Card>
           ) : (
-              <div className="space-y-4">
-                {pendingApplications.map((application) => (
-                  <Card key={application.id} className="border-yellow-200">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={application.logo_url || application.profiles?.avatar_url} />
-                            <AvatarFallback>
-                              {getBusinessInitials(application.business_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
+            <div className="grid gap-4">
+              {pendingApplications.map((application) => (
+                <Card key={application.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={application.logo_url || ''} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {getBusinessInitials(application.business_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
                           <CardTitle className="text-lg">{application.business_name}</CardTitle>
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                             <span>{formatCategory(application.category)}</span>
@@ -374,37 +374,40 @@ const BusinessVerificationAdmin = () => {
                                 </Card>
 
                                 {/* Documents */}
-                                {(selectedApplication.tax_id_number || selectedApplication.business_license) && (
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-base">Documents</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                      {selectedApplication.tax_id_number && (
-                                        <div>
-                                          <p className="text-sm font-medium">Tax ID (TIN)</p>
-                                          <p className="text-muted-foreground">{selectedApplication.tax_id_number}</p>
-                                        </div>
-                                      )}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                      <ShieldCheckIcon className="h-4 w-4" />
+                                      Verification Documents
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium">Tax ID: {selectedApplication.tax_id_number || 'Not provided'}</p>
                                       {selectedApplication.business_license && (
-                                        <div>
-                                          <p className="text-sm font-medium">Business License</p>
-                                          <p className="text-muted-foreground">{selectedApplication.business_license}</p>
-                                        </div>
+                                        <a
+                                          href={selectedApplication.business_license}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                                        >
+                                          <DocumentTextIcon className="h-4 w-4" />
+                                          View Business License
+                                        </a>
                                       )}
-                                    </CardContent>
-                                  </Card>
-                                )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
 
                                 {/* Review Notes */}
                                 <div className="space-y-2">
-                                  <Label htmlFor="review-notes">Review Notes (Optional)</Label>
+                                  <Label htmlFor="reviewNotes">Review Notes (Optional)</Label>
                                   <Textarea
-                                    id="review-notes"
+                                    id="reviewNotes"
+                                    placeholder="Add notes about this verification review..."
                                     value={reviewNotes}
                                     onChange={(e) => setReviewNotes(e.target.value)}
-                                    placeholder="Add notes about the review decision..."
-                                    rows={3}
+                                    rows={4}
                                   />
                                 </div>
 
@@ -416,16 +419,16 @@ const BusinessVerificationAdmin = () => {
                                     className="bg-green-600 hover:bg-green-700 flex-1"
                                   >
                                     <CheckCircleIcon className="h-4 w-4 mr-2" />
-                                    {processing ? 'Processing...' : 'Approve Business'}
+                                    Verify Business
                                   </Button>
-                                  <Button
+                                  <Button 
                                     variant="destructive"
                                     onClick={() => handleApproval(selectedApplication.id, 'reject')}
                                     disabled={processing}
                                     className="flex-1"
                                   >
                                     <XCircleIcon className="h-4 w-4 mr-2" />
-                                    {processing ? 'Processing...' : 'Reject Application'}
+                                    Reject
                                   </Button>
                                 </div>
                               </div>
@@ -436,19 +439,17 @@ const BusinessVerificationAdmin = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {application.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground line-clamp-2">{application.description}</p>
+                    <div className="flex items-center gap-4 mt-2">
                       {application.phone && (
-                        <span className="flex items-center gap-1">
-                          <PhoneIcon className="h-3 w-3" />
+                        <span className="text-sm flex items-center gap-1">
+                          <PhoneIcon className="h-4 w-4" />
                           {application.phone}
                         </span>
                       )}
                       {application.email && (
-                        <span className="flex items-center gap-1">
-                          <EnvelopeIcon className="h-3 w-3" />
+                        <span className="text-sm flex items-center gap-1">
+                          <EnvelopeIcon className="h-4 w-4" />
                           {application.email}
                         </span>
                       )}
@@ -464,32 +465,56 @@ const BusinessVerificationAdmin = () => {
           {verifiedBusinesses.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <p className="text-muted-foreground">No verified businesses yet</p>
+                <XCircleIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No verified businesses</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4">
               {verifiedBusinesses.map((business) => (
-                <Card key={business.id} className="border-green-200">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={business.logo_url || business.profiles?.avatar_url} />
-                        <AvatarFallback>
-                          {getBusinessInitials(business.business_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold truncate">{business.business_name}</h3>
-                          <ShieldCheckIcon className="h-4 w-4 text-green-500" />
+                <Card key={business.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={business.logo_url || ''} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {getBusinessInitials(business.business_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{business.business_name}</CardTitle>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span>{formatCategory(business.category)}</span>
+                            {business.city && business.state && (
+                              <span className="flex items-center gap-1">
+                                <MapPinIcon className="h-3 w-3" />
+                                {business.city}, {business.state}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Verified {formatTimeAgo(business.updated_at)}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{formatCategory(business.category)}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Verified {formatTimeAgo(business.updated_at)}
-                        </p>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{business.description}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      {business.phone && (
+                        <span className="text-sm flex items-center gap-1">
+                          <PhoneIcon className="h-4 w-4" />
+                          {business.phone}
+                        </span>
+                      )}
+                      {business.email && (
+                        <span className="text-sm flex items-center gap-1">
+                          <EnvelopeIcon className="h-4 w-4" />
+                          {business.email}
+                        </span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -502,31 +527,55 @@ const BusinessVerificationAdmin = () => {
           {rejectedApplications.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <XCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <p className="text-muted-foreground">No rejected applications</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {rejectedApplications.map((application) => (
-                <Card key={application.id} className="border-red-200">
-                  <CardContent className="pt-4">
+                <Card key={application.id}>
+                  <CardHeader>
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={application.logo_url || application.profiles?.avatar_url} />
-                          <AvatarFallback>
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={application.logo_url || ''} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                             {getBusinessInitials(application.business_name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <h3 className="font-semibold">{application.business_name}</h3>
-                          <p className="text-sm text-muted-foreground">{formatCategory(application.category)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{application.business_name}</CardTitle>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span>{formatCategory(application.category)}</span>
+                            {application.city && application.state && (
+                              <span className="flex items-center gap-1">
+                                <MapPinIcon className="h-3 w-3" />
+                                {application.city}, {application.state}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
                             Rejected {formatTimeAgo(application.updated_at)}
                           </p>
                         </div>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{application.description}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      {application.phone && (
+                        <span className="text-sm flex items-center gap-1">
+                          <PhoneIcon className="h-4 w-4" />
+                          {application.phone}
+                        </span>
+                      )}
+                      {application.email && (
+                        <span className="text-sm flex items-center gap-1">
+                          <EnvelopeIcon className="h-4 w-4" />
+                          {application.email}
+                        </span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
