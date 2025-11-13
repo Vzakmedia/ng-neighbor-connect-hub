@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw } from "lucide-react";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 import { useQueryClient } from "@tanstack/react-query";
 import { create } from "zustand";
 
@@ -37,7 +37,7 @@ export const NewPostsBanner = () => {
             onClick={handleRefresh}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-lg px-4 py-3 flex items-center justify-center gap-2 transition-all hover:shadow-xl"
           >
-            <RefreshCw className="w-4 h-4" />
+            <ArrowPathIcon className="w-4 h-4" />
             <span className="font-medium">New posts available</span>
           </button>
         </motion.div>

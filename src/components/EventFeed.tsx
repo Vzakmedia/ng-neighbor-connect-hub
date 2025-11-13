@@ -5,18 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { 
-  Heart, 
-  MessageCircle, 
-  Share2, 
-  MoreHorizontal,
-  MapPin,
-  Clock,
-  Calendar,
-  Search,
-  Bookmark,
-  Users,
-  Eye
-} from 'lucide-react';
+  HeartIcon,
+  ChatBubbleLeftIcon,
+  ShareIcon,
+  EllipsisHorizontalIcon,
+  MapPinIcon,
+  ClockIcon,
+  CalendarIcon,
+  MagnifyingGlassIcon,
+  BookmarkIcon,
+  UsersIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
+import {
+  HeartIcon as HeartSolid,
+  BookmarkIcon as BookmarkSolid
+} from '@heroicons/react/24/solid';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -496,7 +500,7 @@ const EventFeed = () => {
     <div className="space-y-3 md:space-y-4 px-1 md:px-0">
       {/* Search Bar - Mobile optimized */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search events..."
           value={searchQuery}
