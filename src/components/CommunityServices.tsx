@@ -316,7 +316,7 @@ const CommunityServices = () => {
                             </Badge>
                             {service.rating && (
                               <Badge variant="secondary" className="gap-1 text-xs">
-                                <Star className="h-3 w-3 fill-current" />
+                                <StarIcon className="h-3 w-3 fill-current" />
                                 {service.rating.toFixed(1)}
                               </Badge>
                             )}
@@ -330,7 +330,7 @@ const CommunityServices = () => {
                             description: "Direct messaging will be available soon",
                           });
                         }}>
-                          <MessageCircle className="h-4 w-4 mr-1" />
+                          <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                           Message
                         </Button>
                         <BookServiceDialog 
@@ -376,7 +376,7 @@ const CommunityServices = () => {
                       <div className="space-y-1">
                         {service.location && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                             <span className="break-words">{service.location}</span>
                           </div>
                         )}
@@ -451,7 +451,7 @@ const CommunityServices = () => {
                             description: "Direct messaging will be available soon",
                           });
                         }}>
-                          <MessageCircle className="h-4 w-4 mr-1" />
+                          <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                           Message
                         </Button>
                         <MarketplaceInquiryDialog
@@ -496,7 +496,7 @@ const CommunityServices = () => {
                       <div>
                         {item.location && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                            <MapPin className="h-4 w-4" />
+                            <MapPinIcon className="h-4 w-4" />
                             {item.location}
                           </div>
                         )}

@@ -512,7 +512,7 @@ const EventFeed = () => {
       {filteredEvents.length === 0 ? (
         <Card className="mx-2 md:mx-0">
           <CardContent className="text-center py-8">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground text-sm md:text-base">
               {searchQuery ? 'No events found matching your search' : 'No events posted yet'}
             </p>
@@ -540,11 +540,11 @@ const EventFeed = () => {
                     <p className="font-semibold text-sm md:text-base truncate leading-tight">{event.author.name}</p>
                     <div className="flex flex-col text-xs text-muted-foreground gap-0.5 mt-0.5">
                       <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <MapPinIcon className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate text-xs">{event.author.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <ClockIcon className="h-3 w-3 flex-shrink-0" />
                         <span className="text-xs">{formatTimeAgo(event.timestamp)}</span>
                       </div>
                     </div>
@@ -552,11 +552,11 @@ const EventFeed = () => {
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                    <Calendar className="h-3 w-3 mr-1" />
+                    <CalendarIcon className="h-3 w-3 mr-1" />
                     <span className="hidden sm:inline">Event</span>
                   </Badge>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 touch-manipulation">
-                    <MoreHorizontal className="h-4 w-4" />
+                    <EllipsisHorizontalIcon className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -618,7 +618,7 @@ const EventFeed = () => {
                       onClick={() => handleLike(event.id)}
                       className={`text-xs min-h-[40px] px-2 md:px-3 touch-manipulation ${event.isLiked ? 'text-red-500' : 'text-muted-foreground'}`}
                     >
-                      <Heart className={`h-4 w-4 mr-1 ${event.isLiked ? 'fill-current' : ''}`} />
+                      <HeartIcon className={`h-4 w-4 mr-1 ${event.isLiked ? 'fill-current' : ''}`} />
                       <span className="text-xs">{event.likes}</span>
                     </Button>
                     
@@ -628,7 +628,7 @@ const EventFeed = () => {
                        onClick={() => toggleInlineComments(event.id)}
                        className={`text-xs min-h-[40px] px-2 md:px-3 touch-manipulation ${inlineComments.has(event.id) ? 'text-primary' : 'text-muted-foreground'}`}
                      >
-                       <MessageCircle className="h-4 w-4 mr-1" />
+                       <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                        <span className="text-xs">{event.comments}</span>
                      </Button>
                     
@@ -638,7 +638,7 @@ const EventFeed = () => {
                       onClick={() => handleShare(event)}
                       className="text-xs text-muted-foreground min-h-[40px] px-2 md:px-3 touch-manipulation"
                     >
-                      <Share2 className="h-4 w-4" />
+                      <ShareIcon className="h-4 w-4" />
                       <span className="hidden sm:inline ml-1 text-xs">Share</span>
                     </Button>
                     
@@ -648,7 +648,7 @@ const EventFeed = () => {
                       onClick={() => handleSave(event.id)}
                       className={`text-xs min-h-[40px] px-2 md:px-3 touch-manipulation ${event.isSaved ? 'text-blue-500' : 'text-muted-foreground'}`}
                     >
-                      <Bookmark className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
+                      <BookmarkIcon className={`h-4 w-4 ${event.isSaved ? 'fill-current' : ''}`} />
                       <span className="hidden sm:inline ml-1 text-xs">{event.isSaved ? 'Saved' : 'Save'}</span>
                     </Button>
                   </div>
@@ -665,7 +665,7 @@ const EventFeed = () => {
                     }}
                     className="min-h-[44px] px-3 text-xs touch-manipulation flex-1"
                   >
-                    <Eye className="h-4 w-4 mr-2" />
+                    <EyeIcon className="h-4 w-4 mr-2" />
                     View Event
                   </Button>
                   
@@ -676,7 +676,7 @@ const EventFeed = () => {
                       onClick={() => handleRSVP(event)}
                       className="min-h-[44px] px-3 text-xs touch-manipulation flex-1"
                     >
-                      <Users className="h-4 w-4 mr-2" />
+                      <UsersIcon className="h-4 w-4 mr-2" />
                       RSVP
                     </Button>
                   )}
