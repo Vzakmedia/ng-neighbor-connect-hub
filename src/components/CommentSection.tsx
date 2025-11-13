@@ -544,7 +544,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
             onClick={() => toggleCommentLike(comment.id)}
             className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
           >
-            <Heart className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
+            <HeartIcon className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
             {comment.likes_count > 0 && comment.likes_count}
           </Button>
           {!isReply && (
@@ -554,7 +554,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
               className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
             >
-              <MessageCircle className="h-3 w-3 mr-1" />
+              <ChatBubbleLeftIcon className="h-3 w-3 mr-1" />
               Reply
             </Button>
           )}
@@ -639,7 +639,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                     disabled={!replyText.trim()}
                     className="text-xs"
                   >
-                    <Send className="h-3 w-3 mr-1" />
+                    <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                     Reply
                   </Button>
                 </div>
@@ -746,7 +746,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                 disabled={!newComment.trim()}
                 className="text-xs"
               >
-                <Send className="h-3 w-3 mr-1" />
+                <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                 Post
               </Button>
             </div>
