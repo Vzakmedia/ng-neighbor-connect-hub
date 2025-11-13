@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Smartphone, Copy, Download, AlertTriangle } from 'lucide-react';
+import { Shield, Smartphone, Copy, Download, AlertTriangle } from '@/lib/icons';
 import QRCode from 'qrcode';
 import { TOTP } from 'otpauth';
 

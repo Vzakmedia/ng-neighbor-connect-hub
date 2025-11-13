@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Settings, Smartphone } from 'lucide-react';
+import { Calendar, Settings, Smartphone } from '@/lib/icons';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
 import { useGoogleCalendarConfig } from '@/hooks/useGoogleCalendarConfig';
 import { useGoogleCalendarAPI } from '@/hooks/useGoogleCalendarAPI';

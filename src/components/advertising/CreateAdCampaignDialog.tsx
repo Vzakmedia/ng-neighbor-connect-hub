@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Target, DollarSign, Image as ImageIcon, Globe, MapPin, Building2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Flag as Target, DollarSign, ImageIcon, Globe, MapPin, Building as Building2 } from '@/lib/icons';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';

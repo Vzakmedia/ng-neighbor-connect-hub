@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TermsAndConditions } from "./TermsAndConditions";
 import { PrivacyPolicy } from "./PrivacyPolicy";
-import { Shield, FileText, Eye, CheckSquare } from "lucide-react";
+import { Shield, FileText, Eye, Check as CheckSquare } from '@/lib/icons';
 
 interface ConsentDialogProps {
   open: boolean;

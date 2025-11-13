@@ -7,7 +7,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin, Camera, AlertTriangle } from 'lucide-react';
+import { MapPin, Camera, AlertTriangle } from '@/lib/icons';
 
 interface PermissionRequestDialogProps {
   open: boolean;

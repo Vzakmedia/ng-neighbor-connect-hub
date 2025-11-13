@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, Send, Ticket } from 'lucide-react';
+import { AlertCircle, Send, Flag as Ticket } from '@/lib/icons';
 import { useRealtimeSupportTickets } from '@/hooks/useRealtimeSupportTickets';
 
 const SupportTicketForm = () => {

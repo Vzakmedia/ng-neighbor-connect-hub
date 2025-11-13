@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   X, 
-  Building2, 
+  Building as Building2, 
   TrendingUp, 
   Users, 
   Star,
   ArrowRight,
   Calendar
-} from 'lucide-react';
+} from '@/lib/icons';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingNotifications } from '@/hooks/useOnboardingNotifications';
 import { useToast } from '@/hooks/use-toast';

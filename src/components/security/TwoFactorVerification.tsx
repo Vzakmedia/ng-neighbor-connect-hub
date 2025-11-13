@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, Smartphone, Key } from 'lucide-react';
+import { Shield, Smartphone, Key } from '@/lib/icons';
 import { TOTP } from 'otpauth';
 
 interface TwoFactorVerificationProps {

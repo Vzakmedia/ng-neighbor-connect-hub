@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Ad } from '@/types/advertising';
-import { ExternalLink, MapPin, Calendar, ShoppingBag, Briefcase } from 'lucide-react';
+import { ExternalLink, MapPin, Calendar, ShoppingBag, Briefcase } from '@/lib/icons';
 import { useNavigate } from 'react-router-dom';
 
 interface AdCardProps {

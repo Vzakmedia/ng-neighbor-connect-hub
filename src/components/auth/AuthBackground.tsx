@@ -19,7 +19,7 @@ import {
   Wifi,
   Share2,
   ThumbsUp
-} from 'lucide-react';
+} from '@/lib/icons';
 
 const AuthBackground = () => {
   // Communication and social icons for the pattern

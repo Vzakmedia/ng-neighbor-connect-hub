@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, MapPin, Loader2 } from "lucide-react";
+import { Search, MapPin, Loader2 } from '@/lib/icons';
 
 interface Location {
   name: string;

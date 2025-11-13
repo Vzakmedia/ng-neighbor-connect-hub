@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, PhoneOff, Video, VideoOff, PhoneMissed, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Phone as PhoneMissed, Phone as PhoneIncoming, Phone as PhoneOutgoing } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 
 interface CallLog {

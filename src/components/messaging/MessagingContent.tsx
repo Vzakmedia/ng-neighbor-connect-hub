@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import OnlineAvatar from '@/components/OnlineAvatar';
-import { MessageCircle, Search, Bell } from 'lucide-react';
+import { MessageCircle, Search, Bell } from '@/lib/icons';
 import { Input } from '@/components/ui/input';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';

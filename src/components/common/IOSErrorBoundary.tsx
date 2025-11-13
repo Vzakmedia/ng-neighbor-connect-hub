@@ -3,7 +3,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { detectIOSDevice, logIOSCompatibility } from '@/utils/iosCompatibility';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw, Smartphone, Shield } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Smartphone, Shield } from '@/lib/icons';
 
 interface Props {
   children: ReactNode;

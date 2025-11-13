@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, Eye, Calendar } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Eye, Calendar } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import { PostCardData } from '@/types/community';
 

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Shield, AlertCircle } from '@/lib/icons';
 import { RateLimiter } from "@/components/security/RateLimiter";
 import { SecureInput } from "@/components/auth/SecureAuthForms";
 import { Alert, AlertDescription } from "@/components/ui/alert";

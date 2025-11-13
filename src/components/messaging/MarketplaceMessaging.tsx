@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import MarketplaceMessageThread from './MarketplaceMessageThread';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Package } from 'lucide-react';
+import { ShoppingBag, Package } from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
 
 interface MarketplaceConversation {

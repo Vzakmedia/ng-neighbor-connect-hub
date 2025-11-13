@@ -21,7 +21,7 @@ import {
   X, 
   Trash2,
   Send
-} from 'lucide-react';
+} from '@/lib/icons';
 import {
   Dialog,
   DialogContent,

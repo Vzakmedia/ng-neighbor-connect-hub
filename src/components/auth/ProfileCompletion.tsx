@@ -8,7 +8,7 @@ import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelec
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, User, MapPin } from "lucide-react";
+import { Loader2, User, MapPin } from '@/lib/icons';
 
 export const ProfileCompletion = () => {
   const [loading, setLoading] = useState(false);
