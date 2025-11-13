@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import CreatePostDialog from './CreatePostDialog';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
@@ -21,7 +21,9 @@ import {
   Plus,
   Settings,
   Building2,
-  Briefcase
+  Briefcase,
+  Grid3x3,
+  X
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -30,6 +32,7 @@ const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [hasStaffRole, setHasStaffRole] = useState(false);
   const { unreadCount } = useNotifications();
   const [animatingBadges, setAnimatingBadges] = useState<Record<string, boolean>>({});
@@ -259,73 +262,92 @@ const Navigation = () => {
           
           {/* More menu for additional items */}
           <div className="w-16 flex items-center justify-center border-l">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button 
-                  onClick={async () => {
-                    try {
-                      await Haptics.impact({ style: ImpactStyle.Light });
-                    } catch (error) {
-                      // Haptics not available
+            <button 
+              onClick={async () => {
+                try {
+                  await Haptics.impact({ style: ImpactStyle.Light });
+                } catch (error) {
+                  // Haptics not available
+                }
+                setMoreDrawerOpen(true);
+              }}
+              className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-all touch-manipulation active:scale-95 h-full w-full"
+            >
+              <Grid3x3 className="h-6 w-6" />
+              <span className="text-xs font-medium">More</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Modern Bottom Drawer for More Options */}
+      <Drawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="flex items-center justify-between border-b pb-4">
+            <DrawerTitle className="text-lg font-semibold">More Options</DrawerTitle>
+            <DrawerClose asChild>
+              <button className="rounded-full p-2 hover:bg-muted transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </DrawerClose>
+          </DrawerHeader>
+          
+          <div className="overflow-y-auto px-4 pb-6">
+            {/* Navigation Section */}
+            {mobileNavItems.slice(5).filter(item => {
+              if (item.id === 'users' && !hasStaffRole) {
+                return false;
+              }
+              return true;
+            }).length > 0 && (
+              <div className="pt-4">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Navigation</h3>
+                <div className="space-y-1">
+                  {mobileNavItems.slice(5).filter(item => {
+                    if (item.id === 'users' && !hasStaffRole) {
+                      return false;
                     }
-                  }}
-                  className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-all touch-manipulation active:scale-95 h-full w-full"
-                >
-                  <div className="h-6 w-6 flex items-center justify-center">
-                    <div className="grid grid-cols-2 gap-0.5">
-                      <div className="w-1 h-1 bg-current rounded-full"></div>
-                      <div className="w-1 h-1 bg-current rounded-full"></div>
-                      <div className="w-1 h-1 bg-current rounded-full"></div>
-                      <div className="w-1 h-1 bg-current rounded-full"></div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-medium">More</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top" className="mb-2">
-                {mobileNavItems.slice(5).filter(item => {
-                  // Hide User Directory for non-staff users
-                  if (item.id === 'users' && !hasStaffRole) {
-                    return false;
-                  }
-                  return true;
-                }).map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={item.id}
-                      onClick={async () => {
-                        try {
-                          await Haptics.impact({ style: ImpactStyle.Light });
-                        } catch (error) {
-                          // Haptics not available
-                        }
-                        handleNavigation(item.path);
-                      }}
-                      className="flex items-center py-3"
-                    >
-                      <Icon className="mr-3 h-4 w-4" />
-                      <span>{item.label}</span>
-                      {item.count > 0 && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.count}
-                        </Badge>
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-                <DropdownMenuSeparator />
-                {/* Staff Portal for mobile */}
-                {hasStaffRole && (
-                  <DropdownMenuItem 
-                    onClick={() => navigate('/staff')}
-                    className="flex items-center py-3"
-                  >
-                    <Settings className="mr-3 h-4 w-4" />
-                    <span>Staff Portal</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem 
+                    return true;
+                  }).map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={async () => {
+                          try {
+                            await Haptics.impact({ style: ImpactStyle.Light });
+                          } catch (error) {
+                            // Haptics not available
+                          }
+                          handleNavigation(item.path);
+                          setMoreDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all touch-manipulation active:scale-[0.98] ${
+                          isActive 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        <span className="font-medium text-left flex-1">{item.label}</span>
+                        {item.count > 0 && (
+                          <Badge variant={isActive ? "default" : "secondary"} className="ml-auto">
+                            {item.count > 9 ? '9+' : item.count}
+                          </Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions Section */}
+            <div className="pt-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Quick Actions</h3>
+              <div className="space-y-1">
+                <button
                   onClick={async () => {
                     try {
                       await Haptics.impact({ style: ImpactStyle.Light });
@@ -333,18 +355,51 @@ const Navigation = () => {
                       // Haptics not available
                     }
                     setCreatePostOpen(true);
+                    setMoreDrawerOpen(false);
                   }}
-                  className="flex items-center py-3 text-primary"
+                  className="w-full flex items-center gap-4 p-4 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-all touch-manipulation active:scale-[0.98]"
                   data-tutorial="create-post-mobile"
                 >
-                  <Plus className="mr-3 h-4 w-4" />
-                  <span>Create Post</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold">Create Post</div>
+                    <div className="text-xs opacity-80">Share with your community</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Settings Section (Staff Portal) */}
+            {hasStaffRole && (
+              <div className="pt-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Settings</h3>
+                <div className="space-y-1">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await Haptics.impact({ style: ImpactStyle.Light });
+                      } catch (error) {
+                        // Haptics not available
+                      }
+                      navigate('/staff');
+                      setMoreDrawerOpen(false);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-all touch-manipulation active:scale-[0.98]"
+                  >
+                    <Settings className="h-5 w-5 flex-shrink-0" />
+                    <div className="text-left flex-1">
+                      <div className="font-medium">Staff Portal</div>
+                      <div className="text-xs text-muted-foreground">Manage platform settings</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      </nav>
+        </DrawerContent>
+      </Drawer>
 
       {/* Create Post Dialog */}
       <CreatePostDialog 
