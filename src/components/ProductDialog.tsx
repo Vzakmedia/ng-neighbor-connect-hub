@@ -28,7 +28,7 @@ import {
   Facebook,
   Bookmark,
   BookmarkCheck,
-} from 'lucide-react';
+} from '@/lib/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useToast } from '@/hooks/use-toast';

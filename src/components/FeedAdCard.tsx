@@ -11,7 +11,7 @@ import {
   Heart,
   MessageCircle,
   MoreHorizontal
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface FeedAdvertisement {
   id: string;
