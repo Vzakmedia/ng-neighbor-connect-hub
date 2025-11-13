@@ -131,22 +131,22 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   };
 
   const serviceCategories = [
-    { value: 'all', label: 'All Services', icon: Users },
-    { value: 'home_repair', label: 'Home Repair', icon: Wrench },
-    { value: 'tutoring', label: 'Tutoring', icon: GraduationCap },
-    { value: 'nanny', label: 'Nanny', icon: Heart },
-    { value: 'cleaning', label: 'Cleaning', icon: Home },
-    { value: 'tech_support', label: 'Tech Support', icon: Zap },
-    { value: 'transport', label: 'Transport', icon: Car },
+    { value: 'all', label: 'All Services', icon: UsersIcon },
+    { value: 'home_repair', label: 'Home Repair', icon: WrenchScrewdriverIcon },
+    { value: 'tutoring', label: 'Tutoring', icon: AcademicCapIcon },
+    { value: 'nanny', label: 'Nanny', icon: HeartIcon },
+    { value: 'cleaning', label: 'Cleaning', icon: HomeIcon },
+    { value: 'tech_support', label: 'Tech Support', icon: BoltIcon },
+    { value: 'transport', label: 'Transport', icon: TruckIcon },
   ];
 
   const itemCategories = [
-    { value: 'all', label: 'All Items', icon: ShoppingBag },
-    { value: 'electronics', label: 'Electronics', icon: Zap },
-    { value: 'furniture', label: 'Furniture', icon: Home },
-    { value: 'vehicles', label: 'Vehicles', icon: Car },
-    { value: 'toys', label: 'Toys & Games', icon: Gamepad2 },
-    { value: 'sports', label: 'Sports', icon: Camera },
+    { value: 'all', label: 'All Items', icon: ShoppingBagIcon },
+    { value: 'electronics', label: 'Electronics', icon: BoltIcon },
+    { value: 'furniture', label: 'Furniture', icon: HomeIcon },
+    { value: 'vehicles', label: 'Vehicles', icon: TruckIcon },
+    { value: 'toys', label: 'Toys & Games', icon: PuzzlePieceIcon },
+    { value: 'sports', label: 'Sports', icon: CameraIcon },
   ];
 
   useEffect(() => {
@@ -405,7 +405,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   const getCategoryIcon = (category: string, type: 'services' | 'goods') => {
     const categories = type === 'services' ? serviceCategories : itemCategories;
     const categoryData = categories.find(cat => cat.value === category);
-    return categoryData?.icon || Users;
+    return categoryData?.icon || UsersIcon;
   };
 
   const currentCategories = activeSubTab === 'services' ? serviceCategories : itemCategories;
@@ -542,7 +542,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
       {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             type="text"
             placeholder={`Search ${activeSubTab}...`}
@@ -561,7 +561,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
             onServiceCreated={() => fetchServices()}
             trigger={
               <Button className="gap-2 shrink-0">
-                <Plus className="w-4 h-4" />
+                <PlusIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Create Listing</span>
                 <span className="sm:hidden">Create</span>
               </Button>
@@ -572,7 +572,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
             onItemCreated={() => fetchItems()}
             trigger={
               <Button className="gap-2 shrink-0">
-                <Plus className="w-4 h-4" />
+                <PlusIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Create Listing</span>
                 <span className="sm:hidden">Create</span>
               </Button>
@@ -662,9 +662,9 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-muted">
                         {activeSubTab === 'services' ? (
-                          <Users className="h-12 w-12 text-muted-foreground" />
+                          <UsersIcon className="h-12 w-12 text-muted-foreground" />
                         ) : (
-                          <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                          <ShoppingBagIcon className="h-12 w-12 text-muted-foreground" />
                         )}
                       </div>
                     )}
@@ -685,7 +685,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                    {item.images && item.images.length > 1 && (
                      <div className="absolute top-2 left-2">
                        <Badge variant="secondary" className="bg-black/60 text-white text-xs">
-                         <Camera className="h-3 w-3 mr-1" />
+                         <CameraIcon className="h-3 w-3 mr-1" />
                          {item.images.length}
                        </Badge>
                      </div>
@@ -718,7 +718,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                      </div>
                      {activeSubTab === 'services' ? (
                       <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <StarIcon className="h-4 w-4 text-yellow-400 fill-current" />
                         <span className="text-sm font-medium">{(item as Service).rating || 'New'}</span>
                         <span className="text-sm text-muted-foreground">
                           ({(item as Service).total_reviews})
@@ -743,7 +743,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                       <span className="text-sm text-muted-foreground">{item.profiles?.full_name || 'Unknown'}</span>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
+                      <MapPinIcon className="h-3 w-3" />
                       {item.location}
                     </div>
                   </div>
@@ -765,7 +765,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                           onBookingCreated={handleServiceBooked}
                         >
                           <Button className="flex-1 h-8 text-xs">
-                            <Calendar className="h-3 w-3 mr-1" />
+                            <CalendarIcon className="h-3 w-3 mr-1" />
                             Book Now
                           </Button>
                         </BookServiceDialog>
@@ -789,7 +789,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                            }}
                          >
                            <Button className="flex-1 h-8 text-xs">
-                             <MessageSquare className="h-3 w-3 mr-1" />
+                             <ChatBubbleBottomCenterTextIcon className="h-3 w-3 mr-1" />
                              Message
                            </Button>
                          </MarketplaceMessageDialog>
@@ -805,7 +805,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                        className={`h-8 px-2 ${item.is_liked_by_user ? 'text-red-500' : ''}`}
                        onClick={() => toggleLike(item.id, activeSubTab === 'services')}
                      >
-                       <Heart className={`h-3 w-3 ${item.is_liked_by_user ? 'fill-current' : ''}`} />
+                       <HeartIcon className={`h-3 w-3 ${item.is_liked_by_user ? 'fill-current' : ''}`} />
                        {(item.likes_count || 0) > 0 && (
                          <span className="ml-1 text-xs">{item.likes_count}</span>
                        )}
@@ -824,9 +824,9 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
         <div className="text-center py-12">
           <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             {activeSubTab === 'services' ? (
-              <Users className="h-12 w-12 text-muted-foreground" />
+              <UsersIcon className="h-12 w-12 text-muted-foreground" />
             ) : (
-              <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+              <ShoppingBagIcon className="h-12 w-12 text-muted-foreground" />
             )}
           </div>
           <h3 className="text-lg font-semibold mb-2">No {activeSubTab} found</h3>
