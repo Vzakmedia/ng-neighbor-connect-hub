@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import MyBookingsPanel from '@/components/MyBookingsPanel';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from '@/lib/icons';
 
 const MyBookings = () => {
   const { user, loading } = useAuth();

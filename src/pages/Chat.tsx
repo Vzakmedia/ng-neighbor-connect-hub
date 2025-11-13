@@ -11,7 +11,7 @@ import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Phone, Video, MoreVertical, CheckSquare, Trash2, PhoneCall } from 'lucide-react';
+import { ArrowLeft, Phone, Video, MoreVertical, Check as CheckSquare, Trash2, Phone as PhoneCall } from '@/lib/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,

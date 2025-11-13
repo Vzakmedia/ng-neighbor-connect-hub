@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, Flag, ShoppingCart, Eye, FileText, Clock, CheckCircle, ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import { Users, Flag, ShoppingCart, Eye, FileText, Clock, CheckCircle, ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, Activity } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

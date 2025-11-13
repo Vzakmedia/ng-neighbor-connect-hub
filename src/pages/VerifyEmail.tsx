@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { Mail, CheckCircle2, AlertCircle, PartyPopper } from "lucide-react";
+import { Mail, CheckCircle2, AlertCircle, Star as PartyPopper } from '@/lib/icons';
 import {
   Dialog,
   DialogContent,
