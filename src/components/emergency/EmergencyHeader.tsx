@@ -26,7 +26,7 @@ const EmergencyHeader = () => {
         <ReportIncidentDialog
           trigger={
             <Button variant="outline" size="sm" className="hidden sm:flex items-center gap-2">
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
               Report Incident
             </Button>
           }
@@ -34,7 +34,7 @@ const EmergencyHeader = () => {
         <ReportIncidentDialog
           trigger={
             <Button variant="outline" size="sm" className="sm:hidden h-8 w-8 p-0">
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
             </Button>
           }
         />

@@ -375,7 +375,7 @@ const PanicButton = () => {
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-500 rounded-full">
-              <CheckCircle className="h-6 w-6 text-white" />
+              <CheckCircleIcon className="h-6 w-6 text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-red-800">Emergency Alert Active</h3>
@@ -387,7 +387,7 @@ const PanicButton = () => {
               onClick={() => setIsActivated(false)}
               className="ml-auto"
             >
-              <X className="h-4 w-4" />
+              <XMarkIcon className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>
@@ -403,7 +403,7 @@ const PanicButton = () => {
         size="lg"
         disabled={loading}
       >
-        <AlertTriangle className="h-5 w-5 mr-2" />
+        <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
         {loading ? 'Sending...' : 'PANIC'}
       </Button>
 
@@ -411,7 +411,7 @@ const PanicButton = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-6 w-6" />
+              <ExclamationTriangleIcon className="h-6 w-6" />
               Emergency Alert
             </DialogTitle>
           </DialogHeader>
@@ -446,7 +446,7 @@ const PanicButton = () => {
             </div>
 
             <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
                 Select the type of emergency to send an immediate alert to your emergency contacts and authorities.
               </AlertDescription>
@@ -454,15 +454,15 @@ const PanicButton = () => {
 
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
+                <UsersIcon className="h-4 w-4" />
                 Emergency contacts will be alerted via their preferred methods
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+                <MapPinIcon className="h-4 w-4" />
                 Your real-time location will be shared
               </div>
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
+                <ShieldCheckIcon className="h-4 w-4" />
                 Community members nearby will be notified
               </div>
             </div>
