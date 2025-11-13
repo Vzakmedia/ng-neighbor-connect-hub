@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Search, MapPin, Phone, Mail, Shield, MessageCircle } from 'lucide-react';
+import { MagnifyingGlassIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ShieldCheckIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfileDialog } from './UserProfileDialog';
@@ -147,14 +147,14 @@ export const UserDirectory = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
+            <MagnifyingGlassIcon className="h-5 w-5" />
             User Directory
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or location..."
                 value={searchTerm}
@@ -188,19 +188,19 @@ export const UserDirectory = () => {
                       <h3 className="text-lg font-semibold">{profile.display_name || 'Anonymous User'}</h3>
                       {profile.is_verified && (
                         <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
-                          <Shield className="h-3 w-3 text-white" />
+                          <ShieldCheckIcon className="h-3 w-3 text-white" />
                         </div>
                       )}
                     </div>
                     
                     <div className="flex items-center space-x-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
+                      <MapPinIcon className="h-4 w-4" />
                       <span>{getLocation(profile)}</span>
                     </div>
 
                     {profile.phone_masked && (
                       <div className="flex items-center space-x-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
+                        <PhoneIcon className="h-4 w-4" />
                         <span>{profile.phone_masked}</span>
                       </div>
                     )}
@@ -231,7 +231,7 @@ export const UserDirectory = () => {
                       size="sm"
                       onClick={() => handleSendMessage(profile)}
                     >
-                      <MessageCircle className="h-4 w-4 mr-1" />
+                      <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                       Message
                     </Button>
                   </div>

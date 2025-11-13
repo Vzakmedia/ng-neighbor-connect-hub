@@ -9,26 +9,29 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Search,
-  Filter,
-  Star,
-  MapPin,
-  Clock,
-  Plus,
-  Users,
-  ShoppingBag,
-  Wrench,
-  GraduationCap,
-  Heart,
-  Zap,
-  Car,
-  Home,
-  Camera,
-  Gamepad2,
-  Calendar,
-  MessageSquare,
-  ChevronDown
-} from 'lucide-react';
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  StarIcon,
+  MapPinIcon,
+  ClockIcon,
+  PlusIcon,
+  UsersIcon,
+  ShoppingBagIcon,
+  WrenchScrewdriverIcon,
+  AcademicCapIcon,
+  HeartIcon,
+  BoltIcon,
+  TruckIcon,
+  HomeIcon,
+  CameraIcon,
+  PuzzlePieceIcon,
+  CalendarIcon,
+  ChatBubbleBottomCenterTextIcon,
+  ChevronDownIcon
+} from '@heroicons/react/24/outline';
+import {
+  HeartIcon as HeartSolid
+} from '@heroicons/react/24/solid';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -837,7 +840,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
               onServiceCreated={() => fetchServices()}
               trigger={
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-4 w-4 mr-2" />
                   Create Listing
                 </Button>
               }
@@ -847,7 +850,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
               onItemCreated={() => fetchItems()}
               trigger={
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <PlusIcon className="h-4 w-4 mr-2" />
                   Create Listing
                 </Button>
               }

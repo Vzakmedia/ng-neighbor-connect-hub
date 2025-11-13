@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { MapPin, Star, Phone, Mail, Clock, Building, Search, ShieldCheck, Plus, Check, ChevronsUpDown } from 'lucide-react';
+import { MapPinIcon, StarIcon, PhoneIcon, EnvelopeIcon, ClockIcon, BuildingOfficeIcon, MagnifyingGlassIcon, ShieldCheckIcon, PlusIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline';
 import BusinessRegistrationDialog from './BusinessRegistrationDialog';
 import { formatTimeAgo } from '@/lib/utils';
 import { BUSINESS_CATEGORIES, formatCategory as formatCategoryUtil } from '@/data/businessCategories';
@@ -205,7 +205,7 @@ const BusinessListings = () => {
     return (
       <div className="flex items-center gap-1">
         {[...Array(5)].map((_, i) => (
-          <Star
+          <StarIcon
             key={i}
             className={`h-4 w-4 ${
               i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-muted-foreground'
@@ -235,7 +235,7 @@ const BusinessListings = () => {
       <div className="space-y-3 md:space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search businesses..."
               value={searchTerm}
@@ -276,7 +276,7 @@ const BusinessListings = () => {
                     ? selectedState
                     : "Select location..."}
                 </span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                <ChevronUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[280px] sm:w-[320px] p-0 bg-background border shadow-md">
@@ -304,7 +304,7 @@ const BusinessListings = () => {
                       }}
                       className="w-full flex items-center px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
-                      <Check className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
+                      <CheckIcon className={`mr-2 h-4 w-4 ${selectedState === 'all' ? 'opacity-100' : 'opacity-0'}`} />
                       All Locations
                     </button>
                   </div>
@@ -328,7 +328,7 @@ const BusinessListings = () => {
                               }}
                               className="w-full flex items-center px-3 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
-                              <Check className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
+                              <CheckIcon className={`mr-2 h-4 w-4 ${selectedState === state ? 'opacity-100' : 'opacity-0'}`} />
                               <span className="truncate">{state}</span>
                             </button>
                           ))}
@@ -360,7 +360,7 @@ const BusinessListings = () => {
                               }}
                               className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
                             >
-                              <Check className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
+                              <CheckIcon className={`mr-2 h-4 w-4 ${selectedCity === city ? 'opacity-100' : 'opacity-0'}`} />
                               {city}
                             </button>
                           ))}
@@ -392,7 +392,7 @@ const BusinessListings = () => {
                               }}
                               className="w-full flex items-center px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
                             >
-                              <Check className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
+                              <CheckIcon className={`mr-2 h-4 w-4 ${selectedNeighborhood === neighborhood ? 'opacity-100' : 'opacity-0'}`} />
                               {neighborhood}
                             </button>
                           ))}
