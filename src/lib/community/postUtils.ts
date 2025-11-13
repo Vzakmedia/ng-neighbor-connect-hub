@@ -1,5 +1,5 @@
 import { PostType } from '@/types/community';
-import { AlertTriangle, ShoppingCart, Users, Calendar } from 'lucide-react';
+import { AlertTriangle, ShoppingCart, Users, Calendar } from '@/lib/icons';
 
 /**
  * Get icon component for post type
