@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, MapPin, X, Bell, Users, Navigation } from 'lucide-react';
+import { ExclamationTriangleIcon, MapPinIcon, XMarkIcon, BellIcon, UsersIcon, MapIcon } from '@heroicons/react/24/outline';
 import { playNotification } from '@/utils/audioUtils';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';

@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle, Search, Shield } from 'lucide-react';
+import { ExclamationTriangleIcon, CheckCircleIcon, MagnifyingGlassIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { SafetyAlert, PanicAlert, EmergencyStats } from '@/types/emergency';
 
 interface EmergencyStatsProps {

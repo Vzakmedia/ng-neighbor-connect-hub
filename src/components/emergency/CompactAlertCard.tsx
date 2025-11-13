@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Share2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { ShareIcon, ExclamationTriangleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,9 +72,9 @@ const CompactAlertCard = ({ alert, userLocation, onClick }: CompactAlertCardProp
       <div className="flex items-start gap-3">
         <div className={`flex-shrink-0 ${getSeverityColor(alert.severity)}`}>
           {alert.severity === 'critical' || alert.severity === 'high' ? (
-            <AlertTriangle className="h-5 w-5" />
+            <ExclamationTriangleIcon className="h-5 w-5" />
           ) : (
-            <AlertCircle className="h-5 w-5" />
+            <ExclamationCircleIcon className="h-5 w-5" />
           )}
         </div>
         
@@ -89,7 +89,7 @@ const CompactAlertCard = ({ alert, userLocation, onClick }: CompactAlertCardProp
               className="h-7 w-7 flex-shrink-0"
               onClick={handleShare}
             >
-              <Share2 className="h-4 w-4" />
+              <ShareIcon className="h-4 w-4" />
             </Button>
           </div>
           

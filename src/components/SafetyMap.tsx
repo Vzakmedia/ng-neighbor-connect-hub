@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Locate, Home } from 'lucide-react';
+import { MapPinIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/integrations/supabase/client';
 import { Capacitor } from '@capacitor/core';
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
