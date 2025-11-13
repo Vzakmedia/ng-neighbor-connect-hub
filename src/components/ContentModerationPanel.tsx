@@ -451,12 +451,12 @@ export default function ContentModerationPanel() {
       {/* Search and Filter Controls */}
       <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <Filter className="h-4 w-4" />
+          <FunnelIcon className="h-4 w-4" />
           Filters
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
             <Input
               placeholder="Search content..."
               value={searchQuery}
