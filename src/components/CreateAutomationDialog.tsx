@@ -27,12 +27,12 @@ import {
   Shield, 
   ChevronLeft, 
   ChevronRight,
-  Check,
+  CheckCircle as Check,
   Settings,
   Calendar,
   MessageSquare,
   Plus
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface CreateAutomationDialogProps {
   open: boolean;

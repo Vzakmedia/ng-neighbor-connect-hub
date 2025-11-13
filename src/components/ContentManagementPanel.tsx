@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from '@/lib/icons';
 
 interface PressRelease {
   id: string;
