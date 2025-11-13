@@ -255,8 +255,8 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <div className="flex items-center gap-2 mb-2">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-orange-600" />
                     <Badge className="bg-orange-600 text-white">
                       {alert.situation_type?.replace('_', ' ').toUpperCase()}
                     </Badge>
@@ -275,7 +275,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                   
                   {alert.address && (
                     <p className="text-xs text-orange-600 flex items-center gap-1 mb-3">
-                      <MapPin className="h-3 w-3" />
+                      <MapPinIcon className="h-3 w-3" />
                       {alert.address}
                     </p>
                   )}
@@ -286,7 +286,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                       onClick={() => getDirections(alert.latitude, alert.longitude)}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <Navigation className="h-3 w-3 mr-1" />
+                      <MapIcon className="h-3 w-3 mr-1" />
                       Get Directions
                     </Button>
                     <Button 
@@ -303,7 +303,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                   <span className="text-xs text-muted-foreground mb-2">
                     {new Date(alert.created_at).toLocaleTimeString()}
                   </span>
-                  <Users className="h-4 w-4 text-orange-600" />
+                  <UsersIcon className="h-4 w-4 text-orange-600" />
                 </div>
               </div>
             </CardContent>

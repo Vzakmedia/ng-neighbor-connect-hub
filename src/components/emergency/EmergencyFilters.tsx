@@ -145,7 +145,7 @@ const EmergencyFiltersComponent = ({
             onClick={onRefresh}
             className="touch-manipulation"
           >
-            <RefreshCw className="h-4 w-4" />
+            <ArrowPathIcon className="h-4 w-4" />
           </Button>
           <Button
             variant={autoRefresh ? 'default' : 'outline'}
