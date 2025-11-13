@@ -154,7 +154,31 @@ import {
   ArrowUturnRightIcon,
 } from '@heroicons/react/24/outline';
 
-// Export with Lucide-compatible names
+// Import solid versions for mobile/native active states
+import {
+  HomeIcon as HomeIconSolid,
+  UsersIcon as UsersIconSolid,
+  ChatBubbleLeftIcon as ChatBubbleLeftIconSolid,
+  ShoppingBagIcon as ShoppingBagIconSolid,
+  CalendarIcon as CalendarIconSolid,
+  Cog6ToothIcon as Cog6ToothIconSolid,
+  ShieldCheckIcon as ShieldCheckIconSolid,
+  BuildingOfficeIcon as BuildingOfficeIconSolid,
+  BellIcon as BellIconSolid,
+  HeartIcon as HeartIconSolid,
+  StarIcon as StarIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
+  FlagIcon as FlagIconSolid,
+  Squares2X2Icon as Squares2X2IconSolid,
+  PlusIcon as PlusIconSolid,
+  PencilIcon as PencilIconSolid,
+  CheckIcon as CheckIconSolid,
+  XMarkIcon as XMarkIconSolid,
+  MapPinIcon as MapPinIconSolid,
+  BriefcaseIcon as BriefcaseIconSolid,
+} from '@heroicons/react/24/solid';
+
+// Export with Lucide-compatible names (outlined versions)
 export const Users = UsersIcon;
 export const User = UserIcon;
 export const UserPlus = UserPlusIcon;
@@ -343,3 +367,27 @@ export const PanelLeft = Bars3Icon;
 export const LogOut = ArrowLeftIcon; // Using ArrowLeft for logout
 export const Edit2 = PencilIcon;
 export const LockKeyhole = LockClosedIcon;
+
+// Export solid versions for mobile/native active states (with "Solid" suffix)
+export const HomeSolid = HomeIconSolid;
+export const UsersSolid = UsersIconSolid;
+export const MessageSquareSolid = ChatBubbleLeftIconSolid;
+export const MessageCircleSolid = ChatBubbleLeftIconSolid;
+export const ShoppingBagSolid = ShoppingBagIconSolid;
+export const CalendarSolid = CalendarIconSolid;
+export const SettingsSolid = Cog6ToothIconSolid;
+export const ShieldSolid = ShieldCheckIconSolid;
+export const BuildingSolid = BuildingOfficeIconSolid;
+export const BellSolid = BellIconSolid;
+export const HeartSolid = HeartIconSolid;
+export const StarSolid = StarIconSolid;
+export const BookmarkSolid = BookmarkIconSolid;
+export const FlagSolid = FlagIconSolid;
+export const GridSolid = Squares2X2IconSolid;
+export const PlusSolid = PlusIconSolid;
+export const EditSolid = PencilIconSolid;
+export const PencilSolid = PencilIconSolid;
+export const CheckSolid = CheckIconSolid;
+export const XSolid = XMarkIconSolid;
+export const MapPinSolid = MapPinIconSolid;
+export const BriefcaseSolid = BriefcaseIconSolid;
