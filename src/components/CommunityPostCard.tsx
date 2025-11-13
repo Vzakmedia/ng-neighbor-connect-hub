@@ -1,5 +1,6 @@
 import React, { useState, memo } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, Eye, Calendar, MapPin } from "lucide-react";
+import { HeartIcon, ChatBubbleLeftIcon, ShareIcon, BookmarkIcon, EyeIcon, CalendarIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolid, BookmarkIcon as BookmarkSolid } from "@heroicons/react/24/solid";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ const CommunityPostCardComponent = ({
           </div>
           {event.rsvp_enabled && (
             <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-              <Calendar className="h-3 w-3" />
+              <CalendarIcon className="h-3 w-3" />
               <span className="hidden sm:inline">Event</span>
             </Badge>
           )}
@@ -122,7 +123,7 @@ const CommunityPostCardComponent = ({
 
         {event.location && (
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 shrink-0" />
+            <MapPinIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{event.location}</span>
           </div>
         )}
@@ -183,7 +184,7 @@ const CommunityPostCardComponent = ({
               }}
               className={`gap-1 hover-scale text-xs sm:text-sm min-w-0 px-2 ${event.isLiked ? 'text-red-500' : ''}`}
             >
-              <Heart className={`h-4 w-4 shrink-0 ${event.isLiked ? 'fill-current' : ''}`} />
+              {event.isLiked ? <HeartSolid className="h-4 w-4 shrink-0" /> : <HeartIcon className="h-4 w-4 shrink-0" />}
               <span className="hidden sm:inline">{event.likes_count || 0}</span>
             </Button>
 
@@ -196,7 +197,7 @@ const CommunityPostCardComponent = ({
               }}
               className="gap-1 hover-scale text-xs sm:text-sm min-w-0 px-2"
             >
-              <MessageCircle className="h-4 w-4 shrink-0" />
+              <ChatBubbleLeftIcon className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">{event.comments_count || 0}</span>
             </Button>
 
@@ -209,12 +210,12 @@ const CommunityPostCardComponent = ({
               }}
               className="gap-1 hover-scale text-xs sm:text-sm min-w-0 px-2"
             >
-              <Share2 className="h-4 w-4 shrink-0" />
+              <ShareIcon className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Share</span>
             </Button>
 
             <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-              <Eye className="h-4 w-4 shrink-0" />
+              <EyeIcon className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">{event.views_count || 0}</span>
             </div>
           </div>
@@ -229,7 +230,7 @@ const CommunityPostCardComponent = ({
               }}
               className={`hover-scale px-2 ${event.isSaved ? 'text-primary' : ''}`}
             >
-              <Bookmark className={`h-4 w-4 shrink-0 ${event.isSaved ? 'fill-current' : ''}`} />
+              {event.isSaved ? <BookmarkSolid className="h-4 w-4 shrink-0" /> : <BookmarkIcon className="h-4 w-4 shrink-0" />}
             </Button>
 
             {event.rsvp_enabled && (
@@ -243,7 +244,7 @@ const CommunityPostCardComponent = ({
                 className="hover-scale text-xs sm:text-sm px-2 sm:px-3 shrink-0"
               >
                 <span className="hidden sm:inline">RSVP</span>
-                <Calendar className="h-4 w-4 sm:hidden" />
+                <CalendarIcon className="h-4 w-4 sm:hidden" />
               </Button>
             )}
           </div>

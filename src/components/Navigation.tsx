@@ -10,21 +10,35 @@ import { useReadStatus } from '@/hooks/useReadStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Home, 
-  MessageSquare, 
-  MessageCircle,
-  ShoppingBag, 
-  Shield, 
-  Calendar,
-  Users,
-  Building,
-  Plus,
-  Settings,
-  Building2,
-  Briefcase,
-  Grid3x3,
-  X
-} from 'lucide-react';
+  HomeIcon,
+  ChatBubbleLeftIcon,
+  ShoppingBagIcon,
+  ShieldCheckIcon,
+  CalendarIcon,
+  UsersIcon,
+  BuildingOfficeIcon,
+  PlusIcon,
+  Cog6ToothIcon,
+  BuildingOffice2Icon,
+  BriefcaseIcon,
+  Squares2X2Icon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
+import { 
+  HomeIcon as HomeSolid,
+  ChatBubbleLeftIcon as ChatBubbleLeftSolid,
+  ShoppingBagIcon as ShoppingBagSolid,
+  ShieldCheckIcon as ShieldCheckSolid,
+  CalendarIcon as CalendarSolid,
+  UsersIcon as UsersSolid,
+  BuildingOfficeIcon as BuildingOfficeSolid,
+  PlusIcon as PlusSolid,
+  Cog6ToothIcon as Cog6ToothSolid,
+  BuildingOffice2Icon as BuildingOffice2Solid,
+  BriefcaseIcon as BriefcaseSolid,
+  Squares2X2Icon as Squares2X2Solid,
+  XMarkIcon as XMarkSolid
+} from '@heroicons/react/24/solid';
 
 const Navigation = () => {
   const { unreadCounts } = useReadStatus();
@@ -92,26 +106,26 @@ const Navigation = () => {
   }, [user]);
   
   const navItems = [
-    { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
-    { id: 'community', icon: Users, label: 'Groups', count: unreadCounts.community, path: '/community' },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
-    { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
-    { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
-    { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
-    { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
-    { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/' },
+    { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
+    { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
+    { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'users', icon: UsersIcon, iconSolid: UsersSolid, label: 'User Directory', count: 0, path: '/users' },
+    { id: 'safety', icon: ShieldCheckIcon, iconSolid: ShieldCheckSolid, label: 'Safety', count: 0, path: '/safety' },
+    { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
+    { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
   ];
 
   // Mobile-specific order with Messages in middle of first 5 items
   const mobileNavItems = [
-    { id: 'home', icon: Home, label: 'Home', count: 0, path: '/' },
-    { id: 'community', icon: Users, label: 'Groups', count: unreadCounts.community, path: '/community' },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
-    { id: 'marketplace', icon: ShoppingBag, label: 'Marketplace', count: 0, path: '/marketplace' },
-    { id: 'safety', icon: Shield, label: 'Safety', count: 0, path: '/safety' },
-    { id: 'users', icon: Users, label: 'User Directory', count: 0, path: '/users' },
-    { id: 'services', icon: Briefcase, label: 'Services', count: 0, path: '/services' },
-    { id: 'events', icon: Calendar, label: 'Events', count: 0, path: '/events' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/' },
+    { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
+    { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
+    { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'safety', icon: ShieldCheckIcon, iconSolid: ShieldCheckSolid, label: 'Safety', count: 0, path: '/safety' },
+    { id: 'users', icon: UsersIcon, iconSolid: UsersSolid, label: 'User Directory', count: 0, path: '/users' },
+    { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
+    { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -140,7 +154,7 @@ const Navigation = () => {
               onClick={() => setCreatePostOpen(true)}
               data-tutorial="create-post"
             >
-              <Plus className="h-4 w-4 lg:mr-2" />
+              <PlusIcon className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Create Post</span>
             </Button>
           </div>
@@ -152,7 +166,8 @@ const Navigation = () => {
                 return null;
               }
               
-              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              const Icon = isActive ? item.iconSolid : item.icon;
               return (
                 <button
                   key={item.id}
@@ -204,7 +219,7 @@ const Navigation = () => {
                     }`}
                     title="Staff Portal"
                   >
-                    <Settings className="h-5 w-5 lg:mr-3 flex-shrink-0" />
+                    <Cog6ToothIcon className="h-5 w-5 lg:mr-3 flex-shrink-0" />
                     <span className="hidden lg:block flex-1 text-left">Staff Portal</span>
                     
                     {/* Tablet tooltip */}
@@ -273,7 +288,7 @@ const Navigation = () => {
               }}
               className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-all touch-manipulation active:scale-95 h-full w-full"
             >
-              <Grid3x3 className="h-6 w-6" />
+              <Squares2X2Icon className="h-6 w-6" />
               <span className="text-xs font-medium">More</span>
             </button>
           </div>
@@ -287,7 +302,7 @@ const Navigation = () => {
             <DrawerTitle className="text-lg font-semibold">More Options</DrawerTitle>
             <DrawerClose asChild>
               <button className="rounded-full p-2 hover:bg-muted transition-colors">
-                <X className="h-5 w-5" />
+                <XMarkIcon className="h-5 w-5" />
               </button>
             </DrawerClose>
           </DrawerHeader>
@@ -361,7 +376,7 @@ const Navigation = () => {
                   data-tutorial="create-post-mobile"
                 >
                   <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Plus className="h-5 w-5" />
+                    <PlusIcon className="h-5 w-5" />
                   </div>
                   <div className="text-left flex-1">
                     <div className="font-semibold">Create Post</div>
@@ -388,7 +403,7 @@ const Navigation = () => {
                     }}
                     className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-all touch-manipulation active:scale-[0.98]"
                   >
-                    <Settings className="h-5 w-5 flex-shrink-0" />
+                    <Cog6ToothIcon className="h-5 w-5 flex-shrink-0" />
                     <div className="text-left flex-1">
                       <div className="font-medium">Staff Portal</div>
                       <div className="text-xs text-muted-foreground">Manage platform settings</div>

@@ -37,6 +37,7 @@
     "@capacitor/status-bar": "^7.0.3",
     "@capgo/native-audio": "^7.9.0",
     "@googlemaps/js-api-loader": "^1.16.10",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
