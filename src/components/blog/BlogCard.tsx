@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Calendar } from 'lucide-react';
+import { Clock, Calendar } from '@/lib/icons';
 import { formatDate, truncateText } from '@/services/blogService';
 import type { BlogPost } from '@/hooks/useBlogPosts';
 

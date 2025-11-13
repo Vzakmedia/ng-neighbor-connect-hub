@@ -6,8 +6,8 @@ import {
   X, 
   MoreVertical,
   Archive,
-  Forward
-} from 'lucide-react';
+  Send as Forward
+} from '@/lib/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,

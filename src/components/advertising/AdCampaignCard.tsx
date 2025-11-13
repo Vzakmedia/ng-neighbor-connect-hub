@@ -8,12 +8,12 @@ import {
   DollarSign, 
   Calendar, 
   MapPin, 
-  Building2, 
+  Building as Building2, 
   Globe,
   Play,
   Pause,
   BarChart3 
-} from 'lucide-react';
+} from '@/lib/icons';
 import { format } from 'date-fns';
 
 interface AdCampaign {

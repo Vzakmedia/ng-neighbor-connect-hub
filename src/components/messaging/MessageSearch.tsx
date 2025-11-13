@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 
 interface MessageSearchProps {

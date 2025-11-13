@@ -4,14 +4,14 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/lib/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Send, Check, CheckCheck, Clock, AlertCircle, RotateCw, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Check, CheckCircle as CheckCheck, Clock, AlertCircle, RotateCw, MoreVertical, Trash2 } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { type Conversation } from '@/hooks/useConversations';
 import { type Message, MessageStatus } from '@/hooks/useDirectMessages';

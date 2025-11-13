@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Users, Shield, MessageSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, Shield, MessageSquare } from '@/lib/icons';
 import onboardingImage1 from '@/assets/onboarding/onboarding-young-woman.png';
 import onboardingImage2 from '@/assets/onboarding/onboarding-mature-woman.png';
 import onboardingImage3 from '@/assets/onboarding/onboarding-young-man.png';

@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useBiometricAuth } from '@/hooks/mobile/useBiometricAuth';
 import { useAuth } from '@/hooks/useAuth';
-import { Fingerprint, Loader2 } from 'lucide-react';
+import { Fingerprint, Loader2 } from '@/lib/icons';
 
 export const BiometricSettings = () => {
   const { 

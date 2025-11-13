@@ -1,7 +1,7 @@
 import React from 'react';
 import { sanitizeText, validateEmail, validatePhoneNumber } from '@/utils/security';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from '@/lib/icons';
 
 interface SecureInputValidatorProps {
   value: string;

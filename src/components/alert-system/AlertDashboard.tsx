@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertCircle, CheckCircle, Clock, XCircle, Activity, Zap, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, XCircle, Activity, Zap, Wifi, VolumeX as WifiOff } from '@/lib/icons';
 
 interface AlertDashboardProps {
   className?: string;

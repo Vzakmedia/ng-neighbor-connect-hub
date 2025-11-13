@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Clock } from '@/lib/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SecurityCheck {

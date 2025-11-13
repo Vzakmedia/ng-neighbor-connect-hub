@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, X } from '@/lib/icons';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

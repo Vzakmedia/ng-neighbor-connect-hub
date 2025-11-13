@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { ArrowLeft, Search, X } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { type Conversation } from '@/hooks/useConversations';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CreateAdCampaignDialog } from '@/components/advertising/CreateAdCampaignDialog';
-import { Megaphone } from 'lucide-react';
+import { Megaphone } from '@/lib/icons';
 
 interface PromotePostButtonProps {
   postId: string;

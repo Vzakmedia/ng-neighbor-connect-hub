@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Share2, Twitter, Facebook, Linkedin, Link2 } from 'lucide-react';
+import { Share2, Facebook as Twitter, Facebook, Share2 as Linkedin, Link as Link2 } from '@/lib/icons';
 import { toast } from 'sonner';
 
 interface ShareButtonsProps {

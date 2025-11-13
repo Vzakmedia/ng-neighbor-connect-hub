@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight } from '@/lib/icons';
 import { formatDate } from '@/services/blogService';
 import type { BlogPost } from '@/hooks/useBlogPosts';
 
