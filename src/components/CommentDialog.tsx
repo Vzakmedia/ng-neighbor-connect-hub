@@ -123,7 +123,7 @@ const CommentDialog = ({ open, onOpenChange, postId, postAuthor, postContent }: 
                       onClick={() => toggleCommentLike(comment.id)}
                       className={`h-6 px-2 text-xs ${comment.isLiked ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
                     >
-                      <Heart className={`h-3 w-3 mr-1 ${comment.isLiked ? 'fill-current' : ''}`} />
+                      <HeartIcon className={`h-3 w-3 mr-1 ${comment.isLiked ? 'fill-current' : ''}`} />
                       {comment.likes > 0 && comment.likes}
                     </Button>
                   </div>
@@ -158,7 +158,7 @@ const CommentDialog = ({ open, onOpenChange, postId, postAuthor, postContent }: 
                 onClick={handleSubmitComment}
                 disabled={!newComment.trim()}
               >
-                <Send className="h-3 w-3 mr-1" />
+                <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                 Post
               </Button>
             </div>
