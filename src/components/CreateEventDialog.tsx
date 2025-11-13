@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation, Upload, FileIcon, ImageIcon, Users } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, PlusIcon, XMarkIcon, ArrowUpIcon, ArrowUpTrayIcon, DocumentIcon, PhotoIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
