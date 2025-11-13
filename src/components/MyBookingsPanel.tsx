@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Clock, User, MessageSquare } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, ClockIcon, UserIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { useBookingSync } from '@/hooks/useBookingSync';
 
@@ -209,7 +209,7 @@ const MyBookingsPanel = () => {
   if (bookings.length === 0) {
     return (
       <div className="text-center py-8">
-        <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">No bookings yet</h3>
         <p className="text-muted-foreground">Your service bookings will appear here</p>
       </div>
@@ -244,28 +244,28 @@ const MyBookingsPanel = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                   <span>{date}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <ClockIcon className="h-4 w-4 text-muted-foreground" />
                   <span>{time}</span>
                 </div>
                 {booking.service?.location && (
                   <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <MapPinIcon className="h-4 w-4 text-muted-foreground" />
                     <span>{booking.service.location}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <UserIcon className="h-4 w-4 text-muted-foreground" />
                   <span>{booking.provider?.full_name || 'Service Provider'}</span>
                 </div>
               </div>
 
               {booking.message && (
                 <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <ChatBubbleLeftIcon className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="text-sm font-medium">Your message:</p>
                     <p className="text-sm text-muted-foreground">{booking.message}</p>
