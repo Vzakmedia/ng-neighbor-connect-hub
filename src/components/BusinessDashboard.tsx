@@ -117,7 +117,7 @@ const BusinessDashboard = () => {
     return (
       <div className="flex items-center gap-1">
         {[...Array(5)].map((_, i) => (
-          <Star
+          <StarIcon
             key={i}
             className={`h-4 w-4 ${
               i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-muted-foreground'
@@ -145,7 +145,7 @@ const BusinessDashboard = () => {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <BuildingOfficeIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <CardTitle className="mb-2">No Business Registered</CardTitle>
           <p className="text-muted-foreground mb-4">
             You haven't registered a business yet. Register your business to access the business dashboard.
@@ -178,12 +178,12 @@ const BusinessDashboard = () => {
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                   <span className="flex items-center gap-1">
-                    <Building className="h-4 w-4" />
+                    <BuildingOfficeIcon className="h-4 w-4" />
                     {formatCategory(business.category)}
                   </span>
                   {business.city && business.state && (
                     <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
+                      <MapPinIcon className="h-4 w-4" />
                       {business.city}, {business.state}
                     </span>
                   )}
@@ -194,17 +194,17 @@ const BusinessDashboard = () => {
             {/* Desktop buttons */}
             <div className="hidden md:flex gap-2">
               <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-1" />
+                <PencilIcon className="h-4 w-4 mr-1" />
                 Edit
               </Button>
               <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 mr-1" />
+                <EyeIcon className="h-4 w-4 mr-1" />
                 Preview
               </Button>
               {business.verification_status === 'verified' && (
                 <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
                   <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                    <TrendingUp className="h-4 w-4 mr-1" />
+                    <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
                     Promote
                   </Button>
                 </BusinessPromotionDialog>
@@ -214,15 +214,15 @@ const BusinessDashboard = () => {
             {/* Mobile buttons - icon only */}
             <div className="md:hidden flex gap-1">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <Edit className="h-4 w-4" />
+                <PencilIcon className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                <Eye className="h-4 w-4" />
+                <EyeIcon className="h-4 w-4" />
               </Button>
               {business.verification_status === 'verified' && (
                 <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
                   <Button size="sm" className="h-8 w-8 p-0 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                    <TrendingUp className="h-4 w-4" />
+                    <ArrowTrendingUpIcon className="h-4 w-4" />
                   </Button>
                 </BusinessPromotionDialog>
               )}
@@ -236,7 +236,7 @@ const BusinessDashboard = () => {
         <Card className="border-yellow-200 bg-yellow-50">
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
-              <Clock3 className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <Clock3Icon className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-yellow-800">Verification in Progress</h4>
                 <p className="text-yellow-700 text-sm">
@@ -253,7 +253,7 @@ const BusinessDashboard = () => {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <ExclamationCircleIcon className="h-5 w-5 text-red-600 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-red-800">Verification Rejected</h4>
                 <p className="text-red-700 text-sm">
@@ -287,7 +287,7 @@ const BusinessDashboard = () => {
                     <p className="text-sm text-muted-foreground">Profile Views</p>
                     <p className="text-2xl font-bold">0</p>
                   </div>
-                  <Eye className="h-8 w-8 text-muted-foreground" />
+                  <EyeIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -298,7 +298,7 @@ const BusinessDashboard = () => {
                     <p className="text-sm text-muted-foreground">Contact Clicks</p>
                     <p className="text-2xl font-bold">0</p>
                   </div>
-                  <Phone className="h-8 w-8 text-muted-foreground" />
+                  <PhoneIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -309,7 +309,7 @@ const BusinessDashboard = () => {
                     <p className="text-sm text-muted-foreground">Reviews</p>
                     <p className="text-2xl font-bold">{business.total_reviews || 0}</p>
                   </div>
-                  <Star className="h-8 w-8 text-muted-foreground" />
+                  <StarIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -320,7 +320,7 @@ const BusinessDashboard = () => {
                     <p className="text-sm text-muted-foreground">Avg Rating</p>
                     <p className="text-2xl font-bold">{business.rating?.toFixed(1) || 'N/A'}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                  <ArrowTrendingUpIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -334,7 +334,7 @@ const BusinessDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4" />
+                <ChartBarIcon className="h-12 w-12 mx-auto mb-4" />
                 <p>No activity yet</p>
                 <p className="text-sm">Activity will appear here once customers start engaging with your business</p>
               </div>
@@ -394,14 +394,14 @@ const BusinessDashboard = () => {
               {business.verification_status === 'verified' ? (
                 <div className="space-y-4">
                   <div className="text-center py-6">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <ArrowTrendingUpIcon className="h-12 w-12 mx-auto mb-4 text-primary" />
                     <h3 className="text-lg font-semibold mb-2">Ready to Promote Your Business?</h3>
                     <p className="text-muted-foreground mb-4">
                       Reach more customers in your community with targeted promotions
                     </p>
                     <BusinessPromotionDialog business={business} onPromotionCreated={fetchBusiness}>
                       <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                        <TrendingUp className="h-4 w-4 mr-2" />
+                        <ArrowTrendingUpIcon className="h-4 w-4 mr-2" />
                         Create Promotion Campaign
                       </Button>
                     </BusinessPromotionDialog>
@@ -409,7 +409,7 @@ const BusinessDashboard = () => {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
+                  <ShoppingBagIcon className="h-12 w-12 mx-auto mb-4" />
                   <p>Promotions Available After Verification</p>
                   <p className="text-sm">Create targeted ads and promotions once your business is verified</p>
                 </div>
