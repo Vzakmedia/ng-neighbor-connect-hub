@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, ShoppingBag } from 'lucide-react';
+import { ChatBubbleLeftIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 
 interface MarketplaceItem {
   id: string;
