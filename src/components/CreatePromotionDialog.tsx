@@ -180,7 +180,7 @@ const CreatePromotionDialog = ({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-primary" />
+            <MegaphoneIcon className="h-5 w-5 text-primary" />
             Promote {itemTitle}
           </DialogTitle>
         </DialogHeader>
@@ -334,7 +334,7 @@ const CreatePromotionDialog = ({
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  <Target className="h-3 w-3 mr-1" />
+                  <FlagIcon className="h-3 w-3 mr-1" />
                   Promoted
                 </Badge>
                 <Badge variant="outline">
@@ -347,11 +347,11 @@ const CreatePromotionDialog = ({
               </p>
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
+                  <ClockIcon className="h-3 w-3" />
                   {formData.duration_days} days
                 </div>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
+                  <CurrencyDollarIcon className="h-3 w-3" />
                   ₦{selectedTier ? Number(totalPrice).toLocaleString() : (formData.budget || '0')}
                 </div>
               </div>
