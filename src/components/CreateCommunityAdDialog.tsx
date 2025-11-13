@@ -278,7 +278,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-primary" />
+            <MegaphoneIcon className="h-5 w-5 text-primary" />
             Create Community Advertisement
           </DialogTitle>
         </DialogHeader>
@@ -385,7 +385,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                       htmlFor="image-upload" 
                       className="flex items-center gap-2 px-4 py-2 border border-dashed border-border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
                     >
-                      <Upload className="h-4 w-4" />
+                      <ArrowUpTrayIcon className="h-4 w-4" />
                       {uploading ? 'Uploading...' : 'Upload Images'}
                     </Label>
                     <span className="text-sm text-muted-foreground">
@@ -564,7 +564,7 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      <Target className="h-3 w-3 mr-1" />
+                      <CursorArrowRaysIcon className="h-3 w-3 mr-1" />
                       Sponsored
                     </Badge>
                     <Badge variant="outline">
@@ -591,15 +591,15 @@ const CreateCommunityAdDialog = ({ children }: CreateCommunityAdDialogProps) => 
                   )}
                   <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                      <ClockIcon className="h-3 w-3" />
                       {formData.duration_days} days
                     </div>
                     <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
+                      <MapPinIcon className="h-3 w-3" />
                       {formData.target_states.length || 1} state(s)
                     </div>
                     <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
+                      <UsersIcon className="h-3 w-3" />
                       {formData.target_audience}
                     </div>
                   </div>
