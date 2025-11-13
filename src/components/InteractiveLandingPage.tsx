@@ -10,7 +10,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion, useScroll, useTransform, useMotionValue, useInView, animate } from "framer-motion";
-import { Users, Shield, MessageSquare, MapPin, Calendar, ShoppingBag, Heart, Zap, CheckCircle, Star, ArrowRight, Phone, Mail, Globe, Smartphone, Monitor, Tablet, Play, TrendingUp, Award, Clock, UserPlus, Eye, MousePointer, Sparkles, ArrowLeft, Facebook, Instagram, Twitter, Linkedin, Menu, X, Database, CheckCircle2 } from 'lucide-react';
+import { UsersIcon, ShieldCheckIcon as ShieldIcon, ChatBubbleLeftIcon as MessageSquareIcon, MapPinIcon, CalendarIcon, ShoppingBagIcon, HeartIcon, BoltIcon as ZapIcon, CheckCircleIcon, StarIcon, ArrowRightIcon, PhoneIcon, EnvelopeIcon as MailIcon, GlobeAltIcon as GlobeIcon, DevicePhoneMobileIcon as SmartphoneIcon, ComputerDesktopIcon as MonitorIcon, DeviceTabletIcon as TabletIcon, PlayIcon, ArrowTrendingUpIcon as TrendingUpIcon, TrophyIcon as AwardIcon, ClockIcon, UserPlusIcon, EyeIcon, CursorArrowRaysIcon as MousePointerIcon, SparklesIcon, ArrowLeftIcon, XMarkIcon as XIcon, CircleStackIcon as DatabaseIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";

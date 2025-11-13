@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from 'lucide-react';
+import { PlusIcon, PencilIcon as EditIcon, TrashIcon as Trash2Icon, EyeIcon, DocumentTextIcon as FileTextIcon, BriefcaseIcon, ArrowUpTrayIcon as UploadIcon, ArrowDownTrayIcon as DownloadIcon, ArrowTopRightOnSquareIcon as ExternalLinkIcon } from '@heroicons/react/24/outline';
 
 interface PressRelease {
   id: string;
