@@ -88,6 +88,13 @@ const PanicAlertManager = ({
                   <AvatarFallback>
                     {panicAlert.profiles.full_name?.charAt(0) || '?'}
                   </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{panicAlert.profiles.full_name}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">
