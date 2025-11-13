@@ -183,7 +183,7 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
+            <ExclamationTriangleIcon className="h-5 w-5" />
             Report Safety Incident
           </DialogTitle>
         </DialogHeader>
@@ -274,9 +274,9 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
                     className="flex items-center gap-2"
                   >
                     {locationLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
                     ) : (
-                      <MapPin className="h-4 w-4" />
+                      <MapPinIcon className="h-4 w-4" />
                     )}
                     Use Current Location
                   </Button>
@@ -297,7 +297,7 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
 
             {/* Important Notice */}
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
+              <ExclamationTriangleIcon className="h-4 w-4" />
               <AlertDescription>
                 <strong>Emergency situations:</strong> If this is an active emergency requiring immediate response, 
                 please call emergency services directly instead of using this form.
@@ -323,7 +323,7 @@ const ReportIncidentDialog = ({ trigger }: ReportIncidentDialogProps) => {
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
