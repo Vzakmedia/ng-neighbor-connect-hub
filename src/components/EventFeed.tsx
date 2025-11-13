@@ -5,22 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { 
-  HeartIcon, 
-  ChatBubbleLeftIcon, 
-  ShareIcon, 
-  EllipsisHorizontalIcon,
-  MapPinIcon,
-  ClockIcon,
-  CalendarIcon,
-  MagnifyingGlassIcon,
-  BookmarkIcon,
-  UsersIcon,
-  EyeIcon
-} from '@heroicons/react/24/outline';
-import { 
-  HeartIcon as HeartSolid,
-  BookmarkIcon as BookmarkSolid
-} from '@heroicons/react/24/solid';
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  MoreHorizontal,
+  MapPin,
+  Clock,
+  Calendar,
+  Search,
+  Bookmark,
+  Users,
+  Eye
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -500,7 +496,7 @@ const EventFeed = () => {
     <div className="space-y-3 md:space-y-4 px-1 md:px-0">
       {/* Search Bar - Mobile optimized */}
       <div className="relative mb-4">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search events..."
           value={searchQuery}
@@ -512,7 +508,7 @@ const EventFeed = () => {
       {filteredEvents.length === 0 ? (
         <Card className="mx-2 md:mx-0">
           <CardContent className="text-center py-8">
-            <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground text-sm md:text-base">
               {searchQuery ? 'No events found matching your search' : 'No events posted yet'}
             </p>
@@ -540,11 +536,11 @@ const EventFeed = () => {
                     <p className="font-semibold text-sm md:text-base truncate leading-tight">{event.author.name}</p>
                     <div className="flex flex-col text-xs text-muted-foreground gap-0.5 mt-0.5">
                       <div className="flex items-center gap-1">
-                        <MapPinIcon className="h-3 w-3 flex-shrink-0" />
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate text-xs">{event.author.location}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <ClockIcon className="h-3 w-3 flex-shrink-0" />
+                        <Clock className="h-3 w-3 flex-shrink-0" />
                         <span className="text-xs">{formatTimeAgo(event.timestamp)}</span>
                       </div>
                     </div>
@@ -552,11 +548,11 @@ const EventFeed = () => {
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    <Calendar className="h-3 w-3 mr-1" />
                     <span className="hidden sm:inline">Event</span>
                   </Badge>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 touch-manipulation">
-                    <EllipsisHorizontalIcon className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
