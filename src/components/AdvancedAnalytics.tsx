@@ -12,24 +12,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Activity, 
-  DollarSign, 
-  Clock, 
-  BarChart3,
-  Download,
-  Filter,
-  Calendar,
-  Eye,
-  Heart,
-  Share2,
-  MessageCircle,
-  Zap,
-  Monitor,
-  AlertCircle
-} from 'lucide-react';
+  ArrowTrendingUpIcon as TrendingUpIcon, 
+  ArrowTrendingDownIcon as TrendingDownIcon, 
+  UsersIcon, 
+  BoltIcon as ActivityIcon, 
+  CurrencyDollarIcon as DollarSignIcon, 
+  ClockIcon, 
+  ChartBarIcon as BarChart3Icon,
+  ArrowDownTrayIcon as DownloadIcon,
+  FunnelIcon as FilterIcon,
+  CalendarIcon,
+  EyeIcon,
+  HeartIcon,
+  ShareIcon as Share2Icon,
+  ChatBubbleLeftIcon as MessageCircleIcon,
+  BoltIcon as ZapIcon,
+  ComputerDesktopIcon as MonitorIcon,
+  ExclamationCircleIcon as AlertCircleIcon
+} from '@heroicons/react/24/outline';
 
 interface AnalyticsSummary {
   total_users: number;
@@ -313,11 +313,11 @@ export const AdvancedAnalytics = () => {
 
   const getMetricIcon = (metricType: string) => {
     switch (metricType) {
-      case 'response_time': return <Clock className="h-4 w-4" />;
-      case 'cpu_usage': return <Monitor className="h-4 w-4" />;
-      case 'memory_usage': return <Zap className="h-4 w-4" />;
-      case 'active_connections': return <Users className="h-4 w-4" />;
-      default: return <BarChart3 className="h-4 w-4" />;
+      case 'response_time': return <ClockIcon className="h-4 w-4" />;
+      case 'cpu_usage': return <MonitorIcon className="h-4 w-4" />;
+      case 'memory_usage': return <ZapIcon className="h-4 w-4" />;
+      case 'active_connections': return <UsersIcon className="h-4 w-4" />;
+      default: return <BarChart3Icon className="h-4 w-4" />;
     }
   };
 
@@ -346,7 +346,7 @@ export const AdvancedAnalytics = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => generateReport('user_analytics')}>
-            <Download className="h-4 w-4 mr-2" />
+            <DownloadIcon className="h-4 w-4 mr-2" />
             Export Report
           </Button>
         </div>
@@ -356,7 +356,7 @@ export const AdvancedAnalytics = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+            <FilterIcon className="h-5 w-5" />
             Filters & Date Range
           </CardTitle>
         </CardHeader>
@@ -414,7 +414,7 @@ export const AdvancedAnalytics = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <UsersIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analyticsData?.total_users || 0}</div>
@@ -427,7 +427,7 @@ export const AdvancedAnalytics = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+                <ActivityIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analyticsData?.active_users || 0}</div>
@@ -442,7 +442,7 @@ export const AdvancedAnalytics = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <BarChart3Icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analyticsData?.total_posts || 0}</div>
@@ -455,7 +455,7 @@ export const AdvancedAnalytics = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <DollarSignIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -493,24 +493,24 @@ export const AdvancedAnalytics = () => {
                         <Badge variant="outline">{content.content_type}</Badge>
                       </TableCell>
                       <TableCell className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
+                        <EyeIcon className="h-3 w-3" />
                         {content.total_views}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Heart className="h-3 w-3" />
+                          <HeartIcon className="h-3 w-3" />
                           {content.total_likes}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Share2 className="h-3 w-3" />
+                          <Share2Icon className="h-3 w-3" />
                           {content.total_shares}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <MessageCircle className="h-3 w-3" />
+                          <MessageCircleIcon className="h-3 w-3" />
                           {content.total_comments}
                         </div>
                       </TableCell>

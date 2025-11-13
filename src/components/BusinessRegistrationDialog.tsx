@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, Building, Shield, CheckCircle } from 'lucide-react';
+import { ArrowUpTrayIcon as UploadIcon, DocumentTextIcon as FileTextIcon, BuildingOfficeIcon as BuildingIcon, ShieldCheckIcon as ShieldIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { BUSINESS_CATEGORIES, formatCategory as formatCategoryUtil } from '@/data/businessCategories';
 import { NIGERIAN_STATES } from '@/data/nigeriaLocationData';
 
