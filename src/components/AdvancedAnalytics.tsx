@@ -538,7 +538,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Registered Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <UsersIcon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analyticsData?.total_users || 0}</div>
@@ -551,7 +551,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">New Users (Period)</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analyticsData?.new_users || 0}</div>
@@ -564,7 +564,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <ActivityIcon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analyticsData?.active_users || 0}</div>
@@ -589,7 +589,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Community Posts</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <BarChart3Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analyticsData?.total_posts || 0}</div>
@@ -602,7 +602,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Engagement</CardTitle>
-                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <HeartIcon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{analyticsData?.total_engagement || 0}</div>
@@ -615,7 +615,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Avg Engagement</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
@@ -632,7 +632,7 @@ export const AdvancedAnalytics = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Content Score</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <BarChart3Icon className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
@@ -754,7 +754,7 @@ export const AdvancedAnalytics = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
+                <AlertCircleIcon className="h-5 w-5" />
                 System Health Status
               </CardTitle>
             </CardHeader>
