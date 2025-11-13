@@ -277,7 +277,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center">
-        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+        <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">Registration Summary</h3>
         <p className="text-muted-foreground mb-4">
           Please review your business information before submitting
@@ -304,7 +304,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4" />
+            <ShieldIcon className="h-4 w-4" />
             Verification Process
           </CardTitle>
         </CardHeader>
@@ -334,7 +334,7 @@ const BusinessRegistrationDialog = ({ children, onBusinessRegistered }: Business
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
+            <BuildingIcon className="h-5 w-5" />
             Register Your Business
           </DialogTitle>
           <DialogDescription>
