@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, X, Phone, Check, AlertTriangle, MessageSquare, Shield } from 'lucide-react';
+import { Bell, X, Phone, Check, AlertTriangle, MessageSquare, Shield } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

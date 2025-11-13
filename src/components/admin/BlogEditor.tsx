@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Bold, Italic, List, ListOrdered, Heading2, Heading3,
   Quote, Code, Undo, Redo, ImageIcon, Link as LinkIcon
-} from 'lucide-react';
+} from '@/lib/icons';
 import { useCloudinaryImageUpload } from '@/hooks/useCloudinaryImageUpload';
 import { toast } from 'sonner';
 

@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, Target, Clock, DollarSign, MapPin, Users, Upload, X, Image } from 'lucide-react';
+import { Megaphone, Target, Clock, DollarSign, MapPin, Users, Upload, X, Image } from '@/lib/icons';
 import { Checkbox } from '@/components/ui/checkbox';
 import ContentSuggestionPanel from './ContentSuggestionPanel';
 

@@ -18,7 +18,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Activity
-} from "lucide-react";
+} from "@/lib/icons";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 

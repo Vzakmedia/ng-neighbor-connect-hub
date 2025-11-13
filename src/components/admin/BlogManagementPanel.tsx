@@ -20,7 +20,7 @@ import { generateSlug, validateSEO } from '@/services/blogService';
 import { 
   Plus, Edit, Trash2, Eye, BarChart3, FileText, 
   Send, Save, X, Image as ImageIcon, Tag, Settings
-} from 'lucide-react';
+} from '@/lib/icons';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
