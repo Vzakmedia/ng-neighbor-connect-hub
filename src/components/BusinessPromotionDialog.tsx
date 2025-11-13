@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Megaphone, Star, TrendingUp, Zap, CheckCircle, MapPin, Calendar } from 'lucide-react';
+import { MegaphoneIcon, StarIcon, ArrowTrendingUpIcon, BoltIcon, CheckCircleIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { PromotionImageUpload } from '@/components/PromotionImageUpload';
 
 interface BusinessPromotionDialogProps {
