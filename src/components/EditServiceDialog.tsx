@@ -420,7 +420,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
                     </>
                   ) : (
                     <>
-                      <Plus className="h-4 w-4" />
+                      <PlusIcon className="h-4 w-4" />
                       Add Images
                     </>
                   )}
@@ -461,7 +461,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
                       className="aspect-square flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => document.getElementById('gallery-upload')?.click()}
                     >
-                      <Camera className="h-8 w-8 mb-2" />
+                      <CameraIcon className="h-8 w-8 mb-2" />
                       <span className="text-xs text-center">Add Photo</span>
                     </div>
                   </CardContent>

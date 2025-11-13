@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Plus, X, Navigation, Upload, FileIcon, ImageIcon, Users } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, PlusIcon, XMarkIcon, ArrowUpTrayIcon, DocumentIcon, PhotoIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -197,7 +197,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
       <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <CalendarIcon className="h-5 w-5" />
             Create New Event
           </DialogTitle>
         </DialogHeader>
@@ -235,7 +235,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             />
             {location && coordinates && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+                <MapPinIcon className="h-3 w-3" />
                 <span>{location}</span>
                 <Button
                   type="button"
@@ -270,7 +270,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 onClick={handleAddTag}
                 disabled={!currentTag.trim()}
               >
-                <Plus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
             

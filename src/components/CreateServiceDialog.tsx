@@ -236,7 +236,7 @@ const CreateServiceDialog = ({ onServiceCreated, trigger }: CreateServiceDialogP
           trigger
         ) : (
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-4 w-4 mr-2" />
             Offer Service
           </Button>
         )}
@@ -371,7 +371,7 @@ const CreateServiceDialog = ({ onServiceCreated, trigger }: CreateServiceDialogP
                     </>
                   ) : (
                     <>
-                      <Plus className="h-4 w-4" />
+                      <PlusIcon className="h-4 w-4" />
                       Add Images
                     </>
                   )}
@@ -412,7 +412,7 @@ const CreateServiceDialog = ({ onServiceCreated, trigger }: CreateServiceDialogP
                       className="aspect-square flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => document.getElementById('gallery-upload')?.click()}
                     >
-                      <Camera className="h-8 w-8 mb-2" />
+                      <CameraIcon className="h-8 w-8 mb-2" />
                       <span className="text-xs text-center">Add Photo</span>
                     </div>
                   </CardContent>

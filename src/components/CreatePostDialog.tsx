@@ -24,25 +24,24 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
-  AlertTriangle,
-  ShoppingCart,
-  Users,
-  Calendar,
-  MapPin,
-  ImagePlus,
-  X,
-  Navigation,
-  Building,
-  Home,
-  Globe
-} from 'lucide-react';
+  ExclamationTriangleIcon,
+  ShoppingCartIcon,
+  UsersIcon,
+  CalendarIcon,
+  MapPinIcon,
+  PhotoIcon,
+  XMarkIcon,
+  BuildingOfficeIcon,
+  HomeIcon,
+  GlobeAltIcon
+} from '@heroicons/react/24/outline';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -65,11 +64,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const { pickImages, isNative } = useNativeCamera();
 
   const postTypes = [
-    { value: 'general', label: 'General Update', icon: Users, color: 'text-muted-foreground' },
-    { value: 'safety', label: 'Safety Alert', icon: AlertTriangle, color: 'text-destructive' },
-    { value: 'marketplace', label: 'Marketplace Item', icon: ShoppingCart, color: 'text-community-green' },
-    { value: 'help', label: 'Need Help', icon: Users, color: 'text-community-blue' },
-    { value: 'event', label: 'Community Event', icon: Calendar, color: 'text-community-yellow' },
+    { value: 'general', label: 'General Update', icon: UsersIcon, color: 'text-muted-foreground' },
+    { value: 'safety', label: 'Safety Alert', icon: ExclamationTriangleIcon, color: 'text-destructive' },
+    { value: 'marketplace', label: 'Marketplace Item', icon: ShoppingCartIcon, color: 'text-community-green' },
+    { value: 'help', label: 'Need Help', icon: UsersIcon, color: 'text-community-blue' },
+    { value: 'event', label: 'Community Event', icon: CalendarIcon, color: 'text-community-yellow' },
   ];
 
   const getCurrentPostType = () => postTypes.find(type => type.value === postType)!;
@@ -484,7 +483,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                     onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
                   />
                   <Label htmlFor="rsvp-enabled" className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+                  <UsersIcon className="h-4 w-4" />
                     Enable RSVP for this event
                   </Label>
                 </div>

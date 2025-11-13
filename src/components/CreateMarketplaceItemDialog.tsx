@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Camera, X } from 'lucide-react';
+import { PlusIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 
 interface CreateMarketplaceItemDialogProps {
@@ -379,7 +379,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
                       className="aspect-square flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors"
                       onClick={() => document.getElementById('gallery-upload')?.click()}
                     >
-                      <Camera className="h-8 w-8 mb-2" />
+                      <CameraIcon className="h-8 w-8 mb-2" />
                       <span className="text-xs text-center">Add Photo</span>
                     </div>
                   </CardContent>
