@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { MapPin } from "lucide-react";
+import { MapPinIcon } from "@heroicons/react/24/outline";
 import { NIGERIAN_STATES, STATE_CITIES, CITY_NEIGHBORHOODS } from "@/data/nigeriaLocationData";
 
 interface SimpleLocationSelectorProps {
@@ -51,7 +51,7 @@ export const SimpleLocationSelector = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <MapPin className="h-4 w-4 text-primary" />
+        <MapPinIcon className="h-4 w-4 text-primary" />
         <h3 className="font-medium">Location <span className="text-destructive">*</span></h3>
       </div>
 
