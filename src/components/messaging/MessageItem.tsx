@@ -1,10 +1,10 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Check, CheckCheck, Clock, AlertCircle, RotateCw } from 'lucide-react';
+import { CheckIcon, CheckBadgeIcon, ClockIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline';
 import AttachmentDisplay from './AttachmentDisplay';
 import { MessageReactions } from './MessageReactions';
 import { type Message, MessageStatus } from '@/hooks/useDirectMessages';
