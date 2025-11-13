@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
-
+import { useMobileIcons } from "@/hooks/useMobileIcons"
 import { cn } from "@/lib/utils"
 
 const Tabs = TabsPrimitive.Root
@@ -22,17 +22,33 @@ TabsList.displayName = TabsPrimitive.List.displayName
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.3)] data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground hover:bg-accent/50 data-[state=active]:hover:bg-primary shrink-0 min-w-fit",
-      className
-    )}
-    {...props}
-  />
-))
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
+    icon?: React.ComponentType<any>;
+    iconSolid?: React.ComponentType<any>;
+  }
+>(({ className, icon, iconSolid, children, ...props }, ref) => {
+  const { shouldUseFilledIcons } = useMobileIcons();
+  const isActive = props.value === props['data-state'];
+  
+  // Select icon: use solid on mobile/native when active
+  const IconComponent = (isActive && shouldUseFilledIcons && iconSolid) 
+    ? iconSolid 
+    : icon;
+  
+  return (
+    <TabsPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.3)] data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground hover:bg-accent/50 data-[state=active]:hover:bg-primary shrink-0 min-w-fit",
+        className
+      )}
+      {...props}
+    >
+      {IconComponent && <IconComponent className="h-4 w-4" />}
+      {children}
+    </TabsPrimitive.Trigger>
+  );
+})
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
 const TabsContent = React.forwardRef<
