@@ -8,15 +8,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  CheckCircle, 
-  Search, 
-  AlertTriangle, 
-  XCircle, 
-  MessageSquare,
-  Shield,
-  Clock,
-  User
-} from 'lucide-react';
+  CheckCircleIcon, 
+  MagnifyingGlassIcon, 
+  ExclamationTriangleIcon, 
+  XCircleIcon, 
+  ChatBubbleLeftIcon,
+  ShieldCheckIcon,
+  ClockIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
 
 interface PanicAlert {
   id: string;

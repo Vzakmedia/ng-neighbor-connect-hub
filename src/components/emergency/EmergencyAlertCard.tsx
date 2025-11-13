@@ -3,8 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Shield, AlertTriangle, MapPin, Clock, User, Eye, Zap, Activity 
-} from 'lucide-react';
+  ShieldCheckIcon, ExclamationTriangleIcon, MapPinIcon, ClockIcon, UserIcon, EyeIcon, BoltIcon, ChartBarIcon 
+} from '@heroicons/react/24/outline';
 import { SafetyAlert, SEVERITY_COLORS } from '@/types/emergency';
 
 interface EmergencyAlertCardProps {
@@ -14,33 +14,33 @@ interface EmergencyAlertCardProps {
 }
 
 const alertTypeIcons = {
-  break_in: Shield,
-  theft: AlertTriangle,
-  accident: Zap,
-  suspicious_activity: Eye,
-  harassment: User,
-  fire: Zap,
-  flood: Activity,
-  power_outage: Zap,
-  road_closure: MapPin,
-  other: AlertTriangle
+  break_in: ShieldCheckIcon,
+  theft: ExclamationTriangleIcon,
+  accident: BoltIcon,
+  suspicious_activity: EyeIcon,
+  harassment: UserIcon,
+  fire: BoltIcon,
+  flood: ChartBarIcon,
+  power_outage: BoltIcon,
+  road_closure: MapPinIcon,
+  other: ExclamationTriangleIcon
 };
 
 const EmergencyAlertCard = ({ alert, onClick, getTimeSince }: EmergencyAlertCardProps) => {
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />;
       case 'high':
-        return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+        return <ExclamationTriangleIcon className="h-4 w-4 text-orange-600" />;
       case 'medium':
-        return <Shield className="h-4 w-4 text-yellow-600" />;
+        return <ShieldCheckIcon className="h-4 w-4 text-yellow-600" />;
       default:
-        return <Shield className="h-4 w-4 text-blue-600" />;
+        return <ShieldCheckIcon className="h-4 w-4 text-blue-600" />;
     }
   };
 
-  const AlertIcon = alertTypeIcons[alert.alert_type as keyof typeof alertTypeIcons] || AlertTriangle;
+  const AlertIcon = alertTypeIcons[alert.alert_type as keyof typeof alertTypeIcons] || ExclamationTriangleIcon;
 
   return (
     <Card 
@@ -72,13 +72,13 @@ const EmergencyAlertCard = ({ alert, onClick, getTimeSince }: EmergencyAlertCard
               </p>
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                  <MapPinIcon className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate max-w-32 sm:max-w-48">
                     {alert.address}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 flex-shrink-0" />
+                  <ClockIcon className="h-3 w-3 flex-shrink-0" />
                   <span>{getTimeSince(alert.created_at)}</span>
                 </div>
                 {alert.profiles && (
