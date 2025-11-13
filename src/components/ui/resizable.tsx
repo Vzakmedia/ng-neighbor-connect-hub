@@ -1,4 +1,4 @@
-import { MoreVertical as GripVertical } from "@/lib/icons"
+import { GripVertical } from "@/lib/icons"
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
