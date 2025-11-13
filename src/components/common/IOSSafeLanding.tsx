@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Smartphone,
   Wifi
-} from 'lucide-react';
+} from '@/lib/icons';
 
 interface IOSSafeLandingProps {
   onGetStarted: () => void;

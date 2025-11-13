@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Navigation, Loader2 } from 'lucide-react';
+import { Navigation, Loader2 } from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';

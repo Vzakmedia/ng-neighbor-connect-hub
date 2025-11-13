@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAdvertisingCampaigns } from '@/hooks/advertising/useAdvertisingCampaigns';
 import { AdvertisingService } from '@/services/advertisingService';
 import { CampaignType, PricingTier, CreateCampaignData } from '@/types/advertising';
-import { Plus, Check, Loader2, MapPin, Calendar } from 'lucide-react';
+import { Plus, Check, Loader2, MapPin, Calendar } from '@/lib/icons';
 import { toast } from 'sonner';
 import { RenderApiService } from '@/services/renderApiService';
 

@@ -1,5 +1,5 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Wifi, VolumeX as WifiOff, Loader2 } from '@/lib/icons';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useEffect, useState } from 'react';
 

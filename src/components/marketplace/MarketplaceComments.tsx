@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Send, Trash2 } from 'lucide-react';
+import { User, Send, Trash2 } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Comment {

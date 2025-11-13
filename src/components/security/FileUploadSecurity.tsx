@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { validateImageFile } from '@/utils/security';
-import { AlertTriangle, Upload } from 'lucide-react';
+import { AlertTriangle, Upload } from '@/lib/icons';
 
 interface FileUploadSecurityProps {
   onFileSelect: (file: File) => void;

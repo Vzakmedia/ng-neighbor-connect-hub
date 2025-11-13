@@ -8,7 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { Home, MessageSquare, ShoppingBag, Shield, Plus, Bell, User } from 'lucide-react';
+import { Home, MessageSquare, ShoppingBag, Shield, Plus, Bell, User } from '@/lib/icons';
 
 interface MobileTutorialStep {
   id: string;

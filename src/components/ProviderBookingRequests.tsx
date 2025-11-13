@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, User, MessageSquare, Star, Calendar } from 'lucide-react';
+import { Clock, User, MessageSquare, Star, Calendar } from '@/lib/icons';
 import { format } from 'date-fns';
 import { useBookingSync } from '@/hooks/useBookingSync';
 

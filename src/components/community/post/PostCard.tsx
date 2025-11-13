@@ -7,7 +7,7 @@ import { PostCardContent } from './PostCardContent';
 import { PostCardMedia } from './PostCardMedia';
 import { PostCardActions } from './PostCardActions';
 import CommentSection from '@/components/CommentSection';
-import { Users, Building, Home, Globe } from 'lucide-react';
+import { Users, Building, Home as HomeIcon, Globe } from '@/lib/icons';
 
 interface PostCardProps {
   post: PostCardData;
@@ -71,7 +71,7 @@ const PostCardComponent = ({
     } else if (locationScope === 'state' && targetState) {
       return (
         <Badge variant="outline" className="text-xs">
-          <Home className="h-3 w-3 mr-1" />
+          <HomeIcon className="h-3 w-3 mr-1" />
           {targetState}
         </Badge>
       );

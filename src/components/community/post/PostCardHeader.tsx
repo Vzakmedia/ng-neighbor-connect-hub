@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Users, Building, Home, Globe, MoreVertical } from 'lucide-react';
+import { Calendar, Users, Building, Home as HomeIcon, Globe, MoreVertical } from '@/lib/icons';
 import { CardHeader } from '@/components/ui/card';
 import { OnlineAvatar } from '@/components/OnlineAvatar';
 import { PostAuthor } from '@/types/community';
@@ -39,7 +39,7 @@ export const PostCardHeader = ({
     } else if (locationScope === 'city') {
       return <Building className="h-3.5 w-3.5 text-muted-foreground" />;
     } else if (locationScope === 'state') {
-      return <Home className="h-3.5 w-3.5 text-muted-foreground" />;
+      return <HomeIcon className="h-3.5 w-3.5 text-muted-foreground" />;
     } else if (locationScope === 'all') {
       return <Globe className="h-3.5 w-3.5 text-muted-foreground" />;
     }

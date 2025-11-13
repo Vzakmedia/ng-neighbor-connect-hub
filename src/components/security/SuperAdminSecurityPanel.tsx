@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Lock, Clock, MapPin, AlertTriangle, Activity } from 'lucide-react';
+import { Shield, Lock, Clock, MapPin, AlertTriangle, Activity } from '@/lib/icons';
 
 interface SecuritySettings {
   allowed_ip_addresses: string[];

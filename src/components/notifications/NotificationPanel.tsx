@@ -8,10 +8,10 @@ import {
   FileText,
   Phone,
   Check,
-  CheckCheck,
+  CheckCircle as CheckCheck,
   Trash2,
   X
-} from 'lucide-react';
+} from '@/lib/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';

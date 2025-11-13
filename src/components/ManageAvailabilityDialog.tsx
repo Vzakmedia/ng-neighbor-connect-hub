@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Clock } from 'lucide-react';
+import { Trash2, Clock } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 interface Service {

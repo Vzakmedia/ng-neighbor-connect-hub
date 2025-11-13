@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { BookOpen, Calendar, Clock, ArrowRight } from 'lucide-react';
+import { Newspaper as BookOpen, Calendar, Clock, ArrowRight } from '@/lib/icons';
 import { formatDate, truncateText } from '@/services/blogService';
 
 export const BlogSection = () => {

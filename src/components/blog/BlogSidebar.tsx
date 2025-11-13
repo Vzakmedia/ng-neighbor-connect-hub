@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Search } from 'lucide-react';
+import { Search } from '@/lib/icons';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
 import { usePublishedBlogPosts } from '@/hooks/useBlogPosts';
 import { Link } from 'react-router-dom';

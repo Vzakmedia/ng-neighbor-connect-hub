@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, MessageSquare, Clock, User, Plus, Send, Eye, Reply, Archive } from 'lucide-react';
+import { Mail, MessageSquare, Clock, User, Plus, Send, Eye, Reply, Archive } from '@/lib/icons';
 
 interface SupportTicket {
   id: string;

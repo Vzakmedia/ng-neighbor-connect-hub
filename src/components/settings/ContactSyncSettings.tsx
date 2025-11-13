@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNativeContacts } from '@/hooks/mobile/useNativeContacts';
-import { Users, Loader2, Check, X } from 'lucide-react';
+import { Users, Loader2, Check, X } from '@/lib/icons';
 import { Badge } from '@/components/ui/badge';
 
 export const ContactSyncSettings = () => {
