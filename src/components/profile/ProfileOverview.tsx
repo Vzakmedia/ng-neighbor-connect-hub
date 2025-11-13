@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Edit, MapPin, Phone, Mail, User, Star, Camera, Save, X, Upload, Calendar, Shield, CheckCircle, Crop as CropIcon } from 'lucide-react';
+import { PencilIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, UserIcon, StarIcon, CameraIcon, CheckIcon, XMarkIcon, ArrowUpTrayIcon, CalendarIcon, ShieldCheckIcon, CheckCircleIcon, ScissorsIcon } from '@heroicons/react/24/outline';
 import { useToast } from '@/hooks/use-toast';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -407,22 +407,22 @@ const ProfileOverview = () => {
         <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <User className="h-5 w-5 flex-shrink-0" />
+              <UserIcon className="h-5 w-5 flex-shrink-0" />
               <span className="truncate">My Profile</span>
             </CardTitle>
             {!editing ? (
               <Button variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">
-                <Edit className="h-4 w-4 mr-2" />
+                <PencilIcon className="h-4 w-4 mr-2" />
                 <span className="sm:inline">Edit Profile</span>
               </Button>
             ) : (
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button variant="outline" onClick={cancelEditing} className="w-full sm:w-auto">
-                  <X className="h-4 w-4 mr-2" />
+                  <XMarkIcon className="h-4 w-4 mr-2" />
                   <span className="sm:inline">Cancel</span>
                 </Button>
                 <Button onClick={handleSubmit} className="w-full sm:w-auto">
-                  <Save className="h-4 w-4 mr-2" />
+                  <CheckIcon className="h-4 w-4 mr-2" />
                   <span className="sm:inline">Save</span>
                 </Button>
               </div>
@@ -452,7 +452,7 @@ const ProfileOverview = () => {
                   {uploading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                   ) : (
-                    <Camera className="h-4 w-4" />
+                    <CameraIcon className="h-4 w-4" />
                   )}
                 </Button>
               )}
@@ -486,7 +486,7 @@ const ProfileOverview = () => {
                     </h2>
                     {profile?.is_verified && (
                       <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 flex-shrink-0">
-                        <CheckCircle className="h-3 w-3 mr-1" />
+                        <CheckCircleIcon className="h-3 w-3 mr-1" />
                         <span className="text-xs">Verified</span>
                       </Badge>
                     )}
@@ -523,7 +523,7 @@ const ProfileOverview = () => {
       <Card className="w-full max-w-full overflow-hidden">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Phone className="h-5 w-5 flex-shrink-0" />
+            <PhoneIcon className="h-5 w-5 flex-shrink-0" />
             <span className="truncate">Contact Information</span>
           </CardTitle>
         </CardHeader>
@@ -543,14 +543,14 @@ const ProfileOverview = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 w-full">
-                  <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <PhoneIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-sm sm:text-base truncate">{profile?.phone || 'No phone number'}</span>
                 </div>
               )}
             </div>
 
             <div className="flex items-center gap-2 w-full">
-              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <EnvelopeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-sm sm:text-base truncate">{user?.email || 'No email'}</span>
             </div>
           </div>
@@ -561,7 +561,7 @@ const ProfileOverview = () => {
       <Card className="w-full max-w-full overflow-hidden">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <MapPin className="h-5 w-5 flex-shrink-0" />
+            <MapPinIcon className="h-5 w-5 flex-shrink-0" />
             <span className="truncate">Location Details</span>
           </CardTitle>
         </CardHeader>
@@ -623,7 +623,7 @@ const ProfileOverview = () => {
       <Card className="w-full max-w-full overflow-hidden">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Shield className="h-5 w-5 flex-shrink-0" />
+            <ShieldCheckIcon className="h-5 w-5 flex-shrink-0" />
             <span className="truncate">Account Information</span>
           </CardTitle>
         </CardHeader>
@@ -632,7 +632,7 @@ const ProfileOverview = () => {
             <div className="w-full">
               <Label className="text-xs sm:text-sm text-muted-foreground">Member Since</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className="font-medium text-sm sm:text-base">
                   {new Date(profile?.created_at || '').toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -653,7 +653,7 @@ const ProfileOverview = () => {
                       <span className="font-medium text-emerald-700 dark:text-emerald-400 text-sm sm:text-base">Verified Account</span>
                     </div>
                     <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800 flex-shrink-0 w-fit">
-                      <CheckCircle className="h-3 w-3 mr-1" />
+                      <CheckCircleIcon className="h-3 w-3 mr-1" />
                       <span className="text-xs">Verified</span>
                     </Badge>
                   </>
@@ -684,7 +684,7 @@ const ProfileOverview = () => {
                   {requestingVerification ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                   ) : (
-                    <Shield className="h-4 w-4 mr-2" />
+                    <ShieldCheckIcon className="h-4 w-4 mr-2" />
                   )}
                   <span className="text-sm">{requestingVerification ? 'Requesting...' : 'Request Verification'}</span>
                 </Button>
@@ -699,7 +699,7 @@ const ProfileOverview = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CropIcon className="h-5 w-5" />
+              <ScissorsIcon className="h-5 w-5" />
               Crop Profile Picture
             </DialogTitle>
           </DialogHeader>
@@ -732,7 +732,7 @@ const ProfileOverview = () => {
                 setImageToCrop(null);
               }}
             >
-              <X className="h-4 w-4 mr-2" />
+              <XMarkIcon className="h-4 w-4 mr-2" />
               Cancel
             </Button>
             <Button
@@ -742,7 +742,7 @@ const ProfileOverview = () => {
               {uploading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <CheckIcon className="h-4 w-4 mr-2" />
               )}
               {uploading ? 'Uploading...' : 'Save Picture'}
             </Button>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useNativeContacts } from '@/hooks/mobile/useNativeContacts';
-import { Users, Loader2, UserPlus } from 'lucide-react';
+import { UsersIcon, ArrowPathIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -68,12 +68,12 @@ export const FindFriendsButton = () => {
       <Button onClick={handleFindFriends} disabled={isLoading}>
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
             Finding...
           </>
         ) : (
           <>
-            <Users className="mr-2 h-4 w-4" />
+            <UsersIcon className="mr-2 h-4 w-4" />
             Find Friends from Contacts
           </>
         )}
@@ -116,10 +116,10 @@ export const FindFriendsButton = () => {
                   disabled={sendingRequests.has(match.userId)}
                 >
                   {sendingRequests.has(match.userId) ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <UserPlus className="mr-2 h-4 w-4" />
+                      <UserPlusIcon className="mr-2 h-4 w-4" />
                       Connect
                     </>
                   )}
