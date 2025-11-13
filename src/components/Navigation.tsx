@@ -8,6 +8,7 @@ import CreatePostDialog from './CreatePostDialog';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { useAuth } from '@/hooks/useAuth';
+import { useMobileIcons } from '@/hooks/useMobileIcons';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   HomeIcon,
@@ -41,6 +42,7 @@ import {
 } from '@heroicons/react/24/solid';
 
 const Navigation = () => {
+  const { shouldUseFilledIcons } = useMobileIcons();
   const { unreadCounts } = useReadStatus();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -167,7 +169,8 @@ const Navigation = () => {
               }
               
               const isActive = location.pathname === item.path;
-              const Icon = isActive ? item.iconSolid : item.icon;
+              // Only use solid icons on mobile/native platforms
+              const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
               return (
                 <button
                   key={item.id}
@@ -245,7 +248,9 @@ const Navigation = () => {
               }
               return true;
             }).slice(0, 5).map((item) => {
-              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              // Mobile nav: use solid icons when active (mobile-only feature)
+              const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
               return (
                 <button
                   key={item.id}
