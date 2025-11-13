@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Shield, Lock, Eye, Server, FileCheck, AlertTriangle, KeyRound, Mail } from "lucide-react";
+import { Shield, Lock, Eye, Server, File as FileCheck, AlertTriangle, Key as KeyRound, Mail } from '@/lib/icons';
 
 const Security = () => {
   return (

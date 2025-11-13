@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useNavigate } from "react-router-dom";
-import { BarChart3, Building, TrendingUp, DollarSign, ShoppingCart, Users, Calendar, Settings, ArrowLeft } from "lucide-react";
+import { BarChart3, Building, TrendingUp, DollarSign, ShoppingCart, Users, Calendar, Settings, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

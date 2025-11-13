@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, UserCheck, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, UserCheck, Shield, AlertCircle, CheckCircle } from '@/lib/icons';
 import { Link } from 'react-router-dom';
 
 const TermsOfServicePage = () => {

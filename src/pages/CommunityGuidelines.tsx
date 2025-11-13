@@ -1,4 +1,4 @@
-import { ArrowLeft, Shield, Users, AlertTriangle, Heart } from "lucide-react";
+import { ArrowLeft, Shield, Users, AlertTriangle, Heart } from '@/lib/icons';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

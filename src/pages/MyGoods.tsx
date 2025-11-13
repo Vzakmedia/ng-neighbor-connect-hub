@@ -6,7 +6,7 @@ import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
 import CreateMarketplaceItemDialog from '@/components/CreateMarketplaceItemDialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from '@/lib/icons';
 
 const MyGoods = () => {
   const { user, loading } = useAuth();

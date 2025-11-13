@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CreateCampaignDialog } from "@/components/advertising/campaigns/CreateCampaignDialog";
 import { useAdvertisingCampaigns } from "@/hooks/advertising/useAdvertisingCampaigns";
 import { Campaign } from "@/types/advertising";
-import { BarChart3, DollarSign, Eye, TrendingUp, Play, Pause } from "lucide-react";
+import { BarChart3, DollarSign, Eye, TrendingUp, Play, Pause } from '@/lib/icons';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";

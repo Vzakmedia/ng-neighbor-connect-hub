@@ -8,7 +8,7 @@ import CreateServiceDialog from '@/components/CreateServiceDialog';
 import ProviderBookingRequests from '@/components/ProviderBookingRequests';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, ArrowLeft } from '@/lib/icons';
 
 const MyServices = () => {
   const { user, loading } = useAuth();

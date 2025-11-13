@@ -16,9 +16,9 @@ import {
   TrendingUp,
   Lightbulb,
   Globe,
-  Coffee,
+  Star as Coffee,
   GraduationCap
-} from "lucide-react";
+} from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import teamCollaboration from "@/assets/careers/team-collaboration.jpg";

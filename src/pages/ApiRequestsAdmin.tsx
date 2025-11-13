@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Filter, Search, Mail, Building, User, Calendar, CheckCircle, Clock, AlertCircle, XCircle, Key, Copy } from "lucide-react";
+import { ArrowLeft, Filter, Search, Mail, Building, User, Calendar, CheckCircle, Clock, AlertCircle, XCircle, Key, Copy } from '@/lib/icons';
 import { formatDistanceToNow } from "date-fns";
 
 interface ApiRequest {
