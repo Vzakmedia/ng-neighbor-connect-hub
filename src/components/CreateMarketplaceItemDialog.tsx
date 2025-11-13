@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlusIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Plus, Camera, X } from 'lucide-react';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 
 interface CreateMarketplaceItemDialogProps {

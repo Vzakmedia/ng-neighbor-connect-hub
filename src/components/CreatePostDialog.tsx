@@ -24,18 +24,18 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
-  ExclamationTriangleIcon,
-  ShoppingCartIcon,
-  UsersIcon,
-  CalendarIcon,
-  MapPinIcon,
-  PhotoIcon,
-  XMarkIcon,
-  ArrowUpIcon,
-  BuildingOfficeIcon,
-  HomeIcon,
-  GlobeAltIcon
-} from '@heroicons/react/24/outline';
+  AlertTriangle,
+  ShoppingCart,
+  Users,
+  Calendar,
+  MapPin,
+  ImagePlus,
+  X,
+  Navigation,
+  Building,
+  Home,
+  Globe
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
