@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Megaphone, Target, Clock, DollarSign } from 'lucide-react';
+import { MegaphoneIcon, FlagIcon, ClockIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { PromotionImageUpload } from '@/components/PromotionImageUpload';
 
 interface PricingTier {
