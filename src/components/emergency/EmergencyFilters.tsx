@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { List, MapPin, Activity, RefreshCw } from 'lucide-react';
+import { ListBulletIcon, MapPinIcon, ChartBarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { EmergencyFilters, EmergencyViewMode, ALERT_TYPES } from '@/types/emergency';
 
 interface EmergencyFiltersProps {
@@ -32,7 +32,7 @@ const EmergencyFiltersComponent = ({
           size="sm"
           className="touch-manipulation"
         >
-          <List className="h-4 w-4 mr-1" />
+          <ListBulletIcon className="h-4 w-4 mr-1" />
           List View
         </Button>
         <Button
@@ -41,7 +41,7 @@ const EmergencyFiltersComponent = ({
           size="sm"
           className="touch-manipulation"
         >
-          <MapPin className="h-4 w-4 mr-1" />
+          <MapPinIcon className="h-4 w-4 mr-1" />
           Map View
         </Button>
         <Button
@@ -50,7 +50,7 @@ const EmergencyFiltersComponent = ({
           size="sm"
           className="touch-manipulation"
         >
-          <Activity className="h-4 w-4 mr-1" />
+          <ChartBarIcon className="h-4 w-4 mr-1" />
           Live Feed
         </Button>
       </div>
@@ -64,7 +64,7 @@ const EmergencyFiltersComponent = ({
             size="sm"
             className="transition-all duration-300 ease-in-out text-xs touch-manipulation flex-1"
           >
-            <List className="h-3 w-3 mr-1" />
+            <ListBulletIcon className="h-3 w-3 mr-1" />
             List
           </Button>
           <Button
@@ -73,7 +73,7 @@ const EmergencyFiltersComponent = ({
             size="sm"
             className="transition-all duration-300 ease-in-out text-xs touch-manipulation flex-1"
           >
-            <MapPin className="h-3 w-3 mr-1" />
+            <MapPinIcon className="h-3 w-3 mr-1" />
             Map
           </Button>
           <Button
@@ -82,7 +82,7 @@ const EmergencyFiltersComponent = ({
             size="sm"
             className="transition-all duration-300 ease-in-out text-xs touch-manipulation flex-1"
           >
-            <Activity className="h-3 w-3 mr-1" />
+            <ChartBarIcon className="h-3 w-3 mr-1" />
             Feed
           </Button>
         </div>
