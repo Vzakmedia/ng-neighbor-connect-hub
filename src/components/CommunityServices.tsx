@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Star, MessageCircle, Search, Filter, Wrench, Package } from 'lucide-react';
+import { MapPinIcon, StarIcon, ChatBubbleLeftIcon, MagnifyingGlassIcon, FunnelIcon, WrenchScrewdriverIcon, CubeIcon } from '@heroicons/react/24/outline';
 import { formatTimeAgo } from '@/lib/utils';
 import BookServiceDialog from './BookServiceDialog';
 import RatingDialog from './RatingDialog';
@@ -223,7 +223,7 @@ const CommunityServices = () => {
       <div className="flex flex-col gap-3 md:gap-4">
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search services and goods..."
             value={searchTerm}
@@ -236,7 +236,7 @@ const CommunityServices = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:flex-1 h-12 md:h-10">
-              <Filter className="h-4 w-4 mr-2" />
+              <FunnelIcon className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-md">
@@ -251,7 +251,7 @@ const CommunityServices = () => {
 
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger className="w-full sm:flex-1 h-12 md:h-10">
-              <MapPin className="h-4 w-4 mr-2" />
+              <MapPinIcon className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-md">
@@ -274,11 +274,11 @@ const CommunityServices = () => {
         {/* Mobile tabs */}
         <TabsList className="md:hidden flex mb-4">
           <TabsTrigger value="services">
-            <Wrench className="h-4 w-4 mr-2" />
+            <WrenchScrewdriverIcon className="h-4 w-4 mr-2" />
             Services ({filteredServices.length})
           </TabsTrigger>
           <TabsTrigger value="goods">
-            <Package className="h-4 w-4 mr-2" />
+            <CubeIcon className="h-4 w-4 mr-2" />
             Goods ({filteredItems.length})
           </TabsTrigger>
         </TabsList>
