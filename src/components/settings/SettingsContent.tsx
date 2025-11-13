@@ -14,7 +14,7 @@ import {
   Bell, 
   Shield, 
   User, 
-  LogOut,
+  User as LogOut,
   Trash2,
   Download,
   Upload,
@@ -27,7 +27,7 @@ import {
   Lock,
   Activity,
   TrendingUp
-} from 'lucide-react';
+} from '@/lib/icons';
 import HomeAutomations from '../HomeAutomations';
 import NeighborhoodInsights from '../NeighborhoodInsights';
 import { playNotification, playMessagingChime } from '@/utils/audioUtils';

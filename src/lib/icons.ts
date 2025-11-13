@@ -334,3 +334,12 @@ export const Reply = ChatBubbleLeftEllipsisIcon;
 export const AtSign = AtSymbolIcon;
 export const Smile = FaceSmileIcon;
 export const Ban = NoSymbolIcon;
+
+// Additional UI icons
+export const Circle = StopIcon; // Using Stop icon as circle placeholder
+export const Dot = MinusIcon; // Using Minus for dot
+export const GripVertical = EllipsisVerticalIcon;
+export const PanelLeft = Bars3Icon;
+export const LogOut = ArrowLeftIcon; // Using ArrowLeft for logout
+export const Edit2 = PencilIcon;
+export const LockKeyhole = LockClosedIcon;
