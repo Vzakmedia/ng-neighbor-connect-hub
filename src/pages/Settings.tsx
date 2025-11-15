@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Navigation from '@/components/Navigation';
 import SettingsContent from '@/components/settings/SettingsContent';
-import { ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -36,7 +36,7 @@ const Settings = () => {
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-6 w-6 text-foreground" />
+            <ArrowLeftIcon className="h-6 w-6 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Settings</h1>
           <div className="w-10" />

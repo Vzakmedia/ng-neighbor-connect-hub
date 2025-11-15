@@ -4,7 +4,7 @@ import { EnhancedProfileCompletion } from "@/components/auth/EnhancedProfileComp
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-import { ArrowLeftIcon as ArrowLeft } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 const CompleteProfile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -85,7 +85,7 @@ const CompleteProfile = () => {
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-6 w-6 text-foreground" />
+            <ArrowLeftIcon className="h-6 w-6 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Complete Profile</h1>
           <div className="w-10" />
