@@ -37,7 +37,7 @@ export const ProfileMenu = () => {
 
   return (
     <button
-      className="flex flex-col items-center gap-1 focus:outline-none"
+      className="p-2 focus:outline-none"
       onClick={handleClick}
     >
       <Avatar className="h-6 w-6 border-2 border-primary/20">
@@ -46,7 +46,6 @@ export const ProfileMenu = () => {
           {getUserInitials()}
         </AvatarFallback>
       </Avatar>
-      <span className="text-xs font-medium text-foreground">You</span>
     </button>
   );
 };
