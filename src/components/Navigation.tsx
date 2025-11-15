@@ -301,102 +301,46 @@ const Navigation = () => {
 
       {/* Modern Bottom Drawer for More Options */}
       <Drawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="flex items-center justify-between border-b pb-4">
-            <DrawerTitle className="text-lg font-semibold">More Options</DrawerTitle>
-            <DrawerClose asChild>
-              <button className="rounded-full p-2 hover:bg-muted transition-colors">
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </DrawerClose>
-          </DrawerHeader>
-          
-          <div className="overflow-y-auto px-4 pb-6">
-            <div className="pt-4">
-              <div className="space-y-1">
-                {mobileDrawerItems.filter(item => {
-                  if (item.id === 'users' && !hasStaffRole) return false;
-                  return true;
-                }).map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={async () => {
-                        try {
-                          await Haptics.impact({ style: ImpactStyle.Light });
-                        } catch (error) {}
-                        handleNavigation(item.path);
-                        setMoreDrawerOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-lg ${
-                        isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium">{item.label}</span>
-                      {item.count > 0 && <Badge className="ml-auto">{item.count}</Badge>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Quick Actions Section */}
-            <div className="pt-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Quick Actions</h3>
-              <div className="space-y-1">
-                <button
-                  onClick={async () => {
-                    try {
-                      await Haptics.impact({ style: ImpactStyle.Light });
-                    } catch (error) {
-                      // Haptics not available
-                    }
-                    setCreatePostOpen(true);
-                    setMoreDrawerOpen(false);
-                  }}
-                  className="w-full flex items-center gap-4 p-4 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-all touch-manipulation active:scale-[0.98]"
-                  data-tutorial="create-post-mobile"
-                >
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <PlusIcon className="h-5 w-5" />
-                  </div>
-                  <div className="text-left flex-1">
-                    <div className="font-semibold">Create Post</div>
-                    <div className="text-xs opacity-80">Share with your community</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Settings Section (Staff Portal) */}
-            {hasStaffRole && (
-              <div className="pt-6">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Settings</h3>
-                <div className="space-y-1">
+        <DrawerContent className="h-[90vh] bg-gradient-to-b from-blue-600 to-blue-700 border-none">
+          <div className="flex-1 overflow-y-auto px-6 pt-8 pb-24">
+            <div className="grid grid-cols-3 gap-6">
+              {mobileDrawerItems.filter(item => {
+                if (item.id === 'users' && !hasStaffRole) return false;
+                return true;
+              }).map((item) => {
+                const Icon = item.icon;
+                return (
                   <button
+                    key={item.id}
                     onClick={async () => {
                       try {
                         await Haptics.impact({ style: ImpactStyle.Light });
-                      } catch (error) {
-                        // Haptics not available
-                      }
-                      navigate('/staff');
+                      } catch (error) {}
+                      handleNavigation(item.path);
                       setMoreDrawerOpen(false);
                     }}
-                    className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-all touch-manipulation active:scale-[0.98]"
+                    className="flex flex-col items-center gap-3 touch-manipulation active:scale-95 transition-transform"
                   >
-                    <Cog6ToothIcon className="h-5 w-5 flex-shrink-0" />
-                    <div className="text-left flex-1">
-                      <div className="font-medium">Staff Portal</div>
-                      <div className="text-xs text-muted-foreground">Manage platform settings</div>
+                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg">
+                      <Icon className="h-9 w-9 text-blue-600" />
                     </div>
+                    <span className="text-sm font-medium text-white text-center leading-tight">
+                      {item.label}
+                    </span>
                   </button>
-                </div>
-              </div>
-            )}
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Yellow Close Button */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+            <button
+              onClick={() => setMoreDrawerOpen(false)}
+              className="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center shadow-xl touch-manipulation active:scale-95 transition-transform"
+            >
+              <XMarkIcon className="h-8 w-8 text-blue-900" />
+            </button>
           </div>
         </DrawerContent>
       </Drawer>
