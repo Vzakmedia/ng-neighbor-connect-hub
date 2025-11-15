@@ -28,6 +28,11 @@ const MobileConversationList = ({ conversations, loading, userId }: MobileConver
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
+  // Debug logging
+  console.log('MobileConversationList - conversations:', conversations);
+  console.log('MobileConversationList - loading:', loading);
+  console.log('MobileConversationList - userId:', userId);
+
   const filteredConversations = conversations.filter(conv => {
     return conv.other_user_name?.toLowerCase().includes(searchQuery.toLowerCase());
   });
