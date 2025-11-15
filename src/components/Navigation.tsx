@@ -124,7 +124,7 @@ const Navigation = () => {
 
   // Mobile bottom nav: 5 icons only (Overview, Feed, More, Messages, Avatar)
   const mobileBottomNavItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Overview', count: 0, path: '/home' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Overview', count: 0, path: '/dashboard' },
     { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
   ];
 
