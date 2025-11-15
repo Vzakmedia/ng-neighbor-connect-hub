@@ -105,7 +105,7 @@ export default function ProfileMenu() {
           <button
             onClick={() => {
               hapticFeedback();
-              navigate(-1);
+              navigate('/');
             }}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
