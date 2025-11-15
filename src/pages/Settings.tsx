@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import SettingsContent from '@/components/settings/SettingsContent';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from '@/lib/icons';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -34,6 +36,17 @@ const Settings = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0 min-w-0">
         <div className="container py-4 px-4 max-w-4xl mx-auto overflow-x-hidden">
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
           <SettingsContent />
         </div>
       </main>
