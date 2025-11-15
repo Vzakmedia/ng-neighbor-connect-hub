@@ -70,6 +70,7 @@ import HelpCenter from "./pages/HelpCenter";
 import BlogPost from "./pages/BlogPost";
 import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
+import ProfileMenu from "./pages/ProfileMenu";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
@@ -233,6 +234,7 @@ const App = () => {
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile-menu" element={<ProfileMenu />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/services" element={<Services />} />
               <Route path="/users" element={<UserDirectory />} />
