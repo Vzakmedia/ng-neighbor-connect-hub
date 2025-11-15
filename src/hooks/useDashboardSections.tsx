@@ -65,7 +65,6 @@ export const useUpcomingEvents = (limit: number = 3) => {
           content,
           location,
           created_at,
-          event_date,
           profiles!community_posts_user_id_fkey (
             full_name,
             neighborhood,
@@ -74,8 +73,8 @@ export const useUpcomingEvents = (limit: number = 3) => {
           )
         `)
         .eq('post_type', 'event')
-        .gte('event_date', now)
-        .order('event_date', { ascending: true })
+        .gte('created_at', now)
+        .order('created_at', { ascending: true })
         .limit(limit);
 
       // Only show events created after user joined (clean slate)
