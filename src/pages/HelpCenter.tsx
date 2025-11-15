@@ -138,7 +138,7 @@ const HelpCenter = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/profile-menu')}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
             <ArrowLeft className="h-6 w-6 text-foreground" />
