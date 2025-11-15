@@ -9,6 +9,7 @@ import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
 import { useAuth } from '@/hooks/useAuth';
 import { useMobileIcons } from '@/hooks/useMobileIcons';
+import { ProfileMenu } from '@/components/mobile/ProfileMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   HomeIcon,
@@ -108,7 +109,8 @@ const Navigation = () => {
   }, [user]);
   
   const navItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: shouldUseFilledIcons ? 'Feed' : 'Home', count: 0, path: '/' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/home' },
+    { id: 'feed', icon: HomeIcon, iconSolid: HomeSolid, label: 'Feed', count: 0, path: '/' },
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
@@ -118,16 +120,21 @@ const Navigation = () => {
     { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
   ];
 
-  // Mobile-specific order with Messages in middle of first 5 items
-  const mobileNavItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/' },
+  // Mobile bottom nav: 5 icons only (Home, Feed, More, Messages, Avatar)
+  const mobileBottomNavItems = [
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/home' },
+    { id: 'feed', icon: HomeIcon, iconSolid: HomeSolid, label: 'Feed', count: 0, path: '/' },
+  ];
+
+  // Items to show in "More" drawer on mobile
+  const mobileDrawerItems = [
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
-    { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
+    { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
+    { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
     { id: 'safety', icon: ShieldCheckIcon, iconSolid: ShieldCheckSolid, label: 'Safety', count: 0, path: '/safety' },
     { id: 'users', icon: UsersIcon, iconSolid: UsersSolid, label: 'User Directory', count: 0, path: '/users' },
-    { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
-    { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
+    { id: 'settings', icon: Cog6ToothIcon, iconSolid: Cog6ToothSolid, label: 'Settings', count: 0, path: '/settings' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -236,67 +243,57 @@ const Navigation = () => {
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - 5 icons: Home, Feed, More, Messages, Avatar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-50">
-        <div className="flex h-16">
-          {/* Main nav items - 5 columns */}
-          <div className="flex-1 grid grid-cols-5">
-            {mobileNavItems.slice(0, 5).filter(item => {
-              // Hide User Directory for non-staff users on mobile
-              if (item.id === 'users' && !hasStaffRole) {
-                return false;
-              }
-              return true;
-            }).slice(0, 5).map((item) => {
-              const isActive = location.pathname === item.path;
-              // Mobile nav: use solid icons when active (mobile-only feature)
-              const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleMobileNavigation(item.path)}
-                  className={`flex flex-col items-center justify-center space-y-1 transition-all touch-manipulation active:scale-95 ${
-                    location.pathname === item.path
-                      ? 'text-primary bg-primary/5'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="relative">
-                    <Icon className="h-6 w-6" />
-                    {item.count > 0 && (
-                      <Badge 
-                        className={`absolute -top-1 -right-1 h-3 w-3 rounded-full p-0 flex items-center justify-center text-xs border border-background ${animatingBadges[item.id] ? 'animate-bounce-subtle' : ''}`}
-                      >
-                        {item.count > 9 ? '9+' : item.count}
-                      </Badge>
-                    )}
-                  </div>
-                  {/* Show label only when active */}
-                  {location.pathname === item.path && (
-                    <span className="text-xs font-medium animate-fade-in">{item.label}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex h-16 items-center justify-around px-2">
+          {mobileBottomNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleMobileNavigation(item.path)}
+                className={`flex flex-col items-center justify-center gap-1 ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            );
+          })}
           
-          {/* More menu for additional items */}
-          <div className="w-16 flex items-center justify-center border-l">
-            <button 
-              onClick={async () => {
-                try {
-                  await Haptics.impact({ style: ImpactStyle.Light });
-                } catch (error) {
-                  // Haptics not available
-                }
-                setMoreDrawerOpen(true);
-              }}
-              className="flex flex-col items-center justify-center space-y-1 text-muted-foreground hover:text-foreground transition-all touch-manipulation active:scale-95 h-full w-full"
-            >
-              <Squares2X2Icon className="h-6 w-6" />
-              <span className="text-xs font-medium">More</span>
-            </button>
-          </div>
+          <button
+            onClick={async () => {
+              try {
+                await Haptics.impact({ style: ImpactStyle.Light });
+              } catch (error) {}
+              setMoreDrawerOpen(true);
+            }}
+            className="flex flex-col items-center justify-center gap-1 text-muted-foreground"
+          >
+            <Squares2X2Icon className="h-6 w-6" />
+            <span className="text-xs font-medium">More</span>
+          </button>
+          
+          <button
+            onClick={() => handleMobileNavigation('/messages')}
+            className={`flex flex-col items-center justify-center gap-1 ${
+              location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            <div className="relative">
+              <ChatBubbleLeftIcon className="h-6 w-6" />
+              {unreadCounts.messages > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
+                  {unreadCounts.messages}
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs font-medium">Messages</span>
+          </button>
+          
+          <ProfileMenu />
         </div>
       </nav>
 
@@ -313,54 +310,36 @@ const Navigation = () => {
           </DrawerHeader>
           
           <div className="overflow-y-auto px-4 pb-6">
-            {/* Navigation Section */}
-            {mobileNavItems.slice(5).filter(item => {
-              if (item.id === 'users' && !hasStaffRole) {
-                return false;
-              }
-              return true;
-            }).length > 0 && (
-              <div className="pt-4">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 px-2">Navigation</h3>
-                <div className="space-y-1">
-                  {mobileNavItems.slice(5).filter(item => {
-                    if (item.id === 'users' && !hasStaffRole) {
-                      return false;
-                    }
-                    return true;
-                  }).map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={async () => {
-                          try {
-                            await Haptics.impact({ style: ImpactStyle.Light });
-                          } catch (error) {
-                            // Haptics not available
-                          }
-                          handleNavigation(item.path);
-                          setMoreDrawerOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all touch-manipulation active:scale-[0.98] ${
-                          isActive 
-                            ? 'bg-primary/10 text-primary' 
-                            : 'hover:bg-muted/50'
-                        }`}
-                      >
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="font-medium text-left flex-1">{item.label}</span>
-                        {item.count > 0 && (
-                          <Badge variant={isActive ? "default" : "secondary"} className="ml-auto">
-                            {item.count > 9 ? '9+' : item.count}
-                          </Badge>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+            <div className="pt-4">
+              <div className="space-y-1">
+                {mobileDrawerItems.filter(item => {
+                  if (item.id === 'users' && !hasStaffRole) return false;
+                  return true;
+                }).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={async () => {
+                        try {
+                          await Haptics.impact({ style: ImpactStyle.Light });
+                        } catch (error) {}
+                        handleNavigation(item.path);
+                        setMoreDrawerOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-lg ${
+                        isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="font-medium">{item.label}</span>
+                      {item.count > 0 && <Badge className="ml-auto">{item.count}</Badge>}
+                    </button>
+                  );
+                })}
               </div>
+            </div>
             )}
 
             {/* Quick Actions Section */}

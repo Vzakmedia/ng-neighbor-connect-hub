@@ -28,6 +28,7 @@ import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 
 import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Landing from "./pages/Landing";
 import PlatformRoot from "@/components/PlatformRoot";
 import About from "./pages/About";
@@ -220,6 +221,7 @@ const App = () => {
           <DirectMessageToastWrapper />
           <Routes>
               <Route path="/" element={<PlatformRoot />} />
+              <Route path="/home" element={<Home />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/about" element={<About />} />
