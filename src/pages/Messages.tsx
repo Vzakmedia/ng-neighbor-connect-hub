@@ -36,8 +36,8 @@ const Messages = () => {
       <Header />
       <Navigation />
       
-      {/* Mobile View - Simple Conversation List */}
-      <main className="md:hidden fixed inset-0 top-16 bottom-20 bg-background">
+      {/* Mobile & Tablet View - Simple Conversation List */}
+      <main className="lg:hidden fixed inset-0 top-16 bottom-20 bg-background">
         {user && (
           <MobileConversationList 
             conversations={conversations}
@@ -48,7 +48,7 @@ const Messages = () => {
       </main>
 
       {/* Desktop View - Keep existing UnifiedMessaging */}
-      <main className="hidden md:block md:ml-16 lg:ml-64 pb-16 md:pb-0">
+      <main className="hidden lg:block md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
             <div className="xl:col-span-3">
