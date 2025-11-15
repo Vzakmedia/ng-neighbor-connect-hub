@@ -248,8 +248,8 @@ const [audioSettings, setAudioSettings] = useState({
     <div className="w-full max-w-full overflow-x-hidden">
 
       <Tabs defaultValue="notifications" className="w-full max-w-full">
-        <div className="w-full overflow-x-auto -mx-4 px-4">
-          <TabsList className="w-full justify-start">
+        <div className="w-full overflow-x-auto overflow-y-hidden -mx-4 px-4 scrollbar-hide">
+          <TabsList className="w-auto inline-flex min-w-full justify-start">
             <TabsTrigger value="notifications">
               Notifications
             </TabsTrigger>
