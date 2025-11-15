@@ -1,6 +1,6 @@
 import { PlusIcon, EllipsisHorizontalIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,41 +36,34 @@ export const FeedTabNavigation = ({
   return (
     <div className="flex items-center justify-between gap-2 md:gap-4">
       <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-        <ToggleGroup 
-          type="single" 
-          value={activeTab}
-          onValueChange={(value) => value && onTabChange(value as FeedTab)}
-          className="justify-start flex-nowrap"
-        >
-          <ToggleGroupItem 
-            value="for-you" 
-            variant="outline"
-            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
-          >
-            For you
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="recent" 
-            variant="outline"
-            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
-          >
-            Recent
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="nearby" 
-            variant="outline"
-            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
-          >
-            Nearby
-          </ToggleGroupItem>
-          <ToggleGroupItem 
-            value="trending" 
-            variant="outline"
-            className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=on]:border-foreground data-[state=on]:bg-background touch-manipulation active:scale-95 transition-all"
-          >
-            Trending
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as FeedTab)}>
+          <TabsList className="h-auto p-1 bg-transparent">
+            <TabsTrigger 
+              value="for-you"
+              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+            >
+              For you
+            </TabsTrigger>
+            <TabsTrigger 
+              value="recent"
+              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+            >
+              Recent
+            </TabsTrigger>
+            <TabsTrigger 
+              value="nearby"
+              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+            >
+              Nearby
+            </TabsTrigger>
+            <TabsTrigger 
+              value="trending"
+              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+            >
+              Trending
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
