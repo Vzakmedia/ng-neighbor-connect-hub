@@ -59,7 +59,7 @@ export const MobileDrawer = ({
   const navItems: NavItem[] = [
     { 
       id: 'home', 
-      label: 'Home', 
+      label: shouldUseFilledIcons ? 'Feed' : 'Home', 
       path: '/', 
       icon: Home, 
       iconSolid: HomeSolid 

@@ -108,7 +108,7 @@ const Navigation = () => {
   }, [user]);
   
   const navItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: shouldUseFilledIcons ? 'Feed' : 'Home', count: 0, path: '/' },
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
