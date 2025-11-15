@@ -42,9 +42,9 @@ const MarketplacePage = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
-          {/* Mobile tab navigation */}
-          <div className="md:hidden space-y-3 mb-6">
-            <TabsList className="w-full grid grid-cols-3 h-auto p-1 bg-muted/30">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* Mobile tab navigation */}
+            <TabsList className="md:hidden w-full grid grid-cols-3 h-auto p-1 bg-muted/30 mb-6">
               <TabsTrigger 
                 value="marketplace"
                 onClick={() => setMarketSubTab("services")}
@@ -72,7 +72,7 @@ const MarketplacePage = () => {
             
             {/* Location scope toggle for mobile - only show when on marketplace tab */}
             {activeTab === 'marketplace' && (
-              <div className="flex items-center justify-center gap-2">
+              <div className="md:hidden flex items-center justify-center gap-2 mb-6">
                 <Button
                   variant={viewScope === 'neighborhood' ? 'default' : 'outline'}
                   onClick={() => setViewScope('neighborhood')}
@@ -91,10 +91,6 @@ const MarketplacePage = () => {
                 </Button>
               </div>
             )}
-          </div>
-          
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             {/* Desktop navigation with inline filters */}
             <div className="hidden md:flex items-center gap-6 mb-6 flex-wrap">
               {/* Main Tabs */}
