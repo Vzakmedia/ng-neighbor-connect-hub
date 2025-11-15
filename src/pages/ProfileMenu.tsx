@@ -82,8 +82,8 @@ export default function ProfileMenu() {
   const menuItems = [
     { icon: UserIcon, label: "View Profile", action: () => handleNavigation("/profile") },
     { icon: SettingsIcon, label: "Account Settings", action: () => handleNavigation("/settings") },
-    { icon: BellIcon, label: "Notifications", action: () => handleNavigation("/settings?tab=notifications") },
-    { icon: ShieldCheckIcon, label: "Privacy & Security", action: () => handleNavigation("/settings?tab=privacy") },
+    { icon: BellIcon, label: "Notifications", action: () => handleNavigation("/notifications") },
+    { icon: ShieldCheckIcon, label: "Privacy & Security", action: () => handleNavigation("/privacy-security") },
     { icon: QuestionMarkCircleIcon, label: "Help Center", action: () => handleNavigation("/help") },
   ];
 
