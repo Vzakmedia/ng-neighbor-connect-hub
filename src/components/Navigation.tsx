@@ -246,7 +246,7 @@ const Navigation = () => {
       </aside>
 
       {/* Mobile Bottom Navigation - Icon only design with centered More button */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-3xl z-50">
         <div className="flex h-14 items-center justify-evenly px-4">
           {/* Home */}
           {mobileBottomNavItems.map((item) => {
@@ -260,7 +260,7 @@ const Navigation = () => {
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <Icon className="h-6 w-6" />
+                <Icon className="h-7 w-7" />
               </button>
             );
           })}
@@ -275,7 +275,7 @@ const Navigation = () => {
             }}
             className="bg-primary text-primary-foreground p-3 rounded-2xl"
           >
-            <Squares2X2Icon className="h-6 w-6" />
+            <Squares2X2Icon className="h-7 w-7" />
           </button>
           
           {/* Messages */}
@@ -286,9 +286,9 @@ const Navigation = () => {
             }`}
           >
             {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
-              <ChatBubbleLeftSolid className="h-6 w-6" />
+              <ChatBubbleLeftSolid className="h-7 w-7" />
             ) : (
-              <ChatBubbleLeftIcon className="h-6 w-6" />
+              <ChatBubbleLeftIcon className="h-7 w-7" />
             )}
             {unreadCounts.messages > 0 && (
               <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
