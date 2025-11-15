@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import SettingsContent from '@/components/settings/SettingsContent';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from '@/lib/icons';
+import { ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
 
 const Settings = () => {
   const { user, loading } = useAuth();
@@ -31,25 +29,27 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <Navigation />
-      
-      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0 min-w-0">
-        <div className="container py-4 px-4 max-w-4xl mx-auto overflow-x-hidden">
-          <div className="mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </div>
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6 text-foreground" />
+          </button>
+          <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+          <div className="w-10" />
+        </div>
+      </div>
+
+      <main className="pb-20 md:pb-0">
+        <div className="container py-4 px-4 max-w-4xl mx-auto">
           <SettingsContent />
         </div>
       </main>
+
+      <Navigation />
     </div>
   );
 };

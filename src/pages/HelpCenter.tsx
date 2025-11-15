@@ -135,27 +135,18 @@ const HelpCenter = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <img 
-                src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
-                alt="NeighborLink Logo" 
-                className="h-8 w-8" 
-              />
-              <span className="font-bold text-xl">NeighborLink</span>
-            </div>
-            <Button 
-              variant="outline"
-              onClick={() => navigate(-1)}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-          </div>
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6 text-foreground" />
+          </button>
+          <h1 className="text-lg font-semibold text-foreground">Help Center</h1>
+          <div className="w-10" />
         </div>
-      </header>
+      </div>
 
       <div className="container py-12 max-w-6xl">
         {/* Hero Section */}
