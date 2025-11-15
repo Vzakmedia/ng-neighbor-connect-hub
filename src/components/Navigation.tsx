@@ -247,7 +247,7 @@ const Navigation = () => {
 
       {/* Mobile Bottom Navigation - Icon only design with centered More button */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-3xl z-50">
-        <div className="flex h-14 items-center justify-evenly px-4">
+        <div className="flex h-20 items-center justify-evenly px-4">
           {/* Home */}
           {mobileBottomNavItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -260,12 +260,12 @@ const Navigation = () => {
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <Icon className="h-7 w-7" />
+                <Icon className="h-8 w-8" />
               </button>
             );
           })}
           
-          {/* More Button - Centered with Primary Background */}
+          {/* More Button - Centered with Primary Background and Shadow */}
           <button
             onClick={async () => {
               try {
@@ -273,9 +273,9 @@ const Navigation = () => {
               } catch (error) {}
               setMoreDrawerOpen(true);
             }}
-            className="bg-primary text-primary-foreground p-3 rounded-2xl"
+            className="bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg shadow-primary/30"
           >
-            <Squares2X2Icon className="h-7 w-7" />
+            <Squares2X2Icon className="h-8 w-8" />
           </button>
           
           {/* Messages */}
@@ -286,9 +286,9 @@ const Navigation = () => {
             }`}
           >
             {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
-              <ChatBubbleLeftSolid className="h-7 w-7" />
+              <ChatBubbleLeftSolid className="h-8 w-8" />
             ) : (
-              <ChatBubbleLeftIcon className="h-7 w-7" />
+              <ChatBubbleLeftIcon className="h-8 w-8" />
             )}
             {unreadCounts.messages > 0 && (
               <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
