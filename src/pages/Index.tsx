@@ -27,6 +27,13 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
 
+  // Redirect mobile/native users to /home
+  useEffect(() => {
+    if (shouldUseFilledIcons && !loading) {
+      navigate("/home", { replace: true });
+    }
+  }, [shouldUseFilledIcons, loading, navigate]);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/");
@@ -59,11 +66,6 @@ const Index = () => {
     
     checkUserRole();
   }, [user]);
-
-  // Redirect mobile/native users to /home (after all hooks)
-  if (shouldUseFilledIcons && !loading) {
-    return <Navigate to="/home" replace />;
-  }
 
   if (loading || roleLoading) {
     return (
