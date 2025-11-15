@@ -301,8 +301,14 @@ const Navigation = () => {
 
       {/* Modern Bottom Drawer for More Options */}
       <Drawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen}>
-        <DrawerContent className="h-[90vh] bg-gradient-primary border-none">
-          <div className="flex-1 overflow-y-auto px-6 pt-12 pb-32">
+        <DrawerContent className="max-h-[70vh] bg-background border-none rounded-t-3xl">
+          {/* Header */}
+          <div className="pt-6 pb-4 px-6 border-b border-border/50">
+            <h2 className="text-center text-lg font-semibold text-foreground">More</h2>
+          </div>
+          
+          {/* Grid of Options */}
+          <div className="flex-1 overflow-y-auto px-8 py-8">
             <div className="grid grid-cols-3 gap-8">
               {mobileDrawerItems.filter(item => {
                 if (item.id === 'users' && !hasStaffRole) return false;
@@ -319,28 +325,18 @@ const Navigation = () => {
                       handleNavigation(item.path);
                       setMoreDrawerOpen(false);
                     }}
-                    className="flex flex-col items-center gap-3 touch-manipulation active:scale-95 transition-all duration-300"
+                    className="flex flex-col items-center gap-3 touch-manipulation active:scale-95 transition-transform"
                   >
-                    <div className="w-20 h-20 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-elevated hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                      <Icon className="h-9 w-9 text-community-primary" />
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Icon className="h-7 w-7 text-primary" />
                     </div>
-                    <span className="text-xs font-medium text-white text-center leading-tight max-w-[80px]">
+                    <span className="text-xs font-medium text-foreground text-center leading-tight max-w-[70px]">
                       {item.label}
                     </span>
                   </button>
                 );
               })}
             </div>
-          </div>
-          
-          {/* Modern Close Button */}
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-            <button
-              onClick={() => setMoreDrawerOpen(false)}
-              className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-2xl touch-manipulation active:scale-90 transition-all duration-300 hover:bg-accent group"
-            >
-              <XMarkIcon className="h-8 w-8 text-community-primary transition-transform duration-300 group-active:rotate-90" />
-            </button>
           </div>
         </DrawerContent>
       </Drawer>
