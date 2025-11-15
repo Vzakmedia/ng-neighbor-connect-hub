@@ -30,6 +30,7 @@ import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
+import ProfilePage from "./pages/ProfilePage";
 import Landing from "./pages/Landing";
 import PlatformRoot from "@/components/PlatformRoot";
 import About from "./pages/About";
@@ -222,6 +223,7 @@ const App = () => {
           <DirectMessageToastWrapper />
           <Routes>
               <Route path="/" element={<PlatformRoot />} />
+              <Route path="/account" element={<ProfilePage />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/home" element={<Home />} />
               <Route path="/dashboard" element={<Index />} />
