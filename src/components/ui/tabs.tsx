@@ -12,7 +12,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-9 sm:h-10 items-center justify-start gap-2 sm:gap-3 text-muted-foreground overflow-x-auto scrollbar-hide",
+      "flex items-center border-b border-border overflow-x-auto scrollbar-hide scroll-smooth",
       className
     )}
     {...props}
@@ -39,7 +39,10 @@ const TabsTrigger = React.forwardRef<
     <TabsPrimitive.Trigger
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.3)] data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground hover:bg-accent/50 data-[state=active]:hover:bg-primary shrink-0 min-w-fit",
+        "relative inline-flex items-center justify-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 shrink-0",
+        "data-[state=active]:text-foreground",
+        "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:transition-opacity",
+        "after:opacity-0 data-[state=active]:after:opacity-100",
         className
       )}
       {...props}
