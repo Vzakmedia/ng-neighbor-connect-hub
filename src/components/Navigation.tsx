@@ -24,7 +24,8 @@ import {
   BuildingOffice2Icon,
   BriefcaseIcon,
   Squares2X2Icon,
-  XMarkIcon
+  XMarkIcon,
+  NewspaperIcon
 } from '@heroicons/react/24/outline';
 import { 
   HomeIcon as HomeSolid,
@@ -39,7 +40,8 @@ import {
   BuildingOffice2Icon as BuildingOffice2Solid,
   BriefcaseIcon as BriefcaseSolid,
   Squares2X2Icon as Squares2X2Solid,
-  XMarkIcon as XMarkSolid
+  XMarkIcon as XMarkSolid,
+  NewspaperIcon as NewspaperSolid
 } from '@heroicons/react/24/solid';
 
 const Navigation = () => {
@@ -109,8 +111,8 @@ const Navigation = () => {
   }, [user]);
   
   const navItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/home' },
-    { id: 'feed', icon: HomeIcon, iconSolid: HomeSolid, label: 'Feed', count: 0, path: '/' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Overview', count: 0, path: '/home' },
+    { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
@@ -120,10 +122,10 @@ const Navigation = () => {
     { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
   ];
 
-  // Mobile bottom nav: 5 icons only (Home, Feed, More, Messages, Avatar)
+  // Mobile bottom nav: 5 icons only (Overview, Feed, More, Messages, Avatar)
   const mobileBottomNavItems = [
-    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/home' },
-    { id: 'feed', icon: HomeIcon, iconSolid: HomeSolid, label: 'Feed', count: 0, path: '/' },
+    { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Overview', count: 0, path: '/home' },
+    { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
   ];
 
   // Items to show in "More" drawer on mobile
