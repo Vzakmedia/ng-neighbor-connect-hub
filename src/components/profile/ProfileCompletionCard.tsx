@@ -155,13 +155,11 @@ export const ProfileCompletionCard = ({
           {expanded && (
             <div className="space-y-2 mt-3 animate-accordion-down">
               {completionStatus.missingSections.map(section => {
-                const Icon = section.icon;
                 return (
                   <div
                     key={section.id}
                     className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                   >
-                    <Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{section.label}</p>
                       <p className="text-xs text-muted-foreground">
