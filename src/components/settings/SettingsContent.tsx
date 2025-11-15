@@ -246,10 +246,6 @@ const [audioSettings, setAudioSettings] = useState({
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
-      <div className="flex items-center gap-2 mb-4 sm:mb-6 px-1">
-        <Settings className="h-5 w-5 sm:h-6 sm:w-6" />
-        <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
-      </div>
 
       <Tabs defaultValue="notifications" className="w-full max-w-full">
         <div className="w-full overflow-x-auto pb-2 mb-4">
