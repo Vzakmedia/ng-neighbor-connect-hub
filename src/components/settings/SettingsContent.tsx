@@ -251,50 +251,39 @@ const [audioSettings, setAudioSettings] = useState({
         <div className="w-full overflow-x-auto -mx-4 px-4">
           <TabsList className="w-full justify-start">
             <TabsTrigger value="notifications">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notifications</span>
+              Notifications
             </TabsTrigger>
             <TabsTrigger value="emergency">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="hidden sm:inline">Emergency</span>
+              Emergency
             </TabsTrigger>
             <TabsTrigger value="contacts">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Contacts</span>
+              Contacts
             </TabsTrigger>
             <TabsTrigger value="privacy">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Privacy</span>
+              Privacy
             </TabsTrigger>
             <TabsTrigger value="security">
-              <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">Security</span>
+              Security
             </TabsTrigger>
             {userRole === 'super_admin' && (
               <TabsTrigger value="admin-security">
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin Security</span>
+                Admin Security
               </TabsTrigger>
             )}
             <TabsTrigger value="account">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Account</span>
+              Account
             </TabsTrigger>
             <TabsTrigger value="data">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Data</span>
+              Data
             </TabsTrigger>
             <TabsTrigger value="support">
-              <HelpCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Support</span>
+              Support
             </TabsTrigger>
             <TabsTrigger value="automations">
-              <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">Automations</span>
+              Automations
             </TabsTrigger>
             <TabsTrigger value="insights">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Insights</span>
+              Insights
             </TabsTrigger>
           </TabsList>
         </div>
