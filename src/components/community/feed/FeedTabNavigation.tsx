@@ -37,28 +37,28 @@ export const FeedTabNavigation = ({
     <div className="flex items-center justify-between gap-2 md:gap-4">
       <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
         <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as FeedTab)}>
-          <TabsList className="h-auto p-1 bg-transparent">
+          <TabsList className="h-auto p-0">
             <TabsTrigger 
               value="for-you"
-              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+              className="whitespace-nowrap"
             >
               For you
             </TabsTrigger>
             <TabsTrigger 
               value="recent"
-              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+              className="whitespace-nowrap"
             >
               Recent
             </TabsTrigger>
             <TabsTrigger 
               value="nearby"
-              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+              className="whitespace-nowrap"
             >
               Nearby
             </TabsTrigger>
             <TabsTrigger 
               value="trending"
-              className="rounded-full px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm touch-manipulation active:scale-95 transition-all"
+              className="whitespace-nowrap"
             >
               Trending
             </TabsTrigger>
