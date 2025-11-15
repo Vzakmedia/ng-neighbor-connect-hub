@@ -10,25 +10,29 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerClose,
-  DrawerTrigger,
 } from '@/components/ui/drawer';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
-  Home, HomeSolid,
-  Users, UsersSolid,
-  MessageSquare, MessageSquareSolid,
-  ShoppingBag, ShoppingBagSolid,
-  Calendar, CalendarSolid,
-  Settings, SettingsSolid,
-  Bell, BellSolid,
-  Shield, ShieldSolid,
-  Menu,
-  X,
-  User,
-} from '@/lib/icons';
+  HomeIcon,
+  UsersIcon,
+  ChatBubbleLeftIcon,
+  ShoppingBagIcon,
+  CalendarIcon,
+  Cog6ToothIcon,
+  ShieldCheckIcon,
+  BriefcaseIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import {
+  HomeIcon as HomeSolid,
+  UsersIcon as UsersSolid,
+  ChatBubbleLeftIcon as ChatBubbleLeftSolid,
+  ShoppingBagIcon as ShoppingBagSolid,
+  CalendarIcon as CalendarSolid,
+  Cog6ToothIcon as Cog6ToothSolid,
+  ShieldCheckIcon as ShieldCheckSolid,
+  BriefcaseIcon as BriefcaseSolid,
+} from '@heroicons/react/24/solid';
 
 interface NavItem {
   id: string;
@@ -42,87 +46,84 @@ interface NavItem {
 }
 
 interface MobileDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   notificationCount?: number;
   hasStaffRole?: boolean;
 }
 
+/**
+ * MobileDrawer - "More" navigation drawer for mobile/native apps
+ * Shows additional navigation items that don't fit in the bottom nav bar
+ */
 export const MobileDrawer = ({ 
+  open,
+  onOpenChange,
   notificationCount = 0,
   hasStaffRole = false 
 }: MobileDrawerProps) => {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { shouldUseFilledIcons } = useMobileIcons();
 
+  // Navigation items for the More drawer (not in bottom nav)
   const navItems: NavItem[] = [
     { 
-      id: 'home', 
-      label: shouldUseFilledIcons ? 'Feed' : 'Home', 
-      path: '/', 
-      icon: Home, 
-      iconSolid: HomeSolid 
-    },
-    { 
       id: 'community', 
-      label: 'Community', 
+      label: 'Groups', 
       path: '/community', 
-      icon: Users, 
+      icon: UsersIcon, 
       iconSolid: UsersSolid 
-    },
-    { 
-      id: 'messages', 
-      label: 'Messages', 
-      path: '/messages', 
-      icon: MessageSquare, 
-      iconSolid: MessageSquareSolid,
-      requiresAuth: true 
-    },
-    { 
-      id: 'marketplace', 
-      label: 'Marketplace', 
-      path: '/marketplace', 
-      icon: ShoppingBag, 
-      iconSolid: ShoppingBagSolid 
     },
     { 
       id: 'events', 
       label: 'Events', 
       path: '/events', 
-      icon: Calendar, 
+      icon: CalendarIcon, 
       iconSolid: CalendarSolid 
     },
     { 
-      id: 'notifications', 
-      label: 'Notifications', 
-      path: '/notifications', 
-      icon: Bell, 
-      iconSolid: BellSolid,
-      badge: notificationCount,
+      id: 'marketplace', 
+      label: 'Marketplace', 
+      path: '/marketplace', 
+      icon: ShoppingBagIcon, 
+      iconSolid: ShoppingBagSolid 
+    },
+    { 
+      id: 'services', 
+      label: 'Services', 
+      path: '/services', 
+      icon: BriefcaseIcon, 
+      iconSolid: BriefcaseSolid 
+    },
+    { 
+      id: 'safety', 
+      label: 'Safety Center', 
+      path: '/safety', 
+      icon: ShieldCheckIcon, 
+      iconSolid: ShieldCheckSolid 
+    },
+    { 
+      id: 'users', 
+      label: 'User Directory', 
+      path: '/users', 
+      icon: UsersIcon, 
+      iconSolid: UsersSolid,
+      staffOnly: true,
       requiresAuth: true 
     },
     { 
       id: 'settings', 
       label: 'Settings', 
       path: '/settings', 
-      icon: Settings, 
-      iconSolid: SettingsSolid,
-      requiresAuth: true 
-    },
-    { 
-      id: 'staff', 
-      label: 'Staff Portal', 
-      path: '/staff', 
-      icon: Shield, 
-      iconSolid: ShieldSolid,
-      staffOnly: true,
+      icon: Cog6ToothIcon, 
+      iconSolid: Cog6ToothSolid,
       requiresAuth: true 
     },
   ];
 
   const handleNavigation = async (path: string) => {
-    // Haptic feedback on native platforms
     if (Capacitor.isNativePlatform()) {
       try {
         await Haptics.impact({ style: ImpactStyle.Light });
@@ -132,7 +133,7 @@ export const MobileDrawer = ({
     }
     
     navigate(path);
-    setOpen(false);
+    onOpenChange(false);
   };
 
   const filteredNavItems = navItems.filter(item => {
@@ -141,114 +142,61 @@ export const MobileDrawer = ({
     return true;
   });
 
-  const getUserInitials = () => {
-    if (!user?.email) return '?';
-    return user.email.charAt(0).toUpperCase();
-  };
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-      </DrawerTrigger>
-      
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <DrawerTitle className="text-lg font-semibold">
-              Navigation
-            </DrawerTitle>
-            <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </DrawerClose>
-          </div>
+        <DrawerHeader className="flex items-center justify-between border-b pb-4">
+          <DrawerTitle className="text-lg font-semibold">More</DrawerTitle>
+          <DrawerClose asChild>
+            <button className="rounded-full p-2 hover:bg-muted transition-colors">
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </DrawerClose>
         </DrawerHeader>
-
-        <div className="overflow-y-auto px-4 py-6">
-          {/* User Profile Section */}
-          {user && (
-            <>
-              <div className="flex items-center gap-3 mb-6">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={user.user_metadata?.avatar_url} />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {user.user_metadata?.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-              <Separator className="mb-6" />
-            </>
-          )}
-
-          {/* Navigation Items */}
-          <nav className="space-y-1">
+        
+        <div className="overflow-y-auto px-4 pb-6">
+          <div className="pt-4 space-y-1">
             {filteredNavItems.map((item) => {
+              const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              // Use solid icon on mobile/native when active
-              const Icon = (isActive && shouldUseFilledIcons) 
-                ? item.iconSolid 
-                : item.icon;
-
+              
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.path)}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg
-                    text-left transition-all touch-manipulation active:scale-98
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'text-foreground hover:bg-accent'
-                    }
-                  `}
+                  className={`w-full flex items-center gap-4 p-4 rounded-lg transition-all touch-manipulation active:scale-[0.98] ${
+                    isActive 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'hover:bg-muted/50'
+                  }`}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="flex-1 font-medium text-sm">
-                    {item.label}
-                  </span>
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-medium text-left flex-1">{item.label}</span>
                   {item.badge && item.badge > 0 && (
-                    <Badge 
-                      variant={isActive ? "secondary" : "default"}
-                      className="h-5 min-w-[20px] px-1.5 text-xs"
-                    >
-                      {item.badge > 99 ? '99+' : item.badge}
+                    <Badge variant={isActive ? "default" : "secondary"}>
+                      {item.badge > 9 ? '9+' : item.badge}
                     </Badge>
                   )}
                 </button>
               );
             })}
-          </nav>
+          </div>
 
-          {/* Profile Button (if not logged in) */}
-          {!user && (
-            <>
-              <Separator className="my-6" />
-              <Button
-                onClick={() => handleNavigation('/profile')}
-                className="w-full"
-                variant="default"
+          {/* Staff Portal - separate section */}
+          {hasStaffRole && (
+            <div className="pt-6 mt-6 border-t">
+              <button
+                onClick={() => handleNavigation('/staff')}
+                className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-all"
               >
-                <User className="h-4 w-4 mr-2" />
-                Sign In
-              </Button>
-            </>
+                <ShieldCheckIcon className="h-5 w-5 flex-shrink-0 text-orange-500" />
+                <div className="text-left flex-1">
+                  <div className="font-medium">Staff Portal</div>
+                  <div className="text-xs text-muted-foreground">Platform management</div>
+                </div>
+              </button>
+            </div>
           )}
         </div>
       </DrawerContent>
