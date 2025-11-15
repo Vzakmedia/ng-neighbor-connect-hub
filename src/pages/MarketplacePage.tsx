@@ -48,25 +48,22 @@ const MarketplacePage = () => {
               <TabsTrigger 
                 value="marketplace"
                 onClick={() => setMarketSubTab("services")}
-                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <Briefcase className="h-5 w-5" />
-                <span className="text-xs">Services</span>
+                <span className="text-sm">Services</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="marketplace"
                 onClick={() => setMarketSubTab("goods")}
-                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <ShoppingBag className="h-5 w-5" />
-                <span className="text-xs">Goods</span>
+                <span className="text-sm">Goods</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="businesses"
-                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <MapPin className="h-5 w-5" />
-                <span className="text-xs">Businesses</span>
+                <span className="text-sm">Businesses</span>
               </TabsTrigger>
             </TabsList>
             
