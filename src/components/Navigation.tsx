@@ -340,7 +340,6 @@ const Navigation = () => {
                 })}
               </div>
             </div>
-            )}
 
             {/* Quick Actions Section */}
             <div className="pt-6">
