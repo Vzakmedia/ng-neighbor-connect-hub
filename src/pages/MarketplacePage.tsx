@@ -42,37 +42,33 @@ const MarketplacePage = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container mx-auto px-4 py-6">
-          {/* Mobile tab buttons */}
+          {/* Mobile tab navigation */}
           <div className="md:hidden space-y-3 mb-6">
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant={activeTab === "marketplace" && marketSubTab === "services" ? "default" : "outline"}
-                onClick={() => { setActiveTab("marketplace"); setMarketSubTab("services"); }}
-                size={activeTab === "marketplace" && marketSubTab === "services" ? "default" : "icon"}
-                className="transition-all duration-200"
+            <TabsList className="w-full grid grid-cols-3 h-auto p-1 bg-muted/30">
+              <TabsTrigger 
+                value="marketplace"
+                onClick={() => setMarketSubTab("services")}
+                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <span className="text-xs">📋</span>
-                {activeTab === "marketplace" && marketSubTab === "services" && <span className="ml-2">Services</span>}
-              </Button>
-              <Button
-                variant={activeTab === "marketplace" && marketSubTab === "goods" ? "default" : "outline"}
-                onClick={() => { setActiveTab("marketplace"); setMarketSubTab("goods"); }}
-                size={activeTab === "marketplace" && marketSubTab === "goods" ? "default" : "icon"}
-                className="transition-all duration-200"
+                <Briefcase className="h-5 w-5" />
+                <span className="text-xs">Services</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="marketplace"
+                onClick={() => setMarketSubTab("goods")}
+                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <span className="text-xs">🛍️</span>
-                {activeTab === "marketplace" && marketSubTab === "goods" && <span className="ml-2">Goods</span>}
-              </Button>
-              <Button
-                variant={activeTab === "businesses" ? "default" : "outline"}
-                onClick={() => setActiveTab("businesses")}
-                size={activeTab === "businesses" ? "default" : "icon"}
-                className="transition-all duration-200"
+                <ShoppingBag className="h-5 w-5" />
+                <span className="text-xs">Goods</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="businesses"
+                className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                <span className="text-xs">🏢</span>
-                {activeTab === "businesses" && <span className="ml-2">Local Businesses</span>}
-              </Button>
-            </div>
+                <MapPin className="h-5 w-5" />
+                <span className="text-xs">Businesses</span>
+              </TabsTrigger>
+            </TabsList>
             
             {/* Location scope toggle for mobile - only show when on marketplace tab */}
             {activeTab === 'marketplace' && (
