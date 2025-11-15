@@ -170,7 +170,7 @@ const HomeDashboard = () => {
           
           {/* Feed Content */}
           <Card className="shadow-card border-0">
-            <CardContent className="px-3 sm:px-4 md:px-6 pt-6" data-tutorial="community-feed">
+            <CardContent className="px-0 lg:px-6 pt-6" data-tutorial="community-feed">
               <CommunityFeed 
                 filters={feedFilters}
                 onFiltersChange={setFeedFilters}
