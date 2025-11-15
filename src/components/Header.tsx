@@ -69,16 +69,16 @@ const Header = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-              <MapPinIcon className="h-5 w-5" />
+              <MapPinIcon className="h-4 w-4" />
               <span>{getLocation()}</span>
             </div>
             
             <ThemeToggle />
             
-            <Button variant="ghost" size="icon" className="relative h-10 w-10" onClick={handleMessagesClick} data-tutorial="messages">
-              <ChatBubbleLeftIcon className="h-6 w-6" />
+            <Button variant="ghost" size="icon" className="relative" onClick={handleMessagesClick} data-tutorial="messages">
+              <ChatBubbleLeftIcon className="h-5 w-5" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
                   {unreadCounts.messages}
@@ -87,6 +87,57 @@ const Header = () => {
             </Button>
             
             <NotificationBell onClick={() => setShowNotifications(!showNotifications)} />
+            
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-tutorial="profile">
+                    <OnlineAvatar
+                      userId={user?.id}
+                      src={profile?.avatar_url}
+                      fallback={getInitials()}
+                      size="md"
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">{getDisplayName()}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <CreateCommunityAdDialog>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <MegaphoneIcon className="mr-2 h-4 w-4" />
+                      Create Ad
+                    </DropdownMenuItem>
+                  </CreateCommunityAdDialog>
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Cog6ToothIcon className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <ShieldCheckIcon className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
