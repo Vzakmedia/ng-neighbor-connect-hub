@@ -24,8 +24,7 @@ import {
   BuildingOffice2Icon,
   BriefcaseIcon,
   Squares2X2Icon,
-  XMarkIcon,
-  NewspaperIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { 
   HomeIcon as HomeSolid,
@@ -40,8 +39,7 @@ import {
   BuildingOffice2Icon as BuildingOffice2Solid,
   BriefcaseIcon as BriefcaseSolid,
   Squares2X2Icon as Squares2X2Solid,
-  XMarkIcon as XMarkSolid,
-  NewspaperIcon as NewspaperSolid
+  XMarkIcon as XMarkSolid
 } from '@heroicons/react/24/solid';
 
 const Navigation = () => {
@@ -112,7 +110,7 @@ const Navigation = () => {
   
   const navItems = [
     { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Home', count: 0, path: '/home' },
-    { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
+    { id: 'feed', icon: HomeIcon, iconSolid: HomeSolid, label: 'Feed', count: 0, path: '/' },
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
@@ -285,11 +283,7 @@ const Navigation = () => {
             }`}
           >
             <div className="relative">
-              {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
-                <ChatBubbleLeftSolid className="h-6 w-6" />
-              ) : (
-                <ChatBubbleLeftIcon className="h-6 w-6" />
-              )}
+              <ChatBubbleLeftIcon className="h-6 w-6" />
               {unreadCounts.messages > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
                   {unreadCounts.messages}

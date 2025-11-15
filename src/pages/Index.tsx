@@ -1,10 +1,9 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { useAuth } from "@/hooks/useAuth";
-import { useMobileIcons } from "@/hooks/useMobileIcons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeedErrorBoundary } from "@/components/FeedErrorBoundary";
 
@@ -22,17 +21,9 @@ const DashboardSkeleton = () => (
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const { shouldUseFilledIcons } = useMobileIcons();
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
-
-  // Redirect mobile/native users to /home
-  useEffect(() => {
-    if (shouldUseFilledIcons && !loading) {
-      navigate("/home", { replace: true });
-    }
-  }, [shouldUseFilledIcons, loading, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
