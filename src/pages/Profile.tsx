@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ProfileOverview from '@/components/profile/ProfileOverview';
 import ActivityHistory from '@/components/profile/ActivityHistory';
+import { ProfileCompletionCard } from '@/components/profile/ProfileCompletionCard';
 
 const Profile = () => {
   const { user, loading } = useAuth();
+  const { profile } = useProfile();
+  const completionStatus = useProfileCompletion(profile);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +40,12 @@ const Profile = () => {
       <main className="md:ml-16 lg:ml-64 pt-14 pb-20 md:pb-4">
         <div className="container py-6 max-w-4xl">
           <div className="space-y-6">
+            {!completionStatus.isComplete && (
+              <ProfileCompletionCard 
+                completionStatus={completionStatus}
+                onEditProfile={() => navigate('/complete-profile')}
+              />
+            )}
             <ProfileOverview />
             <ActivityHistory />
           </div>
