@@ -7,7 +7,7 @@ import Navigation from '@/components/Navigation';
 import ProfileOverview from '@/components/profile/ProfileOverview';
 import ActivityHistory from '@/components/profile/ActivityHistory';
 import { ProfileCompletionCard } from '@/components/profile/ProfileCompletionCard';
-import { ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -42,7 +42,7 @@ const Profile = () => {
             onClick={() => navigate(-1)}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
-            <ArrowLeft className="h-6 w-6 text-foreground" />
+            <ArrowLeftIcon className="h-6 w-6 text-foreground" />
           </button>
           <h1 className="text-lg font-semibold text-foreground">Profile</h1>
           <div className="w-10" />
