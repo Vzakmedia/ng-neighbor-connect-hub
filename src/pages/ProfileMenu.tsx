@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Navigation from "@/components/Navigation";
 import {
   UserIcon,
   Cog6ToothIcon as SettingsIcon,
@@ -159,6 +160,8 @@ export default function ProfileMenu() {
           Sign Out
         </button>
       </div>
+      
+      <Navigation />
     </div>
   );
 }
