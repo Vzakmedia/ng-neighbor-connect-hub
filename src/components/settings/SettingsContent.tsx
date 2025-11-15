@@ -248,53 +248,53 @@ const [audioSettings, setAudioSettings] = useState({
     <div className="w-full max-w-full overflow-x-hidden">
 
       <Tabs defaultValue="notifications" className="w-full max-w-full">
-        <div className="w-full overflow-x-auto pb-2 mb-4">
-          <TabsList className="inline-flex h-auto min-w-full w-max p-1 gap-1">
-            <TabsTrigger value="notifications" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Bell className="h-3 w-3 mr-1" />
-              Notifications
+        <div className="w-full overflow-x-auto -mx-4 px-4">
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="notifications">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
-            <TabsTrigger value="emergency" className="text-xs px-2 py-2 whitespace-nowrap">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Emergency
+            <TabsTrigger value="emergency">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="hidden sm:inline">Emergency</span>
             </TabsTrigger>
-            <TabsTrigger value="contacts" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Users className="h-3 w-3 mr-1" />
-              Contacts
+            <TabsTrigger value="contacts">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Contacts</span>
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Shield className="h-3 w-3 mr-1" />
-              Privacy
+            <TabsTrigger value="privacy">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Privacy</span>
             </TabsTrigger>
-            <TabsTrigger value="security" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Lock className="h-3 w-3 mr-1" />
-              Security
+            <TabsTrigger value="security">
+              <Lock className="h-4 w-4" />
+              <span className="hidden sm:inline">Security</span>
             </TabsTrigger>
             {userRole === 'super_admin' && (
-              <TabsTrigger value="admin-security" className="text-xs px-2 py-2 whitespace-nowrap">
-                <Shield className="h-3 w-3 mr-1" />
-                Admin Security
+              <TabsTrigger value="admin-security">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin Security</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="account" className="text-xs px-2 py-2 whitespace-nowrap">
-              <User className="h-3 w-3 mr-1" />
-              Account
+            <TabsTrigger value="account">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Account</span>
             </TabsTrigger>
-            <TabsTrigger value="data" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Download className="h-3 w-3 mr-1" />
-              Data
+            <TabsTrigger value="data">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Data</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="text-xs px-2 py-2 whitespace-nowrap">
-              <HelpCircle className="h-3 w-3 mr-1" />
-              Support
+            <TabsTrigger value="support">
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Support</span>
             </TabsTrigger>
-            <TabsTrigger value="automations" className="text-xs px-2 py-2 whitespace-nowrap">
-              <Activity className="h-3 w-3 mr-1" />
-              Automations
+            <TabsTrigger value="automations">
+              <Activity className="h-4 w-4" />
+              <span className="hidden sm:inline">Automations</span>
             </TabsTrigger>
-            <TabsTrigger value="insights" className="text-xs px-2 py-2 whitespace-nowrap">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Insights
+            <TabsTrigger value="insights">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Insights</span>
             </TabsTrigger>
           </TabsList>
         </div>
