@@ -6,9 +6,11 @@ import Navigation from '@/components/Navigation';
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeedErrorBoundary } from "@/components/FeedErrorBoundary";
+import { useMobileIcons } from "@/hooks/useMobileIcons";
 
-// Lazy load the dashboard for better initial load
+// Lazy load components for better initial load
 const HomeDashboard = lazy(() => import('@/components/HomeDashboard'));
+const HomeWidgets = lazy(() => import('@/components/home/HomeWidgets'));
 
 // Loading skeleton
 const DashboardSkeleton = () => (
@@ -22,6 +24,7 @@ const DashboardSkeleton = () => (
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { shouldUseFilledIcons } = useMobileIcons();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
 
@@ -70,21 +73,27 @@ const Index = () => {
     return null; // Will redirect to auth
   }
 
-  // Always show the regular dashboard - staff can access staff portal via navigation
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <Navigation />
       
       <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-2 md:pt-0">
-        <div className="container px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
-          <FeedErrorBoundary>
-            <Suspense fallback={<DashboardSkeleton />}>
-              <HomeDashboard />
-            </Suspense>
-          </FeedErrorBoundary>
-        </div>
+        {shouldUseFilledIcons ? (
+          // Mobile: Show Overview widgets
+          <Suspense fallback={<DashboardSkeleton />}>
+            <HomeWidgets />
+          </Suspense>
+        ) : (
+          // Desktop: Show Feed
+          <div className="container px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6">
+            <FeedErrorBoundary>
+              <Suspense fallback={<DashboardSkeleton />}>
+                <HomeDashboard />
+              </Suspense>
+            </FeedErrorBoundary>
+          </div>
+        )}
       </main>
     </div>
   );
