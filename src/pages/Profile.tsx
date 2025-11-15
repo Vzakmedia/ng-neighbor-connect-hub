@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
-import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ProfileOverview from '@/components/profile/ProfileOverview';
 import ActivityHistory from '@/components/profile/ActivityHistory';
 import { ProfileCompletionCard } from '@/components/profile/ProfileCompletionCard';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from '@/lib/icons';
+import { ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -37,22 +35,22 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="md:ml-16 lg:ml-64 pt-14 pb-20 md:pb-4">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6 text-foreground" />
+          </button>
+          <h1 className="text-lg font-semibold text-foreground">Profile</h1>
+          <div className="w-10" />
+        </div>
+      </div>
+
+      <main className="pb-20 md:pb-4">
         <div className="container py-6 max-w-4xl">
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-          </div>
-          
           <div className="space-y-6">
             {!completionStatus.isComplete && (
               <ProfileCompletionCard 
