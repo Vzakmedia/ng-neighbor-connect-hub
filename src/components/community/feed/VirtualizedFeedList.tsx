@@ -212,7 +212,7 @@ const VirtualizedFeedListComponent = ({
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
-                className="px-2 sm:px-4"
+                className="px-2 lg:px-4"
               >
                 {isLoaderRow ? (
                   hasNextPage ? (
