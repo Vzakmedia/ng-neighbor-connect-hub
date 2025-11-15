@@ -40,7 +40,7 @@ export const ProfileMenu = () => {
       className="p-2 focus:outline-none"
       onClick={handleClick}
     >
-      <Avatar className="h-6 w-6 border-2 border-primary/20">
+      <Avatar className="h-7 w-7 border-2 border-primary/20">
         <AvatarImage src={profile?.avatar_url || undefined} />
         <AvatarFallback className="bg-primary/10 text-primary text-xs">
           {getUserInitials()}
