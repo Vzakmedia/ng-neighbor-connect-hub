@@ -245,9 +245,10 @@ const Navigation = () => {
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation - 5 icons: Home, Feed, More, Messages, Avatar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-50">
-        <div className="flex h-16 items-center justify-around px-2">
+      {/* Mobile Bottom Navigation - Icon only design with centered More button */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+        <div className="flex h-14 items-center justify-evenly px-4">
+          {/* Home */}
           {mobileBottomNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
@@ -255,16 +256,16 @@ const Navigation = () => {
               <button
                 key={item.id}
                 onClick={() => handleMobileNavigation(item.path)}
-                className={`flex flex-col items-center justify-center gap-1 ${
+                className={`p-2 ${
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
                 <Icon className="h-6 w-6" />
-                <span className="text-xs font-medium">{item.label}</span>
               </button>
             );
           })}
           
+          {/* More Button - Centered with Primary Background */}
           <button
             onClick={async () => {
               try {
@@ -272,29 +273,31 @@ const Navigation = () => {
               } catch (error) {}
               setMoreDrawerOpen(true);
             }}
-            className="flex flex-col items-center justify-center gap-1 text-muted-foreground"
+            className="bg-primary text-primary-foreground p-3 rounded-2xl"
           >
             <Squares2X2Icon className="h-6 w-6" />
-            <span className="text-xs font-medium">More</span>
           </button>
           
+          {/* Messages */}
           <button
             onClick={() => handleMobileNavigation('/messages')}
-            className={`flex flex-col items-center justify-center gap-1 ${
+            className={`relative p-2 ${
               location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
-            <div className="relative">
+            {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
+              <ChatBubbleLeftSolid className="h-6 w-6" />
+            ) : (
               <ChatBubbleLeftIcon className="h-6 w-6" />
-              {unreadCounts.messages > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
-                  {unreadCounts.messages}
-                </Badge>
-              )}
-            </div>
-            <span className="text-xs font-medium">Messages</span>
+            )}
+            {unreadCounts.messages > 0 && (
+              <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                {unreadCounts.messages}
+              </Badge>
+            )}
           </button>
           
+          {/* Profile Menu */}
           <ProfileMenu />
         </div>
       </nav>
