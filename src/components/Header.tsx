@@ -156,68 +156,7 @@ const Header = () => {
           
           <div className="flex items-center space-x-1">
             <ThemeToggle />
-            
-            <Button variant="ghost" size="icon" className="relative h-8 w-8" onClick={handleMessagesClick} data-tutorial="messages">
-              <ChatBubbleLeftIcon className="h-4 w-4" />
-              {unreadCounts.messages > 0 && (
-                <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-green-600">
-                  {unreadCounts.messages}
-                </Badge>
-              )}
-            </Button>
-            
             <NotificationBell onClick={() => setShowNotifications(!showNotifications)} className="h-8 w-8" />
-            
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-tutorial="profile">
-                    <OnlineAvatar
-                      userId={user?.id}
-                      src={profile?.avatar_url}
-                      fallback={getInitials()}
-                      size="sm"
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="text-sm font-medium">{getDisplayName()}</p>
-                      <p className="w-[180px] truncate text-xs text-muted-foreground">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <CreateCommunityAdDialog>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <MegaphoneIcon className="mr-2 h-4 w-4" />
-                      Create Ad
-                    </DropdownMenuItem>
-                  </CreateCommunityAdDialog>
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Cog6ToothIcon className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <ShieldCheckIcon className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </div>
       </div>
