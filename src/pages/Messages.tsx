@@ -11,7 +11,13 @@ import { useConversations } from '@/hooks/useConversations';
 const Messages = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { conversations, loading: conversationsLoading } = useConversations(user?.id);
+  const { conversations, loading: conversationsLoading, fetchConversations } = useConversations(user?.id);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchConversations();
+    }
+  }, [user?.id, fetchConversations]);
 
   useEffect(() => {
     if (!loading && !user) {
