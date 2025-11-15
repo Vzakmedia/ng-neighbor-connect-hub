@@ -31,9 +31,8 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <Navigation />
       
-      <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
+      <main className="md:ml-16 lg:ml-64 pt-14 pb-20 md:pb-4">
         <div className="container py-6 max-w-4xl">
           <div className="space-y-6">
             <ProfileOverview />
@@ -41,6 +40,8 @@ const Profile = () => {
           </div>
         </div>
       </main>
+
+      <Navigation />
     </div>
   );
 };
