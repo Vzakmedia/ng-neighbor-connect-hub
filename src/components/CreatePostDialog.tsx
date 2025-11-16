@@ -521,7 +521,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                         }}
                         className="flex-shrink-0 p-2 rounded-full bg-white/60 transition-all active:scale-95"
                       >
-                        <Icon className={`h-5 w-5 ${type.color}`} />
+                        <Icon className="h-5 w-5 text-white" />
                       </button>
                     );
                   })}
