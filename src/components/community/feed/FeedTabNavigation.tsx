@@ -34,6 +34,7 @@ export const FeedTabNavigation = ({
   };
 
   return (
+    <>
     <div className="flex items-center justify-between gap-2 md:gap-4">
       <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
         <Tabs value={activeTab} onValueChange={(value) => onTabChange(value as FeedTab)}>
@@ -116,14 +117,25 @@ export const FeedTabNavigation = ({
         )}
       </div>
 
+      {/* Desktop Post Button - Inline with tabs */}
       <Button 
         onClick={onCreatePost}
-        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-3 md:px-4 py-1.5 md:py-2 flex-shrink-0 touch-manipulation active:scale-95 transition-all"
+        className="hidden lg:flex bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-3 md:px-4 py-1.5 md:py-2 flex-shrink-0 touch-manipulation active:scale-95 transition-all"
         size="sm"
       >
         <PlusIcon className="h-4 w-4 md:mr-1" />
         <span className="hidden md:inline">Post</span>
       </Button>
     </div>
+
+    {/* Mobile/Tablet Floating Action Button */}
+    <Button 
+      onClick={onCreatePost}
+      className="lg:hidden fixed bottom-24 right-4 z-50 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full w-14 h-14 shadow-lg hover:shadow-xl transition-all touch-manipulation active:scale-95"
+      size="icon"
+    >
+      <PlusIcon className="h-6 w-6" />
+    </Button>
+    </>
   );
 };
