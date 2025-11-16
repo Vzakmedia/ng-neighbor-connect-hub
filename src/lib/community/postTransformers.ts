@@ -10,6 +10,7 @@ export function transformToCardData(post: CommunityPost & {
   is_liked: boolean;
   is_saved: boolean;
   views_count?: number;
+  post_type: string;
 }): PostCardData {
   return {
     ...post,
@@ -26,6 +27,7 @@ export function transformToCardData(post: CommunityPost & {
     isLiked: post.is_liked,
     isSaved: post.is_saved,
     views_count: post.views_count || 0,
+    post_type: post.post_type,
   };
 }
 
