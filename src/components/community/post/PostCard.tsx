@@ -120,7 +120,7 @@ const PostCardComponent = ({
         onDoubleTapLike={handleDoubleTapLike}
       />
       
-      <div className="px-3 sm:px-4">
+      <div className="px-3 sm:px-4 bg-primary text-white [&_*]:text-white [&_button]:text-white [&_svg]:text-white">
         <PostCardActions
           post={post}
           showComments={showComments}
@@ -132,7 +132,7 @@ const PostCardComponent = ({
         />
         
         {showComments && (
-          <div className="pt-2 pb-4 border-t animate-fade-in">
+          <div className="pt-2 pb-4 border-t border-white/20 animate-fade-in">
             <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
           </div>
         )}
