@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Navigation from '@/components/Navigation';
 import ProfileOverview from '@/components/profile/ProfileOverview';
 import ActivityHistory from '@/components/profile/ActivityHistory';
@@ -13,6 +14,7 @@ const Profile = () => {
   const { user, loading } = useAuth();
   const { profile } = useProfile();
   const completionStatus = useProfileCompletion(profile);
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +54,7 @@ const Profile = () => {
       <main className="pb-20 md:pb-4">
         <div className="container py-6 max-w-4xl">
           <div className="space-y-6">
-            {!completionStatus.isComplete && (
+            {!completionStatus.isComplete && !isMobile && (
               <ProfileCompletionCard 
                 completionStatus={completionStatus}
                 onEditProfile={() => navigate('/complete-profile')}
