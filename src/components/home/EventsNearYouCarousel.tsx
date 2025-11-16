@@ -22,26 +22,38 @@ export const EventsNearYouCarousel = () => {
           {/* Find Event Card */}
           <div
             onClick={() => navigate('/events')}
-            className="relative flex-shrink-0 w-[140px] h-[200px] bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            className="relative flex-shrink-0 w-[140px] h-[200px] bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
           >
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {/* Avatar at bottom with icon overlay */}
-              <div className="relative mb-3">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
+            {/* Avatar Image Background */}
+            <div className="absolute inset-0">
+              {profile?.avatar_url ? (
+                <img 
+                  src={profile.avatar_url} 
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                  <div className="text-6xl text-white/40 font-bold">
                     {getInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-1.5">
-                  <PlusIcon className="h-4 w-4" />
+                  </div>
                 </div>
+              )}
+            </div>
+            
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            
+            {/* Plus Button at Bottom Center */}
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
+              <div className="bg-blue-600 rounded-full p-3 shadow-lg">
+                <PlusIcon className="h-6 w-6 text-white" />
               </div>
-              
-              <div className="flex items-center gap-1.5 text-foreground">
-                <CalendarIcon className="h-4 w-4" />
-                <span className="text-sm font-medium">Find Event</span>
-              </div>
+            </div>
+            
+            {/* Find Event Text */}
+            <div className="absolute bottom-3 left-0 right-0 text-center">
+              <span className="text-sm font-medium text-white">Find Event</span>
             </div>
           </div>
 
