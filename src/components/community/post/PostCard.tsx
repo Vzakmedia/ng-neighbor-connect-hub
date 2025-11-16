@@ -7,6 +7,8 @@ import { PostCardContent } from './PostCardContent';
 import { PostCardMedia } from './PostCardMedia';
 import { PostCardActions } from './PostCardActions';
 import CommentSection from '@/components/CommentSection';
+import { PollCard } from '../poll/PollCard';
+import { usePoll } from '@/hooks/usePoll';
 import { Users, Building, Home as HomeIcon, Globe } from '@/lib/icons';
 
 interface PostCardProps {
@@ -35,6 +37,7 @@ const PostCardComponent = ({
   onToggleComments
 }: PostCardProps) => {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
+  const { poll, options, userVotes, isLoading } = usePoll(post.id);
 
   const handleImageError = (index: number) => {
     setImageError(prev => ({ ...prev, [index]: true }));
@@ -110,6 +113,19 @@ const PostCardComponent = ({
           tags={post.tags}
           onPostClick={onPostClick}
         />
+        
+        {/* Poll Card */}
+        {post.post_type === 'poll' && poll && !isLoading && (
+          <PollCard
+            pollId={poll.id}
+            question={poll.question}
+            closesAt={poll.closes_at}
+            allowMultipleChoices={poll.allow_multiple_choices}
+            maxChoices={poll.max_choices}
+            options={options}
+            userVotes={userVotes}
+          />
+        )}
       </div>
       
       <PostCardMedia

@@ -43,6 +43,7 @@ export interface PostCardData extends CommunityPost, PostEngagement {
   isLiked: boolean;
   isSaved: boolean;
   views_count?: number;
+  post_type: string;
 }
 
 export type PostType = 'general' | 'safety' | 'marketplace' | 'help' | 'event';
