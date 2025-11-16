@@ -506,7 +506,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             </ScrollArea>
 
             {/* Fixed Bottom Section - Collapsed Drawer Trigger */}
-            <div className="border-t bg-background flex-shrink-0">
+            <div className="border-t bg-primary flex-shrink-0">
               <div className="flex items-center justify-between p-3">
                 {/* Icon Row */}
                 <div className="flex gap-2 overflow-x-auto">
@@ -519,9 +519,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                           setPostType(type.value);
                           setDrawerOpen(true);
                         }}
-                        className={`flex-shrink-0 p-2 rounded-full ${type.bgColor} ${type.color} transition-all active:scale-95`}
+                        className="flex-shrink-0 p-2 rounded-full bg-white transition-all active:scale-95"
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className={`h-5 w-5 ${type.color}`} />
                       </button>
                     );
                   })}
@@ -532,7 +532,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setDrawerOpen(true)}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 text-white hover:bg-white/20"
                 >
                   <ChevronUp className="h-5 w-5" />
                 </Button>
