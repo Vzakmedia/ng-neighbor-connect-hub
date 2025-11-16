@@ -159,14 +159,16 @@ const HomeDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Tab Navigation */}
-          <FeedTabNavigation
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            onCreatePost={() => setCreatePostOpen(true)}
-            selectedLocationScope={selectedLocationScope}
-            onLocationScopeChange={handleLocationScopeChange}
-          />
+          {/* Tab Navigation - Sticky */}
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 sm:-mx-5 md:-mx-6 px-4 sm:px-5 md:px-6 py-3 border-b">
+            <FeedTabNavigation
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              onCreatePost={() => setCreatePostOpen(true)}
+              selectedLocationScope={selectedLocationScope}
+              onLocationScopeChange={handleLocationScopeChange}
+            />
+          </div>
           
           {/* Feed Content */}
           <Card className="shadow-card border-0">
