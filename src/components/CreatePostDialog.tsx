@@ -261,6 +261,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           <SheetContent 
             side="bottom" 
             className="h-full p-0 flex flex-col"
+            hideClose
           >
             {/* Header */}
             <SheetHeader className="flex-row items-center justify-between p-4 border-b flex-shrink-0">
