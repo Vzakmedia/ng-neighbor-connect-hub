@@ -81,6 +81,13 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
+  // Poll-specific state
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollDuration, setPollDuration] = useState<string>('7');
+  const [allowMultipleChoices, setAllowMultipleChoices] = useState(false);
+  const [maxChoices, setMaxChoices] = useState(1);
+  
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -162,6 +169,27 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     e.preventDefault();
     if (!content.trim() || !user) return;
 
+    // Poll validation
+    if (postType === 'poll') {
+      if (!pollQuestion.trim()) {
+        toast({
+          title: "Poll question required",
+          description: "Please enter a question for your poll.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const validOptions = pollOptions.filter(opt => opt.trim());
+      if (validOptions.length < 2) {
+        toast({
+          title: "At least 2 options required",
+          description: "Please provide at least 2 poll options.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     // Show optimistic success immediately
     toast({
       title: "Creating post...",
@@ -169,7 +197,10 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     });
 
     // Reset form and close dialog immediately
-    const formState = { content, title, images, tags, currentTag, postType, rsvpEnabled, locationScope };
+    const formState = { 
+      content, title, images, tags, currentTag, postType, rsvpEnabled, locationScope,
+      pollQuestion, pollOptions, pollDuration, allowMultipleChoices, maxChoices
+    };
     setContent('');
     setTitle('');
     setImages([]);
@@ -178,6 +209,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     setPostType('general');
     setRsvpEnabled(false);
     setLocationScope('all');
+    setPollQuestion('');
+    setPollOptions(['', '']);
+    setPollDuration('7');
+    setAllowMultipleChoices(false);
+    setMaxChoices(1);
     onOpenChange(false);
 
     setIsSubmitting(true);
@@ -206,7 +242,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       }
 
       // Use exact profile location as single source of truth
-      const { error } = await supabase
+      const { data: postData, error } = await supabase
         .from('community_posts')
         .insert({
           user_id: user.id,
@@ -223,9 +259,45 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           target_neighborhood: formState.locationScope === 'neighborhood' ? profile?.neighborhood : null,
           target_city: formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.city : null,
           target_state: formState.locationScope === 'state' || formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.state : null
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // If poll, create poll data
+      if (formState.postType === 'poll' && postData) {
+        const closesAt = new Date();
+        closesAt.setDate(closesAt.getDate() + parseInt(formState.pollDuration));
+
+        const { data: pollData, error: pollError } = await supabase
+          .from('polls')
+          .insert({
+            post_id: postData.id,
+            question: formState.pollQuestion,
+            closes_at: closesAt.toISOString(),
+            allow_multiple_choices: formState.allowMultipleChoices,
+            max_choices: formState.allowMultipleChoices ? formState.maxChoices : 1,
+          })
+          .select()
+          .single();
+
+        if (pollError) throw pollError;
+
+        // Insert poll options
+        const validOptions = formState.pollOptions.filter(opt => opt.trim());
+        const optionsToInsert = validOptions.map((option, index) => ({
+          poll_id: pollData.id,
+          option_text: option.trim(),
+          option_order: index,
+        }));
+
+        const { error: optionsError } = await supabase
+          .from('poll_options')
+          .insert(optionsToInsert);
+
+        if (optionsError) throw optionsError;
+      }
       
       toast({
         title: "Post created successfully!",
@@ -247,6 +319,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       setPostType(formState.postType);
       setRsvpEnabled(formState.rsvpEnabled);
       setLocationScope(formState.locationScope);
+      setPollQuestion(formState.pollQuestion);
+      setPollOptions(formState.pollOptions);
+      setPollDuration(formState.pollDuration);
+      setAllowMultipleChoices(formState.allowMultipleChoices);
+      setMaxChoices(formState.maxChoices);
       onOpenChange(true);
     } finally {
       setIsSubmitting(false);
@@ -500,6 +577,118 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                     <p className="text-xs text-muted-foreground ml-6">
                       Allow people to RSVP and track attendance
                     </p>
+                  </div>
+                )}
+
+                {/* Poll Configuration */}
+                {postType === 'poll' && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                    <div className="space-y-2">
+                      <Label>Poll Question *</Label>
+                      <Input
+                        value={pollQuestion}
+                        onChange={(e) => setPollQuestion(e.target.value)}
+                        placeholder="What would you like to ask?"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>Poll Options *</Label>
+                      {pollOptions.map((option, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...pollOptions];
+                              newOptions[index] = e.target.value;
+                              setPollOptions(newOptions);
+                            }}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                          {pollOptions.length > 2 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setPollOptions(pollOptions.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {pollOptions.length < 5 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPollOptions([...pollOptions, ''])}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Option
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {pollOptions.filter(o => o.trim()).length}/5 options (minimum 2 required)
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Poll Duration</Label>
+                      <Select value={pollDuration} onValueChange={setPollDuration}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 day</SelectItem>
+                          <SelectItem value="3">3 days</SelectItem>
+                          <SelectItem value="7">1 week</SelectItem>
+                          <SelectItem value="14">2 weeks</SelectItem>
+                          <SelectItem value="30">1 month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="multiple-choices"
+                          checked={allowMultipleChoices}
+                          onCheckedChange={(checked) => {
+                            setAllowMultipleChoices(checked as boolean);
+                            if (!checked) setMaxChoices(1);
+                          }}
+                        />
+                        <Label htmlFor="multiple-choices">
+                          Allow multiple choices
+                        </Label>
+                      </div>
+
+                      {allowMultipleChoices && (
+                        <div className="ml-6 space-y-2">
+                          <Label>Maximum choices</Label>
+                          <Select 
+                            value={maxChoices.toString()} 
+                            onValueChange={(v) => setMaxChoices(parseInt(v))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[2, 3, 4, 5].map(num => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num} options
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
