@@ -47,7 +47,7 @@ const Feed = () => {
       <Navigation />
       
       <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-2 md:pt-0">
-        <div className="container px-0 lg:px-6 py-3 sm:py-4 md:py-6">
+        <div className="container px-0 lg:px-6 pt-1 sm:pt-2 md:pt-3 pb-3 sm:pb-4 md:pb-6">
           <FeedErrorBoundary>
             <Suspense fallback={<DashboardSkeleton />}>
               <HomeDashboard />
