@@ -127,15 +127,15 @@ export const TrendingPostsCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <div className="flex justify-center gap-1.5 mt-4">
+          <div className="flex justify-center gap-2 mt-4">
             {trendingPosts.map((_, index) => (
               <button
                 key={index}
                 onClick={() => api?.scrollTo(index)}
                 className={`rounded-full transition-all ${
                   index === current 
-                    ? "h-1.5 w-1.5 bg-primary" 
-                    : "h-1 w-1 bg-muted-foreground/30"
+                    ? "h-2 w-2 bg-primary" 
+                    : "h-2 w-2 bg-muted-foreground/30"
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
