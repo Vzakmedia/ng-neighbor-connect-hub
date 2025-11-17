@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingBagIcon, ChevronRightIcon, MapPinIcon } from "@heroicons/react/24/outline";
@@ -8,11 +9,30 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  CarouselApi,
 } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export const MarketplaceHighlights = () => {
   const navigate = useNavigate();
   const { items, loading } = useMarketplaceHighlights(6);
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    if (!api) return;
+    
+    const onSelect = () => {
+      setCurrentSlide(api.selectedScrollSnap());
+    };
+    
+    api.on('select', onSelect);
+    onSelect();
+    
+    return () => {
+      api.off('select', onSelect);
+    };
+  }, [api]);
 
   if (loading || items.length === 0) return null;
 
@@ -39,7 +59,14 @@ export const MarketplaceHighlights = () => {
           align: "start",
           loop: true,
         }}
+        plugins={[
+          Autoplay({
+            delay: 7000,
+            stopOnInteraction: false,
+          })
+        ]}
         className="w-full"
+        setApi={setApi}
       >
         <CarouselContent>
           {items.map((item) => (
@@ -79,6 +106,28 @@ export const MarketplaceHighlights = () => {
         <CarouselPrevious className="left-2" />
         <CarouselNext className="right-2" />
       </Carousel>
+
+      <div className="flex justify-center gap-2 mt-4">
+        {items.map((_, index) => (
+          <div
+            key={index}
+            role="button"
+            tabIndex={0}
+            onClick={() => api?.scrollTo(index)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                api?.scrollTo(index);
+              }
+            }}
+            className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
+              index === currentSlide 
+                ? "bg-primary" 
+                : "bg-muted-foreground/30"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
