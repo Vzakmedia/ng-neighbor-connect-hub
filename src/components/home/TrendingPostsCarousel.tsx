@@ -100,17 +100,17 @@ export const TrendingPostsCarousel = () => {
   }
 
   return (
-    <div className="my-4 space-y-4">
-      {/* Posts with images */}
-      {postsWithImages.length > 0 && (
-        <Card className="bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Trending Posts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+    <Card className="bg-card my-4">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Trending Posts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Posts with images */}
+        {postsWithImages.length > 0 && (
+          <div>
             <Carousel
               opts={{ align: "start", loop: true }}
               plugins={[
@@ -157,20 +157,12 @@ export const TrendingPostsCarousel = () => {
                 />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
 
-      {/* Posts without images */}
-      {postsWithoutImages.length > 0 && (
-        <Card className="bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              More Trending Posts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Posts without images */}
+        {postsWithoutImages.length > 0 && (
+          <div>
             <Carousel
               opts={{ align: "start", loop: true }}
               plugins={[
@@ -217,9 +209,9 @@ export const TrendingPostsCarousel = () => {
                 />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
