@@ -128,13 +128,15 @@ const PostCardComponent = ({
         )}
       </div>
       
-      <PostCardMedia
-        images={post.image_urls}
-        imageError={imageError}
-        onImageError={handleImageError}
-        onImageClick={onImageClick}
-        onDoubleTapLike={handleDoubleTapLike}
-      />
+      {post.image_urls && post.image_urls.length > 0 && (
+        <PostCardMedia
+          images={post.image_urls}
+          imageError={imageError}
+          onImageError={handleImageError}
+          onImageClick={onImageClick}
+          onDoubleTapLike={handleDoubleTapLike}
+        />
+      )}
       
       <div className="px-3 sm:px-4 bg-primary text-white [&_*]:text-white [&_button]:text-white [&_svg]:text-white">
         <PostCardActions
