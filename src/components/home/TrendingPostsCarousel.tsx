@@ -94,21 +94,23 @@ export const TrendingPostsCarousel = () => {
           ]}
           className="w-full"
         >
-          <CarouselContent>
+          <CarouselContent className="-ml-2 md:-ml-4">
             {trendingPosts.map((post) => (
-              <CarouselItem key={post.id}>
-                <PostCard
-                  post={post}
-                  onLike={() => handleLike(post.id, post.is_liked)}
-                  onSave={() => handleSave(post.id, post.is_saved)}
-                  onShare={() => handleShare(post.id)}
-                  onPostClick={() => handlePostClick(post.id)}
-                  onToggleComments={() => toggleComments(post.id)}
-                  showComments={showComments[post.id] || false}
-                  onRSVP={() => {}}
-                  onAvatarClick={() => {}}
-                  onImageClick={() => {}}
-                />
+              <CarouselItem key={post.id} className="pl-2 md:pl-4 h-auto">
+                <div className="h-full">
+                  <PostCard
+                    post={post}
+                    onLike={() => handleLike(post.id, post.is_liked)}
+                    onSave={() => handleSave(post.id, post.is_saved)}
+                    onShare={() => handleShare(post.id)}
+                    onPostClick={() => handlePostClick(post.id)}
+                    onToggleComments={() => toggleComments(post.id)}
+                    showComments={showComments[post.id] || false}
+                    onRSVP={() => {}}
+                    onAvatarClick={() => {}}
+                    onImageClick={() => {}}
+                  />
+                </div>
               </CarouselItem>
             ))}
           </CarouselContent>
