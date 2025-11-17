@@ -27,6 +27,7 @@ export const SellerOtherListings = ({
 }: SellerOtherListingsProps) => {
   const [listings, setListings] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const { toast } = useToast();
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     align: 'start',
@@ -66,6 +67,21 @@ export const SellerOtherListings = ({
       fetchSellerListings();
     }
   }, [sellerId, currentItemId]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const onSelect = () => {
+      setCurrentSlide(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on('select', onSelect);
+    onSelect();
+
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
 
   if (loading || listings.length === 0) return null;
 
@@ -128,6 +144,28 @@ export const SellerOtherListings = ({
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="flex justify-center gap-2 mt-2">
+        {listings.map((_, index) => (
+          <div
+            key={index}
+            role="button"
+            tabIndex={0}
+            onClick={() => emblaApi?.scrollTo(index)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                emblaApi?.scrollTo(index);
+              }
+            }}
+            className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
+              index === currentSlide 
+                ? "bg-primary" 
+                : "bg-muted-foreground/30"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
       </div>
     </div>
   );
