@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { HomeHero } from "@/components/home/HomeHero";
 import { CommunityHighlights } from "@/components/home/CommunityHighlights";
 import { SafetyAlertsWidget } from "@/components/home/SafetyAlertsWidget";
 import { BusinessCardCTA } from "@/components/home/BusinessCardCTA";
@@ -21,7 +20,6 @@ const HomeWidgets = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-2xl mx-auto">
         <QuickPostInput onCreatePost={() => setCreatePostOpen(true)} />
-        <HomeHero />
         <div className="space-y-4 px-4">
           <EventsNearYouCarousel />
           <QuickActions />
