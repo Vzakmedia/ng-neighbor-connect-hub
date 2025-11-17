@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselApi } from "@/components/ui/carousel";
 import { PostCard } from "@/components/community/post/PostCard";
 import { useFeedQuery } from "@/hooks/useFeedQuery";
 import { usePostEngagement } from "@/hooks/community/usePostEngagement";
@@ -16,6 +16,8 @@ import Autoplay from "embla-carousel-autoplay";
  */
 export const TrendingPostsCarousel = () => {
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { handleLike, handleSave } = usePostEngagement();
@@ -52,6 +54,16 @@ export const TrendingPostsCarousel = () => {
       [postId]: !prev[postId]
     }));
   };
+
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   if (isLoading) {
     return (
@@ -93,6 +105,7 @@ export const TrendingPostsCarousel = () => {
             })
           ]}
           className="w-full"
+          setApi={setApi}
         >
           <CarouselContent className="-ml-2 md:-ml-4">
             {trendingPosts.map((post) => (
@@ -114,8 +127,20 @@ export const TrendingPostsCarousel = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-2" />
-          <CarouselNext className="right-2" />
+          <div className="flex justify-center gap-2 mt-4">
+            {trendingPosts.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => api?.scrollTo(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index === current 
+                    ? "w-8 bg-primary" 
+                    : "w-2 bg-muted-foreground/30"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         </Carousel>
       </CardContent>
     </Card>
