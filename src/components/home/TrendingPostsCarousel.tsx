@@ -186,7 +186,7 @@ export const TrendingPostsCarousel = () => {
                 <button
                   key={index}
                   onClick={() => apiWithoutImages?.scrollTo(index)}
-                  className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                  className={`h-3 w-3 rounded-full transition-colors ${
                     index === currentWithoutImages 
                       ? "bg-primary" 
                       : "bg-muted-foreground/30"
