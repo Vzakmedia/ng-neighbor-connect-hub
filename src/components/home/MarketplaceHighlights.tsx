@@ -34,16 +34,16 @@ export const MarketplaceHighlights = () => {
             onClick={() => navigate(`/marketplace?itemId=${item.id}`)}
             className="bg-background rounded-xl overflow-hidden cursor-pointer border border-border/50 hover:shadow-lg hover:scale-105 hover:border-primary/50 transform transition-all duration-300"
           >
-            <div className="aspect-square bg-muted relative w-full">
+            <div className="w-full aspect-square bg-muted relative overflow-hidden">
               {item.image && (
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-full object-cover absolute inset-0"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               )}
               {!item.image && (
-                <div className="w-full h-full flex items-center justify-center absolute inset-0">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <ShoppingBagIcon className="h-8 w-8 text-muted-foreground" />
                 </div>
               )}
