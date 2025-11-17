@@ -23,7 +23,11 @@ const HomeWidgets = () => {
         <div className="space-y-4 px-4">
           <EventsNearYouCarousel />
         </div>
-        <TrendingPostsCarousel />
+      </div>
+      
+      <TrendingPostsCarousel />
+      
+      <div className="max-w-2xl mx-auto">
         <div className="space-y-4 px-4">
           <SafetyAlertsWidget />
           <CommunityHighlights />
