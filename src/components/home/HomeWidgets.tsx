@@ -6,6 +6,7 @@ import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
 import { QuickPostInput } from "@/components/home/QuickPostInput";
 import { EventsNearYouCarousel } from "@/components/home/EventsNearYouCarousel";
+import { TrendingPostsCarousel } from "@/components/home/TrendingPostsCarousel";
 import CreatePostDialog from "@/components/CreatePostDialog";
 
 /**
@@ -21,6 +22,7 @@ const HomeWidgets = () => {
         <QuickPostInput onCreatePost={() => setCreatePostOpen(true)} />
         <div className="space-y-4 px-4">
           <EventsNearYouCarousel />
+          <TrendingPostsCarousel />
           <SafetyAlertsWidget />
           <CommunityHighlights />
           <DiscoverServices />
