@@ -48,7 +48,7 @@ export const MarketplaceHighlights = () => {
                 onClick={() => navigate(`/marketplace?itemId=${item.id}`)}
                 className="bg-background rounded-xl overflow-hidden cursor-pointer border border-border/50 hover:shadow-lg hover:scale-[1.02] hover:border-primary/50 transform transition-all duration-300"
               >
-                <div className="w-full aspect-square bg-muted relative overflow-hidden">
+                <div className="w-full aspect-[4/3] bg-muted relative overflow-hidden">
                   {item.image && (
                     <img
                       src={item.image}
