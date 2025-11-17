@@ -186,10 +186,10 @@ export const TrendingPostsCarousel = () => {
                 <button
                   key={index}
                   onClick={() => apiWithoutImages?.scrollTo(index)}
-                  className={`rounded-full transition-all ${
+                  className={`h-2.5 w-2.5 rounded-full transition-colors ${
                     index === currentWithoutImages 
-                      ? "h-2.5 w-2.5 bg-primary" 
-                      : "h-2 w-2 bg-muted-foreground/40"
+                      ? "bg-primary" 
+                      : "bg-muted-foreground/30"
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
