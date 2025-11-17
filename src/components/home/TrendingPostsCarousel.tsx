@@ -76,7 +76,7 @@ export const TrendingPostsCarousel = () => {
   }
 
   return (
-    <Card className="bg-card">
+    <Card className="bg-card my-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <TrendingUp className="h-5 w-5 text-primary" />
