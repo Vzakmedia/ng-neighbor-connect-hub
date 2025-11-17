@@ -3,7 +3,6 @@ import { CommunityHighlights } from "@/components/home/CommunityHighlights";
 import { SafetyAlertsWidget } from "@/components/home/SafetyAlertsWidget";
 import { BusinessCardCTA } from "@/components/home/BusinessCardCTA";
 import { DiscoverServices } from "@/components/home/DiscoverServices";
-import { QuickActions } from "@/components/home/QuickActions";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
 import { QuickPostInput } from "@/components/home/QuickPostInput";
 import { EventsNearYouCarousel } from "@/components/home/EventsNearYouCarousel";
@@ -22,7 +21,6 @@ const HomeWidgets = () => {
         <QuickPostInput onCreatePost={() => setCreatePostOpen(true)} />
         <div className="space-y-4 px-4">
           <EventsNearYouCarousel />
-          <QuickActions />
           <SafetyAlertsWidget />
           <CommunityHighlights />
           <DiscoverServices />
