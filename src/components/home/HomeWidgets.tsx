@@ -22,7 +22,9 @@ const HomeWidgets = () => {
         <QuickPostInput onCreatePost={() => setCreatePostOpen(true)} />
         <div className="space-y-4 px-4">
           <EventsNearYouCarousel />
-          <TrendingPostsCarousel />
+        </div>
+        <TrendingPostsCarousel />
+        <div className="space-y-4 px-4">
           <SafetyAlertsWidget />
           <CommunityHighlights />
           <DiscoverServices />
