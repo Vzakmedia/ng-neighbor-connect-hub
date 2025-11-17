@@ -183,10 +183,17 @@ export const TrendingPostsCarousel = () => {
             </Carousel>
             <div className="flex justify-center gap-2 mt-4">
               {postsWithoutImages.map((_, index) => (
-                <button
+                <div
                   key={index}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => apiWithoutImages?.scrollTo(index)}
-                  className={`h-2 w-2 rounded-full flex-shrink-0 p-0 border-0 transition-colors ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      apiWithoutImages?.scrollTo(index);
+                    }
+                  }}
+                  className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
                     index === currentWithoutImages 
                       ? "bg-primary" 
                       : "bg-muted-foreground/30"
