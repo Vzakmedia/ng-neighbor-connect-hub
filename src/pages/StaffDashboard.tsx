@@ -90,7 +90,7 @@ const StaffDashboard = () => {
         // Fetch recent users with more details
         const { data: usersData } = await supabase
           .from('profiles')
-          .select('user_id, full_name, email, city, state, created_at, email_verified')
+          .select('user_id, full_name, email, city, state, created_at, is_verified')
           .order('created_at', { ascending: false })
           .limit(20);
 
@@ -487,8 +487,8 @@ const StaffDashboard = () => {
                         </TableCell>
                         <TableCell>{[user.city, user.state].filter(Boolean).join(', ') || 'Not specified'}</TableCell>
                         <TableCell>
-                          <Badge variant={user.email_verified ? "default" : "secondary"}>
-                            {user.email_verified ? 'Verified' : 'Unverified'}
+                          <Badge variant={user.is_verified ? "default" : "secondary"}>
+                            {user.is_verified ? 'Verified' : 'Unverified'}
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
