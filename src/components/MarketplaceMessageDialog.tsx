@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -77,30 +78,44 @@ const MarketplaceMessageDialog = ({ item, children }: MarketplaceMessageDialogPr
 
     const messageToSend = customMessage.trim() || defaultMessage;
     
-    // Create product attachment as a special message with metadata
-    const productData = JSON.stringify({
-      type: 'product_card',
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      price: item.price,
-      is_negotiable: item.is_negotiable,
-      condition: item.condition,
-      image: item.images?.[0] || null,
-      link: productLink
-    });
-
-    const productAttachment = {
-      id: `product_${item.id}`,
-      type: 'file' as const,
-      name: `${item.title}_details.json`,
-      url: `data:application/json;base64,${btoa(productData)}`,
-      size: productData.length,
-      mimeType: 'application/json'
-    };
-
     setLoading(true);
     try {
+      // Create or find marketplace conversation
+      const { data: conversationId, error: convError } = await supabase.rpc(
+        'create_conversation_with_request_check',
+        {
+          sender_id: user.id,
+          recipient_id: item.user_id,
+          conversation_type: 'marketplace',
+          marketplace_item_id: item.id,
+          marketplace_service_id: null,
+        }
+      );
+
+      if (convError) throw convError;
+
+      // Create product attachment as a special message with metadata
+      const productData = JSON.stringify({
+        type: 'product_card',
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        is_negotiable: item.is_negotiable,
+        condition: item.condition,
+        image: item.images?.[0] || null,
+        link: productLink
+      });
+
+      const productAttachment = {
+        id: `product_${item.id}`,
+        type: 'file' as const,
+        name: `${item.title}_details.json`,
+        url: `data:application/json;base64,${btoa(productData)}`,
+        size: productData.length,
+        mimeType: 'application/json'
+      };
+
       const success = await sendMessageWithAttachments(messageToSend, item.user_id, [productAttachment]);
       
       if (success) {

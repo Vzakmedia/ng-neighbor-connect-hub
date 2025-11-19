@@ -186,33 +186,31 @@ export const useConversations = (userId: string | undefined) => {
   }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
   
 
-  const createOrFindConversation = useCallback(async (recipientId: string): Promise<string | null> => {
+  const createOrFindConversation = useCallback(async (
+    recipientId: string,
+    options?: {
+      conversationType?: 'direct_message' | 'marketplace';
+      marketplaceItemId?: string;
+      marketplaceServiceId?: string;
+    }
+  ): Promise<string | null> => {
     if (!userId) return null;
 
     try {
-      // Find existing conversation
-      const { data: existingConversation } = await supabase
-        .from('direct_conversations')
-        .select('id')
-        .or(`and(user1_id.eq.${userId},user2_id.eq.${recipientId}),and(user1_id.eq.${recipientId},user2_id.eq.${userId})`)
-        .maybeSingle();
-
-      if (existingConversation) {
-        return existingConversation.id;
-      }
-
-      // Create new conversation
-      const { data: newConversation, error } = await supabase
-        .from('direct_conversations')
-        .insert({
-          user1_id: userId,
-          user2_id: recipientId
-        })
-        .select('id')
-        .single();
+      // Use the RPC function to create or find conversation
+      const { data: conversationId, error } = await supabase.rpc(
+        'create_conversation_with_request_check',
+        {
+          sender_id: userId,
+          recipient_id: recipientId,
+          conversation_type: options?.conversationType || 'direct_message',
+          marketplace_item_id: options?.marketplaceItemId || null,
+          marketplace_service_id: options?.marketplaceServiceId || null,
+        }
+      );
 
       if (error) throw error;
-      return newConversation.id;
+      return conversationId;
     } catch (error) {
       console.error('Error creating conversation:', error);
       toastRef.current({
