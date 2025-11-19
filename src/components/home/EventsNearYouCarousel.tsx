@@ -177,15 +177,32 @@ export const EventsNearYouCarousel = () => {
                 onClick={() => handleCardClick(item)}
                 className="relative flex-shrink-0 w-[160px] h-[200px] rounded-xl overflow-hidden cursor-pointer group"
               >
-                {/* Background Image or Gradient */}
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-105"
-                  style={{ 
-                    backgroundImage: item.image 
-                      ? `url(${item.image})`
-                      : 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.7) 100%)'
-                  }}
-                />
+                {/* Background Image, Map, or Logo */}
+                {item.type === 'alert' ? (
+                  // Show map for safety alerts
+                  <div className="absolute inset-0">
+                    <img
+                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${item.data.latitude},${item.data.longitude}&zoom=15&size=400x400&markers=color:red%7C${item.data.latitude},${item.data.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY'}`}
+                      alt="Alert location"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : item.image ? (
+                  // Show image if available
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-105"
+                    style={{ backgroundImage: `url(${item.image})` }}
+                  />
+                ) : (
+                  // Show NeighborLink logo for posts without images
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                    <img 
+                      src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                      alt="NeighborLink" 
+                      className="h-16 w-16 object-contain opacity-40"
+                    />
+                  </div>
+                )}
                 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
