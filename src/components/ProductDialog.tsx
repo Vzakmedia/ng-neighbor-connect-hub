@@ -290,6 +290,20 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     }
 
     try {
+      // Create or find marketplace conversation
+      const { data: conversationId, error: convError } = await supabase.rpc(
+        'create_conversation_with_request_check',
+        {
+          sender_id: user.id,
+          recipient_id: product.user_id,
+          conversation_type: 'marketplace',
+          marketplace_item_id: product.id,
+          marketplace_service_id: null,
+        }
+      );
+
+      if (convError) throw convError;
+
       // Send a message with product details embedded in the attachments as JSON
       const productLink = `${window.location.origin}/marketplace?item=${product.id}`;
       
@@ -351,6 +365,20 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
     }
 
     try {
+      // Create or find marketplace conversation
+      const { data: conversationId, error: convError } = await supabase.rpc(
+        'create_conversation_with_request_check',
+        {
+          sender_id: user.id,
+          recipient_id: product.user_id,
+          conversation_type: 'marketplace',
+          marketplace_item_id: product.id,
+          marketplace_service_id: null,
+        }
+      );
+
+      if (convError) throw convError;
+
       const productLink = `${window.location.origin}/marketplace?item=${product.id}`;
       
       const success = await sendMessageWithAttachments(
