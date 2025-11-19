@@ -291,12 +291,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const virtualizer = useVirtualizer({
     count: displayMessages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 150, // Increase from 120 to 150 for better spacing
+    estimateSize: () => 150,
     overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
-    measureElement: (element) => {
-      // Dynamically measure actual element height
-      return element?.getBoundingClientRect().height ?? 150;
-    },
+    measureElement:
+      typeof window !== 'undefined' &&
+      navigator.userAgent.indexOf('Firefox') === -1
+        ? (element) => element?.getBoundingClientRect().height ?? 150
+        : undefined,
   });
 
   // Batch process read receipts
@@ -440,8 +441,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 data-message-id={message.id}
                 data-index={virtualRow.index}
                 ref={(el) => {
-                  if (!el || !sharedObserverRef.current) return;
-                  sharedObserverRef.current.observe(el);
+                  if (!el) return;
+                  
+                  // Let the virtualizer measure the real height
+                  virtualizer.measureElement(el);
+                  
+                  // Hook into the shared IntersectionObserver for read receipts
+                  if (sharedObserverRef.current) {
+                    sharedObserverRef.current.observe(el);
+                  }
                 }}
                 style={{
                   position: 'absolute',
@@ -449,6 +457,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   left: 0,
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
+                  minHeight: `${virtualRow.size}px`,
                 }}
                 className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-6 mb-2`}
                 onDoubleClick={() => handleLongPress(message.id)}
