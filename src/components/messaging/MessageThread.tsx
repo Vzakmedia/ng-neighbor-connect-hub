@@ -20,6 +20,7 @@ import { useMessageActions } from '@/hooks/useMessageActions';
 import { useFileUpload, type Attachment } from '@/hooks/useFileUpload';
 import MessageSelectionToolbar from './MessageSelectionToolbar';
 import AttachmentButton from './AttachmentButton';
+import EmojiPickerButton from './EmojiPickerButton';
 import AttachmentDisplay from './AttachmentDisplay';
 import { useTypingIndicator } from '@/hooks/messaging/useTypingIndicator';
 import { MessageReactions } from './MessageReactions';
@@ -109,6 +110,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage((prev) => prev + emoji);
+    textareaRef.current?.focus();
   };
 
   // Filter messages based on search query
@@ -589,6 +595,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           <AttachmentButton 
             onFileSelect={handleFileSelect}
             uploading={uploading}
+          />
+          <EmojiPickerButton 
+            onEmojiSelect={handleEmojiSelect}
+            disabled={uploading || loading}
           />
           <Textarea
             ref={textareaRef}
