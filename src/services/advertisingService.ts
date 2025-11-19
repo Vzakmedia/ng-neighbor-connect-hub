@@ -160,10 +160,9 @@ export class AdvertisingService {
   ): Promise<Ad[]> {
     try {
       const { data, error } = await supabase.rpc('get_active_ads', {
-        user_location: null,
-        user_city: userLocation?.city || null,
+        p_limit: limit,
         user_state: userLocation?.state || null,
-        content_limit: limit,
+        user_city: userLocation?.city || null,
       });
 
       if (error) throw error;
