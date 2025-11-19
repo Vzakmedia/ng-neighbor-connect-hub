@@ -8,6 +8,7 @@ import { QuickPostInput } from "@/components/home/QuickPostInput";
 import { EventsNearYouCarousel } from "@/components/home/EventsNearYouCarousel";
 import { TrendingPostsCarousel } from "@/components/home/TrendingPostsCarousel";
 import CreatePostDialog from "@/components/CreatePostDialog";
+import { AdDisplay } from "@/components/advertising/display/AdDisplay";
 
 /**
  * HomeWidgets - Mobile Overview Dashboard
@@ -26,6 +27,14 @@ const HomeWidgets = () => {
       </div>
       
       <TrendingPostsCarousel />
+      
+      <div className="max-w-2xl mx-auto px-4 my-6">
+        <AdDisplay 
+          placement="feed" 
+          maxAds={2}
+          filterType="all"
+        />
+      </div>
       
       <div className="max-w-2xl mx-auto">
         <div className="space-y-4 px-4">
