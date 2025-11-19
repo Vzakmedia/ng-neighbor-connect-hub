@@ -40,6 +40,11 @@ const HomeWidgets = () => {
           <DiscoverServices />
           <MarketplaceHighlights />
           <BusinessCardCTA />
+          <AdDisplay 
+            placement="feed" 
+            maxAds={2}
+            filterType="all"
+          />
         </div>
       </div>
       
