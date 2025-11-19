@@ -178,13 +178,17 @@ export const EventsNearYouCarousel = () => {
                 className="relative flex-shrink-0 w-[160px] h-[200px] rounded-xl overflow-hidden cursor-pointer group"
               >
                 {/* Background Image, Map, or Logo */}
-                {item.type === 'alert' ? (
-                  // Show map for safety alerts
+                {item.type === 'alert' && item.data?.latitude && item.data?.longitude ? (
+                  // Show Mapbox static map for safety alerts
                   <div className="absolute inset-0">
                     <img
-                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${item.data.latitude},${item.data.longitude}&zoom=15&size=400x400&markers=color:red%7C${item.data.latitude},${item.data.longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY'}`}
+                      src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+ff0000(${item.data.longitude},${item.data.latitude})/${item.data.longitude},${item.data.latitude},14,0/400x400@2x?access_token=pk.eyJ1IjoibmVpZ2hib3JsaW5rIiwiYSI6ImNtNGpxbXc3bjAxOGIyanB6cW1iMW11MHoifQ.5PqK5zTesjLBY-gDqHFKNw`}
                       alt="Alert location"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to gradient if map fails to load
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   </div>
                 ) : item.image ? (
