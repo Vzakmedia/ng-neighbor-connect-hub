@@ -291,8 +291,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const virtualizer = useVirtualizer({
     count: displayMessages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 120,
+    estimateSize: () => 150, // Increase from 120 to 150 for better spacing
     overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
+    measureElement: (element) => {
+      // Dynamically measure actual element height
+      return element?.getBoundingClientRect().height ?? 150;
+    },
   });
 
   // Batch process read receipts
@@ -434,6 +438,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
               <div 
                 key={message.id}
                 data-message-id={message.id}
+                data-index={virtualRow.index}
                 ref={(el) => {
                   if (!el || !sharedObserverRef.current) return;
                   sharedObserverRef.current.observe(el);
@@ -444,9 +449,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   left: 0,
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
-                  height: `${virtualRow.size}px`,
                 }}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-4`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-6 mb-2`}
                 onDoubleClick={() => handleLongPress(message.id)}
               >
                 {isSelectionMode && (
@@ -485,7 +489,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     )}
                   </div>
                   
-                  <div className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}>
+                  <div className={`flex flex-col gap-1 mt-1 ${isOwn ? 'items-end' : 'items-start'}`}>
                     <div className={`flex items-center gap-1 ${
                       isOwn ? 'justify-end' : 'justify-start'
                     }`}>
