@@ -17,6 +17,7 @@ import { useDirectMessages, MessageStatus } from '@/hooks/useDirectMessages';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useConversations } from '@/hooks/useConversations';
 import { ConnectionStatusBanner } from '@/components/messaging/ConnectionStatusBanner';
+import EmojiPickerButton from '@/components/messaging/EmojiPickerButton';
 
 interface DirectMessageDialogProps {
   isOpen: boolean;
@@ -109,6 +110,10 @@ export const DirectMessageDialog = ({
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage((prev) => prev + emoji);
   };
 
   const getStatusIcon = (message: any) => {
@@ -213,6 +218,10 @@ export const DirectMessageDialog = ({
               placeholder="Type a message..."
               className="flex-1 min-h-[40px] max-h-[120px]"
               rows={1}
+            />
+            <EmojiPickerButton 
+              onEmojiSelect={handleEmojiSelect}
+              disabled={loading}
             />
             <Button 
               onClick={handleSendMessage} 
