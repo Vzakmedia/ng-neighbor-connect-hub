@@ -76,6 +76,27 @@ export const AdCard = ({ ad, placement, onAdClick }: AdCardProps) => {
     }
   };
 
+  const getPlaceholderImage = () => {
+    // Campaign-type specific placeholder colors and emojis
+    switch (ad.campaign_type) {
+      case 'business_promotion':
+        return { emoji: '🏢', bg: 'from-blue-500 to-blue-600' };
+      case 'service_ad':
+        return { emoji: '⚙️', bg: 'from-purple-500 to-purple-600' };
+      case 'marketplace_ad':
+        return { emoji: '🛍️', bg: 'from-green-500 to-green-600' };
+      case 'event_promotion':
+        return { emoji: '📅', bg: 'from-orange-500 to-orange-600' };
+      case 'community_boost':
+        return { emoji: '👥', bg: 'from-pink-500 to-pink-600' };
+      default:
+        return { emoji: '📢', bg: 'from-gray-500 to-gray-600' };
+    }
+  };
+
+  const hasImages = ad.ad_images && ad.ad_images.length > 0;
+  const placeholder = getPlaceholderImage();
+
   // Compact layout for sidebar
   if (placement === 'sidebar') {
     return (
@@ -86,12 +107,17 @@ export const AdCard = ({ ad, placement, onAdClick }: AdCardProps) => {
           </Badge>
         </div>
         
-        {ad.ad_images && ad.ad_images[0] && (
+        {hasImages ? (
           <img
             src={ad.ad_images[0]}
             alt={ad.ad_title}
             className="w-full h-24 object-cover rounded mt-2"
+            loading="lazy"
           />
+        ) : (
+          <div className={`w-full h-24 bg-gradient-to-br ${placeholder.bg} rounded mt-2 flex items-center justify-center`}>
+            <span className="text-4xl">{placeholder.emoji}</span>
+          </div>
         )}
         
         <h4 className="font-medium text-sm mt-2 line-clamp-2">{ad.ad_title}</h4>
@@ -114,12 +140,17 @@ export const AdCard = ({ ad, placement, onAdClick }: AdCardProps) => {
     return (
       <Card className="flex-shrink-0 w-80 cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
         <div className="relative">
-          {ad.ad_images && ad.ad_images[0] && (
+          {hasImages ? (
             <img
               src={ad.ad_images[0]}
               alt={ad.ad_title}
               className="w-full h-40 object-cover rounded-t"
+              loading="lazy"
             />
+          ) : (
+            <div className={`w-full h-40 bg-gradient-to-br ${placeholder.bg} rounded-t flex items-center justify-center`}>
+              <span className="text-6xl">{placeholder.emoji}</span>
+            </div>
           )}
           <Badge className="absolute top-2 right-2" variant="secondary">
             Sponsored
@@ -172,13 +203,18 @@ export const AdCard = ({ ad, placement, onAdClick }: AdCardProps) => {
           </div>
         )}
 
-        {ad.ad_images && ad.ad_images.length > 0 && (
+        {hasImages ? (
           <div className="mb-3 rounded-lg overflow-hidden">
             <img
               src={ad.ad_images[0]}
               alt={ad.ad_title}
               className="w-full h-48 object-cover"
+              loading="lazy"
             />
+          </div>
+        ) : (
+          <div className={`mb-3 rounded-lg overflow-hidden bg-gradient-to-br ${placeholder.bg} h-48 flex items-center justify-center`}>
+            <span className="text-7xl">{placeholder.emoji}</span>
           </div>
         )}
 
