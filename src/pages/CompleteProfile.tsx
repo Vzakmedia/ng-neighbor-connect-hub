@@ -53,7 +53,7 @@ const CompleteProfile = () => {
       
       if (hasCompleteProfile) {
         setHasProfile(true);
-        navigate("/");
+        navigate("/", { replace: true });
       } else {
         setHasProfile(false);
       }
@@ -73,7 +73,20 @@ const CompleteProfile = () => {
   }
 
   if (hasProfile) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Profile Already Complete!</h2>
+          <p className="text-muted-foreground">Redirecting you to the dashboard...</p>
+          <button
+            onClick={() => navigate("/", { replace: true })}
+            className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
