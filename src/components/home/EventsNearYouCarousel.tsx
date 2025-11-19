@@ -160,44 +160,6 @@ export const EventsNearYouCarousel = () => {
       
       <div className="overflow-x-auto scrollbar-hide px-4">
         <div className="flex gap-3 pb-2">
-          {/* Explore Card */}
-          <div
-            onClick={() => navigate('/')}
-            className="relative flex-shrink-0 w-[140px] h-[200px] bg-gradient-to-br from-primary to-primary/70 rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-          >
-            {/* Avatar Image Background */}
-            <div className="absolute inset-0">
-              {profile?.avatar_url ? (
-                <img 
-                  src={profile.avatar_url} 
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <div className="text-6xl text-white/40 font-bold">
-                    {getInitials()}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            
-            {/* Plus Button at Bottom Center */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2">
-              <div className="bg-accent rounded-full p-3 shadow-lg">
-                <SparklesIcon className="h-6 w-6 text-accent-foreground" />
-              </div>
-            </div>
-            
-            {/* Explore Text */}
-            <div className="absolute bottom-3 left-0 right-0 text-center">
-              <span className="text-sm font-medium text-white">Explore More</span>
-            </div>
-          </div>
-
           {/* Trending Content Cards */}
           {loading ? (
             <>
