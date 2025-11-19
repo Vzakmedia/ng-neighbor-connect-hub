@@ -13,6 +13,7 @@ import { CampaignType, PricingTier, CreateCampaignData } from '@/types/advertisi
 import { Plus, Check, Loader2, MapPin, Calendar } from '@/lib/icons';
 import { toast } from 'sonner';
 import { RenderApiService } from '@/services/renderApiService';
+import { PromotionImageUpload } from '@/components/PromotionImageUpload';
 
 interface CreateCampaignDialogProps {
   children?: React.ReactNode;
@@ -216,6 +217,19 @@ export const CreateCampaignDialog = ({
                 placeholder="Learn More"
                 value={formData.ad_call_to_action || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, ad_call_to_action: e.target.value }))}
+              />
+            </div>
+
+            {/* Ad Images Upload */}
+            <div>
+              <Label>Ad Images</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Upload up to 5 images for your ad. Recommended size: 1200x675px (16:9 ratio)
+              </p>
+              <PromotionImageUpload
+                images={formData.ad_images || []}
+                onImagesChange={(images) => setFormData(prev => ({ ...prev, ad_images: images }))}
+                maxImages={5}
               />
             </div>
           </div>
