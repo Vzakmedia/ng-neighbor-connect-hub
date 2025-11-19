@@ -73,6 +73,7 @@ export const useConversations = (userId: string | undefined) => {
           created_at,
           updated_at
         `)
+        .eq('conversation_type', 'direct_message')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('last_message_at', { ascending: false });
 
