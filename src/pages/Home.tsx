@@ -9,6 +9,7 @@ import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { QuickActions } from "@/components/home/QuickActions";
 import { EventsPreview } from "@/components/home/EventsPreview";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
+import AuthBackground from "@/components/auth/AuthBackground";
 
 const Home = () => {
   const { shouldUseFilledIcons } = useMobileIcons();
@@ -25,8 +26,9 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background pb-20 relative">
+      <AuthBackground />
+      <div className="max-w-2xl mx-auto relative z-10">
         <HomeHero />
         <div className="space-y-4 px-4">
           <QuickActions />
