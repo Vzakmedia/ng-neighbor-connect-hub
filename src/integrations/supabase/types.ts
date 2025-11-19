@@ -7468,8 +7468,8 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       st_srid:
-        | { Args: { geog: unknown }; Returns: number }
         | { Args: { geom: unknown }; Returns: number }
+        | { Args: { geog: unknown }; Returns: number }
       st_subdivide: {
         Args: { geom: unknown; gridsize?: number; maxvertices?: number }
         Returns: unknown[]
