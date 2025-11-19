@@ -28,16 +28,13 @@ const HomeWidgets = () => {
       
       <TrendingPostsCarousel />
       
-      <div className="max-w-2xl mx-auto px-4 my-6">
-        <AdDisplay 
-          placement="feed" 
-          maxAds={2}
-          filterType="all"
-        />
-      </div>
-      
       <div className="max-w-2xl mx-auto">
         <div className="space-y-4 px-4">
+          <AdDisplay 
+            placement="banner" 
+            maxAds={3}
+            filterType="all"
+          />
           <SafetyAlertsWidget />
           <CommunityHighlights />
           <DiscoverServices />
