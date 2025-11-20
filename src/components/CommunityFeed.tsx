@@ -258,6 +258,8 @@ export const CommunityFeed = ({
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingNextPage}
           onPostVisible={handlePostVisible}
+          showAds={isMobile}
+          adInterval={5}
         />
       </div>
     </div>
