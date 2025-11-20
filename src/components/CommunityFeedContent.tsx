@@ -34,6 +34,8 @@ interface CommunityFeedContentProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onPostVisible?: (postId: string) => void;
+  showAds?: boolean;
+  adInterval?: number;
 }
 
 // Memoize component to prevent unnecessary re-renders
@@ -46,6 +48,8 @@ const CommunityFeedContentComponent = ({
   hasNextPage = false,
   isFetchingNextPage = false,
   onPostVisible,
+  showAds = false,
+  adInterval = 5,
 }: CommunityFeedContentProps) => {
   // Transform events to PostCardData format
   const transformedEvents = events.map(event => transformToCardData(event as any));
@@ -60,6 +64,8 @@ const CommunityFeedContentComponent = ({
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       onPostVisible={onPostVisible}
+      showAds={showAds}
+      adInterval={adInterval}
     />
   );
 };
