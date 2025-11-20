@@ -179,9 +179,18 @@ export const useSafetyAlerts = (limit: number = 3) => {
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const alertCountRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchAlerts = async () => {
     if (!user) return;
+
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       // Get user's creation date for clean slate filtering
@@ -253,7 +262,10 @@ export const useSafetyAlerts = (limit: number = 3) => {
       alertCountRef.current = formattedAlerts.length;
       setAlerts(formattedAlerts);
     } catch (error) {
-      console.error('Error fetching safety alerts:', error);
+      // Ignore AbortError - it's expected when cancelling requests
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error fetching safety alerts:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -261,6 +273,13 @@ export const useSafetyAlerts = (limit: number = 3) => {
 
   useEffect(() => {
     fetchAlerts();
+
+    // Cleanup: abort any pending requests when component unmounts or deps change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [user?.id, limit]);
 
   useEffect(() => {
