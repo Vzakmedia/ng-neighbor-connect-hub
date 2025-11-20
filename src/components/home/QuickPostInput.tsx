@@ -23,7 +23,7 @@ export const QuickPostInput = ({ onCreatePost }: QuickPostInputProps) => {
         </Avatar>
         
         <div className="flex-1 text-muted-foreground text-sm">
-          What's on your mind?
+          What's happening in your area?
         </div>
         
         <PhotoIcon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
