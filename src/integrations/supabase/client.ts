@@ -36,7 +36,6 @@ const createSupabaseClient = () => {
           // Enhanced fetch with iOS security error handling
           const enhancedOptions = {
             ...options,
-            credentials: 'include' as RequestCredentials,
             mode: 'cors' as RequestMode,
           };
           
