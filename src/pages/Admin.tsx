@@ -2497,7 +2497,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   if (!adminCheckComplete) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 py-8">
         <Card>
           <CardContent className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -2511,7 +2511,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   if (!isSuperAdmin) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 py-8">
         <Card>
           <CardContent className="p-8 text-center">
             <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -2525,7 +2525,7 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
