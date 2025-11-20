@@ -32,26 +32,6 @@ const createSupabaseClient = () => {
           'X-Client-Info': 'neighborlink-ios-compat',
           'Cache-Control': 'no-cache',
         },
-        fetch: (url, options = {}) => {
-          // Enhanced fetch with iOS security error handling
-          const enhancedOptions = {
-            ...options,
-            mode: 'cors' as RequestMode,
-          };
-          
-          return fetch(url, enhancedOptions).catch((error) => {
-            if (error.name === 'SecurityError' || error.message?.includes('insecure')) {
-              console.warn('iOS Safari security restriction detected, retrying with fallback');
-              // Retry with minimal options
-              return fetch(url, {
-                ...options,
-                credentials: 'omit' as RequestCredentials,
-                mode: 'cors' as RequestMode,
-              });
-            }
-            throw error;
-          });
-        },
       },
     };
 
