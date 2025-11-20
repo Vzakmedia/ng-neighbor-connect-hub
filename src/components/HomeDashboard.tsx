@@ -6,6 +6,7 @@ import HeroSection from './HeroSection';
 import CreatePostDialog from './CreatePostDialog';
 import { ScrollToTop } from './ScrollToTop';
 import { FeedTabNavigation } from './community/feed/FeedTabNavigation';
+import { BusinessCardCTA } from './home/BusinessCardCTA';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -181,6 +182,9 @@ const HomeDashboard = () => {
 
         {/* Sidebar - Visible on desktop only due to space constraints */}
         <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 sticky top-4 self-start max-h-[calc(100vh-6rem)]">
+          {/* Business CTA */}
+          <BusinessCardCTA />
+          
           {/* Sponsored Ads Section */}
           <Suspense fallback={<div className="h-64 animate-pulse bg-muted rounded-lg" />}>
             <AdDisplay placement="sidebar" maxAds={3} />
