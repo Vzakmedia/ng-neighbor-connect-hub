@@ -30,9 +30,18 @@ export const usePoll = (postId: string) => {
         .from("polls")
         .select("*")
         .eq("post_id", postId)
-        .single();
+        .maybeSingle();
 
       if (pollError) throw pollError;
+
+      // Handle case where no poll exists for this post
+      if (!poll) {
+        return {
+          poll: null,
+          options: [],
+          userVotes: [],
+        };
+      }
 
       const { data: options, error: optionsError } = await supabase
         .from("poll_options")
