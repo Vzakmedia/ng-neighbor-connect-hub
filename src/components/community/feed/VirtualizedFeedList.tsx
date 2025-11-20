@@ -7,6 +7,7 @@ import { PostCardData } from '@/types/community';
 import { usePostVisibility } from '@/hooks/community/usePostVisibility';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePostViews } from '@/hooks/usePostViews';
+import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 
 interface VirtualizedFeedListProps {
   events: PostCardData[];
@@ -17,6 +18,8 @@ interface VirtualizedFeedListProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onPostVisible?: (postId: string) => void;
+  showAds?: boolean;
+  adInterval?: number;
 }
 
 const VirtualizedFeedListComponent = ({
@@ -28,6 +31,8 @@ const VirtualizedFeedListComponent = ({
   hasNextPage = false,
   isFetchingNextPage = false,
   onPostVisible,
+  showAds = false,
+  adInterval = 5,
 }: VirtualizedFeedListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -54,10 +59,30 @@ const VirtualizedFeedListComponent = ({
     }
   });
 
+  // Mix ads into events array
+  const mixedContent = React.useMemo(() => {
+    if (!showAds) return events.map(event => ({ type: 'post' as const, data: event }));
+    
+    const mixed: Array<{ type: 'post' | 'ad'; data?: PostCardData; adIndex?: number }> = [];
+    events.forEach((event, index) => {
+      mixed.push({ type: 'post', data: event });
+      // Insert ad after every adInterval posts
+      if ((index + 1) % adInterval === 0 && index < events.length - 1) {
+        mixed.push({ type: 'ad', adIndex: Math.floor(index / adInterval) });
+      }
+    });
+    return mixed;
+  }, [events, showAds, adInterval]);
+
   // Estimate post height based on content
   const estimateSize = (index: number) => {
-    if (index >= events.length) return 100; // Loader row
-    const post = events[index];
+    if (index >= mixedContent.length) return 100; // Loader row
+    const item = mixedContent[index];
+    
+    // Ad height estimate
+    if (item.type === 'ad') return isMobile ? 350 : 400;
+    
+    const post = item.data!;
     
     // Base height differs by device
     let height = isMobile ? 200 : 180;
@@ -95,7 +120,7 @@ const VirtualizedFeedListComponent = ({
 
   // Initialize virtualizer with parent element for window scrolling
   const rowVirtualizer = useVirtualizer({
-    count: hasNextPage ? events.length + 1 : events.length,
+    count: hasNextPage ? mixedContent.length + 1 : mixedContent.length,
     getScrollElement: () => parentRef.current,
     estimateSize,
     overscan: isMobile ? 2 : 3,
@@ -175,7 +200,7 @@ const VirtualizedFeedListComponent = ({
     return <LoadingSkeleton />;
   }
 
-  if (events.length === 0) {
+  if (events.length === 0 && !showAds) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground text-lg">No posts found in your area.</p>
@@ -197,8 +222,9 @@ const VirtualizedFeedListComponent = ({
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const isLoaderRow = virtualRow.index > events.length - 1;
-            const post = events[virtualRow.index];
+            const isLoaderRow = virtualRow.index > mixedContent.length - 1;
+            const item = mixedContent[virtualRow.index];
+            const post = item?.type === 'post' ? item.data : null;
 
             return (
               <div
@@ -224,7 +250,11 @@ const VirtualizedFeedListComponent = ({
                       ✨ You've caught up with your community
                     </div>
                   )
-                ) : (
+                ) : item?.type === 'ad' ? (
+                  <div className="mb-3 sm:mb-4 md:mb-6 animate-fade-in">
+                    <AdDisplay placement="feed" maxAds={1} />
+                  </div>
+                ) : post ? (
                   <div
                     ref={observePost}
                     data-post-id={post.id}
@@ -243,7 +273,7 @@ const VirtualizedFeedListComponent = ({
                       onToggleComments={() => toggleComments(post.id)}
                     />
                   </div>
-                )}
+                ) : null}
               </div>
             );
           })}
