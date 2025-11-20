@@ -12,6 +12,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronRightIcon,
   ArrowLeftIcon,
+  MegaphoneIcon,
 } from "@heroicons/react/24/outline";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
@@ -84,6 +85,7 @@ export default function ProfileMenu() {
     { icon: UserIcon, label: "View Profile", action: () => handleNavigation("/profile") },
     { icon: SettingsIcon, label: "Account Settings", action: () => handleNavigation("/settings") },
     { icon: BellIcon, label: "Notifications", action: () => handleNavigation("/notifications") },
+    { icon: MegaphoneIcon, label: "My Campaigns", action: () => handleNavigation("/advertising") },
     { icon: ShieldCheckIcon, label: "Privacy & Security", action: () => handleNavigation("/privacy-security") },
     { icon: QuestionMarkCircleIcon, label: "Help Center", action: () => handleNavigation("/help") },
   ];
