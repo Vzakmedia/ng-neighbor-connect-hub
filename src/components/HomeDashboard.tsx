@@ -157,7 +157,7 @@ const HomeDashboard = () => {
         <AdDisplay placement="sidebar" maxAds={3} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 overflow-x-clip">
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tab Navigation */}
@@ -181,7 +181,7 @@ const HomeDashboard = () => {
         </div>
 
         {/* Sidebar - Visible on desktop only due to space constraints */}
-        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 sticky top-4 self-start max-h-[calc(100vh-6rem)]">
+        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 sticky top-4 self-start max-h-[calc(100vh-6rem)] w-full overflow-x-hidden overflow-y-auto">
           {/* Business CTA */}
           <BusinessCardCTA />
           
