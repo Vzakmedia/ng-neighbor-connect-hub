@@ -4167,6 +4167,313 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendation_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_category_id: string | null
+          recommendation_type: string | null
+          slug: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_category_id?: string | null
+          recommendation_type?: string | null
+          slug: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_category_id?: string | null
+          recommendation_type?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "recommendation_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_check_ins: {
+        Row: {
+          check_in_date: string
+          created_at: string
+          id: string
+          image_urls: string[] | null
+          note: string | null
+          recommendation_id: string
+          user_id: string
+        }
+        Insert: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          note?: string | null
+          recommendation_id: string
+          user_id: string
+        }
+        Update: {
+          check_in_date?: string
+          created_at?: string
+          id?: string
+          image_urls?: string[] | null
+          note?: string | null
+          recommendation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_check_ins_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_likes: {
+        Row: {
+          created_at: string
+          id: string
+          recommendation_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recommendation_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recommendation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_likes_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_reviews: {
+        Row: {
+          cons: string[] | null
+          created_at: string
+          helpful_count: number | null
+          id: string
+          image_urls: string[] | null
+          is_flagged: boolean | null
+          is_verified_visit: boolean | null
+          pros: string[] | null
+          rating: number
+          recommendation_id: string
+          review_text: string
+          review_title: string | null
+          reviewer_id: string
+          updated_at: string
+          visit_date: string | null
+        }
+        Insert: {
+          cons?: string[] | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          image_urls?: string[] | null
+          is_flagged?: boolean | null
+          is_verified_visit?: boolean | null
+          pros?: string[] | null
+          rating: number
+          recommendation_id: string
+          review_text: string
+          review_title?: string | null
+          reviewer_id: string
+          updated_at?: string
+          visit_date?: string | null
+        }
+        Update: {
+          cons?: string[] | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          image_urls?: string[] | null
+          is_flagged?: boolean | null
+          is_verified_visit?: boolean | null
+          pros?: string[] | null
+          rating?: number
+          recommendation_id?: string
+          review_text?: string
+          review_title?: string | null
+          reviewer_id?: string
+          updated_at?: string
+          visit_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_reviews_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_tips: {
+        Row: {
+          created_at: string
+          helpful_count: number | null
+          id: string
+          recommendation_id: string
+          tip_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          recommendation_id: string
+          tip_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          recommendation_id?: string
+          tip_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_tips_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendations: {
+        Row: {
+          address: string | null
+          average_rating: number | null
+          category: string
+          city: string
+          contact_info: Json | null
+          coordinates: Json | null
+          created_at: string
+          description: string
+          id: string
+          image_urls: string[] | null
+          is_verified: boolean | null
+          location_type: string
+          neighborhood: string | null
+          operating_hours: Json | null
+          price_range: string | null
+          recommendation_type: string
+          state: string
+          status: string | null
+          sub_category: string | null
+          tags: string[] | null
+          title: string
+          total_likes: number | null
+          total_reviews: number | null
+          total_saves: number | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          average_rating?: number | null
+          category: string
+          city: string
+          contact_info?: Json | null
+          coordinates?: Json | null
+          created_at?: string
+          description: string
+          id?: string
+          image_urls?: string[] | null
+          is_verified?: boolean | null
+          location_type?: string
+          neighborhood?: string | null
+          operating_hours?: Json | null
+          price_range?: string | null
+          recommendation_type: string
+          state: string
+          status?: string | null
+          sub_category?: string | null
+          tags?: string[] | null
+          title: string
+          total_likes?: number | null
+          total_reviews?: number | null
+          total_saves?: number | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          average_rating?: number | null
+          category?: string
+          city?: string
+          contact_info?: Json | null
+          coordinates?: Json | null
+          created_at?: string
+          description?: string
+          id?: string
+          image_urls?: string[] | null
+          is_verified?: boolean | null
+          location_type?: string
+          neighborhood?: string | null
+          operating_hours?: Json | null
+          price_range?: string | null
+          recommendation_type?: string
+          state?: string
+          status?: string | null
+          sub_category?: string | null
+          tags?: string[] | null
+          title?: string
+          total_likes?: number | null
+          total_reviews?: number | null
+          total_saves?: number | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       revenue_analytics: {
         Row: {
           amount: number
@@ -4208,6 +4515,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      review_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          reaction_type: string
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reaction_type: string
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_reactions_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "recommendation_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_reports: {
         Row: {
@@ -4464,6 +4803,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_recommendations: {
+        Row: {
+          collection_name: string
+          created_at: string
+          id: string
+          notes: string | null
+          recommendation_id: string
+          user_id: string
+        }
+        Insert: {
+          collection_name?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          recommendation_id: string
+          user_id: string
+        }
+        Update: {
+          collection_name?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          recommendation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_recommendations_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
           },
         ]
       }
