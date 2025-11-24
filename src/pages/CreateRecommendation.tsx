@@ -101,8 +101,15 @@ export default function CreateRecommendation() {
     switch (step) {
       case 1:
         return ['recommendation_type', 'title', 'description', 'category'];
-      case 2:
-        return ['location_type', 'city', 'state'];
+      case 2: {
+        const locationType = form.watch('location_type');
+        const baseFields = ['location_type'];
+        // Only validate city and state if location is physical or both
+        if (locationType === 'physical' || locationType === 'both') {
+          return [...baseFields, 'city', 'state'];
+        }
+        return baseFields;
+      }
       case 3:
         return [];
       case 4:
