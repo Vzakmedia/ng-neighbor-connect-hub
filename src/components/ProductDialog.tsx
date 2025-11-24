@@ -39,6 +39,7 @@ import { useNativeClipboard } from '@/hooks/mobile/useNativeClipboard';
 import { MarketplaceComments } from './marketplace/MarketplaceComments';
 import { MarketplaceMap } from './marketplace/MarketplaceMap';
 import { SellerOtherListings } from './marketplace/SellerOtherListings';
+import { VideoPlayer } from './VideoPlayer';
 import useEmblaCarousel from 'embla-carousel-react';
 
 interface MarketplaceItem {
@@ -47,6 +48,7 @@ interface MarketplaceItem {
   description: string;
   price: number;
   images: string[];
+  video_urls?: string[];
   condition: string;
   is_negotiable: boolean;
   location: string;
@@ -503,12 +505,25 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
             {/* Left Column - Images Carousel and Suggested Items */}
             <div className="md:sticky md:top-0 md:h-screen md:overflow-y-auto">
               <div className="relative w-full h-[280px] md:h-[400px]">
-                {product.images && product.images.length > 0 ? (
+                {(product.images && product.images.length > 0) || (product.video_urls && product.video_urls.length > 0) ? (
                   <>
                     <div className="overflow-hidden h-full rounded-t-3xl md:rounded-tl-3xl md:rounded-tr-none" ref={emblaRef}>
                       <div className="flex h-full">
-                        {product.images.map((image, index) => (
-                          <div key={index} className="flex-[0_0_100%] min-w-0">
+                        {/* Display videos first */}
+                        {product.video_urls?.map((video, index) => (
+                          <div key={`video-${index}`} className="flex-[0_0_100%] min-w-0">
+                            <VideoPlayer
+                              src={video}
+                              className="w-full h-full"
+                              autoPlay={false}
+                              muted={true}
+                              controls={true}
+                            />
+                          </div>
+                        ))}
+                        {/* Then display images */}
+                        {product.images?.map((image, index) => (
+                          <div key={`image-${index}`} className="flex-[0_0_100%] min-w-0">
                             <img
                               src={image}
                               alt={`${product.title} - Image ${index + 1}`}
@@ -518,7 +533,7 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                         ))}
                       </div>
                     </div>
-                    {product.images.length > 1 && (
+                    {((product.images?.length || 0) + (product.video_urls?.length || 0)) > 1 && (
                       <>
                         <Button
                           variant="outline"
@@ -537,14 +552,14 @@ export const ProductDialog = ({ open, onOpenChange, product }: ProductDialogProp
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium">
-                          {currentImageIndex + 1} / {product.images.length}
+                          {currentImageIndex + 1} / {(product.images?.length || 0) + (product.video_urls?.length || 0)}
                         </div>
                       </>
                     )}
                   </>
                 ) : (
                   <div className="w-full h-full bg-muted flex items-center justify-center md:rounded-tl-3xl">
-                    <span className="text-muted-foreground text-sm">No image available</span>
+                    <span className="text-muted-foreground text-sm">No media available</span>
                   </div>
                 )}
               </div>
