@@ -13,7 +13,9 @@ import { CampaignType, PricingTier, CreateCampaignData } from '@/types/advertisi
 import { Plus, Check, Loader2, MapPin, Calendar } from '@/lib/icons';
 import { toast } from 'sonner';
 import { RenderApiService } from '@/services/renderApiService';
-import { PromotionImageUpload } from '@/components/PromotionImageUpload';
+import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
+import { MediaUploader } from '@/components/MediaUploader';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CreateCampaignDialogProps {
   children?: React.ReactNode;
@@ -47,6 +49,9 @@ export const CreateCampaignDialog = ({
   const [loading, setLoading] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
+  const [adMedia, setAdMedia] = useState<any[]>([]);
+  const { user } = useAuth();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'ad-media');
   const [formData, setFormData] = useState<Partial<CreateCampaignData>>({
     campaign_type: serviceId ? 'service_ad' : marketplaceItemId ? 'marketplace_ad' : businessId ? 'business_promotion' : eventId ? 'event_promotion' : 'community_boost',
     target_geographic_scope: 'city',
@@ -220,16 +225,60 @@ export const CreateCampaignDialog = ({
               />
             </div>
 
-            {/* Ad Images Upload */}
+            {/* Ad Media Upload */}
             <div>
-              <Label>Ad Images</Label>
+              <Label>Ad Media (Images & Videos)</Label>
               <p className="text-xs text-muted-foreground mb-2">
-                Upload up to 5 images for your ad. Recommended size: 1200x675px (16:9 ratio)
+                Upload images and videos for your ad. Max 1 video and 4 images total.
               </p>
-              <PromotionImageUpload
-                images={formData.ad_images || []}
-                onImagesChange={(images) => setFormData(prev => ({ ...prev, ad_images: images }))}
-                maxImages={5}
+              <MediaUploader
+                onFilesSelected={async (files) => {
+                  const attachments = await uploadMultipleFiles(files);
+                  if (attachments.length > 0) {
+                    setAdMedia(prev => [...prev, ...attachments]);
+                    const images: string[] = [];
+                    let videoUrl = '';
+                    let videoThumbnail = '';
+                    
+                    attachments.forEach(att => {
+                      if (att.type === 'image') {
+                        images.push(att.url);
+                      } else if (att.type === 'video') {
+                        videoUrl = att.url;
+                        videoThumbnail = att.thumbnailUrl || '';
+                      }
+                    });
+                    
+                    setFormData(prev => ({
+                      ...prev,
+                      ad_images: [...(prev.ad_images || []), ...images],
+                      video_url: videoUrl || prev.video_url,
+                      video_thumbnail_url: videoThumbnail || prev.video_thumbnail_url
+                    }));
+                  }
+                }}
+                onRemove={(index) => {
+                  const removed = adMedia[index];
+                  setAdMedia(prev => prev.filter((_, i) => i !== index));
+                  
+                  if (removed.type === 'image') {
+                    setFormData(prev => ({
+                      ...prev,
+                      ad_images: (prev.ad_images || []).filter(url => url !== removed.url)
+                    }));
+                  } else if (removed.type === 'video') {
+                    setFormData(prev => ({
+                      ...prev,
+                      video_url: undefined,
+                      video_thumbnail_url: undefined
+                    }));
+                  }
+                }}
+                accept="both"
+                maxFiles={5}
+                uploadedFiles={adMedia}
+                uploading={uploading}
+                progress={progress}
               />
             </div>
           </div>
