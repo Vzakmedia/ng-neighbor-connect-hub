@@ -24,6 +24,7 @@ interface Service {
   location: string | null;
   is_active: boolean;
   images: string[];
+  video_urls?: string[];
 }
 
 interface EditServiceDialogProps {
@@ -88,14 +89,29 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
         location: service.location || '',
         is_active: service.is_active
       });
-      const existingMedia = (service.images || []).map((url: string, idx: number) => ({
-        id: `existing-${idx}`,
-        type: 'image',
-        name: `Image ${idx + 1}`,
-        url,
-        size: 0,
-        mimeType: 'image/jpeg'
-      }));
+      
+      // Load existing media (both images and videos)
+      const existingMedia: any[] = [];
+      (service.images || []).forEach((url: string, idx: number) => {
+        existingMedia.push({
+          id: `existing-image-${idx}`,
+          type: 'image',
+          name: `Image ${idx + 1}`,
+          url,
+          size: 0,
+          mimeType: 'image/jpeg'
+        });
+      });
+      (service.video_urls || []).forEach((url: string, idx: number) => {
+        existingMedia.push({
+          id: `existing-video-${idx}`,
+          type: 'video',
+          name: `Video ${idx + 1}`,
+          url,
+          size: 0,
+          mimeType: 'video/mp4'
+        });
+      });
       setGalleryFiles(existingMedia);
       fetchWeeklyAvailability();
     }
