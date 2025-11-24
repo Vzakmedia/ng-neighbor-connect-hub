@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent } from '@/components/ui/card';
-import { PlusIcon, CameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
+import { MediaUploader } from '@/components/MediaUploader';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface CreateMarketplaceItemDialogProps {
   onItemCreated: () => void;
@@ -21,11 +21,10 @@ interface CreateMarketplaceItemDialogProps {
 const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketplaceItemDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { pickImages, isNative } = useNativeCamera();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'marketplace-items');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -45,99 +44,17 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
     'new', 'like_new', 'good', 'fair', 'poor'
   ];
 
-  const handleNativeImagePick = async () => {
-    if (!user || !isNative) return;
-
-    setUploadingImages(true);
-    try {
-      const files = await pickImages(true);
-      if (files.length === 0) {
-        setUploadingImages(false);
-        return;
-      }
-
-      await uploadFilesToStorage(files);
-    } catch (error) {
-      console.error('Error picking images:', error);
-      toast({
-        title: "Error",
-        description: "Failed to select images",
-        variant: "destructive",
-      });
-      setUploadingImages(false);
-    }
-  };
-
-  const handleImageUpload = async (files: FileList | null) => {
-    if (!files || !user) return;
-    await uploadFilesToStorage(Array.from(files));
-  };
-
-  const uploadFilesToStorage = async (files: File[]) => {
+  const handleMediaUpload = async (files: File[]) => {
     if (!user) return;
 
-    setUploadingImages(true);
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from('service-galleries') // Reusing the same bucket
-          .upload(fileName, file);
-
-        if (error) throw error;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('service-galleries')
-          .getPublicUrl(fileName);
-
-        return publicUrl;
-      });
-
-      const newImageUrls = await Promise.all(uploadPromises);
-      setGalleryImages(prev => [...prev, ...newImageUrls]);
-
-      toast({
-        title: "Images uploaded",
-        description: `${newImageUrls.length} image(s) added to listing`,
-      });
-    } catch (error) {
-      console.error('Error uploading images:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingImages(false);
+    const attachments = await uploadMultipleFiles(files);
+    if (attachments.length > 0) {
+      setGalleryFiles(prev => [...prev, ...attachments]);
     }
   };
 
-  const handleRemoveImage = async (imageUrl: string, index: number) => {
-    try {
-      const urlParts = imageUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const filePath = `${user?.id}/${fileName}`;
-
-      await supabase.storage
-        .from('service-galleries')
-        .remove([filePath]);
-
-      setGalleryImages(prev => prev.filter((_, i) => i !== index));
-
-      toast({
-        title: "Image removed",
-        description: "Image deleted from listing",
-      });
-    } catch (error) {
-      console.error('Error removing image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove image",
-        variant: "destructive",
-      });
-    }
+  const handleRemoveMedia = (index: number) => {
+    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,7 +69,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
 
     // Save form state and reset immediately
     const savedFormData = { ...formData };
-    const savedImages = [...galleryImages];
+    const savedFiles = [...galleryFiles];
     setFormData({
       title: '',
       description: '',
@@ -162,12 +79,15 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
       condition: '',
       is_negotiable: false
     });
-    setGalleryImages([]);
+    setGalleryFiles([]);
     setOpen(false);
     onItemCreated();
 
     setLoading(true);
     try {
+      const imageUrls = savedFiles.filter(f => f.type === 'image').map(f => f.url);
+      const videoUrls = savedFiles.filter(f => f.type === 'video').map(f => f.url);
+
       const { error } = await supabase
         .from('marketplace_items')
         .insert({
@@ -179,7 +99,8 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
           location: savedFormData.location,
           condition: savedFormData.condition,
           is_negotiable: savedFormData.is_negotiable,
-          images: savedImages,
+          images: imageUrls,
+          video_urls: videoUrls,
           status: 'active'
         });
 
@@ -198,7 +119,7 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
       });
       // Restore form on error
       setFormData(savedFormData);
-      setGalleryImages(savedImages);
+      setGalleryFiles(savedFiles);
       setOpen(true);
     } finally {
       setLoading(false);
@@ -309,86 +230,20 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
             </div>
           </div>
 
-          {/* Gallery Section */}
+          {/* Media Gallery Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Item Gallery</Label>
-              <div className="flex gap-2">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  className="hidden"
-                  id="gallery-upload"
-                  disabled={uploadingImages}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={isNative ? handleNativeImagePick : () => document.getElementById('gallery-upload')?.click()}
-                  disabled={uploadingImages}
-                  className="flex items-center gap-2"
-                >
-                  {uploadingImages ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <PlusIcon className="h-4 w-4" />
-                      Add Images
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Image Gallery Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {galleryImages.map((imageUrl, index) => (
-                <Card key={index} className="relative group">
-                  <CardContent className="p-2">
-                    <div className="relative aspect-square">
-                      <img
-                        src={imageUrl}
-                        alt={`Item gallery ${index + 1}`}
-                        className="w-full h-full object-cover rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveImage(imageUrl, index)}
-                      >
-                        <XMarkIcon className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {/* Upload placeholder */}
-              {galleryImages.length < 8 && (
-                <Card className="cursor-pointer border-dashed hover:bg-muted/50">
-                  <CardContent className="p-2">
-                    <div 
-                      className="aspect-square flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                      onClick={() => document.getElementById('gallery-upload')?.click()}
-                    >
-                      <CameraIcon className="h-8 w-8 mb-2" />
-                      <span className="text-xs text-center">Add Photo</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-            
+            <Label className="text-base font-semibold">Item Gallery (Images & Videos)</Label>
+            <MediaUploader
+              onFilesSelected={handleMediaUpload}
+              accept="both"
+              maxFiles={8}
+              uploadedFiles={galleryFiles}
+              onRemove={handleRemoveMedia}
+              uploading={uploading}
+              progress={progress}
+            />
             <p className="text-xs text-muted-foreground">
-              Add up to 8 photos to showcase your item. JPG, PNG formats supported.
+              Add up to 8 media files (images or videos) to showcase your item
             </p>
           </div>
 
@@ -402,10 +257,10 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading || uploadingImages} className="flex-1">
+            <Button type="submit" disabled={loading || uploading} className="flex-1">
               {loading ? 'Creating...' : 'Create Listing'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading || uploadingImages}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading || uploading}>
               Cancel
             </Button>
           </div>
