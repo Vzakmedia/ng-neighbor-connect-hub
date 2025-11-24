@@ -623,16 +623,31 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
               }}
             >
                <CardContent className="p-0">
-                  {/* Image Carousel */}
+                  {/* Image/Video Carousel */}
                   <div 
                     className="relative h-48 bg-muted rounded-t-lg overflow-hidden cursor-pointer"
                     onClick={() => item.images && item.images.length > 0 && handleImageClick(item.images, item.title)}
                   >
-                   {item.images && item.images.length > 0 ? (
+                   {(item.images && item.images.length > 0) || (item.video_urls && item.video_urls.length > 0) ? (
                      <Carousel className="w-full h-full">
                        <CarouselContent className="h-full">
-                         {item.images.map((imageUrl, index) => (
-                           <CarouselItem key={index} className="h-full">
+                         {/* Display videos first */}
+                         {item.video_urls?.map((videoUrl, index) => (
+                           <CarouselItem key={`video-${index}`} className="h-full">
+                             <video
+                               src={videoUrl}
+                               className="w-full h-full object-cover"
+                               muted
+                               loop
+                               playsInline
+                               onMouseEnter={(e) => e.currentTarget.play()}
+                               onMouseLeave={(e) => e.currentTarget.pause()}
+                             />
+                           </CarouselItem>
+                         ))}
+                         {/* Then display images */}
+                         {item.images?.map((imageUrl, index) => (
+                           <CarouselItem key={`image-${index}`} className="h-full">
                              <img
                                src={imageUrl}
                                alt={`${item.title} ${index + 1}`}
@@ -641,16 +656,16 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                            </CarouselItem>
                          ))}
                        </CarouselContent>
-                       {item.images.length > 1 && (
+                       {((item.images?.length || 0) + (item.video_urls?.length || 0)) > 1 && (
                          <>
                            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white border-0 shadow-md" />
                            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white/80 hover:bg-white border-0 shadow-md" />
                          </>
                        )}
-                       {/* Image indicator dots */}
-                       {item.images.length > 1 && (
+                       {/* Media indicator dots */}
+                       {((item.images?.length || 0) + (item.video_urls?.length || 0)) > 1 && (
                          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                           {item.images.map((_, index) => (
+                           {[...(item.video_urls || []), ...(item.images || [])].map((_, index) => (
                              <div
                                key={index}
                                className="w-2 h-2 rounded-full bg-white/60"
@@ -681,12 +696,12 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
                      </Badge>
                    </div>
                    
-                   {/* Image count badge */}
-                   {item.images && item.images.length > 1 && (
+                   {/* Media count badge */}
+                   {((item.images?.length || 0) + (item.video_urls?.length || 0)) > 1 && (
                      <div className="absolute top-2 left-2">
                        <Badge variant="secondary" className="bg-black/60 text-white text-xs">
                          <CameraIcon className="h-3 w-3 mr-1" />
-                         {item.images.length}
+                         {(item.images?.length || 0) + (item.video_urls?.length || 0)}
                        </Badge>
                      </div>
                    )}
