@@ -7,6 +7,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Paperclip, ImageIcon, Video, FileText, Camera } from '@/lib/icons';
+import { useToast } from '@/hooks/use-toast';
+import { validateMedia } from '@/utils/mediaValidation';
+import { useNetwork } from '@/hooks/mobile/useNetwork';
 
 interface AttachmentButtonProps {
   onFileSelect: (files: File[]) => void;
@@ -20,6 +23,8 @@ const AttachmentButton: React.FC<AttachmentButtonProps> = ({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const { networkType, isOnline } = useNetwork();
 
   const handleImageSelect = () => {
     imageInputRef.current?.click();
@@ -35,9 +40,46 @@ const AttachmentButton: React.FC<AttachmentButtonProps> = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    if (files.length > 0) {
-      onFileSelect(files);
+    
+    if (!isOnline) {
+      toast({
+        title: "No internet connection",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
+      event.target.value = '';
+      return;
     }
+    
+    // Validate each file
+    const validatedFiles: File[] = [];
+    for (const file of files) {
+      const validation = validateMedia(file);
+      
+      if (!validation.valid) {
+        toast({
+          title: "Invalid file",
+          description: validation.error,
+          variant: "destructive",
+        });
+        continue;
+      }
+      
+      // Warn on cellular for large files
+      if (networkType === 'cellular' && file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "Large file on cellular",
+          description: `Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB on cellular data. This may take a while.`,
+        });
+      }
+      
+      validatedFiles.push(file);
+    }
+    
+    if (validatedFiles.length > 0) {
+      onFileSelect(validatedFiles);
+    }
+    
     // Reset the input
     event.target.value = '';
   };
@@ -92,7 +134,7 @@ const AttachmentButton: React.FC<AttachmentButtonProps> = ({
       <input
         ref={videoInputRef}
         type="file"
-        accept="video/*"
+        accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
         multiple
         onChange={handleFileChange}
         className="hidden"
