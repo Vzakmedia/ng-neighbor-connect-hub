@@ -1,7 +1,9 @@
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ChevronRight } from "@/lib/icons";
 import type { RecommendationCategory } from "@/types/recommendations";
 
 interface Props {
@@ -10,6 +12,9 @@ interface Props {
 }
 
 export function CategoryPills({ selectedCategories, onSelectCategory }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['recommendation-categories'],
     queryFn: async () => {
@@ -24,6 +29,25 @@ export function CategoryPills({ selectedCategories, onSelectCategory }: Props) {
     },
   });
 
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [categories]);
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -35,27 +59,43 @@ export function CategoryPills({ selectedCategories, onSelectCategory }: Props) {
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-      {categories.map((category) => {
-        const isSelected = selectedCategories.includes(category.slug);
-        return (
-          <Button
-            key={category.slug}
-            variant={isSelected ? "default" : "outline"}
-            size="sm"
-            className={cn(
-              "rounded-full flex-shrink-0 px-4 h-10 transition-all",
-              isSelected 
-                ? "bg-foreground text-background hover:bg-foreground/90" 
-                : "bg-background hover:bg-muted border-border"
-            )}
-            onClick={() => onSelectCategory(category.slug)}
-          >
-            {category.icon && <span className="mr-2">{category.icon}</span>}
-            {category.name}
-          </Button>
-        );
-      })}
+    <div className="relative">
+      <div 
+        ref={scrollRef}
+        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+        onScroll={checkScroll}
+      >
+        {categories.map((category) => {
+          const isSelected = selectedCategories.includes(category.slug);
+          return (
+            <Button
+              key={category.slug}
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              className={cn(
+                "rounded-full flex-shrink-0 px-4 h-10 transition-all",
+                isSelected 
+                  ? "bg-foreground text-background hover:bg-foreground/90" 
+                  : "bg-background hover:bg-muted border-border"
+              )}
+              onClick={() => onSelectCategory(category.slug)}
+            >
+              {category.icon && <span className="mr-2">{category.icon}</span>}
+              {category.name}
+            </Button>
+          );
+        })}
+      </div>
+      
+      {showRightArrow && (
+        <button
+          onClick={scrollRight}
+          className="absolute right-0 top-0 h-10 w-10 bg-background/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-md border border-border hover:bg-background transition-all animate-fade-in"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-5 w-5 text-foreground" />
+        </button>
+      )}
     </div>
   );
 }
