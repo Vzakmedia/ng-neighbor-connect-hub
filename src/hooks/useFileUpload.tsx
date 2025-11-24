@@ -9,6 +9,7 @@ export interface Attachment {
   type: 'image' | 'video' | 'file';
   name: string;
   url: string;
+  thumbnailUrl?: string;
   size: number;
   mimeType: string;
 }
