@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent } from '@/components/ui/card';
-import { PencilIcon, ArrowUpTrayIcon, XMarkIcon, PlusIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { MediaUploader } from '@/components/MediaUploader';
 
 interface Service {
   id: string;
@@ -44,9 +44,9 @@ interface WeeklyAvailability {
 const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'service-galleries');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadingImages, setUploadingImages] = useState(false);
   const [formData, setFormData] = useState({
     title: service.title,
     description: service.description,
@@ -57,7 +57,7 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
     location: service.location || '',
     is_active: service.is_active
   });
-  const [galleryImages, setGalleryImages] = useState<string[]>(service.images || []);
+  const [galleryFiles, setGalleryFiles] = useState<any[]>([]);
   const [weeklyAvailability, setWeeklyAvailability] = useState<WeeklyAvailability[]>([]);
 
   const DAYS_OF_WEEK = [
@@ -88,7 +88,15 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
         location: service.location || '',
         is_active: service.is_active
       });
-      setGalleryImages(service.images || []);
+      const existingMedia = (service.images || []).map((url: string, idx: number) => ({
+        id: `existing-${idx}`,
+        type: 'image',
+        name: `Image ${idx + 1}`,
+        url,
+        size: 0,
+        mimeType: 'image/jpeg'
+      }));
+      setGalleryFiles(existingMedia);
       fetchWeeklyAvailability();
     }
   }, [open, service]);
@@ -139,76 +147,17 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
     );
   };
 
-  const handleImageUpload = async (files: FileList | null) => {
-    if (!files || !user) return;
+  const handleMediaUpload = async (files: File[]) => {
+    if (!user) return;
 
-    setUploadingImages(true);
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        // Create unique filename with user ID and timestamp
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from('service-galleries')
-          .upload(fileName, file);
-
-        if (error) throw error;
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('service-galleries')
-          .getPublicUrl(fileName);
-
-        return publicUrl;
-      });
-
-      const newImageUrls = await Promise.all(uploadPromises);
-      setGalleryImages(prev => [...prev, ...newImageUrls]);
-
-      toast({
-        title: "Images uploaded",
-        description: `${newImageUrls.length} image(s) added to gallery`,
-      });
-    } catch (error) {
-      console.error('Error uploading images:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingImages(false);
+    const attachments = await uploadMultipleFiles(files);
+    if (attachments.length > 0) {
+      setGalleryFiles(prev => [...prev, ...attachments]);
     }
   };
 
-  const handleRemoveImage = async (imageUrl: string, index: number) => {
-    try {
-      // Extract file path from URL for deletion
-      const urlParts = imageUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const filePath = `${user?.id}/${fileName}`;
-
-      // Delete from storage
-      await supabase.storage
-        .from('service-galleries')
-        .remove([filePath]);
-
-      // Remove from local state
-      setGalleryImages(prev => prev.filter((_, i) => i !== index));
-
-      toast({
-        title: "Image removed",
-        description: "Image deleted from gallery",
-      });
-    } catch (error) {
-      console.error('Error removing image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove image",
-        variant: "destructive",
-      });
-    }
+  const handleRemoveMedia = (index: number) => {
+    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -217,6 +166,9 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
 
     setLoading(true);
     try {
+      const imageUrls = galleryFiles.filter(f => f.type === 'image').map(f => f.url);
+      const videoUrls = galleryFiles.filter(f => f.type === 'video').map(f => f.url);
+
       const { error } = await supabase
         .from('services')
         .update({
@@ -228,11 +180,12 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
           price_type: formData.price_type,
           location: formData.location || null,
           is_active: formData.is_active,
-          images: galleryImages,
+          images: imageUrls,
+          video_urls: videoUrls,
           updated_at: new Date().toISOString()
         })
         .eq('id', service.id)
-        .eq('user_id', user.id); // Ensure user can only edit their own services
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -391,86 +344,20 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
             />
           </div>
 
-          {/* Gallery Section */}
+          {/* Media Gallery Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Service Gallery</Label>
-              <div className="flex gap-2">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  className="hidden"
-                  id="gallery-upload"
-                  disabled={uploadingImages}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => document.getElementById('gallery-upload')?.click()}
-                  disabled={uploadingImages}
-                  className="flex items-center gap-2"
-                >
-                  {uploadingImages ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <PlusIcon className="h-4 w-4" />
-                      Add Images
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Image Gallery Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {galleryImages.map((imageUrl, index) => (
-                <Card key={index} className="relative group">
-                  <CardContent className="p-2">
-                    <div className="relative aspect-square">
-                      <img
-                        src={imageUrl}
-                        alt={`Gallery image ${index + 1}`}
-                        className="w-full h-full object-cover rounded"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleRemoveImage(imageUrl, index)}
-                      >
-                        <XMarkIcon className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {/* Upload placeholder */}
-              {galleryImages.length < 8 && (
-                <Card className="cursor-pointer border-dashed hover:bg-muted/50">
-                  <CardContent className="p-2">
-                    <div 
-                      className="aspect-square flex flex-col items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                      onClick={() => document.getElementById('gallery-upload')?.click()}
-                    >
-                      <CameraIcon className="h-8 w-8 mb-2" />
-                      <span className="text-xs text-center">Add Photo</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-            
+            <Label className="text-base font-semibold">Service Gallery (Images & Videos)</Label>
+            <MediaUploader
+              onFilesSelected={handleMediaUpload}
+              accept="both"
+              maxFiles={8}
+              uploadedFiles={galleryFiles}
+              onRemove={handleRemoveMedia}
+              uploading={uploading}
+              progress={progress}
+            />
             <p className="text-xs text-muted-foreground">
-              Add up to 8 photos to showcase your service. JPG, PNG formats supported.
+              Add up to 8 media files (images or videos) to showcase your service
             </p>
           </div>
 
@@ -555,10 +442,10 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading || uploadingImages} className="flex-1">
+            <Button type="submit" disabled={loading || uploading} className="flex-1">
               {loading ? 'Updating...' : 'Update Service'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading || uploadingImages}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading || uploading}>
               Cancel
             </Button>
           </div>

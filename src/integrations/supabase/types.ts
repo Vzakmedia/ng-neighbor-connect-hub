@@ -233,6 +233,8 @@ export type Database = {
           total_spent: number | null
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
+          video_url: string | null
         }
         Insert: {
           ad_call_to_action?: string | null
@@ -273,6 +275,8 @@ export type Database = {
           total_spent?: number | null
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Update: {
           ad_call_to_action?: string | null
@@ -313,6 +317,8 @@ export type Database = {
           total_spent?: number | null
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -1720,6 +1726,8 @@ export type Database = {
           title: string | null
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
+          video_url: string | null
         }
         Insert: {
           content: string
@@ -1738,6 +1746,8 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Update: {
           content?: string
@@ -1756,6 +1766,8 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -2658,6 +2670,8 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
+          video_url: string | null
         }
         Insert: {
           content?: string | null
@@ -2676,6 +2690,8 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Update: {
           content?: string | null
@@ -2694,6 +2710,8 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -2956,6 +2974,7 @@ export type Database = {
           total_reviews: number | null
           updated_at: string
           user_id: string
+          video_urls: Json | null
         }
         Insert: {
           approval_status?: string | null
@@ -2977,6 +2996,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id: string
+          video_urls?: Json | null
         }
         Update: {
           approval_status?: string | null
@@ -2998,6 +3018,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string
+          video_urls?: Json | null
         }
         Relationships: [
           {
@@ -5160,6 +5181,7 @@ export type Database = {
           total_reviews: number | null
           updated_at: string
           user_id: string
+          video_urls: Json | null
         }
         Insert: {
           approval_status?: string | null
@@ -5181,6 +5203,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id: string
+          video_urls?: Json | null
         }
         Update: {
           approval_status?: string | null
@@ -5202,6 +5225,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string
+          video_urls?: Json | null
         }
         Relationships: []
       }
