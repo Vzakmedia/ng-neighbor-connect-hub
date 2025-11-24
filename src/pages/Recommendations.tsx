@@ -50,9 +50,10 @@ export default function Recommendations() {
 
   return (
     <>
-      <Header />
-      <Navigation />
-      <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-2 md:pt-0 bg-background min-h-screen">
+      <div className="min-h-screen bg-background">
+        <Header />
+        <Navigation />
+        <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-2 md:pt-0">
         <div className="container px-0 lg:px-6 pt-1 sm:pt-2 md:pt-3 pb-3 sm:pb-4 md:pb-6 space-y-3 sm:space-y-4 max-w-7xl">
           {/* Search and Filter Bar */}
           <div className="flex gap-2 sticky top-2 md:top-0 z-10 py-2 px-4 lg:px-0 border-b bg-background/80 backdrop-blur-md">
@@ -135,6 +136,7 @@ export default function Recommendations() {
           </div>
         </div>
       </main>
+      </div>
 
       {/* Filter Modal */}
       <FilterModal 
