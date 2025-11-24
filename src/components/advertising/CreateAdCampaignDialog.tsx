@@ -16,6 +16,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/hooks/useProfile';
+import { useCloudinaryUpload } from '@/hooks/useCloudinaryUpload';
+import { MediaUploader } from '@/components/MediaUploader';
 import { cn } from '@/lib/utils';
 
 interface CreateAdCampaignDialogProps {
@@ -54,9 +56,11 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
   const [loading, setLoading] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [promotableContent, setPromotableContent] = useState<PromotableContent[]>([]);
+  const [adMedia, setAdMedia] = useState<any[]>([]);
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'ad-media');
 
   const [formData, setFormData] = useState({
     campaignName: '',
@@ -75,7 +79,9 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
     adDescription: '',
     adUrl: '',
     adCallToAction: 'Learn More',
-    adImages: [] as string[]
+    adImages: [] as string[],
+    videoUrl: '',
+    videoThumbnailUrl: ''
   });
 
   useEffect(() => {
@@ -238,7 +244,9 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
           ad_description: formData.adDescription,
           ad_url: formData.adUrl,
           ad_call_to_action: formData.adCallToAction,
-          ad_images: formData.adImages
+          ad_images: formData.adImages,
+          video_url: formData.videoUrl,
+          video_thumbnail_url: formData.videoThumbnailUrl
         })
       };
 
@@ -433,6 +441,63 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                         <SelectItem value="Download">Download</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  {/* Media Upload */}
+                  <div>
+                    <Label>Ad Media (Images & Videos)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Upload images and videos for your ad. Max 1 video and 4 images total.
+                    </p>
+                    <MediaUploader
+                      onFilesSelected={async (files) => {
+                        const attachments = await uploadMultipleFiles(files);
+                        if (attachments.length > 0) {
+                          setAdMedia(prev => [...prev, ...attachments]);
+                          const images = [...formData.adImages];
+                          let videoUrl = formData.videoUrl;
+                          let videoThumbnail = formData.videoThumbnailUrl;
+                          
+                          attachments.forEach(att => {
+                            if (att.type === 'image') {
+                              images.push(att.url);
+                            } else if (att.type === 'video') {
+                              videoUrl = att.url;
+                              videoThumbnail = att.thumbnailUrl || '';
+                            }
+                          });
+                          
+                          setFormData({
+                            ...formData,
+                            adImages: images,
+                            videoUrl,
+                            videoThumbnailUrl: videoThumbnail
+                          });
+                        }
+                      }}
+                      onRemove={(index) => {
+                        const removed = adMedia[index];
+                        setAdMedia(prev => prev.filter((_, i) => i !== index));
+                        
+                        if (removed.type === 'image') {
+                          setFormData({
+                            ...formData,
+                            adImages: formData.adImages.filter(url => url !== removed.url)
+                          });
+                        } else if (removed.type === 'video') {
+                          setFormData({
+                            ...formData,
+                            videoUrl: '',
+                            videoThumbnailUrl: ''
+                          });
+                        }
+                      }}
+                      accept="both"
+                      maxFiles={5}
+                      uploadedFiles={adMedia}
+                      uploading={uploading}
+                      progress={progress}
+                    />
                   </div>
                 </div>
               )}
