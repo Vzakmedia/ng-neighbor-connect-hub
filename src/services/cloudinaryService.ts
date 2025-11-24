@@ -2,6 +2,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
+if (!CLOUDINARY_CLOUD_NAME) {
+  console.error('CLOUDINARY_CLOUD_NAME is not configured. Image uploads will fail.');
+}
+
 interface UploadSignature {
   signature: string;
   timestamp: number;
@@ -11,15 +15,25 @@ interface UploadSignature {
 
 export const getUploadSignature = async (folder: string): Promise<UploadSignature | null> => {
   try {
+    console.log('Requesting upload signature for folder:', folder);
     const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
       body: { folder }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Edge function error:', error);
+      throw error;
+    }
+    
+    if (!data || !data.signature) {
+      throw new Error('Invalid signature response from server');
+    }
+    
+    console.log('Successfully received upload signature');
     return data;
   } catch (error) {
     console.error('Error getting upload signature:', error);
-    return null;
+    throw error; // Propagate error instead of silently returning null
   }
 };
 
@@ -29,6 +43,12 @@ export const uploadToCloudinary = async (
   onProgress?: (progress: number) => void
 ): Promise<string | null> => {
   try {
+    if (!CLOUDINARY_CLOUD_NAME) {
+      throw new Error('Cloudinary is not configured. Please check your environment variables.');
+    }
+
+    console.log('Starting upload for file:', file.name, 'to folder:', folder);
+    
     const signatureData = await getUploadSignature(folder);
     if (!signatureData) throw new Error('Failed to get upload signature');
 
@@ -46,6 +66,7 @@ export const uploadToCloudinary = async (
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable && onProgress) {
           const progress = Math.round((e.loaded / e.total) * 100);
+          console.log(`Upload progress: ${progress}%`);
           onProgress(progress);
         }
       });
@@ -53,19 +74,25 @@ export const uploadToCloudinary = async (
       xhr.addEventListener('load', () => {
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
+          console.log('Upload successful:', response.secure_url);
           resolve(response.secure_url);
         } else {
-          reject(new Error('Upload failed'));
+          console.error('Upload failed with status:', xhr.status, xhr.responseText);
+          reject(new Error(`Upload failed with status ${xhr.status}`));
         }
       });
 
-      xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+      xhr.addEventListener('error', (e) => {
+        console.error('Upload network error:', e);
+        reject(new Error('Network error during upload'));
+      });
+      
       xhr.open('POST', uploadUrl);
       xhr.send(formData);
     });
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
-    return null;
+    throw error; // Propagate error instead of returning null
   }
 };
 
