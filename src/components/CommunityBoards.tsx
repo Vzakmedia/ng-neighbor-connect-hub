@@ -58,7 +58,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { useCloudinaryUpload, CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
+import { MediaUploader } from '@/components/MediaUploader';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import { useToast } from '@/hooks/use-toast';
 
 interface DiscussionBoard {
@@ -156,6 +158,8 @@ interface BoardPost {
   edited_at?: string;
   message_type?: string;
   thread_id?: string;
+  video_url?: string;
+  video_thumbnail_url?: string;
   profiles: {
     full_name: string | null;
     avatar_url: string | null;
@@ -182,14 +186,7 @@ const CommunityBoards = () => {
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
   const [posts, setPosts] = useState<BoardPost[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [pendingAttachments, setPendingAttachments] = useState<Array<{
-    id: string;
-    type: 'image' | 'video' | 'file';
-    name: string;
-    url: string;
-    size: number;
-    mimeType: string;
-  }>>([]);
+  const [adMedia, setAdMedia] = useState<CloudinaryAttachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [showDiscoverBoards, setShowDiscoverBoards] = useState(false);
@@ -220,7 +217,7 @@ const CommunityBoards = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const { uploadFile, uploading } = useFileUpload(user?.id || '');
+  const { uploading, uploadMultipleFiles } = useCloudinaryUpload(user?.id || '', 'board-posts');
 
   // Create a new board
   const createBoard = async () => {
@@ -523,9 +520,13 @@ const CommunityBoards = () => {
     }
   };
 
-  // Send message with attachments
+  // Send message with media
   const sendMessage = async () => {
-    if (!selectedBoard || (!newMessage.trim() && pendingAttachments.length === 0) || !user || !profile) return;
+    if (!selectedBoard || (!newMessage.trim() && adMedia.length === 0) || !user || !profile) return;
+
+    // Separate images and video
+    const images = adMedia.filter(m => m.type === 'image');
+    const video = adMedia.find(m => m.type === 'video');
 
     // Generate temporary post for optimistic UI
     const tempId = `temp-${Date.now()}-${Math.random()}`;
@@ -535,8 +536,9 @@ const CommunityBoards = () => {
       user_id: user.id,
       content: newMessage.trim(),
       post_type: 'message',
-      image_urls: [],
-      attachments: pendingAttachments.length > 0 ? pendingAttachments : undefined,
+      image_urls: images.map(img => img.url),
+      video_url: video?.url,
+      video_thumbnail_url: video?.thumbnailUrl,
       reply_to_id: null,
       is_pinned: false,
       approval_status: 'approved',
@@ -562,10 +564,12 @@ const CommunityBoards = () => {
     
     // Clear input
     const messageContent = newMessage.trim();
-    const attachments = [...pendingAttachments];
+    const imageUrls = images.map(img => img.url);
+    const videoUrl = video?.url;
+    const videoThumbnail = video?.thumbnailUrl;
     const members = [...taggedMembers];
     setNewMessage('');
-    setPendingAttachments([]);
+    setAdMedia([]);
     setTaggedMembers([]);
     
     // Scroll
@@ -578,12 +582,11 @@ const CommunityBoards = () => {
         user_id: user.id,
         content: messageContent,
         post_type: 'message',
-        tagged_members: members
+        tagged_members: members,
+        image_urls: imageUrls,
+        video_url: videoUrl,
+        video_thumbnail_url: videoThumbnail
       };
-
-      if (attachments.length > 0) {
-        insertData.attachments = attachments;
-      }
 
       const { data, error } = await supabase
         .from('board_posts')
@@ -878,6 +881,18 @@ const CommunityBoards = () => {
                       <div className="prose prose-sm max-w-none">
                         {post.content}
                       </div>
+                      {/* Video attachment */}
+                      {post.video_url && (
+                        <div className="mt-2 max-w-md">
+                          <VideoPlayer
+                            src={post.video_url}
+                            poster={post.video_thumbnail_url}
+                            controls={true}
+                            autoPlay={false}
+                            muted={false}
+                          />
+                        </div>
+                      )}
                       {/* Image attachments */}
                       {post.image_urls && post.image_urls.length > 0 && (
                         <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
@@ -920,7 +935,20 @@ const CommunityBoards = () => {
             </ScrollArea>
 
             {/* Message input */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t space-y-2">
+              <MediaUploader
+                onFilesSelected={async (files) => {
+                  const attachments = await uploadMultipleFiles(files);
+                  setAdMedia(prev => [...prev, ...attachments.filter((a): a is CloudinaryAttachment => a.type === 'image' || a.type === 'video')]);
+                }}
+                accept="both"
+                maxFiles={5}
+                uploadedFiles={adMedia}
+                onRemove={(index) => {
+                  setAdMedia(prev => prev.filter((_, i) => i !== index));
+                }}
+                uploading={uploading}
+              />
               <div className="flex gap-2">
                 <Textarea
                   ref={messageInputRef}
@@ -937,7 +965,7 @@ const CommunityBoards = () => {
                 />
                 <Button
                   onClick={sendMessage}
-                  disabled={!newMessage.trim()}
+                  disabled={(!newMessage.trim() && adMedia.length === 0) || uploading}
                   size="sm"
                 >
                   <Send className="h-4 w-4" />
