@@ -22,6 +22,8 @@ export interface Campaign {
   ad_title: string;
   ad_description: string;
   ad_images: string[];
+  video_url?: string;
+  video_thumbnail_url?: string;
   ad_url?: string;
   ad_call_to_action: string;
   
@@ -73,6 +75,8 @@ export interface Ad {
   ad_title: string;
   ad_description: string;
   ad_images: string[];
+  video_url?: string;
+  video_thumbnail_url?: string;
   ad_url?: string;
   ad_call_to_action: string;
   campaign_type: CampaignType;
@@ -100,6 +104,8 @@ export interface CreateCampaignData {
   ad_title: string;
   ad_description: string;
   ad_images?: string[];
+  video_url?: string;
+  video_thumbnail_url?: string;
   ad_url?: string;
   ad_call_to_action: string;
   
