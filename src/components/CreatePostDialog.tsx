@@ -894,7 +894,313 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               />
             </div>
 
-            {/* All other existing fields remain unchanged */}
+            {/* Image Upload & Preview */}
+            <div className="space-y-2">
+              <Label>Images (Max 4)</Label>
+              <div className="flex gap-2">
+                {isNative ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleNativeImagePick}
+                    disabled={images.length >= 4}
+                    className="flex-1"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    Take Photo
+                  </Button>
+                ) : null}
+                <label className={`${isNative ? 'flex-1' : 'w-full'}`}>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    disabled={images.length >= 4}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const input = e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
+                      input?.click();
+                    }}
+                    disabled={images.length >= 4}
+                    className="w-full"
+                  >
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    Upload Images
+                  </Button>
+                </label>
+              </div>
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tags Display */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    #{tag}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-1 h-auto p-0"
+                      onClick={() => removeTag(tag)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Tag Input */}
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  onKeyDown={handleTagKeyPress}
+                  placeholder="Add tags..."
+                  disabled={tags.length >= 5}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTag}
+                  disabled={!currentTag.trim() || tags.length >= 5}
+                >
+                  Add
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {tags.length}/5 tags
+              </span>
+            </div>
+
+            {/* Post Visibility */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label>Who can see this post?</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-xs">
+                        Control who can see your post based on their location. Posts are only visible to users in the selected area.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              {!hasRequiredLocation() && (
+                <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                    Your profile location is incomplete. Please update your profile to use location-based visibility.
+                  </p>
+                </div>
+              )}
+              
+              <RadioGroup value={locationScope} onValueChange={(value: any) => setLocationScope(value)}>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="neighborhood" id="neighborhood" disabled={!profile?.neighborhood} />
+                    <Label htmlFor="neighborhood" className={`flex items-center gap-2 ${!profile?.neighborhood ? 'opacity-50' : ''}`}>
+                      <Home className="h-4 w-4" />
+                      <div>
+                        <div>My Ward Only</div>
+                        <div className="text-xs text-muted-foreground">{profile?.neighborhood || 'Not set'}</div>
+                      </div>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="city" id="city" disabled={!profile?.city} />
+                    <Label htmlFor="city" className={`flex items-center gap-2 ${!profile?.city ? 'opacity-50' : ''}`}>
+                      <Building className="h-4 w-4" />
+                      <div>
+                        <div>My LGA</div>
+                        <div className="text-xs text-muted-foreground">{profile?.city || 'Not set'}</div>
+                      </div>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="state" id="state" disabled={!profile?.state} />
+                    <Label htmlFor="state" className={`flex items-center gap-2 ${!profile?.state ? 'opacity-50' : ''}`}>
+                      <MapPin className="h-4 w-4" />
+                      <div>
+                        <div>My State</div>
+                        <div className="text-xs text-muted-foreground">{profile?.state || 'Not set'}</div>
+                      </div>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all" id="all" />
+                    <Label htmlFor="all" className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <div>
+                        <div>Everyone</div>
+                        <div className="text-xs text-muted-foreground">Visible to all users</div>
+                      </div>
+                    </Label>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* RSVP Section for Events */}
+            {postType === 'event' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rsvp"
+                  checked={rsvpEnabled}
+                  onCheckedChange={(checked) => setRsvpEnabled(checked as boolean)}
+                />
+                <Label htmlFor="rsvp" className="text-sm font-normal">
+                  Enable RSVP for this event
+                </Label>
+              </div>
+            )}
+
+            {/* Poll Configuration Section */}
+            {postType === 'poll' && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pollQuestion">Poll Question *</Label>
+                  <Input
+                    id="pollQuestion"
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    placeholder="What's your question?"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Poll Options</Label>
+                  {pollOptions.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...pollOptions];
+                          newOptions[index] = e.target.value;
+                          setPollOptions(newOptions);
+                        }}
+                        placeholder={`Option ${index + 1}`}
+                        required={index < 2}
+                      />
+                      {index >= 2 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setPollOptions(prev => prev.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {pollOptions.length < 5 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPollOptions(prev => [...prev, ''])}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Option
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pollDuration">Poll Duration</Label>
+                  <Select value={pollDuration} onValueChange={setPollDuration}>
+                    <SelectTrigger id="pollDuration">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Day</SelectItem>
+                      <SelectItem value="3">3 Days</SelectItem>
+                      <SelectItem value="7">1 Week</SelectItem>
+                      <SelectItem value="14">2 Weeks</SelectItem>
+                      <SelectItem value="30">1 Month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="multipleChoices"
+                    checked={allowMultipleChoices}
+                    onCheckedChange={(checked) => setAllowMultipleChoices(checked as boolean)}
+                  />
+                  <Label htmlFor="multipleChoices" className="text-sm font-normal">
+                    Allow multiple choices
+                  </Label>
+                </div>
+
+                {allowMultipleChoices && (
+                  <div className="space-y-2">
+                    <Label htmlFor="maxChoices">Maximum Choices</Label>
+                    <Select 
+                      value={maxChoices.toString()} 
+                      onValueChange={(value) => setMaxChoices(parseInt(value))}
+                    >
+                      <SelectTrigger id="maxChoices">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5].map((num) => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} choices
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
           </form>
         </ScrollArea>
 
