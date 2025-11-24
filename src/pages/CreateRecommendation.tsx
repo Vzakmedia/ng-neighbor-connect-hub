@@ -69,15 +69,25 @@ export default function CreateRecommendation() {
   };
 
   const nextStep = async () => {
+    console.log('Next Step clicked - Current step:', currentStep);
     const fieldsToValidate = getFieldsForStep(currentStep);
+    console.log('Fields to validate:', fieldsToValidate);
+    console.log('Current form values:', form.getValues());
+    
     const isValid = await form.trigger(fieldsToValidate as any);
+    console.log('Validation result:', isValid);
+    console.log('Form errors:', form.formState.errors);
     
     if (isValid) {
       if (currentStep < STEPS.length) {
+        console.log('Moving to next step:', currentStep + 1);
         setCurrentStep(currentStep + 1);
       } else {
+        console.log('Submitting form...');
         form.handleSubmit(onSubmit)();
       }
+    } else {
+      console.log('Validation failed - staying on current step');
     }
   };
 
