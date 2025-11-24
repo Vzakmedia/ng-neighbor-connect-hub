@@ -284,11 +284,13 @@ export function FilterModal({ open, onOpenChange, filters, onChange, totalResult
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] p-0">
-          <SheetHeader className="p-6 pb-4">
+        <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col">
+          <SheetHeader className="p-6 pb-4 flex-shrink-0">
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
-          {content}
+          <div className="flex-1 overflow-hidden">
+            {content}
+          </div>
         </SheetContent>
       </Sheet>
     );
@@ -296,11 +298,13 @@ export function FilterModal({ open, onOpenChange, filters, onChange, totalResult
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] p-0">
-        <DialogHeader className="p-6 pb-4">
+      <DialogContent className="max-w-3xl h-[80vh] p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>Filters</DialogTitle>
         </DialogHeader>
-        {content}
+        <div className="flex-1 overflow-hidden">
+          {content}
+        </div>
       </DialogContent>
     </Dialog>
   );
