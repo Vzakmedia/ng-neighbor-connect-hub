@@ -1304,6 +1304,8 @@ export type Database = {
           thread_id: string | null
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
+          video_url: string | null
         }
         Insert: {
           approval_status?: string | null
@@ -1325,6 +1327,8 @@ export type Database = {
           thread_id?: string | null
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Update: {
           approval_status?: string | null
@@ -1346,6 +1350,8 @@ export type Database = {
           thread_id?: string | null
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
