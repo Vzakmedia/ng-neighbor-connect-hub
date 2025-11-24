@@ -47,7 +47,13 @@ const VerifyEmail = () => {
 
           if (error) {
             console.error('Verification error:', error);
-            setError(error.message);
+            // Check if the error is due to expired link
+            if (error.message.toLowerCase().includes('expired') || 
+                error.message.toLowerCase().includes('invalid')) {
+              setError('This verification link has expired. Click below to get a new one.');
+            } else {
+              setError(error.message);
+            }
           } else {
             setVerified(true);
             setShowWelcomeDialog(true);
@@ -68,7 +74,13 @@ const VerifyEmail = () => {
             
             if (error) {
               console.error('Hash verification error:', error);
-              setError(error.message);
+              // Check if the error is due to expired link
+              if (error.message.toLowerCase().includes('expired') || 
+                  error.message.toLowerCase().includes('invalid')) {
+                setError('This verification link has expired. Click below to get a new one.');
+              } else {
+                setError(error.message);
+              }
             } else {
               setVerified(true);
               setShowWelcomeDialog(true);
@@ -160,9 +172,32 @@ const VerifyEmail = () => {
         
         <CardContent className="space-y-4">
           {error && (
-            <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
+            <>
+              <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-3">
+                <p className="text-sm font-medium text-destructive">{error}</p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p className="font-semibold">Common causes:</p>
+                  <ul className="list-disc list-inside ml-2 space-y-0.5">
+                    <li>Email was in spam folder and link expired (24hr limit)</li>
+                    <li>Link was already used</li>
+                    <li>Link was copied incorrectly</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Tip:</strong> Add our emails to your contacts to prevent future emails from going to spam.
+                </p>
+              </div>
+              <Button 
+                onClick={resendVerification}
+                className="w-full"
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? "Sending New Link..." : "Get New Verification Link"}
+              </Button>
+            </>
           )}
           
           {!verified && !error && (
