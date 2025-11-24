@@ -37,43 +37,69 @@ export const useCloudinaryImageUpload = (folder: string = 'promotions') => {
     try {
       const uploadedUrls: string[] = [];
       const userFolder = `${folder}/${user.id}`;
+      
+      console.log('Starting batch upload of', files.length, 'file(s) to folder:', userFolder);
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        console.log(`Uploading file ${i + 1}/${files.length}:`, file.name);
 
-        const url = await uploadToCloudinary(
-          file,
-          userFolder,
-          (progress) => {
+        try {
+          const url = await uploadToCloudinary(
+            file,
+            userFolder,
+            (progress) => {
+              setUploads(prev => prev.map((upload, index) => 
+                index === i ? { ...upload, progress } : upload
+              ));
+            }
+          );
+
+          if (url) {
+            uploadedUrls.push(url);
             setUploads(prev => prev.map((upload, index) => 
-              index === i ? { ...upload, progress } : upload
+              index === i ? { ...upload, progress: 100, url } : upload
             ));
+            console.log(`File ${i + 1} uploaded successfully:`, url);
+          } else {
+            throw new Error('Upload returned no URL');
           }
-        );
-
-        if (url) {
-          uploadedUrls.push(url);
+        } catch (fileError) {
+          console.error(`Error uploading file ${i + 1}:`, fileError);
+          const errorMessage = fileError instanceof Error ? fileError.message : 'Upload failed';
           setUploads(prev => prev.map((upload, index) => 
-            index === i ? { ...upload, progress: 100, url } : upload
+            index === i ? { ...upload, error: errorMessage, progress: 0 } : upload
           ));
-        } else {
-          setUploads(prev => prev.map((upload, index) => 
-            index === i ? { ...upload, error: 'Upload failed', progress: 0 } : upload
-          ));
+          
+          // Show specific error for this file
+          toast({
+            title: "Upload Failed",
+            description: `${file.name}: ${errorMessage}`,
+            variant: "destructive",
+          });
         }
       }
 
-      toast({
-        title: "Success",
-        description: `${uploadedUrls.length} image(s) uploaded successfully`,
-      });
+      if (uploadedUrls.length > 0) {
+        toast({
+          title: "Success",
+          description: `${uploadedUrls.length} of ${files.length} image(s) uploaded successfully`,
+        });
+      } else if (files.length > 0) {
+        toast({
+          title: "Upload Failed",
+          description: "No images were uploaded. Please check your connection and try again.",
+          variant: "destructive",
+        });
+      }
 
       return uploadedUrls;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Batch upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload images';
       toast({
         title: "Error",
-        description: "Failed to upload images",
+        description: errorMessage,
         variant: "destructive",
       });
       return [];
