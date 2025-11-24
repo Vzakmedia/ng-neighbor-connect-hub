@@ -52,10 +52,10 @@ export default function Recommendations() {
     <>
       <Header />
       <Navigation />
-      <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-16">
+      <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-16 bg-background">
         <div className="container mx-auto px-4 py-2 sm:py-3 space-y-3 sm:space-y-4 max-w-7xl">
           {/* Search and Filter Bar */}
-          <div className="flex gap-2 sticky top-16 z-10 py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b">
+          <div className="flex gap-2 sticky top-16 z-10 py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b bg-background/80 backdrop-blur-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
