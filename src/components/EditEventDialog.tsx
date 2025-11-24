@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import PlacesAutocomplete from '@/components/PlacesAutocomplete';
+import { MediaUploader } from '@/components/MediaUploader';
+import { useCloudinaryUpload, CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
 
 interface Event {
   id: string;
@@ -38,10 +40,11 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
   const [loading, setLoading] = useState(false);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [media, setMedia] = useState<File[]>([]);
+  const [uploadedMedia, setUploadedMedia] = useState<CloudinaryAttachment[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'events');
 
   // Populate form when event changes
   useEffect(() => {
@@ -51,7 +54,16 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
       setLocation(event.location || '');
       setTags(event.tags || []);
       setRsvpEnabled(event.rsvp_enabled || false);
-      setUploadedFiles(event.file_urls || []);
+      // Convert existing file URLs to CloudinaryAttachment format for display
+      const existingFiles = (event.file_urls || []).map((file: any) => ({
+        id: file.url,
+        type: file.type?.startsWith('video/') ? 'video' : 'image',
+        name: file.name || 'file',
+        url: file.url,
+        size: file.size || 0,
+        mimeType: file.type || 'application/octet-stream'
+      } as CloudinaryAttachment));
+      setUploadedMedia(existingFiles);
     }
   }, [event]);
 
@@ -78,54 +90,13 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setCoordinates(coords);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || !user) return;
-
-    setUploading(true);
-    const uploadPromises = Array.from(files).map(async (file) => {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('event-files')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: urlData } = supabase.storage
-        .from('event-files')
-        .getPublicUrl(fileName);
-
-      return {
-        name: file.name,
-        url: urlData.publicUrl,
-        size: file.size,
-        type: file.type
-      };
-    });
-
-    try {
-      const uploadedFilesData = await Promise.all(uploadPromises);
-      setUploadedFiles([...uploadedFiles, ...uploadedFilesData]);
-      toast({
-        title: "Files uploaded successfully",
-        description: `${uploadedFilesData.length} files uploaded`,
-      });
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload files. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
+  const handleMediaSelect = (files: File[]) => {
+    setMedia([...media, ...files].slice(0, 5));
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  const handleMediaRemove = (index: number) => {
+    setMedia(prev => prev.filter((_, i) => i !== index));
+    setUploadedMedia(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -135,7 +106,8 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setTags([]);
     setCurrentTag('');
     setRsvpEnabled(false);
-    setUploadedFiles([]);
+    setMedia([]);
+    setUploadedMedia([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +134,17 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
     setLoading(true);
 
     try {
+      // Upload new media if any
+      let attachments: CloudinaryAttachment[] = [...uploadedMedia];
+      if (media.length > 0) {
+        const newAttachments = await uploadMultipleFiles(media);
+        attachments = [...attachments, ...newAttachments];
+      }
+      
+      // Separate images and videos
+      const imageUrls = attachments.filter(a => a.type === 'image').map(a => a.url);
+      const videoAttachment = attachments.find(a => a.type === 'video');
+
       const { error } = await supabase
         .from('community_posts')
         .update({
@@ -170,8 +153,15 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
           location: location.trim() || null,
           tags: tags,
           rsvp_enabled: rsvpEnabled,
-          file_urls: uploadedFiles,
-          image_urls: uploadedFiles.filter(f => f.type.startsWith('image/')).map(f => f.url),
+          image_urls: imageUrls,
+          video_url: videoAttachment?.url || null,
+          video_thumbnail_url: videoAttachment?.thumbnailUrl || null,
+          file_urls: attachments.map(a => ({
+            name: a.name,
+            url: a.url,
+            size: a.size,
+            type: a.mimeType
+          })),
           updated_at: new Date().toISOString()
         })
         .eq('id', event.id)
@@ -305,59 +295,15 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
           {/* File Upload Section */}
           <div className="space-y-2">
             <Label>Attach Files & Media</Label>
-            <div className="border-2 border-dashed border-muted rounded-lg p-4">
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload-edit"
-                disabled={uploading}
-              />
-              <label
-                htmlFor="file-upload-edit"
-                className="flex flex-col items-center justify-center cursor-pointer space-y-2"
-              >
-                <ArrowUpTrayIcon className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground text-center">
-                  {uploading ? "Uploading..." : "Click to upload images, videos, or documents"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Max file size: 10MB per file
-                </p>
-              </label>
-            </div>
-
-            {/* Display uploaded files */}
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Uploaded Files:</p>
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center gap-2">
-                      {file.type?.startsWith('image/') ? (
-                        <PhotoIcon className="h-4 w-4" />
-                      ) : (
-                        <DocumentIcon className="h-4 w-4" />
-                      )}
-                      <span className="text-sm">{file.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {file.size ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)` : ''}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                    >
-                      <XMarkIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <MediaUploader
+              onFilesSelected={handleMediaSelect}
+              accept="both"
+              maxFiles={5}
+              uploadedFiles={uploadedMedia}
+              onRemove={handleMediaRemove}
+              uploading={uploading}
+              progress={progress}
+            />
           </div>
 
           {/* RSVP Settings */}
