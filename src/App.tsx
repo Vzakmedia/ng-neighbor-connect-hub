@@ -28,6 +28,7 @@ import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 
 import Index from "./pages/Index";
+import CreateRecommendation from "./pages/CreateRecommendation";
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
 import Landing from "./pages/Landing";
@@ -249,6 +250,7 @@ const App = () => {
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/events" element={<Events />} />
               <Route path="/recommendations" element={<Recommendations />} />
+              <Route path="/recommendations/create" element={<CreateRecommendation />} />
               <Route path="/recommendations/:id" element={<RecommendationDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/verify-email" element={<VerifyEmail />} />
