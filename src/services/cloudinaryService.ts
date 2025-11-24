@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
 if (!CLOUDINARY_CLOUD_NAME) {
-  console.error('CLOUDINARY_CLOUD_NAME is not configured. Image uploads will fail.');
+  console.error('CLOUDINARY_CLOUD_NAME is not configured. Media uploads will fail.');
 }
 
 interface UploadSignature {
@@ -11,13 +11,17 @@ interface UploadSignature {
   timestamp: number;
   api_key: string;
   folder: string;
+  resource_type?: string;
 }
 
-export const getUploadSignature = async (folder: string): Promise<UploadSignature | null> => {
+export const getUploadSignature = async (
+  folder: string, 
+  resourceType?: 'image' | 'video' | 'auto'
+): Promise<UploadSignature | null> => {
   try {
-    console.log('Requesting upload signature for folder:', folder);
+    console.log('Requesting upload signature for folder:', folder, 'resource_type:', resourceType);
     const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
-      body: { folder }
+      body: { folder, resource_type: resourceType || 'auto' }
     });
 
     if (error) {
@@ -33,7 +37,7 @@ export const getUploadSignature = async (folder: string): Promise<UploadSignatur
     return data;
   } catch (error) {
     console.error('Error getting upload signature:', error);
-    throw error; // Propagate error instead of silently returning null
+    throw error;
   }
 };
 
@@ -49,7 +53,14 @@ export const uploadToCloudinary = async (
 
     console.log('Starting upload for file:', file.name, 'to folder:', folder);
     
-    const signatureData = await getUploadSignature(folder);
+    // Determine resource type
+    const resourceType: 'image' | 'video' | 'auto' = file.type.startsWith('video/') 
+      ? 'video' 
+      : file.type.startsWith('image/') 
+      ? 'image' 
+      : 'auto';
+    
+    const signatureData = await getUploadSignature(folder, resourceType);
     if (!signatureData) throw new Error('Failed to get upload signature');
 
     const formData = new FormData();
@@ -58,9 +69,10 @@ export const uploadToCloudinary = async (
     formData.append('timestamp', signatureData.timestamp.toString());
     formData.append('api_key', signatureData.api_key);
     formData.append('folder', folder);
+    formData.append('resource_type', resourceType);
 
     const xhr = new XMLHttpRequest();
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
 
     return new Promise((resolve, reject) => {
       xhr.upload.addEventListener('progress', (e) => {
@@ -87,12 +99,20 @@ export const uploadToCloudinary = async (
         reject(new Error('Network error during upload'));
       });
       
+      xhr.addEventListener('timeout', () => {
+        console.error('Upload timeout');
+        reject(new Error('Upload timeout - file may be too large'));
+      });
+      
+      // Set timeout to 10 minutes for large video uploads
+      xhr.timeout = 10 * 60 * 1000;
+      
       xhr.open('POST', uploadUrl);
       xhr.send(formData);
     });
   } catch (error) {
     console.error('Error uploading to Cloudinary:', error);
-    throw error; // Propagate error instead of returning null
+    throw error;
   }
 };
 
@@ -110,9 +130,13 @@ export const deleteFromCloudinary = async (publicId: string): Promise<boolean> =
   }
 };
 
-export const getCloudinaryUrl = (publicId: string, transformations?: string): string => {
+export const getCloudinaryUrl = (
+  publicId: string, 
+  resourceType: 'image' | 'video' = 'image',
+  transformations?: string
+): string => {
   if (!publicId) return '';
-  const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+  const baseUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
   return transformations ? `${baseUrl}/${transformations}/${publicId}` : `${baseUrl}/${publicId}`;
 };
 
@@ -127,12 +151,26 @@ export const transformations = {
   eventBanner: 'w_1200,h_400,c_fill,f_auto,q_auto',
 };
 
+// Video transformation presets
+export const videoTransformations = {
+  thumbnail: 'so_2.0,w_400,h_300,c_fill,f_auto,q_auto',
+  preview: 'so_2.0,w_800,h_600,c_fill,f_auto,q_auto',
+  compressed: 'q_auto:low,vc_h264',
+  hd: 'q_auto:good,vc_h264,w_1920',
+};
+
 export const extractPublicId = (url: string): string | null => {
   try {
-    const urlPattern = new RegExp(`https://res\\.cloudinary\\.com/${CLOUDINARY_CLOUD_NAME}/image/upload/(?:v\\d+/)?(.+)`);
-    const match = url.match(urlPattern);
-    return match ? match[1] : null;
+    // Handle both image and video URLs
+    const pattern = new RegExp(`https://res\\.cloudinary\\.com/${CLOUDINARY_CLOUD_NAME}/(image|video)/upload/(?:v\\d+/)?(.+)`);
+    const match = url.match(pattern);
+    return match ? match[2] : null;
   } catch {
     return null;
   }
+};
+
+export const getVideoThumbnailUrl = (videoUrl: string): string => {
+  // Generate video thumbnail using Cloudinary's automatic thumbnail
+  return videoUrl.replace('/video/upload/', `/video/upload/${videoTransformations.thumbnail}/`);
 };
