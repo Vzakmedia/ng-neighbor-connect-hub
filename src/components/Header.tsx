@@ -15,7 +15,8 @@ import {
   Cog6ToothIcon, 
   ChatBubbleLeftIcon, 
   ShieldCheckIcon, 
-  MegaphoneIcon 
+  MegaphoneIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -116,6 +117,10 @@ const Header = () => {
                       Create Ad
                     </DropdownMenuItem>
                   </CreateCommunityAdDialog>
+                  <DropdownMenuItem onClick={() => navigate('/advertising')}>
+                    <ChartBarIcon className="mr-2 h-4 w-4" />
+                    View Campaigns
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <UserIcon className="mr-2 h-4 w-4" />
                     Profile
