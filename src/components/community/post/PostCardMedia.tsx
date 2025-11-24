@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LazyImage } from './LazyImage';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import {
   Carousel,
   CarouselContent,
@@ -12,18 +13,22 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useNativeHaptics } from '@/hooks/mobile/useNativeHaptics';
 
 interface PostCardMediaProps {
-  images: string[];
-  imageError: Record<string, boolean>;
-  onImageError: (index: number) => void;
-  onImageClick: (index: number) => void;
+  images?: string[];
+  videoUrl?: string;
+  videoThumbnail?: string;
+  imageError?: Record<string, boolean>;
+  onImageError?: (index: number) => void;
+  onImageClick?: (index: number) => void;
   onDoubleTapLike?: () => void;
 }
 
 export const PostCardMedia = ({ 
-  images, 
-  imageError, 
-  onImageError, 
-  onImageClick,
+  images = [], 
+  videoUrl,
+  videoThumbnail,
+  imageError = {}, 
+  onImageError = () => {}, 
+  onImageClick = () => {},
   onDoubleTapLike 
 }: PostCardMediaProps) => {
   const [api, setApi] = useState<CarouselApi>();
@@ -46,6 +51,36 @@ export const PostCardMedia = ({
       impact('light');
     });
   }, [api, impact]);
+
+  // If we have a video, show it first
+  if (videoUrl) {
+    return (
+      <div className="relative group overflow-hidden">
+        <VideoPlayer
+          src={videoUrl}
+          poster={videoThumbnail}
+          autoPlay={true}
+          muted={true}
+          loop={true}
+          controls={true}
+          className="w-full h-64 sm:h-80 object-cover"
+        />
+        
+        {/* Heart Animation Overlay */}
+        {showHeart && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <svg
+              className="w-24 h-24 text-white drop-shadow-lg animate-[scale-in_0.3s_ease-out,fade-out_0.5s_ease-out_0.3s]"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (!images || images.length === 0) return null;
 

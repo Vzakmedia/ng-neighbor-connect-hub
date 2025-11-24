@@ -62,6 +62,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from '@/lib/icons';
+import { MediaUploader } from '@/components/MediaUploader';
+import { useCloudinaryUpload, CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -72,7 +74,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [postType, setPostType] = useState<string>('general');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [images, setImages] = useState<File[]>([]);
+  const [media, setMedia] = useState<File[]>([]);
+  const [uploadedMedia, setUploadedMedia] = useState<CloudinaryAttachment[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,6 +95,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { pickImages, isNative } = useNativeCamera();
+  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'posts');
 
   // Detect screen size
   useEffect(() => {
@@ -116,24 +120,23 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const getCurrentPostType = () => postTypes.find(type => type.value === postType)!;
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setImages(prev => [...prev, ...newFiles].slice(0, 4)); // Max 4 images
-    }
-  };
-
-  const handleNativeImagePick = async () => {
-    if (!isNative) return;
+  const handleMediaSelect = (files: File[]) => {
+    // Allow max 4 items total, but only 1 video
+    const hasVideo = media.some(f => f.type.startsWith('video/'));
+    const newHasVideo = files.some(f => f.type.startsWith('video/'));
     
-    const files = await pickImages(true);
-    if (files.length > 0) {
-      setImages(prev => [...prev, ...files].slice(0, 4)); // Max 4 images
+    if (hasVideo || newHasVideo) {
+      // If there's already a video or selecting a video, limit to 1 total item
+      setMedia(files.slice(0, 1));
+    } else {
+      // Otherwise allow up to 4 images
+      setMedia([...media, ...files].slice(0, 4));
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const handleMediaRemove = (index: number) => {
+    setMedia(prev => prev.filter((_, i) => i !== index));
+    setUploadedMedia(prev => prev.filter((_, i) => i !== index));
   };
 
   const addTag = () => {
@@ -198,12 +201,13 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
     // Reset form and close dialog immediately
     const formState = { 
-      content, title, images, tags, currentTag, postType, rsvpEnabled, locationScope,
+      content, title, media, tags, currentTag, postType, rsvpEnabled, locationScope,
       pollQuestion, pollOptions, pollDuration, allowMultipleChoices, maxChoices
     };
     setContent('');
     setTitle('');
-    setImages([]);
+    setMedia([]);
+    setUploadedMedia([]);
     setTags([]);
     setCurrentTag('');
     setPostType('general');
@@ -218,28 +222,15 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
     setIsSubmitting(true);
     try {
-      // Upload images first if any
-      const imageUrls: string[] = [];
-      if (formState.images.length > 0) {
-        for (const image of formState.images) {
-          const fileExt = image.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          const filePath = `${user.id}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, image);
-
-          if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-          } else {
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath);
-            imageUrls.push(publicUrl);
-          }
-        }
+      // Upload media first if any
+      let attachments: CloudinaryAttachment[] = [];
+      if (formState.media.length > 0) {
+        attachments = await uploadMultipleFiles(formState.media);
       }
+      
+      // Separate images and videos
+      const imageUrls = attachments.filter(a => a.type === 'image').map(a => a.url);
+      const videoAttachment = attachments.find(a => a.type === 'video');
 
       // Use exact profile location as single source of truth
       const { data: postData, error } = await supabase
@@ -253,6 +244,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             ? `${profile.neighborhood}, ${profile.city}, ${profile.state}`
             : null,
           image_urls: imageUrls,
+          video_url: videoAttachment?.url || null,
+          video_thumbnail_url: videoAttachment?.thumbnailUrl || null,
           tags: formState.tags,
           rsvp_enabled: formState.postType === 'event' ? formState.rsvpEnabled : false,
           location_scope: formState.locationScope,
@@ -313,7 +306,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       // Restore form on error
       setContent(formState.content);
       setTitle(formState.title);
-      setImages(formState.images);
+      setMedia(formState.media);
       setTags(formState.tags);
       setCurrentTag(formState.currentTag);
       setPostType(formState.postType);
@@ -407,29 +400,16 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   </div>
                 )}
 
-                {/* Image Previews */}
-                {images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {images.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-md"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Media Uploader */}
+                <MediaUploader
+                  onFilesSelected={handleMediaSelect}
+                  accept="both"
+                  maxFiles={4}
+                  uploadedFiles={uploadedMedia}
+                  onRemove={handleMediaRemove}
+                  uploading={uploading}
+                  progress={progress}
+                />
 
                 {/* Tags Display */}
                 {tags.length > 0 && (
@@ -778,40 +758,18 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 })}
               </div>
 
-              {/* Image Upload in Drawer */}
+              {/* Media Upload in Drawer */}
               <div className="mt-4 pt-4 border-t">
                 <Label className="text-sm font-medium mb-2 block">Add Media</Label>
-                {isNative ? (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={async () => {
-                      await handleNativeImagePick();
-                      setDrawerOpen(false);
-                    }}
-                    disabled={images.length >= 4}
-                    className="w-full"
-                  >
-                    <ImagePlus className="h-4 w-4 mr-2" />
-                    Add Images (up to 4)
-                  </Button>
-                ) : (
-                  <Button type="button" variant="outline" className="relative w-full" disabled={images.length >= 4}>
-                    <ImagePlus className="h-4 w-4 mr-2" />
-                    Add Images (up to 4)
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => {
-                        handleImageChange(e);
-                        setDrawerOpen(false);
-                      }}
-                      disabled={images.length >= 4}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </Button>
-                )}
+                <MediaUploader
+                  onFilesSelected={handleMediaSelect}
+                  accept="both"
+                  maxFiles={4}
+                  uploadedFiles={uploadedMedia}
+                  onRemove={handleMediaRemove}
+                  uploading={uploading}
+                  progress={progress}
+                />
               </div>
             </div>
           </DrawerContent>
@@ -894,69 +852,18 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               />
             </div>
 
-            {/* Image Upload & Preview */}
+            {/* Media Upload & Preview */}
             <div className="space-y-2">
-              <Label>Images (Max 4)</Label>
-              <div className="flex gap-2">
-                {isNative ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleNativeImagePick}
-                    disabled={images.length >= 4}
-                    className="flex-1"
-                  >
-                    <Camera className="mr-2 h-4 w-4" />
-                    Take Photo
-                  </Button>
-                ) : null}
-                <label className={`${isNative ? 'flex-1' : 'w-full'}`}>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    disabled={images.length >= 4}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const input = e.currentTarget.parentElement?.querySelector('input[type="file"]') as HTMLInputElement;
-                      input?.click();
-                    }}
-                    disabled={images.length >= 4}
-                    className="w-full"
-                  >
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                    Upload Images
-                  </Button>
-                </label>
-              </div>
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label>Media (Images or Video)</Label>
+              <MediaUploader
+                onFilesSelected={handleMediaSelect}
+                accept="both"
+                maxFiles={4}
+                uploadedFiles={uploadedMedia}
+                onRemove={handleMediaRemove}
+                uploading={uploading}
+                progress={progress}
+              />
             </div>
 
             {/* Tags Display */}
