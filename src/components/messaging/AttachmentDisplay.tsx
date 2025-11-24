@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, ImageIcon, Video as VideoIcon, Eye } from '@/lib/icons';
 import { type Attachment } from '@/hooks/useFileUpload';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import ProductCard from './ProductCard';
 
 interface AttachmentDisplayProps {
@@ -104,11 +105,13 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
               </div>
             ) : attachment.type === 'video' ? (
               <div className="space-y-2">
-                <video
+                <VideoPlayer
                   src={attachment.url}
-                  controls
+                  poster={attachment.thumbnailUrl}
                   className="max-w-full max-h-64 rounded-lg"
-                  preload="metadata"
+                  autoPlay={false}
+                  muted={false}
+                  controls={true}
                 />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="truncate flex-1">{attachment.name}</span>
