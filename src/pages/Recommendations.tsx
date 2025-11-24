@@ -53,24 +53,7 @@ export default function Recommendations() {
       <Header />
       <Navigation />
       <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0 pt-16">
-        <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-7xl">
-          {/* Header Section */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Recommendations</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                Discover amazing local spots
-              </p>
-            </div>
-            <Button 
-              onClick={() => navigate("/recommendations/create")}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Recommendation
-            </Button>
-          </div>
-
+        <div className="container mx-auto px-4 py-2 sm:py-3 space-y-3 sm:space-y-4 max-w-7xl">
           {/* Search and Filter Bar */}
           <div className="flex gap-2 sticky top-16 z-10 bg-background py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b">
             <div className="relative flex-1">
@@ -89,6 +72,13 @@ export default function Recommendations() {
             >
               <Sliders className="h-4 w-4" />
               <span className="hidden sm:inline">Filters</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/recommendations/create")}
+              className="flex-shrink-0 gap-2 rounded-full"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add</span>
             </Button>
           </div>
 
