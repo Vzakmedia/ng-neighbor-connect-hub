@@ -73,6 +73,8 @@ import Contact from "./pages/Contact";
 import ProfileMenu from "./pages/ProfileMenu";
 import Notifications from "./pages/Notifications";
 import PrivacySecurity from "./pages/PrivacySecurity";
+import Recommendations from "./pages/Recommendations";
+import RecommendationDetail from "./pages/RecommendationDetail";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
@@ -246,6 +248,8 @@ const App = () => {
               <Route path="/my-goods" element={<MyGoods />} />
               <Route path="/my-bookings" element={<MyBookings />} />
               <Route path="/events" element={<Events />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+              <Route path="/recommendations/:id" element={<RecommendationDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/verify-email" element={<VerifyEmail />} />
               <Route path="/auth/complete-profile" element={<CompleteProfile />} />
