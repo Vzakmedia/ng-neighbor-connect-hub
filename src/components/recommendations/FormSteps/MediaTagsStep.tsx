@@ -36,6 +36,16 @@ export const MediaTagsStep = ({ form }: MediaTagsStepProps) => {
   const images = watch('image_urls') || [];
   const tags = watch('tags') || [];
 
+  // Check if Cloudinary is configured
+  const cloudinaryConfigured = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  
+  console.log('MediaTagsStep - Current state:', { 
+    imageCount: images.length, 
+    tagCount: tags.length,
+    cloudinaryConfigured,
+    errors: errors 
+  });
+
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
     if (trimmedTag && !tags.includes(trimmedTag)) {
@@ -57,15 +67,31 @@ export const MediaTagsStep = ({ form }: MediaTagsStepProps) => {
 
   return (
     <div className="space-y-6">
+      {!cloudinaryConfigured && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <p className="text-sm text-destructive font-medium">
+            ⚠️ Image uploads are not configured. Please contact support if this issue persists.
+          </p>
+        </div>
+      )}
+      
       <div>
         <Label className="text-base font-semibold mb-3 block">Images * (At least 1 required)</Label>
         <ImageUploader
           images={images}
-          onChange={(newImages) => setValue('image_urls', newImages)}
+          onChange={(newImages) => {
+            console.log('Image URLs updated:', newImages);
+            setValue('image_urls', newImages);
+          }}
           maxImages={5}
         />
         {errors.image_urls && (
           <p className="text-sm text-destructive mt-2">{errors.image_urls.message}</p>
+        )}
+        {images.length > 0 && (
+          <p className="text-sm text-muted-foreground mt-2">
+            ✓ {images.length} image{images.length > 1 ? 's' : ''} added
+          </p>
         )}
       </div>
 
@@ -81,6 +107,12 @@ export const MediaTagsStep = ({ form }: MediaTagsStepProps) => {
               onKeyDown={handleKeyDown}
             />
           </div>
+          
+          {tags.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              ✓ {tags.length} tag{tags.length > 1 ? 's' : ''} added
+            </p>
+          )}
 
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
