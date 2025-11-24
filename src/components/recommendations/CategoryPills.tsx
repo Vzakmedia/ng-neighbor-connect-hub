@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronRight } from "@/lib/icons";
+import * as Icons from "@/lib/icons";
 import type { RecommendationCategory } from "@/types/recommendations";
 
 interface Props {
@@ -67,6 +68,9 @@ export function CategoryPills({ selectedCategories, onSelectCategory }: Props) {
       >
         {categories.map((category) => {
           const isSelected = selectedCategories.includes(category.slug);
+          // Get the icon component from the icon name
+          const IconComponent = category.icon ? (Icons as any)[category.icon] : null;
+          
           return (
             <Button
               key={category.slug}
@@ -80,7 +84,7 @@ export function CategoryPills({ selectedCategories, onSelectCategory }: Props) {
               )}
               onClick={() => onSelectCategory(category.slug)}
             >
-              {category.icon && <span className="mr-2">{category.icon}</span>}
+              {IconComponent && <IconComponent className="h-4 w-4 mr-2" />}
               {category.name}
             </Button>
           );
