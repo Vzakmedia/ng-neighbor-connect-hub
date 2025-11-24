@@ -10,10 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import PaymentStatusHandler from "@/components/PaymentStatusHandler";
+import Header from '@/components/Header';
+import Navigation from '@/components/Navigation';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Advertising = () => {
   const { user } = useAuth();
   const { campaigns, loading, updateCampaignStatus, refetch } = useAdvertisingCampaigns();
+  const isMobile = useIsMobile();
 
   const analytics = {
     totalCampaigns: campaigns.length,
@@ -147,18 +151,12 @@ const Advertising = () => {
   );
 
   return (
-    <div className="container mx-auto p-6 space-y-6 bg-background min-h-screen">
-      <PaymentStatusHandler />
-      
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Campaigns</h1>
-          <p className="text-muted-foreground mt-1">
-            Create, manage, and track your advertising campaigns
-          </p>
-        </div>
-        <CreateCampaignDialog onCampaignCreated={refetch} />
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <Navigation />
+      <main className="md:ml-16 lg:ml-64 pb-20 md:pb-0">
+        <div className="container mx-auto p-6 space-y-6">
+          <PaymentStatusHandler />
 
       {/* Analytics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -231,11 +229,13 @@ const Advertising = () => {
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4 mt-6">
-          {campaigns.map((campaign) => renderCampaignCard(campaign))}
+        <TabsContent value="all">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
+            {campaigns.map((campaign) => renderCampaignCard(campaign))}
+          </div>
 
           {campaigns.length === 0 && (
-            <Card className="p-12 text-center">
+            <Card className="p-12 text-center mt-6">
               <div className="max-w-md mx-auto">
                 <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
@@ -248,22 +248,32 @@ const Advertising = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="active" className="space-y-4 mt-6">
-          {campaigns.filter(c => c.status === 'active').map((campaign) => renderCampaignCard(campaign))}
+        <TabsContent value="active">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
+            {campaigns.filter(c => c.status === 'active').map((campaign) => renderCampaignCard(campaign))}
+          </div>
         </TabsContent>
 
-        <TabsContent value="pending_approval" className="space-y-4 mt-6">
-          {campaigns.filter(c => c.approval_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+        <TabsContent value="pending_approval">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
+            {campaigns.filter(c => c.approval_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+          </div>
         </TabsContent>
 
-        <TabsContent value="pending_payment" className="space-y-4 mt-6">
-          {campaigns.filter(c => c.payment_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+        <TabsContent value="pending_payment">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
+            {campaigns.filter(c => c.payment_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+          </div>
         </TabsContent>
 
-        <TabsContent value="completed" className="space-y-4 mt-6">
-          {campaigns.filter(c => c.status === 'completed').map((campaign) => renderCampaignCard(campaign))}
+        <TabsContent value="completed">
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
+            {campaigns.filter(c => c.status === 'completed').map((campaign) => renderCampaignCard(campaign))}
+          </div>
         </TabsContent>
       </Tabs>
+        </div>
+      </main>
     </div>
   );
 };
