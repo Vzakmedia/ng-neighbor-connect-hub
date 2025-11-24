@@ -1,14 +1,19 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { uploadToCloudinary } from '@/services/cloudinaryService';
+import { uploadToCloudinary, getVideoThumbnailUrl } from '@/services/cloudinaryService';
+import { validateMedia, getMediaType } from '@/utils/mediaValidation';
+import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
 
 export interface CloudinaryAttachment {
   id: string;
   type: 'image' | 'video' | 'file';
   name: string;
   url: string;
+  thumbnailUrl?: string; // For videos
   size: number;
   mimeType: string;
+  duration?: number; // For videos
 }
 
 export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attachments') => {
@@ -18,6 +23,36 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
 
   const uploadFile = useCallback(async (file: File): Promise<CloudinaryAttachment | null> => {
     try {
+      // Validate file
+      const validation = validateMedia(file);
+      if (!validation.valid) {
+        toast({
+          title: "Invalid file",
+          description: validation.error,
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      // Check network type for large files
+      const isNative = Capacitor.isNativePlatform();
+      const isVideo = file.type.startsWith('video/');
+      
+      if (isNative && file.size > 20 * 1024 * 1024) {
+        try {
+          const status = await Network.getStatus();
+          if (status.connectionType === 'cellular') {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const shouldContinue = confirm(
+              `Uploading ${sizeMB}MB over cellular data. This may use significant data. Continue?`
+            );
+            if (!shouldContinue) return null;
+          }
+        } catch (error) {
+          console.log('Could not check network status:', error);
+        }
+      }
+
       setUploading(true);
       setProgress(0);
       
@@ -26,14 +61,8 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
 
       if (!url) throw new Error('Upload failed');
 
-      // Determine file type
-      let fileType: 'image' | 'video' | 'file' = 'file';
-      if (file.type.startsWith('image/')) {
-        fileType = 'image';
-      } else if (file.type.startsWith('video/')) {
-        fileType = 'video';
-      }
-
+      const fileType = getMediaType(file);
+      
       const attachment: CloudinaryAttachment = {
         id: url,
         type: fileType,
@@ -43,12 +72,22 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
         mimeType: file.type
       };
 
+      // Add thumbnail for videos
+      if (isVideo) {
+        attachment.thumbnailUrl = getVideoThumbnailUrl(url);
+      }
+
+      toast({
+        title: "Upload successful",
+        description: `${file.name} uploaded successfully`,
+      });
+
       return attachment;
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: "Upload failed",
-        description: "Could not upload file. Please try again.",
+        description: error instanceof Error ? error.message : "Could not upload file. Please try again.",
         variant: "destructive",
       });
       return null;
