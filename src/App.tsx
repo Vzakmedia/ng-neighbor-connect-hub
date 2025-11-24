@@ -29,6 +29,7 @@ import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 
 import Index from "./pages/Index";
 import CreateRecommendation from "./pages/CreateRecommendation";
+import CreateCampaign from "./pages/CreateCampaign";
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
 import Landing from "./pages/Landing";
@@ -264,6 +265,7 @@ const App = () => {
           <Route path="/staff-dashboard" element={<StaffDashboard />} />
           <Route path="/business" element={<Business />} />
           <Route path="/advertising" element={<Advertising />} />
+          <Route path="/advertising/create" element={<CreateCampaign />} />
           <Route path="/staff-login" element={<StaffLogin />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
