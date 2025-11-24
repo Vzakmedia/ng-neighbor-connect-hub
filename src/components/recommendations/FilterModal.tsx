@@ -124,11 +124,11 @@ export function FilterModal({ open, onOpenChange, filters, onChange, totalResult
   const content = (
     <div className="flex flex-col h-full">
       <Tabs defaultValue="price" className="flex-1 overflow-hidden flex flex-col">
-        <TabsList className="w-full justify-start overflow-x-auto flex-shrink-0">
-          <TabsTrigger value="price">Price</TabsTrigger>
-          <TabsTrigger value="type">Type & Category</TabsTrigger>
-          <TabsTrigger value="rating">Rating & Distance</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto flex-shrink-0 scrollbar-hide flex-nowrap">
+          <TabsTrigger value="price" className="whitespace-nowrap">Price</TabsTrigger>
+          <TabsTrigger value="type" className="whitespace-nowrap">Type & Category</TabsTrigger>
+          <TabsTrigger value="rating" className="whitespace-nowrap">Rating & Distance</TabsTrigger>
+          <TabsTrigger value="features" className="whitespace-nowrap">Features</TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-y-auto p-6">
