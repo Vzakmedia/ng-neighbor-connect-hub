@@ -26,7 +26,7 @@ import {
   Squares2X2Icon,
   XMarkIcon,
   NewspaperIcon,
-  MapPinIcon
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { 
   HomeIcon as HomeSolid,
@@ -43,7 +43,7 @@ import {
   Squares2X2Icon as Squares2X2Solid,
   XMarkIcon as XMarkSolid,
   NewspaperIcon as NewspaperSolid,
-  MapPinIcon as MapPinSolid
+  StarIcon as StarSolid
 } from '@heroicons/react/24/solid';
 
 const Navigation = () => {
@@ -117,7 +117,7 @@ const Navigation = () => {
     { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
     { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
-    { id: 'recommendations', icon: MapPinIcon, iconSolid: MapPinSolid, label: 'Recommendations', count: 0, path: '/recommendations' },
+    { id: 'recommendations', icon: StarIcon, iconSolid: StarSolid, label: 'Recommendations', count: 0, path: '/recommendations' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'users', icon: UsersIcon, iconSolid: UsersSolid, label: 'User Directory', count: 0, path: '/users' },
     { id: 'safety', icon: ShieldCheckIcon, iconSolid: ShieldCheckSolid, label: 'Safety', count: 0, path: '/safety' },
@@ -134,7 +134,7 @@ const Navigation = () => {
   // Items to show in "More" drawer on mobile
   const mobileDrawerItems = [
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
-    { id: 'recommendations', icon: MapPinIcon, iconSolid: MapPinSolid, label: 'Recommendations', count: 0, path: '/recommendations' },
+    { id: 'recommendations', icon: StarIcon, iconSolid: StarSolid, label: 'Recommendations', count: 0, path: '/recommendations' },
     { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
