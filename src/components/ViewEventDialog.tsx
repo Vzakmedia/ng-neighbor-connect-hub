@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import RSVPDialog from '@/components/RSVPDialog';
+import { VideoPlayer } from '@/components/VideoPlayer';
 
 interface Event {
   id: string;
@@ -33,6 +34,8 @@ interface Event {
   rsvp_enabled: boolean;
   file_urls?: any[];
   image_urls?: string[];
+  video_url?: string;
+  video_thumbnail_url?: string;
   user_id: string;
   profiles?: {
     full_name: string;
@@ -447,6 +450,23 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
             </TabsContent>
 
             <TabsContent value="media" className="space-y-4">
+              {/* Video */}
+              {event.video_url && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Event Video</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VideoPlayer
+                      src={event.video_url}
+                      poster={event.video_thumbnail_url}
+                      controls={true}
+                      className="w-full rounded-lg"
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Images */}
               {event.image_urls && event.image_urls.length > 0 && (
                 <Card>
