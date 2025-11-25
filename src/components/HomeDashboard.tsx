@@ -53,7 +53,7 @@ const HomeDashboard = () => {
           locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
-          sortBy: 'newest',
+          sortBy: 'recent',
           dateRange: 'all',
         });
         break;
@@ -63,7 +63,7 @@ const HomeDashboard = () => {
           locationScope: 'neighborhood',
           tags: [],
           postTypes: 'all',
-          sortBy: 'newest',
+          sortBy: 'recent',
           dateRange: 'all',
         });
         break;

@@ -72,7 +72,12 @@ export const CommunityFeed = ({
     locationScope: filters.locationScope as 'neighborhood' | 'city' | 'state' | 'all',
     tags: filters.tags,
     postType: filters.postTypes !== 'all' ? filters.postTypes : undefined,
-    sortBy: (filters.sortBy === 'newest' || filters.sortBy === 'oldest' ? 'recent' : 'popular') as 'recent' | 'popular',
+    sortBy: (() => {
+      if (filters.sortBy === 'newest' || filters.sortBy === 'recent') return 'recent';
+      if (filters.sortBy === 'popular' || filters.sortBy === 'trending') return 'popular';
+      if (filters.sortBy === 'recommended') return 'recommended';
+      return 'recent'; // default
+    })() as 'recent' | 'popular' | 'recommended',
     searchQuery: debouncedSearchQuery,
   }), [filters.locationScope, filters.tags, filters.postTypes, filters.sortBy, debouncedSearchQuery]);
 
