@@ -48,9 +48,9 @@ const HomeDashboard = () => {
         });
         break;
       case 'recent':
-        // Most recent posts
+        // Most recent posts from entire platform
         setFeedFilters({
-          locationScope: 'neighborhood',
+          locationScope: 'all',
           tags: [],
           postTypes: 'all',
           sortBy: 'recent',
