@@ -6456,6 +6456,7 @@ export type Database = {
         Args: { _access_reason?: string; _accessed_user_id: string }
         Returns: undefined
       }
+      batch_update_configs: { Args: { configs: Json }; Returns: Json }
       bulk_moderate_content: {
         Args: {
           action_type: string
@@ -6867,6 +6868,15 @@ export type Database = {
           comment_id: string
           liked_by_user: boolean
           likes_count: number
+        }[]
+      }
+      get_config_by_prefix: {
+        Args: { prefix_param: string }
+        Returns: {
+          config_key: string
+          config_value: Json
+          description: string
+          updated_at: string
         }[]
       }
       get_content_moderation_stats: {

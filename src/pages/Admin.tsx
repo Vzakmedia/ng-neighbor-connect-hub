@@ -33,6 +33,8 @@ import ReportIncidentDialog from '../components/ReportIncidentDialog';
 import NewsletterSubscribersPanel from '@/components/admin/NewsletterSubscribersPanel';
 import { BlogManagementPanel } from '@/components/admin/BlogManagementPanel';
 import EmailManagementPanel from '@/components/admin/EmailManagementPanel';
+import SecuritySettingsPanel from '@/components/admin/SecuritySettingsPanel';
+import RateLimitingPanel from '@/components/admin/RateLimitingPanel';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -2605,6 +2607,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
           <TabsTrigger value="email" className="w-full justify-start">
             <Mail className="h-4 w-4 mr-2" />
             Email Management
+          </TabsTrigger>
+          <TabsTrigger value="system-settings" className="w-full justify-start">
+            <Settings className="h-4 w-4 mr-2" />
+            System Settings
           </TabsTrigger>
           <TabsTrigger value="settings" className="w-full justify-start">
             <Shield className="h-4 w-4 mr-2" />
@@ -5988,6 +5994,13 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
 
         <TabsContent value="email" className="space-y-6">
           <EmailManagementPanel />
+        </TabsContent>
+
+        <TabsContent value="system-settings" className="space-y-6">
+          <div className="space-y-6">
+            <SecuritySettingsPanel />
+            <RateLimitingPanel />
+          </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
