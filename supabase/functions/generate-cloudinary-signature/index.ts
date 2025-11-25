@@ -6,18 +6,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
-const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Cloudinary signature generation started');
+    
+    // Check environment variables
+    const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
+    const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
+    
+    if (!CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      console.error('Missing Cloudinary credentials');
+      throw new Error('Cloudinary credentials not configured');
+    }
+
     // Verify user is authenticated
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       throw new Error('Missing authorization header');
     }
 
@@ -29,6 +38,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error('Auth error:', authError);
       throw new Error('Unauthorized');
     }
 
@@ -47,7 +57,7 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    console.log('Generated signature for user:', user.id, 'folder:', folder);
+    console.log('Generated signature successfully for user:', user.id, 'folder:', folder);
 
     return new Response(
       JSON.stringify({
@@ -59,9 +69,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error generating signature:', error);
+    console.error('Error generating signature:', error.message, error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Failed to generate signature' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -7,8 +7,6 @@ const corsHeaders = {
 };
 
 const CLOUDINARY_CLOUD_NAME = 'dz1xpvm7p';
-const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
-const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,9 +14,21 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Cloudinary image deletion started');
+    
+    // Check environment variables
+    const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
+    const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
+    
+    if (!CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      console.error('Missing Cloudinary credentials');
+      throw new Error('Cloudinary credentials not configured');
+    }
+
     // Verify user is authenticated
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       throw new Error('Missing authorization header');
     }
 
@@ -30,6 +40,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.error('Auth error:', authError);
       throw new Error('Unauthorized');
     }
 
@@ -55,7 +66,7 @@ serve(async (req) => {
     const formData = new FormData();
     formData.append('public_id', publicId);
     formData.append('signature', signature);
-    formData.append('api_key', CLOUDINARY_API_KEY!);
+    formData.append('api_key', CLOUDINARY_API_KEY);
     formData.append('timestamp', timestamp.toString());
 
     const response = await fetch(
@@ -68,16 +79,16 @@ serve(async (req) => {
 
     const result = await response.json();
     
-    console.log('Deleted image for user:', user.id, 'publicId:', publicId, 'result:', result);
+    console.log('Deleted image successfully for user:', user.id, 'publicId:', publicId, 'result:', result.result);
 
     return new Response(
-      JSON.stringify({ success: result.result === 'ok' }),
+      JSON.stringify({ success: result.result === 'ok', result }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error deleting image:', error);
+    console.error('Error deleting image:', error.message, error.stack);
     return new Response(
-      JSON.stringify({ error: error.message, success: false }),
+      JSON.stringify({ error: error.message || 'Failed to delete image', success: false }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
