@@ -201,18 +201,18 @@ const StaffNavigation = () => {
   const roleDisplay = getRoleDisplay(userRole);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-background text-foreground">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold">Staff Dashboard Portal</h1>
+            <h1 className="text-3xl font-bold text-foreground">Staff Dashboard Portal</h1>
             <p className="text-muted-foreground">Access your role-specific management tools</p>
           </div>
           <div className="flex items-center gap-3">
             <Button 
               variant="outline" 
               onClick={() => navigate('/landing')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Main Site
@@ -234,24 +234,40 @@ const StaffNavigation = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {accessibleDashboards.map((dashboard) => {
           const Icon = dashboard.icon;
+          const iconColorClass = 
+            dashboard.color === 'red' ? 'text-red-600 dark:text-red-400' :
+            dashboard.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+            dashboard.color === 'green' ? 'text-green-600 dark:text-green-400' :
+            dashboard.color === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+            dashboard.color === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+            'text-foreground';
+          
+          const iconBgClass = 
+            dashboard.color === 'red' ? 'bg-red-100 dark:bg-red-950/30' :
+            dashboard.color === 'blue' ? 'bg-blue-100 dark:bg-blue-950/30' :
+            dashboard.color === 'green' ? 'bg-green-100 dark:bg-green-950/30' :
+            dashboard.color === 'orange' ? 'bg-orange-100 dark:bg-orange-950/30' :
+            dashboard.color === 'purple' ? 'bg-purple-100 dark:bg-purple-950/30' :
+            'bg-muted';
+
           return (
             <Card 
               key={dashboard.id} 
-              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200 bg-card border-border"
               onClick={() => navigate(dashboard.route)}
             >
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-lg bg-${dashboard.color}-100 dark:bg-${dashboard.color}-900/20`}>
-                    <Icon className={`h-6 w-6 text-${dashboard.color}-600 dark:text-${dashboard.color}-400`} />
+                  <div className={`p-2 rounded-lg ${iconBgClass}`}>
+                    <Icon className={`h-6 w-6 ${iconColorClass}`} />
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {dashboard.level}
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <CardTitle className="text-xl">{dashboard.title}</CardTitle>
-                  <CardDescription>{dashboard.description}</CardDescription>
+                  <CardTitle className="text-xl text-card-foreground">{dashboard.title}</CardTitle>
+                  <CardDescription className="text-muted-foreground">{dashboard.description}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
