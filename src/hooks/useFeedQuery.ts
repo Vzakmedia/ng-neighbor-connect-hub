@@ -261,20 +261,23 @@ export function useFeedQuery(filters: FeedFilters) {
     initialPageParam: 0,
     enabled: !!user && !!profile,
     
-    // STALE-WHILE-REVALIDATE CONFIGURATION
-    staleTime: 60 * 1000, // Increased from 30s to 60s (data considered fresh)
-    gcTime: 30 * 60 * 1000, // Increased from 10min to 30min (keep in memory longer)
+    // IMPROVED CACHING CONFIGURATION
+    staleTime: 30 * 1000, // 30s - data considered fresh for this duration
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10min
     
     // Show cached data immediately while fetching fresh data
     placeholderData: (previousData) => previousData,
     
-    // Smart refetching based on cache age
-    refetchOnMount: cacheAge > 60000, // Only refetch if cache > 1 min old
-    refetchOnWindowFocus: cacheAge > 300000, // Only on focus if > 5 min old
-    refetchOnReconnect: true, // Always refetch on reconnect
+    // Always check for updates to ensure fresh content
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     
-    // Use network cache when available
-    networkMode: 'offlineFirst',
+    // Add automatic background refetch
+    refetchInterval: 60000, // Poll every 60 seconds for new posts
+    
+    // Use online mode to ensure fetch happens
+    networkMode: 'online',
   });
 
   // Return extended query with cache metadata

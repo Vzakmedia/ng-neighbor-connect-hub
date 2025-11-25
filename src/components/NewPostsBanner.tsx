@@ -17,8 +17,9 @@ export const NewPostsBanner = () => {
   const { hasNewPosts, setHasNewPosts } = useNewPostsStore();
   const queryClient = useQueryClient();
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['feed'] });
+  const handleRefresh = async () => {
+    // Force refetch all active feed queries
+    await queryClient.refetchQueries({ queryKey: ['feed'], type: 'active' });
     setHasNewPosts(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
