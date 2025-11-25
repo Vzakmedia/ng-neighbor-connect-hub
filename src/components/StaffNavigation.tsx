@@ -103,7 +103,7 @@ const StaffNavigation = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen w-full px-4 py-8">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded mb-4"></div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -118,7 +118,7 @@ const StaffNavigation = () => {
 
   if (!user || !userRole) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen w-full px-4 py-8">
         <Card>
           <CardContent className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -201,7 +201,7 @@ const StaffNavigation = () => {
   const roleDisplay = getRoleDisplay(userRole);
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-background text-foreground">
+    <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
