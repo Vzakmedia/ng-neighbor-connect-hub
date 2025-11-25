@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface UnverifiedUser {
-  id: string;
+  user_id: string;
   email: string;
   created_at: string;
   full_name?: string;
@@ -50,23 +50,14 @@ export default function EmailManagementPanel() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Fetch unverified users from profiles table
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, email, full_name, created_at')
-        .eq('is_verified', false)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Fetch users with unverified emails
+      const { data: unverifiedData, error: unverifiedError } = await supabase
+        .rpc('get_unverified_email_users');
       
-      if (profilesError) {
-        console.error('Error fetching unverified users:', profilesError);
-      } else if (profilesData) {
-        setUnverifiedUsers(profilesData.map(p => ({
-          id: p.user_id,
-          email: p.email || 'No email',
-          created_at: p.created_at,
-          full_name: p.full_name
-        })));
+      if (unverifiedError) {
+        console.error('Error fetching unverified users:', unverifiedError);
+      } else if (unverifiedData) {
+        setUnverifiedUsers(unverifiedData);
       }
 
       // Fetch email audit logs
@@ -87,12 +78,12 @@ export default function EmailManagementPanel() {
   };
 
   const handleResendVerification = async (user: UnverifiedUser) => {
-    setActionLoading(user.id);
+    setActionLoading(user.user_id);
     try {
       const { error } = await supabase.functions.invoke('admin-resend-verification', {
         body: {
           action: 'resend',
-          userId: user.id,
+          userId: user.user_id,
           email: user.email
         }
       });
@@ -119,12 +110,12 @@ export default function EmailManagementPanel() {
   const handleManualVerify = async () => {
     if (!selectedUser) return;
     
-    setActionLoading(selectedUser.id);
+    setActionLoading(selectedUser.user_id);
     try {
       const { error } = await supabase.functions.invoke('admin-resend-verification', {
         body: {
           action: 'verify',
-          userId: selectedUser.id,
+          userId: selectedUser.user_id,
           email: selectedUser.email
         }
       });
@@ -245,7 +236,7 @@ export default function EmailManagementPanel() {
               </TableHeader>
               <TableBody>
                 {unverifiedUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.user_id}>
                     <TableCell className="font-medium">{user.email}</TableCell>
                     <TableCell>{user.full_name || '-'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -257,9 +248,9 @@ export default function EmailManagementPanel() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleResendVerification(user)}
-                          disabled={actionLoading === user.id}
+                          disabled={actionLoading === user.user_id}
                         >
-                          {actionLoading === user.id ? (
+                          {actionLoading === user.user_id ? (
                             <RefreshCw className="h-3 w-3 animate-spin" />
                           ) : (
                             <>
@@ -272,7 +263,7 @@ export default function EmailManagementPanel() {
                           size="sm"
                           variant="secondary"
                           onClick={() => openVerifyDialog(user)}
-                          disabled={actionLoading === user.id}
+                          disabled={actionLoading === user.user_id}
                         >
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Verify

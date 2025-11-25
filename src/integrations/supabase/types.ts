@@ -7123,6 +7123,15 @@ export type Database = {
       get_unread_community_posts_count: { Args: never; Returns: number }
       get_unread_messages_count: { Args: never; Returns: number }
       get_unread_notifications_count: { Args: never; Returns: number }
+      get_unverified_email_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_user_automation_preferences: {
         Args: never
         Returns: {
