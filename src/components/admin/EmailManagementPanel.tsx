@@ -50,29 +50,23 @@ export default function EmailManagementPanel() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Fetch unverified users from auth.users via RPC or admin query
-      const { data: usersData, error: usersError } = await supabase.rpc('get_unverified_users');
+      // Fetch unverified users from profiles table
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, email, full_name, created_at')
+        .eq('is_verified', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
       
-      if (usersError) {
-        console.error('Error fetching unverified users:', usersError);
-        // Fallback: Try to get from profiles table
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, email, full_name, created_at')
-          .is('email', null)
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (!profilesError && profilesData) {
-          setUnverifiedUsers(profilesData.map(p => ({
-            id: p.user_id,
-            email: p.email || 'No email',
-            created_at: p.created_at,
-            full_name: p.full_name
-          })));
-        }
-      } else {
-        setUnverifiedUsers(usersData || []);
+      if (profilesError) {
+        console.error('Error fetching unverified users:', profilesError);
+      } else if (profilesData) {
+        setUnverifiedUsers(profilesData.map(p => ({
+          id: p.user_id,
+          email: p.email || 'No email',
+          created_at: p.created_at,
+          full_name: p.full_name
+        })));
       }
 
       // Fetch email audit logs
