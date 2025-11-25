@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle } from '@/lib/icons';
+import { Mail, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, Trash2 } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertDialog,
@@ -40,6 +40,7 @@ export default function EmailManagementPanel() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UnverifiedUser | null>(null);
   const { toast } = useToast();
 
@@ -144,6 +145,45 @@ export default function EmailManagementPanel() {
   const openVerifyDialog = (user: UnverifiedUser) => {
     setSelectedUser(user);
     setVerifyDialogOpen(true);
+  };
+
+  const openDeleteDialog = (user: UnverifiedUser) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    setActionLoading(selectedUser.user_id);
+    try {
+      const { error } = await supabase.functions.invoke('admin-resend-verification', {
+        body: {
+          action: 'delete',
+          userId: selectedUser.user_id,
+          email: selectedUser.email
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "User Deleted",
+        description: `${selectedUser.email} has been deleted`,
+      });
+      
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+      await loadData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to delete user',
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -268,6 +308,15 @@ export default function EmailManagementPanel() {
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Verify
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openDeleteDialog(user)}
+                          disabled={actionLoading === user.user_id}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -351,6 +400,29 @@ export default function EmailManagementPanel() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleManualVerify}>
               Verify User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Unverified User?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to permanently delete <strong>{selectedUser?.email}</strong>.
+              <br /><br />
+              This will remove the user account and all associated data from the system.
+              This action cannot be undone.
+              <br /><br />
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
