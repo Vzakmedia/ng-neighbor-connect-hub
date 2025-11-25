@@ -659,7 +659,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   );
 
   return (
-    <div className={`space-y-4 ${isInline ? '' : 'border-t bg-muted/20 mt-4 p-4'}`}>
+    <div className={`space-y-4 ${isInline ? '' : 'border-t bg-muted/20 dark:bg-muted/40 mt-4 p-4'}`}>
       {/* Comments list */}
       <div className={isInline ? "h-64 overflow-hidden" : ""}>
         <ScrollArea className={isInline ? "h-full pr-4" : "max-h-96 pr-4"}>
