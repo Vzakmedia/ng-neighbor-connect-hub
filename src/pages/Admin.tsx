@@ -35,6 +35,7 @@ import { BlogManagementPanel } from '@/components/admin/BlogManagementPanel';
 import EmailManagementPanel from '@/components/admin/EmailManagementPanel';
 import SecuritySettingsPanel from '@/components/admin/SecuritySettingsPanel';
 import RateLimitingPanel from '@/components/admin/RateLimitingPanel';
+import { PerformanceDashboard } from '@/components/admin/PerformanceDashboard';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -7092,6 +7093,18 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Monitoring</CardTitle>
+              <CardDescription>Real-time application performance metrics and API response times</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PerformanceDashboard />
             </CardContent>
           </Card>
         </TabsContent>
