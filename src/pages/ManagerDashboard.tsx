@@ -257,8 +257,8 @@ const ManagerDashboard = () => {
 
   if (!userRole || !['manager', 'super_admin'].includes(userRole)) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
+      <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
+        <Card className="bg-card border-border">
           <CardContent className="p-8 text-center">
             <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
@@ -270,7 +270,7 @@ const ManagerDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Manager Dashboard</h1>
