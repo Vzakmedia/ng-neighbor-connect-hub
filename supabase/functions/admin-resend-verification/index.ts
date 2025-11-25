@@ -148,6 +148,49 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
+    } else if (action === 'delete') {
+      if (!userId) {
+        throw new Error('User ID required for deletion');
+      }
+
+      // Delete the user
+      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+      if (deleteError) {
+        console.error('User deletion error:', deleteError);
+        
+        // Log failed attempt
+        await supabaseAdmin.from('email_audit_logs').insert({
+          user_id: userId,
+          recipient_email: recipientEmail!,
+          email_type: 'admin_user_deletion',
+          action_type: 'failed',
+          sent_by_admin_id: adminUser.id,
+          error_message: deleteError.message,
+          metadata: { action: 'delete' }
+        });
+
+        throw deleteError;
+      }
+
+      // Log successful deletion
+      await supabaseAdmin.from('email_audit_logs').insert({
+        user_id: userId,
+        recipient_email: recipientEmail!,
+        email_type: 'admin_user_deletion',
+        action_type: 'deleted',
+        sent_by_admin_id: adminUser.id,
+        metadata: { action: 'delete' }
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'User deleted successfully'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else {
       throw new Error('Invalid action');
     }
