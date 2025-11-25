@@ -77,6 +77,7 @@ import Notifications from "./pages/Notifications";
 import PrivacySecurity from "./pages/PrivacySecurity";
 import Recommendations from "./pages/Recommendations";
 import RecommendationDetail from "./pages/RecommendationDetail";
+import PostDetail from "./pages/PostDetail";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
@@ -235,6 +236,7 @@ const App = () => {
               <Route path="/landing" element={<Landing />} />
               <Route path="/about" element={<About />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/community/post/:id" element={<PostDetail />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
               <Route path="/marketplace" element={<MarketplacePage />} />
