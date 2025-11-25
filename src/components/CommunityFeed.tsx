@@ -235,6 +235,18 @@ export const CommunityFeed = ({
     onUpdatePostComments: () => {},
   });
 
+  // Fallback polling to ensure fresh data even if real-time fails
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only refetch if tab is visible and not already fetching
+      if (document.visibilityState === 'visible' && !isFetching) {
+        refetch();
+      }
+    }, pollingInterval);
+
+    return () => clearInterval(interval);
+  }, [refetch, isFetching, pollingInterval]);
+
   const feedContent = (
     <div className="max-w-2xl mx-auto">
       <div className="px-2 sm:px-4">

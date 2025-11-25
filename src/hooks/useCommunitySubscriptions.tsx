@@ -46,7 +46,11 @@ export const useCommunitySubscriptions = ({
       
       if (payload.eventType === 'INSERT') {
         setHasNewPosts(true);
-        queryClient.invalidateQueries({ queryKey: ['feed'] });
+        // Force immediate cache invalidation AND refetch
+        queryClient.invalidateQueries({ 
+          queryKey: ['feed'],
+          refetchType: 'all' // Ensure all matching queries refetch
+        });
         onNewContent();
       }
       
