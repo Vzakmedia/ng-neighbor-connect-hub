@@ -405,6 +405,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onFilesSelected={handleMediaSelect}
                   accept="both"
                   maxFiles={4}
+                  pendingFiles={media}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
                   uploading={uploading}
@@ -765,6 +766,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onFilesSelected={handleMediaSelect}
                   accept="both"
                   maxFiles={4}
+                  pendingFiles={media}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
                   uploading={uploading}
@@ -859,6 +861,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 onFilesSelected={handleMediaSelect}
                 accept="both"
                 maxFiles={4}
+                pendingFiles={media}
                 uploadedFiles={uploadedMedia}
                 onRemove={handleMediaRemove}
                 uploading={uploading}
