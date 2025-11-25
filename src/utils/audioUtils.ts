@@ -512,11 +512,11 @@ export const playMessagingChime = async (
 
     const playOnce = async (): Promise<void> => {
       try {
-        await playAudioBuffer('/assets/sounds/message-chime.mp3', vol);
+        await playAudioBuffer('/notification-chime.mp3', vol);
       } catch (bufferErr) {
         console.warn('Chime buffer playback failed:', bufferErr);
         try {
-          const audio = new Audio('/assets/sounds/message-chime.mp3');
+          const audio = new Audio('/notification-chime.mp3');
           audio.volume = vol;
           audio.preload = 'auto';
           audio.crossOrigin = 'anonymous';
