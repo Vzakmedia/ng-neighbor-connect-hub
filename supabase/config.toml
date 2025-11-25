@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.generate-enterprise-api-key]
 verify_jwt = true
+
+[functions.generate-cloudinary-signature]
+verify_jwt = true
+
+[functions.delete-cloudinary-image]
+verify_jwt = true
