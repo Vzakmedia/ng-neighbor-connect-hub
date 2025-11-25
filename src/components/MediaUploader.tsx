@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
 import { validateMedia, formatFileSize } from '@/utils/mediaValidation';
@@ -8,6 +8,7 @@ import { VideoPlayer } from './VideoPlayer';
 import { CameraIcon, XMarkIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { Progress } from './ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from './ui/badge';
 
 interface MediaUploaderProps {
   onFilesSelected: (files: File[]) => void;
@@ -15,6 +16,7 @@ interface MediaUploaderProps {
   maxFiles?: number;
   maxSizeMB?: number;
   uploadedFiles?: CloudinaryAttachment[];
+  pendingFiles?: File[];
   onRemove?: (index: number) => void;
   uploading?: boolean;
   progress?: number;
@@ -26,12 +28,25 @@ export const MediaUploader = ({
   accept = 'both',
   maxFiles = 8,
   uploadedFiles = [],
+  pendingFiles = [],
   onRemove,
   uploading = false,
   progress = 0,
   disabled = false
 }: MediaUploaderProps) => {
   const { toast } = useToast();
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Create preview URLs for pending files
+  useEffect(() => {
+    const urls = pendingFiles.map(file => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    // Cleanup function to revoke object URLs
+    return () => {
+      urls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [pendingFiles]);
 
   const getAcceptedTypes = () => {
     if (accept === 'images') return { 'image/*': [] };
@@ -69,7 +84,8 @@ export const MediaUploader = ({
     multiple: maxFiles > 1
   });
 
-  const canAddMore = uploadedFiles.length < maxFiles;
+  const totalFiles = uploadedFiles.length + pendingFiles.length;
+  const canAddMore = totalFiles < maxFiles;
 
   return (
     <div className="space-y-4">
@@ -117,10 +133,55 @@ export const MediaUploader = ({
       )}
 
       {/* Preview Grid */}
-      {uploadedFiles.length > 0 && (
+      {totalFiles > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Pending Files */}
+          {pendingFiles.map((file, index) => {
+            const isVideo = file.type.startsWith('video/');
+            return (
+              <Card key={`pending-${index}`} className="relative group">
+                <CardContent className="p-2">
+                  <div className="relative aspect-square">
+                    {isVideo ? (
+                      <video
+                        src={previewUrls[index]}
+                        className="w-full h-full object-cover rounded"
+                        muted
+                      />
+                    ) : (
+                      <img
+                        src={previewUrls[index]}
+                        alt={file.name}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    )}
+                    
+                    {onRemove && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => onRemove(index)}
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </Button>
+                    )}
+                    
+                    <Badge className="absolute top-1 left-1 text-xs">Pending</Badge>
+                    
+                    <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      {formatFileSize(file.size)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Uploaded Files */}
           {uploadedFiles.map((file, index) => (
-            <Card key={index} className="relative group">
+            <Card key={`uploaded-${index}`} className="relative group">
               <CardContent className="p-2">
                 <div className="relative aspect-square">
                   {file.type === 'video' ? (
@@ -146,7 +207,7 @@ export const MediaUploader = ({
                       variant="destructive"
                       size="sm"
                       className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => onRemove(index)}
+                      onClick={() => onRemove(pendingFiles.length + index)}
                     >
                       <XMarkIcon className="h-3 w-3" />
                     </Button>
@@ -163,7 +224,7 @@ export const MediaUploader = ({
       )}
 
       <p className="text-xs text-muted-foreground">
-        {uploadedFiles.length} / {maxFiles} files uploaded
+        {totalFiles} / {maxFiles} files {pendingFiles.length > 0 ? 'selected' : 'uploaded'}
       </p>
     </div>
   );
