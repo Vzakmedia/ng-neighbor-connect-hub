@@ -69,7 +69,6 @@ export const uploadToCloudinary = async (
     formData.append('timestamp', signatureData.timestamp.toString());
     formData.append('api_key', signatureData.api_key);
     formData.append('folder', folder);
-    formData.append('resource_type', resourceType);
 
     const xhr = new XMLHttpRequest();
     const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
