@@ -8,6 +8,19 @@ import { usePostVisibility } from '@/hooks/community/usePostVisibility';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePostViews } from '@/hooks/usePostViews';
 import { AdDisplay } from '@/components/advertising/display/AdDisplay';
+import { EditPostDialog } from '../EditPostDialog';
+import { useDeletePost } from '@/hooks/useFeedQuery';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface VirtualizedFeedListProps {
   events: PostCardData[];
@@ -37,6 +50,8 @@ const VirtualizedFeedListComponent = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { trackPostView } = usePostViews();
+  const { toast } = useToast();
+  const deletePost = useDeletePost();
   
   // Dialog state
   const [selectedEvent, setSelectedEvent] = useState<PostCardData | null>(null);
@@ -49,6 +64,10 @@ const VirtualizedFeedListComponent = ({
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [postFullScreenOpen, setPostFullScreenOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<PostCardData | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<PostCardData | null>(null);
 
   const { observePost } = usePostVisibility((postId) => {
     // Track view for recommendations
@@ -196,6 +215,24 @@ const VirtualizedFeedListComponent = ({
     setPostFullScreenOpen(true);
   };
 
+  const handleEdit = (post: PostCardData) => {
+    setEditingPost(post);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (post: PostCardData) => {
+    setPostToDelete(post);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (postToDelete) {
+      await deletePost.mutateAsync(postToDelete.id);
+      setDeleteDialogOpen(false);
+      setPostToDelete(null);
+    }
+  };
+
   if (loading) {
     return <LoadingSkeleton />;
   }
@@ -271,6 +308,8 @@ const VirtualizedFeedListComponent = ({
                       onPostClick={() => handlePostClick(post)}
                       showComments={visibleComments.has(post.id)}
                       onToggleComments={() => toggleComments(post.id)}
+                      onEdit={() => handleEdit(post)}
+                      onDelete={() => handleDelete(post)}
                     />
                   </div>
                 ) : null}
@@ -301,6 +340,31 @@ const VirtualizedFeedListComponent = ({
         handleShare={handleShare}
         handleAvatarClick={handleAvatarClick}
       />
+
+      {editingPost && (
+        <EditPostDialog
+          post={editingPost}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+      )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
