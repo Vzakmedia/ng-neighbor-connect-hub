@@ -10,21 +10,25 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Safe Capacitor detection with fallback
-let Capacitor: any = null;
-try {
-  const capacitorModule = await import('@capacitor/core');
-  Capacitor = capacitorModule.Capacitor;
-} catch (error) {
-  console.debug('Capacitor not available, using web mode');
-}
-
 // Detect iOS device
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+// Safe Capacitor detection with defensive fallback
+const getCapacitor = () => {
+  try {
+    // Try importing Capacitor - will only work if @capacitor/core is available
+    const { Capacitor } = require('@capacitor/core');
+    return Capacitor;
+  } catch (error) {
+    // Capacitor not available (web mode)
+    return null;
+  }
+};
 
 // Safe storage detection with defensive fallback
 const getStorageAdapter = () => {
   try {
+    const Capacitor = getCapacitor();
     const isNativePlatform = Capacitor?.isNativePlatform?.() === true;
     if (isNativePlatform) {
       return nativeStorageAdapter;
