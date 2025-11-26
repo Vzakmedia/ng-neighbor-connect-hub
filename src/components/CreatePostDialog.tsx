@@ -95,7 +95,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { pickImages, isNative } = useNativeCamera();
-  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'posts');
+  const { uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'posts');
 
   // Detect screen size
   useEffect(() => {
@@ -408,6 +408,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onRemove={handleMediaRemove}
                   uploading={uploading}
                   progress={progress}
+                  currentFileName={currentFileName}
+                  currentFileSize={currentFileSize}
+                  uploadedBytes={uploadedBytes}
+                  uploadSpeed={uploadSpeed}
+                  currentFileIndex={currentFileIndex}
+                  totalFilesCount={totalFilesCount}
                 />
 
                 {/* Tags Display */}

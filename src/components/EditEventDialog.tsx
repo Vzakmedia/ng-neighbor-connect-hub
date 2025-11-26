@@ -44,7 +44,7 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
   const [uploadedMedia, setUploadedMedia] = useState<CloudinaryAttachment[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'events');
+  const { uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'events');
 
   // Populate form when event changes
   useEffect(() => {
@@ -303,6 +303,12 @@ const EditEventDialog = ({ open, onOpenChange, event, onEventUpdated }: EditEven
               onRemove={handleMediaRemove}
               uploading={uploading}
               progress={progress}
+              currentFileName={currentFileName}
+              currentFileSize={currentFileSize}
+              uploadedBytes={uploadedBytes}
+              uploadSpeed={uploadSpeed}
+              currentFileIndex={currentFileIndex}
+              totalFilesCount={totalFilesCount}
             />
           </div>
 
