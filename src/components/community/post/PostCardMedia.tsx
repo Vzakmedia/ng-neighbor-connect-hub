@@ -33,8 +33,6 @@ export const PostCardMedia = ({
   onDoubleTapLike,
   onVideoClick
 }: PostCardMediaProps) => {
-  console.log('PostCardMedia received:', { videoUrl, videoThumbnail, images });
-  
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -56,44 +54,39 @@ export const PostCardMedia = ({
     });
   }, [api, impact]);
 
-  // If we have a video, show it first
+  // If we have a video, show thumbnail with play button
   if (videoUrl) {
     return (
       <div 
         className="relative group overflow-hidden cursor-pointer"
         onClick={onVideoClick}
       >
-        <VideoPlayer
-          src={videoUrl}
-          poster={videoThumbnail}
-          autoPlay={true}
-          muted={true}
-          loop={true}
-          controls={true}
-          className="w-full h-64 sm:h-80 object-cover"
-        />
+        {/* Video Thumbnail or Placeholder */}
+        {videoThumbnail ? (
+          <LazyImage
+            src={videoThumbnail}
+            alt="Video thumbnail"
+            className="w-full h-64 sm:h-80 object-cover"
+          />
+        ) : (
+          <div className="w-full h-64 sm:h-80 bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center">
+            <svg className="w-16 h-16 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
         
-        {/* Click to expand overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-full p-3">
-            <svg className="w-8 h-8 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        {/* Play Button Overlay - Always visible */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-black/60 group-hover:bg-black/70 backdrop-blur-sm rounded-full p-4 transition-all duration-200 group-hover:scale-110">
+            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
             </svg>
           </div>
         </div>
         
-        {/* Heart Animation Overlay */}
-        {showHeart && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-            <svg
-              className="w-24 h-24 text-white drop-shadow-lg animate-[scale-in_0.3s_ease-out,fade-out_0.5s_ease-out_0.3s]"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-          </div>
-        )}
+        {/* Hover overlay for darkening effect */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
       </div>
     );
   }
