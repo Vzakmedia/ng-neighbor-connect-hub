@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { VideoPlayer } from './VideoPlayer';
 import { CameraIcon, XMarkIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import { Progress } from './ui/progress';
+import { UploadProgressIndicator } from './ui/upload-progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
 
@@ -25,6 +25,12 @@ interface MediaUploaderProps {
   uploading?: boolean;
   progress?: number;
   disabled?: boolean;
+  currentFileName?: string;
+  currentFileSize?: number;
+  uploadedBytes?: number;
+  uploadSpeed?: number;
+  currentFileIndex?: number;
+  totalFilesCount?: number;
 }
 
 export const MediaUploader = ({
@@ -36,7 +42,13 @@ export const MediaUploader = ({
   onRemove,
   uploading = false,
   progress = 0,
-  disabled = false
+  disabled = false,
+  currentFileName = '',
+  currentFileSize = 0,
+  uploadedBytes = 0,
+  uploadSpeed = 0,
+  currentFileIndex = 0,
+  totalFilesCount = 0,
 }: MediaUploaderProps) => {
   const { toast } = useToast();
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -140,13 +152,16 @@ export const MediaUploader = ({
       )}
 
       {/* Upload Progress */}
-      {uploading && (
-        <div className="space-y-2">
-          <Progress value={progress} />
-          <p className="text-sm text-muted-foreground text-center">
-            Uploading... {progress}%
-          </p>
-        </div>
+      {uploading && currentFileName && (
+        <UploadProgressIndicator
+          fileName={currentFileName}
+          fileSize={currentFileSize}
+          progress={progress}
+          uploadedBytes={uploadedBytes}
+          uploadSpeed={uploadSpeed}
+          currentFile={currentFileIndex}
+          totalFiles={totalFilesCount > 1 ? totalFilesCount : undefined}
+        />
       )}
 
       {/* Preview Grid */}

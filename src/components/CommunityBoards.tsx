@@ -217,7 +217,7 @@ const CommunityBoards = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const { uploading, uploadMultipleFiles } = useCloudinaryUpload(user?.id || '', 'board-posts');
+  const { uploading, uploadMultipleFiles, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'board-posts');
 
   // Create a new board
   const createBoard = async () => {
@@ -948,6 +948,13 @@ const CommunityBoards = () => {
                   setAdMedia(prev => prev.filter((_, i) => i !== index));
                 }}
                 uploading={uploading}
+                progress={progress}
+                currentFileName={currentFileName}
+                currentFileSize={currentFileSize}
+                uploadedBytes={uploadedBytes}
+                uploadSpeed={uploadSpeed}
+                currentFileIndex={currentFileIndex}
+                totalFilesCount={totalFilesCount}
               />
               <div className="flex gap-2">
                 <Textarea
