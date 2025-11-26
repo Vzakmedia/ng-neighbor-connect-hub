@@ -9,6 +9,7 @@ import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 import AuthBackground from "./AuthBackground";
 import { GoogleAuthButton } from "./GoogleAuthButton";
+import { PrivateBrowsingWarning } from "@/components/mobile/PrivateBrowsingWarning";
 
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
@@ -42,6 +43,7 @@ export const AuthPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <PrivateBrowsingWarning />
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             {/* Desktop tabs */}
             <TabsList className="hidden md:flex mb-4">

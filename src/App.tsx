@@ -26,6 +26,7 @@ import { useTutorial } from "@/hooks/useTutorial";
 import MessagingNotificationProvider from "@/components/messaging/MessagingNotificationProvider";
 import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
+import { useDeepLinkHandler } from "@/hooks/mobile/useDeepLinkHandler";
 
 import Index from "./pages/Index";
 import CreateRecommendation from "./pages/CreateRecommendation";
@@ -116,6 +117,12 @@ const CommunityPostToastWrapper = () => {
 // Component that shows toast notifications for new direct messages
 const DirectMessageToastWrapper = () => {
   useDirectMessageToasts();
+  return null;
+};
+
+// Component that handles deep link authentication callbacks on native
+const DeepLinkHandler = () => {
+  useDeepLinkHandler();
   return null;
 };
 
@@ -222,6 +229,7 @@ const App = () => {
           
           <AudioInitializer />
           <PushNotificationWrapper />
+          <DeepLinkHandler />
           <SecurityHeaders />
           <OnboardingNotificationManager />
           <MessagingNotificationProvider />
