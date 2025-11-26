@@ -4,7 +4,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Camera } from '@capacitor/camera';
 import { useToast } from '@/hooks/use-toast';
 
-export type PermissionType = 'location' | 'camera' | 'photos';
+export type PermissionType = 'location' | 'camera' | 'photos' | 'microphone';
 
 export const useNativePermissions = () => {
   const { toast } = useToast();
@@ -167,6 +167,42 @@ export const useNativePermissions = () => {
     }
   }, [isNative, requestLocationPermission]);
 
+  const requestMicrophonePermission = useCallback(async (): Promise<boolean> => {
+    try {
+      // For both native and web, use Web API since Capacitor doesn't have a microphone plugin
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (error: any) {
+      console.error('Microphone access error:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        toast({
+          title: "Microphone permission denied",
+          description: "Please enable microphone access in your device settings",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      if (error.name === 'NotFoundError') {
+        toast({
+          title: "No microphone found",
+          description: "Please connect a microphone to use voice features",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      toast({
+        title: "Permission error",
+        description: "Failed to request microphone permission",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [toast]);
+
   const openAppSettings = useCallback(() => {
     if (!isNative) return;
     
@@ -186,6 +222,7 @@ export const useNativePermissions = () => {
     isNative,
     requestLocationPermission,
     requestCameraPermission,
+    requestMicrophonePermission,
     getCurrentPosition,
     openAppSettings
   };
