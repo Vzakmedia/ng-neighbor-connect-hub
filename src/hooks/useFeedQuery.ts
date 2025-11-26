@@ -491,3 +491,100 @@ export function useCreatePost() {
     },
   });
 }
+
+export function useUpdatePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      id: string;
+      content: string;
+      title?: string | null;
+      image_urls?: string[];
+      video_url?: string | null;
+      video_thumbnail_url?: string | null;
+      tags?: string[];
+      location_scope?: string;
+      rsvp_enabled?: boolean;
+    }) => {
+      const { id, ...updateData } = data;
+      const { data: updatedPost, error } = await supabase
+        .from('community_posts')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updatedPost;
+    },
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ['feed'] });
+
+      queryClient.setQueriesData({ queryKey: ['feed'] }, (old: any) => {
+        if (!old?.pages) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: FeedPage) => ({
+            ...page,
+            items: page.items.map((post) =>
+              post.id === data.id
+                ? { ...post, ...data, updated_at: new Date().toISOString() }
+                : post
+            ),
+          })),
+        };
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      toast.success('Post updated successfully');
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      toast.error('Failed to update post');
+    },
+  });
+}
+
+export function useDeletePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+    },
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ['feed'] });
+
+      queryClient.setQueriesData({ queryKey: ['feed'] }, (old: any) => {
+        if (!old?.pages) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: FeedPage) => ({
+            ...page,
+            items: page.items.filter((post) => post.id !== postId),
+          })),
+        };
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      toast.success('Post deleted successfully');
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      toast.error('Failed to delete post');
+    },
+  });
+}
