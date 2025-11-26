@@ -2,7 +2,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { getSafeStorage } from '@/utils/iosCompatibility';
-import { Capacitor } from '@capacitor/core';
 import { nativeStorageAdapter } from '@/utils/nativeStorageAdapter';
 
 const SUPABASE_URL = "https://cowiviqhrnmhttugozbz.supabase.co";
@@ -11,15 +10,37 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Use native storage on mobile, web storage on web
-const storage = Capacitor.isNativePlatform() ? nativeStorageAdapter : getSafeStorage();
+// Safe Capacitor detection with fallback
+let Capacitor: any = null;
+try {
+  const capacitorModule = await import('@capacitor/core');
+  Capacitor = capacitorModule.Capacitor;
+} catch (error) {
+  console.debug('Capacitor not available, using web mode');
+}
 
 // Detect iOS device
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+// Safe storage detection with defensive fallback
+const getStorageAdapter = () => {
+  try {
+    const isNativePlatform = Capacitor?.isNativePlatform?.() === true;
+    if (isNativePlatform) {
+      return nativeStorageAdapter;
+    }
+    return getSafeStorage();
+  } catch (error) {
+    console.warn('Storage detection failed, using fallback:', error);
+    return getSafeStorage();
+  }
+};
+
 // Enhanced error handling for iOS Safari security restrictions
 const createSupabaseClient = () => {
   try {
+    const storage = getStorageAdapter();
+    
     const clientConfig: any = {
       auth: {
         storage,
@@ -52,9 +73,10 @@ const createSupabaseClient = () => {
     // Don't throw on iOS if it's a SecurityError - allow degraded functionality
     if (isIOS && (error as any)?.name === 'SecurityError') {
       console.warn('iOS SecurityError caught during client creation, using fallback configuration');
+      const fallbackStorage = getStorageAdapter();
       return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: {
-          storage,
+          storage: fallbackStorage,
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,

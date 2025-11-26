@@ -60,32 +60,52 @@ const queryClient = new QueryClient({
 })
 
 // Create persister for offline cache with optimizations
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
-  key: 'REACT_QUERY_OFFLINE_CACHE',
-  serialize: (data) => {
-    try {
-      // Only persist essential data to reduce localStorage size
-      const optimized = {
-        ...data,
-        buster: Date.now(), // Cache buster for tracking age
-      };
-      return JSON.stringify(optimized);
-    } catch (e) {
-      console.warn('Failed to serialize cache:', e);
-      return '{}';
-    }
-  },
-  deserialize: (data) => {
-    try {
-      return JSON.parse(data);
-    } catch (e) {
-      console.warn('Failed to deserialize cache:', e);
-      return {};
-    }
-  },
-  throttleTime: 1000, // Only save to localStorage max once per second
-})
+// Defensive persister creation with fallback for iOS private browsing
+const createPersister = () => {
+  try {
+    // Test localStorage access
+    const testKey = '__storage_test__';
+    window.localStorage.setItem(testKey, 'test');
+    window.localStorage.removeItem(testKey);
+    
+    return createSyncStoragePersister({
+      storage: window.localStorage,
+      key: 'REACT_QUERY_OFFLINE_CACHE',
+      serialize: (data) => {
+        try {
+          // Only persist essential data to reduce localStorage size
+          const optimized = {
+            ...data,
+            buster: Date.now(), // Cache buster for tracking age
+          };
+          return JSON.stringify(optimized);
+        } catch (e) {
+          console.warn('Failed to serialize cache:', e);
+          return '{}';
+        }
+      },
+      deserialize: (data) => {
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          console.warn('Failed to deserialize cache:', e);
+          return {};
+        }
+      },
+      throttleTime: 1000, // Only save to localStorage max once per second
+    });
+  } catch (error) {
+    console.warn('localStorage unavailable (likely iOS private browsing), using memory-only cache:', error);
+    // Return a no-op persister that doesn't actually persist
+    return {
+      persistClient: async () => {},
+      restoreClient: async () => undefined,
+      removeClient: async () => {},
+    } as any;
+  }
+};
+
+const persister = createPersister();
 
 // Capacitor type definitions
 declare global {
