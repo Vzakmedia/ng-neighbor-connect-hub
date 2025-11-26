@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselApi } from "@/components/ui/carousel";
-import { PostCard } from "@/components/community/post/PostCard";
+import { TrendingPostSlideCard } from "@/components/home/TrendingPostSlideCard";
 import { useFeedQuery } from "@/hooks/useFeedQuery";
 import { usePostEngagement } from "@/hooks/community/usePostEngagement";
 import { transformToCardData } from "@/lib/community/postTransformers";
@@ -15,14 +15,11 @@ import Autoplay from "embla-carousel-autoplay";
  * Shows one post at a time, auto-advances every 7 seconds
  */
 export const TrendingPostsCarousel = () => {
-  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
-  const [apiWithImages, setApiWithImages] = useState<CarouselApi>();
-  const [apiWithoutImages, setApiWithoutImages] = useState<CarouselApi>();
-  const [currentWithImages, setCurrentWithImages] = useState(0);
-  const [currentWithoutImages, setCurrentWithoutImages] = useState(0);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { handleLike, handleSave } = usePostEngagement();
+  const { handleSave } = usePostEngagement();
 
   // Fetch trending posts (sorted by popularity)
   const { data, isLoading } = useFeedQuery({
@@ -30,16 +27,12 @@ export const TrendingPostsCarousel = () => {
     locationScope: 'all',
   });
 
-  const rawPosts = data?.pages[0]?.items.slice(0, 12) || [];
+  const rawPosts = data?.pages[0]?.items.slice(0, 8) || [];
   const allPosts = rawPosts.map(post => transformToCardData({
     ...post,
     post_type: 'general',
     views_count: 0
   } as any));
-
-  // Separate posts with and without images
-  const postsWithImages = allPosts.filter(post => post.image_urls && post.image_urls.length > 0).slice(0, 6);
-  const postsWithoutImages = allPosts.filter(post => !post.image_urls || post.image_urls.length === 0).slice(0, 6);
 
   const handlePostClick = (postId: string) => {
     navigate(`/community/post/${postId}`);
@@ -54,28 +47,13 @@ export const TrendingPostsCarousel = () => {
     });
   };
 
-  const toggleComments = (postId: string) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
-
   useEffect(() => {
-    if (!apiWithImages) return;
-    setCurrentWithImages(apiWithImages.selectedScrollSnap());
-    apiWithImages.on("select", () => {
-      setCurrentWithImages(apiWithImages.selectedScrollSnap());
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
     });
-  }, [apiWithImages]);
-
-  useEffect(() => {
-    if (!apiWithoutImages) return;
-    setCurrentWithoutImages(apiWithoutImages.selectedScrollSnap());
-    apiWithoutImages.on("select", () => {
-      setCurrentWithoutImages(apiWithoutImages.selectedScrollSnap());
-    });
-  }, [apiWithoutImages]);
+  }, [api]);
 
   if (isLoading) {
     return (
@@ -95,7 +73,7 @@ export const TrendingPostsCarousel = () => {
     );
   }
 
-  if (postsWithImages.length === 0 && postsWithoutImages.length === 0) {
+  if (allPosts.length === 0) {
     return null;
   }
 
@@ -107,103 +85,53 @@ export const TrendingPostsCarousel = () => {
           Trending Posts
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Posts with images */}
-        {postsWithImages.length > 0 && (
-          <div>
-            <Carousel
-              opts={{ align: "start", loop: true }}
-              plugins={[
-                Autoplay({
-                  delay: 7000,
-                  stopOnInteraction: false,
-                })
-              ]}
-              className="w-full"
-              setApi={setApiWithImages}
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {postsWithImages.map((post) => (
-                  <CarouselItem key={post.id} className="pl-2 md:pl-4 h-auto">
-                    <div className="h-full">
-                      <PostCard
-                        post={post}
-                        onLike={() => handleLike(post.id, post.is_liked)}
-                        onSave={() => handleSave(post.id, post.is_saved)}
-                        onShare={() => handleShare(post.id)}
-                        onPostClick={() => handlePostClick(post.id)}
-                        onToggleComments={() => toggleComments(post.id)}
-                        showComments={showComments[post.id] || false}
-                        onRSVP={() => {}}
-                        onAvatarClick={() => {}}
-                        onImageClick={() => {}}
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-        )}
-
-        {/* Posts without images */}
-        {postsWithoutImages.length > 0 && (
-          <div>
-            <Carousel
-              opts={{ align: "start", loop: true }}
-              plugins={[
-                Autoplay({
-                  delay: 7000,
-                  stopOnInteraction: false,
-                })
-              ]}
-              className="w-full"
-              setApi={setApiWithoutImages}
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {postsWithoutImages.map((post) => (
-                  <CarouselItem key={post.id} className="pl-2 md:pl-4 h-auto">
-                    <div className="h-full">
-                      <PostCard
-                        post={post}
-                        onLike={() => handleLike(post.id, post.is_liked)}
-                        onSave={() => handleSave(post.id, post.is_saved)}
-                        onShare={() => handleShare(post.id)}
-                        onPostClick={() => handlePostClick(post.id)}
-                        onToggleComments={() => toggleComments(post.id)}
-                        showComments={showComments[post.id] || false}
-                        onRSVP={() => {}}
-                        onAvatarClick={() => {}}
-                        onImageClick={() => {}}
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-            <div className="flex justify-center gap-2 mt-4">
-              {postsWithoutImages.map((_, index) => (
-                <div
-                  key={index}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => apiWithoutImages?.scrollTo(index)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      apiWithoutImages?.scrollTo(index);
-                    }
-                  }}
-                  className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
-                    index === currentWithoutImages 
-                      ? "bg-primary" 
-                      : "bg-muted-foreground/30"
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
+      <CardContent>
+        <Carousel
+          opts={{ align: "start", loop: true }}
+          plugins={[
+            Autoplay({
+              delay: 5000,
+              stopOnInteraction: false,
+            })
+          ]}
+          className="w-full"
+          setApi={setApi}
+        >
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {allPosts.map((post) => (
+              <CarouselItem key={post.id} className="pl-2 md:pl-4 basis-auto">
+                <TrendingPostSlideCard
+                  post={post}
+                  onPostClick={() => handlePostClick(post.id)}
+                  onSave={() => handleSave(post.id, post.is_saved)}
                 />
-              ))}
-            </div>
-          </div>
-        )}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+
+        {/* Navigation Dots */}
+        <div className="flex justify-center gap-2 mt-4">
+          {allPosts.map((_, index) => (
+            <div
+              key={index}
+              role="button"
+              tabIndex={0}
+              onClick={() => api?.scrollTo(index)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  api?.scrollTo(index);
+                }
+              }}
+              className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
+                index === current 
+                  ? "bg-primary" 
+                  : "bg-muted-foreground/30"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
