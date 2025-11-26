@@ -20,13 +20,6 @@ export const TrendingPostSlideCard = ({
 
   const hasVideo = !!post.video_url;
 
-  console.log('TrendingPostSlideCard:', {
-    postId: post.id,
-    hasImages: post.image_urls?.length,
-    hasVideoThumb: !!post.video_thumbnail_url,
-    backgroundImage,
-  });
-
   return (
     <div
       onClick={onPostClick}
