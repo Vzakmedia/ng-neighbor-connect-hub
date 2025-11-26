@@ -82,7 +82,7 @@ const Messages = () => {
       <Navigation />
       
       {/* Mobile & Tablet View - Tabbed Messaging */}
-      <main className="lg:hidden fixed inset-0 top-16 bottom-20 bg-background">
+      <main className="lg:hidden fixed inset-0 top-16 bottom-20 bg-background pt-3">
         {user && (
           <Tabs defaultValue="direct" className="h-full flex flex-col">
             <TabsList className="w-full rounded-none">
