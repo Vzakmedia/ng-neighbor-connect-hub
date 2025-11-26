@@ -36,23 +36,28 @@ serve(async (req) => {
     // Extract JWT token
     const token = authHeader.replace('Bearer ', '');
     
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get user using the JWT token directly
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('Failed to get user:', authError?.message);
+    // Decode JWT to get user ID (JWT is already verified by Supabase when verify_jwt=true)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid JWT format');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Invalid token format' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const payload = JSON.parse(atob(parts[1]));
+    const userId = payload.sub;
+    
+    if (!userId) {
+      console.error('No user ID in JWT');
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated:', userId);
 
     const { folder = 'uploads', resource_type = 'auto' } = await req.json();
 
@@ -69,7 +74,7 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    console.log('Generated signature successfully for user:', user.id, 'folder:', folder);
+    console.log('Generated signature successfully for user:', userId, 'folder:', folder);
 
     return new Response(
       JSON.stringify({
