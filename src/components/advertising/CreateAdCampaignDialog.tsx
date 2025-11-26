@@ -60,7 +60,7 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const { uploadMultipleFiles, uploading, progress } = useCloudinaryUpload(user?.id || '', 'ad-media');
+  const { uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'ad-media');
 
   const [formData, setFormData] = useState({
     campaignName: '',
@@ -497,6 +497,12 @@ export const CreateAdCampaignDialog = ({ children, onCampaignCreated, preSelecte
                       uploadedFiles={adMedia}
                       uploading={uploading}
                       progress={progress}
+                      currentFileName={currentFileName}
+                      currentFileSize={currentFileSize}
+                      uploadedBytes={uploadedBytes}
+                      uploadSpeed={uploadSpeed}
+                      currentFileIndex={currentFileIndex}
+                      totalFilesCount={totalFilesCount}
                     />
                   </div>
                 </div>
