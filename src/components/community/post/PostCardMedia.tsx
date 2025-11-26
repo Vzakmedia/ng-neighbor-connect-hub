@@ -20,6 +20,7 @@ interface PostCardMediaProps {
   onImageError?: (index: number) => void;
   onImageClick?: (index: number) => void;
   onDoubleTapLike?: () => void;
+  onVideoClick?: () => void;
 }
 
 export const PostCardMedia = ({ 
@@ -29,7 +30,8 @@ export const PostCardMedia = ({
   imageError = {}, 
   onImageError = () => {}, 
   onImageClick = () => {},
-  onDoubleTapLike 
+  onDoubleTapLike,
+  onVideoClick
 }: PostCardMediaProps) => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
@@ -55,7 +57,10 @@ export const PostCardMedia = ({
   // If we have a video, show it first
   if (videoUrl) {
     return (
-      <div className="relative group overflow-hidden">
+      <div 
+        className="relative group overflow-hidden cursor-pointer"
+        onClick={onVideoClick}
+      >
         <VideoPlayer
           src={videoUrl}
           poster={videoThumbnail}
@@ -65,6 +70,15 @@ export const PostCardMedia = ({
           controls={true}
           className="w-full h-64 sm:h-80 object-cover"
         />
+        
+        {/* Click to expand overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-full p-3">
+            <svg className="w-8 h-8 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </div>
+        </div>
         
         {/* Heart Animation Overlay */}
         {showHeart && (
