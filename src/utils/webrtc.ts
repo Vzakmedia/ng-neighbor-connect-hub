@@ -112,14 +112,20 @@ export class WebRTCManager {
         
         this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
         console.log('Got local media stream:', this.localStream.getTracks().map(t => `${t.kind}: ${t.label}`));
-      } catch (mediaError) {
+      } catch (mediaError: any) {
         console.error('Error getting user media:', mediaError);
+        
         if (mediaError.name === 'NotAllowedError') {
-          throw new Error('Camera or microphone access denied. Please allow access and try again.');
+          throw new Error('Camera or microphone access denied. Please enable permissions in your device settings and try again.');
         } else if (mediaError.name === 'NotFoundError') {
-          throw new Error('No camera or microphone found on this device.');
+          const device = video ? 'camera or microphone' : 'microphone';
+          throw new Error(`No ${device} found on this device. Please connect a ${device} and try again.`);
+        } else if (mediaError.name === 'NotReadableError') {
+          throw new Error('Your camera or microphone is already in use by another application. Please close other apps and try again.');
+        } else if (mediaError.name === 'OverconstrainedError') {
+          throw new Error('Your device does not meet the video call requirements. Try using voice call instead.');
         } else {
-          throw new Error(`Media access error: ${mediaError.message}`);
+          throw new Error(`Unable to access your device: ${mediaError.message}`);
         }
       }
 
@@ -180,7 +186,7 @@ export class WebRTCManager {
     try {
       this.callStartTime = new Date();
       
-      // Get user media
+      // Get user media with error handling
       console.log('Answering call with video:', video);
       const constraints = {
         audio: true,
@@ -191,8 +197,23 @@ export class WebRTCManager {
         } : false
       };
       
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Got local media stream for answer:', this.localStream.getTracks().map(t => `${t.kind}: ${t.label}`));
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('Got local media stream for answer:', this.localStream.getTracks().map(t => `${t.kind}: ${t.label}`));
+      } catch (mediaError: any) {
+        console.error('Error getting user media while answering:', mediaError);
+        
+        if (mediaError.name === 'NotAllowedError') {
+          throw new Error('Camera or microphone access denied. Please enable permissions and try again.');
+        } else if (mediaError.name === 'NotFoundError') {
+          const device = video ? 'camera or microphone' : 'microphone';
+          throw new Error(`No ${device} found on this device.`);
+        } else if (mediaError.name === 'NotReadableError') {
+          throw new Error('Your camera or microphone is already in use by another application.');
+        } else {
+          throw new Error(`Unable to access your device: ${mediaError.message}`);
+        }
+      }
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {

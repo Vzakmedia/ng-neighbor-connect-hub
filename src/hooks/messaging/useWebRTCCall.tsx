@@ -4,10 +4,12 @@ import { useToastNotifications } from '@/hooks/common/useToastNotifications';
 import { WebRTCManager } from '@/utils/webrtc';
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription } from '@/utils/realtimeUtils';
+import { useCallPermissions } from '@/hooks/mobile/useCallPermissions';
 
 export const useWebRTCCall = (conversationId: string) => {
   const { user } = useAuth();
   const { showError, showSuccess } = useToastNotifications();
+  const { requestMicrophoneForCall, requestVideoCallPermissions } = useCallPermissions();
   
   const [webrtcManager, setWebrtcManager] = useState<WebRTCManager | null>(null);
   const [isInCall, setIsInCall] = useState(false);
@@ -50,6 +52,17 @@ export const useWebRTCCall = (conversationId: string) => {
   // Start voice call
   const startVoiceCall = useCallback(async () => {
     try {
+      console.log('Starting voice call - requesting microphone permission');
+      
+      // Request microphone permission first
+      const hasPermission = await requestMicrophoneForCall();
+      if (!hasPermission) {
+        console.log('Microphone permission denied');
+        return;
+      }
+      
+      showSuccess("Connecting...", "Setting up voice call");
+      
       const manager = initializeManager();
       if (!manager) return;
 
@@ -76,11 +89,22 @@ export const useWebRTCCall = (conversationId: string) => {
       const errorMessage = error instanceof Error ? error.message : "Could not start voice call";
       showError("Voice call failed", errorMessage);
     }
-  }, [initializeManager, showSuccess, showError]);
+  }, [initializeManager, showSuccess, showError, requestMicrophoneForCall]);
 
   // Start video call
   const startVideoCall = useCallback(async () => {
     try {
+      console.log('Starting video call - requesting camera and microphone permissions');
+      
+      // Request both camera and microphone permissions first
+      const hasPermissions = await requestVideoCallPermissions();
+      if (!hasPermissions) {
+        console.log('Camera or microphone permission denied');
+        return;
+      }
+      
+      showSuccess("Connecting...", "Setting up video call");
+      
       const manager = initializeManager();
       if (!manager) return;
 
@@ -107,13 +131,31 @@ export const useWebRTCCall = (conversationId: string) => {
       const errorMessage = error instanceof Error ? error.message : "Could not start video call";
       showError("Video call failed", errorMessage);
     }
-  }, [initializeManager, showSuccess, showError]);
+  }, [initializeManager, showSuccess, showError, requestVideoCallPermissions]);
 
   // Answer incoming call
   const answerCall = useCallback(async (acceptVideo: boolean = false) => {
     if (!incomingCall) return;
 
     try {
+      console.log('Answering call - video:', acceptVideo, '- requesting permissions');
+      
+      // Request appropriate permissions before answering
+      let hasPermissions = false;
+      if (acceptVideo) {
+        hasPermissions = await requestVideoCallPermissions();
+      } else {
+        hasPermissions = await requestMicrophoneForCall();
+      }
+      
+      if (!hasPermissions) {
+        console.log('Permission denied - cannot answer call');
+        setIncomingCall(null);
+        return;
+      }
+      
+      showSuccess("Connecting...", "Joining the call");
+      
       const manager = initializeManager();
       if (!manager) return;
 
@@ -143,7 +185,7 @@ export const useWebRTCCall = (conversationId: string) => {
       showError("Error", "Could not answer call");
       setIncomingCall(null);
     }
-  }, [incomingCall, initializeManager, showSuccess, showError]);
+  }, [incomingCall, initializeManager, showSuccess, showError, requestMicrophoneForCall, requestVideoCallPermissions]);
 
   // Decline incoming call
   const declineCall = useCallback(() => {
