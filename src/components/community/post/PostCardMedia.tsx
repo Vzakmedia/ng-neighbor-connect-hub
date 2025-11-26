@@ -59,7 +59,10 @@ export const PostCardMedia = ({
     return (
       <div 
         className="relative group overflow-hidden cursor-pointer"
-        onClick={onVideoClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onVideoClick?.();
+        }}
       >
         {/* Video Thumbnail or Placeholder */}
         {videoThumbnail ? (
