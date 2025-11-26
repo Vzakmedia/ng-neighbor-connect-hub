@@ -10,6 +10,7 @@ import CommentSection from '@/components/CommentSection';
 import { PollCard } from '../poll/PollCard';
 import { usePoll } from '@/hooks/usePoll';
 import { Users, Building, Home as HomeIcon, Globe } from '@/lib/icons';
+import { VideoPlayerDialog } from '@/components/VideoPlayerDialog';
 
 interface PostCardProps {
   post: PostCardData;
@@ -37,6 +38,7 @@ const PostCardComponent = ({
   onToggleComments
 }: PostCardProps) => {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const { poll, options, userVotes, isLoading } = usePoll(post.id);
 
   const handleImageError = (index: number) => {
@@ -137,6 +139,17 @@ const PostCardComponent = ({
           onImageError={handleImageError}
           onImageClick={onImageClick}
           onDoubleTapLike={handleDoubleTapLike}
+          onVideoClick={() => setIsVideoDialogOpen(true)}
+        />
+      )}
+
+      {post.video_url && (
+        <VideoPlayerDialog
+          isOpen={isVideoDialogOpen}
+          onClose={() => setIsVideoDialogOpen(false)}
+          videoUrl={post.video_url}
+          thumbnailUrl={post.video_thumbnail_url}
+          title={post.title || undefined}
         />
       )}
       
