@@ -250,7 +250,10 @@ const Navigation = () => {
       </aside>
 
       {/* Mobile Bottom Navigation - Icon only design with centered More button */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border rounded-t-3xl z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border rounded-t-3xl z-50" style={{ 
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        backgroundColor: 'hsl(var(--card))'
+      }}>
         <div className="flex h-20 items-center justify-evenly px-4">
           {/* Home */}
           {mobileBottomNavItems.map((item) => {
