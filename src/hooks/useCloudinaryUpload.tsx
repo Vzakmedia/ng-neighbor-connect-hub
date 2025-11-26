@@ -23,6 +23,16 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
 
   const uploadFile = useCallback(async (file: File): Promise<CloudinaryAttachment | null> => {
     try {
+      // Check if user is authenticated
+      if (!userId) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload files",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       // Validate file
       const validation = validateMedia(file);
       if (!validation.valid) {

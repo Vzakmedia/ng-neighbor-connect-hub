@@ -19,10 +19,38 @@ export const getUploadSignature = async (
   resourceType?: 'image' | 'video' | 'auto'
 ): Promise<UploadSignature | null> => {
   try {
+    // Verify session is available before making the request
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Please sign in to upload files');
+    }
+    
     console.log('Requesting upload signature for folder:', folder, 'resource_type:', resourceType);
     const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
       body: { folder, resource_type: resourceType || 'auto' }
     });
+
+    // If we get a fetch error, try once more after refreshing session
+    if (error?.message?.includes('Failed to send a request')) {
+      console.log('Edge function request failed, attempting to refresh session and retry...');
+      await supabase.auth.refreshSession();
+      
+      const retryResult = await supabase.functions.invoke('generate-cloudinary-signature', {
+        body: { folder, resource_type: resourceType || 'auto' }
+      });
+      
+      if (retryResult.error) {
+        console.error('Retry failed:', retryResult.error);
+        throw retryResult.error;
+      }
+      
+      if (!retryResult.data || !retryResult.data.signature) {
+        throw new Error('Invalid signature response from server');
+      }
+      
+      console.log('Successfully received upload signature after retry');
+      return retryResult.data;
+    }
 
     if (error) {
       console.error('Edge function error:', error);
@@ -35,8 +63,21 @@ export const getUploadSignature = async (
     
     console.log('Successfully received upload signature');
     return data;
-  } catch (error) {
-    console.error('Error getting upload signature:', error);
+  } catch (error: any) {
+    console.error('Error getting upload signature:', {
+      message: error?.message,
+      name: error?.name,
+      context: error?.context,
+      stack: error?.stack
+    });
+    
+    // Provide user-friendly error message
+    if (error?.message?.includes('Failed to send a request')) {
+      throw new Error('Unable to connect to upload service. Please check your connection and try again.');
+    }
+    if (error?.message?.includes('sign in')) {
+      throw error; // Re-throw auth errors as-is
+    }
     throw error;
   }
 };
