@@ -11,6 +11,7 @@ import { PollCard } from '../poll/PollCard';
 import { usePoll } from '@/hooks/usePoll';
 import { Users, Building, Home as HomeIcon, Globe } from '@/lib/icons';
 import { VideoPlayerDialog } from '@/components/VideoPlayerDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PostCardProps {
   post: PostCardData;
@@ -23,6 +24,8 @@ interface PostCardProps {
   onPostClick: () => void;
   showComments: boolean;
   onToggleComments: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const PostCardComponent = ({
@@ -35,11 +38,14 @@ const PostCardComponent = ({
   onImageClick,
   onPostClick,
   showComments,
-  onToggleComments
+  onToggleComments,
+  onEdit,
+  onDelete
 }: PostCardProps) => {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const { poll, options, userVotes, isLoading } = usePoll(post.id);
+  const { user } = useAuth();
 
   const handleImageError = (index: number) => {
     setImageError(prev => ({ ...prev, [index]: true }));
@@ -105,6 +111,10 @@ const PostCardComponent = ({
         targetCity={(post as any).target_city}
         targetState={(post as any).target_state}
         onAvatarClick={onAvatarClick}
+        currentUserId={user?.id}
+        postUserId={post.user_id}
+        onEdit={onEdit}
+        onDelete={onDelete}
       />
       
       <div className="px-3 sm:px-4 space-y-3">
