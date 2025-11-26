@@ -220,7 +220,7 @@ export const transformations = {
 
 // Video transformation presets
 export const videoTransformations = {
-  thumbnail: 'so_2.0,w_400,h_300,c_fill,f_auto,q_auto',
+  thumbnail: 'so_2.0,w_1280,h_720,c_fill,f_auto,q_auto',
   preview: 'so_2.0,w_800,h_600,c_fill,f_auto,q_auto',
   compressed: 'q_auto:low,vc_h264',
   hd: 'q_auto:good,vc_h264,w_1920',
