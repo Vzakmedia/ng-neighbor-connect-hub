@@ -12,9 +12,11 @@ import { MapPin, Camera, AlertTriangle } from '@/lib/icons';
 interface PermissionRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  permissionType: 'location' | 'camera';
+  permissionType: 'location' | 'camera' | 'notifications' | 'contacts';
   onAllow: () => void;
   onDeny: () => void;
+  showSettingsButton?: boolean;
+  isIOSAlwaysLocation?: boolean;
 }
 
 const PermissionRequestDialog = ({
@@ -22,19 +24,31 @@ const PermissionRequestDialog = ({
   onOpenChange,
   permissionType,
   onAllow,
-  onDeny
+  onDeny,
+  showSettingsButton = false,
+  isIOSAlwaysLocation = false
 }: PermissionRequestDialogProps) => {
   const permissionConfig = {
     location: {
       icon: MapPin,
-      title: 'Location Access',
-      description: 'NeighborLink needs access to your location to show nearby posts, services, and emergency alerts in your area.',
-      features: [
+      title: isIOSAlwaysLocation ? 'Background Location Access' : 'Location Access',
+      description: isIOSAlwaysLocation 
+        ? 'For emergency alerts to work even when the app is closed, please select "Always" when prompted.'
+        : 'NeighborLink needs access to your location to show nearby posts, services, and emergency alerts in your area.',
+      features: isIOSAlwaysLocation ? [
+        'Receive emergency alerts in the background',
+        'Get safety notifications when near incidents',
+        'Enable panic button with automatic location sharing',
+        'Background location is battery-optimized'
+      ] : [
         'View posts and events near you',
         'Get emergency alerts in your neighborhood',
         'Find local services and marketplace items',
         'Share your location when needed'
-      ]
+      ],
+      iosTip: isIOSAlwaysLocation 
+        ? 'On the next screen, tap "Allow While Using App" or "Always" for best experience.'
+        : 'On the next screen, tap "Allow While Using App" to enable location features.'
     },
     camera: {
       icon: Camera,
@@ -45,12 +59,44 @@ const PermissionRequestDialog = ({
         'Upload profile pictures',
         'Share event photos',
         'Add images to marketplace items'
-      ]
+      ],
+      iosTip: 'On the next screen, tap "OK" to grant camera access.'
+    },
+    notifications: {
+      icon: AlertTriangle,
+      title: 'Notifications',
+      description: 'Enable notifications to receive important safety alerts and community updates.',
+      features: [
+        'Emergency and safety alerts',
+        'Message notifications',
+        'Community post updates',
+        'Service booking reminders'
+      ],
+      iosTip: 'On the next screen, tap "Allow" to enable notifications.'
+    },
+    contacts: {
+      icon: Camera,
+      title: 'Contacts Access',
+      description: 'Access your contacts to easily add emergency contacts and connect with neighbors.',
+      features: [
+        'Add emergency contacts quickly',
+        'Find neighbors already on the platform',
+        'Share safety information with trusted contacts',
+        'Invite friends to join'
+      ],
+      iosTip: 'On the next screen, tap "OK" to grant contacts access.'
     }
   };
 
   const config = permissionConfig[permissionType];
   const Icon = config.icon;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  const handleOpenSettings = async () => {
+    const { openAppSettings } = await import('@/utils/iosSettingsHelper');
+    await openAppSettings();
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,6 +125,15 @@ const PermissionRequestDialog = ({
           </ul>
         </div>
 
+        {isIOS && config.iosTip && (
+          <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+            <AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-foreground">
+              <strong>iOS Tip:</strong> {config.iosTip}
+            </p>
+          </div>
+        )}
+
         <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
           <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <p className="text-xs text-muted-foreground">
@@ -87,12 +142,25 @@ const PermissionRequestDialog = ({
         </div>
 
         <DialogFooter className="flex-col sm:flex-col gap-2">
-          <Button onClick={onAllow} className="w-full">
-            Allow
-          </Button>
-          <Button onClick={onDeny} variant="outline" className="w-full">
-            Not Now
-          </Button>
+          {showSettingsButton ? (
+            <>
+              <Button onClick={handleOpenSettings} className="w-full">
+                Open Settings
+              </Button>
+              <Button onClick={onDeny} variant="outline" className="w-full">
+                Maybe Later
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={onAllow} className="w-full">
+                Allow
+              </Button>
+              <Button onClick={onDeny} variant="outline" className="w-full">
+                Not Now
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
