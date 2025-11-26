@@ -7,6 +7,7 @@ import CreatePostDialog from './CreatePostDialog';
 import { ScrollToTop } from './ScrollToTop';
 import { FeedTabNavigation } from './community/feed/FeedTabNavigation';
 import { BusinessCardCTA } from './home/BusinessCardCTA';
+import { TrendingPostsCarousel } from './home/TrendingPostsCarousel';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -152,6 +153,8 @@ const HomeDashboard = () => {
       {/* Hero Section */}
       <HeroSection />
 
+      {/* Trending Posts Carousel */}
+      <TrendingPostsCarousel />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 overflow-x-clip relative">
         {/* Main Feed */}
