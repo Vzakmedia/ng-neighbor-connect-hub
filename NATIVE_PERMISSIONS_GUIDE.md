@@ -18,6 +18,7 @@ NeighborLink now properly implements native app permissions for iOS and Android 
 Provides centralized permission management:
 - `requestLocationPermission()` - Request location access
 - `requestCameraPermission()` - Request camera/photo access
+- `requestMicrophonePermission()` - Request microphone access
 - `getCurrentPosition()` - Get location with auto-permission request
 - `openAppSettings()` - Direct users to device settings
 - `isNative` - Check if running on native platform
@@ -31,7 +32,16 @@ Handles native camera operations:
 - Automatic permission requests
 - Web fallback support
 
-### 4. **Permission UI Components**
+### 4. **Call Permissions Hook**
+**Location**: `src/hooks/mobile/useCallPermissions.ts`
+
+Handles permissions for voice and video calls:
+- `requestMicrophoneForCall()` - Request microphone for voice calls
+- `requestVideoCallPermissions()` - Request camera + microphone for video calls
+- Automatic user feedback with toast notifications
+- Platform-specific guidance when permissions are denied
+
+### 5. **Permission UI Components**
 
 **PermissionRequestDialog** (`src/components/mobile/PermissionRequestDialog.tsx`):
 - User-friendly permission explanation
@@ -44,7 +54,7 @@ Handles native camera operations:
 - Provides "Go to Settings" button on native
 - Context-specific messages
 
-### 5. **Updated Components**
+### 6. **Updated Components**
 
 All location and file upload components now use native APIs:
 
@@ -58,7 +68,11 @@ All location and file upload components now use native APIs:
 - ✅ `CreatePostDialog.tsx` - Post image uploads
 - ✅ `CreateMarketplaceItemDialog.tsx` - Product photos
 
-### 6. **Configuration Updates**
+#### Voice & Video Calls:
+- ✅ `useWebRTCCall.tsx` - Voice and video call permissions
+- ✅ `webrtc.ts` - Improved error handling for media access
+
+### 7. **Configuration Updates**
 
 **capacitor.config.json** - Development config with permission declarations
 **capacitor.config.prod.json** - Production config with permission declarations
@@ -96,6 +110,9 @@ You need to add permission descriptions to `ios/App/App/Info.plist`:
 
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>NeighborLink needs permission to save photos to your library.</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>NeighborLink needs microphone access to make voice and video calls with your neighbors.</string>
 ```
 
 ### Android (AndroidManifest.xml)
@@ -109,6 +126,8 @@ Add permissions to `android/app/src/main/AndroidManifest.xml`:
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:maxSdkVersion="32" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 ```
 
 ## How It Works
