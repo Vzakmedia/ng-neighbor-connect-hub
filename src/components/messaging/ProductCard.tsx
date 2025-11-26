@@ -82,43 +82,44 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="max-w-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
+    <Card className="max-w-sm hover:shadow-md transition-shadow bg-card/95 backdrop-blur-sm">
+      <CardContent className="p-3">
         <div className="flex gap-3">
           {product.image ? (
             <img
               src={product.image}
               alt={product.title}
-              className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+              className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-              <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="h-10 w-10 text-muted-foreground" />
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.title}</h4>
-            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
-            <div className="flex items-center gap-2 mb-2">
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{product.title}</h4>
+            <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+            <div className="flex items-center gap-2 mt-auto">
               <span className="font-bold text-primary text-sm">{formatPrice(product.price)}</span>
               {product.is_negotiable && (
                 <Badge variant="outline" className="text-xs">Negotiable</Badge>
               )}
             </div>
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="text-xs">{product.condition}</Badge>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-6 px-2 text-xs" 
-                disabled={loading}
-                onClick={handleViewProduct}
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                {loading ? 'Loading...' : 'View'}
-              </Button>
-            </div>
           </div>
+        </div>
+        
+        <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
+          <Badge variant="secondary" className="text-xs">{product.condition}</Badge>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            className="h-7 px-3 text-xs" 
+            disabled={loading}
+            onClick={handleViewProduct}
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            {loading ? 'Loading...' : 'View'}
+          </Button>
         </div>
       </CardContent>
 
