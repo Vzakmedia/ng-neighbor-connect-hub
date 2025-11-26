@@ -43,9 +43,11 @@ import { TwoFactorSetup } from '@/components/security/TwoFactorSetup';
 import { SuperAdminSecurityPanel } from '@/components/security/SuperAdminSecurityPanel';
 import { BiometricSettings } from './BiometricSettings';
 import { ContactSyncSettings } from './ContactSyncSettings';
+import IOSDiagnostics from './IOSDiagnostics';
 import { useTutorial } from '@/hooks/useTutorial';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
+import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -285,6 +287,11 @@ const [audioSettings, setAudioSettings] = useState({
             <TabsTrigger value="insights">
               Insights
             </TabsTrigger>
+            {Capacitor.isNativePlatform() && (
+              <TabsTrigger value="diagnostics">
+                Device
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -1102,6 +1109,13 @@ const [audioSettings, setAudioSettings] = useState({
             </Card>
           </div>
         </TabsContent>
+
+        {/* Diagnostics Tab - Only on native platforms */}
+        {Capacitor.isNativePlatform() && (
+          <TabsContent value="diagnostics" className="w-full max-w-full">
+            <IOSDiagnostics />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
