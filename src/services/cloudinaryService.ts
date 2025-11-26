@@ -239,5 +239,8 @@ export const extractPublicId = (url: string): string | null => {
 
 export const getVideoThumbnailUrl = (videoUrl: string): string => {
   // Generate video thumbnail using Cloudinary's automatic thumbnail
-  return videoUrl.replace('/video/upload/', `/video/upload/${videoTransformations.thumbnail}/`);
+  // Must change extension to .jpg to get an image frame from the video
+  return videoUrl
+    .replace('/video/upload/', `/video/upload/${videoTransformations.thumbnail}/`)
+    .replace(/\.(mp4|mov|avi|webm|mkv)$/i, '.jpg');
 };
