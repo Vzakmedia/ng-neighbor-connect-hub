@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { getSafeStorage } from '@/utils/iosCompatibility';
+import { Capacitor } from '@capacitor/core';
+import { nativeStorageAdapter } from '@/utils/nativeStorageAdapter';
 
 const SUPABASE_URL = "https://cowiviqhrnmhttugozbz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4";
@@ -9,8 +11,8 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Get safe storage for iOS compatibility (handles private browsing)
-const storage = getSafeStorage();
+// Use native storage on mobile, web storage on web
+const storage = Capacitor.isNativePlatform() ? nativeStorageAdapter : getSafeStorage();
 
 // Detect iOS device
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
