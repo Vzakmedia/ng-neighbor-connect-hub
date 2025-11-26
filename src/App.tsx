@@ -214,12 +214,13 @@ const App = () => {
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <TooltipProvider>
-              <div style={{
-                paddingLeft: 'var(--safe-area-left)', 
-                paddingRight: 'var(--safe-area-right)'
-              }}>
+            <AuthProvider>
+              <TooltipProvider>
+                <div style={{
+                  paddingLeft: 'var(--safe-area-left)', 
+                  paddingRight: 'var(--safe-area-right)',
+                  minHeight: '100vh'
+                }}>
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
