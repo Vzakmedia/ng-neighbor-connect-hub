@@ -21,6 +21,10 @@ interface PostCardHeaderProps {
   targetCity?: string;
   targetState?: string;
   onAvatarClick: (userId: string) => void;
+  currentUserId?: string;
+  postUserId: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const PostCardHeader = ({ 
@@ -31,8 +35,13 @@ export const PostCardHeader = ({
   targetNeighborhood,
   targetCity,
   targetState,
-  onAvatarClick 
+  onAvatarClick,
+  currentUserId,
+  postUserId,
+  onEdit,
+  onDelete
 }: PostCardHeaderProps) => {
+  const isOwner = currentUserId && currentUserId === postUserId;
   const getVisibilityIcon = () => {
     if (locationScope === 'neighborhood') {
       return <Users className="h-3.5 w-3.5 text-muted-foreground" />;
@@ -97,6 +106,27 @@ export const PostCardHeader = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            {isOwner && onEdit && (
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                Edit Post
+              </DropdownMenuItem>
+            )}
+            {isOwner && onDelete && (
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="text-destructive focus:text-destructive"
+              >
+                Delete Post
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
               View Full Post
             </DropdownMenuItem>
