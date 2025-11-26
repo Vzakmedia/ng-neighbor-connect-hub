@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -120,7 +120,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const getCurrentPostType = () => postTypes.find(type => type.value === postType)!;
 
-  const handleMediaSelect = async (files: File[]) => {
+  const handleMediaSelect = useCallback(async (files: File[]) => {
     // Allow max 4 items total, but only 1 video
     const hasVideo = uploadedMedia.some(f => f.type === 'video');
     const newHasVideo = files.some(f => f.type.startsWith('video/'));
@@ -135,11 +135,11 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       const attachments = await uploadMultipleFiles(files.slice(0, maxToAdd));
       setUploadedMedia(prev => [...prev, ...attachments]);
     }
-  };
+  }, [uploadedMedia, uploadMultipleFiles]);
 
-  const handleMediaRemove = (index: number) => {
+  const handleMediaRemove = useCallback((index: number) => {
     setUploadedMedia(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim()) && tags.length < 5) {
