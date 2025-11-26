@@ -106,6 +106,8 @@ export const FeedDialogs = ({
           likes: selectedEvent.likes_count || 0,
           comments: selectedEvent.comments_count || 0,
           images: selectedEvent.image_urls,
+          video_url: selectedEvent.video_url,
+          video_thumbnail_url: selectedEvent.video_thumbnail_url,
           tags: selectedEvent.tags,
           isLiked: selectedEvent.isLiked || false,
           isSaved: selectedEvent.isSaved || false
