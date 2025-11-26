@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
 import { validateMedia, formatFileSize } from '@/utils/mediaValidation';
@@ -9,6 +9,10 @@ import { CameraIcon, XMarkIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/re
 import { Progress } from './ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
+
+// Stable empty array to prevent re-renders
+const EMPTY_FILES: File[] = [];
+const EMPTY_UPLOADED: CloudinaryAttachment[] = [];
 
 interface MediaUploaderProps {
   onFilesSelected: (files: File[]) => void;
@@ -27,8 +31,8 @@ export const MediaUploader = ({
   onFilesSelected,
   accept = 'both',
   maxFiles = 8,
-  uploadedFiles = [],
-  pendingFiles = [],
+  uploadedFiles = EMPTY_UPLOADED,
+  pendingFiles = EMPTY_FILES,
   onRemove,
   uploading = false,
   progress = 0,
@@ -36,9 +40,22 @@ export const MediaUploader = ({
 }: MediaUploaderProps) => {
   const { toast } = useToast();
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const prevFileNamesRef = useRef<string>('');
 
-  // Create preview URLs for pending files
+  // Create preview URLs for pending files - only when files actually change
   useEffect(() => {
+    const currentFileNames = pendingFiles.map(f => f.name).join(',');
+    
+    // Only update if files actually changed
+    if (currentFileNames === prevFileNamesRef.current) {
+      return;
+    }
+    
+    prevFileNamesRef.current = currentFileNames;
+    
+    // Revoke old URLs first
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    
     const urls = pendingFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(urls);
 
