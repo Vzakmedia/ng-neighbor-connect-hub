@@ -14,12 +14,18 @@ export const TrendingPostSlideCard = ({
   onPostClick,
   onSave,
 }: TrendingPostSlideCardProps) => {
-  // Determine background image
-  const backgroundImage = post.video_thumbnail_url
-    ? post.video_thumbnail_url
-    : post.image_urls?.[0];
+  // Determine background image - prioritize video thumbnail, then first image
+  const backgroundImage = post.video_thumbnail_url || 
+    (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : null);
 
   const hasVideo = !!post.video_url;
+
+  console.log('TrendingPostSlideCard:', {
+    postId: post.id,
+    hasImages: post.image_urls?.length,
+    hasVideoThumb: !!post.video_thumbnail_url,
+    backgroundImage,
+  });
 
   return (
     <div
