@@ -228,6 +228,14 @@ All colors MUST be HSL.
     pointer-events: none;
   }
   
+  .dark body::before {
+    background: hsl(var(--background));
+  }
+  
+  .dark html {
+    background: hsl(var(--background));
+  }
+  
   /* iOS Keyboard Adjustment */
   body.keyboard-open {
     padding-bottom: calc(var(--ios-safe-area-bottom) + var(--ios-keyboard-height));
