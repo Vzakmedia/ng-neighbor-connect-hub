@@ -76,7 +76,7 @@ All colors MUST be HSL.
     
     /* Combined Safe Areas */
     --safe-area-top: max(var(--ios-safe-area-top), 20px);
-    --safe-area-bottom: max(var(--ios-safe-area-bottom), 20px);
+    --safe-area-bottom: max(var(--ios-safe-area-bottom), 0px);
     --safe-area-left: max(var(--ios-safe-area-left), 16px);
     --safe-area-right: max(var(--ios-safe-area-right), 16px);
 
