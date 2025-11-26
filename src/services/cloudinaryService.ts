@@ -19,50 +19,80 @@ export const getUploadSignature = async (
   resourceType?: 'image' | 'video' | 'auto'
 ): Promise<UploadSignature | null> => {
   try {
-    // Verify session is available before making the request
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('Please sign in to upload files');
-    }
+    // Explicitly validate access token
+    let { data: { session } } = await supabase.auth.getSession();
     
-    console.log('Requesting upload signature for folder:', folder, 'resource_type:', resourceType);
-    const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
-      body: { folder, resource_type: resourceType || 'auto' }
-    });
-
-    // If we get a fetch error, try once more after refreshing session
-    if (error?.message?.includes('Failed to send a request')) {
-      console.log('Edge function request failed, attempting to refresh session and retry...');
-      await supabase.auth.refreshSession();
+    if (!session?.access_token) {
+      console.log('No access token found, attempting to refresh session...');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
-      const retryResult = await supabase.functions.invoke('generate-cloudinary-signature', {
-        body: { folder, resource_type: resourceType || 'auto' }
-      });
-      
-      if (retryResult.error) {
-        console.error('Retry failed:', retryResult.error);
-        throw retryResult.error;
+      if (refreshError || !refreshData.session?.access_token) {
+        throw new Error('Please sign in to upload files');
       }
       
-      if (!retryResult.data || !retryResult.data.signature) {
+      session = refreshData.session;
+    }
+    
+    console.log('Requesting upload signature:', {
+      folder,
+      resource_type: resourceType,
+      hasAccessToken: !!session.access_token,
+      tokenExpiresAt: session.expires_at,
+      currentTime: Math.floor(Date.now() / 1000)
+    });
+    
+    // Try with supabase.functions.invoke first
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
+        body: { folder, resource_type: resourceType || 'auto' }
+      });
+
+      if (error) {
+        console.error('Edge function invoke error:', error);
+        throw error;
+      }
+      
+      if (!data || !data.signature) {
         throw new Error('Invalid signature response from server');
       }
       
-      console.log('Successfully received upload signature after retry');
-      return retryResult.data;
+      console.log('Successfully received upload signature via invoke');
+      return data;
+    } catch (invokeError: any) {
+      // Fallback to direct fetch
+      console.log('Invoke failed, attempting direct fetch fallback...', invokeError.message);
+      
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/generate-cloudinary-signature`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ folder, resource_type: resourceType || 'auto' })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Direct fetch failed:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data || !data.signature) {
+        throw new Error('Invalid signature response from server');
+      }
+      
+      console.log('Successfully received upload signature via direct fetch');
+      return data;
     }
-
-    if (error) {
-      console.error('Edge function error:', error);
-      throw error;
-    }
-    
-    if (!data || !data.signature) {
-      throw new Error('Invalid signature response from server');
-    }
-    
-    console.log('Successfully received upload signature');
-    return data;
   } catch (error: any) {
     console.error('Error getting upload signature:', {
       message: error?.message,
@@ -72,13 +102,10 @@ export const getUploadSignature = async (
     });
     
     // Provide user-friendly error message
-    if (error?.message?.includes('Failed to send a request')) {
-      throw new Error('Unable to connect to upload service. Please check your connection and try again.');
-    }
     if (error?.message?.includes('sign in')) {
       throw error; // Re-throw auth errors as-is
     }
-    throw error;
+    throw new Error('Unable to connect to upload service. Please check your connection and try again.');
   }
 };
 
