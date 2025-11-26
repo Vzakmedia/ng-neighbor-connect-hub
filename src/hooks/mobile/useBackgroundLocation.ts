@@ -20,14 +20,17 @@ interface CachedLocation {
 export const useBackgroundLocation = () => {
   const [lastLocation, setLastLocation] = useState<CachedLocation | null>(null);
   const [isTracking, setIsTracking] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'prompt' | 'granted' | 'denied' | 'when-in-use'>('prompt');
   const { getItem, setItem } = useNativeStorage();
   const { toast } = useToast();
   const { user } = useAuth();
   const isNative = Capacitor.isNativePlatform();
+  const isIOS = Capacitor.getPlatform() === 'ios';
 
-  // Load cached location on mount
+  // Load cached location and check permission status on mount
   useEffect(() => {
     loadCachedLocation();
+    checkLocationPermissionStatus();
   }, []);
 
   // Start periodic location updates
@@ -53,6 +56,88 @@ export const useBackgroundLocation = () => {
       } catch (error) {
         console.error('Error loading cached location:', error);
       }
+    }
+  };
+
+  /**
+   * Check current location permission status
+   */
+  const checkLocationPermissionStatus = async () => {
+    if (!isNative) return;
+
+    try {
+      const result = await Geolocation.checkPermissions();
+      
+      if (result.location === 'granted') {
+        // On iOS, check if we have "Always" or just "When In Use"
+        if (isIOS && result.coarseLocation === 'granted') {
+          setPermissionStatus('when-in-use');
+        } else {
+          setPermissionStatus('granted');
+        }
+      } else if (result.location === 'denied') {
+        setPermissionStatus('denied');
+      } else {
+        setPermissionStatus('prompt');
+      }
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+    }
+  };
+
+  /**
+   * Request "Always" location permission (iOS)
+   */
+  const requestAlwaysPermission = async (): Promise<boolean> => {
+    if (!isNative) return false;
+
+    try {
+      // First explain why we need "Always" permission
+      if (isIOS && permissionStatus !== 'granted') {
+        toast({
+          title: "Background Location Required",
+          description: "For emergency alerts and safety features to work in the background, please select 'Allow While Using App' or 'Always' when prompted.",
+          duration: 6000,
+        });
+      }
+
+      // Request permission
+      const result = await Geolocation.requestPermissions();
+      
+      if (result.location === 'granted') {
+        setPermissionStatus('granted');
+        return true;
+      } else if (result.location === 'denied') {
+        setPermissionStatus('denied');
+        
+        // iOS-specific guidance
+        if (isIOS) {
+          toast({
+            title: "Location Permission Denied",
+            description: "To enable background location, go to Settings > Privacy > Location Services > NeighborLink and select 'Always'",
+            variant: "destructive",
+            duration: 8000,
+          });
+        } else {
+          toast({
+            title: "Location Permission Denied",
+            description: "Please enable location permission in your device settings",
+            variant: "destructive",
+          });
+        }
+        return false;
+      }
+      
+      setPermissionStatus('when-in-use');
+      return false;
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      toast({
+        title: "Permission Error",
+        description: "Failed to request location permission",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -123,7 +208,7 @@ export const useBackgroundLocation = () => {
   /**
    * Start background location tracking
    */
-  const startTracking = useCallback(() => {
+  const startTracking = useCallback(async () => {
     if (!isNative) {
       toast({
         title: "Not available",
@@ -133,12 +218,20 @@ export const useBackgroundLocation = () => {
       return;
     }
 
+    // Check if we have permission, request if needed
+    if (permissionStatus !== 'granted') {
+      const granted = await requestAlwaysPermission();
+      if (!granted) {
+        return;
+      }
+    }
+
     setIsTracking(true);
     toast({
       title: "Location tracking enabled",
       description: "Your location will be updated periodically for better emergency alerts",
     });
-  }, [isNative, toast]);
+  }, [isNative, permissionStatus, toast]);
 
   /**
    * Stop background location tracking
@@ -163,11 +256,14 @@ export const useBackgroundLocation = () => {
   return {
     lastLocation,
     isTracking,
+    permissionStatus,
     getCurrentLocation,
     updateLocation,
     startTracking,
     stopTracking,
     needsUpdate,
+    requestAlwaysPermission,
+    checkLocationPermissionStatus,
     isNative
   };
 };
