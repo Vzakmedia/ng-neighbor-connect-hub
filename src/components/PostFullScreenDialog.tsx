@@ -31,6 +31,8 @@ import { useToast } from '@/hooks/use-toast';
 import CommentSection from '@/components/CommentSection';
 import ShareDialog from '@/components/ShareDialog';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
+import { VideoPlayerDialog } from '@/components/VideoPlayerDialog';
+import { Play } from '@/lib/icons';
 
 interface Post {
   id: string;
@@ -47,6 +49,8 @@ interface Post {
   likes: number;
   comments: number;
   images?: string[];
+  video_url?: string | null;
+  video_thumbnail_url?: string | null;
   tags?: string[];
   isLiked: boolean;
   isSaved: boolean;
@@ -75,6 +79,7 @@ export const PostFullScreenDialog = ({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -203,6 +208,22 @@ export const PostFullScreenDialog = ({
               </div>
             )}
             
+            {/* Display video if any */}
+            {post.video_url && (
+              <div className="mb-6 relative rounded-lg overflow-hidden cursor-pointer group" onClick={() => setVideoDialogOpen(true)}>
+                <img
+                  src={post.video_thumbnail_url || '/placeholder.svg'}
+                  alt="Video thumbnail"
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                  <div className="bg-background/90 rounded-full p-4 group-hover:scale-110 transition-transform">
+                    <Play className="h-8 w-8 text-foreground" />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Display images if any */}
             {post.images && post.images.length > 0 && (
               <div className={`grid gap-2 mb-6 ${
@@ -295,6 +316,17 @@ export const PostFullScreenDialog = ({
         postContent={post.content}
         postAuthor={post.author.name}
       />
+
+      {/* Video Player Dialog */}
+      {post.video_url && (
+        <VideoPlayerDialog
+          isOpen={videoDialogOpen}
+          onClose={() => setVideoDialogOpen(false)}
+          videoUrl={post.video_url}
+          thumbnailUrl={post.video_thumbnail_url}
+          title={post.title || 'Video'}
+        />
+      )}
     </>
   );
 };
