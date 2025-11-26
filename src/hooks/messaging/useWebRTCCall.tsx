@@ -21,6 +21,7 @@ export const useWebRTCCall = (conversationId: string) => {
   } | null>(null);
 
   const webrtcRef = useRef<WebRTCManager | null>(null);
+  const pendingMessagesRef = useRef<any[]>([]);
 
   // Initialize WebRTC manager
   const initializeManager = useCallback(() => {
@@ -55,6 +56,16 @@ export const useWebRTCCall = (conversationId: string) => {
       const stream = await manager.startCall(false);
       setWebrtcManager(manager);
       webrtcRef.current = manager;
+      
+      // Process any pending messages
+      if (pendingMessagesRef.current.length > 0) {
+        console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
+        for (const msg of pendingMessagesRef.current) {
+          await manager.handleSignalingMessage(msg);
+        }
+        pendingMessagesRef.current = [];
+      }
+      
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(false);
@@ -62,7 +73,8 @@ export const useWebRTCCall = (conversationId: string) => {
       showSuccess("Voice call", "Calling...");
     } catch (error) {
       console.error('Error starting voice call:', error);
-      showError("Error", "Could not start voice call");
+      const errorMessage = error instanceof Error ? error.message : "Could not start voice call";
+      showError("Voice call failed", errorMessage);
     }
   }, [initializeManager, showSuccess, showError]);
 
@@ -75,6 +87,16 @@ export const useWebRTCCall = (conversationId: string) => {
       const stream = await manager.startCall(true);
       setWebrtcManager(manager);
       webrtcRef.current = manager;
+      
+      // Process any pending messages
+      if (pendingMessagesRef.current.length > 0) {
+        console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
+        for (const msg of pendingMessagesRef.current) {
+          await manager.handleSignalingMessage(msg);
+        }
+        pendingMessagesRef.current = [];
+      }
+      
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(true);
@@ -82,7 +104,8 @@ export const useWebRTCCall = (conversationId: string) => {
       showSuccess("Video call", "Calling...");
     } catch (error) {
       console.error('Error starting video call:', error);
-      showError("Error", "Could not start video call");
+      const errorMessage = error instanceof Error ? error.message : "Could not start video call";
+      showError("Video call failed", errorMessage);
     }
   }, [initializeManager, showSuccess, showError]);
 
@@ -99,6 +122,16 @@ export const useWebRTCCall = (conversationId: string) => {
       
       setWebrtcManager(manager);
       webrtcRef.current = manager;
+      
+      // Process any pending messages
+      if (pendingMessagesRef.current.length > 0) {
+        console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
+        for (const msg of pendingMessagesRef.current) {
+          await manager.handleSignalingMessage(msg);
+        }
+        pendingMessagesRef.current = [];
+      }
+      
       setLocalStream(stream);
       setIsInCall(true);
       setIsVideoCall(acceptVideo);
@@ -173,42 +206,43 @@ export const useWebRTCCall = (conversationId: string) => {
         });
       } else if (message.message.type === 'answer') {
         console.log('Call answer received');
-        {
-          const mgr = webrtcRef.current;
-          if (mgr) {
-            mgr.markCallAsAnswered();
-            await mgr.handleSignalingMessage(message.message);
-          }
+        const mgr = webrtcRef.current;
+        if (mgr) {
+          mgr.markCallAsAnswered();
+          await mgr.handleSignalingMessage(message.message);
+        } else {
+          console.log('Manager not ready, queuing answer');
+          pendingMessagesRef.current.push(message.message);
         }
       } else if (message.message.type === 'ice-candidate') {
         console.log('ICE candidate received');
-        {
-          const mgr = webrtcRef.current;
-          if (mgr) {
-            await mgr.handleSignalingMessage(message.message);
-          }
+        const mgr = webrtcRef.current;
+        if (mgr) {
+          await mgr.handleSignalingMessage(message.message);
+        } else {
+          console.log('Manager not ready, queuing ICE candidate');
+          pendingMessagesRef.current.push(message.message);
         }
       } else if (message.message.type === 'call-end') {
         console.log('Call end signal received');
-        {
-          const mgr = webrtcRef.current;
-          if (mgr) {
-            await mgr.handleSignalingMessage(message.message);
-          }
+        const mgr = webrtcRef.current;
+        if (mgr) {
+          await mgr.handleSignalingMessage(message.message);
         }
       } else {
         const mgr = webrtcRef.current;
         if (mgr) {
           console.log('Other signaling message:', message.message.type);
           await mgr.handleSignalingMessage(message.message);
+        } else {
+          console.log('Manager not ready, queuing message');
+          pendingMessagesRef.current.push(message.message);
         }
       }
     };
 
-    // Polling fallback for when realtime fails - only for WebRTC calls
+    // Polling fallback for when realtime fails
     const startPollingFallback = async () => {
-      // Only poll if we're actually in a call
-      if (!isInCall) return;
       
       try {
         const { data, error } = await supabase
