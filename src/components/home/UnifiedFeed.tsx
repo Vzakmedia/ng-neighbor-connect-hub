@@ -12,6 +12,7 @@ import { CommunityHighlights } from "@/components/home/CommunityHighlights";
 import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
 import { BusinessCardCTA } from "@/components/home/BusinessCardCTA";
+import { RecommendationsCarousel } from "@/components/home/RecommendationsCarousel";
 import { Loader2 } from "@/lib/icons";
 import InfiniteScroll from "react-infinite-scroll-component";
 
@@ -106,8 +107,17 @@ export const UnifiedFeed = () => {
       });
     }
 
-    // First ad after 3rd post
+    // Recommendations Carousel after 3rd post
     if (index === 2) {
+      mixedContent.push({
+        type: 'widget',
+        component: <RecommendationsCarousel />,
+        key: 'recommendations-carousel'
+      });
+    }
+
+    // First ad after 4th post
+    if (index === 3) {
       mixedContent.push({
         type: 'ad',
         component: <AdDisplay placement="feed" maxAds={1} filterType="all" />,
