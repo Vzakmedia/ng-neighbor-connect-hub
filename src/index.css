@@ -188,6 +188,7 @@ All colors MUST be HSL.
   }
 
   html {
+    @apply bg-background;
     scroll-behavior: smooth;
     scroll-padding-top: 6rem; /* Account for fixed header height */
   }
