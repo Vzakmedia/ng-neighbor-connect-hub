@@ -82,43 +82,45 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Card className="max-w-sm hover:shadow-md transition-shadow bg-card/95 backdrop-blur-sm">
-      <CardContent className="p-3">
-        <div className="flex gap-3">
+    <Card className="max-w-sm overflow-hidden border-border/50 bg-background/95 backdrop-blur-sm hover:shadow-lg transition-all">
+      <CardContent className="p-0">
+        <div className="flex gap-3 p-3">
           {product.image ? (
             <img
               src={product.image}
               alt={product.title}
-              className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+              className="w-24 h-24 rounded-md object-cover flex-shrink-0 border border-border/50"
             />
           ) : (
-            <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-              <ShoppingBag className="h-10 w-10 text-muted-foreground" />
+            <div className="w-24 h-24 rounded-md bg-muted/50 flex items-center justify-center flex-shrink-0 border border-border/50">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground/50" />
             </div>
           )}
-          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-            <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{product.title}</h4>
-            <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
-            <div className="flex items-center gap-2 mt-auto">
-              <span className="font-bold text-primary text-sm">{formatPrice(product.price)}</span>
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div>
+              <h4 className="font-semibold text-base line-clamp-2 leading-tight mb-1">{product.title}</h4>
+              <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-primary text-lg">{formatPrice(product.price)}</span>
               {product.is_negotiable && (
-                <Badge variant="outline" className="text-xs">Negotiable</Badge>
+                <Badge variant="default" className="text-xs px-2 py-0">Negotiable</Badge>
               )}
             </div>
           </div>
         </div>
         
-        <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
-          <Badge variant="secondary" className="text-xs">{product.condition}</Badge>
+        <div className="flex items-center justify-between px-3 py-2.5 bg-muted/30 border-t border-border/50">
+          <Badge variant="secondary" className="text-xs font-medium capitalize">{product.condition}</Badge>
           <Button 
             size="sm" 
-            variant="ghost"
-            className="h-7 px-3 text-xs" 
+            variant="default"
+            className="h-8 px-4 text-xs font-medium" 
             disabled={loading}
             onClick={handleViewProduct}
           >
-            <ExternalLink className="h-3 w-3 mr-1" />
-            {loading ? 'Loading...' : 'View'}
+            <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+            {loading ? 'Loading...' : 'View Item'}
           </Button>
         </div>
       </CardContent>
