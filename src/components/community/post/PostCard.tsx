@@ -91,14 +91,6 @@ const PostCardComponent = ({
     return null;
   };
 
-  // Debug logging
-  console.log('PostCard data:', { 
-    hasImages: post.image_urls?.length > 0, 
-    hasVideo: !!post.video_url,
-    video_url: post.video_url,
-    video_thumbnail: post.video_thumbnail_url
-  });
-
   return (
     <Card 
       className="w-full max-w-full animate-fade-in hover:shadow-md transition-shadow cursor-pointer rounded-xl overflow-hidden"
