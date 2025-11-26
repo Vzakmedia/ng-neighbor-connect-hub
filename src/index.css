@@ -191,6 +191,8 @@ All colors MUST be HSL.
     @apply bg-background;
     scroll-behavior: smooth;
     scroll-padding-top: 6rem; /* Account for fixed header height */
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 
   body {
@@ -211,6 +213,19 @@ All colors MUST be HSL.
     padding-bottom: var(--ios-safe-area-bottom);
     padding-left: var(--ios-safe-area-left);
     padding-right: var(--ios-safe-area-right);
+  }
+  
+  /* Ensure background extends into safe areas */
+  body::before {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: hsl(var(--background));
+    z-index: -1;
+    pointer-events: none;
   }
   
   /* iOS Keyboard Adjustment */
