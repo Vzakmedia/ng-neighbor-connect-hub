@@ -128,9 +128,11 @@ const PostCardComponent = ({
         )}
       </div>
       
-      {post.image_urls && post.image_urls.length > 0 && (
+      {((post.image_urls && post.image_urls.length > 0) || post.video_url) && (
         <PostCardMedia
           images={post.image_urls}
+          videoUrl={post.video_url}
+          videoThumbnail={post.video_thumbnail_url}
           imageError={imageError}
           onImageError={handleImageError}
           onImageClick={onImageClick}
