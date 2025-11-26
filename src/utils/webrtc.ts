@@ -9,6 +9,8 @@ export class WebRTCManager {
   private isInitiator: boolean = false;
   private callStartTime: Date | null = null;
   private currentCallLogId: string | null = null;
+  private pendingIceCandidates: RTCIceCandidateInit[] = [];
+  private hasRemoteDescription: boolean = false;
 
   constructor(
     conversationId: string,
@@ -54,13 +56,37 @@ export class WebRTCManager {
       this.onRemoteStream(this.remoteStream);
     };
 
-    this.pc.onconnectionstatechange = () => {
+    this.pc.onconnectionstatechange = async () => {
       console.log('Connection state:', this.pc?.connectionState);
+      
+      if (this.pc?.connectionState === 'connected') {
+        console.log('WebRTC connection established successfully');
+      }
+      
+      if (this.pc?.connectionState === 'failed') {
+        console.log('Connection failed, attempting ICE restart');
+        try {
+          const offer = await this.pc.createOffer({ iceRestart: true });
+          await this.pc.setLocalDescription(offer);
+          await this.sendSignalingMessage({
+            type: 'offer',
+            offer: offer,
+            isRestart: true
+          });
+        } catch (error) {
+          console.error('ICE restart failed:', error);
+          this.onCallEnd();
+        }
+      }
+      
       if (this.pc?.connectionState === 'disconnected' || 
-          this.pc?.connectionState === 'failed' ||
           this.pc?.connectionState === 'closed') {
         this.onCallEnd();
       }
+    };
+
+    this.pc.oniceconnectionstatechange = () => {
+      console.log('ICE connection state:', this.pc?.iceConnectionState);
     };
   }
 
@@ -175,6 +201,10 @@ export class WebRTCManager {
 
       // Set remote description (offer)
       await this.pc!.setRemoteDescription(offer);
+      this.hasRemoteDescription = true;
+      
+      // Process any pending ICE candidates
+      await this.processPendingIceCandidates();
 
       // Create answer
       const answer = await this.pc!.createAnswer();
@@ -202,21 +232,31 @@ export class WebRTCManager {
           console.log('Processing incoming offer');
           // Handle incoming call offer
           await this.pc!.setRemoteDescription(message.offer);
+          this.hasRemoteDescription = true;
+          await this.processPendingIceCandidates();
           break;
           
         case 'answer':
           console.log('Processing call answer');
           // Handle call answer
           await this.pc!.setRemoteDescription(message.answer);
+          this.hasRemoteDescription = true;
+          await this.processPendingIceCandidates();
           break;
           
         case 'ice-candidate':
           console.log('Processing ICE candidate');
           // Handle ICE candidate
-          if (this.pc!.remoteDescription) {
-            await this.pc!.addIceCandidate(message.candidate);
+          if (this.hasRemoteDescription && this.pc!.remoteDescription) {
+            try {
+              await this.pc!.addIceCandidate(message.candidate);
+              console.log('ICE candidate added successfully');
+            } catch (error) {
+              console.error('Error adding ICE candidate:', error);
+            }
           } else {
             console.log('Queuing ICE candidate - no remote description yet');
+            this.pendingIceCandidates.push(message.candidate);
           }
           break;
           
@@ -228,6 +268,20 @@ export class WebRTCManager {
     } catch (error) {
       console.error('Error handling signaling message:', error);
       // Don't throw - this could break the call flow
+    }
+  }
+
+  private async processPendingIceCandidates() {
+    if (this.pendingIceCandidates.length > 0 && this.hasRemoteDescription) {
+      console.log(`Processing ${this.pendingIceCandidates.length} pending ICE candidates`);
+      for (const candidate of this.pendingIceCandidates) {
+        try {
+          await this.pc!.addIceCandidate(candidate);
+        } catch (error) {
+          console.error('Error adding pending ICE candidate:', error);
+        }
+      }
+      this.pendingIceCandidates = [];
     }
   }
 

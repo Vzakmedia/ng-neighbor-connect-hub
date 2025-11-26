@@ -73,6 +73,13 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
                 <p className="text-gray-300 mt-2">
                   {remoteStream ? 'Voice call' : 'Connecting...'}
                 </p>
+                {!remoteStream && (
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-300" />
+                  </div>
+                )}
               </div>
             )}
           </div>
