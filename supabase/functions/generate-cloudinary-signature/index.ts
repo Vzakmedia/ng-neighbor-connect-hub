@@ -23,26 +23,38 @@ serve(async (req) => {
       throw new Error('Cloudinary credentials not configured');
     }
 
-    // Verify user is authenticated
+    // Get JWT from authorization header (already validated by Supabase since verify_jwt=true)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('Missing authorization header');
-      throw new Error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get user using the JWT token directly
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
     if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error('Unauthorized');
+      console.error('Failed to get user:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const { folder = 'uploads' } = await req.json();
+    console.log('User authenticated:', user.id);
+
+    const { folder = 'uploads', resource_type = 'auto' } = await req.json();
 
     // Generate timestamp
     const timestamp = Math.round(new Date().getTime() / 1000);
