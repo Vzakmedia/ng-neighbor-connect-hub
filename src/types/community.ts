@@ -33,6 +33,8 @@ export interface CommunityPost {
   author_city: string | null;
   author_state: string | null;
   rsvp_enabled: boolean;
+  video_url?: string | null;
+  video_thumbnail_url?: string | null;
 }
 
 export interface PostCardData extends CommunityPost, PostEngagement {
