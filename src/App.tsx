@@ -27,6 +27,7 @@ import MessagingNotificationProvider from "@/components/messaging/MessagingNotif
 import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 import { useDeepLinkHandler } from "@/hooks/mobile/useDeepLinkHandler";
+import { ConnectionStatusIndicator } from "@/components/mobile/ConnectionStatusIndicator";
 
 import Index from "./pages/Index";
 import CreateRecommendation from "./pages/CreateRecommendation";
@@ -228,6 +229,7 @@ const App = () => {
                     <PresenceProvider>
           
           <AudioInitializer />
+          <ConnectionStatusIndicator />
           <PushNotificationWrapper />
           <DeepLinkHandler />
           <SecurityHeaders />

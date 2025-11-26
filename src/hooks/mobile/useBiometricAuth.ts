@@ -89,9 +89,30 @@ export const useBiometricAuth = () => {
         return false;
       }
 
+      // Provide helpful error messages
+      let errorTitle = 'Authentication Failed';
+      let errorMessage = error.message || 'Failed to authenticate';
+
+      if (error.code === 'biometryNotAvailable') {
+        errorTitle = 'Biometric Not Available';
+        errorMessage = 'Biometric authentication is not available on this device.';
+      } else if (error.code === 'biometryNotEnrolled') {
+        errorTitle = 'Not Set Up';
+        errorMessage = `Please set up ${getBiometricName()} in your device settings first.`;
+      } else if (error.code === 'biometryLockout') {
+        errorTitle = 'Locked Out';
+        errorMessage = 'Too many failed attempts. Please use your device passcode.';
+      } else if (error.code === 'passcodeNotSet') {
+        errorTitle = 'Passcode Required';
+        errorMessage = 'Please set up a device passcode in Settings to use biometric authentication.';
+      } else if (error.message?.includes('Info.plist')) {
+        errorTitle = 'Configuration Error';
+        errorMessage = 'App needs proper configuration for biometric authentication. Please contact support.';
+      }
+
       toast({
-        title: 'Authentication Failed',
-        description: error.message || 'Failed to authenticate',
+        title: errorTitle,
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
