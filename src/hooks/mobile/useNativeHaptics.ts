@@ -34,6 +34,22 @@ export const useNativeHaptics = () => {
     }
   };
 
+  const buttonPress = async () => {
+    await impact('light');
+  };
+
+  const swipeAction = async () => {
+    await impact('medium');
+  };
+
+  const errorFeedback = async () => {
+    await notification('error');
+  };
+
+  const successFeedback = async () => {
+    await notification('success');
+  };
+
   const vibrate = async (duration: number = 300) => {
     if (!isNative) return;
 
@@ -81,6 +97,10 @@ export const useNativeHaptics = () => {
     selectionStart,
     selectionChanged,
     selectionEnd,
+    buttonPress,
+    swipeAction,
+    errorFeedback,
+    successFeedback,
     isNative,
   };
 };
