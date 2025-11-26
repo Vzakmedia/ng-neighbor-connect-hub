@@ -120,22 +120,24 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
   const getCurrentPostType = () => postTypes.find(type => type.value === postType)!;
 
-  const handleMediaSelect = (files: File[]) => {
+  const handleMediaSelect = async (files: File[]) => {
     // Allow max 4 items total, but only 1 video
-    const hasVideo = media.some(f => f.type.startsWith('video/'));
+    const hasVideo = uploadedMedia.some(f => f.type === 'video');
     const newHasVideo = files.some(f => f.type.startsWith('video/'));
     
     if (hasVideo || newHasVideo) {
       // If there's already a video or selecting a video, limit to 1 total item
-      setMedia(files.slice(0, 1));
+      const attachments = await uploadMultipleFiles(files.slice(0, 1));
+      setUploadedMedia(attachments);
     } else {
       // Otherwise allow up to 4 images
-      setMedia([...media, ...files].slice(0, 4));
+      const maxToAdd = 4 - uploadedMedia.length;
+      const attachments = await uploadMultipleFiles(files.slice(0, maxToAdd));
+      setUploadedMedia(prev => [...prev, ...attachments]);
     }
   };
 
   const handleMediaRemove = (index: number) => {
-    setMedia(prev => prev.filter((_, i) => i !== index));
     setUploadedMedia(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -199,9 +201,12 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       description: "Your post is being shared with the community.",
     });
 
+    // Save uploaded media before resetting
+    const savedUploadedMedia = [...uploadedMedia];
+    
     // Reset form and close dialog immediately
     const formState = { 
-      content, title, media, tags, currentTag, postType, rsvpEnabled, locationScope,
+      content, title, tags, currentTag, postType, rsvpEnabled, locationScope,
       pollQuestion, pollOptions, pollDuration, allowMultipleChoices, maxChoices
     };
     setContent('');
@@ -222,15 +227,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
     setIsSubmitting(true);
     try {
-      // Upload media first if any
-      let attachments: CloudinaryAttachment[] = [];
-      if (formState.media.length > 0) {
-        attachments = await uploadMultipleFiles(formState.media);
-      }
-      
-      // Separate images and videos
-      const imageUrls = attachments.filter(a => a.type === 'image').map(a => a.url);
-      const videoAttachment = attachments.find(a => a.type === 'video');
+      // Separate images and videos from already-uploaded media
+      const imageUrls = savedUploadedMedia.filter(a => a.type === 'image').map(a => a.url);
+      const videoAttachment = savedUploadedMedia.find(a => a.type === 'video');
 
       // Use exact profile location as single source of truth
       const { data: postData, error } = await supabase
@@ -306,7 +305,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       // Restore form on error
       setContent(formState.content);
       setTitle(formState.title);
-      setMedia(formState.media);
+      setUploadedMedia(savedUploadedMedia); // Restore uploaded media
       setTags(formState.tags);
       setCurrentTag(formState.currentTag);
       setPostType(formState.postType);
@@ -405,7 +404,6 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onFilesSelected={handleMediaSelect}
                   accept="both"
                   maxFiles={4}
-                  pendingFiles={media}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
                   uploading={uploading}
@@ -766,7 +764,6 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onFilesSelected={handleMediaSelect}
                   accept="both"
                   maxFiles={4}
-                  pendingFiles={media}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
                   uploading={uploading}
@@ -861,7 +858,6 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 onFilesSelected={handleMediaSelect}
                 accept="both"
                 maxFiles={4}
-                pendingFiles={media}
                 uploadedFiles={uploadedMedia}
                 onRemove={handleMediaRemove}
                 uploading={uploading}
