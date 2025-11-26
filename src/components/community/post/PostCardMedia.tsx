@@ -33,6 +33,8 @@ export const PostCardMedia = ({
   onDoubleTapLike,
   onVideoClick
 }: PostCardMediaProps) => {
+  console.log('PostCardMedia received:', { videoUrl, videoThumbnail, images });
+  
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
