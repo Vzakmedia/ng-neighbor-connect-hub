@@ -218,8 +218,7 @@ const App = () => {
             <TooltipProvider>
               <div style={{
                 paddingLeft: 'var(--safe-area-left)', 
-                paddingRight: 'var(--safe-area-right)',
-                paddingBottom: 'var(--safe-area-bottom)'
+                paddingRight: 'var(--safe-area-right)'
               }}>
                 <Toaster />
                 <Sonner />
