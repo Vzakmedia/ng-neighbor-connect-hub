@@ -28,11 +28,26 @@ export const TrendingPostsCarousel = () => {
   });
 
   const rawPosts = data?.pages[0]?.items.slice(0, 8) || [];
+  
+  console.log('TrendingPostsCarousel - Raw posts:', rawPosts.map(p => ({
+    id: p.id,
+    image_urls: p.image_urls,
+    video_url: p.video_url,
+    video_thumbnail_url: p.video_thumbnail_url,
+  })));
+  
   const allPosts = rawPosts.map(post => transformToCardData({
     ...post,
     post_type: 'general',
     views_count: 0
   } as any));
+  
+  console.log('TrendingPostsCarousel - Transformed posts:', allPosts.map(p => ({
+    id: p.id,
+    image_urls: p.image_urls,
+    video_url: p.video_url,
+    video_thumbnail_url: p.video_thumbnail_url,
+  })));
 
   const handlePostClick = (postId: string) => {
     navigate(`/community/post/${postId}`);
