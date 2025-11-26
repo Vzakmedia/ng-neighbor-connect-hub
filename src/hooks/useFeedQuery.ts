@@ -40,6 +40,8 @@ interface FeedPost {
   is_saved: boolean;
   optimistic?: boolean; // Flag for optimistic updates
   rsvp_enabled: boolean;
+  video_url?: string | null;
+  video_thumbnail_url?: string | null;
 }
 
 interface FeedPage {
@@ -203,6 +205,8 @@ export function useFeedQuery(filters: FeedFilters) {
             is_liked: !!userLike?.data,
             is_saved: !!userSave?.data,
             rsvp_enabled: post.rsvp_enabled || false,
+            video_url: post.video_url || null,
+            video_thumbnail_url: post.video_thumbnail_url || null,
           };
         })
       );
