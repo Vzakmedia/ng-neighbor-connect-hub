@@ -19,6 +19,13 @@ export interface CloudinaryAttachment {
 export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attachments') => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentFileName, setCurrentFileName] = useState<string>('');
+  const [currentFileSize, setCurrentFileSize] = useState<number>(0);
+  const [uploadedBytes, setUploadedBytes] = useState<number>(0);
+  const [uploadSpeed, setUploadSpeed] = useState<number>(0);
+  const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
+  const [totalFilesCount, setTotalFilesCount] = useState<number>(0);
+  const [uploadStartTime, setUploadStartTime] = useState<number>(0);
   const { toast } = useToast();
 
   const uploadFile = useCallback(async (file: File): Promise<CloudinaryAttachment | null> => {
@@ -65,9 +72,29 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
 
       setUploading(true);
       setProgress(0);
+      setCurrentFileName(file.name);
+      setCurrentFileSize(file.size);
+      setUploadedBytes(0);
+      setUploadSpeed(0);
+      setUploadStartTime(Date.now());
       
       const userFolder = `${folder}/${userId}`;
-      const url = await uploadToCloudinary(file, userFolder, setProgress);
+      
+      // Enhanced progress callback with speed calculation
+      const progressCallback = (progressPercent: number) => {
+        setProgress(progressPercent);
+        const bytesUploaded = Math.round((progressPercent / 100) * file.size);
+        setUploadedBytes(bytesUploaded);
+        
+        // Calculate upload speed
+        const elapsedSeconds = (Date.now() - uploadStartTime) / 1000;
+        if (elapsedSeconds > 0) {
+          const speed = Math.round(bytesUploaded / elapsedSeconds);
+          setUploadSpeed(speed);
+        }
+      };
+      
+      const url = await uploadToCloudinary(file, userFolder, progressCallback);
 
       if (!url) throw new Error('Upload failed');
 
@@ -104,25 +131,40 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
     } finally {
       setUploading(false);
       setProgress(0);
+      setCurrentFileName('');
+      setCurrentFileSize(0);
+      setUploadedBytes(0);
+      setUploadSpeed(0);
+      setUploadStartTime(0);
     }
   }, [userId, folder, toast]);
 
   const uploadMultipleFiles = useCallback(async (files: File[]): Promise<CloudinaryAttachment[]> => {
     const attachments: CloudinaryAttachment[] = [];
+    setTotalFilesCount(files.length);
     
-    for (const file of files) {
-      const attachment = await uploadFile(file);
+    for (let i = 0; i < files.length; i++) {
+      setCurrentFileIndex(i + 1);
+      const attachment = await uploadFile(files[i]);
       if (attachment) {
         attachments.push(attachment);
       }
     }
     
+    setTotalFilesCount(0);
+    setCurrentFileIndex(0);
     return attachments;
   }, [uploadFile]);
 
   return {
     uploading,
     progress,
+    currentFileName,
+    currentFileSize,
+    uploadedBytes,
+    uploadSpeed,
+    currentFileIndex,
+    totalFilesCount,
     uploadFile,
     uploadMultipleFiles
   };
