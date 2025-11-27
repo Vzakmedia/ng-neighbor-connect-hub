@@ -32,8 +32,8 @@ const UnifiedMessaging = () => {
   const onReadReceiptRef = useRef<((messageId: string) => void) | null>(null);
   const isStartingConversationRef = useRef(false);
 
-  const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead } = useConversations(user?.id);
-  const { messages, fetchMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage } = useDirectMessages(user?.id);
+  const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead, setConversations } = useConversations(user?.id);
+  const { messages, fetchMessages, fetchMissedMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage, setActiveConversationId } = useDirectMessages(user?.id);
 
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,10 +85,11 @@ const UnifiedMessaging = () => {
       return;
     }
     setActiveConversation(conv);
+    setActiveConversationId(conv.id);
     const targetUserId = conv.user1_id === user?.id ? conv.user2_id : conv.user1_id;
     await fetchMessages(targetUserId);
     await markConversationAsRead(conv.id);
-  }, [navigate, user?.id, fetchMessages, markConversationAsRead]);
+  }, [navigate, user?.id, fetchMessages, markConversationAsRead, setActiveConversationId]);
 
   // No-op: Message handling moved to useDirectMessages broadcast channel
   const onNewMessage = useCallback((message: Message) => {
@@ -99,12 +100,21 @@ const UnifiedMessaging = () => {
     updateMessage(message);
   }, [updateMessage]);
 
-  // DISABLED: Automatic conversation updates cause infinite loops
-  // Conversations will update on manual actions only (navigation, pull-to-refresh)
+  // ENABLED: Conversation updates with proper debouncing (300ms)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const onConversationUpdate = useCallback(() => {
-    console.log('Conversation update blocked - automatic updates disabled');
-    return;
-  }, []); // Empty dependencies - never changes, never fetches
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Debounce conversation refetch - only refetch after 300ms of no updates
+    debounceTimerRef.current = setTimeout(() => {
+      console.log('[onConversationUpdate] Refetching conversations (debounced)');
+      fetchConversations();
+      fetchRequestCount();
+    }, 300);
+  }, [fetchConversations, fetchRequestCount]);
 
   // Step 4: Fix onReadReceipt to not depend on messages array
   const onReadReceipt = useCallback((messageId: string) => {
@@ -125,6 +135,7 @@ const UnifiedMessaging = () => {
     userId: user?.id,
     onNewMessage: useCallback(() => {}, []), // No-op: handled by useDirectMessages
     onMessageUpdate: useCallback(() => {}, []), // No-op: handled by useDirectMessages
+    onConversationUpdate: onConversationUpdate, // Re-enabled with debouncing
     onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
 

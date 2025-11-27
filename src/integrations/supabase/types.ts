@@ -2132,8 +2132,10 @@ export type Database = {
           attachments: Json | null
           content: string
           created_at: string
+          delivered_at: string | null
           id: string
           is_deleted: boolean | null
+          read_at: string | null
           recipient_id: string
           sender_id: string
           status: Database["public"]["Enums"]["direct_message_status"] | null
@@ -2143,8 +2145,10 @@ export type Database = {
           attachments?: Json | null
           content: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          read_at?: string | null
           recipient_id: string
           sender_id: string
           status?: Database["public"]["Enums"]["direct_message_status"] | null
@@ -2154,8 +2158,10 @@ export type Database = {
           attachments?: Json | null
           content?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          read_at?: string | null
           recipient_id?: string
           sender_id?: string
           status?: Database["public"]["Enums"]["direct_message_status"] | null
@@ -4052,6 +4058,7 @@ export type Database = {
           has_completed_onboarding: boolean | null
           id: string
           is_verified: boolean | null
+          last_seen: string | null
           location: unknown
           neighborhood: string | null
           neighbourhood: string | null
@@ -4073,6 +4080,7 @@ export type Database = {
           has_completed_onboarding?: boolean | null
           id?: string
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: unknown
           neighborhood?: string | null
           neighbourhood?: string | null
@@ -4094,6 +4102,7 @@ export type Database = {
           has_completed_onboarding?: boolean | null
           id?: string
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: unknown
           neighborhood?: string | null
           neighbourhood?: string | null
@@ -7302,7 +7311,7 @@ export type Database = {
         Args: { conversation_id: string; current_user_id: string }
         Returns: undefined
       }
-      mark_message_as_read: { Args: { message_id: string }; Returns: boolean }
+      mark_message_as_read: { Args: { message_id: string }; Returns: undefined }
       mark_messages_as_delivered: {
         Args: { recipient_user_id: string; sender_user_id: string }
         Returns: undefined
