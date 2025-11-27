@@ -39,10 +39,23 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   }, [localStream]);
 
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
+    if (remoteVideoRef.current && remoteStream && isVideoCall) {
+      const videoTracks = remoteStream.getVideoTracks();
+      console.log('[VideoCallDialog] Setting remote video stream:', {
+        hasVideoTracks: videoTracks.length > 0,
+        videoTracks: videoTracks.map(t => ({
+          enabled: t.enabled,
+          readyState: t.readyState,
+          label: t.label
+        }))
+      });
+      
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(err => {
+        console.error('[VideoCallDialog] Error playing remote video:', err);
+      });
     }
-  }, [remoteStream]);
+  }, [remoteStream, isVideoCall]);
 
   useEffect(() => {
     if (remoteAudioRef.current && remoteStream) {
@@ -83,14 +96,16 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Remote video/avatar */}
           <div className="w-full h-full flex items-center justify-center">
-            {remoteStream && isVideoCall ? (
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
+            {/* Always render video element but hide when not in video call */}
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className={`w-full h-full object-cover ${(!remoteStream || !isVideoCall) ? 'hidden' : ''}`}
+            />
+            
+            {/* Show avatar for voice calls or when connecting */}
+            {(!remoteStream || !isVideoCall) && (
               <div className="flex flex-col items-center justify-center text-white">
                 <Avatar className="w-32 h-32 mb-4">
                   <AvatarImage src={otherUserAvatar} />
