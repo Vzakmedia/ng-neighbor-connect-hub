@@ -86,11 +86,6 @@ const Chat = () => {
       console.log('Adding message to current conversation');
       addMessage(message);
       
-      // Auto-scroll to bottom when new message arrives
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      
       // Mark as read if user is recipient and also mark as delivered
       if (message.recipient_id === user?.id) {
         markConversationAsRead(conversation.id);
@@ -249,7 +244,7 @@ const Chat = () => {
     }
   }, [messages, conversation, user, markMessageAsRead]);
 
-  // Auto-scroll to bottom after sending a message
+  // Send message and let MessageThread handle scrolling
   const handleSendMessage = async (content: string, attachments?: Array<{
     id: string;
     type: 'image' | 'video' | 'file';
@@ -267,20 +262,14 @@ const Chat = () => {
     if (attachments && attachments.length > 0) {
       const success = await sendMessageWithAttachments(content, recipientId, attachments);
       if (success) {
-        // Immediately refresh messages and auto-scroll
+        // Immediately refresh messages; MessageThread will auto-scroll on update
         fetchMessages(recipientId);
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 200);
       }
     } else {
       const success = await sendMessage(content, recipientId);
       if (success) {
-        // Immediately refresh messages and auto-scroll
+        // Immediately refresh messages; MessageThread will auto-scroll on update
         fetchMessages(recipientId);
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 200);
       }
     }
   };
