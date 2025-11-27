@@ -371,7 +371,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     return () => observer.disconnect();
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
 
-  // Auto-scroll to bottom - instant on mobile for better performance
+  // Auto-scroll to bottom when conversation opens
+  useEffect(() => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: 'auto' // Instant scroll when opening
+      });
+    }, 100);
+  }, [conversation.id]);
+
+  // Auto-scroll to bottom when new messages arrive - instant on mobile for better performance
   useEffect(() => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ 
