@@ -263,14 +263,16 @@ export const useDirectMessages = (userId: string | undefined) => {
         )
       );
 
-      // Add to queue for retry
+      // Add to queue for retry with normal priority
       if (!tempId) {
         addToQueue({
           tempId: optimisticId,
           content: content.trim(),
           recipientId,
           timestamp: Date.now(),
-          retryCount: 0
+          retryCount: 0,
+          priority: 'normal',
+          nextRetryAt: Date.now() + 1000
         });
       } else {
         updateRetryCount(tempId);
@@ -433,6 +435,50 @@ export const useDirectMessages = (userId: string | undefined) => {
     }
   }, [userId]);
 
+  const markMessagesAsDelivered = useCallback(async () => {
+    if (!userId) return;
+    
+    try {
+      // Mark all 'sent' messages to this user as 'delivered'
+      const { data: updatedCount, error } = await supabase.rpc('mark_messages_delivered', {
+        recipient_user_id: userId
+      });
+      
+      if (error) {
+        console.error('Error marking messages as delivered:', error);
+        return;
+      }
+      
+      // Update local state
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.recipient_id === userId && msg.status === 'sent'
+            ? { ...msg, status: 'delivered' as const }
+            : msg
+        )
+      );
+      
+      // Broadcast delivery receipts to senders
+      const deliveredMessages = messagesRef.current.filter(
+        m => m.recipient_id === userId && m.status === 'sent'
+      );
+      
+      if (broadcastChannelRef.current && deliveredMessages.length > 0) {
+        for (const msg of deliveredMessages) {
+          await broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'delivery_receipt',
+            payload: { messageId: msg.id, deliveredTo: userId }
+          });
+        }
+      }
+      
+      console.log(`Marked ${updatedCount} messages as delivered`);
+    } catch (error) {
+      console.error('Error in markMessagesAsDelivered:', error);
+    }
+  }, [userId]);
+
   const addMessage = useCallback((message: Message) => {
     setMessages(prev => {
       // Deduplication: Check if message already exists (by ID or optimistic match)
@@ -463,7 +509,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     );
   }, []);
 
-  // Setup broadcast channel for instant read receipts
+  // Setup broadcast channel for instant read receipts and delivery receipts
   useEffect(() => {
     if (!userId) return;
 
@@ -476,6 +522,18 @@ export const useDirectMessages = (userId: string | undefined) => {
           prev.map(msg => 
             msg.id === messageId && msg.sender_id === userId
               ? { ...msg, status: 'read' as const }
+              : msg
+          )
+        );
+      })
+      .on('broadcast', { event: 'delivery_receipt' }, (payload: any) => {
+        const { messageId } = payload.payload;
+        
+        // Only update if we're the sender of the message
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId && msg.sender_id === userId
+              ? { ...msg, status: 'delivered' as const }
               : msg
           )
         );
@@ -507,6 +565,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     updateMessage,
     setMessages,
     retryMessage,
+    markMessagesAsDelivered,
     queuedMessagesCount: queue.length,
     broadcastChannelRef
   };

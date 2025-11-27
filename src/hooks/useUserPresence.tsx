@@ -19,6 +19,7 @@ interface PresenceState {
     online_at: string;
     user_name?: string;
     avatar_url?: string;
+    last_ping?: number;
   };
 }
 
@@ -61,12 +62,17 @@ export const useUserPresence = () => {
       }
     });
 
-    console.log('Real-time presence update:', { 
-      totalOnline: userIds.size, 
-      userIds: Array.from(userIds), 
-      presenceData: flattened 
+    // Delta update - only log changes
+    setPresenceState(prev => {
+      const joined = Array.from(userIds).filter(id => !prev[id]);
+      const left = Object.keys(prev).filter(id => !userIds.has(id));
+      
+      if (joined.length > 0 || left.length > 0) {
+        console.log('Presence delta:', { joined, left, totalOnline: userIds.size });
+      }
+      
+      return flattened;
     });
-    setPresenceState(flattened);
     setOnlineUsers(userIds);
   }, []);
 
@@ -179,6 +185,7 @@ export const useUserPresence = () => {
     let subscription: any = null;
     let fallbackInterval: NodeJS.Timeout | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let keepAliveInterval: NodeJS.Timeout | null = null;
 
     const initializePresence = async () => {
       try {
@@ -296,6 +303,24 @@ export const useUserPresence = () => {
           }
         );
 
+        // Keep-alive ping every 30 seconds when page is visible and connected
+        keepAliveInterval = setInterval(() => {
+          if (subscription && isPageVisible && !fallbackMode && userIsActive) {
+            const channel = subscription;
+            const currentPresence = channel.presenceState() as UserPresence;
+            const userPresence = currentPresence[user.id]?.[0];
+            
+            if (userPresence) {
+              channel.track({
+                ...userPresence,
+                last_ping: Date.now()
+              }).catch((error: any) => {
+                console.error('Keep-alive ping failed:', error);
+              });
+            }
+          }
+        }, 30000);
+
         // Smart polling - increased interval to 180 seconds (3 minutes)
         // Only poll when page is visible, user is active, and in fallback mode
         fallbackInterval = setInterval(() => {
@@ -330,8 +355,11 @@ export const useUserPresence = () => {
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+      }
     };
-  }, [user, isMessagingRoute, updatePresenceState, fallbackPresenceCheck, userIsActive, isPageVisible, attemptReconnection, retryAttempt, connectionMetrics.isIOS]);
+  }, [user, isMessagingRoute, updatePresenceState, fallbackPresenceCheck, userIsActive, isPageVisible, attemptReconnection, retryAttempt, connectionMetrics.isIOS, fallbackMode]);
 
   const isUserOnline = useCallback((userId: string) => {
     // In fallback mode, be more lenient about marking users as online

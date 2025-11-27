@@ -7,6 +7,8 @@ interface QueuedMessage {
   recipientId: string;
   timestamp: number;
   retryCount: number;
+  priority: 'high' | 'normal' | 'low';
+  nextRetryAt: number;
   attachments?: Array<{
     id: string;
     type: 'image' | 'video' | 'file';
@@ -59,16 +61,34 @@ export const useMessageQueue = (userId: string | undefined) => {
 
   const updateRetryCount = useCallback((tempId: string) => {
     setQueue(prev => 
-      prev.map(msg => 
-        msg.tempId === tempId 
-          ? { ...msg, retryCount: msg.retryCount + 1 }
-          : msg
-      )
+      prev.map(msg => {
+        if (msg.tempId === tempId) {
+          const newRetryCount = msg.retryCount + 1;
+          // Exponential backoff: 1s, 2s, 4s, 8s, 16s, max 30s
+          const delay = Math.min(1000 * Math.pow(2, newRetryCount), 30000);
+          return { 
+            ...msg, 
+            retryCount: newRetryCount,
+            nextRetryAt: Date.now() + delay
+          };
+        }
+        return msg;
+      })
     );
   }, []);
 
   const getRetryableMessages = useCallback(() => {
-    return queue.filter(msg => msg.retryCount < MAX_RETRIES);
+    const now = Date.now();
+    // Sort by priority (high -> normal -> low), then by timestamp
+    return queue
+      .filter(msg => msg.retryCount < MAX_RETRIES && msg.nextRetryAt <= now)
+      .sort((a, b) => {
+        const priorityOrder = { high: 0, normal: 1, low: 2 };
+        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+          return priorityOrder[a.priority] - priorityOrder[b.priority];
+        }
+        return a.timestamp - b.timestamp;
+      });
   }, [queue]);
 
   const clearQueue = useCallback(() => {
