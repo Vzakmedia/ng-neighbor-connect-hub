@@ -235,24 +235,17 @@ const Chat = () => {
     };
   }, [conversation?.id, user?.id, fetchMessages]);
 
-  // Auto-scroll to bottom when messages change and mark messages as read
+  // Mark messages as read when they become visible
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+    if (messages.length > 0 && conversation && user) {
+      const unreadMessages = messages.filter(msg => 
+        msg.recipient_id === user.id && 
+        msg.status !== 'read'
+      );
       
-      // Mark messages as read when they become visible
-      if (conversation && user) {
-        const unreadMessages = messages.filter(msg => 
-          msg.recipient_id === user.id && 
-          msg.status !== 'read'
-        );
-        
-        unreadMessages.forEach(msg => {
-          markMessageAsRead(msg.id);
-        });
-      }
+      unreadMessages.forEach(msg => {
+        markMessageAsRead(msg.id);
+      });
     }
   }, [messages, conversation, user, markMessageAsRead]);
 
