@@ -250,26 +250,6 @@ export const useDirectMessages = (userId: string | undefined) => {
         )
       );
 
-      // Create notification for the recipient
-      if (message) {
-        try {
-          await supabase.functions.invoke('notification-service', {
-            body: {
-              userId: recipientId,
-              title: 'New Message',
-              body: `${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-              type: 'message',
-              data: {
-                messageId: message.id,
-                senderId: userId
-              }
-            }
-          });
-        } catch (notificationError) {
-          console.error('Error creating notification:', notificationError);
-        }
-      }
-
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
