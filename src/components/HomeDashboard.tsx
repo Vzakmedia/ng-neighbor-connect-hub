@@ -150,11 +150,15 @@ const HomeDashboard = () => {
 
   return (
     <div className="space-y-4 sm:space-y-5 md:space-y-6 overflow-x-hidden">
-      {/* Hero Section */}
-      <HeroSection />
+      {/* Hero Section - with right margin for sidebar on desktop */}
+      <div className="lg:mr-[352px]">
+        <HeroSection />
+      </div>
 
-      {/* Trending Posts Carousel */}
-      <TrendingPostsCarousel />
+      {/* Trending Posts Carousel - with right margin for sidebar on desktop */}
+      <div className="lg:mr-[352px]">
+        <TrendingPostsCarousel />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 overflow-x-clip relative">
         {/* Main Feed */}
