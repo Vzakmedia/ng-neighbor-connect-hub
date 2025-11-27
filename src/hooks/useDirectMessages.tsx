@@ -550,6 +550,90 @@ export const useDirectMessages = (userId: string | undefined) => {
     };
   }, [userId]);
 
+  // Setup postgres_changes subscription for real-time message delivery
+  useEffect(() => {
+    if (!userId) return;
+
+    console.log('[useDirectMessages] Setting up postgres_changes subscription for user:', userId);
+
+    const messagesChannel = supabase
+      .channel(`direct-messages-changes:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `recipient_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('[useDirectMessages] New message received:', payload);
+          const newMessage = payload.new as any;
+          addMessage({
+            id: newMessage.id,
+            content: newMessage.content,
+            sender_id: newMessage.sender_id,
+            recipient_id: newMessage.recipient_id,
+            created_at: newMessage.created_at,
+            status: newMessage.status as MessageStatus,
+            attachments: newMessage.attachments || []
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `recipient_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('[useDirectMessages] Message updated (as recipient):', payload);
+          const updatedMessage = payload.new as any;
+          updateMessage({
+            id: updatedMessage.id,
+            content: updatedMessage.content,
+            sender_id: updatedMessage.sender_id,
+            recipient_id: updatedMessage.recipient_id,
+            created_at: updatedMessage.created_at,
+            status: updatedMessage.status as MessageStatus,
+            attachments: updatedMessage.attachments || []
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `sender_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('[useDirectMessages] Message updated (as sender):', payload);
+          const updatedMessage = payload.new as any;
+          updateMessage({
+            id: updatedMessage.id,
+            content: updatedMessage.content,
+            sender_id: updatedMessage.sender_id,
+            recipient_id: updatedMessage.recipient_id,
+            created_at: updatedMessage.created_at,
+            status: updatedMessage.status as MessageStatus,
+            attachments: updatedMessage.attachments || []
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useDirectMessages] Subscription status:', status);
+      });
+
+    return () => {
+      console.log('[useDirectMessages] Cleaning up postgres_changes subscription');
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [userId, addMessage, updateMessage]);
+
   return {
     messages,
     loading,
