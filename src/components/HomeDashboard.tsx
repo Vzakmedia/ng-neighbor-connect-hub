@@ -14,9 +14,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-// Lazy load AdDisplay - not critical for initial render
-const AdDisplay = lazy(() => import('@/components/advertising/display/AdDisplay').then(m => ({ default: m.AdDisplay })));
-
 const HomeDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -187,11 +184,6 @@ const HomeDashboard = () => {
         <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 fixed top-20 right-8 w-80 max-h-[calc(100vh-6rem)] overflow-x-hidden overflow-y-auto z-10">
           {/* Business CTA */}
           <BusinessCardCTA />
-          
-          {/* Sponsored Ads Section */}
-          <Suspense fallback={<div className="h-64 animate-pulse bg-muted rounded-lg" />}>
-            <AdDisplay placement="sidebar" maxAds={3} />
-          </Suspense>
         </div>
           </div>
 
