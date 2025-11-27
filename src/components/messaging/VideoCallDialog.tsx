@@ -30,6 +30,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
@@ -43,6 +44,12 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
     }
   }, [remoteStream]);
 
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
   const handleEndCall = () => {
     onEndCall();
     onOpenChange(false);
@@ -51,6 +58,14 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full h-[80vh] p-0 bg-black">
+        {/* Hidden audio element for remote stream - ensures audio plays for voice calls */}
+        <audio
+          ref={remoteAudioRef}
+          autoPlay
+          playsInline
+          style={{ display: 'none' }}
+        />
+        
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Remote video/avatar */}
           <div className="w-full h-full flex items-center justify-center">
