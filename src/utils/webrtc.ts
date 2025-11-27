@@ -51,8 +51,13 @@ export class WebRTCManager {
     };
 
     this.pc.ontrack = (event) => {
-      console.log('Received remote stream');
+      console.log('Received remote stream with tracks:', event.streams[0]?.getTracks().map(t => `${t.kind}: enabled=${t.enabled}, muted=${t.muted}`));
       this.remoteStream = event.streams[0];
+      
+      // Log audio track state
+      const audioTracks = this.remoteStream.getAudioTracks();
+      console.log('Remote audio tracks:', audioTracks.length, audioTracks.map(t => `enabled=${t.enabled}, readyState=${t.readyState}`));
+      
       this.onRemoteStream(this.remoteStream);
     };
 
@@ -133,7 +138,7 @@ export class WebRTCManager {
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {
-        console.log('Adding track:', track.kind);
+        console.log(`[CALLER] Adding ${track.kind} track - enabled: ${track.enabled}, muted: ${track.muted}, label: ${track.label}`);
         this.pc?.addTrack(track, this.localStream!);
       });
 
@@ -217,6 +222,7 @@ export class WebRTCManager {
 
       // Add local stream to peer connection
       this.localStream.getTracks().forEach(track => {
+        console.log(`[RECEIVER] Adding ${track.kind} track - enabled: ${track.enabled}, muted: ${track.muted}, label: ${track.label}`);
         this.pc?.addTrack(track, this.localStream!);
       });
 
