@@ -73,7 +73,16 @@ export const useWebRTCCall = (conversationId: string) => {
       // Process any pending messages
       if (pendingMessagesRef.current.length > 0) {
         console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
-        for (const msg of pendingMessagesRef.current) {
+        
+        // Sort to process answer first, then ICE candidates
+        const sorted = pendingMessagesRef.current.sort((a, b) => {
+          if (a.type === 'answer') return -1;
+          if (b.type === 'answer') return 1;
+          return 0;
+        });
+        
+        for (const msg of sorted) {
+          console.log('[useWebRTCCall] Processing pending message:', msg.type);
           await manager.handleSignalingMessage(msg);
         }
         pendingMessagesRef.current = [];
@@ -115,7 +124,16 @@ export const useWebRTCCall = (conversationId: string) => {
       // Process any pending messages
       if (pendingMessagesRef.current.length > 0) {
         console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
-        for (const msg of pendingMessagesRef.current) {
+        
+        // Sort to process answer first, then ICE candidates
+        const sorted = pendingMessagesRef.current.sort((a, b) => {
+          if (a.type === 'answer') return -1;
+          if (b.type === 'answer') return 1;
+          return 0;
+        });
+        
+        for (const msg of sorted) {
+          console.log('[useWebRTCCall] Processing pending message:', msg.type);
           await manager.handleSignalingMessage(msg);
         }
         pendingMessagesRef.current = [];
@@ -168,7 +186,16 @@ export const useWebRTCCall = (conversationId: string) => {
       // Process any pending messages
       if (pendingMessagesRef.current.length > 0) {
         console.log(`Processing ${pendingMessagesRef.current.length} pending messages`);
-        for (const msg of pendingMessagesRef.current) {
+        
+        // Sort to process answer first, then ICE candidates
+        const sorted = pendingMessagesRef.current.sort((a, b) => {
+          if (a.type === 'answer') return -1;
+          if (b.type === 'answer') return 1;
+          return 0;
+        });
+        
+        for (const msg of sorted) {
+          console.log('[useWebRTCCall] Processing pending message:', msg.type);
           await manager.handleSignalingMessage(msg);
         }
         pendingMessagesRef.current = [];

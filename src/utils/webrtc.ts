@@ -51,18 +51,38 @@ export class WebRTCManager {
     };
 
     this.pc.ontrack = (event) => {
-      console.log('Received remote stream with tracks:', event.streams[0]?.getTracks().map(t => `${t.kind}: enabled=${t.enabled}, muted=${t.muted}`));
-      this.remoteStream = event.streams[0];
+      console.log('[WebRTC] ontrack fired:', {
+        kind: event.track.kind,
+        trackId: event.track.id,
+        streams: event.streams.length,
+        enabled: event.track.enabled,
+        readyState: event.track.readyState
+      });
       
-      // Log audio track state
-      const audioTracks = this.remoteStream.getAudioTracks();
-      console.log('Remote audio tracks:', audioTracks.length, audioTracks.map(t => `enabled=${t.enabled}, readyState=${t.readyState}`));
+      // Use the first stream or create one if needed
+      if (event.streams && event.streams[0]) {
+        this.remoteStream = event.streams[0];
+      } else {
+        // If no stream provided, add track to existing or new stream
+        if (!this.remoteStream) {
+          this.remoteStream = new MediaStream();
+        }
+        this.remoteStream.addTrack(event.track);
+      }
+      
+      console.log('[WebRTC] Remote stream tracks:', this.remoteStream.getTracks().map(t => 
+        `${t.kind}: enabled=${t.enabled}, readyState=${t.readyState}`
+      ));
       
       this.onRemoteStream(this.remoteStream);
     };
 
+    this.pc.onnegotiationneeded = async () => {
+      console.log('[WebRTC] Negotiation needed');
+    };
+
     this.pc.onconnectionstatechange = async () => {
-      console.log('Connection state:', this.pc?.connectionState);
+      console.log('[WebRTC] Connection state:', this.pc?.connectionState);
       
       if (this.pc?.connectionState === 'connected') {
         console.log('WebRTC connection established successfully');
