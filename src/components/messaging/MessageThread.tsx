@@ -77,6 +77,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const readReceiptBatchRef = useRef<Set<string>>(new Set());
   const readReceiptTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sharedObserverRef = useRef<IntersectionObserver | null>(null);
+  const previousMessageCountRef = useRef(messages.length);
+  const isUserScrolledUpRef = useRef(false);
   const isMobile = window.innerWidth < 768;
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
@@ -93,6 +95,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       notifyTypingStop();
       setNewMessage('');
       setPendingAttachments([]);
+      
+      // Force scroll to bottom after sending
+      isUserScrolledUpRef.current = false;
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 50);
     }
   };
 
@@ -373,21 +381,46 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   // Auto-scroll to bottom when conversation opens
   useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ 
-        behavior: 'auto' // Instant scroll when opening
-      });
-    }, 100);
+    isUserScrolledUpRef.current = false;
+    previousMessageCountRef.current = messages.length;
+    
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    });
   }, [conversation.id]);
 
-  // Auto-scroll to bottom when new messages arrive - instant on mobile for better performance
+  // Track user scroll position to detect manual scroll up
   useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ 
-        behavior: isMobile ? 'auto' : 'smooth' 
+    const parentEl = parentRef.current;
+    if (!parentEl) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = parentEl;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      isUserScrolledUpRef.current = !isNearBottom;
+    };
+
+    parentEl.addEventListener('scroll', handleScroll);
+    return () => parentEl.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-scroll to bottom when new messages arrive (not when loading older)
+  useEffect(() => {
+    const previousCount = previousMessageCountRef.current;
+    const currentCount = messages.length;
+    
+    // Only scroll if messages were added (not loaded older messages)
+    // and user hasn't scrolled up manually
+    if (currentCount > previousCount && !isUserScrolledUpRef.current) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ 
+          behavior: isMobile ? 'auto' : 'smooth' 
+        });
       });
-    }, 100);
-  }, [messages.length]);
+    }
+    
+    previousMessageCountRef.current = currentCount;
+  }, [messages.length, isMobile]);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
