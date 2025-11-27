@@ -46,7 +46,21 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
 
   useEffect(() => {
     if (remoteAudioRef.current && remoteStream) {
+      console.log('[VideoCallDialog] Setting remote audio stream:', {
+        hasAudioTracks: remoteStream.getAudioTracks().length > 0,
+        audioTracks: remoteStream.getAudioTracks().map(t => ({
+          enabled: t.enabled,
+          muted: t.muted,
+          readyState: t.readyState,
+          label: t.label
+        }))
+      });
       remoteAudioRef.current.srcObject = remoteStream;
+      
+      // Explicitly try to play
+      remoteAudioRef.current.play().catch(err => {
+        console.error('[VideoCallDialog] Error playing remote audio:', err);
+      });
     }
   }, [remoteStream]);
 
