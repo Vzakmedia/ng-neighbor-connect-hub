@@ -10,4 +10,6 @@ export interface OptimisticMessage {
   is_read: boolean;
   attachments?: any[];
   optimistic?: boolean; // Flag to indicate optimistic message
+  delivered_at?: string | null;
+  read_at?: string | null;
 }
