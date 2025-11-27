@@ -7307,6 +7307,10 @@ export type Database = {
         Args: { recipient_user_id: string; sender_user_id: string }
         Returns: undefined
       }
+      mark_messages_delivered: {
+        Args: { recipient_user_id: string }
+        Returns: number
+      }
       mark_notification_delivered: {
         Args: {
           _channel: string
