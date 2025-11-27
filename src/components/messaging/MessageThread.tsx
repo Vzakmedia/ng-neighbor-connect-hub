@@ -96,12 +96,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       notifyTypingStop();
       setNewMessage('');
       setPendingAttachments([]);
-      
-      // Force scroll to bottom after sending
+
+      // Mark user as at-bottom so new-message effect can auto-scroll
       isUserScrolledUpRef.current = false;
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-      }, 50);
     }
   };
 
@@ -389,15 +386,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   // Initial scroll when messages first load for a conversation
   useEffect(() => {
-    if (messages.length > 0 && !initialScrollDoneRef.current) {
+    if (displayMessages.length > 0 && !initialScrollDoneRef.current) {
       initialScrollDoneRef.current = true;
-      
-      // Small timeout to ensure DOM has rendered
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-      }, 50);
+
+      // Use virtualizer to jump to the last item once layout is ready
+      requestAnimationFrame(() => {
+        virtualizer.scrollToIndex(displayMessages.length - 1, { align: 'end' });
+      });
     }
-  }, [messages.length, conversation.id]);
+  }, [displayMessages.length, conversation.id, virtualizer]);
 
   // Track user scroll position to detect manual scroll up
   useEffect(() => {
@@ -423,14 +420,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     // and user hasn't scrolled up manually
     if (currentCount > previousCount && !isUserScrolledUpRef.current) {
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ 
-          behavior: isMobile ? 'auto' : 'smooth' 
-        });
+        if (displayMessages.length > 0) {
+          virtualizer.scrollToIndex(displayMessages.length - 1, { align: 'end' });
+        }
       });
     }
     
     previousMessageCountRef.current = currentCount;
-  }, [messages.length, isMobile]);
+  }, [messages.length, displayMessages.length, virtualizer]);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
