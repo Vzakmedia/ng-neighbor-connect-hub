@@ -182,6 +182,11 @@ export const useConnectionManager = () => {
     };
   }, []);
 
+  // Subscribe to connection state changes
+  const onConnectionStateChange = useCallback((callback: (state: ConnectionState) => void) => {
+    reconnectionManager.current.setOnStateChange(callback);
+  }, []);
+
   return {
     state,
     trackMessageSend,
@@ -192,5 +197,6 @@ export const useConnectionManager = () => {
     retryConnection,
     getOptimalSettings,
     networkQuality,
+    onConnectionStateChange,
   };
 };
