@@ -79,6 +79,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const sharedObserverRef = useRef<IntersectionObserver | null>(null);
   const previousMessageCountRef = useRef(messages.length);
   const isUserScrolledUpRef = useRef(false);
+  const initialScrollDoneRef = useRef(false);
   const isMobile = window.innerWidth < 768;
   
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
@@ -379,15 +380,24 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     return () => observer.disconnect();
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
 
-  // Auto-scroll to bottom when conversation opens
+  // Reset state when conversation changes
   useEffect(() => {
     isUserScrolledUpRef.current = false;
     previousMessageCountRef.current = messages.length;
-    
-    requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-    });
+    initialScrollDoneRef.current = false;
   }, [conversation.id]);
+
+  // Initial scroll when messages first load for a conversation
+  useEffect(() => {
+    if (messages.length > 0 && !initialScrollDoneRef.current) {
+      initialScrollDoneRef.current = true;
+      
+      // Small timeout to ensure DOM has rendered
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 50);
+    }
+  }, [messages.length, conversation.id]);
 
   // Track user scroll position to detect manual scroll up
   useEffect(() => {
