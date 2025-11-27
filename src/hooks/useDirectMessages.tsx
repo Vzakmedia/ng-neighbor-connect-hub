@@ -14,6 +14,8 @@ export interface Message {
   created_at: string;
   status: MessageStatus;
   optimistic?: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
   attachments?: Array<{
     id: string;
     type: 'image' | 'video' | 'file';
@@ -43,6 +45,8 @@ export const useDirectMessages = (userId: string | undefined) => {
   const messageCache = useRef<Map<string, Message[]>>(new Map());
   const broadcastChannelRef = useRef<any>(null);
   const messagesRef = useRef<Message[]>([]);
+  const lastSyncTimestampRef = useRef<Map<string, string>>(new Map());
+  const activeConversationIdRef = useRef<string | null>(null);
 
   // Update messagesRef whenever messages change
   useEffect(() => {
@@ -103,6 +107,8 @@ export const useDirectMessages = (userId: string | undefined) => {
         recipient_id: msg.recipient_id,
         created_at: msg.created_at,
         status: msg.status as 'sent' | 'delivered' | 'read',
+        delivered_at: msg.delivered_at,
+        read_at: msg.read_at,
         attachments: Array.isArray(msg.attachments) 
           ? msg.attachments as Array<{
               id: string;
@@ -117,6 +123,12 @@ export const useDirectMessages = (userId: string | undefined) => {
       
       // Update cache (keep only last 50)
       messageCache.current.set(cacheKey, mappedMessages);
+      
+      // Store last sync timestamp for this conversation
+      if (mappedMessages.length > 0) {
+        const latestTimestamp = mappedMessages[mappedMessages.length - 1].created_at;
+        lastSyncTimestampRef.current.set(cacheKey, latestTimestamp);
+      }
       
       setMessages(mappedMessages);
     } catch (error) {
@@ -164,6 +176,8 @@ export const useDirectMessages = (userId: string | undefined) => {
         recipient_id: msg.recipient_id,
         created_at: msg.created_at,
         status: msg.status as 'sent' | 'delivered' | 'read',
+        delivered_at: msg.delivered_at,
+        read_at: msg.read_at,
         attachments: Array.isArray(msg.attachments) 
           ? msg.attachments as Array<{
               id: string;
@@ -301,6 +315,81 @@ export const useDirectMessages = (userId: string | undefined) => {
   const retryQueuedMessage = useCallback(async (tempId: string, content: string, recipientId: string) => {
     return sendMessage(content, recipientId, tempId);
   }, [sendMessage]);
+
+  // Fetch missed messages since last sync (for reconnection)
+  const fetchMissedMessages = useCallback(async (otherUserId: string) => {
+    if (!userId) return [];
+
+    const cacheKey = [userId, otherUserId].sort().join('-');
+    const lastSyncTimestamp = lastSyncTimestampRef.current.get(cacheKey);
+    
+    if (!lastSyncTimestamp) {
+      console.log('[fetchMissedMessages] No last sync timestamp, skipping');
+      return [];
+    }
+
+    try {
+      console.log('[fetchMissedMessages] Fetching messages after:', lastSyncTimestamp);
+      
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
+        .gt('created_at', lastSyncTimestamp)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const missedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        created_at: msg.created_at,
+        status: msg.status as MessageStatus,
+        delivered_at: msg.delivered_at,
+        read_at: msg.read_at,
+        attachments: msg.attachments || []
+      }));
+
+      if (missedMessages.length > 0) {
+        console.log(`[fetchMissedMessages] Found ${missedMessages.length} missed messages`);
+        
+        // Add missed messages to state
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(m => m.id));
+          const newMessages = missedMessages.filter(m => !existingIds.has(m.id));
+          return [...prev, ...newMessages];
+        });
+
+        // Update last sync timestamp
+        const latestTimestamp = missedMessages[missedMessages.length - 1].created_at;
+        lastSyncTimestampRef.current.set(cacheKey, latestTimestamp);
+      }
+
+      return missedMessages;
+    } catch (error) {
+      console.error('[fetchMissedMessages] Error:', error);
+      return [];
+    }
+  }, [userId]);
+
+  // Pull missed messages on reconnection
+  const wasOfflineRef = useRef(false);
+  useEffect(() => {
+    const wasOffline = wasOfflineRef.current;
+    const isNowOnline = connectionStatus === 'connected';
+    
+    // If we just came back online and have an active conversation, pull missed messages
+    if (wasOffline && isNowOnline && activeConversationIdRef.current) {
+      const otherUserId = activeConversationIdRef.current;
+      console.log('[useDirectMessages] Reconnected - fetching missed messages for:', otherUserId);
+      fetchMissedMessages(otherUserId);
+    }
+    
+    // Update the offline state
+    wasOfflineRef.current = connectionStatus !== 'connected';
+  }, [connectionStatus, fetchMissedMessages]);
 
   const sendMessageWithAttachments = useCallback(async (
     content: string, 
@@ -576,6 +665,8 @@ export const useDirectMessages = (userId: string | undefined) => {
             recipient_id: newMessage.recipient_id,
             created_at: newMessage.created_at,
             status: newMessage.status as MessageStatus,
+            delivered_at: newMessage.delivered_at,
+            read_at: newMessage.read_at,
             attachments: newMessage.attachments || []
           });
         }
@@ -598,6 +689,8 @@ export const useDirectMessages = (userId: string | undefined) => {
             recipient_id: updatedMessage.recipient_id,
             created_at: updatedMessage.created_at,
             status: updatedMessage.status as MessageStatus,
+            delivered_at: updatedMessage.delivered_at,
+            read_at: updatedMessage.read_at,
             attachments: updatedMessage.attachments || []
           });
         }
@@ -620,6 +713,8 @@ export const useDirectMessages = (userId: string | undefined) => {
             recipient_id: updatedMessage.recipient_id,
             created_at: updatedMessage.created_at,
             status: updatedMessage.status as MessageStatus,
+            delivered_at: updatedMessage.delivered_at,
+            read_at: updatedMessage.read_at,
             attachments: updatedMessage.attachments || []
           });
         }
@@ -641,6 +736,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     hasMoreMessages,
     fetchMessages,
     fetchOlderMessages,
+    fetchMissedMessages,
     sendMessage,
     sendMessageWithAttachments,
     markMessageAsRead,
@@ -651,6 +747,9 @@ export const useDirectMessages = (userId: string | undefined) => {
     retryMessage,
     markMessagesAsDelivered,
     queuedMessagesCount: queue.length,
-    broadcastChannelRef
+    broadcastChannelRef,
+    setActiveConversationId: (id: string | null) => {
+      activeConversationIdRef.current = id;
+    }
   };
 };
