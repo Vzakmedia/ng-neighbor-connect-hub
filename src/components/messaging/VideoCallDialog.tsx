@@ -107,7 +107,20 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full w-full h-screen p-0 bg-gradient-to-b from-primary via-primary/95 to-secondary border-0">
+      <DialogContent className={`max-w-full w-full h-screen p-0 border-0 overflow-hidden ${!otherUserAvatar ? 'bg-gradient-to-b from-primary via-primary/95 to-secondary' : ''}`}>
+        {/* Blurred background image */}
+        {otherUserAvatar && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center scale-110 blur-2xl"
+            style={{ backgroundImage: `url(${otherUserAvatar})` }}
+          />
+        )}
+        
+        {/* Dark overlay for readability */}
+        {otherUserAvatar && (
+          <div className="absolute inset-0 bg-black/40" />
+        )}
+
         {/* Hidden audio element for remote stream - ensures audio plays for voice calls */}
         <audio
           ref={remoteAudioRef}
@@ -116,7 +129,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
           style={{ display: 'none' }}
         />
         
-        <div className="relative w-full h-full flex flex-col items-center justify-between py-12">
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-12">
           {/* Top spacer */}
           <div className="flex-1" />
 
