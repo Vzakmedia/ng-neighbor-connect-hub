@@ -66,6 +66,7 @@ const Chat = () => {
   const {
     isInCall,
     isVideoCall,
+    callState,
     localStream,
     remoteStream,
     incomingCall,
@@ -462,6 +463,7 @@ const Chat = () => {
         isVideoCall={isVideoCall}
         otherUserName={conversation?.other_user_name || 'Unknown User'}
         otherUserAvatar={conversation?.other_user_avatar}
+        callState={callState}
       />
 
       {/* Incoming Call Dialog */}
