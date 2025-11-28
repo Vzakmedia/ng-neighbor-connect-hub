@@ -260,17 +260,9 @@ const Chat = () => {
       : conversation.user1_id;
     
     if (attachments && attachments.length > 0) {
-      const success = await sendMessageWithAttachments(content, recipientId, attachments);
-      if (success) {
-        // Immediately refresh messages; MessageThread will auto-scroll on update
-        fetchMessages(recipientId);
-      }
+      await sendMessageWithAttachments(content, recipientId, attachments);
     } else {
-      const success = await sendMessage(content, recipientId);
-      if (success) {
-        // Immediately refresh messages; MessageThread will auto-scroll on update
-        fetchMessages(recipientId);
-      }
+      await sendMessage(content, recipientId);
     }
   };
 
