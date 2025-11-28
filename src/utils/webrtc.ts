@@ -11,6 +11,7 @@ export class WebRTCManager {
   private currentCallLogId: string | null = null;
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
   private hasRemoteDescription: boolean = false;
+  private isEnding: boolean = false;
 
   constructor(
     conversationId: string,
@@ -88,7 +89,7 @@ export class WebRTCManager {
         console.log('WebRTC connection established successfully');
       }
       
-      if (this.pc?.connectionState === 'failed') {
+      if (this.pc?.connectionState === 'failed' && !this.isEnding) {
         console.log('Connection failed, attempting ICE restart');
         try {
           const offer = await this.pc.createOffer({ iceRestart: true });
@@ -100,12 +101,14 @@ export class WebRTCManager {
           });
         } catch (error) {
           console.error('ICE restart failed:', error);
-          this.onCallEnd();
+          if (!this.isEnding) {
+            this.onCallEnd();
+          }
         }
       }
       
-      if (this.pc?.connectionState === 'disconnected' || 
-          this.pc?.connectionState === 'closed') {
+      if ((this.pc?.connectionState === 'disconnected' || 
+          this.pc?.connectionState === 'closed') && !this.isEnding) {
         this.onCallEnd();
       }
     };
@@ -309,7 +312,7 @@ export class WebRTCManager {
           
         case 'call-end':
           console.log('Processing call end signal');
-          this.endCall();
+          this.cleanupCall();
           break;
       }
     } catch (error) {
@@ -364,6 +367,11 @@ export class WebRTCManager {
   }
 
   endCall() {
+    if (this.isEnding) return; // Prevent duplicate calls
+    this.isEnding = true;
+
+    console.log('Ending call');
+
     // Calculate duration and update call log
     if (this.callStartTime && this.currentCallLogId) {
       const duration = Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000);
@@ -373,6 +381,31 @@ export class WebRTCManager {
     // Send end call signal
     this.sendSignalingMessage({ type: 'call-end' });
 
+    // Clean up resources
+    this.cleanupResources();
+
+    this.onCallEnd();
+  }
+
+  private cleanupCall() {
+    if (this.isEnding) return; // Prevent duplicate calls
+    this.isEnding = true;
+
+    console.log('Cleaning up call (no signal sent)');
+
+    // Calculate duration and update call log
+    if (this.callStartTime && this.currentCallLogId) {
+      const duration = Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000);
+      this.updateCallLog('ended', duration);
+    }
+
+    // Clean up resources WITHOUT sending call-end signal
+    this.cleanupResources();
+
+    this.onCallEnd();
+  }
+
+  private cleanupResources() {
     // Stop local stream
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
@@ -388,8 +421,6 @@ export class WebRTCManager {
     // Reset call state
     this.callStartTime = null;
     this.currentCallLogId = null;
-
-    this.onCallEnd();
   }
 
   getLocalStream() {
