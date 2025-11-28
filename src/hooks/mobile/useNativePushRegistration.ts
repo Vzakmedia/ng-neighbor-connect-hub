@@ -116,7 +116,28 @@ export const useNativePushRegistration = () => {
           
           const title = notification.title || 'New notification';
           const body = notification.body || '';
-          toast({ title, description: body });
+          
+          // Handle incoming call notifications
+          const notificationData = notification.data as any;
+          if (notificationData?.notification_type === 'call_incoming') {
+            // Trigger incoming call UI
+            const callData = notificationData.notification_metadata;
+            window.dispatchEvent(new CustomEvent('incoming-call', {
+              detail: {
+                conversationId: callData.conversation_id,
+                callerId: callData.caller_id,
+                callerName: callData.caller_name,
+                callType: callData.call_type,
+              }
+            }));
+            
+            toast({ 
+              title: `Incoming ${callData.call_type} call`, 
+              description: `${callData.caller_name} is calling...` 
+            });
+          } else {
+            toast({ title, description: body });
+          }
         });
 
         // Errors

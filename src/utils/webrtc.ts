@@ -194,6 +194,9 @@ export class WebRTCManager {
       await this.pc!.setLocalDescription(offer);
       console.log('Created offer');
 
+      // Send push notification for incoming call
+      await this.sendCallNotification(video);
+
       // Send offer through signaling with retry mechanism
       let retryCount = 0;
       const maxRetries = 3;
@@ -589,6 +592,33 @@ export class WebRTCManager {
     } catch (error) {
       console.error('Error getting other user ID:', error);
       return '';
+    }
+  }
+
+  private async sendCallNotification(isVideoCall: boolean): Promise<void> {
+    try {
+      const otherUserId = await this.getOtherUserId();
+      
+      const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', this.currentUserId)
+        .single();
+
+      await supabase.functions.invoke('send-call-notification', {
+        body: {
+          recipientId: otherUserId,
+          callerId: this.currentUserId,
+          callerName: callerProfile?.display_name || 'Someone',
+          callType: isVideoCall ? 'video' : 'audio',
+          conversationId: this.conversationId,
+        },
+      });
+      
+      console.log('[WebRTC] Call notification sent');
+    } catch (error) {
+      console.error('[WebRTC] Failed to send call notification:', error);
+      // Don't throw - call should proceed even if notification fails
     }
   }
 

@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.delete-cloudinary-image]
 verify_jwt = true
+
+[functions.send-call-notification]
+verify_jwt = false
