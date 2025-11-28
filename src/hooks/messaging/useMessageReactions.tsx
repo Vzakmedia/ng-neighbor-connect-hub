@@ -17,13 +17,17 @@ export interface ReactionGroup {
   hasReacted: boolean;
 }
 
+// Helper to check if messageId is a temporary/optimistic ID
+const isTemporaryId = (id: string) => id.startsWith('temp-');
+
 export const useMessageReactions = (messageId: string, currentUserId?: string) => {
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchReactions = async () => {
-    if (!messageId) return;
+    // Skip fetching for temporary/optimistic message IDs
+    if (!messageId || isTemporaryId(messageId)) return;
 
     try {
       const { data, error } = await supabase
@@ -42,6 +46,9 @@ export const useMessageReactions = (messageId: string, currentUserId?: string) =
   };
 
   useEffect(() => {
+    // Skip for temporary/optimistic message IDs
+    if (isTemporaryId(messageId)) return;
+
     fetchReactions();
 
     // Subscribe to reaction changes
@@ -67,7 +74,8 @@ export const useMessageReactions = (messageId: string, currentUserId?: string) =
   }, [messageId]);
 
   const addReaction = async (emoji: string) => {
-    if (!currentUserId) return false;
+    // Can't react to optimistic messages that aren't saved yet
+    if (!currentUserId || isTemporaryId(messageId)) return false;
 
     setLoading(true);
     try {
@@ -97,7 +105,7 @@ export const useMessageReactions = (messageId: string, currentUserId?: string) =
   };
 
   const removeReaction = async (emoji: string) => {
-    if (!currentUserId) return false;
+    if (!currentUserId || isTemporaryId(messageId)) return false;
 
     setLoading(true);
     try {
