@@ -9,6 +9,7 @@ interface CallControlsProps {
   onEndCall: () => void;
   onToggleAudio: (enabled: boolean) => void;
   onToggleVideo: (enabled: boolean) => void;
+  onSwitchCamera?: () => void;
   isInCall: boolean;
   isVideoCall: boolean;
   className?: string;
@@ -20,6 +21,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
   onEndCall,
   onToggleAudio,
   onToggleVideo,
+  onSwitchCamera,
   isInCall,
   isVideoCall,
   className
@@ -105,17 +107,19 @@ export const CallControls: React.FC<CallControlsProps> = ({
         </button>
       </div>
 
-      {/* Second row: Add, Record, End */}
+      {/* Second row: Camera Switch (if video), Record, End */}
       <div className="flex items-center justify-center gap-8">
-        <button 
-          onClick={() => console.log('Add participant clicked')}
-          className="flex flex-col items-center gap-1.5"
-        >
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
-            <Plus className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-white text-xs font-medium">Add</span>
-        </button>
+        {isVideoCall && onSwitchCamera && (
+          <button 
+            onClick={onSwitchCamera}
+            className="flex flex-col items-center gap-1.5"
+          >
+            <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+              <Video className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-white text-xs font-medium">Switch</span>
+          </button>
+        )}
 
         <button 
           onClick={() => console.log('Record clicked')}

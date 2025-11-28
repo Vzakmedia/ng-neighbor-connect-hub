@@ -3,6 +3,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CallControls } from './CallControls';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronDown } from '@/lib/icons';
+import { NetworkQualityIndicator } from '@/components/mobile/NetworkQualityIndicator';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface VideoCallDialogProps {
   open: boolean;
@@ -12,6 +14,7 @@ interface VideoCallDialogProps {
   onEndCall: () => void;
   onToggleAudio: (enabled: boolean) => void;
   onToggleVideo: (enabled: boolean) => void;
+  onSwitchCamera?: () => void;
   isVideoCall: boolean;
   otherUserName: string;
   otherUserAvatar?: string;
@@ -25,6 +28,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   onEndCall,
   onToggleAudio,
   onToggleVideo,
+  onSwitchCamera,
   isVideoCall,
   otherUserName,
   otherUserAvatar
@@ -33,6 +37,39 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const [callDuration, setCallDuration] = useState(0);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(true);
+
+  const handleEndCall = () => {
+    onEndCall();
+    onOpenChange(false);
+  };
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'm',
+      callback: () => {
+        const newState = !audioEnabled;
+        setAudioEnabled(newState);
+        onToggleAudio(newState);
+      }
+    },
+    {
+      key: 'v',
+      callback: () => {
+        if (isVideoCall) {
+          const newState = !videoEnabled;
+          setVideoEnabled(newState);
+          onToggleVideo(newState);
+        }
+      }
+    },
+    {
+      key: 'Escape',
+      callback: handleEndCall
+    }
+  ], open);
 
   // Call duration timer
   useEffect(() => {
@@ -99,11 +136,6 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
       });
     }
   }, [remoteStream]);
-
-  const handleEndCall = () => {
-    onEndCall();
-    onOpenChange(false);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -193,7 +225,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
             </div>
           )}
 
-          {/* Video call overlay - name and duration at top */}
+          {/* Video call overlay - name, duration, and network quality at top */}
           {isVideoCall && remoteStream && (
             <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 bg-black/30 backdrop-blur-sm px-6 py-3 rounded-2xl">
               <h2 className="text-white text-xl font-semibold">
@@ -202,6 +234,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
               <div className="text-white/80 text-sm font-medium">
                 {formatDuration(callDuration)}
               </div>
+              <NetworkQualityIndicator />
             </div>
           )}
 
@@ -214,8 +247,15 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
               onStartVoiceCall={() => {}}
               onStartVideoCall={() => {}}
               onEndCall={handleEndCall}
-              onToggleAudio={onToggleAudio}
-              onToggleVideo={onToggleVideo}
+              onToggleAudio={(enabled) => {
+                setAudioEnabled(enabled);
+                onToggleAudio(enabled);
+              }}
+              onToggleVideo={(enabled) => {
+                setVideoEnabled(enabled);
+                onToggleVideo(enabled);
+              }}
+              onSwitchCamera={onSwitchCamera}
               isInCall={true}
               isVideoCall={isVideoCall}
             />

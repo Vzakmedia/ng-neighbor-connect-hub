@@ -76,6 +76,7 @@ const Chat = () => {
     endCall,
     toggleAudio,
     toggleVideo,
+    switchCamera,
   } = useWebRTCCall(conversationId || '');
 
   // Memoized callbacks to prevent infinite re-renders
@@ -457,6 +458,7 @@ const Chat = () => {
         onEndCall={endCall}
         onToggleAudio={toggleAudio}
         onToggleVideo={toggleVideo}
+        onSwitchCamera={switchCamera}
         isVideoCall={isVideoCall}
         otherUserName={conversation?.other_user_name || 'Unknown User'}
         otherUserAvatar={conversation?.other_user_avatar}

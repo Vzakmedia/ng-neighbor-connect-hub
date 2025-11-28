@@ -16,6 +16,7 @@ export class WebRTCManager {
   private iceRestartAttempts: number = 0;
   private maxIceRestarts: number = 3;
   private iceRestartDelay: number = 2000;
+  private currentFacingMode: 'user' | 'environment' = 'user';
 
   constructor(
     conversationId: string,
@@ -148,11 +149,16 @@ export class WebRTCManager {
       try {
         console.log('Requesting media access - video:', video, 'audio: true');
         const constraints = {
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000
+          },
           video: video ? {
             width: { ideal: 1280 },
             height: { ideal: 720 },
-            facingMode: 'user'
+            facingMode: this.currentFacingMode
           } : false
         };
         
@@ -235,11 +241,16 @@ export class WebRTCManager {
       // Get user media with error handling
       console.log('Answering call with video:', video);
       const constraints = {
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000
+        },
         video: video ? {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'user'
+          facingMode: this.currentFacingMode
         } : false
       };
       
@@ -392,6 +403,58 @@ export class WebRTCManager {
       this.localStream.getVideoTracks().forEach(track => {
         track.enabled = enabled;
       });
+    }
+  }
+
+  async switchCamera() {
+    if (!this.localStream) {
+      console.error('No local stream available');
+      return;
+    }
+
+    const videoTrack = this.localStream.getVideoTracks()[0];
+    if (!videoTrack) {
+      console.error('No video track available');
+      return;
+    }
+
+    try {
+      // Toggle facing mode
+      this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+      
+      // Get new stream with opposite facing mode
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: this.currentFacingMode
+        }
+      });
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      
+      // Find the sender that is sending the old video track
+      const sender = this.pc?.getSenders().find(s => s.track?.kind === 'video');
+      
+      if (sender) {
+        // Replace the track in the peer connection
+        await sender.replaceTrack(newVideoTrack);
+        
+        // Stop the old track
+        videoTrack.stop();
+        
+        // Update the local stream
+        this.localStream.removeTrack(videoTrack);
+        this.localStream.addTrack(newVideoTrack);
+        
+        console.log(`Switched camera to ${this.currentFacingMode} facing mode`);
+      }
+    } catch (error) {
+      console.error('Error switching camera:', error);
+      // Revert facing mode on error
+      this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+      throw error;
     }
   }
 
