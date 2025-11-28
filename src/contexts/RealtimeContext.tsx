@@ -79,10 +79,13 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "INSERT",
               schema: "public",
               table: "direct_messages",
-              filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`,
+              // No filter - client-side filtering below
             },
             (payload) => {
               const msg = payload.new;
+
+              // Client-side filter: only process if user is sender or recipient
+              if (msg.sender_id !== user.id && msg.recipient_id !== user.id) return;
 
               // Deduplication: ignore if client_message_id already exists locally
               if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
