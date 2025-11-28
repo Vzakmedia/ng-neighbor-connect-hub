@@ -202,7 +202,13 @@ export const useDirectMessages = (userId: string | undefined) => {
 
         if (tempId) removeFromQueue(tempId);
 
-        setMessages((prev) => prev.map((msg) => (msg.id === optimisticId ? { ...message, status: "sent" } : msg)));
+        setMessages((prev) => {
+          const updated = prev.map((msg) => (msg.id === optimisticId ? { ...message, status: "sent" } : msg));
+          // Update cache to keep it in sync
+          const cacheKey = [userId, recipientId].sort().join("-");
+          messageCache.current.set(cacheKey, updated);
+          return updated;
+        });
         return true;
       } catch (error) {
         console.error(error);
@@ -316,7 +322,13 @@ export const useDirectMessages = (userId: string | undefined) => {
           .single();
         if (error) throw error;
 
-        setMessages((prev) => prev.map((msg) => (msg.id === optimisticId ? { ...message, status: "sent" as MessageStatus } : msg)));
+        setMessages((prev) => {
+          const updated = prev.map((msg) => (msg.id === optimisticId ? { ...message, status: "sent" as MessageStatus } : msg));
+          // Update cache to keep it in sync
+          const cacheKey = [userId, recipientId].sort().join("-");
+          messageCache.current.set(cacheKey, updated);
+          return updated;
+        });
         return true;
       } catch (error) {
         console.error(error);
