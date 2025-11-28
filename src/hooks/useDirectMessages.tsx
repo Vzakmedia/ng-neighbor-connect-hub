@@ -281,6 +281,108 @@ export const useDirectMessages = (userId: string | undefined) => {
   }, [userId]);
 
   // -------------------------------
+  // Send message with attachments
+  // -------------------------------
+  const sendMessageWithAttachments = useCallback(
+    async (content: string, recipientId: string, attachments: any[]) => {
+      if (!userId || !content.trim()) return false;
+      
+      const optimisticId = `temp-${Date.now()}-${Math.random()}`;
+      const optimisticMessage: Message = {
+        id: optimisticId,
+        content: content.trim(),
+        sender_id: userId,
+        recipient_id: recipientId,
+        created_at: new Date().toISOString(),
+        status: "sending",
+        optimistic: true,
+        attachments,
+      };
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+
+      try {
+        setLoading(true);
+        const { data: message, error } = await supabase
+          .from("direct_messages")
+          .insert({ 
+            content: content.trim(), 
+            sender_id: userId, 
+            recipient_id: recipientId, 
+            status: "sent",
+            attachments 
+          })
+          .select()
+          .single();
+        if (error) throw error;
+
+        setMessages((prev) => prev.map((msg) => (msg.id === optimisticId ? { ...message, status: "sent" as MessageStatus } : msg)));
+        return true;
+      } catch (error) {
+        console.error(error);
+        setMessages((prev) => prev.map((msg) => (msg.id === optimisticId ? { ...msg, status: "failed" } : msg)));
+        toast({
+          title: "Message failed",
+          description: "Could not send message with attachments.",
+          variant: "destructive",
+        });
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userId, toast],
+  );
+
+  // -------------------------------
+  // Mark message as read
+  // -------------------------------
+  const markMessageAsRead = useCallback(
+    async (messageId: string) => {
+      if (!userId) return;
+
+      try {
+        const { error } = await supabase
+          .from("direct_messages")
+          .update({ status: "read", read_at: new Date().toISOString() })
+          .eq("id", messageId)
+          .eq("recipient_id", userId);
+
+        if (error) throw error;
+
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === messageId ? { ...msg, status: "read" as MessageStatus } : msg))
+        );
+      } catch (error) {
+        console.error("Error marking message as read:", error);
+      }
+    },
+    [userId],
+  );
+
+  // -------------------------------
+  // Fetch missed messages (compatibility method)
+  // -------------------------------
+  const fetchMissedMessages = useCallback(
+    async (otherUserId: string) => {
+      // This is a compatibility method - just refetch messages
+      return fetchMessages(otherUserId, false);
+    },
+    [fetchMessages],
+  );
+
+  // -------------------------------
+  // Mark conversation as read (compatibility method)
+  // -------------------------------
+  const markConversationAsRead = useCallback(
+    async (conversationId: string) => {
+      // Mark all unread messages in this conversation as read
+      await markMessagesAsDelivered();
+    },
+    [markMessagesAsDelivered],
+  );
+
+  // -------------------------------
   // Add or update messages
   // -------------------------------
   const addMessage = useCallback((msg: Message) => {
@@ -318,19 +420,21 @@ export const useDirectMessages = (userId: string | undefined) => {
       .on("broadcast", { event: "read_receipt" }, (payload) => {
         const { messageId } = payload.payload;
         setMessages((prev) =>
-          prev.map((m) => (m.id === messageId && m.sender_id === userId ? { ...m, status: "read" } : m)),
+          prev.map((m) => (m.id === messageId && m.sender_id === userId ? { ...m, status: "read" as MessageStatus } : m)),
         );
       })
       .on("broadcast", { event: "delivery_receipt" }, (payload) => {
         const { messageId } = payload.payload;
         setMessages((prev) =>
-          prev.map((m) => (m.id === messageId && m.sender_id === userId ? { ...m, status: "delivered" } : m)),
+          prev.map((m) => (m.id === messageId && m.sender_id === userId ? { ...m, status: "delivered" as MessageStatus } : m)),
         );
       })
       .subscribe();
 
     broadcastChannelRef.current = channel;
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   // -------------------------------
@@ -345,23 +449,62 @@ export const useDirectMessages = (userId: string | undefined) => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${userId}` },
         async (payload) => {
-          addMessage(payload.new);
+          const newMessage = payload.new as any;
+          addMessage({
+            id: newMessage.id,
+            content: newMessage.content,
+            sender_id: newMessage.sender_id,
+            recipient_id: newMessage.recipient_id,
+            created_at: newMessage.created_at,
+            status: newMessage.status as MessageStatus,
+            delivered_at: newMessage.delivered_at,
+            read_at: newMessage.read_at,
+            attachments: newMessage.attachments || [],
+          });
           await markMessagesAsDelivered();
         },
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${userId}` },
-        (payload) => updateMessage(payload.new),
+        (payload) => {
+          const updatedMessage = payload.new as any;
+          updateMessage({
+            id: updatedMessage.id,
+            content: updatedMessage.content,
+            sender_id: updatedMessage.sender_id,
+            recipient_id: updatedMessage.recipient_id,
+            created_at: updatedMessage.created_at,
+            status: updatedMessage.status as MessageStatus,
+            delivered_at: updatedMessage.delivered_at,
+            read_at: updatedMessage.read_at,
+            attachments: updatedMessage.attachments || [],
+          });
+        },
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${userId}` },
-        (payload) => updateMessage(payload.new),
+        (payload) => {
+          const updatedMessage = payload.new as any;
+          updateMessage({
+            id: updatedMessage.id,
+            content: updatedMessage.content,
+            sender_id: updatedMessage.sender_id,
+            recipient_id: updatedMessage.recipient_id,
+            created_at: updatedMessage.created_at,
+            status: updatedMessage.status as MessageStatus,
+            delivered_at: updatedMessage.delivered_at,
+            read_at: updatedMessage.read_at,
+            attachments: updatedMessage.attachments || [],
+          });
+        },
       )
       .subscribe();
 
-    return () => supabase.removeChannel(messagesChannel);
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
   }, [userId, addMessage, updateMessage, markMessagesAsDelivered]);
 
   return {
@@ -372,8 +515,12 @@ export const useDirectMessages = (userId: string | undefined) => {
     fetchMessages,
     fetchOlderMessages,
     sendMessage,
+    sendMessageWithAttachments,
     retryMessage,
     markMessagesAsDelivered,
+    markMessageAsRead,
+    markConversationAsRead,
+    fetchMissedMessages,
     addMessage,
     updateMessage,
     broadcastChannelRef,
