@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
+import { useNativeImageOptimization } from '@/hooks/mobile/useNativeImageOptimization';
 import { Capacitor } from '@capacitor/core';
 
 export interface Attachment {
@@ -18,6 +19,7 @@ export const useFileUpload = (userId: string) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { connectionType } = useNativeNetwork();
+  const { optimizeImage } = useNativeImageOptimization();
   const isNative = Capacitor.isNativePlatform();
 
   const uploadFile = useCallback(async (file: File): Promise<Attachment | null> => {
@@ -36,8 +38,6 @@ export const useFileUpload = (userId: string) => {
       
       // Optimize images before upload (Phase 13)
       if (file.type.startsWith('image/')) {
-        const { useNativeImageOptimization } = await import('@/hooks/mobile/useNativeImageOptimization');
-        const { optimizeImage } = useNativeImageOptimization();
         const optimizedResult = await optimizeImage(file, {
           quality: 80,
           maxWidth: 1920,
@@ -94,7 +94,7 @@ export const useFileUpload = (userId: string) => {
     } finally {
       setUploading(false);
     }
-  }, [userId, toast, isNative, connectionType]);
+  }, [userId, toast, isNative, connectionType, optimizeImage]);
 
   const uploadMultipleFiles = useCallback(async (files: File[]): Promise<Attachment[]> => {
     const attachments: Attachment[] = [];
