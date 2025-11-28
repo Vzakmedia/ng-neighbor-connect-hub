@@ -129,45 +129,81 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
           style={{ display: 'none' }}
         />
         
+        {/* Video elements - full screen remote, PIP local */}
+        {isVideoCall && (
+          <>
+            {/* Remote video - full screen background */}
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            
+            {/* Local video - picture-in-picture overlay */}
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute bottom-24 right-4 w-40 h-52 rounded-xl object-cover border-2 border-white/30 shadow-2xl z-20"
+            />
+          </>
+        )}
+        
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-12">
           {/* Top spacer */}
           <div className="flex-1" />
 
-          {/* Main content - Avatar and info */}
-          <div className="flex flex-col items-center justify-center gap-6">
-            {/* Large Avatar with green ring */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-green-500 animate-pulse scale-110" />
-              <Avatar className="w-32 h-32 relative border-4 border-white/20">
-                <AvatarImage src={otherUserAvatar} />
-                <AvatarFallback className="text-3xl bg-white/10 text-white">
-                  {otherUserName?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {/* Online indicator */}
-              <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-primary" />
-            </div>
-
-            {/* User name */}
-            <h2 className="text-white text-3xl font-bold text-center">
-              {otherUserName}
-            </h2>
-
-            {/* Call duration */}
-            <div className="text-white/80 text-xl font-medium">
-              {formatDuration(callDuration)}
-            </div>
-
-            {/* Connection status */}
-            {!remoteStream && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-300" />
-                <span className="text-white/60 text-sm ml-2">Connecting...</span>
+          {/* Main content - Avatar and info (shown for voice calls or when video not connected) */}
+          {(!isVideoCall || !remoteStream) && (
+            <div className="flex flex-col items-center justify-center gap-6">
+              {/* Large Avatar with green ring */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-green-500 animate-pulse scale-110" />
+                <Avatar className="w-32 h-32 relative border-4 border-white/20">
+                  <AvatarImage src={otherUserAvatar} />
+                  <AvatarFallback className="text-3xl bg-white/10 text-white">
+                    {otherUserName?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Online indicator */}
+                <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-primary" />
               </div>
-            )}
-          </div>
+
+              {/* User name */}
+              <h2 className="text-white text-3xl font-bold text-center">
+                {otherUserName}
+              </h2>
+
+              {/* Call duration */}
+              <div className="text-white/80 text-xl font-medium">
+                {formatDuration(callDuration)}
+              </div>
+
+              {/* Connection status */}
+              {!remoteStream && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-300" />
+                  <span className="text-white/60 text-sm ml-2">Connecting...</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Video call overlay - name and duration at top */}
+          {isVideoCall && remoteStream && (
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 bg-black/30 backdrop-blur-sm px-6 py-3 rounded-2xl">
+              <h2 className="text-white text-xl font-semibold">
+                {otherUserName}
+              </h2>
+              <div className="text-white/80 text-sm font-medium">
+                {formatDuration(callDuration)}
+              </div>
+            </div>
+          )}
 
           {/* Bottom spacer */}
           <div className="flex-1" />
@@ -193,25 +229,6 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
               <span className="text-xs font-medium">Collapse</span>
             </button>
           </div>
-
-          {/* Hidden video elements for video calls */}
-          {isVideoCall && (
-            <>
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="hidden"
-              />
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="hidden"
-              />
-            </>
-          )}
         </div>
       </DialogContent>
     </Dialog>
