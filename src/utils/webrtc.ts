@@ -8,16 +8,20 @@ export class WebRTCManager {
   private currentUserId: string;
   private isInitiator: boolean = false;
   private callStartTime: Date | null = null;
+  private callConnectedTime: Date | null = null;
   private currentCallLogId: string | null = null;
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
   private hasRemoteDescription: boolean = false;
   private isEnding: boolean = false;
+  private iceRestartAttempts: number = 0;
+  private maxIceRestarts: number = 3;
+  private iceRestartDelay: number = 2000;
 
   constructor(
     conversationId: string,
     currentUserId: string,
     private onRemoteStream: (stream: MediaStream) => void,
-    private onCallEnd: () => void
+    private onCallEnd: (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => void
   ) {
     this.conversationId = conversationId;
     this.currentUserId = currentUserId;
@@ -87,29 +91,43 @@ export class WebRTCManager {
       
       if (this.pc?.connectionState === 'connected') {
         console.log('WebRTC connection established successfully');
+        this.updateCallLog('connected');
+        this.callConnectedTime = new Date();
+        this.iceRestartAttempts = 0; // Reset on successful connection
       }
       
       if (this.pc?.connectionState === 'failed' && !this.isEnding) {
-        console.log('Connection failed, attempting ICE restart');
-        try {
-          const offer = await this.pc.createOffer({ iceRestart: true });
-          await this.pc.setLocalDescription(offer);
-          await this.sendSignalingMessage({
-            type: 'offer',
-            offer: offer,
-            isRestart: true
-          });
-        } catch (error) {
-          console.error('ICE restart failed:', error);
-          if (!this.isEnding) {
-            this.onCallEnd();
-          }
+        if (this.iceRestartAttempts < this.maxIceRestarts) {
+          this.iceRestartAttempts++;
+          const delay = this.iceRestartDelay * Math.pow(2, this.iceRestartAttempts - 1);
+          console.log(`Connection failed, attempting ICE restart ${this.iceRestartAttempts}/${this.maxIceRestarts} in ${delay}ms`);
+          
+          setTimeout(async () => {
+            try {
+              const offer = await this.pc!.createOffer({ iceRestart: true });
+              await this.pc!.setLocalDescription(offer);
+              await this.sendSignalingMessage({
+                type: 'offer',
+                offer: offer,
+                isRestart: true
+              });
+            } catch (error) {
+              console.error('ICE restart failed:', error);
+            }
+          }, delay);
+        } else {
+          console.log('Max ICE restart attempts reached, ending call');
+          this.onCallEnd('failed');
         }
       }
       
-      if ((this.pc?.connectionState === 'disconnected' || 
-          this.pc?.connectionState === 'closed') && !this.isEnding) {
-        this.onCallEnd();
+      if (this.pc?.connectionState === 'disconnected' && !this.isEnding) {
+        console.log('Connection disconnected');
+        this.onCallEnd('disconnected');
+      }
+      
+      if (this.pc?.connectionState === 'closed' && !this.isEnding) {
+        this.onCallEnd('ended');
       }
     };
 
@@ -279,11 +297,16 @@ export class WebRTCManager {
       console.log('Handling signaling message:', message.type);
       switch (message.type) {
         case 'offer':
-          console.log('Processing incoming offer');
-          // Handle incoming call offer
-          await this.pc!.setRemoteDescription(message.offer);
-          this.hasRemoteDescription = true;
-          await this.processPendingIceCandidates();
+          // Only process ICE restart offers - initial offers go through answerCall()
+          if (message.isRestart && this.pc!.remoteDescription) {
+            console.log('Received ICE restart offer, processing...');
+            await this.pc!.setRemoteDescription(message.offer);
+            const answer = await this.pc!.createAnswer();
+            await this.pc!.setLocalDescription(answer);
+            await this.sendSignalingMessage({ type: 'answer', answer });
+          } else {
+            console.log('Ignoring initial offer - should be handled by answerCall()');
+          }
           break;
           
         case 'answer':
@@ -312,6 +335,12 @@ export class WebRTCManager {
           
         case 'call-end':
           console.log('Processing call end signal');
+          this.cleanupCall();
+          break;
+          
+        case 'call-decline':
+          console.log('Call was declined');
+          this.onCallEnd('declined');
           this.cleanupCall();
           break;
       }
@@ -461,9 +490,15 @@ export class WebRTCManager {
         updated_at: new Date().toISOString()
       };
 
-      if (status === 'ended' && duration !== undefined) {
+      if (status === 'ended') {
         updateData.end_time = new Date().toISOString();
-        updateData.duration_seconds = duration;
+        if (duration !== undefined) {
+          updateData.duration_seconds = duration;
+        } else if (this.callConnectedTime) {
+          // Calculate duration from when call was actually connected
+          const durationMs = new Date().getTime() - this.callConnectedTime.getTime();
+          updateData.duration_seconds = Math.floor(durationMs / 1000);
+        }
       }
 
       const { error } = await supabase
