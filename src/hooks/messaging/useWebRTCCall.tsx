@@ -273,6 +273,19 @@ export const useWebRTCCall = (conversationId: string) => {
     }
   }, [webrtcManager]);
 
+  // Switch camera (front/back)
+  const switchCamera = useCallback(async () => {
+    if (webrtcManager) {
+      try {
+        await webrtcManager.switchCamera();
+        showSuccess("Camera switched", "");
+      } catch (error) {
+        console.error('Error switching camera:', error);
+        showError("Error", "Could not switch camera");
+      }
+    }
+  }, [webrtcManager, showSuccess, showError]);
+
   // Listen for signaling messages with fallback polling
   useEffect(() => {
     if (!user?.id) return;
@@ -426,5 +439,6 @@ export const useWebRTCCall = (conversationId: string) => {
     endCall,
     toggleAudio,
     toggleVideo,
+    switchCamera,
   };
 };
