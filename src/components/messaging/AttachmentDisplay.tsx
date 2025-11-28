@@ -1,10 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, ImageIcon, Video as VideoIcon, Eye } from '@/lib/icons';
+import { Download, FileText, ImageIcon, Video as VideoIcon, Eye, Save, Loader2 } from '@/lib/icons';
 import { type Attachment } from '@/hooks/useFileUpload';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import ProductCard from './ProductCard';
+import { useFileSave } from '@/hooks/mobile/useFileSave';
 
 interface AttachmentDisplayProps {
   attachments: Attachment[];
@@ -15,6 +16,8 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
   attachments,
   onPreview
 }) => {
+  const { saveFile, isSaving, isNative } = useFileSave();
+  
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -23,14 +26,8 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDownload = (attachment: Attachment) => {
-    const link = document.createElement('a');
-    link.href = attachment.url;
-    link.download = attachment.name;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleSave = async (attachment: Attachment) => {
+    await saveFile(attachment.url, attachment.name, attachment.mimeType);
   };
 
   const isProductCard = (attachment: Attachment): boolean => {
@@ -92,12 +89,41 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
           <div key={attachment.id} className="border rounded-lg p-3 bg-background/50">
             {attachment.type === 'image' ? (
               <div className="space-y-2">
-                <img
-                  src={attachment.url}
-                  alt={attachment.name}
-                  className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer"
-                  onClick={() => onPreview?.(attachment)}
-                />
+                <div className="relative group">
+                  <img
+                    src={attachment.url}
+                    alt={attachment.name}
+                    className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer"
+                    onClick={() => onPreview?.(attachment)}
+                  />
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {onPreview && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onPreview(attachment)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleSave(attachment)}
+                      disabled={isSaving}
+                      className="h-8 w-8 p-0"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : isNative ? (
+                        <Save className="h-3 w-3" />
+                      ) : (
+                        <Download className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="truncate flex-1">{attachment.name}</span>
                   <span>{formatFileSize(attachment.size)}</span>
@@ -114,8 +140,25 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
                   controls={true}
                 />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="truncate flex-1">{attachment.name}</span>
-                  <span>{formatFileSize(attachment.size)}</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="truncate flex-1">{attachment.name}</span>
+                    <span>{formatFileSize(attachment.size)}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSave(attachment)}
+                    disabled={isSaving}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isNative ? (
+                      <Save className="h-3 w-3" />
+                    ) : (
+                      <Download className="h-3 w-3" />
+                    )}
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -143,10 +186,18 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDownload(attachment)}
+                    onClick={() => handleSave(attachment)}
+                    disabled={isSaving}
                     className="h-8 w-8 p-0"
+                    title={isNative ? "Save to Device" : "Download"}
                   >
-                    <Download className="h-3 w-3" />
+                    {isSaving ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isNative ? (
+                      <Save className="h-3 w-3" />
+                    ) : (
+                      <Download className="h-3 w-3" />
+                    )}
                   </Button>
                 </div>
               </div>
