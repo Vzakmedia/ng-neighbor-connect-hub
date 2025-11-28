@@ -450,36 +450,19 @@ export const useDirectMessages = (userId: string | undefined) => {
   }, [userId]);
 
   // -------------------------------
-  // Postgres subscription for real-time messages
+  // Postgres subscription removed - now handled by RealtimeContext
+  // Only UPDATE subscriptions needed here for status changes
   // -------------------------------
   useEffect(() => {
     if (!userId) return;
 
     const messagesChannel = supabase
-      .channel(`direct-messages-changes:${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${userId}` },
-        async (payload) => {
-          const newMessage = payload.new as any;
-          addMessage({
-            id: newMessage.id,
-            content: newMessage.content,
-            sender_id: newMessage.sender_id,
-            recipient_id: newMessage.recipient_id,
-            created_at: newMessage.created_at,
-            status: newMessage.status as MessageStatus,
-            delivered_at: newMessage.delivered_at,
-            read_at: newMessage.read_at,
-            attachments: newMessage.attachments || [],
-          });
-          await markMessagesAsDelivered();
-        },
-      )
+      .channel(`direct-messages-updates:${userId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${userId}` },
         (payload) => {
+          console.log('[useDirectMessages] UPDATE event for received message:', payload.new.id);
           const updatedMessage = payload.new as any;
           updateMessage({
             id: updatedMessage.id,
@@ -498,6 +481,7 @@ export const useDirectMessages = (userId: string | undefined) => {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "direct_messages", filter: `sender_id=eq.${userId}` },
         (payload) => {
+          console.log('[useDirectMessages] UPDATE event for sent message:', payload.new.id);
           const updatedMessage = payload.new as any;
           updateMessage({
             id: updatedMessage.id,
@@ -517,7 +501,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     return () => {
       supabase.removeChannel(messagesChannel);
     };
-  }, [userId, addMessage, updateMessage, markMessagesAsDelivered]);
+  }, [userId, updateMessage]);
 
   return {
     messages,
