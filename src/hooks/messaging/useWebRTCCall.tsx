@@ -24,6 +24,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
   const webrtcRef = useRef<WebRTCManager | null>(null);
   const pendingMessagesRef = useRef<any[]>([]);
+  const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Initialize WebRTC manager
   const initializeManager = useCallback(() => {
@@ -255,7 +256,6 @@ export const useWebRTCCall = (conversationId: string) => {
 
     console.log('Setting up signaling subscription for conversation:', conversationId);
     let pollingInterval: NodeJS.Timeout | null = null;
-    const processedMessageIds = new Set<string>();
 
     // Handle signaling messages
     const handleSignalingMessage = async (message: any) => {
@@ -263,8 +263,15 @@ export const useWebRTCCall = (conversationId: string) => {
       if (message.sender_id === user.id) return;
       
       // Prevent duplicate processing
-      if (processedMessageIds.has(message.id)) return;
-      processedMessageIds.add(message.id);
+      if (processedMessageIdsRef.current.has(message.id)) return;
+      processedMessageIdsRef.current.add(message.id);
+
+      // Ignore old messages (older than 30 seconds)
+      const messageAge = Date.now() - new Date(message.created_at).getTime();
+      if (messageAge > 30000) {
+        console.log('Ignoring old signaling message:', message.message.type);
+        return;
+      }
 
       if (message.message.type === 'offer') {
         console.log('Incoming call offer received - setting incoming call state');
@@ -332,7 +339,7 @@ export const useWebRTCCall = (conversationId: string) => {
 
         // Process new messages
         for (const message of data || []) {
-          if (!processedMessageIds.has(message.id)) {
+          if (!processedMessageIdsRef.current.has(message.id)) {
             console.log('Received signaling message via polling:', message);
             await handleSignalingMessage(message);
             break; // Only process one message per poll
