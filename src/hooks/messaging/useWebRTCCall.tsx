@@ -5,6 +5,9 @@ import { WebRTCManager } from '@/utils/webrtc';
 import { supabase } from '@/integrations/supabase/client';
 import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { useCallPermissions } from '@/hooks/mobile/useCallPermissions';
+import { startRingbackTone, stopRingbackTone } from '@/utils/audioUtils';
+
+export type CallState = 'idle' | 'initiating' | 'ringing' | 'connecting' | 'connected' | 'ended';
 
 export const useWebRTCCall = (conversationId: string) => {
   const { user } = useAuth();
@@ -14,6 +17,7 @@ export const useWebRTCCall = (conversationId: string) => {
   const [webrtcManager, setWebrtcManager] = useState<WebRTCManager | null>(null);
   const [isInCall, setIsInCall] = useState(false);
   const [isVideoCall, setIsVideoCall] = useState(false);
+  const [callState, setCallState] = useState<CallState>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [incomingCall, setIncomingCall] = useState<{
@@ -34,8 +38,9 @@ export const useWebRTCCall = (conversationId: string) => {
       conversationId,
       user.id,
       (stream) => {
-        console.log('Remote stream received');
+        console.log('Remote stream received - call connected');
         setRemoteStream(stream);
+        setCallState('connected');
       },
       (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => {
         console.log('Call ended, reason:', reason);
@@ -46,11 +51,24 @@ export const useWebRTCCall = (conversationId: string) => {
         } else if (reason === 'failed') {
           showError("Call Failed", "Unable to establish connection");
         }
+        setCallState('ended');
         setIsInCall(false);
         setIsVideoCall(false);
         setLocalStream(null);
         setRemoteStream(null);
         setWebrtcManager(null);
+      },
+      () => {
+        // onOfferSent callback
+        console.log('Offer sent - call is now ringing');
+        setCallState('ringing');
+        startRingbackTone();
+      },
+      () => {
+        // onAnswerReceived callback
+        console.log('Answer received - call is now connecting');
+        setCallState('connecting');
+        stopRingbackTone();
       }
     );
 
@@ -69,7 +87,8 @@ export const useWebRTCCall = (conversationId: string) => {
         return;
       }
       
-      showSuccess("Connecting...", "Setting up voice call");
+      setCallState('initiating');
+      showSuccess("Initiating...", "Setting up voice call");
       
       const manager = initializeManager();
       if (!manager) return;
@@ -100,11 +119,12 @@ export const useWebRTCCall = (conversationId: string) => {
       setIsInCall(true);
       setIsVideoCall(false);
       
-      showSuccess("Voice call", "Calling...");
+      // State will transition to 'ringing' after offer is sent
     } catch (error) {
       console.error('Error starting voice call:', error);
       const errorMessage = error instanceof Error ? error.message : "Could not start voice call";
       showError("Voice call failed", errorMessage);
+      setCallState('idle');
     }
   }, [initializeManager, showSuccess, showError, requestMicrophoneForCall]);
 
@@ -120,7 +140,8 @@ export const useWebRTCCall = (conversationId: string) => {
         return;
       }
       
-      showSuccess("Connecting...", "Setting up video call");
+      setCallState('initiating');
+      showSuccess("Initiating...", "Setting up video call");
       
       const manager = initializeManager();
       if (!manager) return;
@@ -151,11 +172,12 @@ export const useWebRTCCall = (conversationId: string) => {
       setIsInCall(true);
       setIsVideoCall(true);
       
-      showSuccess("Video call", "Calling...");
+      // State will transition to 'ringing' after offer is sent
     } catch (error) {
       console.error('Error starting video call:', error);
       const errorMessage = error instanceof Error ? error.message : "Could not start video call";
       showError("Video call failed", errorMessage);
+      setCallState('idle');
     }
   }, [initializeManager, showSuccess, showError, requestVideoCallPermissions]);
 
@@ -251,6 +273,8 @@ export const useWebRTCCall = (conversationId: string) => {
     if (webrtcManager) {
       webrtcManager.endCall();
     }
+    stopRingbackTone();
+    setCallState('idle');
     setIsInCall(false);
     setIsVideoCall(false);
     setLocalStream(null);
@@ -445,6 +469,7 @@ export const useWebRTCCall = (conversationId: string) => {
   return {
     isInCall,
     isVideoCall,
+    callState,
     localStream,
     remoteStream,
     incomingCall,

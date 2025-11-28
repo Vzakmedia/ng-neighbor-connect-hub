@@ -22,7 +22,9 @@ export class WebRTCManager {
     conversationId: string,
     currentUserId: string,
     private onRemoteStream: (stream: MediaStream) => void,
-    private onCallEnd: (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => void
+    private onCallEnd: (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => void,
+    private onOfferSent?: () => void,
+    private onAnswerReceived?: () => void
   ) {
     this.conversationId = conversationId;
     this.currentUserId = currentUserId;
@@ -209,6 +211,9 @@ export class WebRTCManager {
             callType: video ? 'video' : 'audio'
           });
           console.log('Offer sent successfully');
+          
+          // Notify that offer was sent successfully
+          this.onOfferSent?.();
           break;
         } catch (signalError) {
           retryCount++;
@@ -329,6 +334,9 @@ export class WebRTCManager {
           await this.pc!.setRemoteDescription(message.answer);
           this.hasRemoteDescription = true;
           await this.processPendingIceCandidates();
+          
+          // Notify that answer was received
+          this.onAnswerReceived?.();
           break;
           
         case 'ice-candidate':
