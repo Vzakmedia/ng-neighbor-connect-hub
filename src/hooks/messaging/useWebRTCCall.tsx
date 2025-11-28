@@ -435,6 +435,7 @@ export const useWebRTCCall = (conversationId: string) => {
     };
 
     // Use safe subscription with proper error handling
+    // Filter by both conversation_id AND receiver_id to ensure targeted delivery
     const subscription = createSafeSubscription(
       (channel) => {
         return channel.on(
@@ -443,7 +444,7 @@ export const useWebRTCCall = (conversationId: string) => {
             event: 'INSERT',
             schema: 'public',
             table: 'call_signaling',
-            filter: `conversation_id=eq.${conversationId}`
+            filter: `conversation_id=eq.${conversationId},receiver_id=eq.${user.id}`
           },
           async (payload) => {
             console.log('Received signaling message via realtime:', payload);
@@ -452,7 +453,7 @@ export const useWebRTCCall = (conversationId: string) => {
         );
       },
       {
-        channelName: `call_signaling_${conversationId}`,
+        channelName: `call_signaling_${conversationId}_${user.id}`,
         debugName: 'WebRTCCall',
         onError: startPollingFallback,
         pollInterval: 2000,
@@ -465,6 +466,12 @@ export const useWebRTCCall = (conversationId: string) => {
       window.removeEventListener('incoming-call', handleIncomingCallNotification as EventListener);
     };
   }, [conversationId, user?.id, showSuccess]); // Removed webrtcManager dependency
+
+  // Get connection stats for debugging
+  const getConnectionStats = useCallback(async () => {
+    if (!webrtcManager) return null;
+    return await webrtcManager.getConnectionStats();
+  }, [webrtcManager]);
 
   return {
     isInCall,
@@ -481,5 +488,6 @@ export const useWebRTCCall = (conversationId: string) => {
     toggleAudio,
     toggleVideo,
     switchCamera,
+    getConnectionStats,
   };
 };

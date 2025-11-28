@@ -1577,6 +1577,7 @@ export type Database = {
           created_at: string
           id: string
           message: Json
+          receiver_id: string | null
           sender_id: string
         }
         Insert: {
@@ -1584,6 +1585,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: Json
+          receiver_id?: string | null
           sender_id: string
         }
         Update: {
@@ -1591,6 +1593,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: Json
+          receiver_id?: string | null
           sender_id?: string
         }
         Relationships: []
