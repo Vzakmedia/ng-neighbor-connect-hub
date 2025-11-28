@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Mic, VolumeX as MicOff, Volume2 } from '@/lib/icons';
+import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Mic, VolumeX as MicOff, Volume2, MessageCircle, Plus } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 interface CallControlsProps {
@@ -63,32 +63,72 @@ export const CallControls: React.FC<CallControlsProps> = ({
   }
 
   return (
-    <div className={cn("flex gap-2 items-center bg-background/95 backdrop-blur-sm border rounded-lg p-2", className)}>
-      <Button
-        variant={audioEnabled ? "outline" : "destructive"}
-        size="sm"
-        onClick={handleToggleAudio}
-      >
-        {audioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-      </Button>
-      
-      {isVideoCall && (
-        <Button
-          variant={videoEnabled ? "outline" : "destructive"}
-          size="sm"
-          onClick={handleToggleVideo}
+    <div className={cn("flex flex-col items-center gap-6 pb-4", className)}>
+      {/* First row: Mute, Chat, Speaker */}
+      <div className="flex items-center justify-center gap-8">
+        <button 
+          onClick={handleToggleAudio}
+          className="flex flex-col items-center gap-1.5"
         >
-          {videoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-        </Button>
-      )}
-      
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={onEndCall}
-      >
-        <PhoneOff className="h-4 w-4" />
-      </Button>
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+            {audioEnabled ? <Volume2 className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white" />}
+          </div>
+          <span className="text-white text-xs font-medium">Mute</span>
+        </button>
+
+        <button 
+          onClick={() => console.log('Chat clicked')}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+            <MessageCircle className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-medium">Chat</span>
+        </button>
+
+        <button 
+          onClick={() => console.log('Speaker clicked')}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+            <Volume2 className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-medium">Speaker</span>
+        </button>
+      </div>
+
+      {/* Second row: Add, Record, End */}
+      <div className="flex items-center justify-center gap-8">
+        <button 
+          onClick={() => console.log('Add participant clicked')}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+            <Plus className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-medium">Add</span>
+        </button>
+
+        <button 
+          onClick={() => console.log('Record clicked')}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
+            <Mic className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-medium">Record</span>
+        </button>
+
+        <button 
+          onClick={onEndCall}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <div className="w-14 h-14 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 transition-colors">
+            <PhoneOff className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-white text-xs font-medium">End</span>
+        </button>
+      </div>
     </div>
   );
 };
