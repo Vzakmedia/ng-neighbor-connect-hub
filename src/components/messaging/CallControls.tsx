@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Mic, VolumeX as MicOff, Volume2, MessageCircle, Plus } from '@/lib/icons';
+import { Phone, X, Video, Mic, Volume2, VolumeX, MessageCircle, Plus } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 
 interface CallControlsProps {
@@ -64,27 +64,35 @@ export const CallControls: React.FC<CallControlsProps> = ({
 
   return (
     <div className={cn("flex flex-col items-center gap-6 pb-4", className)}>
-      {/* First row: Mute, Chat, Speaker */}
+      {/* First row: Mute, Video (if video call), Chat */}
       <div className="flex items-center justify-center gap-8">
         <button 
           onClick={handleToggleAudio}
           className="flex flex-col items-center gap-1.5"
         >
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
-            {audioEnabled ? <Volume2 className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white" />}
+          <div className={cn(
+            "w-14 h-14 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors",
+            audioEnabled ? "bg-white/20 hover:bg-white/30" : "bg-red-500 hover:bg-red-600"
+          )}>
+            {audioEnabled ? <Mic className="h-6 w-6 text-white" /> : <VolumeX className="h-6 w-6 text-white" />}
           </div>
-          <span className="text-white text-xs font-medium">Mute</span>
+          <span className="text-white text-xs font-medium">{audioEnabled ? 'Mute' : 'Unmute'}</span>
         </button>
 
-        <button 
-          onClick={() => console.log('Chat clicked')}
-          className="flex flex-col items-center gap-1.5"
-        >
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
-            <MessageCircle className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-white text-xs font-medium">Chat</span>
-        </button>
+        {isVideoCall && (
+          <button 
+            onClick={handleToggleVideo}
+            className="flex flex-col items-center gap-1.5"
+          >
+            <div className={cn(
+              "w-14 h-14 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors",
+              videoEnabled ? "bg-white/20 hover:bg-white/30" : "bg-red-500 hover:bg-red-600"
+            )}>
+              {videoEnabled ? <Video className="h-6 w-6 text-white" /> : <VolumeX className="h-6 w-6 text-white" />}
+            </div>
+            <span className="text-white text-xs font-medium">{videoEnabled ? 'Stop Video' : 'Start Video'}</span>
+          </button>
+        )}
 
         <button 
           onClick={() => console.log('Speaker clicked')}
@@ -124,7 +132,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
           className="flex flex-col items-center gap-1.5"
         >
           <div className="w-14 h-14 rounded-full bg-destructive flex items-center justify-center hover:bg-destructive/90 transition-colors">
-            <PhoneOff className="h-6 w-6 text-white" />
+            <X className="h-6 w-6 text-white" />
           </div>
           <span className="text-white text-xs font-medium">End</span>
         </button>
