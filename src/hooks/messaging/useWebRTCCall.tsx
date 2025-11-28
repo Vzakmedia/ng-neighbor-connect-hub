@@ -37,8 +37,15 @@ export const useWebRTCCall = (conversationId: string) => {
         console.log('Remote stream received');
         setRemoteStream(stream);
       },
-      () => {
-        console.log('Call ended');
+      (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => {
+        console.log('Call ended, reason:', reason);
+        if (reason === 'disconnected') {
+          showError("Call Disconnected", "The other person lost connection");
+        } else if (reason === 'declined') {
+          showError("Call Declined", "The call was declined");
+        } else if (reason === 'failed') {
+          showError("Call Failed", "Unable to establish connection");
+        }
         setIsInCall(false);
         setIsVideoCall(false);
         setLocalStream(null);
@@ -48,7 +55,7 @@ export const useWebRTCCall = (conversationId: string) => {
     );
 
     return manager;
-  }, [conversationId, user?.id]);
+  }, [conversationId, user?.id, showError]);
 
   // Start voice call
   const startVoiceCall = useCallback(async () => {
@@ -216,12 +223,28 @@ export const useWebRTCCall = (conversationId: string) => {
   }, [incomingCall, initializeManager, showSuccess, showError, requestMicrophoneForCall, requestVideoCallPermissions]);
 
   // Decline incoming call
-  const declineCall = useCallback(() => {
+  const declineCall = useCallback(async () => {
+    console.log('Declining call');
+    
+    // Send decline signal to notify the caller
+    if (incomingCall && user?.id) {
+      try {
+        await supabase.from('call_signaling').insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          message: { type: 'call-decline' }
+        });
+        console.log('Decline signal sent');
+      } catch (error) {
+        console.error('Error sending decline signal:', error);
+      }
+    }
+    
     if (webrtcManager) {
       webrtcManager.markCallAsDeclined();
     }
     setIncomingCall(null);
-  }, [webrtcManager]);
+  }, [incomingCall, conversationId, user?.id, webrtcManager]);
 
   // End current call
   const endCall = useCallback(() => {
@@ -301,6 +324,12 @@ export const useWebRTCCall = (conversationId: string) => {
         }
       } else if (message.message.type === 'call-end') {
         console.log('Call end signal received');
+        const mgr = webrtcRef.current;
+        if (mgr) {
+          await mgr.handleSignalingMessage(message.message);
+        }
+      } else if (message.message.type === 'call-decline') {
+        console.log('Call decline signal received');
         const mgr = webrtcRef.current;
         if (mgr) {
           await mgr.handleSignalingMessage(message.message);
