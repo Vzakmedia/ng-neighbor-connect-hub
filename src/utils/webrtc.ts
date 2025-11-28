@@ -6,6 +6,7 @@ export class WebRTCManager {
   private remoteStream: MediaStream | null = null;
   private conversationId: string;
   private currentUserId: string;
+  private otherUserId: string = '';
   private isInitiator: boolean = false;
   private callStartTime: Date | null = null;
   private callConnectedTime: Date | null = null;
@@ -17,6 +18,7 @@ export class WebRTCManager {
   private maxIceRestarts: number = 3;
   private iceRestartDelay: number = 2000;
   private currentFacingMode: 'user' | 'environment' = 'user';
+  private statsLogInterval: NodeJS.Timeout | null = null;
 
   constructor(
     conversationId: string,
@@ -28,26 +30,35 @@ export class WebRTCManager {
   ) {
     this.conversationId = conversationId;
     this.currentUserId = currentUserId;
+    this.initializeOtherUserId();
     this.setupPeerConnection();
   }
 
-  private setupPeerConnection() {
-    this.pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        {
-          urls: [
-            'turn:openrelay.metered.ca:80',
-            'turn:openrelay.metered.ca:443',
-            'turns:openrelay.metered.ca:443',
-          ],
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-      ]
-    });
+  private async initializeOtherUserId() {
+    this.otherUserId = await this.getOtherUserId();
+  }
+
+  private async setupPeerConnection() {
+    // Fetch TURN credentials from edge function
+    let iceServers: RTCIceServer[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+    ];
+
+    try {
+      const { data: credentials, error } = await supabase.functions.invoke('get-turn-credentials');
+      if (!error && credentials?.iceServers) {
+        iceServers = credentials.iceServers;
+        console.log('[WebRTC] Loaded TURN credentials from server');
+      } else {
+        console.warn('[WebRTC] Failed to load TURN credentials, using STUN only');
+      }
+    } catch (error) {
+      console.warn('[WebRTC] Error fetching TURN credentials:', error);
+    }
+
+    this.pc = new RTCPeerConnection({ iceServers });
 
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -97,6 +108,7 @@ export class WebRTCManager {
         this.updateCallLog('connected');
         this.callConnectedTime = new Date();
         this.iceRestartAttempts = 0; // Reset on successful connection
+        this.startStatsLogging();
       }
       
       if (this.pc?.connectionState === 'failed' && !this.isEnding) {
@@ -190,6 +202,9 @@ export class WebRTCManager {
         console.log(`[CALLER] Adding ${track.kind} track - enabled: ${track.enabled}, muted: ${track.muted}, label: ${track.label}`);
         this.pc?.addTrack(track, this.localStream!);
       });
+
+      // Verify transceivers are set to sendrecv
+      this.verifyTransceivers();
 
       // Create offer
       const offer = await this.pc!.createOffer();
@@ -285,6 +300,9 @@ export class WebRTCManager {
         console.log(`[RECEIVER] Adding ${track.kind} track - enabled: ${track.enabled}, muted: ${track.muted}, label: ${track.label}`);
         this.pc?.addTrack(track, this.localStream!);
       });
+
+      // Verify transceivers are set to sendrecv
+      this.verifyTransceivers();
 
       // Set remote description (offer)
       await this.pc!.setRemoteDescription(offer);
@@ -393,6 +411,7 @@ export class WebRTCManager {
         .insert({
           conversation_id: this.conversationId,
           sender_id: this.currentUserId,
+          receiver_id: this.otherUserId, // Target specific recipient
           message: message,
           created_at: new Date().toISOString()
         });
@@ -509,6 +528,9 @@ export class WebRTCManager {
   }
 
   private cleanupResources() {
+    // Stop stats logging
+    this.stopStatsLogging();
+
     // Stop local stream
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
@@ -648,6 +670,81 @@ export class WebRTCManager {
   markCallAsMissed(): void {
     if (this.currentCallLogId) {
       this.updateCallLog('missed');
+    }
+  }
+
+  // Verify transceivers are set to sendrecv for bidirectional communication
+  private verifyTransceivers() {
+    const transceivers = this.pc?.getTransceivers() || [];
+    transceivers.forEach(t => {
+      console.log(`[WebRTC] Transceiver: kind=${t.receiver.track?.kind}, direction=${t.direction}, currentDirection=${t.currentDirection}`);
+      if (t.direction !== 'sendrecv') {
+        t.direction = 'sendrecv';
+        console.log(`[WebRTC] Set transceiver direction to sendrecv`);
+      }
+    });
+  }
+
+  // Get detailed connection statistics for debugging
+  async getConnectionStats(): Promise<{
+    connectionState: RTCPeerConnectionState | null;
+    iceConnectionState: RTCIceConnectionState | null;
+    iceGatheringState: RTCIceGatheringState | null;
+    transceivers: Array<{kind: string; direction: RTCRtpTransceiverDirection}>;
+    bytesSent: number;
+    bytesReceived: number;
+  }> {
+    if (!this.pc) {
+      return {
+        connectionState: null,
+        iceConnectionState: null,
+        iceGatheringState: null,
+        transceivers: [],
+        bytesSent: 0,
+        bytesReceived: 0,
+      };
+    }
+    
+    const stats = await this.pc.getStats();
+    let bytesSent = 0, bytesReceived = 0;
+    
+    stats.forEach(report => {
+      if (report.type === 'outbound-rtp') bytesSent += (report as any).bytesSent || 0;
+      if (report.type === 'inbound-rtp') bytesReceived += (report as any).bytesReceived || 0;
+    });
+    
+    return {
+      connectionState: this.pc.connectionState,
+      iceConnectionState: this.pc.iceConnectionState,
+      iceGatheringState: this.pc.iceGatheringState,
+      transceivers: this.pc.getTransceivers().map(t => ({
+        kind: t.receiver.track?.kind || 'unknown',
+        direction: t.direction
+      })),
+      bytesSent,
+      bytesReceived
+    };
+  }
+
+  // Start periodic stats logging for debugging
+  private startStatsLogging() {
+    this.statsLogInterval = setInterval(async () => {
+      const stats = await this.getConnectionStats();
+      console.log('[WebRTC Stats]', {
+        state: stats.connectionState,
+        ice: stats.iceConnectionState,
+        bytesSent: stats.bytesSent,
+        bytesReceived: stats.bytesReceived,
+        transceivers: stats.transceivers
+      });
+    }, 5000);
+  }
+
+  // Stop stats logging
+  private stopStatsLogging() {
+    if (this.statsLogInterval) {
+      clearInterval(this.statsLogInterval);
+      this.statsLogInterval = null;
     }
   }
 }
