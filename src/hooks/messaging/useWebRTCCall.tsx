@@ -359,6 +359,21 @@ export const useWebRTCCall = (conversationId: string) => {
       }
     };
 
+    // Handle incoming call notifications from push notifications
+    const handleIncomingCallNotification = (event: CustomEvent) => {
+      const { conversationId: callConvId, callerId, callerName, callType } = event.detail;
+      
+      console.log('[useWebRTCCall] Received incoming call push notification:', event.detail);
+      
+      // Only handle if it matches this conversation
+      if (callConvId === conversationId) {
+        showSuccess("Incoming Call", `${callerName} is calling...`);
+        // The actual incoming call UI will be handled by call_signaling
+      }
+    };
+
+    window.addEventListener('incoming-call', handleIncomingCallNotification as EventListener);
+
     // Polling fallback for when realtime fails
     const startPollingFallback = async () => {
       
@@ -423,8 +438,9 @@ export const useWebRTCCall = (conversationId: string) => {
     return () => {
       console.log('Cleaning up signaling subscription and polling');
       subscription.unsubscribe();
+      window.removeEventListener('incoming-call', handleIncomingCallNotification as EventListener);
     };
-  }, [conversationId, user?.id]); // Removed webrtcManager dependency
+  }, [conversationId, user?.id, showSuccess]); // Removed webrtcManager dependency
 
   return {
     isInCall,
