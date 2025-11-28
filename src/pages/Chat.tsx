@@ -116,12 +116,18 @@ const Chat = () => {
     }
   }, [fetchConversations, fetchMessages, conversation?.id, conversation?.user1_id, conversation?.user2_id, user?.id]);
 
+  // Derive recipientId from conversation
+  const recipientId = conversation?.user1_id === user?.id 
+    ? conversation?.user2_id 
+    : conversation?.user1_id;
+
   // Set up real-time subscriptions for this specific conversation
   useMessageSubscriptions({
     userId: user?.id,
     onNewMessage,
     onMessageUpdate,
     onConversationUpdate,
+    recipientId: recipientId,
     activeConversationId: conversationId
   });
 
