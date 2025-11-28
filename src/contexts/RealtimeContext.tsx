@@ -82,13 +82,14 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               filter: `or(sender_id.eq.${user.id},recipient_id.eq.${user.id})`,
             },
             (payload) => {
-              const msg = payload.record;
+              const msg = payload.new;
 
               // Deduplication: ignore if client_message_id already exists locally
               if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
               if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
 
-              messageCallbacks.current.forEach((cb) => cb(msg));
+              console.log('[RealtimeProvider] New direct message received:', msg.id);
+              messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
             },
           ),
         {

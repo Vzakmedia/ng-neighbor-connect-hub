@@ -28,8 +28,31 @@ export const useMessageSubscriptions = ({
 
     console.log('[MessageSubscriptions] Using unified subscriptions for user:', userId, 'recipient:', recipientId);
 
-    // Message subscriptions removed - handled by useDirectMessages broadcast channel
-    // This prevents double subscriptions and infinite loops
+    // Subscribe to message events
+    const unsubscribeMessages = onMessage((payload) => {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const msg = payload.new;
+        console.log('[MessageSubscriptions] Message event received:', msg.id, 'sender:', msg.sender_id, 'recipient:', msg.recipient_id);
+        
+        // Only process if this message is relevant to the active conversation
+        if (recipientId) {
+          // For direct message dialogs
+          const isRelevant = (msg.sender_id === recipientId && msg.recipient_id === userId) || 
+                            (msg.sender_id === userId && msg.recipient_id === recipientId);
+          if (isRelevant) {
+            console.log('[MessageSubscriptions] Calling onNewMessage for relevant message');
+            onNewMessage(msg);
+          }
+        } else if (activeConversationId) {
+          // For main messaging interface - check if message belongs to active conversation
+          const isRelevant = (msg.sender_id === userId || msg.recipient_id === userId);
+          if (isRelevant && msg.sender_id !== userId) {
+            console.log('[MessageSubscriptions] Calling onNewMessage for active conversation');
+            onNewMessage(msg);
+          }
+        }
+      }
+    });
 
     // Subscribe to conversation events
     const unsubscribeConversations = onConversationUpdate 
@@ -48,10 +71,11 @@ export const useMessageSubscriptions = ({
       : () => {};
 
     return () => {
+      unsubscribeMessages();
       unsubscribeConversations();
       unsubscribeReadReceipts();
     };
-  }, [userId, onConversation, onReadReceiptEvent, onConversationUpdate, onReadReceipt]);
+  }, [userId, onMessage, onConversation, onReadReceiptEvent, onConversationUpdate, onReadReceipt, onNewMessage, recipientId, activeConversationId]);
 
   // Return empty methods for backward compatibility
   return {
