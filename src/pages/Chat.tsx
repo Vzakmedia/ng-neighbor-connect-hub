@@ -11,7 +11,7 @@ import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Phone, Video, MoreVertical, Check as CheckSquare, Trash2, Phone as PhoneCall } from '@/lib/icons';
+import { ArrowLeft, Phone, Video, MoreVertical, Check as CheckSquare, Trash2, Phone as PhoneCall, Search, X } from '@/lib/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [showSearch, setShowSearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastConversationIdRef = useRef<string | null>(null);
@@ -283,6 +284,10 @@ const Chat = () => {
     }
   };
 
+  const toggleSearch = () => {
+    setShowSearch(prev => !prev);
+  };
+
   const handleDeleteConversation = async () => {
     const success = await deleteConversation(conversationId || '');
     if (success) {
@@ -376,6 +381,14 @@ const Chat = () => {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={toggleSearch}
+                className="h-8 w-8 md:h-10 md:w-10"
+              >
+                {showSearch ? <X className="h-4 w-4 md:h-5 md:w-5" /> : <Search className="h-4 w-4 md:h-5 md:w-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleSelectionMode}
                 className={`h-8 w-8 md:h-10 md:w-10 ${isSelectionMode ? 'bg-primary text-primary-foreground' : ''}`}
               >
@@ -420,6 +433,9 @@ const Chat = () => {
           selectedMessages={selectedMessages}
           onSelectedMessagesChange={setSelectedMessages}
           onMarkAsRead={markMessageAsRead}
+          hideHeader={true}
+          showSearch={showSearch}
+          onToggleSearch={toggleSearch}
           onMessageDeleted={() => {
             // Refetch messages when a message is deleted
             if (conversation) {

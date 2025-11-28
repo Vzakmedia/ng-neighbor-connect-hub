@@ -44,6 +44,9 @@ interface MessageThreadProps {
   loadingOlder?: boolean;
   hasMoreMessages?: boolean;
   onMarkAsRead?: (messageId: string) => void;
+  hideHeader?: boolean;
+  showSearch?: boolean;
+  onToggleSearch?: () => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -62,13 +65,19 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onLoadOlder,
   loadingOlder = false,
   hasMoreMessages = true,
-  onMarkAsRead
+  onMarkAsRead,
+  hideHeader = false,
+  showSearch: externalShowSearch,
+  onToggleSearch: externalToggleSearch
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+  const [internalShowSearch, setInternalShowSearch] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  
+  // Use external search state if provided, otherwise use internal
+  const showSearch = externalShowSearch !== undefined ? externalShowSearch : internalShowSearch;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -174,14 +183,19 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   }, [currentSearchIndex, searchResultCount, scrollToSearchResult]);
 
   const toggleSearch = useCallback(() => {
-    setShowSearch(prev => !prev);
+    if (externalToggleSearch) {
+      externalToggleSearch();
+    } else {
+      setInternalShowSearch(prev => !prev);
+    }
+    
     if (!showSearch) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
       setSearchQuery('');
       setCurrentSearchIndex(0);
     }
-  }, [showSearch]);
+  }, [showSearch, externalToggleSearch]);
 
   // Highlight matching text in message
   const highlightText = useCallback((text: string, query: string) => {
@@ -204,7 +218,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Reset search when conversation changes
   useEffect(() => {
     setSearchQuery('');
-    setShowSearch(false);
+    setInternalShowSearch(false);
     setCurrentSearchIndex(0);
   }, [conversation.id]);
 
@@ -431,12 +445,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
-      <MessageThreadHeader 
-        conversation={conversation}
-        showSearch={showSearch}
-        onBack={onBack}
-        onToggleSearch={toggleSearch}
-      />
+      {!hideHeader && (
+        <MessageThreadHeader 
+          conversation={conversation}
+          showSearch={showSearch}
+          onBack={onBack}
+          onToggleSearch={toggleSearch}
+        />
+      )}
       
       {showSearch && (
         <div className="px-4 md:px-6">
