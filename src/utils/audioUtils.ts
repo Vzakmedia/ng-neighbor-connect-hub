@@ -441,6 +441,68 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
   }
 };
 
+// Play ringback tone for outgoing calls
+export const playRingbackTone = async (volume: number = 0.4): Promise<void> => {
+  const ctx = await getAudioContext();
+  
+  // Create a pleasant ringing pattern (ring-ring, pause, ring-ring)
+  const playRing = async (startTime: number) => {
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    // Pleasant phone ring frequencies
+    osc.frequency.setValueAtTime(440, startTime); // A4
+    osc.frequency.setValueAtTime(554.37, startTime + 0.2); // C#5
+    
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(volume, startTime + 0.05);
+    gainNode.gain.setValueAtTime(volume, startTime + 0.4);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+    
+    osc.type = 'sine';
+    osc.start(startTime);
+    osc.stop(startTime + 0.8);
+  };
+  
+  // Play two rings with a pause
+  await playRing(ctx.currentTime);
+  await playRing(ctx.currentTime + 0.9);
+};
+
+// Stop ringback tone (called when call is answered or cancelled)
+let ringbackIntervalId: NodeJS.Timeout | null = null;
+
+export const startRingbackTone = async (volume: number = 0.4): Promise<void> => {
+  console.log('Starting ringback tone');
+  
+  if (!await isSoundEnabled()) {
+    console.log('Sound disabled, skipping ringback tone');
+    return;
+  }
+  
+  // Stop any existing ringback
+  stopRingbackTone();
+  
+  // Play initial ringback
+  await playRingbackTone(volume);
+  
+  // Continue playing every 3 seconds
+  ringbackIntervalId = setInterval(async () => {
+    await playRingbackTone(volume);
+  }, 3000);
+};
+
+export const stopRingbackTone = (): void => {
+  console.log('Stopping ringback tone');
+  if (ringbackIntervalId) {
+    clearInterval(ringbackIntervalId);
+    ringbackIntervalId = null;
+  }
+};
+
 // Play emergency alert sound specifically for critical alerts
 export const playEmergencyAlert = async (): Promise<void> => {
   try {

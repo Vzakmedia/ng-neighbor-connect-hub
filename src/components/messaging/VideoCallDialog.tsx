@@ -2,9 +2,10 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CallControls } from './CallControls';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronDown } from '@/lib/icons';
+import { ChevronDown, Phone } from '@/lib/icons';
 import { NetworkQualityIndicator } from '@/components/mobile/NetworkQualityIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import type { CallState } from '@/hooks/messaging/useWebRTCCall';
 
 interface VideoCallDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface VideoCallDialogProps {
   isVideoCall: boolean;
   otherUserName: string;
   otherUserAvatar?: string;
+  callState?: CallState;
 }
 
 export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
@@ -31,7 +33,8 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   onSwitchCamera,
   isVideoCall,
   otherUserName,
-  otherUserAvatar
+  otherUserAvatar,
+  callState = 'connecting'
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -214,7 +217,21 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
               </div>
 
               {/* Connection status */}
-              {!remoteStream && (
+              {callState === 'initiating' && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-300" />
+                  <span className="text-white/60 text-sm ml-2">Initiating...</span>
+                </div>
+              )}
+              {callState === 'ringing' && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Phone className="h-4 w-4 text-white animate-bounce" />
+                  <span className="text-white/80 text-base ml-2">Ringing...</span>
+                </div>
+              )}
+              {callState === 'connecting' && !remoteStream && (
                 <div className="flex items-center gap-2 mt-2">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
