@@ -7,7 +7,7 @@ import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { useCallPermissions } from '@/hooks/mobile/useCallPermissions';
 import { startRingbackTone, stopRingbackTone } from '@/utils/audioUtils';
 
-export type CallState = 'idle' | 'initiating' | 'ringing' | 'connecting' | 'connected' | 'ended';
+export type CallState = 'idle' | 'initiating' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'failed';
 
 export const useWebRTCCall = (conversationId: string) => {
   const { user } = useAuth();
@@ -28,21 +28,20 @@ export const useWebRTCCall = (conversationId: string) => {
 
   const webrtcRef = useRef<WebRTCManager | null>(null);
   const pendingMessagesRef = useRef<any[]>([]);
-  const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
-  // Initialize WebRTC manager
+  // Initialize WebRTC manager with new configuration object pattern
   const initializeManager = useCallback(() => {
     if (!user?.id) return null;
 
-    const manager = new WebRTCManager(
+    const manager = new WebRTCManager({
       conversationId,
-      user.id,
-      (stream) => {
+      currentUserId: user.id,
+      onRemoteStream: (stream) => {
         console.log('Remote stream received - call connected');
         setRemoteStream(stream);
         setCallState('connected');
       },
-      (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => {
+      onCallEnd: (reason?: 'ended' | 'declined' | 'failed' | 'disconnected') => {
         console.log('Call ended, reason:', reason);
         if (reason === 'disconnected') {
           showError("Call Disconnected", "The other person lost connection");
@@ -58,19 +57,24 @@ export const useWebRTCCall = (conversationId: string) => {
         setRemoteStream(null);
         setWebrtcManager(null);
       },
-      () => {
-        // onOfferSent callback
+      onOfferSent: () => {
         console.log('Offer sent - call is now ringing');
         setCallState('ringing');
         startRingbackTone();
       },
-      () => {
-        // onAnswerReceived callback
+      onAnswerReceived: () => {
         console.log('Answer received - call is now connecting');
         setCallState('connecting');
         stopRingbackTone();
+      },
+      onCallStateChange: (state) => {
+        console.log('Call state changed:', state);
+        setCallState(state);
+      },
+      onError: (err) => {
+        console.error('WebRTC error:', err);
       }
-    );
+    });
 
     return manager;
   }, [conversationId, user?.id, showError]);
@@ -317,14 +321,10 @@ export const useWebRTCCall = (conversationId: string) => {
     console.log('Setting up signaling subscription for conversation:', conversationId);
     let pollingInterval: NodeJS.Timeout | null = null;
 
-    // Handle signaling messages
+    // Handle signaling messages (deduplication now handled in WebRTCManager)
     const handleSignalingMessage = async (message: any) => {
       // Ignore messages from ourselves
       if (message.sender_id === user.id) return;
-      
-      // Prevent duplicate processing
-      if (processedMessageIdsRef.current.has(message.id)) return;
-      processedMessageIdsRef.current.add(message.id);
 
       // Ignore old messages (older than 30 seconds)
       const messageAge = Date.now() - new Date(message.created_at).getTime();
@@ -420,11 +420,9 @@ export const useWebRTCCall = (conversationId: string) => {
 
         // Process new messages
         for (const message of data || []) {
-          if (!processedMessageIdsRef.current.has(message.id)) {
-            console.log('Received signaling message via polling:', message);
-            await handleSignalingMessage(message);
-            break; // Only process one message per poll
-          }
+          console.log('Received signaling message via polling:', message);
+          await handleSignalingMessage(message);
+          break; // Only process one message per poll
         }
       } catch (error: any) {
         // Silently ignore network errors to prevent console spam
