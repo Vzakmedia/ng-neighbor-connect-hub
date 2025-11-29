@@ -1,5 +1,8 @@
 project_id = "cowiviqhrnmhttugozbz"
 
+[functions.insert-call-signal]
+verify_jwt = true
+
 [functions.nigeria-locations]
 verify_jwt = false
 

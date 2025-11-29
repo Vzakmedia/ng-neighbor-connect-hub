@@ -47,6 +47,9 @@ export class WebRTCManager {
   private isEnding: boolean = false;
   private currentFacingMode: 'user' | 'environment' = 'user';
   
+  // Analytics tracking
+  private callInitiatedAt: Date | null = null;
+  
   // ICE handling
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
   private hasRemoteDescription: boolean = false;
@@ -97,6 +100,7 @@ export class WebRTCManager {
   async startCall(video: boolean = false): Promise<MediaStream> {
     try {
       this._setCallState('initiating');
+      this.callInitiatedAt = new Date();
       console.log('Starting call - video:', video);
 
       // Get other user ID for call log
@@ -106,6 +110,12 @@ export class WebRTCManager {
 
       // Create call log entry
       await this.createCallLog(video ? 'video' : 'voice');
+
+      // Log call initiation
+      await this._logCallEvent('call_initiated', {
+        callType: video ? 'video' : 'voice',
+        deviceType: this._getDeviceType()
+      });
 
       // Get local media
       await this._initLocalMedia({ audio: true, video });
@@ -155,10 +165,23 @@ export class WebRTCManager {
       }
 
       this._setCallState('ringing');
+      
+      // Log call ringing
+      await this._logCallEvent('call_ringing', {
+        callType: video ? 'video' : 'voice'
+      });
+      
       console.log('Call initiated successfully');
       return this.localStream!;
     } catch (error) {
       console.error('Error starting call:', error);
+      
+      // Log call failure
+      await this._logCallEvent('call_failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stage: 'initiation'
+      });
+      
       if (this.currentCallLogId) {
         await this.updateCallLog('failed');
       }
@@ -224,10 +247,16 @@ export class WebRTCManager {
 
     console.log('Ending call');
 
-    // Calculate duration and update call log
+    // Calculate duration and log analytics
     if (this.callStartTime && this.currentCallLogId) {
       const duration = Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000);
       await this.updateCallLog('ended', duration);
+      
+      // Log call end with total duration
+      await this._logCallEvent('call_ended', {
+        total_duration_ms: duration * 1000,
+        reason: 'user_initiated'
+      });
     }
 
     // Send end signal
@@ -520,7 +549,7 @@ export class WebRTCManager {
 
     console.log('[WebRTCManager] Subscribing to signaling for conversation', this.conversationId);
 
-    // Subscribe to signaling table for this conversation targeting this user
+    // Subscribe with optimized server-side filtering by receiver_id
     const channel = supabase.channel(`call_signaling_${this.conversationId}_${this.currentUserId}`)
       .on(
         'postgres_changes',
@@ -528,16 +557,11 @@ export class WebRTCManager {
           event: 'INSERT',
           schema: 'public',
           table: 'call_signaling',
-          filter: `conversation_id=eq.${this.conversationId}`
+          filter: `conversation_id=eq.${this.conversationId},or(receiver_id.eq.${this.currentUserId},receiver_id.is.null)`
         },
         async (payload) => {
           const row = payload.new as any;
           if (!row?.message) return;
-
-          // Filter by receiver_id client-side
-          if (row.receiver_id && row.receiver_id !== this.currentUserId) {
-            return;
-          }
 
           const msg: SignalingMessage = row.message;
           await this.handleSignalingMessage(msg);
@@ -652,8 +676,25 @@ export class WebRTCManager {
         this.updateCallLog('connected');
         this.iceRestartAttempts = 0;
         this._startStatsLogging();
+        
+        // Log successful connection with connection time
+        if (this.callInitiatedAt) {
+          const connectionTime = new Date().getTime() - this.callInitiatedAt.getTime();
+          this._logCallEvent('call_connected', {
+            connection_time_ms: connectionTime,
+            ice_connection_state: this.pc.iceConnectionState
+          });
+        }
       } else if (this.pc.connectionState === 'failed') {
         this._setCallState('failed');
+        
+        // Log ICE failure
+        this._logCallEvent('ice_failed', {
+          ice_connection_state: this.pc.iceConnectionState,
+          ice_gathering_state: this.pc.iceGatheringState,
+          restart_attempts: this.iceRestartAttempts
+        });
+        
         this._attemptIceRestart();
       } else if (this.pc.connectionState === 'disconnected') {
         setTimeout(() => {
@@ -816,13 +857,23 @@ export class WebRTCManager {
 
   private async _sendSignalingMessage(message: SignalingMessage) {
     try {
-      await supabase.from('call_signaling').insert({
-        conversation_id: this.conversationId,
-        sender_id: this.currentUserId,
-        receiver_id: message.receiver_id,
-        message: message,
-        created_at: new Date().toISOString()
+      // Use edge function for idempotent signaling insert
+      const { data, error } = await supabase.functions.invoke('insert-call-signal', {
+        body: {
+          message,
+          conversation_id: this.conversationId,
+          receiver_id: message.receiver_id
+        }
       });
+
+      if (error) {
+        console.error('[WebRTC] Signaling edge function error:', error);
+        throw error;
+      }
+
+      if (data?.status === 'duplicate') {
+        console.log('[WebRTC] Duplicate message ignored by server:', message.id);
+      }
     } catch (error) {
       console.error('Error sending signaling message:', error);
       throw error;
@@ -832,6 +883,12 @@ export class WebRTCManager {
   private async _attemptIceRestart() {
     if (!this.pc) return;
     if (this.iceRestartAttempts >= this.maxIceRestarts) {
+      // Log final ICE restart failure
+      await this._logCallEvent('ice_failed', {
+        max_attempts_reached: true,
+        attempts: this.iceRestartAttempts
+      });
+      
       this._handleError('ICE restart failed multiple times', 'ice_restart_failed');
       await this.endCall();
       return;
@@ -839,6 +896,14 @@ export class WebRTCManager {
 
     this.iceRestartAttempts++;
     const delay = 2000 * Math.pow(2, this.iceRestartAttempts - 1);
+    
+    // Log ICE restart attempt
+    await this._logCallEvent('ice_restart', {
+      attempt: this.iceRestartAttempts,
+      max_attempts: this.maxIceRestarts,
+      delay_ms: delay,
+      ice_connection_state: this.pc.iceConnectionState
+    });
     
     console.log(`Connection failed, attempting ICE restart ${this.iceRestartAttempts}/${this.maxIceRestarts} in ${delay}ms`);
 
@@ -961,6 +1026,72 @@ export class WebRTCManager {
         });
       } catch (e) { /* ignore */ }
     }, 5000);
+  }
+
+  // =====================
+  // Analytics Logging
+  // =====================
+
+  private async _logCallEvent(
+    eventType: 'call_initiated' | 'call_ringing' | 'call_connecting' | 'call_connected' | 'call_ended' | 'call_failed' | 'ice_restart' | 'ice_failed' | 'media_error' | 'signaling_error',
+    eventData: Record<string, any> = {}
+  ): Promise<void> {
+    try {
+      const analyticsData: any = {
+        call_log_id: this.currentCallLogId,
+        user_id: this.currentUserId,
+        conversation_id: this.conversationId,
+        event_type: eventType,
+        event_data: eventData,
+        device_type: this._getDeviceType(),
+        network_type: this._getNetworkType()
+      };
+
+      // Add connection time for connected events
+      if (eventType === 'call_connected' && this.callInitiatedAt) {
+        analyticsData.connection_time_ms = new Date().getTime() - this.callInitiatedAt.getTime();
+      }
+
+      // Add total duration for ended events
+      if (eventType === 'call_ended' && this.callStartTime) {
+        analyticsData.total_duration_ms = new Date().getTime() - this.callStartTime.getTime();
+      }
+
+      // Add ICE connection state
+      if (this.pc) {
+        analyticsData.ice_connection_state = this.pc.iceConnectionState;
+      }
+
+      // Add error message if present
+      if (eventData.error) {
+        analyticsData.error_message = String(eventData.error);
+      }
+
+      const { error } = await supabase
+        .from('call_analytics')
+        .insert(analyticsData);
+
+      if (error) {
+        console.error('[WebRTC Analytics] Failed to log event:', error);
+      } else {
+        console.log('[WebRTC Analytics] Logged event:', eventType);
+      }
+    } catch (error) {
+      console.error('[WebRTC Analytics] Error logging call event:', error);
+    }
+  }
+
+  private _getDeviceType(): string {
+    const ua = navigator.userAgent;
+    if (/Mobile|Android|iPhone|iPad|iPod/i.test(ua)) {
+      return /iPhone|iPad|iPod/i.test(ua) ? 'ios' : 'android';
+    }
+    return 'desktop';
+  }
+
+  private _getNetworkType(): string {
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    return connection?.effectiveType || 'unknown';
   }
 
   // =====================
