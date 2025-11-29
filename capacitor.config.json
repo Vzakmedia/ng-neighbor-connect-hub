@@ -35,7 +35,11 @@
       "permissions": ["location", "locationAlways", "locationWhenInUse"]
     },
     "Camera": {
-      "permissions": ["camera", "photos"]
+      "permissions": ["camera", "photos"],
+      "presentationStyle": "fullscreen"
+    },
+    "Microphone": {
+      "permissions": ["microphone"]
     },
     "StatusBar": {
       "style": "dark",
