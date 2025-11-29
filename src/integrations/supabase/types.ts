@@ -1529,6 +1529,69 @@ export type Database = {
         }
         Relationships: []
       }
+      call_analytics: {
+        Row: {
+          call_log_id: string | null
+          connection_time_ms: number | null
+          conversation_id: string | null
+          created_at: string | null
+          device_type: string | null
+          error_message: string | null
+          event_data: Json | null
+          event_type: string
+          ice_connection_state: string | null
+          id: string
+          network_type: string | null
+          total_duration_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          call_log_id?: string | null
+          connection_time_ms?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          error_message?: string | null
+          event_data?: Json | null
+          event_type: string
+          ice_connection_state?: string | null
+          id?: string
+          network_type?: string | null
+          total_duration_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          call_log_id?: string | null
+          connection_time_ms?: number | null
+          conversation_id?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          error_message?: string | null
+          event_data?: Json | null
+          event_type?: string
+          ice_connection_state?: string | null
+          id?: string
+          network_type?: string | null
+          total_duration_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_analytics_call_log_id_fkey"
+            columns: ["call_log_id"]
+            isOneToOne: false
+            referencedRelation: "call_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_analytics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "direct_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_logs: {
         Row: {
           call_status: string
