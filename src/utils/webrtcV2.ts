@@ -359,6 +359,7 @@ export class WebRTCManagerV2 {
         : conversationData.data.user1_id;
 
       const body: any = {
+        log_id: this.currentCallLogId,
         caller_id: user.id,
         receiver_id: receiverId,
         conversation_id: this.conversationId,
