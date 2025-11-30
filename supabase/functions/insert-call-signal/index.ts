@@ -11,6 +11,7 @@ interface SignalingMessage {
   conversation_id: string;
   sender_id: string;
   receiver_id: string;
+  session_id?: string;
   sdp?: any;
   candidate?: any;
   timestamp?: string;
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { message, conversation_id, receiver_id } = body;
+    const { message, conversation_id, receiver_id, session_id } = body;
 
     if (!message || !conversation_id || !receiver_id) {
       return new Response(
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
     // Calculate expires_at (2 minutes from now)
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
 
-    // Insert new signaling message with type and expires_at
+    // Insert new signaling message with type, expires_at, and session_id
     const { data, error: insertError } = await supabaseClient
       .from('call_signaling')
       .insert({
@@ -139,6 +140,7 @@ Deno.serve(async (req) => {
         type: signalType,
         message: signalingMessage,
         expires_at: expiresAt,
+        session_id: session_id || signalingMessage.session_id || null,
       })
       .select('id')
       .single();
