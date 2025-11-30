@@ -59,6 +59,9 @@ export class WebRTCManager {
   // Message deduplication
   private seenMessages = new Set<string>();
   
+  // Negotiation state tracking
+  private isInitialNegotiation: boolean = false;
+  
   // Stats logging
   private statsLogInterval: NodeJS.Timeout | null = null;
   
@@ -124,12 +127,19 @@ export class WebRTCManager {
       // Create peer connection with TURN credentials
       await this._createPeerConnection();
 
+      // Set initial negotiation flag to prevent race condition
+      this.isInitialNegotiation = true;
+
       // Set up transceivers and add tracks
       await this._ensureTransceiversAndSenders();
 
       // Create offer
       const offer = await this.pc!.createOffer();
       await this.pc!.setLocalDescription(offer);
+      
+      // Reset flag after initial negotiation is complete
+      this.isInitialNegotiation = false;
+      
       console.log('Created offer');
 
       // Send push notification
@@ -204,6 +214,9 @@ export class WebRTCManager {
       // Create peer connection
       await this._createPeerConnection();
 
+      // Set initial negotiation flag to prevent race condition
+      this.isInitialNegotiation = true;
+
       // Set up transceivers and add tracks
       await this._ensureTransceiversAndSenders();
 
@@ -213,6 +226,9 @@ export class WebRTCManager {
       // Create answer
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
+      
+      // Reset flag after initial negotiation is complete
+      this.isInitialNegotiation = false;
 
       // Get other user ID
       if (!this.otherUserId) {
@@ -707,8 +723,15 @@ export class WebRTCManager {
 
     // Negotiation needed handler
     this.pc.onnegotiationneeded = async () => {
+      // Skip during initial negotiation to avoid race condition with startCall/answerCall
+      if (this.isInitialNegotiation) {
+        console.log('Skipping onnegotiationneeded during initial negotiation');
+        return;
+      }
+      
+      // Only handle renegotiations (ICE restarts, track changes, etc.)
       try {
-        console.log('Negotiation needed');
+        console.log('Negotiation needed - renegotiating');
         const offer = await this.pc!.createOffer();
         await this.pc!.setLocalDescription(offer);
         await this._sendSignalingMessage({
@@ -981,6 +1004,7 @@ export class WebRTCManager {
       this.hasRemoteDescription = false;
       this.callStartTime = null;
       this.currentCallLogId = null;
+      this.isInitialNegotiation = false;
       
       // Unsubscribe from signaling
       this.unsubscribeSignaling();
