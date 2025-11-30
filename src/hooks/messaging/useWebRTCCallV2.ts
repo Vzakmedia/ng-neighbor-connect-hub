@@ -23,6 +23,7 @@ export function useWebRTCCallV2(conversationId: string) {
 
   const processedSignalIds = useRef<Set<string>>(new Set());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const incomingCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Init manager
   useEffect(() => {
@@ -34,6 +35,18 @@ export function useWebRTCCallV2(conversationId: string) {
     mgr.onIncomingCall = (callData) => {
       setIncomingCall(callData);
       setCallState("ringing");
+      
+      // Start 30s timeout for incoming call
+      if (incomingCallTimeoutRef.current) {
+        clearTimeout(incomingCallTimeoutRef.current);
+      }
+      incomingCallTimeoutRef.current = setTimeout(() => {
+        console.log("Incoming call timeout - auto-declining");
+        mgr.declineCall(callData);
+        setIncomingCall(null);
+        setCallState("idle");
+        toast({ title: "Call missed", description: "The call was not answered in time" });
+      }, 30000);
     };
 
     mgr.onCallStateUpdate = (state) => {
@@ -184,6 +197,12 @@ export function useWebRTCCallV2(conversationId: string) {
       const mgr = managerRef.current;
       if (!mgr || !incomingCall) return;
 
+      // Clear incoming call timeout
+      if (incomingCallTimeoutRef.current) {
+        clearTimeout(incomingCallTimeoutRef.current);
+        incomingCallTimeoutRef.current = null;
+      }
+
       const ok = video ? await requestVideoCallPermissions() : await requestMicrophoneForCall();
       if (!ok) return;
 
@@ -205,6 +224,12 @@ export function useWebRTCCallV2(conversationId: string) {
   const declineCall = useCallback(async () => {
     const mgr = managerRef.current;
     if (!mgr || !incomingCall) return;
+
+    // Clear incoming call timeout
+    if (incomingCallTimeoutRef.current) {
+      clearTimeout(incomingCallTimeoutRef.current);
+      incomingCallTimeoutRef.current = null;
+    }
 
     try {
       await mgr.declineCall(incomingCall);

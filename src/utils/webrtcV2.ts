@@ -18,6 +18,8 @@ export class WebRTCManagerV2 {
   private callSessionId: string | null = null;
   private pendingIceCandidates: RTCIceCandidate[] = [];
   private remoteDescriptionSet: boolean = false;
+  private ringingTimeoutRef: NodeJS.Timeout | null = null;
+  private disconnectTimeoutRef: NodeJS.Timeout | null = null;
 
   // Callbacks
   onIncomingCall: ((callData: any) => void) | null = null;
@@ -89,12 +91,53 @@ export class WebRTCManagerV2 {
       if (this.pc?.connectionState === "connected") {
         this.updateCallState("connected");
         this.logCallConnected();
+        // Clear disconnect timeout if we reconnect
+        if (this.disconnectTimeoutRef) {
+          clearTimeout(this.disconnectTimeoutRef);
+          this.disconnectTimeoutRef = null;
+        }
       } else if (this.pc?.connectionState === "failed") {
         console.warn("Connection failed - attempting ICE restart");
         this.logCallError("Connection failed - attempting restart");
         this.restartIce();
       } else if (this.pc?.connectionState === "disconnected") {
+        console.warn("Connection disconnected - waiting 5s before ICE restart");
         this.logCallError("Connection disconnected");
+        // Wait 5 seconds, then attempt ICE restart if still disconnected
+        if (this.disconnectTimeoutRef) {
+          clearTimeout(this.disconnectTimeoutRef);
+        }
+        this.disconnectTimeoutRef = setTimeout(() => {
+          if (this.pc?.connectionState === "disconnected") {
+            console.log("Still disconnected after 5s - attempting ICE restart");
+            this.restartIce();
+          }
+        }, 5000);
+      }
+    };
+
+    // Handle renegotiation (e.g., camera switching)
+    this.pc.onnegotiationneeded = async () => {
+      if (this.callState !== "connected") {
+        console.log("Skipping negotiation - not connected yet");
+        return;
+      }
+      
+      try {
+        console.log("Renegotiation needed - creating new offer");
+        const offer = await this.pc!.createOffer();
+        await this.pc!.setLocalDescription(offer);
+        
+        await this.sendSignal({
+          type: "renegotiate",
+          sdp: offer,
+          session_id: this.callSessionId
+        });
+        
+        this.logAnalytics("renegotiation_initiated", { reason: "negotiation_needed" });
+      } catch (error) {
+        console.error("Error during renegotiation:", error);
+        this.logCallError(`Renegotiation failed: ${error}`);
       }
     };
   }
@@ -136,6 +179,12 @@ export class WebRTCManagerV2 {
         session_id: this.callSessionId
       });
 
+      // Move to ringing state after offer is sent
+      this.updateCallState("ringing");
+
+      // Start 30s timeout for no answer
+      this.startRingingTimeout();
+
       this.callStartTime = Date.now();
       this.logCallInitiated();
     } catch (error) {
@@ -170,13 +219,16 @@ export class WebRTCManagerV2 {
       this.onLocalStream?.(stream);
 
       await this.createPeerConnection();
-      stream.getTracks().forEach(track => this.pc?.addTrack(track, stream));
-
+      
+      // CRITICAL FIX: Set remote description BEFORE adding tracks
       await this.pc!.setRemoteDescription(new RTCSessionDescription(callData.message.sdp));
       
       // Mark remote description as set and flush pending ICE candidates
       this.remoteDescriptionSet = true;
       await this.flushPendingIceCandidates();
+
+      // Now add local tracks after remote description is set
+      stream.getTracks().forEach(track => this.pc?.addTrack(track, stream));
 
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
@@ -198,12 +250,14 @@ export class WebRTCManagerV2 {
   }
 
   async declineCall(callData: any) {
+    this.clearRingingTimeout();
     await this.sendSignal({ type: "decline" });
     await this.updateCallLogStatus("declined");
     this.cleanup();
   }
 
   async endCall() {
+    this.clearRingingTimeout();
     const duration = this.callStartTime ? Math.floor((Date.now() - this.callStartTime) / 1000) : 0;
     
     await this.sendSignal({ type: "end" });
@@ -253,6 +307,25 @@ export class WebRTCManagerV2 {
       } else if (type === "restart" && this.pc) {
         console.log("Received ICE restart signal from peer");
         await this.handleRemoteIceRestart(sdp);
+      } else if (type === "renegotiate" && this.pc) {
+        console.log("Received renegotiation offer from peer");
+        await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        const answer = await this.pc.createAnswer();
+        await this.pc.setLocalDescription(answer);
+        await this.sendSignal({
+          type: "renegotiate-answer",
+          sdp: answer,
+          session_id: this.callSessionId
+        });
+        this.logAnalytics("renegotiation_answered", { success: true });
+      } else if (type === "renegotiate-answer" && this.pc) {
+        console.log("Received renegotiation answer from peer");
+        await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        this.logAnalytics("renegotiation_completed", { success: true });
+      } else if (type === "timeout") {
+        console.log("Call timed out (no answer) for session:", session_id);
+        this.updateCallState("ended");
+        this.cleanup();
       } else if (type === "end" || type === "decline") {
         console.log("Call ended/declined for session:", session_id);
         this.updateCallState("ended");
@@ -389,6 +462,13 @@ export class WebRTCManagerV2 {
   }
 
   cleanup() {
+    this.clearRingingTimeout();
+    
+    if (this.disconnectTimeoutRef) {
+      clearTimeout(this.disconnectTimeoutRef);
+      this.disconnectTimeoutRef = null;
+    }
+
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
       this.localStream = null;
@@ -406,6 +486,25 @@ export class WebRTCManagerV2 {
     this.pendingIceCandidates = [];
     this.remoteDescriptionSet = false;
     this.updateCallState("idle");
+  }
+
+  private startRingingTimeout() {
+    this.clearRingingTimeout();
+    
+    this.ringingTimeoutRef = setTimeout(async () => {
+      console.log("Call timeout - no answer after 30s");
+      await this.sendSignal({ type: "timeout", session_id: this.callSessionId });
+      await this.updateCallLogStatus("timeout");
+      this.logCallError("Call timeout - no answer");
+      this.cleanup();
+    }, 30000); // 30 seconds
+  }
+
+  private clearRingingTimeout() {
+    if (this.ringingTimeoutRef) {
+      clearTimeout(this.ringingTimeoutRef);
+      this.ringingTimeoutRef = null;
+    }
   }
 
   // Database operations
