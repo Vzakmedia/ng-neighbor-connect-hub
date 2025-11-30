@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface SignalingMessage {
   id: string;
-  type: 'offer' | 'answer' | 'ice' | 'end' | 'restart' | 'busy';
+  type: 'offer' | 'answer' | 'ice' | 'end' | 'restart' | 'busy' | 'renegotiate' | 'renegotiate-answer' | 'timeout';
   conversation_id: string;
   sender_id: string;
   receiver_id: string;
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     const signalType = signalingMessage.type as string;
     
     // Validate signal type
-    const validTypes = ['offer', 'answer', 'ice', 'ice-candidate', 'reject', 'decline', 'end', 'restart', 'busy'];
+    const validTypes = ['offer', 'answer', 'ice', 'ice-candidate', 'reject', 'decline', 'end', 'restart', 'busy', 'renegotiate', 'renegotiate-answer', 'timeout'];
     if (!validTypes.includes(signalType)) {
       return new Response(
         JSON.stringify({ error: `Invalid signal type: ${signalType}` }),
