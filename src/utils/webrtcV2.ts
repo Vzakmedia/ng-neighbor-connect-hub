@@ -66,7 +66,7 @@ export class WebRTCManagerV2 {
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
         this.sendSignal({
-          type: "ice-candidate",
+          type: "ice",
           candidate: event.candidate
         });
       }
@@ -199,7 +199,7 @@ export class WebRTCManagerV2 {
         this.onIncomingCall?.(message);
       } else if (type === "answer" && this.pc) {
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
-      } else if (type === "ice-candidate" && this.pc && candidate) {
+      } else if ((type === "ice" || type === "ice-candidate") && this.pc && candidate) {
         await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
       } else if (type === "end" || type === "decline") {
         this.updateCallState("ended");
@@ -308,9 +308,19 @@ export class WebRTCManagerV2 {
         ? conversationData.data.user2_id 
         : conversationData.data.user1_id;
 
+      // Add required fields to message
+      const fullMessage = {
+        ...message,
+        id: crypto.randomUUID(),
+        sender_id: user.id,
+        conversation_id: this.conversationId,
+        receiver_id: receiverId,
+        timestamp: new Date().toISOString()
+      };
+
       await supabase.functions.invoke("insert-call-signal", {
         body: {
-          message,
+          message: fullMessage,
           conversation_id: this.conversationId,
           receiver_id: receiverId
         }
