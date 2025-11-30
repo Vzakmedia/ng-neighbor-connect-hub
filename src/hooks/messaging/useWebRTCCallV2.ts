@@ -3,6 +3,7 @@ import { WebRTCManagerV2 } from "@/utils/webrtcV2";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallPermissions } from "@/hooks/mobile/useCallPermissions";
 import { useToast } from "@/hooks/use-toast";
+import { createSafeSubscription, cleanupSafeSubscription } from "@/utils/realtimeUtils";
 
 type CallState = "idle" | "initiating" | "ringing" | "connecting" | "connected" | "ended";
 
@@ -19,6 +20,9 @@ export function useWebRTCCallV2(conversationId: string) {
 
   const { requestMicrophoneForCall, requestVideoCallPermissions } = useCallPermissions();
   const { toast } = useToast();
+
+  const processedSignalIds = useRef<Set<string>>(new Set());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Init manager
   useEffect(() => {
@@ -45,28 +49,67 @@ export function useWebRTCCallV2(conversationId: string) {
     };
   }, [conversationId]);
 
-  // Real-time listener
+  // Polling fallback for signaling messages
+  const pollSignalingMessages = useCallback(async () => {
+    if (!managerRef.current) return;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: signals } = await supabase
+      .from("call_signaling")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .eq("receiver_id", user.id)
+      .gte("created_at", new Date(Date.now() - 30000).toISOString())
+      .order("created_at", { ascending: true });
+
+    if (signals) {
+      signals.forEach((signal) => {
+        if (processedSignalIds.current.has(signal.id)) return;
+        processedSignalIds.current.add(signal.id);
+        managerRef.current?.handleSignalingMessage(signal);
+      });
+    }
+  }, [conversationId]);
+
+  // Real-time listener with fallback
   useEffect(() => {
-    const channel = supabase
-      .channel(`webrtc-${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "call_signaling",
-          filter: `conversation_id=eq.${conversationId}`,
+    const subscription = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "call_signaling",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            if (processedSignalIds.current.has(payload.new.id)) return;
+            processedSignalIds.current.add(payload.new.id);
+            managerRef.current?.handleSignalingMessage(payload.new);
+          }
+        ),
+      {
+        channelName: `webrtc-signaling-${conversationId}`,
+        pollInterval: 2000,
+        debugName: "WebRTC-Signaling",
+        onError: () => {
+          console.log("[WebRTC] WebSocket failed, falling back to polling");
+          pollSignalingMessages();
         },
-        (payload) => {
-          managerRef.current?.handleSignalingMessage(payload.new);
-        }
-      )
-      .subscribe();
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanupSafeSubscription(subscription);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     };
-  }, [conversationId]);
+  }, [conversationId, pollSignalingMessages]);
 
   const startVoiceCall = useCallback(async () => {
     const mgr = managerRef.current;
@@ -78,14 +121,22 @@ export function useWebRTCCallV2(conversationId: string) {
     setIsVideoCall(false);
     setCallState("initiating");
 
+    // Start polling as backup
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = setInterval(pollSignalingMessages, 2000);
+
     try {
       await mgr.startCall("voice");
     } catch (err) {
       console.error("Start voice call error", err);
       toast({ title: "Failed to start voice call", variant: "destructive" });
       setCallState("idle");
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
-  }, [requestMicrophoneForCall, toast]);
+  }, [requestMicrophoneForCall, toast, pollSignalingMessages]);
 
   const startVideoCall = useCallback(async () => {
     const mgr = managerRef.current;
@@ -97,14 +148,22 @@ export function useWebRTCCallV2(conversationId: string) {
     setIsVideoCall(true);
     setCallState("initiating");
 
+    // Start polling as backup
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = setInterval(pollSignalingMessages, 2000);
+
     try {
       await mgr.startCall("video");
     } catch (err) {
       console.error("Start video call error", err);
       toast({ title: "Failed to start video call", variant: "destructive" });
       setCallState("idle");
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
     }
-  }, [requestVideoCallPermissions, toast]);
+  }, [requestVideoCallPermissions, toast, pollSignalingMessages]);
 
   const answerCall = useCallback(
     async (video: boolean) => {
@@ -144,6 +203,11 @@ export function useWebRTCCallV2(conversationId: string) {
   const endCall = useCallback(async () => {
     const mgr = managerRef.current;
     if (!mgr) return;
+
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
 
     try {
       await mgr.endCall();
