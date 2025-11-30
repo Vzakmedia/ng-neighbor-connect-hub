@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     const signalType = signalingMessage.type as string;
     
     // Validate signal type
-    const validTypes = ['offer', 'answer', 'ice', 'ice-candidate', 'reject', 'end'];
+    const validTypes = ['offer', 'answer', 'ice', 'ice-candidate', 'reject', 'decline', 'end', 'restart', 'busy'];
     if (!validTypes.includes(signalType)) {
       return new Response(
         JSON.stringify({ error: `Invalid signal type: ${signalType}` }),
