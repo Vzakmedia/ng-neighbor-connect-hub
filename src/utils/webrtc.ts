@@ -1153,7 +1153,7 @@ export class WebRTCManager {
       };
 
       if (status === 'ended') {
-        updateData.end_time = new Date().toISOString();
+        updateData.ended_at = new Date().toISOString();
         if (duration !== undefined) {
           updateData.duration_seconds = duration;
         } else if (this.callConnectedTime) {

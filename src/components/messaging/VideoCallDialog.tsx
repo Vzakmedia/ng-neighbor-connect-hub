@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { CallControls } from './CallControls';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronDown, Phone } from '@/lib/icons';
@@ -142,7 +143,14 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`max-w-full w-full h-screen p-0 border-0 overflow-hidden ${!otherUserAvatar ? 'bg-gradient-to-b from-primary via-primary/95 to-secondary' : ''}`}>
+      <DialogContent className={`max-w-full w-full h-screen p-0 border-0 overflow-hidden ${!otherUserAvatar ? 'bg-gradient-to-b from-primary via-primary/95 to-secondary' : ''}`} aria-describedby="call-dialog-description">
+        <VisuallyHidden>
+          <DialogTitle>{isVideoCall ? 'Video Call' : 'Voice Call'}</DialogTitle>
+          <DialogDescription id="call-dialog-description">
+            {isVideoCall ? 'Video' : 'Voice'} call with {otherUserName}
+          </DialogDescription>
+        </VisuallyHidden>
+        
         {/* Blurred background image */}
         {otherUserAvatar && (
           <div 
