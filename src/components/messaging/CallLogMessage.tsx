@@ -9,8 +9,8 @@ interface CallLog {
   receiver_id: string;
   call_type: 'voice' | 'video';
   call_status: 'missed' | 'answered' | 'declined' | 'failed' | 'ended';
-  start_time: string;
-  end_time?: string;
+  started_at: string;
+  ended_at?: string;
   duration_seconds: number;
 }
 
@@ -81,7 +81,7 @@ export const CallLogMessage: React.FC<CallLogMessageProps> = ({
   const callIcon = getCallIcon(callLog.call_type, callLog.call_status, isOutgoing);
   const callStatusText = getCallStatusText(callLog.call_status, isOutgoing, callLog.call_type);
   const duration = formatCallDuration(callLog.duration_seconds);
-  const timeAgo = formatDistanceToNow(new Date(callLog.start_time), { addSuffix: true });
+  const timeAgo = formatDistanceToNow(new Date(callLog.started_at), { addSuffix: true });
 
   const handleCallBack = () => {
     onCall(callLog.call_type === 'video');
