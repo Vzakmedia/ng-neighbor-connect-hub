@@ -1646,6 +1646,7 @@ export type Database = {
           message: Json
           receiver_id: string
           sender_id: string
+          session_id: string | null
           type: string
         }
         Insert: {
@@ -1656,6 +1657,7 @@ export type Database = {
           message: Json
           receiver_id: string
           sender_id: string
+          session_id?: string | null
           type: string
         }
         Update: {
@@ -1666,6 +1668,7 @@ export type Database = {
           message?: Json
           receiver_id?: string
           sender_id?: string
+          session_id?: string | null
           type?: string
         }
         Relationships: []
