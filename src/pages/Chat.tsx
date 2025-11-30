@@ -470,7 +470,7 @@ const Chat = () => {
         open={!!incomingCall}
         callerName={conversation?.other_user_name || 'Unknown User'}
         callerAvatar={conversation?.other_user_avatar}
-        isVideoCall={incomingCall?.callType === 'video'}
+        isVideoCall={incomingCall?.message?.callType === 'video'}
         onAccept={answerCall}
         onDecline={declineCall}
       />

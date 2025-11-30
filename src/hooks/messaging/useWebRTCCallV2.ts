@@ -195,7 +195,22 @@ export function useWebRTCCallV2(conversationId: string) {
   const answerCall = useCallback(
     async (video: boolean) => {
       const mgr = managerRef.current;
-      if (!mgr || !incomingCall) return;
+      if (!mgr || !incomingCall) {
+        console.error("[WebRTC] Cannot answer call - manager or incomingCall is null", {
+          hasManager: !!mgr,
+          hasIncomingCall: !!incomingCall,
+          incomingCallData: incomingCall
+        });
+        return;
+      }
+
+      console.log("[WebRTC] Answering call", {
+        video,
+        callType: incomingCall?.message?.callType,
+        sessionId: incomingCall?.message?.session_id,
+        sender: incomingCall?.sender_id,
+        conversationId
+      });
 
       // Clear incoming call timeout
       if (incomingCallTimeoutRef.current) {
@@ -204,7 +219,10 @@ export function useWebRTCCallV2(conversationId: string) {
       }
 
       const ok = video ? await requestVideoCallPermissions() : await requestMicrophoneForCall();
-      if (!ok) return;
+      if (!ok) {
+        console.error("[WebRTC] Permission denied for", video ? "video" : "audio");
+        return;
+      }
 
       setIsVideoCall(video);
       setCallState("connecting");
@@ -212,13 +230,40 @@ export function useWebRTCCallV2(conversationId: string) {
       try {
         await mgr.answerCall(incomingCall, video ? "video" : "voice");
         setIncomingCall(null);
-      } catch (err) {
-        console.error("Answer call error", err);
+        console.log("[WebRTC] Call answered successfully");
+        
+        // Log analytics for receiver
+        await supabase.from("call_analytics").insert({
+          conversation_id: conversationId,
+          event_type: "call_answered",
+          event_data: {
+            call_type: video ? "video" : "voice",
+            session_id: incomingCall?.message?.session_id
+          }
+        });
+      } catch (err: any) {
+        console.error("[WebRTC] Answer call error:", {
+          error: err,
+          message: err?.message,
+          stack: err?.stack,
+          incomingCallState: incomingCall
+        });
         toast({ title: "Failed to answer call", variant: "destructive" });
         setCallState("idle");
+        
+        // Log analytics for error
+        await supabase.from("call_analytics").insert({
+          conversation_id: conversationId,
+          event_type: "call_answer_failed",
+          error_message: err?.message || String(err),
+          event_data: {
+            call_type: video ? "video" : "voice",
+            session_id: incomingCall?.message?.session_id
+          }
+        });
       }
     },
-    [incomingCall, requestMicrophoneForCall, requestVideoCallPermissions, toast]
+    [incomingCall, requestMicrophoneForCall, requestVideoCallPermissions, toast, conversationId]
   );
 
   const declineCall = useCallback(async () => {
