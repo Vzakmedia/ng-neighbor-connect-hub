@@ -35,13 +35,24 @@ export class WebRTCManagerV2 {
     this.onCallStateUpdate?.(state);
   }
 
-  private createPeerConnection() {
-    const config: RTCConfiguration = {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }
-      ]
-    };
+  private async createPeerConnection() {
+    // Fetch ICE servers configuration from edge function
+    let iceServers: RTCIceServer[] = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ];
+
+    try {
+      const { data } = await supabase.functions.invoke("get-turn-credentials");
+      if (data?.iceServers) {
+        iceServers = data.iceServers;
+        console.log("Using TURN credentials from server");
+      }
+    } catch (error) {
+      console.warn("Failed to fetch TURN credentials, using STUN only:", error);
+    }
+
+    const config: RTCConfiguration = { iceServers };
 
     this.pc = new RTCPeerConnection(config);
 
@@ -307,19 +318,22 @@ export class WebRTCManagerV2 {
         ? conversationData.data.user2_id
         : conversationData.data.user1_id;
 
-      const { data } = await supabase
-        .from("call_logs")
-        .insert({
-          conversation_id: this.conversationId,
+      // Use edge function to create call log
+      const { data, error } = await supabase.functions.invoke("log-call-event", {
+        body: {
           caller_id: user.id,
           receiver_id: receiverId,
+          conversation_id: this.conversationId,
           call_type: this.callType,
-          call_status: "initiating"
-        })
-        .select()
-        .single();
+          status: "initiated",
+          started_at: new Date().toISOString(),
+        },
+      });
 
-      this.currentCallLogId = data?.id || null;
+      if (error) throw error;
+      
+      this.currentCallLogId = data?.log_id || null;
+      console.log("Call log created:", this.currentCallLogId);
     } catch (error) {
       console.error("Error creating call log:", error);
     }
@@ -329,16 +343,44 @@ export class WebRTCManagerV2 {
     if (!this.currentCallLogId) return;
 
     try {
-      const updates: any = { call_status: status };
-      if (status === "ended" && duration !== undefined) {
-        updates.duration_seconds = duration;
-        updates.end_time = new Date().toISOString();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const conversationData = await supabase
+        .from("direct_conversations")
+        .select("user1_id, user2_id")
+        .eq("id", this.conversationId)
+        .single();
+
+      if (!conversationData.data) return;
+
+      const receiverId = conversationData.data.user1_id === user.id
+        ? conversationData.data.user2_id
+        : conversationData.data.user1_id;
+
+      const body: any = {
+        caller_id: user.id,
+        receiver_id: receiverId,
+        conversation_id: this.conversationId,
+        call_type: this.callType,
+        status,
+        started_at: this.callStartTime ? new Date(this.callStartTime).toISOString() : new Date().toISOString(),
+      };
+
+      if (status === "connected" && this.callStartTime) {
+        body.connected_at = new Date().toISOString();
       }
 
-      await supabase
-        .from("call_logs")
-        .update(updates)
-        .eq("id", this.currentCallLogId);
+      if (duration !== undefined) {
+        body.ended_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase.functions.invoke("log-call-event", {
+        body,
+      });
+
+      if (error) throw error;
+      console.log("Call log updated:", status);
     } catch (error) {
       console.error("Error updating call log:", error);
     }

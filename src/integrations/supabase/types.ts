@@ -1597,39 +1597,42 @@ export type Database = {
           call_status: string
           call_type: string
           caller_id: string
+          connected_at: string | null
           conversation_id: string
           created_at: string
           duration_seconds: number | null
-          end_time: string | null
+          ended_at: string | null
           id: string
           receiver_id: string
-          start_time: string
+          started_at: string
           updated_at: string
         }
         Insert: {
           call_status?: string
           call_type: string
           caller_id: string
+          connected_at?: string | null
           conversation_id: string
           created_at?: string
           duration_seconds?: number | null
-          end_time?: string | null
+          ended_at?: string | null
           id?: string
           receiver_id: string
-          start_time?: string
+          started_at?: string
           updated_at?: string
         }
         Update: {
           call_status?: string
           call_type?: string
           caller_id?: string
+          connected_at?: string | null
           conversation_id?: string
           created_at?: string
           duration_seconds?: number | null
-          end_time?: string | null
+          ended_at?: string | null
           id?: string
           receiver_id?: string
-          start_time?: string
+          started_at?: string
           updated_at?: string
         }
         Relationships: []
@@ -1638,26 +1641,32 @@ export type Database = {
         Row: {
           conversation_id: string
           created_at: string
+          expires_at: string
           id: string
           message: Json
-          receiver_id: string | null
+          receiver_id: string
           sender_id: string
+          type: string
         }
         Insert: {
           conversation_id: string
           created_at?: string
+          expires_at?: string
           id?: string
           message: Json
-          receiver_id?: string | null
+          receiver_id: string
           sender_id: string
+          type: string
         }
         Update: {
           conversation_id?: string
           created_at?: string
+          expires_at?: string
           id?: string
           message?: Json
-          receiver_id?: string | null
+          receiver_id?: string
           sender_id?: string
+          type?: string
         }
         Relationships: []
       }
