@@ -204,7 +204,12 @@ export class WebRTCManagerV2 {
 
     // Store the session ID from the incoming offer
     this.callSessionId = callData.message.session_id;
-    console.log("Answering call with session_id:", this.callSessionId);
+    console.log("[WebRTC] Answering call", {
+      session_id: this.callSessionId,
+      call_type: type,
+      sender_id: callData.sender_id,
+      has_sdp: !!callData.message?.sdp
+    });
 
     this.callType = type;
     this.updateCallState("connecting");
@@ -508,7 +513,10 @@ export class WebRTCManagerV2 {
   }
 
   // Database operations
-  private async sendSignal(message: any) {
+  private async sendSignal(message: any, retryCount = 0): Promise<void> {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // Start with 1 second
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -536,7 +544,13 @@ export class WebRTCManagerV2 {
         timestamp: new Date().toISOString()
       };
 
-      await supabase.functions.invoke("insert-call-signal", {
+      console.log("[WebRTC] Sending signal", {
+        type: message.type,
+        session_id: fullMessage.session_id,
+        retryCount
+      });
+
+      const { error } = await supabase.functions.invoke("insert-call-signal", {
         body: {
           message: fullMessage,
           conversation_id: this.conversationId,
@@ -544,8 +558,29 @@ export class WebRTCManagerV2 {
           session_id: this.callSessionId || message.session_id
         }
       });
-    } catch (error) {
-      console.error("Error sending signal:", error);
+
+      if (error) throw error;
+      
+      console.log("[WebRTC] Signal sent successfully", {
+        type: message.type,
+        session_id: fullMessage.session_id
+      });
+    } catch (error: any) {
+      console.error(`[WebRTC] Error sending signal (attempt ${retryCount + 1}/${MAX_RETRIES + 1}):`, {
+        error,
+        message: error?.message,
+        type: message.type,
+        session_id: this.callSessionId
+      });
+      
+      // Retry with exponential backoff
+      if (retryCount < MAX_RETRIES) {
+        const delay = RETRY_DELAY * Math.pow(2, retryCount);
+        console.log(`[WebRTC] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.sendSignal(message, retryCount + 1);
+      }
+      
       throw error;
     }
   }
