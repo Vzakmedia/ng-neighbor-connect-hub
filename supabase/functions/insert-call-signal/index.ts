@@ -111,15 +111,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Insert new signaling message
+    // Extract signal type from message
+    const signalType = signalingMessage.type as string;
+    
+    // Validate signal type
+    const validTypes = ['offer', 'answer', 'ice', 'reject', 'end'];
+    if (!validTypes.includes(signalType)) {
+      return new Response(
+        JSON.stringify({ error: `Invalid signal type: ${signalType}` }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Calculate expires_at (2 minutes from now)
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+
+    // Insert new signaling message with type and expires_at
     const { data, error: insertError } = await supabaseClient
       .from('call_signaling')
       .insert({
         conversation_id,
         sender_id: signalingMessage.sender_id,
         receiver_id,
+        type: signalType,
         message: signalingMessage,
-        created_at: new Date().toISOString(),
+        expires_at: expiresAt,
       })
       .select('id')
       .single();

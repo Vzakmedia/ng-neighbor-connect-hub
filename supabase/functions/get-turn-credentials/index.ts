@@ -39,27 +39,42 @@ Deno.serve(async (req) => {
 
     console.log('[get-turn-credentials] Request from user:', user.id);
 
-    // Return TURN credentials
-    // In production, these would come from environment variables
-    // For now, return open relay credentials (same as before but served securely)
-    const credentials = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        {
-          urls: [
-            'turn:openrelay.metered.ca:80',
-            'turn:openrelay.metered.ca:443',
-            'turns:openrelay.metered.ca:443',
-          ],
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-      ],
-    };
+    // Read TURN credentials from environment variables
+    const turnServer = Deno.env.get('TURN_SERVER') || 'turn:turn.neighborlink.ng:3478';
+    const turnUsername = Deno.env.get('TURN_USERNAME');
+    const turnPassword = Deno.env.get('TURN_PASSWORD');
 
-    console.log('[get-turn-credentials] Returning TURN credentials');
+    const iceServers: any[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+    ];
+
+    // Add TURN servers if credentials are configured
+    if (turnUsername && turnPassword) {
+      iceServers.push({
+        urls: [
+          `${turnServer}?transport=udp`,
+          `${turnServer}?transport=tcp`
+        ],
+        username: turnUsername,
+        credential: turnPassword
+      });
+      console.log('[get-turn-credentials] Returning custom TURN credentials');
+    } else {
+      // Fallback to free open relay
+      iceServers.push({
+        urls: [
+          'turn:openrelay.metered.ca:80',
+          'turn:openrelay.metered.ca:443',
+          'turns:openrelay.metered.ca:443',
+        ],
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      });
+      console.log('[get-turn-credentials] Returning fallback TURN credentials');
+    }
+
+    const credentials = { iceServers };
 
     return new Response(JSON.stringify(credentials), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

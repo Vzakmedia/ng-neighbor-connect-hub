@@ -56,3 +56,9 @@ verify_jwt = true
 
 [functions.send-call-notification]
 verify_jwt = false
+
+[functions.log-call-event]
+verify_jwt = false
+
+[functions.clean-expired-calls]
+verify_jwt = false
