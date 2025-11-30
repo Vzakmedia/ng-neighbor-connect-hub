@@ -36,6 +36,13 @@ export class WebRTCManagerV2 {
   }
 
   private async createPeerConnection() {
+    // Close existing connection if any
+    if (this.pc) {
+      console.log("Closing existing peer connection");
+      this.pc.close();
+      this.pc = null;
+    }
+
     // Fetch ICE servers configuration from edge function
     let iceServers: RTCIceServer[] = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -84,6 +91,12 @@ export class WebRTCManagerV2 {
   }
 
   async startCall(type: CallType) {
+    // Clean up any existing connection first
+    if (this.pc) {
+      console.log("Cleaning up existing peer connection before new call");
+      this.cleanup();
+    }
+
     this.callType = type;
     this.updateCallState("initiating");
 
@@ -96,7 +109,7 @@ export class WebRTCManagerV2 {
       this.localStream = stream;
       this.onLocalStream?.(stream);
 
-      this.createPeerConnection();
+      await this.createPeerConnection();
       stream.getTracks().forEach(track => this.pc?.addTrack(track, stream));
 
       const offer = await this.pc!.createOffer();
@@ -120,6 +133,12 @@ export class WebRTCManagerV2 {
   }
 
   async answerCall(callData: any, type: CallType) {
+    // Clean up any existing connection first
+    if (this.pc) {
+      console.log("Cleaning up existing peer connection before answering");
+      this.cleanup();
+    }
+
     this.callType = type;
     this.updateCallState("connecting");
 
@@ -132,7 +151,7 @@ export class WebRTCManagerV2 {
       this.localStream = stream;
       this.onLocalStream?.(stream);
 
-      this.createPeerConnection();
+      await this.createPeerConnection();
       stream.getTracks().forEach(track => this.pc?.addTrack(track, stream));
 
       await this.pc!.setRemoteDescription(new RTCSessionDescription(callData.message.sdp));
@@ -267,6 +286,7 @@ export class WebRTCManagerV2 {
 
     this.remoteStream = null;
     this.callStartTime = null;
+    this.currentCallLogId = null;
     this.updateCallState("idle");
   }
 
