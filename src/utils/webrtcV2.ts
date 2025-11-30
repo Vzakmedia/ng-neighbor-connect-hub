@@ -13,6 +13,11 @@ export class WebRTCManagerV2 {
   private callState: CallState = "idle";
   private currentCallLogId: string | null = null;
   private callStartTime: number | null = null;
+  
+  // Session tracking and ICE candidate queue
+  private callSessionId: string | null = null;
+  private pendingIceCandidates: RTCIceCandidate[] = [];
+  private remoteDescriptionSet: boolean = false;
 
   // Callbacks
   onIncomingCall: ((callData: any) => void) | null = null;
@@ -84,8 +89,12 @@ export class WebRTCManagerV2 {
       if (this.pc?.connectionState === "connected") {
         this.updateCallState("connected");
         this.logCallConnected();
-      } else if (this.pc?.connectionState === "failed" || this.pc?.connectionState === "disconnected") {
-        this.logCallError("Connection failed or disconnected");
+      } else if (this.pc?.connectionState === "failed") {
+        console.warn("Connection failed - attempting ICE restart");
+        this.logCallError("Connection failed - attempting restart");
+        this.restartIce();
+      } else if (this.pc?.connectionState === "disconnected") {
+        this.logCallError("Connection disconnected");
       }
     };
   }
@@ -99,6 +108,10 @@ export class WebRTCManagerV2 {
 
     this.callType = type;
     this.updateCallState("initiating");
+
+    // Generate new session ID for this call
+    this.callSessionId = crypto.randomUUID();
+    console.log("Starting new call with session_id:", this.callSessionId);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -119,7 +132,8 @@ export class WebRTCManagerV2 {
       await this.sendSignal({
         type: "offer",
         sdp: offer,
-        callType: type
+        callType: type,
+        session_id: this.callSessionId
       });
 
       this.callStartTime = Date.now();
@@ -139,6 +153,10 @@ export class WebRTCManagerV2 {
       this.cleanup();
     }
 
+    // Store the session ID from the incoming offer
+    this.callSessionId = callData.message.session_id;
+    console.log("Answering call with session_id:", this.callSessionId);
+
     this.callType = type;
     this.updateCallState("connecting");
 
@@ -155,13 +173,18 @@ export class WebRTCManagerV2 {
       stream.getTracks().forEach(track => this.pc?.addTrack(track, stream));
 
       await this.pc!.setRemoteDescription(new RTCSessionDescription(callData.message.sdp));
+      
+      // Mark remote description as set and flush pending ICE candidates
+      this.remoteDescriptionSet = true;
+      await this.flushPendingIceCandidates();
 
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
 
       await this.sendSignal({
         type: "answer",
-        sdp: answer
+        sdp: answer,
+        session_id: this.callSessionId
       });
 
       this.callStartTime = Date.now();
@@ -192,22 +215,114 @@ export class WebRTCManagerV2 {
   async handleSignalingMessage(message: any) {
     if (!message.message) return;
 
-    const { type, sdp, candidate } = message.message;
+    const { type, sdp, candidate, session_id } = message.message;
 
     try {
       if (type === "offer") {
+        // Dedupe check: Only accept first offer for new session
+        if (this.callSessionId && this.callSessionId === session_id) {
+          console.log("Ignoring duplicate offer for session:", session_id);
+          return;
+        }
+        
+        console.log("Received new offer with session_id:", session_id);
         this.onIncomingCall?.(message);
       } else if (type === "answer" && this.pc) {
+        console.log("Received answer for session:", session_id);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
-      } else if ((type === "ice" || type === "ice-candidate") && this.pc && candidate) {
-        await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+        
+        // Mark remote description as set and flush pending ICE candidates
+        this.remoteDescriptionSet = true;
+        await this.flushPendingIceCandidates();
+      } else if ((type === "ice" || type === "ice-candidate") && candidate) {
+        console.log("Received ICE candidate for session:", session_id);
+        
+        if (!this.pc) {
+          console.warn("No peer connection available for ICE candidate");
+          return;
+        }
+
+        // Queue ICE candidates if remote description not set yet
+        if (!this.remoteDescriptionSet) {
+          console.log("Queueing ICE candidate (remote description not set)");
+          this.pendingIceCandidates.push(new RTCIceCandidate(candidate));
+        } else {
+          // Add immediately if remote description is set
+          await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } else if (type === "restart" && this.pc) {
+        console.log("Received ICE restart signal from peer");
+        await this.handleRemoteIceRestart(sdp);
       } else if (type === "end" || type === "decline") {
+        console.log("Call ended/declined for session:", session_id);
         this.updateCallState("ended");
         this.cleanup();
       }
     } catch (error) {
       console.error("Error handling signaling message:", error);
       this.logCallError(`Signaling error: ${error}`);
+    }
+  }
+
+  private async flushPendingIceCandidates() {
+    if (this.pendingIceCandidates.length === 0) return;
+
+    console.log(`Flushing ${this.pendingIceCandidates.length} pending ICE candidates`);
+    
+    for (const candidate of this.pendingIceCandidates) {
+      try {
+        await this.pc?.addIceCandidate(candidate);
+      } catch (error) {
+        console.error("Error adding queued ICE candidate:", error);
+      }
+    }
+    
+    this.pendingIceCandidates = [];
+  }
+
+  private async restartIce() {
+    if (!this.pc || this.callState !== "connected") return;
+
+    try {
+      console.log("Initiating ICE restart");
+      this.pc.restartIce();
+
+      const offer = await this.pc.createOffer({ iceRestart: true });
+      await this.pc.setLocalDescription(offer);
+
+      await this.sendSignal({
+        type: "restart",
+        sdp: offer,
+        session_id: this.callSessionId
+      });
+
+      this.logAnalytics("ice_restart", { reason: "connection_failed" });
+    } catch (error) {
+      console.error("Error during ICE restart:", error);
+      this.logCallError(`ICE restart failed: ${error}`);
+    }
+  }
+
+  private async handleRemoteIceRestart(sdp: any) {
+    if (!this.pc) return;
+
+    try {
+      console.log("Handling remote ICE restart");
+      await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+
+      const answer = await this.pc.createAnswer();
+      await this.pc.setLocalDescription(answer);
+
+      await this.sendSignal({
+        type: "answer",
+        sdp: answer,
+        session_id: this.callSessionId
+      });
+
+      this.logAnalytics("ice_restart_response", { success: true });
+    } catch (error) {
+      console.error("Error handling remote ICE restart:", error);
+      this.logCallError(`Remote ICE restart handling failed: ${error}`);
     }
   }
 
@@ -287,6 +402,9 @@ export class WebRTCManagerV2 {
     this.remoteStream = null;
     this.callStartTime = null;
     this.currentCallLogId = null;
+    this.callSessionId = null;
+    this.pendingIceCandidates = [];
+    this.remoteDescriptionSet = false;
     this.updateCallState("idle");
   }
 
@@ -308,13 +426,14 @@ export class WebRTCManagerV2 {
         ? conversationData.data.user2_id 
         : conversationData.data.user1_id;
 
-      // Add required fields to message
+      // Add required fields to message including session_id
       const fullMessage = {
         ...message,
         id: crypto.randomUUID(),
         sender_id: user.id,
         conversation_id: this.conversationId,
         receiver_id: receiverId,
+        session_id: this.callSessionId || message.session_id,
         timestamp: new Date().toISOString()
       };
 
@@ -322,7 +441,8 @@ export class WebRTCManagerV2 {
         body: {
           message: fullMessage,
           conversation_id: this.conversationId,
-          receiver_id: receiverId
+          receiver_id: receiverId,
+          session_id: this.callSessionId || message.session_id
         }
       });
     } catch (error) {
