@@ -20,6 +20,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const {
+      log_id,
       caller_id,
       receiver_id,
       conversation_id,
@@ -46,28 +47,49 @@ serve(async (req) => {
       duration_seconds = Math.max(0, Math.floor((endedTime - connectedTime) / 1000));
     }
 
-    // Insert call log
-    const { data, error } = await supabase.from('call_logs').insert({
-      caller_id,
-      receiver_id,
-      conversation_id,
-      call_type,
-      call_status: status,
-      started_at: started_at || new Date().toISOString(),
-      connected_at: connected_at || null,
-      ended_at: ended_at || null,
-      duration_seconds,
-    }).select().single();
+    let data, error;
+
+    // Check if this is an update or insert
+    if (log_id) {
+      // UPDATE existing call log
+      const updateResult = await supabase.from('call_logs').update({
+        call_status: status,
+        connected_at: connected_at || undefined,
+        ended_at: ended_at || undefined,
+        duration_seconds,
+      }).eq('id', log_id).select().single();
+
+      data = updateResult.data;
+      error = updateResult.error;
+      
+      console.log('Call log updated:', log_id);
+    } else {
+      // INSERT new call log
+      const insertResult = await supabase.from('call_logs').insert({
+        caller_id,
+        receiver_id,
+        conversation_id,
+        call_type,
+        call_status: status,
+        started_at: started_at || new Date().toISOString(),
+        connected_at: connected_at || null,
+        ended_at: ended_at || null,
+        duration_seconds,
+      }).select().single();
+
+      data = insertResult.data;
+      error = insertResult.error;
+      
+      console.log('Call log created:', data?.id);
+    }
 
     if (error) {
-      console.error('Error inserting call log:', error);
+      console.error('Error with call log:', error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('Call log created successfully:', data.id);
 
     return new Response(JSON.stringify({ success: true, log_id: data.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
