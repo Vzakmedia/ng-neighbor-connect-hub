@@ -75,35 +75,49 @@ export function useWebRTCCallV2(conversationId: string) {
 
   // Real-time listener with fallback
   useEffect(() => {
-    const subscription = createSafeSubscription(
-      (channel) =>
-        channel.on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "call_signaling",
-            filter: `conversation_id=eq.${conversationId}`,
+    if (!managerRef.current || !conversationId) return;
+
+    let subscription: any = null;
+    
+    try {
+      subscription = createSafeSubscription(
+        (channel) =>
+          channel.on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "call_signaling",
+              filter: `conversation_id=eq.${conversationId}`,
+            },
+            (payload) => {
+              if (!payload?.new?.id) return;
+              if (processedSignalIds.current.has(payload.new.id)) return;
+              processedSignalIds.current.add(payload.new.id);
+              managerRef.current?.handleSignalingMessage(payload.new);
+            }
+          ),
+        {
+          channelName: `webrtc-signaling-${conversationId}`,
+          pollInterval: 2000,
+          debugName: "WebRTC-Signaling",
+          onError: () => {
+            console.log("[WebRTC] WebSocket failed, falling back to polling");
+            pollSignalingMessages();
           },
-          (payload) => {
-            if (processedSignalIds.current.has(payload.new.id)) return;
-            processedSignalIds.current.add(payload.new.id);
-            managerRef.current?.handleSignalingMessage(payload.new);
-          }
-        ),
-      {
-        channelName: `webrtc-signaling-${conversationId}`,
-        pollInterval: 2000,
-        debugName: "WebRTC-Signaling",
-        onError: () => {
-          console.log("[WebRTC] WebSocket failed, falling back to polling");
-          pollSignalingMessages();
-        },
-      }
-    );
+        }
+      );
+    } catch (error) {
+      console.error("[WebRTC] Failed to create subscription:", error);
+      // Start polling immediately on subscription error
+      const pollingInterval = setInterval(pollSignalingMessages, 2000);
+      pollingIntervalRef.current = pollingInterval;
+    }
 
     return () => {
-      cleanupSafeSubscription(subscription);
+      if (subscription) {
+        cleanupSafeSubscription(subscription);
+      }
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
