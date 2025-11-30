@@ -45,12 +45,11 @@ const Chat = () => {
     sendMessage,
     sendMessageWithAttachments,
     markMessageAsRead,
-    markConversationAsRead,
     addMessage,
     updateMessage 
   } = useDirectMessages(user?.id);
 
-  const { conversations, fetchConversations } = useConversations(user?.id);
+  const { conversations, fetchConversations, markConversationAsRead } = useConversations(user?.id);
 
   // Create refs after hooks are declared
   const fetchMessagesRef = useRef(fetchMessages);
