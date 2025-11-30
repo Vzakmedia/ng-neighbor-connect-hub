@@ -8,8 +8,8 @@ interface CallLog {
   receiver_id: string;
   call_type: 'voice' | 'video';
   call_status: 'missed' | 'answered' | 'declined' | 'failed' | 'ended';
-  start_time: string;
-  end_time?: string;
+  started_at: string;
+  ended_at?: string;
   duration_seconds: number;
   created_at: string;
   updated_at: string;
@@ -27,7 +27,7 @@ export const useCallLogs = (conversationId: string) => {
         .from('call_logs')
         .select('*')
         .eq('conversation_id', conversationId)
-        .order('start_time', { ascending: false });
+        .order('started_at', { ascending: false });
 
       if (error) throw error;
       
