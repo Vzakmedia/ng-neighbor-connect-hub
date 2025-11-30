@@ -7,7 +7,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { usePresence } from '@/contexts/PresenceContext';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
-import { useWebRTCCall } from '@/hooks/messaging/useWebRTCCall';
+import { useWebRTCCallV2 } from '@/hooks/messaging/useWebRTCCallV2';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -77,7 +77,7 @@ const Chat = () => {
     toggleAudio,
     toggleVideo,
     switchCamera,
-  } = useWebRTCCall(conversationId || '');
+  } = useWebRTCCallV2(conversationId || '');
 
   // Memoized callbacks to prevent infinite re-renders
   const onNewMessage = useCallback((message) => {
