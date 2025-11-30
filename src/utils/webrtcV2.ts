@@ -287,7 +287,19 @@ export class WebRTCManagerV2 {
         console.log("Received new offer with session_id:", session_id);
         this.onIncomingCall?.(message);
       } else if (type === "answer" && this.pc) {
-        console.log("Received answer for session:", session_id);
+        // Verify this answer is for our current call session
+        if (this.callSessionId !== session_id) {
+          console.log("Ignoring answer for different session:", session_id);
+          return;
+        }
+        
+        // Only process answer if we're in the correct state (have-local-offer)
+        if (this.pc.signalingState !== "have-local-offer") {
+          console.warn(`Cannot set remote answer in state: ${this.pc.signalingState}`);
+          return;
+        }
+        
+        console.log("Received answer for session:", session_id, "signalingState:", this.pc.signalingState);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
         
         // Mark remote description as set and flush pending ICE candidates
@@ -324,7 +336,19 @@ export class WebRTCManagerV2 {
         });
         this.logAnalytics("renegotiation_answered", { success: true });
       } else if (type === "renegotiate-answer" && this.pc) {
-        console.log("Received renegotiation answer from peer");
+        // Verify this answer is for our current call session
+        if (this.callSessionId !== session_id) {
+          console.log("Ignoring renegotiation answer for different session:", session_id);
+          return;
+        }
+        
+        // Only process answer if we're in the correct state
+        if (this.pc.signalingState !== "have-local-offer") {
+          console.warn(`Cannot set remote renegotiation answer in state: ${this.pc.signalingState}`);
+          return;
+        }
+        
+        console.log("Received renegotiation answer from peer, signalingState:", this.pc.signalingState);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
         this.logAnalytics("renegotiation_completed", { success: true });
       } else if (type === "timeout") {
