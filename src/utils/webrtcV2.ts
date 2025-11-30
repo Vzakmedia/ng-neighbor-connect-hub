@@ -245,7 +245,7 @@ export class WebRTCManagerV2 {
       });
 
       this.callStartTime = Date.now();
-      await this.updateCallLogStatus("answered");
+      await this.updateCallLogStatus("connected");
     } catch (error) {
       console.error("Error answering call:", error);
       this.updateCallState("idle");
@@ -499,7 +499,7 @@ export class WebRTCManagerV2 {
     this.ringingTimeoutRef = setTimeout(async () => {
       console.log("Call timeout - no answer after 30s");
       await this.sendSignal({ type: "timeout", session_id: this.callSessionId });
-      await this.updateCallLogStatus("timeout");
+      await this.updateCallLogStatus("missed");
       this.logCallError("Call timeout - no answer");
       this.cleanup();
     }, 30000); // 30 seconds
