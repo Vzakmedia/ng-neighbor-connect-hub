@@ -36,7 +36,7 @@ export function useWebRTCCallV2(conversationId: string) {
       setIncomingCall(callData);
       setCallState("ringing");
       
-      // Start 30s timeout for incoming call
+      // Start 40s timeout for incoming call (slightly less than caller's 45s timeout)
       if (incomingCallTimeoutRef.current) {
         clearTimeout(incomingCallTimeoutRef.current);
       }
@@ -46,7 +46,7 @@ export function useWebRTCCallV2(conversationId: string) {
         setIncomingCall(null);
         setCallState("idle");
         toast({ title: "Call missed", description: "The call was not answered in time" });
-      }, 30000);
+      }, 40000); // 40 seconds - slightly less than caller's timeout
     };
 
     mgr.onCallStateUpdate = (state) => {
@@ -90,6 +90,9 @@ export function useWebRTCCallV2(conversationId: string) {
   useEffect(() => {
     if (!managerRef.current || !conversationId) return;
 
+    // Immediately poll for any missed signals on conversation open
+    pollSignalingMessages();
+
     let subscription: any = null;
     
     try {
@@ -112,7 +115,7 @@ export function useWebRTCCallV2(conversationId: string) {
           ),
         {
           channelName: `webrtc-signaling-${conversationId}`,
-          pollInterval: 2000,
+          pollInterval: 1000, // Reduced from 2000ms to 1000ms
           debugName: "WebRTC-Signaling",
           onError: () => {
             console.log("[WebRTC] WebSocket failed, falling back to polling");
@@ -123,7 +126,7 @@ export function useWebRTCCallV2(conversationId: string) {
     } catch (error) {
       console.error("[WebRTC] Failed to create subscription:", error);
       // Start polling immediately on subscription error
-      const pollingInterval = setInterval(pollSignalingMessages, 2000);
+      const pollingInterval = setInterval(pollSignalingMessages, 1000); // Reduced from 2000ms
       pollingIntervalRef.current = pollingInterval;
     }
 
@@ -150,7 +153,7 @@ export function useWebRTCCallV2(conversationId: string) {
 
     // Start polling as backup
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-    pollingIntervalRef.current = setInterval(pollSignalingMessages, 2000);
+    pollingIntervalRef.current = setInterval(pollSignalingMessages, 1000); // Reduced from 2000ms
 
     try {
       await mgr.startCall("voice");
@@ -177,7 +180,7 @@ export function useWebRTCCallV2(conversationId: string) {
 
     // Start polling as backup
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-    pollingIntervalRef.current = setInterval(pollSignalingMessages, 2000);
+    pollingIntervalRef.current = setInterval(pollSignalingMessages, 1000); // Reduced from 2000ms
 
     try {
       await mgr.startCall("video");

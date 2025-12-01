@@ -285,7 +285,18 @@ export class WebRTCManagerV2 {
         }
         
         console.log("Received new offer with session_id:", session_id);
+        
+        // Send ringing acknowledgment to caller immediately
+        await this.sendSignal({ 
+          type: "ringing", 
+          session_id: session_id 
+        });
+        console.log("Sent ringing acknowledgment to caller");
+        
         this.onIncomingCall?.(message);
+      } else if (type === "ringing") {
+        console.log("Received ringing acknowledgment from receiver - call is being delivered");
+        // Optionally update UI to show "Ringing..." status
       } else if (type === "answer" && this.pc) {
         // Verify this answer is for our current call session
         if (this.callSessionId !== session_id) {
@@ -521,12 +532,12 @@ export class WebRTCManagerV2 {
     this.clearRingingTimeout();
     
     this.ringingTimeoutRef = setTimeout(async () => {
-      console.log("Call timeout - no answer after 30s");
+      console.log("Call timeout - no answer after 45s");
       await this.sendSignal({ type: "timeout", session_id: this.callSessionId });
       await this.updateCallLogStatus("missed");
       this.logCallError("Call timeout - no answer");
       this.cleanup();
-    }, 30000); // 30 seconds
+    }, 45000); // 45 seconds - increased to account for polling delays
   }
 
   private clearRingingTimeout() {
