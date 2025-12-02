@@ -62,3 +62,12 @@ verify_jwt = false
 
 [functions.clean-expired-calls]
 verify_jwt = false
+
+[functions.export-user-data]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+[functions.logout-user]
+verify_jwt = true
