@@ -64,12 +64,21 @@ const PanicButton = () => {
         .from('emergency_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading emergency preferences:', error);
+        return;
+      }
 
       if (data) {
         setPreferences(data);
-        setSelectedSituation(data.default_situation_type);
-        setCountdown(data.countdown_duration);
+        if (data.default_situation_type) {
+          setSelectedSituation(data.default_situation_type);
+        }
+        if (data.countdown_duration !== null) {
+          setCountdown(data.countdown_duration);
+        }
       }
     } catch (error) {
       console.error('Error loading emergency preferences:', error);
@@ -195,8 +204,10 @@ const PanicButton = () => {
         
       if (contactsError) throw contactsError;
       
-      // Create notification for each emergency contact
-      if (contacts && contacts.length > 0) {
+      // Create notification for each emergency contact (only if auto_alert_contacts is enabled)
+      const shouldAlertContacts = preferences?.auto_alert_contacts !== false;
+      
+      if (shouldAlertContacts && contacts && contacts.length > 0) {
         // Filter contacts that have app notification enabled
         const appNotificationContacts = contacts.filter(
           contact => contact.preferred_methods && contact.preferred_methods.includes('in_app')
@@ -226,53 +237,70 @@ const PanicButton = () => {
         }
       }
 
-      // Call emergency alert function to notify contacts (non-blocking)
-      try {
-        const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
-          body: {
-            panic_alert_id: panicData.id,
-            situation_type: selectedSituation,
-            location: {
-              latitude: location.latitude,
-              longitude: location.longitude,
-              address
-            },
-            user_name: userName,
-            user_id: user.id
-          }
-        });
-
-        if (alertFunctionError) {
-          console.error('Error calling emergency alert function:', alertFunctionError);
-          // Don't fail the entire panic alert if edge function fails
-          toast({
-            title: "Alert Sent with Limited Notifications",
-            description: "Emergency alert created but some notifications may have failed",
-            variant: "default"
+      // Call emergency alert function to notify contacts (non-blocking, only if contacts should be alerted)
+      if (shouldAlertContacts) {
+        try {
+          const shareLocationWithContacts = preferences?.share_location_with_contacts !== false;
+          
+          const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
+            body: {
+              panic_alert_id: panicData.id,
+              situation_type: selectedSituation,
+              location: shareLocationWithContacts ? {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address
+              } : null,
+              user_name: userName,
+              user_id: user.id,
+              preferences: {
+                auto_alert_contacts: preferences?.auto_alert_contacts,
+                share_location_with_contacts: shareLocationWithContacts,
+                auto_alert_public: preferences?.auto_alert_public,
+                share_location_with_public: preferences?.share_location_with_public
+              }
+            }
           });
-        } else {
-          console.log('Emergency alert function called successfully');
+
+          if (alertFunctionError) {
+            console.error('Error calling emergency alert function:', alertFunctionError);
+            toast({
+              title: "Alert Sent with Limited Notifications",
+              description: "Emergency alert created but some notifications may have failed",
+              variant: "default"
+            });
+          } else {
+            console.log('Emergency alert function called successfully');
+          }
+        } catch (edgeFunctionError) {
+          console.error('Emergency alert function failed:', edgeFunctionError);
         }
-      } catch (edgeFunctionError) {
-        console.error('Emergency alert function failed:', edgeFunctionError);
-        // Don't fail the main alert creation
       }
 
-      // Create a safety alert for community visibility
-      const { error: alertError } = await supabase
-        .from('safety_alerts')
-        .insert({
-          user_id: user.id,
-          title: 'Emergency Alert',
-          description: `Emergency situation reported: ${situationTypes.find(s => s.value === selectedSituation)?.label}`,
-          alert_type: 'other',
-          severity: 'critical',
-          latitude: location.latitude,
-          longitude: location.longitude,
-          address
-        });
+      // Create a safety alert for community visibility (only if auto_alert_public is enabled)
+      const shouldAlertPublic = preferences?.auto_alert_public !== false;
+      
+      if (shouldAlertPublic) {
+        const shareLocationWithPublic = preferences?.share_location_with_public !== false;
+        
+        const { error: alertError } = await supabase
+          .from('safety_alerts')
+          .insert({
+            user_id: user.id,
+            title: 'Emergency Alert',
+            description: `Emergency situation reported: ${situationTypes.find(s => s.value === selectedSituation)?.label}`,
+            alert_type: 'other',
+            severity: 'critical',
+            latitude: shareLocationWithPublic ? location.latitude : null,
+            longitude: shareLocationWithPublic ? location.longitude : null,
+            address: shareLocationWithPublic ? address : 'Location hidden'
+          });
 
-      if (alertError) throw alertError;
+        if (alertError) {
+          console.error('Error creating public safety alert:', alertError);
+          // Don't fail the entire alert for this
+        }
+      }
 
       // Success haptic feedback
       notification('success');

@@ -14,9 +14,15 @@ interface AlertRequest {
     latitude: number;
     longitude: number;
     address: string;
-  };
+  } | null;
   user_name: string;
   user_id: string;
+  preferences?: {
+    auto_alert_contacts?: boolean;
+    share_location_with_contacts?: boolean;
+    auto_alert_public?: boolean;
+    share_location_with_public?: boolean;
+  };
 }
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -31,111 +37,122 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { panic_alert_id, situation_type, location, user_name, user_id }: AlertRequest = await req.json();
+    const { panic_alert_id, situation_type, location, user_name, user_id, preferences: passedPreferences }: AlertRequest = await req.json();
 
     console.log(`Processing emergency alert for panic_alert_id: ${panic_alert_id}, user_id: ${user_id}`);
+    console.log('Received preferences:', passedPreferences);
 
     if (!user_id) {
       throw new Error('User ID is required');
     }
 
-    // Get the user's emergency contacts
-    const { data: contacts, error: contactsError } = await supabase
-      .from('emergency_contacts')
-      .select('*')
-      .eq('user_id', user_id);
-
-    if (contactsError) {
-      console.error('Error fetching emergency contacts:', contactsError);
-      throw contactsError;
+    // Use passed preferences or fetch from database
+    let preferences = passedPreferences;
+    if (!preferences) {
+      const { data: dbPreferences, error: preferencesError } = await supabase
+        .from('emergency_preferences')
+        .select('*')
+        .eq('user_id', user_id)
+        .maybeSingle();
+  
+      if (preferencesError) {
+        console.error('Error fetching emergency preferences:', preferencesError);
+      }
+      preferences = dbPreferences || {};
     }
 
-     // Get user's emergency preferences
-     const { data: preferences, error: preferencesError } = await supabase
-       .from('emergency_preferences')
-       .select('*')
-       .eq('user_id', user_id)
-       .single();
- 
-     if (preferencesError) {
-       console.error('Error fetching emergency preferences:', preferencesError);
-       // Use defaults if no preferences found
-     }
+    // Check if we should alert contacts (default to true if not specified)
+    const shouldAlertContacts = preferences?.auto_alert_contacts !== false;
+    const shareLocationWithContacts = preferences?.share_location_with_contacts !== false;
 
-    const situationLabels: { [key: string]: string } = {
-      'medical_emergency': 'Medical Emergency',
-      'fire': 'Fire Emergency',
-      'break_in': 'Break In',
-      'assault': 'Assault',
-      'accident': 'Accident',
-      'natural_disaster': 'Natural Disaster',
-      'suspicious_activity': 'Suspicious Activity',
-      'domestic_violence': 'Domestic Violence',
-      'other': 'Emergency'
-    };
+    console.log(`Should alert contacts: ${shouldAlertContacts}, Share location: ${shareLocationWithContacts}`);
 
-    const situationLabel = situationLabels[situation_type] || 'Emergency';
-    
-    // Create alert message
-    const alertMessage = `🚨 EMERGENCY ALERT 🚨\n\n${user_name} needs help!\n\nSituation: ${situationLabel}\nLocation: ${location.address}\nTime: ${new Date().toLocaleString()}\n\nThis is an automated emergency alert. Please check on ${user_name} immediately or contact emergency services if needed.`;
+    let contactsNotified = 0;
 
-    // Send alerts to each emergency contact based on their preferred methods
-    const alertPromises = contacts?.map(async (contact) => {
-      const methods = contact.preferred_methods || ['in_app'];
+    if (shouldAlertContacts) {
+      // Get the user's emergency contacts
+      const { data: contacts, error: contactsError } = await supabase
+        .from('emergency_contacts')
+        .select('*')
+        .eq('user_id', user_id);
+
+      if (contactsError) {
+        console.error('Error fetching emergency contacts:', contactsError);
+        throw contactsError;
+      }
+
+      const situationLabels: { [key: string]: string } = {
+        'medical_emergency': 'Medical Emergency',
+        'fire': 'Fire Emergency',
+        'break_in': 'Break In',
+        'assault': 'Assault',
+        'accident': 'Accident',
+        'natural_disaster': 'Natural Disaster',
+        'suspicious_activity': 'Suspicious Activity',
+        'domestic_violence': 'Domestic Violence',
+        'kidnapping': 'Kidnapping',
+        'violence': 'Violence',
+        'other': 'Emergency'
+      };
+
+      const situationLabel = situationLabels[situation_type] || 'Emergency';
       
-      // Create in-app notification for all contacts
-      if (methods.includes('in_app')) {
-        await supabase
-          .from('alert_notifications')
-          .insert({
-            notification_type: 'emergency_alert',
-            panic_alert_id,
-            recipient_id: contact.user_id, // This would need to be mapped to a user if contacts have user accounts
-            sent_at: new Date().toISOString()
-          });
-      }
+      // Create alert message - conditionally include location
+      const locationInfo = (shareLocationWithContacts && location) 
+        ? `\nLocation: ${location.address}` 
+        : '\nLocation: Not shared';
+      
+      const alertMessage = `🚨 EMERGENCY ALERT 🚨\n\n${user_name} needs help!\n\nSituation: ${situationLabel}${locationInfo}\nTime: ${new Date().toLocaleString()}\n\nThis is an automated emergency alert. Please check on ${user_name} immediately or contact emergency services if needed.`;
 
-      // Send SMS alerts
-      if (methods.includes('sms')) {
-        await sendSMSAlert(contact.phone_number, alertMessage);
-      }
+      // Send alerts to each emergency contact based on their preferred methods
+      const alertPromises = contacts?.map(async (contact) => {
+        const methods = contact.preferred_methods || ['in_app'];
+        
+        // Create in-app notification for all contacts
+        if (methods.includes('in_app')) {
+          await supabase
+            .from('alert_notifications')
+            .insert({
+              notification_type: 'emergency_alert',
+              panic_alert_id,
+              recipient_id: contact.user_id,
+              sent_at: new Date().toISOString()
+            });
+        }
 
-      // Send WhatsApp alerts (would require WhatsApp Business API)
-      if (methods.includes('whatsapp')) {
-        await sendWhatsAppAlert(contact.phone_number, alertMessage);
-      }
+        // Send SMS alerts
+        if (methods.includes('sms')) {
+          await sendSMSAlert(contact.phone_number, alertMessage);
+        }
 
-      // Initiate phone call (would require voice API like Twilio)
-      if (methods.includes('phone_call')) {
-        await initiateEmergencyCall(contact.phone_number, user_name, situationLabel);
-      }
-    }) || [];
+        // Send WhatsApp alerts
+        if (methods.includes('whatsapp')) {
+          await sendWhatsAppAlert(contact.phone_number, alertMessage);
+        }
 
-    await Promise.all(alertPromises);
+        // Initiate phone call
+        if (methods.includes('phone_call')) {
+          await initiateEmergencyCall(contact.phone_number, user_name, situationLabel);
+        }
+      }) || [];
 
-    // Create public alert if enabled
-    if (preferences?.auto_alert_public) {
-      await supabase
-        .from('public_emergency_alerts')
-        .insert({
-          panic_alert_id,
-          user_id: user_id,
-          situation_type,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          address: preferences?.share_location_with_public ? location.address : null,
-          radius_km: 5,
-          is_active: true
-        });
-
-      // Send community notifications to nearby users
-      await sendCommunityAlerts(location, situationLabel, user_id);
+      await Promise.all(alertPromises);
+      contactsNotified = contacts?.length || 0;
+    } else {
+      console.log('Skipping contact alerts - auto_alert_contacts is disabled');
     }
+
+    // Note: Public alerts are now handled by PanicButton.tsx directly
+    // The edge function no longer creates duplicate public alerts
 
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Emergency alerts sent successfully',
-      contacts_notified: contacts?.length || 0
+      contacts_notified: contactsNotified,
+      preferences_applied: {
+        auto_alert_contacts: shouldAlertContacts,
+        share_location_with_contacts: shareLocationWithContacts
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
