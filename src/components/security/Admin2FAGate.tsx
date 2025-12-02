@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Lock } from 'lucide-react';
+import { Shield, AlertTriangle, Lock } from "lucide-react";
 import { TwoFactorSetup } from './TwoFactorSetup';
 import { TwoFactorVerification } from './TwoFactorVerification';
 import { useAuth } from '@/hooks/useAuth';
