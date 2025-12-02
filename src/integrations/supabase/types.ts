@@ -6586,16 +6586,26 @@ export type Database = {
         Args: { invite_token: string; joining_user_id: string }
         Returns: boolean
       }
-      create_conversation_with_request_check: {
-        Args: {
-          conversation_type?: string
-          marketplace_item_id?: string
-          marketplace_service_id?: string
-          recipient_id: string
-          sender_id: string
-        }
-        Returns: string
-      }
+      create_conversation_with_request_check:
+        | {
+            Args: { target_user_id: string }
+            Returns: {
+              conversation_id: string
+              is_new: boolean
+              request_id: string
+              status: string
+            }[]
+          }
+        | {
+            Args: {
+              conversation_type?: string
+              marketplace_item_id?: string
+              marketplace_service_id?: string
+              recipient_id: string
+              sender_id: string
+            }
+            Returns: string
+          }
       create_notification: {
         Args: {
           _body: string
