@@ -355,30 +355,7 @@ const Chat = () => {
             </div>
             
             <div className="flex items-center gap-1 md:gap-2">
-              {/* Combined Call Button with Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
-                    <PhoneCall className="h-4 w-4 md:h-5 md:w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="z-50 bg-background border shadow-lg">
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={startVoiceCall}
-                  >
-                    <Phone className="h-4 w-4" />
-                    Voice Call
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={startVideoCall}
-                  >
-                    <Video className="h-4 w-4" />
-                    Video Call
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Call feature temporarily disabled - Coming soon */}
               <Button
                 variant="ghost"
                 size="icon"
