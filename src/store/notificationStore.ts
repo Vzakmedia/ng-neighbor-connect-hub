@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
 import { playNotification, playEmergencyAlert, sendBrowserNotification } from '@/utils/audioUtils';
+import { shouldShowNotification, getNotificationPreferencesCache } from '@/hooks/useNotificationPreferences';
 
 export interface NotificationData {
   id: string;
@@ -47,7 +48,7 @@ export const useNotificationStore = create<NotificationState>()(
       unreadCount: 0,
       lastSyncTime: 0,
 
-      addNotification: (notification) => {
+      addNotification: async (notification) => {
         const { notifications } = get();
         
         // Deduplication: check if notification already exists
@@ -67,26 +68,51 @@ export const useNotificationStore = create<NotificationState>()(
           lastSyncTime: Date.now()
         });
 
-        // Play sound and show browser notification
+        // Check user preferences before playing sound/showing notifications
         if (!notification.isRead) {
-          if (notification.type === 'emergency' || notification.type === 'panic_alert') {
-            playEmergencyAlert();
-          } else {
-            playNotification('normal');
+          try {
+            const prefs = await shouldShowNotification(notification.type, notification.priority);
+            
+            // Play sound based on preferences
+            if (prefs.playSound) {
+              if (notification.type === 'emergency' || notification.type === 'panic_alert') {
+                playEmergencyAlert();
+              } else {
+                playNotification('normal');
+              }
+            }
+
+            // Show browser notification based on preferences
+            if (prefs.showBrowserNotification) {
+              sendBrowserNotification(notification.title, {
+                body: notification.body,
+                icon: '/favicon.ico',
+                tag: `notification-${notification.id}`,
+                data: notification.data,
+                requireInteraction: notification.priority === 'urgent'
+              });
+            }
+
+            // Trigger email notification asynchronously (don't block)
+            triggerEmailNotification(notification).catch(error => {
+              console.error('[NotificationStore] Email send failed:', error);
+            });
+          } catch (error) {
+            console.error('[NotificationStore] Error checking preferences:', error);
+            // Fallback to showing notifications if preference check fails
+            if (notification.type === 'emergency' || notification.type === 'panic_alert') {
+              playEmergencyAlert();
+            } else {
+              playNotification('normal');
+            }
+            sendBrowserNotification(notification.title, {
+              body: notification.body,
+              icon: '/favicon.ico',
+              tag: `notification-${notification.id}`,
+              data: notification.data,
+              requireInteraction: notification.priority === 'urgent'
+            });
           }
-
-          sendBrowserNotification(notification.title, {
-            body: notification.body,
-            icon: '/favicon.ico',
-            tag: `notification-${notification.id}`,
-            data: notification.data,
-            requireInteraction: notification.priority === 'urgent'
-          });
-
-          // Trigger email notification asynchronously (don't block)
-          triggerEmailNotification(notification).catch(error => {
-            console.error('[NotificationStore] Email send failed:', error);
-          });
         }
 
         console.log('[NotificationStore] Notification added:', notification.id, 'Unread:', unreadCount);
