@@ -94,33 +94,71 @@ export const useEmailNotifications = () => {
     mutationFn: async () => {
       if (!user?.email) throw new Error('No email address');
       
-      const { data, error } = await supabase.functions.invoke('send-email-notification', {
-        body: {
-          to: user.email,
-          subject: 'Test Email Notification',
-          body: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #333;">Test Successful!</h1>
-              <p style="color: #666; line-height: 1.6;">Your email notifications are working correctly.</p>
-              <p style="color: #666; line-height: 1.6;">You will receive email notifications based on your preferences.</p>
-              <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;"/>
-              <p style="color: #999; font-size: 12px;">This is a test email from your application.</p>
-            </div>
-          `,
-          type: 'system',
-          userId: user.id
-        }
-      });
+      const emailBody = {
+        to: user.email,
+        subject: 'Test Email Notification',
+        body: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #333;">Test Successful!</h1>
+            <p style="color: #666; line-height: 1.6;">Your email notifications are working correctly.</p>
+            <p style="color: #666; line-height: 1.6;">You will receive email notifications based on your preferences.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;"/>
+            <p style="color: #999; font-size: 12px;">This is a test email from your application.</p>
+          </div>
+        `,
+        type: 'system',
+        userId: user.id
+      };
+
+      console.log('Attempting to send test email via supabase.functions.invoke...');
       
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.functions.invoke('send-email-notification', {
+          body: emailBody
+        });
+        
+        if (error) {
+          console.error('supabase.functions.invoke error:', error);
+          throw error;
+        }
+        
+        console.log('Test email sent successfully via invoke:', data);
+        return data;
+      } catch (invokeError: any) {
+        console.error('Invoke failed, trying direct fetch fallback:', invokeError);
+        
+        // Fallback to direct fetch
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cowiviqhrnmhttugozbz.supabase.co';
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4';
+        
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'apikey': supabaseAnonKey
+          },
+          body: JSON.stringify(emailBody)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Direct fetch failed:', response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Test email sent successfully via direct fetch:', data);
+        return data;
+      }
     },
     onSuccess: () => {
       toast.success('Test email sent! Check your inbox.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error sending test email:', error);
-      toast.error('Failed to send test email');
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to send test email: ${errorMessage}`);
     }
   });
 
