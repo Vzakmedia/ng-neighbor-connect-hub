@@ -22,12 +22,7 @@ import {
   Smartphone, 
   AlertTriangle,
   Shield,
-  Eye,
-  EyeOff,
-  Lock,
   CheckCircle,
-  Copy,
-  Lock as LockKeyhole,
   Search,
   UserCheck,
   Loader2
@@ -45,7 +40,6 @@ interface EmergencyContact {
   can_receive_location: boolean;
   can_alert_public: boolean;
   is_confirmed: boolean;
-  confirm_code?: string;
   created_at: string;
 }
 
@@ -68,16 +62,8 @@ const EmergencyContacts = () => {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isConfirmingContact, setIsConfirmingContact] = useState(false);
-  const [isViewingCode, setIsViewingCode] = useState(false);
-  const [confirmationCode, setConfirmationCode] = useState('');
-  const [contactToConfirm, setContactToConfirm] = useState<EmergencyContact | null>(null);
-  const [selectedContact, setSelectedContact] = useState<EmergencyContact | null>(null);
-  const [contactCode, setContactCode] = useState<string>('');
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [verifyingContact, setVerifyingContact] = useState<EmergencyContact | null>(null);
-  const [verificationCode, setVerificationCode] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -100,7 +86,6 @@ const EmergencyContacts = () => {
 
   useEffect(() => {
     if (user) {
-      // Add a small delay to ensure user is fully loaded
       const timeoutId = setTimeout(() => {
         loadProfile();
         loadContacts();
@@ -147,10 +132,8 @@ const EmergencyContacts = () => {
   const handlePhoneChange = (value: string) => {
     setFormData(prev => ({ ...prev, phone_number: value }));
     
-    // Clear any existing timeout
     if (searchTimeout) clearTimeout(searchTimeout);
     
-    // Set a new timeout to avoid making too many requests while typing
     const timeout = setTimeout(() => {
       searchUsersByPhone(value);
     }, 500);
@@ -188,7 +171,6 @@ const EmergencyContacts = () => {
       setProfile(data);
     } catch (error) {
       console.error('EmergencyContacts: Error loading profile:', error);
-      // Don't show toast for profile errors to reduce noise
     }
   };
 
@@ -238,7 +220,6 @@ const EmergencyContacts = () => {
     } catch (error: any) {
       console.error('EmergencyContacts: Error loading emergency contacts:', error);
       
-      // Only show toast for unexpected errors
       if (error?.code !== 'PGRST116' && error?.code !== '42P01') {
         toast({
           title: "Error Loading Contacts",
@@ -256,7 +237,6 @@ const EmergencyContacts = () => {
     
     setLoading(true);
     try {
-      // Insert the contact in the emergency_contacts table
       const { data, error } = await supabase
         .from('emergency_contacts')
         .insert({
@@ -274,7 +254,7 @@ const EmergencyContacts = () => {
         
       if (error) throw error;
       
-      // Create a contact request and notification system
+      // Create a contact request - the database trigger will handle the notification
       try {
         const { data: request, error: requestError } = await supabase
           .from('emergency_contact_requests')
@@ -295,32 +275,6 @@ const EmergencyContacts = () => {
           });
         } else {
           console.log('Contact request created:', request);
-          
-          // Try to trigger the edge function
-          try {
-            const { data: response, error: funcError } = await supabase.functions.invoke(
-              'emergency-contact-invitation',
-              {
-                body: {
-                  type: 'INSERT',
-                  table: 'emergency_contact_requests',
-                  record: request,
-                  schema: 'public',
-                  old_record: null
-                }
-              }
-            );
-            
-            if (funcError) {
-              console.warn('Edge function not available, notifications may be delayed:', funcError);
-              // Don't fail the whole operation, database trigger will handle it
-            } else {
-              console.log('Edge function response:', response);
-            }
-          } catch (funcErr) {
-            console.warn('Edge function invocation failed:', funcErr);
-            // Continue anyway - the contact is added
-          }
         }
       } catch (e: any) {
         console.error('Error in contact request creation:', e);
@@ -333,10 +287,9 @@ const EmergencyContacts = () => {
       
       toast({
         title: "Emergency Contact Added",
-        description: `${formData.contact_name} has been added as an emergency contact.`,
+        description: `${formData.contact_name} has been added. They will receive a request to confirm.`,
       });
       
-      // Reset form
       setFormData({
         contact_name: '',
         phone_number: '',
@@ -433,56 +386,6 @@ const EmergencyContacts = () => {
     }
   };
 
-  const confirmContact = async () => {
-    if (!contactToConfirm || !confirmationCode) return;
-    
-    setLoading(true);
-    try {
-      // Verify the confirmation code
-      if (contactToConfirm.confirm_code !== confirmationCode) {
-        toast({
-          title: "Invalid Code",
-          description: "The confirmation code is incorrect. Please try again.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Update the contact as confirmed
-      const { error } = await supabase
-        .from('emergency_contacts')
-        .update({ is_confirmed: true })
-        .eq('id', contactToConfirm.id);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Contact Confirmed",
-        description: `${contactToConfirm.contact_name} has been confirmed as your emergency contact.`,
-      });
-      
-      setIsConfirmingContact(false);
-      setContactToConfirm(null);
-      setConfirmationCode('');
-      loadContacts();
-    } catch (error) {
-      console.error('Error confirming contact:', error);
-      toast({
-        title: "Error",
-        description: "Failed to confirm emergency contact.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyCode = async (code: string) => {
-    const { useNativeClipboard } = await import('@/hooks/mobile/useNativeClipboard');
-    const { copyToClipboard } = useNativeClipboard();
-    await copyToClipboard(code, "Confirmation code copied to clipboard");
-  };
-
   const openEditDialog = (contact: EmergencyContact) => {
     setEditingContact(contact);
     setFormData({
@@ -499,7 +402,6 @@ const EmergencyContacts = () => {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
-      {/* Main Emergency Contacts Card */}
       <Card className="w-full max-w-full overflow-hidden">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 space-y-0">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -507,60 +409,6 @@ const EmergencyContacts = () => {
             Emergency Contacts
           </CardTitle>
           <div className="flex gap-2 w-full sm:w-auto">
-            
-            {/* Confirmation Dialog */}
-            <Dialog open={isConfirmingContact} onOpenChange={setIsConfirmingContact}>
-              <DialogContent className="sm:max-w-[400px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <LockKeyhole className="h-5 w-5" />
-                    Confirm Emergency Contact
-                  </DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-4 py-3">
-                  {contactToConfirm && (
-                    <>
-                      <p className="text-sm">
-                        To confirm <strong>{contactToConfirm.contact_name}</strong> as your emergency contact, 
-                        please enter the confirmation code they provided to you.
-                      </p>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmation-code">Confirmation Code</Label>
-                        <Input
-                          id="confirmation-code"
-                          type="text"
-                          placeholder="Enter 6-digit code"
-                          value={confirmationCode}
-                          onChange={(e) => setConfirmationCode(e.target.value)}
-                          maxLength={6}
-                        />
-                      </div>
-                      
-                      <div className="flex gap-2 pt-4">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsConfirmingContact(false)} 
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={confirmContact} 
-                          disabled={loading || confirmationCode.length !== 6} 
-                          className="flex-1"
-                        >
-                          {loading ? 'Confirming...' : 'Confirm Contact'}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            {/* Add Contact Dialog */}
             <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
               <DialogTrigger asChild>
                 <Button onClick={() => {
@@ -624,7 +472,6 @@ const EmergencyContacts = () => {
                         )}
                       </div>
                       
-                      {/* Search Results */}
                       {searchResults.length > 0 && (
                         <div className="absolute z-50 mt-1 w-full bg-background rounded-md border shadow-lg max-w-full">
                           <div className="p-2 text-xs text-muted-foreground flex items-center">
@@ -782,51 +629,6 @@ const EmergencyContacts = () => {
                 </div>
               </DialogContent>
             </Dialog>
-            
-            {/* View Code Dialog */}
-            <Dialog open={isViewingCode} onOpenChange={setIsViewingCode}>
-              <DialogContent className="sm:max-w-[400px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
-                    Confirmation Code
-                  </DialogTitle>
-                </DialogHeader>
-                
-                <div className="space-y-4 py-3">
-                  {selectedContact && (
-                    <>
-                      <p className="text-sm">
-                        Share this code with <strong>{selectedContact.contact_name}</strong> so they can confirm 
-                        the emergency contact relationship:
-                      </p>
-                      
-                      <div className="bg-muted p-4 rounded-lg text-center">
-                        <div className="text-2xl font-mono font-bold tracking-widest mb-2">
-                          {contactCode}
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => copyCode(contactCode)}
-                          className="mt-2"
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy Code
-                        </Button>
-                      </div>
-                      
-                      <Alert>
-                        <Shield className="h-4 w-4" />
-                        <AlertDescription>
-                          This code is unique to this contact. Keep it secure and only share it with the intended person.
-                        </AlertDescription>
-                      </Alert>
-                    </>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
         </CardHeader>
         
@@ -863,7 +665,7 @@ const EmergencyContacts = () => {
                           ) : (
                             <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
                               <AlertTriangle className="h-3 w-3 mr-1" />
-                              Pending Confirmation
+                              Pending
                             </Badge>
                           )}
                         </div>
@@ -893,37 +695,6 @@ const EmergencyContacts = () => {
                     </div>
                     
                     <div className="flex gap-1 flex-wrap sm:flex-nowrap justify-start sm:justify-end">
-                      {!contact.is_confirmed && contact.confirm_code && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedContact(contact);
-                            setContactCode(contact.confirm_code || '');
-                            setIsViewingCode(true);
-                          }}
-                          title="View confirmation code"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
-                      {!contact.is_confirmed && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setContactToConfirm(contact);
-                            setIsConfirmingContact(true);
-                          }}
-                          title="Confirm this contact"
-                          className="h-8 w-8 p-0"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -969,7 +740,6 @@ const EmergencyContacts = () => {
         </CardContent>
       </Card>
       
-      {/* Security Information */}
       <Card className="w-full max-w-full overflow-hidden mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -979,7 +749,7 @@ const EmergencyContacts = () => {
         </CardHeader>
         <CardContent className="space-y-3 overflow-x-hidden">
           <div className="text-sm space-y-2">
-            <p><strong>Confirmation Required:</strong> Emergency contacts must confirm their relationship with you using a secure code before they can receive alerts.</p>
+            <p><strong>Confirmation Required:</strong> Emergency contacts will receive a notification in the app and must accept your request before they can receive alerts.</p>
             <p><strong>Location Sharing:</strong> Your exact location will only be shared with contacts who have permission during active emergencies.</p>
             <p><strong>Data Protection:</strong> All emergency contact information is encrypted and secured.</p>
           </div>
