@@ -6566,6 +6566,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      can_admin_modify_role: {
+        Args: { _target_role: string }
+        Returns: boolean
+      }
       can_moderate_board_posts: {
         Args: { board_id: string; user_id: string }
         Returns: boolean
@@ -6886,6 +6890,7 @@ export type Database = {
           title: string
         }[]
       }
+      get_admin_level: { Args: { _user_id: string }; Returns: string }
       get_admin_user_stats: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
