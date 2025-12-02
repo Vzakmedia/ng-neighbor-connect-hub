@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import { useAuth } from '@/hooks/useAuth'; // Make sure to use the real auth hook
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Settings, 
   Bell, 
@@ -47,6 +47,7 @@ import IOSDiagnostics from './IOSDiagnostics';
 import { useTutorial } from '@/hooks/useTutorial';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -66,6 +67,13 @@ const SettingsContent = () => {
   const navigate = useNavigate();
   const { startTutorial, resetTutorial, hasCompletedTutorial } = useTutorial();
   const { preferences: emailPreferences, updatePreferences: updateEmailPreferences, sendTestEmail } = useEmailNotifications();
+  const { 
+    preferences: notifPreferences, 
+    isLoading: notifLoading, 
+    updatePreferences: updateNotifPreferences,
+    updateCategory,
+    updateAudioSettings: updateAudioPrefs
+  } = useNotificationPreferences();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,19 +92,20 @@ const SettingsContent = () => {
     fetchUserRole();
   }, [user]);
   
-  // Notification Settings
-  const [notificationSettings, setNotificationSettings] = useState({
-    safetyAlerts: true,
-    marketplaceUpdates: true,
-    communityPosts: false,
-    serviceBookings: true,
-    emergencyAlerts: true,
-    emailNotifications: true,
-    pushNotifications: true
-  });
+  // Derive notification settings from database preferences
+  const notificationSettings = {
+    safetyAlerts: notifPreferences?.categories?.safety_alerts ?? true,
+    marketplaceUpdates: notifPreferences?.categories?.marketplace_updates ?? true,
+    communityPosts: notifPreferences?.categories?.community_posts ?? false,
+    serviceBookings: notifPreferences?.categories?.service_bookings ?? true,
+    emergencyAlerts: notifPreferences?.categories?.emergency_alerts ?? true,
+    emailNotifications: notifPreferences?.email_enabled ?? true,
+    pushNotifications: notifPreferences?.push_enabled ?? true
+  };
 
-  // Audio Settings
-const [audioSettings, setAudioSettings] = useState({
+  // Derive audio settings from database preferences
+  const dbAudioSettings = notifPreferences?.categories?.audio_settings;
+  const [audioSettings, setAudioSettings] = useState({
     notificationVolume: [0.5],
     emergencyVolume: [0.8],
     soundEnabled: true,
@@ -105,37 +114,39 @@ const [audioSettings, setAudioSettings] = useState({
     messageChimeVolume: [0.7],
   });
 
-  // Load audio settings from native storage on component mount
+  // Sync audio settings from database when preferences load
   useEffect(() => {
-    const loadSettings = async () => {
-      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
-      const { getItem } = useNativeStorage();
-      const savedAudioSettings = await getItem('audioSettings');
-      if (savedAudioSettings) {
-        try {
-          const parsed = JSON.parse(savedAudioSettings);
-          setAudioSettings(prev => ({ 
-            ...prev, 
-            ...parsed,
-            notificationSound: parsed.notificationSound || 'generated'
-          }));
-        } catch (error) {
-          console.error('Error loading audio settings:', error);
-        }
-      }
-    };
-    loadSettings();
-  }, []);
+    if (dbAudioSettings) {
+      setAudioSettings({
+        notificationVolume: [dbAudioSettings.notificationVolume ?? 0.5],
+        emergencyVolume: [dbAudioSettings.emergencyVolume ?? 0.8],
+        soundEnabled: dbAudioSettings.soundEnabled ?? true,
+        notificationSound: (dbAudioSettings.notificationSound || 'generated') as NotificationSoundType,
+        messageChimeMode: dbAudioSettings.messageChimeMode || 'single',
+        messageChimeVolume: [dbAudioSettings.messageChimeVolume ?? 0.7],
+      });
+    }
+  }, [dbAudioSettings]);
 
-  // Save audio settings to native storage whenever they change
-  useEffect(() => {
-    const saveSettings = async () => {
-      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
-      const { setItem } = useNativeStorage();
-      await setItem('audioSettings', JSON.stringify(audioSettings));
-    };
-    saveSettings();
-  }, [audioSettings]);
+  // Save audio settings to both native storage and database
+  const saveAudioSettings = async (newSettings: typeof audioSettings) => {
+    setAudioSettings(newSettings);
+    
+    // Save to native storage for quick access
+    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
+    const { setItem } = useNativeStorage();
+    await setItem('audioSettings', JSON.stringify(newSettings));
+    
+    // Save to database for cross-device sync
+    updateAudioPrefs({
+      soundEnabled: newSettings.soundEnabled,
+      notificationVolume: newSettings.notificationVolume[0],
+      emergencyVolume: newSettings.emergencyVolume[0],
+      notificationSound: newSettings.notificationSound,
+      messageChimeMode: newSettings.messageChimeMode,
+      messageChimeVolume: newSettings.messageChimeVolume[0]
+    });
+  };
 
   // Privacy Settings
   const [privacySettings, setPrivacySettings] = useState({
@@ -152,12 +163,31 @@ const [audioSettings, setAudioSettings] = useState({
     show_online_status: true
   });
 
-  const handleNotificationChange = (key: string, value: boolean) => {
-    setNotificationSettings(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Settings updated",
-      description: "Your notification preferences have been saved.",
-    });
+  // Map UI keys to database category keys
+  const categoryKeyMap: Record<string, string> = {
+    safetyAlerts: 'safety_alerts',
+    marketplaceUpdates: 'marketplace_updates',
+    communityPosts: 'community_posts',
+    serviceBookings: 'service_bookings',
+    emergencyAlerts: 'emergency_alerts'
+  };
+
+  const handleNotificationChange = async (key: string, value: boolean) => {
+    // Handle delivery method changes
+    if (key === 'emailNotifications') {
+      await updateNotifPreferences({ email_enabled: value });
+      return;
+    }
+    if (key === 'pushNotifications') {
+      await updateNotifPreferences({ push_enabled: value });
+      return;
+    }
+    
+    // Handle category changes
+    const dbKey = categoryKeyMap[key];
+    if (dbKey) {
+      await updateCategory(dbKey as any, value);
+    }
   };
 
   const handlePrivacyChange = (key: string, value: boolean | string) => {
@@ -201,10 +231,11 @@ const [audioSettings, setAudioSettings] = useState({
   };
 
   const handleVolumeChange = (type: 'notification' | 'emergency', value: number[]) => {
-    setAudioSettings(prev => ({
-      ...prev,
+    const newSettings = {
+      ...audioSettings,
       [`${type}Volume`]: value
-    }));
+    };
+    saveAudioSettings(newSettings);
   };
 
   const testSound = async (type: 'normal' | 'emergency') => {
@@ -605,7 +636,7 @@ const [audioSettings, setAudioSettings] = useState({
                       id="sound-enabled"
                       checked={audioSettings.soundEnabled}
                       onCheckedChange={(checked) => {
-                        setAudioSettings(prev => ({ ...prev, soundEnabled: checked }));
+                        saveAudioSettings({ ...audioSettings, soundEnabled: checked });
                         if (checked) {
                           // Request permissions when enabling
                           if ('Notification' in window && Notification.permission === 'default') {
@@ -668,7 +699,7 @@ const [audioSettings, setAudioSettings] = useState({
                           <Select
                             value={audioSettings.notificationSound}
                             onValueChange={(value: NotificationSoundType) => 
-                              setAudioSettings(prev => ({ ...prev, notificationSound: value }))
+                              saveAudioSettings({ ...audioSettings, notificationSound: value })
                             }
                           >
                             <SelectTrigger className="flex-1">
@@ -709,7 +740,7 @@ const [audioSettings, setAudioSettings] = useState({
                           <Select
                             value={audioSettings.messageChimeMode}
                             onValueChange={(value: 'single' | 'double') =>
-                              setAudioSettings(prev => ({ ...prev, messageChimeMode: value }))
+                              saveAudioSettings({ ...audioSettings, messageChimeMode: value })
                             }
                           >
                             <SelectTrigger className="w-[180px]">
@@ -737,7 +768,7 @@ const [audioSettings, setAudioSettings] = useState({
                           <Slider
                             id="message-chime-volume"
                             value={audioSettings.messageChimeVolume}
-                            onValueChange={(value) => setAudioSettings(prev => ({ ...prev, messageChimeVolume: value }))}
+                            onValueChange={(value) => saveAudioSettings({ ...audioSettings, messageChimeVolume: value })}
                             max={1}
                             min={0}
                             step={0.05}
