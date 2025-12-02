@@ -5,12 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
 import { TwoFactorSetup } from "@/components/security/TwoFactorSetup";
 import { BiometricSettings } from "@/components/settings/BiometricSettings";
 import { useState } from "react";
 import { toast } from "sonner";
+import { usePrivacySettings } from "@/hooks/usePrivacySettings";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,10 +29,19 @@ import {
 
 export default function PrivacySecurity() {
   const navigate = useNavigate();
-  const [profileVisibility, setProfileVisibility] = useState("public");
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
-  const [allowDMsFrom, setAllowDMsFrom] = useState("everyone");
-  const [locationSharing, setLocationSharing] = useState(true);
+  const { signOut } = useAuth();
+  const { 
+    privacySettings, 
+    messagingPreferences, 
+    isLoading, 
+    updatePrivacySettings, 
+    updateMessagingPreferences 
+  } = usePrivacySettings();
+  
+  const [isSigningOutAll, setIsSigningOutAll] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const hapticFeedback = async () => {
     if (Capacitor.isNativePlatform()) {
@@ -42,18 +55,119 @@ export default function PrivacySecurity() {
 
   const handleSignOutAll = async () => {
     await hapticFeedback();
-    toast.success("Signed out from all devices");
+    setIsSigningOutAll(true);
+    
+    try {
+      // Sign out from all sessions using global scope
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) throw error;
+      
+      toast.success("Signed out from all devices");
+      // The auth state change will handle redirect
+    } catch (error) {
+      console.error('Error signing out all devices:', error);
+      toast.error("Failed to sign out from all devices");
+    } finally {
+      setIsSigningOutAll(false);
+    }
   };
 
   const handleClearCache = async () => {
     await hapticFeedback();
-    toast.success("Cache cleared successfully");
+    
+    try {
+      // Clear localStorage cache items
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('supabase.') || key.startsWith('audio') || key.startsWith('cache')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      
+      toast.success("Cache cleared successfully");
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      toast.error("Failed to clear cache");
+    }
   };
 
   const handleDownloadData = async () => {
     await hapticFeedback();
-    toast.success("Your data export will be sent to your email");
+    setIsExporting(true);
+    
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('export-user-data', {
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neighborlink-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Your data has been downloaded");
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast.error("Failed to export data. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
+
+  const handleDeleteAccount = async () => {
+    await hapticFeedback();
+    
+    if (deleteConfirmation !== 'DELETE_MY_ACCOUNT') {
+      toast.error("Please type DELETE_MY_ACCOUNT to confirm");
+      return;
+    }
+    
+    setIsDeleting(true);
+    
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const { error } = await supabase.functions.invoke('delete-account', {
+        body: { confirmation: deleteConfirmation },
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Your account has been deleted");
+      await signOut();
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      toast.error(error.message || "Failed to delete account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmation("");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,16 +229,17 @@ export default function PrivacySecurity() {
                   variant="outline"
                   className="w-full justify-start text-destructive hover:text-destructive"
                   onClick={hapticFeedback}
+                  disabled={isSigningOutAll}
                 >
                   <DevicePhoneMobileIcon className="h-4 w-4 mr-2" />
-                  Sign Out All Devices
+                  {isSigningOutAll ? "Signing out..." : "Sign Out All Devices"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Sign out all devices?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will sign you out from all devices except this one. You'll need to sign in again on those devices.
+                    This will sign you out from all devices including this one. You'll need to sign in again.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -149,7 +264,12 @@ export default function PrivacySecurity() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm">Profile Visibility</Label>
-              <Select value={profileVisibility} onValueChange={setProfileVisibility}>
+              <Select 
+                value={privacySettings.profileVisibility} 
+                onValueChange={(value: 'public' | 'neighbors' | 'verified' | 'private') => 
+                  updatePrivacySettings({ profileVisibility: value })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -168,17 +288,23 @@ export default function PrivacySecurity() {
               </div>
               <Switch
                 id="online-status"
-                checked={showOnlineStatus}
+                checked={messagingPreferences.show_online_status}
                 onCheckedChange={async (checked) => {
                   await hapticFeedback();
-                  setShowOnlineStatus(checked);
+                  updateMessagingPreferences({ show_online_status: checked });
                 }}
               />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm">Allow Direct Messages From</Label>
-              <Select value={allowDMsFrom} onValueChange={setAllowDMsFrom}>
+              <Select 
+                value={privacySettings.allowDMsFrom} 
+                onValueChange={(value: 'everyone' | 'neighbors' | 'none') => {
+                  updatePrivacySettings({ allowDMsFrom: value });
+                  updateMessagingPreferences({ allow_messages: value !== 'none' });
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -197,10 +323,10 @@ export default function PrivacySecurity() {
               </div>
               <Switch
                 id="location-sharing"
-                checked={locationSharing}
+                checked={privacySettings.locationSharing}
                 onCheckedChange={async (checked) => {
                   await hapticFeedback();
-                  setLocationSharing(checked);
+                  updatePrivacySettings({ locationSharing: checked });
                 }}
               />
             </div>
@@ -220,8 +346,9 @@ export default function PrivacySecurity() {
               variant="outline"
               className="w-full justify-start"
               onClick={handleDownloadData}
+              disabled={isExporting}
             >
-              Download Your Data
+              {isExporting ? "Exporting..." : "Download Your Data"}
             </Button>
             <Button
               variant="outline"
@@ -233,7 +360,9 @@ export default function PrivacySecurity() {
             <div className="pt-2 px-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Storage Used</span>
-                <span>124 MB</span>
+                <span>
+                  {Math.round(JSON.stringify(localStorage).length / 1024)} KB
+                </span>
               </div>
             </div>
           </CardContent>
@@ -319,14 +448,27 @@ export default function PrivacySecurity() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                  <AlertDialogDescription className="space-y-3">
+                    <p>This action cannot be undone. This will permanently delete your account and remove all your data from our servers.</p>
+                    <p className="font-medium">Type <span className="font-mono bg-muted px-1 rounded">DELETE_MY_ACCOUNT</span> to confirm:</p>
+                    <Input
+                      value={deleteConfirmation}
+                      onChange={(e) => setDeleteConfirmation(e.target.value)}
+                      placeholder="Type DELETE_MY_ACCOUNT"
+                      className="mt-2"
+                    />
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete Account
+                  <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction 
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmation !== 'DELETE_MY_ACCOUNT' || isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete Account"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

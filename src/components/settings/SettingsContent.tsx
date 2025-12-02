@@ -48,6 +48,7 @@ import { useTutorial } from '@/hooks/useTutorial';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { Capacitor } from '@capacitor/core';
 import {
   AlertDialog,
@@ -74,6 +75,13 @@ const SettingsContent = () => {
     updateCategory,
     updateAudioSettings: updateAudioPrefs
   } = useNotificationPreferences();
+  const {
+    privacySettings: dbPrivacySettings,
+    messagingPreferences: dbMessagingPreferences,
+    isLoading: privacyLoading,
+    updatePrivacySettings: updateDbPrivacySettings,
+    updateMessagingPreferences: updateDbMessagingPreferences,
+  } = usePrivacySettings();
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -148,20 +156,7 @@ const SettingsContent = () => {
     });
   };
 
-  // Privacy Settings
-  const [privacySettings, setPrivacySettings] = useState({
-    profileVisibility: 'public',
-    showPhone: false,
-    showAddress: false,
-    shareLocation: true
-  });
-
-  // Messaging preferences
-  const [messagingPreferences, setMessagingPreferences] = useState({
-    allow_messages: true,
-    show_read_receipts: true,
-    show_online_status: true
-  });
+  // Use database-backed privacy settings (synced via hook)
 
   // Map UI keys to database category keys
   const categoryKeyMap: Record<string, string> = {
@@ -191,11 +186,11 @@ const SettingsContent = () => {
   };
 
   const handlePrivacyChange = (key: string, value: boolean | string) => {
-    setPrivacySettings(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Privacy settings updated",
-      description: "Your privacy preferences have been saved.",
-    });
+    updateDbPrivacySettings({ [key]: value });
+  };
+
+  const handleMessagingPrefChange = (key: string, value: boolean) => {
+    updateDbMessagingPreferences({ [key]: value });
   };
 
   const handleSignOut = async () => {
@@ -856,7 +851,7 @@ const SettingsContent = () => {
                   <div className="space-y-2">
                     <Label htmlFor="profile-visibility" className="text-sm font-medium">Who can see your profile?</Label>
                     <Select
-                      value={privacySettings.profileVisibility}
+                      value={dbPrivacySettings.profileVisibility}
                       onValueChange={(value) => handlePrivacyChange('profileVisibility', value)}
                     >
                       <SelectTrigger className="w-full">
@@ -880,7 +875,7 @@ const SettingsContent = () => {
                     </div>
                     <Switch
                       id="show-phone"
-                      checked={privacySettings.showPhone}
+                      checked={dbPrivacySettings.showPhone}
                       onCheckedChange={(checked) => handlePrivacyChange('showPhone', checked)}
                       className="shrink-0"
                     />
@@ -895,7 +890,7 @@ const SettingsContent = () => {
                     </div>
                     <Switch
                       id="show-address"
-                      checked={privacySettings.showAddress}
+                      checked={dbPrivacySettings.showAddress}
                       onCheckedChange={(checked) => handlePrivacyChange('showAddress', checked)}
                       className="shrink-0"
                     />
@@ -917,8 +912,8 @@ const SettingsContent = () => {
                     </div>
                     <Switch
                       id="allow-messages"
-                      checked={messagingPreferences.allow_messages}
-                      onCheckedChange={(checked) => setMessagingPreferences(prev => ({ ...prev, allow_messages: checked }))}
+                      checked={dbMessagingPreferences.allow_messages}
+                      onCheckedChange={(checked) => handleMessagingPrefChange('allow_messages', checked)}
                       className="shrink-0"
                     />
                   </div>
@@ -939,7 +934,7 @@ const SettingsContent = () => {
                     </div>
                     <Switch
                       id="share-location"
-                      checked={privacySettings.shareLocation}
+                      checked={dbPrivacySettings.shareLocation}
                       onCheckedChange={(checked) => handlePrivacyChange('shareLocation', checked)}
                       className="shrink-0"
                     />
