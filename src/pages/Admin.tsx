@@ -8,6 +8,10 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Users, MessageSquare, Shield, TrendingUp, MapPin, Calendar, ShoppingCart, Settings, AlertTriangle, Edit, DollarSign, Eye, Play, Pause, BarChart3, Download, Clock, Building, UserPlus, MoreHorizontal, UserX, Trash2, ArrowLeft, FileText, Link as Plug, Key, Code, Database, Globe, Activity, Search, Filter, CheckCircle, XCircle, Mail } from '@/lib/icons';
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
+import { useAdminAuditLog } from "@/hooks/useAdminAuditLog";
+import { Admin2FAGate } from "@/components/security/Admin2FAGate";
+import { AdminSessionGuard } from "@/components/security/AdminSessionGuard";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -41,6 +45,7 @@ const Admin = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logRoleChange, logUserAction, logConfigChange, logAdminSession } = useAdminAuditLog();
   
   // State for real-time data
   const [stats, setStats] = useState({
@@ -658,10 +663,27 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
     }
   };
 
-  // User management handlers
+  // User management handlers - with privilege escalation prevention
   const handleEditUserRole = async (user: any) => {
-    const validRoles = ['user', 'admin', 'super_admin', 'moderator', 'manager', 'support', 'staff'];
-    const newRole = prompt(`Enter new role for ${user.full_name} (${validRoles.join(', ')}):`, user.user_roles?.[0]?.role || 'user');
+    // Regular admins cannot assign admin or super_admin roles - only super_admins can
+    const baseRoles = ['user', 'moderator', 'manager', 'support', 'staff'];
+    const validRoles = isSuperAdmin 
+      ? [...baseRoles, 'admin', 'super_admin'] 
+      : baseRoles;
+    
+    const currentRole = user.user_roles?.[0]?.role || 'user';
+    
+    // Prevent regular admins from modifying admin/super_admin users
+    if (!isSuperAdmin && (currentRole === 'admin' || currentRole === 'super_admin')) {
+      toast({
+        title: "Permission Denied",
+        description: "Only super admins can modify admin roles",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newRole = prompt(`Enter new role for ${user.full_name} (${validRoles.join(', ')}):`, currentRole);
     if (!newRole || !validRoles.includes(newRole)) {
       if (newRole) {
         toast({
@@ -673,6 +695,16 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
       return;
     }
 
+    // Double-check: prevent privilege escalation
+    if (!isSuperAdmin && (newRole === 'admin' || newRole === 'super_admin')) {
+      toast({
+        title: "Permission Denied",
+        description: "Only super admins can assign admin roles",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('user_roles')
@@ -680,6 +712,9 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         .eq('user_id', user.user_id);
 
       if (error) throw error;
+
+      // Log the role change for audit trail
+      await logRoleChange(user.user_id, currentRole, newRole, 'Admin panel role update');
 
       toast({
         title: "Role Updated",
@@ -2528,28 +2563,30 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
-      <div className="w-full px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Real-time neighborhood platform management</p>
-            <div className="flex items-center mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-              <span className="text-sm text-muted-foreground">Live data updates enabled</span>
+    <Admin2FAGate requireVerification={true}>
+      <AdminSessionGuard onSessionStart={() => logAdminSession('admin_session_start')}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90">
+          <div className="w-full px-4 py-8">
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+                <p className="text-muted-foreground">Real-time neighborhood platform management</p>
+                <div className="flex items-center mt-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-sm text-muted-foreground">Live data updates enabled</span>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/landing')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Landing
+              </Button>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/landing')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Landing
-          </Button>
-        </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex gap-6" orientation="vertical">
         <TabsList className="flex flex-col h-fit w-48 space-y-1">
@@ -7459,8 +7496,10 @@ const [showProfileDialog, setShowProfileDialog] = useState(false);
         onOpenChange={setAutomationLogsDialogOpen}
         automation={selectedAutomation}
       />
-      </div>
-    </div>
+          </div>
+        </div>
+      </AdminSessionGuard>
+    </Admin2FAGate>
   );
 };
 
