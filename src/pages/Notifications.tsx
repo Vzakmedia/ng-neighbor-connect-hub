@@ -15,7 +15,7 @@ import { playNotification } from "@/utils/audioUtils";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { preferences, isLoading, updatePreferences } = useEmailNotifications();
+  const { preferences, isLoading, updatePreferences, sendTestEmail } = useEmailNotifications();
   
   const [notificationVolume, setNotificationVolume] = useState([80]);
   const [emergencyVolume, setEmergencyVolume] = useState([100]);
@@ -143,6 +143,17 @@ export default function Notifications() {
                 onCheckedChange={(checked) => handleToggle('email_enabled', checked)}
               />
             </div>
+            {preferences?.email_enabled && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestEmail.mutate()}
+                disabled={sendTestEmail.isPending}
+                className="w-full"
+              >
+                {sendTestEmail.isPending ? 'Sending...' : 'Send Test Email'}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
