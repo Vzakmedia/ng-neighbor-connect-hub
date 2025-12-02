@@ -9,6 +9,7 @@ interface UserPresence {
     online_at: string;
     user_name?: string;
     avatar_url?: string;
+    show_online_status?: boolean;
   }[];
 }
 
@@ -18,6 +19,7 @@ interface PresenceState {
     online_at: string;
     user_name?: string;
     avatar_url?: string;
+    show_online_status?: boolean;
   };
 }
 
@@ -39,6 +41,9 @@ interface PresenceContextValue {
     recentDiagnostics: any[];
   };
 }
+
+// Cache for user online status preferences
+const onlineStatusPrefsCache = new Map<string, boolean>();
 
 const PresenceContext = createContext<PresenceContextValue | null>(null);
 
@@ -199,17 +204,32 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 if (status !== 'SUBSCRIBED') return;
 
                 try {
-                  const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, avatar_url')
-                    .eq('user_id', user.id)
-                    .maybeSingle();
+                  // Fetch profile and messaging preferences in parallel
+                  const [profileResult, prefsResult] = await Promise.all([
+                    supabase
+                      .from('profiles')
+                      .select('full_name, avatar_url')
+                      .eq('user_id', user.id)
+                      .maybeSingle(),
+                    supabase
+                      .from('messaging_preferences')
+                      .select('show_online_status')
+                      .eq('user_id', user.id)
+                      .maybeSingle()
+                  ]);
+
+                  const profile = profileResult.data;
+                  const showOnlineStatus = prefsResult.data?.show_online_status ?? true;
+                  
+                  // Cache the preference
+                  onlineStatusPrefsCache.set(user.id, showOnlineStatus);
 
                   const presenceData = {
                     user_id: user.id,
                     online_at: new Date().toISOString(),
                     user_name: profile?.full_name || user.email?.split('@')[0] || 'Anonymous',
                     avatar_url: profile?.avatar_url || null,
+                    show_online_status: showOnlineStatus,
                   };
 
                   await channel.track(presenceData);
@@ -272,8 +292,20 @@ export const PresenceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (fallbackModeRef.current && userId === user?.id) {
       return true;
     }
+    
+    // Check if user has disabled online status visibility
+    const presenceData = presenceState[userId];
+    if (presenceData?.show_online_status === false) {
+      return false;
+    }
+    
+    // Check cached preference
+    if (onlineStatusPrefsCache.has(userId) && !onlineStatusPrefsCache.get(userId)) {
+      return false;
+    }
+    
     return onlineUsers.has(userId);
-  }, [onlineUsers, user?.id]);
+  }, [onlineUsers, user?.id, presenceState]);
 
   const getUserPresence = useCallback((userId: string) => {
     return presenceState[userId];
