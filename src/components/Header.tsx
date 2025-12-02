@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useReadStatus } from "@/hooks/useReadStatus";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { NotificationBell } from './notifications/NotificationBell';
 import { NotificationPanel } from './notifications/NotificationPanel';
 
@@ -28,6 +29,7 @@ const Header = () => {
   const { user, signOut } = useAuth();
   const { profile, getDisplayName, getInitials, getLocation } = useProfile();
   const { unreadCounts } = useReadStatus();
+  const { isAdmin } = useAdminStatus();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -39,8 +41,6 @@ const Header = () => {
   const handleSignOut = async () => {
     await signOut();
   };
-
-  const isAdmin = user?.email === 'admin@nextdoor.ng' || user?.email === 'vzakfenwa@gmail.com';
 
   return (
     <>
