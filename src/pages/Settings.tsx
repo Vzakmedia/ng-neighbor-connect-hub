@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Navigation from '@/components/Navigation';
 import SettingsContent from '@/components/settings/SettingsContent';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -8,6 +9,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 const Settings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,7 +35,7 @@ const Settings = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
-            onClick={() => navigate('/profile-menu')}
+            onClick={() => navigate(isMobile ? '/profile-menu' : '/')}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="h-6 w-6 text-foreground" />
