@@ -6,9 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
-import { Capacitor } from '@capacitor/core';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { initializeStatusBar } from '@/hooks/mobile/useNativeStatusBar';
+import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/nativeStartup';
 
 import { AuthProvider } from "@/hooks/useAuth";
 import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
@@ -129,30 +127,37 @@ const DeepLinkHandler = () => {
 };
 
 const App = () => {
-  console.log("App component rendering, React:", React);
+  console.log("[App] Component rendering, timestamp:", Date.now());
   
-  // Hide native splash screen and initialize status bar after React is ready
+  // Safe native initialization with comprehensive error handling
   useEffect(() => {
-    const initializeNative = async () => {
-      // Only on native platforms
-      if (Capacitor.isNativePlatform()) {
-        try {
-          // Initialize status bar first
-          await initializeStatusBar('light');
-          
-          // Reduced delay from 1500ms to 300ms for faster perceived load
-          await new Promise(resolve => setTimeout(resolve, 300));
-          await SplashScreen.hide({
-            fadeOutDuration: 300
-          });
-          console.log('Native splash screen hidden and status bar initialized');
-        } catch (error) {
-          console.debug('Splash screen already hidden or not available:', error);
+    console.log("[App] useEffect: Starting native initialization check");
+    
+    const initNative = async () => {
+      try {
+        if (isNativePlatform()) {
+          console.log("[App] Native platform detected, initializing...");
+          const success = await initializeNativeApp();
+          console.log("[App] Native initialization result:", success);
+        } else {
+          console.log("[App] Web platform detected, skipping native init");
         }
+      } catch (error) {
+        console.error("[App] Native initialization error:", error);
+        // Emergency fallback - try to hide splash
+        await forceHideSplash();
       }
     };
     
-    initializeNative();
+    initNative();
+    
+    // Safety timeout: force hide splash after 5 seconds if still showing
+    const safetyTimeout = setTimeout(() => {
+      console.log("[App] Safety timeout: forcing splash hide");
+      forceHideSplash();
+    }, 5000);
+    
+    return () => clearTimeout(safetyTimeout);
   }, []);
   
   // Add global error handler for security errors (especially iOS WebSocket issues)

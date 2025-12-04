@@ -9,6 +9,19 @@ import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
 
+// ============= NATIVE APP STARTUP LOGGING =============
+console.log('[main.tsx] Script loaded, timestamp:', Date.now());
+console.log('[main.tsx] User agent:', navigator.userAgent);
+console.log('[main.tsx] Location:', window.location.href);
+
+// Check for Capacitor availability early
+try {
+  const hasCapacitor = typeof (window as any).Capacitor !== 'undefined';
+  console.log('[main.tsx] Capacitor global available:', hasCapacitor);
+} catch (e) {
+  console.log('[main.tsx] Capacitor check error:', e);
+}
+
 // Defer performance monitoring to avoid blocking initial load
 setTimeout(() => {
   performanceMonitor.initialize();
@@ -226,7 +239,17 @@ if (deviceInfo.isIOS) {
   }
 }
 
-const root = createRoot(document.getElementById("root")!);
+console.log('[main.tsx] About to create root element');
+const rootElement = document.getElementById("root");
+console.log('[main.tsx] Root element found:', !!rootElement);
+
+if (!rootElement) {
+  console.error('[main.tsx] FATAL: Root element not found!');
+  throw new Error('Root element not found');
+}
+
+const root = createRoot(rootElement);
+console.log('[main.tsx] React root created, rendering app...');
 
 root.render(
   <StrictMode>
