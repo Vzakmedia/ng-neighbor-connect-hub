@@ -7,17 +7,16 @@ const config: CapacitorConfig = {
   bundledWebRuntime: false,
   
   server: {
-    // Development server - enables hot reload from Lovable sandbox
-    url: process.env.NODE_ENV === 'development' 
-      ? 'https://1a2a500f-c780-4032-94ca-e7185a964f07.lovableproject.com?forceHideBadge=true'
-      : undefined,
+    // Only use development server URL when explicitly set
+    // For production builds, this should be undefined to use webDir
+    url: undefined,
     cleartext: true,
     androidScheme: 'https',
     iosScheme: 'neighborlink'
   },
 
   android: {
-    allowMixedContent: process.env.NODE_ENV === 'development',
+    allowMixedContent: false,
     backgroundColor: '#ffffff',
     buildOptions: {
       keystorePath: undefined,
@@ -34,7 +33,7 @@ const config: CapacitorConfig = {
     scheme: 'neighborlink',
     limitsNavigationsToAppBoundDomains: false,
     allowsInlineMediaPlayback: true,
-    webContentsDebuggingEnabled: process.env.NODE_ENV === 'development',
+    webContentsDebuggingEnabled: false,
     mediaTypesRequiringUserActionForPlayback: [],
     allowsBackForwardNavigationGestures: true,
     scrollEnabled: true,
@@ -43,8 +42,9 @@ const config: CapacitorConfig = {
 
   plugins: {
     SplashScreen: {
-      launchShowDuration: 0,
-      launchAutoHide: false,
+      launchShowDuration: 2000,
+      launchAutoHide: true, // Safety: auto-hide splash after duration
+      launchFadeOutDuration: 300,
       backgroundColor: '#667eea',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,

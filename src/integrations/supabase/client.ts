@@ -14,13 +14,24 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 // Safe Capacitor detection with defensive fallback
+let cachedCapacitor: any = undefined; // undefined means not checked yet
+
 const getCapacitor = () => {
+  if (cachedCapacitor !== undefined) {
+    return cachedCapacitor;
+  }
+  
   try {
+    console.log('[Supabase] Checking for Capacitor...');
     // Try importing Capacitor - will only work if @capacitor/core is available
     const { Capacitor } = require('@capacitor/core');
+    cachedCapacitor = Capacitor;
+    console.log('[Supabase] Capacitor found, native:', Capacitor?.isNativePlatform?.());
     return Capacitor;
   } catch (error) {
     // Capacitor not available (web mode)
+    console.log('[Supabase] Capacitor not available (web mode)');
+    cachedCapacitor = null;
     return null;
   }
 };
