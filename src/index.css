@@ -113,6 +113,28 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+/* GPU optimization for native Android - prevents buffer issues during fast scrolling */
+.gpu-optimized {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Content containment for better performance */
+.contain-layout {
+  contain: layout style paint;
+}
+
+.contain-strict {
+  contain: strict;
+}
+
+/* Auto content visibility for virtualized lists */
+.content-auto {
+  content-visibility: auto;
+}
+
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 1;
