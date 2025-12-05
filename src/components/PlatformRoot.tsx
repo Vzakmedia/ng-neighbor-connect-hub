@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/hooks/useAuth';
+import { isNativePlatform } from '@/utils/nativeStartup';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
 import Landing from '@/pages/Landing';
@@ -21,8 +21,13 @@ import Landing from '@/pages/Landing';
 const PlatformRoot = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const isNativeApp = Capacitor.isNativePlatform();
+  const [isNativeApp, setIsNativeApp] = useState(false);
   const syncWithServer = useNotificationStore(state => state.syncWithServer);
+  
+  // Safe native platform detection
+  useEffect(() => {
+    setIsNativeApp(isNativePlatform());
+  }, []);
   
   // Initialize real-time notifications
   useRealtimeNotifications();

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Capacitor } from '@capacitor/core';
-import { Preferences } from '@capacitor/preferences';
+import { isNativePlatform } from '@/utils/nativeStartup';
+import { nativeStorageAdapter } from '@/utils/nativeStorageAdapter';
 import SplashScreen from './SplashScreen';
 import MobileAuthFlow from './MobileAuthFlow';
 
@@ -19,21 +19,27 @@ import MobileAuthFlow from './MobileAuthFlow';
 const NativeAppWrapper = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [splashShownThisSession, setSplashShownThisSession] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const isNative = Capacitor.isNativePlatform();
+
+  // Safe native platform detection
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   useEffect(() => {
     const checkSplashStatus = async () => {
-      if (isNative) {
-        // Use Capacitor Preferences for native
-        const { value } = await Preferences.get({ key: 'splash_shown_session' });
+      try {
+        // Use nativeStorageAdapter which handles native/web automatically
+        const value = await nativeStorageAdapter.getItem('splash_shown_session');
         if (value === 'true') {
           setShowSplash(false);
           setSplashShownThisSession(true);
         }
-      } else {
-        // Use sessionStorage for web
+      } catch (error) {
+        console.warn('[NativeAppWrapper] Error checking splash status:', error);
+        // Fallback to sessionStorage
         const shownThisSession = sessionStorage.getItem('splash_shown');
         if (shownThisSession) {
           setShowSplash(false);
@@ -43,13 +49,15 @@ const NativeAppWrapper = () => {
     };
     
     checkSplashStatus();
-  }, [isNative]);
+  }, []);
 
   const handleSplashComplete = async () => {
-    // Mark splash as shown for this session
-    if (isNative) {
-      await Preferences.set({ key: 'splash_shown_session', value: 'true' });
-    } else {
+    try {
+      // Use nativeStorageAdapter which handles native/web automatically
+      await nativeStorageAdapter.setItem('splash_shown_session', 'true');
+    } catch (error) {
+      console.warn('[NativeAppWrapper] Error saving splash status:', error);
+      // Fallback to sessionStorage
       sessionStorage.setItem('splash_shown', 'true');
     }
     setSplashShownThisSession(true);
