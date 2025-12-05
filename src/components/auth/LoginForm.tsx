@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showIOSWarning, setShowIOSWarning] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Check for iOS private browsing on mount
   useEffect(() => {
@@ -69,7 +71,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           // Sign out temporarily until 2FA is verified
           await supabase.auth.signOut();
           // Redirect to 2FA verification
-          window.location.href = `/auth/2fa-verify?userId=${data.user.id}`;
+          navigate(`/auth/2fa-verify?userId=${data.user.id}`);
         } else {
           // Check if this is the user's first login
           const { data: profile } = await supabase
