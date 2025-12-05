@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SecurityHeaders } from './SecurityHeaders';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,6 +13,7 @@ export const SecureAuthWrapper: React.FC<SecureAuthWrapperProps> = ({
   requireAuth = false 
 }) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Implement session timeout (30 minutes of inactivity)
@@ -22,7 +24,7 @@ export const SecureAuthWrapper: React.FC<SecureAuthWrapperProps> = ({
       inactivityTimer = setTimeout(() => {
         if (user && requireAuth) {
           // Log user out after 30 minutes of inactivity
-          window.location.href = '/auth';
+          navigate('/auth');
         }
       }, 30 * 60 * 1000); // 30 minutes
     };
@@ -41,10 +43,15 @@ export const SecureAuthWrapper: React.FC<SecureAuthWrapperProps> = ({
         document.removeEventListener(event, resetTimer, true);
       });
     };
-  }, [user, requireAuth]);
+  }, [user, requireAuth, navigate]);
+
+  useEffect(() => {
+    if (requireAuth && !loading && !user) {
+      navigate('/auth');
+    }
+  }, [requireAuth, loading, user, navigate]);
 
   if (requireAuth && !loading && !user) {
-    window.location.href = '/auth';
     return null;
   }
 
