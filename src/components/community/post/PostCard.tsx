@@ -117,7 +117,7 @@ const PostCardComponent = ({
         onDelete={onDelete}
       />
       
-      <div className="px-3 sm:px-4 space-y-3">
+      <div className="px-3 sm:px-4 pb-3 space-y-3">
         <PostCardContent
           title={post.title}
           content={post.content}
