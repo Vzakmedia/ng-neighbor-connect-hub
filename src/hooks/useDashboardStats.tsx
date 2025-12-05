@@ -27,52 +27,57 @@ export const useDashboardStats = () => {
     if (!user || !profile) return;
 
     try {
-      // Get active neighbors (users who posted in the last 30 days)
+      // Get date boundaries
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { data: activeNeighborsData } = await supabase
-        .from('community_posts')
-        .select('user_id')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .neq('user_id', user.id);
-
-      const uniqueNeighbors = new Set(activeNeighborsData?.map(post => post.user_id) || []);
-
-      // Get posts today
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const { data: postsToday } = await supabase
-        .from('community_posts')
-        .select('id', { count: 'exact' })
-        .gte('created_at', today.toISOString())
-        .lt('created_at', tomorrow.toISOString());
-
-      // Get upcoming events (next 30 days)
+      
       const nextMonth = new Date();
       nextMonth.setDate(nextMonth.getDate() + 30);
 
-      const { data: upcomingEvents } = await supabase
-        .from('community_posts')
-        .select('id', { count: 'exact' })
-        .eq('post_type', 'event')
-        .gte('created_at', new Date().toISOString())
-        .lte('created_at', nextMonth.toISOString());
+      // Run all queries in parallel for efficiency
+      const [activeNeighborsData, postsTodayResult, upcomingEventsResult, itemsForSaleResult] = await Promise.all([
+        // Get active neighbors (users who posted in the last 30 days) - limit to reduce data transfer
+        supabase
+          .from('community_posts')
+          .select('user_id')
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .neq('user_id', user.id)
+          .limit(1000),
+        
+        // Get posts today count using head:true (much faster - no data returned)
+        supabase
+          .from('community_posts')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', today.toISOString())
+          .lt('created_at', tomorrow.toISOString()),
+        
+        // Get upcoming events count
+        supabase
+          .from('community_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_type', 'event')
+          .gte('created_at', new Date().toISOString())
+          .lte('created_at', nextMonth.toISOString()),
+        
+        // Get active marketplace items count
+        supabase
+          .from('marketplace_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active'),
+      ]);
 
-      // Get active marketplace items
-      const { data: itemsForSale } = await supabase
-        .from('marketplace_items')
-        .select('id', { count: 'exact' })
-        .eq('status', 'active');
+      const uniqueNeighbors = new Set(activeNeighborsData.data?.map(post => post.user_id) || []);
 
       setStats({
         activeNeighbors: uniqueNeighbors.size,
-        postsToday: postsToday?.length || 0,
-        upcomingEvents: upcomingEvents?.length || 0,
-        itemsForSale: itemsForSale?.length || 0,
+        postsToday: postsTodayResult.count || 0,
+        upcomingEvents: upcomingEventsResult.count || 0,
+        itemsForSale: itemsForSaleResult.count || 0,
         loading: false,
       });
     } catch (error) {
