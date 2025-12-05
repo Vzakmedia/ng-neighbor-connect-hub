@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ interface OnboardingStatus {
 export const useOnboardingNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus>({
     profileComplete: false,
     hasBusiness: false,
@@ -160,7 +162,7 @@ export const useOnboardingNotifications = () => {
         duration: 8000,
         action: (
           <button 
-            onClick={() => window.location.href = '/profile'}
+            onClick={() => navigate('/profile')}
             className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50"
           >
             Complete Profile
