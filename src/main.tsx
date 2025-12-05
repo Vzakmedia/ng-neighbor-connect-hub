@@ -9,6 +9,49 @@ import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
 
+// ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
+// Fix corrupted URLs caused by HashRouter/BrowserRouter conflicts
+const cleanCorruptedUrl = () => {
+  const href = window.location.href;
+  
+  // Detect corrupted URL patterns (repeated encoded hash/query strings)
+  if (href.includes('%23/') || href.includes('%3F__lovable_token=')) {
+    console.warn('[main.tsx] Corrupted URL detected, cleaning...');
+    
+    // Extract the base URL and get the intended path
+    const baseUrl = window.location.origin;
+    
+    // Try to find the actual intended route from the URL
+    const hashMatch = href.match(/#\/([a-zA-Z0-9-/]*)/);
+    const pathMatch = href.match(/\/([a-zA-Z0-9-]+)(?:%3F|%23|\?|#|$)/);
+    
+    let targetPath = '/';
+    if (hashMatch && hashMatch[1]) {
+      targetPath = '/' + hashMatch[1].split(/[?#%]/)[0];
+    } else if (pathMatch && pathMatch[1] && pathMatch[1] !== 'dashboard%3F') {
+      targetPath = '/' + pathMatch[1];
+    }
+    
+    // Preserve lovable token if present
+    const tokenMatch = href.match(/__lovable_token=([^&#%]+)/);
+    const tokenParam = tokenMatch ? `?__lovable_token=${tokenMatch[1]}` : '';
+    
+    const cleanUrl = baseUrl + targetPath + tokenParam;
+    console.log('[main.tsx] Redirecting to clean URL:', cleanUrl);
+    
+    // Use replace to avoid adding to history
+    window.location.replace(cleanUrl);
+    return true; // Indicate we're redirecting
+  }
+  return false;
+};
+
+// Run URL cleanup immediately - if corrupted, stop execution
+if (cleanCorruptedUrl()) {
+  // Stop execution, page will reload with clean URL
+  throw new Error('URL cleanup redirect in progress');
+}
+
 // ============= NATIVE APP STARTUP LOGGING =============
 console.log('[main.tsx] Script loaded, timestamp:', Date.now());
 console.log('[main.tsx] User agent:', navigator.userAgent);

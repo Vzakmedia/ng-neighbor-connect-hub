@@ -87,12 +87,8 @@ export class IOSErrorBoundary extends Component<Props, State> {
   };
 
   handleReload = () => {
-    // Force reload with cache clear for security errors
-    if (this.state.isSecurityError) {
-      window.location.href = window.location.href + '?t=' + Date.now();
-    } else {
-      window.location.reload();
-    }
+    // Always use reload() to avoid URL corruption with HashRouter
+    window.location.reload();
   };
 
   handlePrivateModeSwitch = () => {
