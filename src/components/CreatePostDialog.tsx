@@ -738,12 +738,13 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   const isSelected = postType === type.value;
                   
                   return (
-                    <button
-                      key={type.value}
-                      onClick={() => {
-                        setPostType(type.value);
-                        setDrawerOpen(false);
-                      }}
+                      <button
+                        type="button"
+                        key={type.value}
+                        onClick={() => {
+                          setPostType(type.value);
+                          setDrawerOpen(false);
+                        }}
                       className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
                         isSelected 
                           ? 'border-primary bg-primary/5' 
