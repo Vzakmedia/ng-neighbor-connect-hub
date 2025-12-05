@@ -145,71 +145,62 @@ export function useFeedQuery(filters: FeedFilters) {
         (profilesData || []).map((profile: any) => [profile.user_id, profile])
       );
 
-      // Transform and enrich posts with engagement data and author info
-      const posts: FeedPost[] = await Promise.all(
-        (postsData || []).map(async (post: any) => {
-          // Get profile from map
-          const authorProfile = profileMap.get(post.user_id);
+      // Get all post IDs for batch user engagement check
+      const postIds = (postsData || []).map((p: any) => p.id);
 
-          // Fetch engagement data in parallel
-          const [likeData, commentData, saveData, userLike, userSave] = await Promise.all([
-            supabase
+      // Batch fetch user's likes and saves for all posts (2 queries instead of 2 per post)
+      const [userLikesData, userSavesData] = await Promise.all([
+        user && postIds.length > 0
+          ? supabase
               .from('post_likes')
-              .select('id', { count: 'exact', head: true })
-              .eq('post_id', post.id),
-            supabase
-              .from('post_comments')
-              .select('id', { count: 'exact', head: true })
-              .eq('post_id', post.id),
-            supabase
+              .select('post_id')
+              .eq('user_id', user.id)
+              .in('post_id', postIds)
+          : Promise.resolve({ data: [] }),
+        user && postIds.length > 0
+          ? supabase
               .from('saved_posts')
-              .select('id', { count: 'exact', head: true })
-              .eq('post_id', post.id),
-            user
-              ? supabase
-                  .from('post_likes')
-                  .select('id')
-                  .eq('post_id', post.id)
-                  .eq('user_id', user.id)
-                  .maybeSingle()
-              : Promise.resolve({ data: null }),
-            user
-              ? supabase
-                  .from('saved_posts')
-                  .select('id')
-                  .eq('post_id', post.id)
-                  .eq('user_id', user.id)
-                  .maybeSingle()
-              : Promise.resolve({ data: null }),
-          ]);
+              .select('post_id')
+              .eq('user_id', user.id)
+              .in('post_id', postIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
-          return {
-            id: post.id,
-            user_id: post.user_id,
-            content: post.content,
-            title: post.title,
-            image_urls: post.image_urls || [],
-            file_urls: post.file_urls || [],
-            tags: post.tags || [],
-            location: post.location,
-            location_scope: post.location_scope,
-            created_at: post.created_at,
-            updated_at: post.updated_at,
-            author_name: (authorProfile as any)?.display_name || 'Anonymous User',
-            author_avatar: (authorProfile as any)?.avatar_url || null,
-            author_city: (authorProfile as any)?.city || null,
-            author_state: (authorProfile as any)?.state || null,
-            like_count: likeData.count || 0,
-            comment_count: commentData.count || 0,
-            save_count: saveData.count || 0,
-            is_liked: !!userLike?.data,
-            is_saved: !!userSave?.data,
-            rsvp_enabled: post.rsvp_enabled || false,
-            video_url: post.video_url || null,
-            video_thumbnail_url: post.video_thumbnail_url || null,
-          };
-        })
-      );
+      // Create Sets for O(1) lookup
+      const userLikedPosts = new Set((userLikesData?.data || []).map((l: any) => l.post_id));
+      const userSavedPosts = new Set((userSavesData?.data || []).map((s: any) => s.post_id));
+
+      // Transform posts using denormalized counts (no additional queries needed!)
+      const posts: FeedPost[] = (postsData || []).map((post: any) => {
+        const authorProfile = profileMap.get(post.user_id);
+
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          content: post.content,
+          title: post.title,
+          image_urls: post.image_urls || [],
+          file_urls: post.file_urls || [],
+          tags: post.tags || [],
+          location: post.location,
+          location_scope: post.location_scope,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          author_name: (authorProfile as any)?.display_name || 'Anonymous User',
+          author_avatar: (authorProfile as any)?.avatar_url || null,
+          author_city: (authorProfile as any)?.city || null,
+          author_state: (authorProfile as any)?.state || null,
+          // Use denormalized counts from community_posts table
+          like_count: post.likes_count || 0,
+          comment_count: post.comments_count || 0,
+          save_count: post.saves_count || 0,
+          is_liked: userLikedPosts.has(post.id),
+          is_saved: userSavedPosts.has(post.id),
+          rsvp_enabled: post.rsvp_enabled || false,
+          video_url: post.video_url || null,
+          video_thumbnail_url: post.video_thumbnail_url || null,
+        };
+      });
 
       // Apply client-side filters
       let filteredPosts = posts;
