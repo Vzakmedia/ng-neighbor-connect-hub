@@ -8,7 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { Home, MessageSquare, ShoppingBag, Shield, Plus, Bell, User } from '@/lib/icons';
+import { Home, Newspaper, LayoutGrid, MessageSquare, User, Bell } from 'lucide-react';
 
 interface MobileTutorialStep {
   id: string;
@@ -32,33 +32,54 @@ const mobileTutorialSteps: MobileTutorialStep[] = [
   },
   {
     id: 'navigation',
-    icon: <Home className="w-16 h-16 text-primary" />,
-    title: 'Bottom Navigation',
-    description: 'Access Home, Community, Marketplace, and Safety from the navigation bar at the bottom of your screen.',
+    icon: (
+      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-2xl">
+        <Home className="w-8 h-8 text-primary" />
+        <Newspaper className="w-8 h-8 text-muted-foreground" />
+        <LayoutGrid className="w-10 h-10 text-primary" />
+        <MessageSquare className="w-8 h-8 text-muted-foreground" />
+        <User className="w-8 h-8 text-muted-foreground" />
+      </div>
+    ),
+    title: 'Your Navigation Bar',
+    description: 'Your main navigation is at the bottom. Access Overview, Feed, More features, Messages, and your Profile — all with one tap.',
   },
   {
-    id: 'create-post',
-    icon: <Plus className="w-16 h-16 text-primary" />,
-    title: 'Create Posts',
-    description: 'Tap the floating + button in the bottom right corner to share updates, ask questions, or start discussions with your neighbors.',
+    id: 'feed',
+    icon: <Newspaper className="w-16 h-16 text-primary" />,
+    title: 'Your Community Feed',
+    description: 'Scroll through posts, safety alerts, local recommendations, and community updates — all seamlessly mixed in one continuous feed.',
   },
   {
-    id: 'notifications',
-    icon: <Bell className="w-16 h-16 text-primary" />,
-    title: 'Stay Updated',
-    description: 'Get notified about messages, safety alerts, and community updates. Check the bell icon in the top right corner.',
+    id: 'more-button',
+    icon: (
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+        <LayoutGrid className="w-8 h-8 text-primary-foreground" />
+      </div>
+    ),
+    title: 'Discover More',
+    description: 'Tap the center button to access Groups, Events, Marketplace, Services, Safety Center, Recommendations, and Settings.',
   },
   {
-    id: 'messages',
-    icon: <MessageSquare className="w-16 h-16 text-primary" />,
-    title: 'Direct Messages',
-    description: 'Connect privately with neighbors. Access your messages from the top navigation bar.',
+    id: 'messages-notifications',
+    icon: (
+      <div className="flex items-center gap-4">
+        <MessageSquare className="w-12 h-12 text-primary" />
+        <Bell className="w-12 h-12 text-primary" />
+      </div>
+    ),
+    title: 'Stay Connected',
+    description: 'Tap Messages in the bottom bar to chat with neighbors. Use the bell icon at the top for notifications and safety alerts.',
   },
   {
     id: 'profile',
-    icon: <User className="w-16 h-16 text-primary" />,
+    icon: (
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+        <User className="w-8 h-8 text-primary-foreground" />
+      </div>
+    ),
     title: 'Your Profile',
-    description: 'Manage your account, settings, and preferences by tapping your profile icon in the top right corner.',
+    description: 'Tap your profile picture in the bottom bar to access your account, manage settings, and personalize your experience.',
   },
   {
     id: 'complete',
