@@ -14,6 +14,7 @@ import {
   ChevronRight
 } from '@/lib/icons';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import communityHero from '@/assets/community-hero.jpg';
 
 const LandingPage = () => {
@@ -267,19 +268,19 @@ const LandingPage = () => {
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/about" className="hover:text-primary transition-colors">About Us</a></li>
-                <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="/contact" className="hover:text-primary transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Support</a></li>
+                <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+                <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
+                <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+                <li><Link to="/help" className="hover:text-primary transition-colors">Support</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="/terms" className="hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="/community-guidelines" className="hover:text-primary transition-colors">Community Guidelines</a></li>
+                <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link to="/community-guidelines" className="hover:text-primary transition-colors">Community Guidelines</Link></li>
               </ul>
             </div>
           </div>
