@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { isNativePlatform } from '@/utils/nativeStartup';
 
 interface LazyImageProps {
   src: string;
@@ -10,7 +11,7 @@ interface LazyImageProps {
 
 /**
  * Lazy-loaded image component using Intersection Observer
- * Only loads images when they're about to become visible
+ * Optimized for native Android GPU buffer management
  */
 export const LazyImage = ({ 
   src, 
@@ -21,7 +22,19 @@ export const LazyImage = ({
 }: LazyImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+  const imgRef = useRef<HTMLDivElement>(null);
+  const imageElementRef = useRef<HTMLImageElement | null>(null);
+  const isNative = isNativePlatform();
+
+  // Cleanup function to properly release GPU resources
+  const cleanupImage = useCallback(() => {
+    if (imageElementRef.current) {
+      // Clear src to release GPU texture before unmount
+      imageElementRef.current.src = '';
+      imageElementRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!imgRef.current) return;
@@ -31,39 +44,79 @@ export const LazyImage = ({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true);
+            // Small delay before rendering on native to prevent GPU buffer issues
+            if (isNative) {
+              requestAnimationFrame(() => {
+                setShouldRender(true);
+              });
+            } else {
+              setShouldRender(true);
+            }
             observer.disconnect();
           }
         });
       },
       {
-        rootMargin: '50px', // Start loading 50px before image enters viewport
+        rootMargin: isNative ? '100px' : '50px', // Larger margin on native for preloading
         threshold: 0.01
       }
     );
 
     observer.observe(imgRef.current);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Cleanup GPU resources on unmount
+      if (isNative) {
+        requestAnimationFrame(() => {
+          cleanupImage();
+        });
+      }
+    };
+  }, [isNative, cleanupImage]);
+
+  // Handle image ref for cleanup
+  const handleImageRef = useCallback((el: HTMLImageElement | null) => {
+    imageElementRef.current = el;
   }, []);
 
+  const handleLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
+  // GPU optimization styles for native
+  const gpuOptimizedStyles: React.CSSProperties = isNative ? {
+    willChange: 'transform',
+    transform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    contain: 'layout paint',
+  } : {};
+
   return (
-    <div ref={imgRef} className="relative">
+    <div 
+      ref={imgRef} 
+      className="relative gpu-optimized"
+      style={gpuOptimizedStyles}
+    >
       {/* Placeholder skeleton */}
       {!isLoaded && (
         <div 
           className={`animate-pulse bg-muted ${className}`}
-          style={{ aspectRatio: '16/9' }}
+          style={{ aspectRatio: '16/9', contain: 'strict' }}
         />
       )}
       
-      {/* Actual image */}
-      {isInView && (
+      {/* Actual image - only render when in view and ready */}
+      {isInView && shouldRender && (
         <img
+          ref={handleImageRef}
           src={src}
           alt={alt}
           loading="lazy"
+          decoding="async"
           className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-          onLoad={() => setIsLoaded(true)}
+          style={gpuOptimizedStyles}
+          onLoad={handleLoad}
           onError={onError}
           onClick={onClick}
         />
