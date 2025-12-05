@@ -1,21 +1,55 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
+/**
+ * Get timestamp for logging
+ */
+const getTimestamp = (): string => {
+  return new Date().toISOString();
+};
+
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
+  const mountTimestamp = getTimestamp();
+  console.log(`[SplashScreen ${mountTimestamp}] ========== COMPONENT MOUNTED ==========`);
+  
   const [animationComplete, setAnimationComplete] = useState(false);
 
   useEffect(() => {
+    const timestamp = getTimestamp();
+    console.log(`[SplashScreen ${timestamp}] Starting 3 second splash timer...`);
+    
     const timer = setTimeout(() => {
+      const completeTimestamp = getTimestamp();
+      console.log(`[SplashScreen ${completeTimestamp}] Timer complete, setting animationComplete=true`);
       setAnimationComplete(true);
-      setTimeout(onComplete, 500); // Small delay before transitioning
+      
+      console.log(`[SplashScreen ${completeTimestamp}] Starting 500ms exit animation delay...`);
+      setTimeout(() => {
+        const callbackTimestamp = getTimestamp();
+        console.log(`[SplashScreen ${callbackTimestamp}] Exit animation complete, calling onComplete()`);
+        onComplete();
+      }, 500); // Small delay before transitioning
     }, 3000); // 3 seconds splash duration
 
-    return () => clearTimeout(timer);
+    return () => {
+      const cleanupTimestamp = getTimestamp();
+      console.log(`[SplashScreen ${cleanupTimestamp}] Cleanup: clearing timer`);
+      clearTimeout(timer);
+    };
   }, [onComplete]);
+
+  // Log animation state changes
+  useEffect(() => {
+    const timestamp = getTimestamp();
+    console.log(`[SplashScreen ${timestamp}] Animation state changed: animationComplete=${animationComplete}`);
+  }, [animationComplete]);
+
+  const renderTimestamp = getTimestamp();
+  console.log(`[SplashScreen ${renderTimestamp}] Rendering splash UI`);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
