@@ -126,25 +126,37 @@ const DeepLinkHandler = () => {
   return null;
 };
 
+/**
+ * Get timestamp for logging
+ */
+const getTimestamp = (): string => {
+  return new Date().toISOString();
+};
+
 const App = () => {
-  console.log("[App] Component rendering, timestamp:", Date.now());
+  const mountTimestamp = getTimestamp();
+  console.log(`[App ${mountTimestamp}] ========== APP COMPONENT RENDERING ==========`);
   
   // Safe native initialization with comprehensive error handling
   useEffect(() => {
-    console.log("[App] useEffect: Starting native initialization check");
+    const timestamp = getTimestamp();
+    console.log(`[App ${timestamp}] useEffect: Starting native initialization check`);
     
     const initNative = async () => {
+      const initTimestamp = getTimestamp();
       try {
+        console.log(`[App ${initTimestamp}] Checking if native platform...`);
         if (isNativePlatform()) {
-          console.log("[App] Native platform detected, initializing...");
+          console.log(`[App ${initTimestamp}] NATIVE platform detected, starting initialization...`);
           const success = await initializeNativeApp();
-          console.log("[App] Native initialization result:", success);
+          console.log(`[App ${getTimestamp()}] Native initialization result: ${success ? 'SUCCESS' : 'FAILED'}`);
         } else {
-          console.log("[App] Web platform detected, skipping native init");
+          console.log(`[App ${initTimestamp}] WEB platform detected, skipping native init`);
         }
       } catch (error) {
-        console.error("[App] Native initialization error:", error);
+        console.error(`[App ${getTimestamp()}] Native initialization error:`, error);
         // Emergency fallback - try to hide splash
+        console.log(`[App ${getTimestamp()}] Attempting emergency splash hide...`);
         await forceHideSplash();
       }
     };
@@ -152,12 +164,16 @@ const App = () => {
     initNative();
     
     // Safety timeout: force hide splash after 5 seconds if still showing
+    console.log(`[App ${timestamp}] Setting 5 second safety timeout for splash hide`);
     const safetyTimeout = setTimeout(() => {
-      console.log("[App] Safety timeout: forcing splash hide");
+      console.log(`[App ${getTimestamp()}] ⚠️ SAFETY TIMEOUT: forcing splash hide after 5 seconds`);
       forceHideSplash();
     }, 5000);
     
-    return () => clearTimeout(safetyTimeout);
+    return () => {
+      console.log(`[App ${getTimestamp()}] Cleanup: clearing safety timeout`);
+      clearTimeout(safetyTimeout);
+    };
   }, []);
   
   // Add global error handler for security errors (especially iOS WebSocket issues)
