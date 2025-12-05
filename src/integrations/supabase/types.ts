@@ -1794,15 +1794,18 @@ export type Database = {
       }
       community_posts: {
         Row: {
+          comments_count: number | null
           content: string
           created_at: string
           file_urls: Json | null
           id: string
           image_urls: string[] | null
+          likes_count: number | null
           location: string | null
           location_scope: Database["public"]["Enums"]["location_scope"] | null
           post_type: string
           rsvp_enabled: boolean | null
+          saves_count: number | null
           tags: string[] | null
           target_city: string | null
           target_neighborhood: string | null
@@ -1814,15 +1817,18 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          comments_count?: number | null
           content: string
           created_at?: string
           file_urls?: Json | null
           id?: string
           image_urls?: string[] | null
+          likes_count?: number | null
           location?: string | null
           location_scope?: Database["public"]["Enums"]["location_scope"] | null
           post_type: string
           rsvp_enabled?: boolean | null
+          saves_count?: number | null
           tags?: string[] | null
           target_city?: string | null
           target_neighborhood?: string | null
@@ -1834,15 +1840,18 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          comments_count?: number | null
           content?: string
           created_at?: string
           file_urls?: Json | null
           id?: string
           image_urls?: string[] | null
+          likes_count?: number | null
           location?: string | null
           location_scope?: Database["public"]["Enums"]["location_scope"] | null
           post_type?: string
           rsvp_enabled?: boolean | null
+          saves_count?: number | null
           tags?: string[] | null
           target_city?: string | null
           target_neighborhood?: string | null
@@ -7007,6 +7016,7 @@ export type Database = {
           unresolved_panic_alerts: number
         }[]
       }
+      get_estimated_count: { Args: { table_name: string }; Returns: number }
       get_event_rsvp_counts: {
         Args: { _event_id: string }
         Returns: {
