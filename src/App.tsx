@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import PlatformRouter from "@/components/PlatformRouter";
 import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
 import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/nativeStartup';
@@ -245,7 +246,7 @@ const App = () => {
                 }}>
                 <Toaster />
                 <Sonner />
-                <HashRouter>
+                <PlatformRouter>
                   <ScrollToTopOnNavigate />
                   <RealtimeProvider>
                     <PresenceProvider>
@@ -317,7 +318,7 @@ const App = () => {
             <NeighborhoodEmergencyAlert position="top-center" />
                     </PresenceProvider>
                   </RealtimeProvider>
-                 </HashRouter>
+                 </PlatformRouter>
               </div>
             </TooltipProvider>
           </AuthProvider>
