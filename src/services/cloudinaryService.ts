@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction, checkIsNativePlatform } from '@/utils/nativeEdgeFunctions';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
@@ -18,92 +18,38 @@ export const getUploadSignature = async (
   folder: string, 
   resourceType?: 'image' | 'video' | 'auto'
 ): Promise<UploadSignature | null> => {
+  const timestamp = Date.now();
+  const isNative = checkIsNativePlatform();
+  
+  console.log(`[CloudinaryService] getUploadSignature started, timestamp: ${timestamp}`);
+  console.log(`[CloudinaryService] Platform: ${isNative ? 'native' : 'web'}, folder: ${folder}, resourceType: ${resourceType}`);
+  
   try {
-    // Explicitly validate access token
-    let { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      console.log('No access token found, attempting to refresh session...');
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError || !refreshData.session?.access_token) {
-        throw new Error('Please sign in to upload files');
-      }
-      
-      session = refreshData.session;
-    }
-    
-    console.log('Requesting upload signature:', {
-      folder,
-      resource_type: resourceType,
-      hasAccessToken: !!session.access_token,
-      tokenExpiresAt: session.expires_at,
-      currentTime: Math.floor(Date.now() / 1000)
+    const { data, error } = await invokeEdgeFunction<UploadSignature>('generate-cloudinary-signature', {
+      body: { folder, resource_type: resourceType || 'auto' }
     });
     
-    // Try with supabase.functions.invoke first
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-cloudinary-signature', {
-        body: { folder, resource_type: resourceType || 'auto' }
-      });
-
-      if (error) {
-        console.error('Edge function invoke error:', error);
-        throw error;
-      }
-      
-      if (!data || !data.signature) {
-        throw new Error('Invalid signature response from server');
-      }
-      
-      console.log('Successfully received upload signature via invoke');
-      return data;
-    } catch (invokeError: any) {
-      // Fallback to direct fetch
-      console.log('Invoke failed, attempting direct fetch fallback...', invokeError.message);
-      
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/generate-cloudinary-signature`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': SUPABASE_ANON_KEY
-          },
-          body: JSON.stringify({ folder, resource_type: resourceType || 'auto' })
-        }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Direct fetch failed:', response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data || !data.signature) {
-        throw new Error('Invalid signature response from server');
-      }
-      
-      console.log('Successfully received upload signature via direct fetch');
-      return data;
+    if (error) {
+      console.error('[CloudinaryService] Failed to get signature:', error);
+      throw error;
     }
+    
+    if (!data || !data.signature) {
+      console.error('[CloudinaryService] Invalid signature response:', data);
+      throw new Error('Invalid signature response from server');
+    }
+    
+    console.log('[CloudinaryService] Successfully received upload signature');
+    return data;
   } catch (error: any) {
-    console.error('Error getting upload signature:', {
+    console.error('[CloudinaryService] getUploadSignature error:', {
       message: error?.message,
       name: error?.name,
-      context: error?.context,
       stack: error?.stack
     });
     
-    // Provide user-friendly error message
-    if (error?.message?.includes('sign in')) {
-      throw error; // Re-throw auth errors as-is
+    if (error?.message?.includes('sign in') || error?.message?.includes('Authentication')) {
+      throw error;
     }
     throw new Error('Unable to connect to upload service. Please check your connection and try again.');
   }
@@ -114,13 +60,18 @@ export const uploadToCloudinary = async (
   folder: string,
   onProgress?: (progress: number) => void
 ): Promise<string | null> => {
+  const uploadTimestamp = Date.now();
+  const isNative = checkIsNativePlatform();
+  
+  console.log(`[CloudinaryService] uploadToCloudinary started, timestamp: ${uploadTimestamp}`);
+  console.log(`[CloudinaryService] File: ${file.name}, size: ${file.size}, type: ${file.type}`);
+  console.log(`[CloudinaryService] Platform: ${isNative ? 'native' : 'web'}, folder: ${folder}`);
+  
   try {
     if (!CLOUDINARY_CLOUD_NAME) {
       throw new Error('Cloudinary is not configured. Please check your environment variables.');
     }
 
-    console.log('Starting upload for file:', file.name, 'to folder:', folder);
-    
     // Determine resource type
     const resourceType: 'image' | 'video' | 'auto' = file.type.startsWith('video/') 
       ? 'video' 
@@ -128,8 +79,15 @@ export const uploadToCloudinary = async (
       ? 'image' 
       : 'auto';
     
+    console.log(`[CloudinaryService] Resource type determined: ${resourceType}`);
+    console.log(`[CloudinaryService] Getting upload signature...`);
+    
     const signatureData = await getUploadSignature(folder, resourceType);
-    if (!signatureData) throw new Error('Failed to get upload signature');
+    if (!signatureData) {
+      throw new Error('Failed to get upload signature');
+    }
+    
+    console.log(`[CloudinaryService] Signature received, preparing upload...`);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -138,61 +96,73 @@ export const uploadToCloudinary = async (
     formData.append('api_key', signatureData.api_key);
     formData.append('folder', folder);
 
-    const xhr = new XMLHttpRequest();
     const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
+    console.log(`[CloudinaryService] Upload URL: ${uploadUrl}`);
 
+    // Use XMLHttpRequest for progress tracking
     return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable && onProgress) {
           const progress = Math.round((e.loaded / e.total) * 100);
-          console.log(`Upload progress: ${progress}%`);
+          console.log(`[CloudinaryService] Upload progress: ${progress}% (${e.loaded}/${e.total})`);
           onProgress(progress);
         }
       });
 
       xhr.addEventListener('load', () => {
+        const elapsed = Date.now() - uploadTimestamp;
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
-          console.log('Upload successful:', response.secure_url);
+          console.log(`[CloudinaryService] Upload successful in ${elapsed}ms:`, response.secure_url);
           resolve(response.secure_url);
         } else {
-          console.error('Upload failed with status:', xhr.status, xhr.responseText);
+          console.error(`[CloudinaryService] Upload failed: status=${xhr.status}, response=${xhr.responseText}`);
           reject(new Error(`Upload failed with status ${xhr.status}`));
         }
       });
 
       xhr.addEventListener('error', (e) => {
-        console.error('Upload network error:', e);
+        console.error('[CloudinaryService] Upload network error:', e);
         reject(new Error('Network error during upload'));
       });
       
       xhr.addEventListener('timeout', () => {
-        console.error('Upload timeout');
+        console.error('[CloudinaryService] Upload timeout');
         reject(new Error('Upload timeout - file may be too large'));
       });
       
       // Set timeout to 10 minutes for large video uploads
       xhr.timeout = 10 * 60 * 1000;
       
+      console.log(`[CloudinaryService] Starting XHR upload...`);
       xhr.open('POST', uploadUrl);
       xhr.send(formData);
     });
   } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
+    console.error('[CloudinaryService] uploadToCloudinary error:', error);
     throw error;
   }
 };
 
 export const deleteFromCloudinary = async (publicId: string): Promise<boolean> => {
+  console.log(`[CloudinaryService] deleteFromCloudinary: ${publicId}`);
+  
   try {
-    const { data, error } = await supabase.functions.invoke('delete-cloudinary-image', {
+    const { data, error } = await invokeEdgeFunction<{ success: boolean }>('delete-cloudinary-image', {
       body: { publicId }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[CloudinaryService] Delete error:', error);
+      return false;
+    }
+    
+    console.log('[CloudinaryService] Delete result:', data?.success);
     return data?.success || false;
   } catch (error) {
-    console.error('Error deleting from Cloudinary:', error);
+    console.error('[CloudinaryService] deleteFromCloudinary error:', error);
     return false;
   }
 };
