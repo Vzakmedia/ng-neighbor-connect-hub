@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, XCircle, Clock } from '@/lib/icons';
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const PaymentStatusHandler = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const payment = searchParams.get('payment');
@@ -50,8 +51,8 @@ const PaymentStatusHandler = () => {
           : 'Your payment was successful. Your ad is being processed.',
       });
 
-      // Clear URL parameters and keep user on advertising page
-      window.history.replaceState({}, '', '/advertising/campaigns');
+      // Clear URL parameters using navigate for router compatibility
+      navigate('/advertising/campaigns', { replace: true });
     } catch (error) {
       console.error('Error checking payment status:', error);
       toast({
@@ -78,8 +79,8 @@ const PaymentStatusHandler = () => {
         variant: 'destructive',
       });
 
-      // Clear URL parameters
-      window.history.replaceState({}, '', '/advertising/campaigns');
+      // Clear URL parameters using navigate for router compatibility
+      navigate('/advertising/campaigns', { replace: true });
     } catch (error) {
       console.error('Error handling cancelled payment:', error);
     }
