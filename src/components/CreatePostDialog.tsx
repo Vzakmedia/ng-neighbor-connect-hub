@@ -680,7 +680,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             </ScrollArea>
 
             {/* Fixed Bottom Section - Collapsed Drawer Trigger */}
-            <div className="border-t bg-primary flex-shrink-0">
+            <div className="border-t bg-primary flex-shrink-0 relative z-10">
               <div className="flex items-center justify-between p-3">
                 {/* Icon Row */}
                 <div className="flex gap-2 overflow-x-auto">
@@ -688,14 +688,15 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                     const Icon = type.icon;
                     return (
                       <button
+                        type="button"
                         key={type.value}
                         onClick={() => {
                           setPostType(type.value);
                           setDrawerOpen(true);
                         }}
-                        className="flex-shrink-0 p-2 rounded-lg bg-white/60 transition-all active:scale-95"
+                        className="flex-shrink-0 p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-all active:scale-95"
                       >
-                        <Icon className="h-5 w-5 text-white" />
+                        <Icon className="h-5 w-5 text-white drop-shadow-sm" />
                       </button>
                     );
                   })}
