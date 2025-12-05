@@ -138,11 +138,12 @@ const VirtualizedFeedListComponent = ({
   };
 
   // Initialize virtualizer with parent element for window scrolling
+  // Increased overscan for mobile to reduce GPU buffer issues on Android
   const rowVirtualizer = useVirtualizer({
     count: hasNextPage ? mixedContent.length + 1 : mixedContent.length,
     getScrollElement: () => parentRef.current,
     estimateSize,
-    overscan: isMobile ? 2 : 3,
+    overscan: isMobile ? 5 : 4, // Higher overscan reduces mount/unmount frequency
     measureElement:
       typeof window !== 'undefined' &&
       navigator.userAgent.indexOf('Firefox') === -1
@@ -274,8 +275,10 @@ const VirtualizedFeedListComponent = ({
                   left: 0,
                   width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
+                  contain: 'layout style paint',
+                  contentVisibility: 'auto',
                 }}
-                className="px-2 lg:px-4"
+                className="px-2 lg:px-4 gpu-optimized"
               >
                 {isLoaderRow ? (
                   hasNextPage ? (
