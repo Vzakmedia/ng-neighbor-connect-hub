@@ -68,10 +68,11 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
     // ================================
-    // 1. Direct Messages Subscription
+    // 1. Direct Messages Subscription (FILTERED by recipient_id)
     // ================================
     if (isMessagingRoute) {
-      const messagesSub = createSafeSubscription(
+      // Subscribe to messages where user is the RECIPIENT (incoming)
+      const incomingMessagesSub = createSafeSubscription(
         (channel) =>
           channel.on(
             "postgres_changes",
@@ -79,29 +80,56 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "INSERT",
               schema: "public",
               table: "direct_messages",
-              // No filter - client-side filtering below
+              filter: `recipient_id=eq.${user.id}`, // Only receive messages sent TO this user
             },
             (payload) => {
               const msg = payload.new;
-
-              // Client-side filter: only process if user is sender or recipient
-              if (msg.sender_id !== user.id && msg.recipient_id !== user.id) return;
 
               // Deduplication: ignore if client_message_id already exists locally
               if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
               if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
 
-              console.log('[RealtimeProvider] New direct message received:', msg.id);
+              console.log('[RealtimeProvider] Incoming message received:', msg.id);
               messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
             },
           ),
         {
-          channelName: `realtime-direct-messages:${user.id}`,
+          channelName: `realtime-incoming-messages:${user.id}`,
           pollInterval: 30000,
-          debugName: "RealtimeProvider-DirectMessages",
+          debugName: "RealtimeProvider-IncomingMessages",
         },
       );
-      subscriptions.push(messagesSub);
+      subscriptions.push(incomingMessagesSub);
+
+      // Subscribe to messages where user is the SENDER (for optimistic UI confirmations)
+      const outgoingMessagesSub = createSafeSubscription(
+        (channel) =>
+          channel.on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "direct_messages",
+              filter: `sender_id=eq.${user.id}`, // Only receive messages sent BY this user
+            },
+            (payload) => {
+              const msg = payload.new;
+
+              // Deduplication
+              if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
+              if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+
+              console.log('[RealtimeProvider] Outgoing message confirmed:', msg.id);
+              messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
+            },
+          ),
+        {
+          channelName: `realtime-outgoing-messages:${user.id}`,
+          pollInterval: 30000,
+          debugName: "RealtimeProvider-OutgoingMessages",
+        },
+      );
+      subscriptions.push(outgoingMessagesSub);
     }
 
     // ================================
@@ -169,9 +197,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     subscriptions.push(alertsSub);
 
     // ================================
-    // 5. Safety Alerts (Route-Specific)
+    // 5. Safety Alerts (Route-Specific, filtered by status)
     // ================================
     if (isSafetyRoute) {
+      // Only subscribe to active safety alerts
       const safetyAlertsSub = createSafeSubscription(
         (channel) =>
           channel.on(
@@ -180,6 +209,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "*",
               schema: "public",
               table: "safety_alerts",
+              filter: "status=eq.active", // Only active alerts
             },
             (payload) => safetyAlertCallbacks.current.forEach((cb) => cb(payload)),
           ),
@@ -187,6 +217,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       );
       subscriptions.push(safetyAlertsSub);
 
+      // Panic alerts for this user
       const panicAlertsSub = createSafeSubscription(
         (channel) =>
           channel.on(
@@ -195,33 +226,50 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "INSERT",
               schema: "public",
               table: "panic_alerts",
+              filter: `user_id=eq.${user.id}`, // Only this user's panic alerts
             },
             (payload) => panicAlertCallbacks.current.forEach((cb) => cb(payload)),
           ),
-        { channelName: "unified-panic-alerts", pollInterval: 30000, debugName: "RealtimeProvider-PanicAlerts" },
+        { channelName: `unified-panic-alerts:${user.id}`, pollInterval: 30000, debugName: "RealtimeProvider-PanicAlerts" },
       );
       subscriptions.push(panicAlertsSub);
     }
 
     // ================================
-    // 6. Post Likes / Comments
+    // 6. Post Likes / Comments (filtered by user_id for own posts)
     // ================================
     if (isCommunityRoute) {
+      // Subscribe to likes on posts by this user
       const postLikesSub = createSafeSubscription(
         (channel) =>
-          channel.on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, (payload) =>
-            postLikeCallbacks.current.forEach((cb) => cb(payload)),
+          channel.on(
+            "postgres_changes",
+            { 
+              event: "*", 
+              schema: "public", 
+              table: "post_likes",
+              filter: `user_id=eq.${user.id}`, // Likes by this user (for optimistic updates)
+            },
+            (payload) => postLikeCallbacks.current.forEach((cb) => cb(payload)),
           ),
-        { channelName: "unified-post-likes", pollInterval: 30000, debugName: "RealtimeProvider-PostLikes" },
+        { channelName: `unified-post-likes:${user.id}`, pollInterval: 30000, debugName: "RealtimeProvider-PostLikes" },
       );
       subscriptions.push(postLikesSub);
 
+      // Subscribe to comments by this user
       const postCommentsSub = createSafeSubscription(
         (channel) =>
-          channel.on("postgres_changes", { event: "*", schema: "public", table: "post_comments" }, (payload) =>
-            postCommentCallbacks.current.forEach((cb) => cb(payload)),
+          channel.on(
+            "postgres_changes",
+            { 
+              event: "*", 
+              schema: "public", 
+              table: "post_comments",
+              filter: `user_id=eq.${user.id}`, // Comments by this user
+            },
+            (payload) => postCommentCallbacks.current.forEach((cb) => cb(payload)),
           ),
-        { channelName: "unified-post-comments", pollInterval: 30000, debugName: "RealtimeProvider-PostComments" },
+        { channelName: `unified-post-comments:${user.id}`, pollInterval: 30000, debugName: "RealtimeProvider-PostComments" },
       );
       subscriptions.push(postCommentsSub);
     }

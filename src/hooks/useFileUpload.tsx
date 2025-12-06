@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
 import { useNativeImageOptimization } from '@/hooks/mobile/useNativeImageOptimization';
 import { Capacitor } from '@capacitor/core';
+import { generateUniqueFileName } from '@/utils/fileUploadUtils';
 
 export interface Attachment {
   id: string;
@@ -48,10 +49,8 @@ export const useFileUpload = (userId: string) => {
         }
       }
       
-      // Generate unique filename
-      const fileExt = fileToUpload.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
+      // Generate unique filename using UUID to prevent collisions
+      const filePath = generateUniqueFileName(fileToUpload.name, userId);
 
       // Upload file to storage
       const { data, error } = await supabase.storage
