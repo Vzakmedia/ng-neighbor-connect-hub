@@ -87,7 +87,7 @@ Add the following entries inside the `<dict>` tag:
 
 After running `npx cap add android`, configure permissions in `android/app/src/main/AndroidManifest.xml`:
 
-Add the following permissions before the `<application>` tag:
+#### 1. Add Permissions (before the `<application>` tag):
 
 ```xml
 <!-- Location Permissions -->
@@ -114,7 +114,18 @@ Add the following permissions before the `<application>` tag:
 <uses-permission android:name="android.permission.VIBRATE" />
 ```
 
-## Building the App
+#### 2. Add Google Maps API Key (inside the `<application>` tag):
+
+Add the following meta-data entry inside your `<application>` tag:
+
+```xml
+<!-- Google Maps API Key -->
+<meta-data
+    android:name="com.google.android.geo.API_KEY"
+    android:value="AIzaSyBqkepJX9aVJFKkwfBNW62IfOVYkM1Cb3s"/>
+```
+
+**Important:** This must be added after running `npx cap add android`. The key persists across `npx cap sync` but must be re-added if you delete and regenerate the `android` folder.
 
 ### Development Build (Testing)
 
