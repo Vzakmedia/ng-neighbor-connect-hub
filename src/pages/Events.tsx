@@ -42,9 +42,6 @@ const Events = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="container py-4 md:py-6 px-3 md:px-6">
-          {/* Event Advertisements */}
-          <AdDisplay placement="banner" maxAds={1} />
-
           <Tabs defaultValue="all" className="w-full">
             {/* Desktop tabs with Create Event button */}
             <div className="hidden md:flex items-center justify-between mb-4">

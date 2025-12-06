@@ -4,7 +4,6 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import CommunityBoards from '@/components/CommunityBoards';
 import PaymentStatusHandler from '@/components/PaymentStatusHandler';
-import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 import { useAuth } from "@/hooks/useAuth";
 
 const Community = () => {
@@ -38,10 +37,7 @@ const Community = () => {
         <div className="container mx-auto px-4 py-6">
           <PaymentStatusHandler />
           
-          <div className="space-y-6">
-            <AdDisplay placement="sidebar" maxAds={2} />
-            <CommunityBoards />
-          </div>
+          <CommunityBoards />
         </div>
       </main>
     </div>
