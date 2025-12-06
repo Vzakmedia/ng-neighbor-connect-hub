@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, User, MapPin, Camera, Eye, EyeOff, Lock } from '@/lib/icons';
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
 import { validatePasswordStrength } from "@/utils/security";
+import { generateUniqueFileName, getFileExtension } from "@/utils/fileUploadUtils";
 
 export const EnhancedProfileCompletion = () => {
   const [loading, setLoading] = useState(false);
@@ -95,10 +96,8 @@ export const EnhancedProfileCompletion = () => {
     try {
       setUploadingAvatar(true);
 
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-pictures/${fileName}`;
+      // Generate unique filename using UUID to prevent collisions
+      const filePath = `profile-pictures/${generateUniqueFileName(file.name, user?.id)}`;
 
       // Upload to avatars bucket
       const { data, error } = await supabase.storage

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload } from '@/lib/icons';
 import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
+import { v4 as uuidv4 } from 'uuid';
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
 import { Capacitor } from '@capacitor/core';
 import {
@@ -108,8 +109,8 @@ export const SignUpForm = () => {
       setUploadingAvatar(true);
       console.log('Starting avatar upload...');
 
-      // Generate unique filename
-      const fileName = `temp-${Date.now()}.jpeg`;
+      // Generate unique filename using UUID to prevent collisions
+      const fileName = `${uuidv4()}.jpeg`;
       const filePath = `profile-pictures/${fileName}`;
       
       console.log('Upload path:', filePath);

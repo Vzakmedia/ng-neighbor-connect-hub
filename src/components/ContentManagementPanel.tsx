@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Trash2, Eye, FileText, Briefcase, Upload, Download, ExternalLink } from '@/lib/icons';
+import { generateCategorizedFileName } from '@/utils/fileUploadUtils';
 
 interface PressRelease {
   id: string;
@@ -380,7 +381,8 @@ const ContentManagementPanel = () => {
     if (!uploadFile) return;
 
     try {
-      const fileName = `${uploadCategory}/${Date.now()}-${uploadFile.name}`;
+      // Use UUID for unique filenames to prevent collisions
+      const fileName = generateCategorizedFileName(uploadFile.name, uploadCategory);
       
       const { error: uploadError } = await supabase.storage
         .from('press-materials')
@@ -468,7 +470,8 @@ const ContentManagementPanel = () => {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileName = `${category}/${Date.now()}-${file.name}`;
+        // Use UUID for unique filenames to prevent collisions
+        const fileName = generateCategorizedFileName(file.name, category);
         
         // Update progress
         setUploadingFiles(prev => prev.map((uploadFile, index) => 
