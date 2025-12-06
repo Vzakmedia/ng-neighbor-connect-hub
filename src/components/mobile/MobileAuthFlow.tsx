@@ -69,11 +69,12 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    // If skipSplash is true and we're on onboarding, check if we should skip to auth
-    if (skipSplash && currentStep === 'onboarding' && hasSeenOnboarding) {
+    // Only skip onboarding if user is authenticated AND has completed it before
+    // For unauthenticated users, always show onboarding
+    if (skipSplash && currentStep === 'onboarding' && hasSeenOnboarding && user) {
       setCurrentStep('auth');
     }
-  }, [skipSplash, currentStep, hasSeenOnboarding]);
+  }, [skipSplash, currentStep, hasSeenOnboarding, user]);
 
   const handleSplashComplete = () => {
     if (hasSeenOnboarding) {
@@ -122,9 +123,11 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
     case 'splash':
       return <SplashScreen onComplete={handleSplashComplete} />;
     case 'onboarding':
-      return hasSeenOnboarding || useIOSSafeLanding ? 
-        <IOSSafeLanding onGetStarted={handleIOSGetStarted} /> : 
-        <OnboardingScreen onGetStarted={handleGetStarted} />;
+      // Always show full onboarding for new/unauthenticated users on native
+      if (useIOSSafeLanding) {
+        return <IOSSafeLanding onGetStarted={handleIOSGetStarted} />;
+      }
+      return <OnboardingScreen onGetStarted={handleGetStarted} />;
     case 'auth':
       return <AuthPage />;
     default:
