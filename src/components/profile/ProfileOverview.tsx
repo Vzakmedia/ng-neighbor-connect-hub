@@ -185,7 +185,9 @@ const ProfileOverview = () => {
 
     setUploading(true);
     try {
-      const fileName = `${user.id}/avatar.jpg`;
+      // Use userId/avatar.ext format - upsert handles overwrites for avatars
+      const fileExt = 'jpg';
+      const fileName = `${user.id}/avatar.${fileExt}`;
 
       // Upload cropped image to storage
       const { error: uploadError } = await supabase.storage
