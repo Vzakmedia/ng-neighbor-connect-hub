@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { generateUniqueFileName } from '@/utils/fileUploadUtils';
 
 interface UploadProgress {
   file: File;
@@ -39,8 +40,8 @@ export const usePromotionImageUpload = () => {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        // Use UUID for unique filenames to prevent collisions
+        const fileName = generateUniqueFileName(file.name, user.id);
 
         // Update progress
         setUploads(prev => prev.map((upload, index) => 

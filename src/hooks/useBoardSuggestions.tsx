@@ -62,13 +62,14 @@ export const useBoardSuggestions = (limit: number = 3) => {
       const suggestions: any[] = [];
       
       // 1. Neighborhood boards first (highest priority)
+      // Using exact match instead of ilike for better performance
       if (profile.neighborhood) {
         const { data: neighborhoodBoards } = await supabase
           .from('discussion_boards')
           .select('*')
           .eq('is_public', true)
           .eq('location_scope', 'neighborhood')
-          .ilike('location', `%${profile.neighborhood}%`)
+          .eq('location', profile.neighborhood) // Exact match is faster than ilike
           .not('id', 'in', userBoardIds.length > 0 ? `(${userBoardIds.join(',')})` : '()')
           .order('created_at', { ascending: false })
           .limit(2);
@@ -79,13 +80,14 @@ export const useBoardSuggestions = (limit: number = 3) => {
       }
 
       // 2. City boards (medium priority)
+      // Using exact match instead of ilike for better performance
       if (profile.city && suggestions.length < limit) {
         const { data: cityBoards } = await supabase
           .from('discussion_boards')
           .select('*')
           .eq('is_public', true)
           .eq('location_scope', 'city')
-          .ilike('location', `%${profile.city}%`)
+          .eq('location', profile.city) // Exact match is faster than ilike
           .not('id', 'in', userBoardIds.length > 0 ? `(${userBoardIds.join(',')})` : '()')
           .order('created_at', { ascending: false })
           .limit(limit - suggestions.length);
@@ -96,13 +98,14 @@ export const useBoardSuggestions = (limit: number = 3) => {
       }
 
       // 3. State boards (lower priority)
+      // Using exact match instead of ilike for better performance
       if (profile.state && suggestions.length < limit) {
         const { data: stateBoards } = await supabase
           .from('discussion_boards')
           .select('*')
           .eq('is_public', true)
           .eq('location_scope', 'state')
-          .ilike('location', `%${profile.state}%`)
+          .eq('location', profile.state) // Exact match is faster than ilike
           .not('id', 'in', userBoardIds.length > 0 ? `(${userBoardIds.join(',')})` : '()')
           .order('created_at', { ascending: false })
           .limit(limit - suggestions.length);
