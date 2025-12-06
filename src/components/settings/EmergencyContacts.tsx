@@ -235,7 +235,32 @@ const EmergencyContacts = () => {
   const handleAddContact = async () => {
     if (!user) return;
     
+    // Validate required fields
+    if (!formData.phone_number?.trim()) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter a phone number for the emergency contact.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formData.contact_name?.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter a name for the emergency contact.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
+    console.log('EmergencyContacts: Adding contact with data:', {
+      contact_name: formData.contact_name,
+      phone_number: formData.phone_number,
+      relationship: formData.relationship
+    });
+    
     try {
       const { data, error } = await supabase
         .from('emergency_contacts')
@@ -252,10 +277,16 @@ const EmergencyContacts = () => {
         .select()
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('EmergencyContacts: Error inserting contact:', error);
+        throw error;
+      }
+      
+      console.log('EmergencyContacts: Contact added successfully:', data);
       
       // Create a contact request - the database trigger will handle the notification
       try {
+        console.log('EmergencyContacts: Creating contact request for phone:', formData.phone_number);
         const { data: request, error: requestError } = await supabase
           .from('emergency_contact_requests')
           .insert({
@@ -267,17 +298,23 @@ const EmergencyContacts = () => {
           .single();
         
         if (requestError) {
-          console.error('Error creating contact request:', requestError);
+          console.error('EmergencyContacts: Error creating contact request:', requestError);
+          console.error('EmergencyContacts: Request error details:', {
+            code: requestError.code,
+            message: requestError.message,
+            details: requestError.details,
+            hint: requestError.hint
+          });
           toast({
             title: "Warning",
-            description: "Contact added but notification may be delayed.",
+            description: requestError.message || "Contact added but notification may be delayed.",
             variant: "default"
           });
         } else {
-          console.log('Contact request created:', request);
+          console.log('EmergencyContacts: Contact request created successfully:', request);
         }
       } catch (e: any) {
-        console.error('Error in contact request creation:', e);
+        console.error('EmergencyContacts: Exception in contact request creation:', e);
         toast({
           title: "Warning",
           description: "Contact added but notification system may be unavailable. Contact will still receive alerts.",
