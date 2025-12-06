@@ -1806,6 +1806,7 @@ export type Database = {
           post_type: string
           rsvp_enabled: boolean | null
           saves_count: number | null
+          search_vector: unknown
           tags: string[] | null
           target_city: string | null
           target_neighborhood: string | null
@@ -1829,6 +1830,7 @@ export type Database = {
           post_type: string
           rsvp_enabled?: boolean | null
           saves_count?: number | null
+          search_vector?: unknown
           tags?: string[] | null
           target_city?: string | null
           target_neighborhood?: string | null
@@ -1852,6 +1854,7 @@ export type Database = {
           post_type?: string
           rsvp_enabled?: boolean | null
           saves_count?: number | null
+          search_vector?: unknown
           tags?: string[] | null
           target_city?: string | null
           target_neighborhood?: string | null
@@ -2275,6 +2278,7 @@ export type Database = {
           member_limit: number | null
           name: string
           requires_approval: boolean | null
+          search_vector: unknown
           updated_at: string
         }
         Insert: {
@@ -2295,6 +2299,7 @@ export type Database = {
           member_limit?: number | null
           name: string
           requires_approval?: boolean | null
+          search_vector?: unknown
           updated_at?: string
         }
         Update: {
@@ -2315,6 +2320,7 @@ export type Database = {
           member_limit?: number | null
           name?: string
           requires_approval?: boolean | null
+          search_vector?: unknown
           updated_at?: string
         }
         Relationships: [
@@ -7506,6 +7512,23 @@ export type Database = {
             }
             Returns: string
           }
+      search_discussion_boards: {
+        Args: {
+          is_public_filter?: boolean
+          location_scope_filter?: string
+          search_query: string
+        }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          is_public: boolean
+          location: string
+          location_scope: string
+          name: string
+          rank: number
+        }[]
+      }
       set_alert_cache: {
         Args: { _cache_data: Json; _cache_key: string; _ttl_seconds?: number }
         Returns: undefined
