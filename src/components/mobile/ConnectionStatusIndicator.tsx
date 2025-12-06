@@ -9,9 +9,19 @@ import { Capacitor } from '@capacitor/core';
  * Shows real-time connection status and falls back to polling when needed
  */
 export const ConnectionStatusIndicator = () => {
-  const [status, setStatus] = useState<'connected' | 'polling' | 'disconnected'>('connected');
+  const [status, setStatus] = useState<'connected' | 'polling' | 'disconnected' | 'connecting'>('connecting');
   const [showIndicator, setShowIndicator] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  // Startup grace period - wait for connections to establish
+  useEffect(() => {
+    const startupDelay = setTimeout(() => {
+      setInitialLoadComplete(true);
+    }, 5000);
+
+    return () => clearTimeout(startupDelay);
+  }, []);
 
   useEffect(() => {
     // Only show on iOS or when there are connection issues
@@ -19,7 +29,14 @@ export const ConnectionStatusIndicator = () => {
 
     const checkStatus = () => {
       const diagnostics = getConnectionDiagnostics();
-      const recentDiags = diagnostics.slice(-10); // Last 10 events
+      const recentDiags = diagnostics.slice(-10);
+
+      // If no diagnostics yet, we're still connecting - don't show warning
+      if (recentDiags.length === 0) {
+        setStatus('connecting');
+        setShowIndicator(false);
+        return;
+      }
 
       const hasErrors = recentDiags.some(
         d => d.status === 'WEBSOCKET_ERROR' || d.status === 'CHANNEL_ERROR'
@@ -31,21 +48,20 @@ export const ConnectionStatusIndicator = () => {
         setShowIndicator(false);
       } else if (hasErrors) {
         setStatus('polling');
-        setShowIndicator(true);
+        // Only show if initial load is complete
+        setShowIndicator(initialLoadComplete);
       } else {
         setStatus('disconnected');
-        setShowIndicator(true);
+        // Only show if initial load is complete AND we have diagnostics
+        setShowIndicator(initialLoadComplete && recentDiags.length > 0);
       }
     };
 
-    // Check immediately
     checkStatus();
-
-    // Check every 5 seconds
     const interval = setInterval(checkStatus, 5000);
 
     return () => clearInterval(interval);
-  }, [isIOS]);
+  }, [isIOS, initialLoadComplete]);
 
   if (!showIndicator) return null;
 
