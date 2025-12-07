@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
 import { useMobileIcons } from '@/hooks/useMobileIcons';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -51,6 +49,21 @@ interface MobileDrawerProps {
   notificationCount?: number;
   hasStaffRole?: boolean;
 }
+
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
+
+const triggerHaptic = async () => {
+  if (!isNativePlatform()) return;
+  
+  try {
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+    await Haptics.impact({ style: ImpactStyle.Light });
+  } catch (error) {
+    console.log('Haptics not available');
+  }
+};
 
 /**
  * MobileDrawer - "More" navigation drawer for mobile/native apps
@@ -124,14 +137,7 @@ export const MobileDrawer = ({
   ];
 
   const handleNavigation = async (path: string) => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Haptics.impact({ style: ImpactStyle.Light });
-      } catch (error) {
-        console.log('Haptics not available');
-      }
-    }
-    
+    await triggerHaptic();
     navigate(path);
     onOpenChange(false);
   };

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNativeNetwork } from '@/hooks/mobile/useNativeNetwork';
 import { useNativeImageOptimization } from '@/hooks/mobile/useNativeImageOptimization';
-import { Capacitor } from '@capacitor/core';
 import { generateUniqueFileName } from '@/utils/fileUploadUtils';
 
 export interface Attachment {
@@ -16,12 +15,16 @@ export interface Attachment {
   mimeType: string;
 }
 
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
+
 export const useFileUpload = (userId: string) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { connectionType } = useNativeNetwork();
   const { optimizeImage } = useNativeImageOptimization();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const uploadFile = useCallback(async (file: File): Promise<Attachment | null> => {
     try {

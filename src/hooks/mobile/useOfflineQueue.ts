@@ -1,7 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Network } from '@capacitor/network';
-import { Preferences } from '@capacitor/preferences';
-import { Capacitor } from '@capacitor/core';
 
 interface QueuedRequest {
   id: string;
@@ -16,17 +13,25 @@ interface QueuedRequest {
 const QUEUE_KEY = 'offline_request_queue';
 const MAX_RETRIES = 3;
 
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
+
 export const useOfflineQueue = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  const isNative = Capacitor.isNativePlatform();
 
   const loadQueue = async (): Promise<QueuedRequest[]> => {
     try {
-      const { value } = await Preferences.get({ key: QUEUE_KEY });
-      return value ? JSON.parse(value) : [];
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
+        const { value } = await Preferences.get({ key: QUEUE_KEY });
+        return value ? JSON.parse(value) : [];
+      } else {
+        const value = localStorage.getItem(QUEUE_KEY);
+        return value ? JSON.parse(value) : [];
+      }
     } catch (error) {
       console.error('Failed to load queue:', error);
       return [];
@@ -35,10 +40,15 @@ export const useOfflineQueue = () => {
 
   const saveQueue = async (queue: QueuedRequest[]) => {
     try {
-      await Preferences.set({
-        key: QUEUE_KEY,
-        value: JSON.stringify(queue),
-      });
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
+        await Preferences.set({
+          key: QUEUE_KEY,
+          value: JSON.stringify(queue),
+        });
+      } else {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+      }
       setPendingCount(queue.length);
     } catch (error) {
       console.error('Failed to save queue:', error);
@@ -96,37 +106,50 @@ export const useOfflineQueue = () => {
   }, []);
 
   useEffect(() => {
-    if (!isNative) {
+    if (!isNativePlatform()) {
       setIsOnline(navigator.onLine);
-      return;
+      
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+      
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
     }
-
-    const checkStatus = async () => {
-      const status = await Network.getStatus();
-      setIsOnline(status.connected);
-    };
-
-    checkStatus();
 
     let listener: any;
 
-    const setupListener = async () => {
-      listener = await Network.addListener('networkStatusChange', (status) => {
-        setIsOnline(status.connected);
+    const setupNativeNetwork = async () => {
+      try {
+        const { Network } = await import('@capacitor/network');
         
-        if (status.connected) {
-          processQueue();
-        }
-      });
+        const status = await Network.getStatus();
+        setIsOnline(status.connected);
+
+        listener = await Network.addListener('networkStatusChange', (status) => {
+          setIsOnline(status.connected);
+          
+          if (status.connected) {
+            processQueue();
+          }
+        });
+      } catch (error) {
+        console.error('Failed to setup native network:', error);
+        setIsOnline(navigator.onLine);
+      }
     };
 
-    setupListener();
+    setupNativeNetwork();
     loadQueue().then(queue => setPendingCount(queue.length));
 
     return () => {
-      listener?.remove();
+      listener?.remove?.();
     };
-  }, [isNative, processQueue]);
+  }, [processQueue]);
 
   useEffect(() => {
     if (isOnline && pendingCount > 0) {
