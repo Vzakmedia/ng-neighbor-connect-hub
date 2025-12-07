@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Camera, CameraResultType, Photo } from '@capacitor/camera';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useToast } from '@/hooks/use-toast';
 
 interface OptimizationOptions {
@@ -20,7 +18,7 @@ interface OptimizedImage {
 
 export const useNativeImageOptimization = () => {
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   /**
    * Optimize a single image file
@@ -123,6 +121,7 @@ export const useNativeImageOptimization = () => {
     if (!isNative) return null;
 
     try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const base64Data = await fileToBase64(file);
       const result = await Filesystem.writeFile({
         path: `image_cache/${cacheKey}`,
@@ -146,6 +145,7 @@ export const useNativeImageOptimization = () => {
     if (!isNative) return null;
 
     try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const result = await Filesystem.readFile({
         path: `image_cache/${cacheKey}`,
         directory: Directory.Cache
@@ -165,6 +165,7 @@ export const useNativeImageOptimization = () => {
     if (!isNative) return;
 
     try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
       await Filesystem.rmdir({
         path: 'image_cache',
         directory: Directory.Cache,

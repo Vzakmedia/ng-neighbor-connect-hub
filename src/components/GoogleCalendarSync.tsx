@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Settings, Smartphone } from '@/lib/icons';
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar';
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 const GoogleCalendarSync = ({ onSyncEnabledChange }: GoogleCalendarSyncProps) => {
   const [autoSync, setAutoSync] = useState(false);
   const [nativeCalendarEnabled, setNativeCalendarEnabled] = useState(false);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   
   // Google Calendar (web only)
   const { config, isLoading: configLoading, error: configError } = useGoogleCalendarConfig();

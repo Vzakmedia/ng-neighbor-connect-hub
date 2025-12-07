@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export const ProfileMenu = () => {
   const navigate = useNavigate();
@@ -11,8 +11,9 @@ export const ProfileMenu = () => {
   const { profile } = useProfile();
 
   const hapticFeedback = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.error('Haptic feedback error:', error);

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Wifi, AlertCircle } from '@/lib/icons';
 import { getConnectionDiagnostics } from '@/utils/realtimeUtils';
 import { Badge } from '@/components/ui/badge';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Connection Status Indicator for iOS
@@ -25,7 +25,7 @@ export const ConnectionStatusIndicator = () => {
 
   useEffect(() => {
     // Only show on iOS or when there are connection issues
-    if (!isIOS && !Capacitor.isNativePlatform()) return;
+    if (!isIOS && !isNativePlatform()) return;
 
     const checkStatus = () => {
       const diagnostics = getConnectionDiagnostics();
