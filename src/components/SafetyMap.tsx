@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPinIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/integrations/supabase/client';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { NativeSafetyMap } from './mobile/NativeSafetyMap';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -37,7 +37,7 @@ interface SafetyMapProps {
 }
 
 const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const { user } = useAuth();
   const { profile } = useProfile();
   const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, geocodeAddress, getPlaceId } = useGoogleMapsCache();

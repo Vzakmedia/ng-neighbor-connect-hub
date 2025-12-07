@@ -12,7 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
-import { Capacitor } from "@capacitor/core";
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useQueryClient } from "@tanstack/react-query";
 
 export interface CommunityFeedProps {
@@ -37,7 +37,7 @@ export const CommunityFeed = ({
   const { markCommunityPostAsRead, refreshUnreadCounts, markAllCommunityPostsAsRead } = useReadStatus();
   const isMobile = useIsMobile();
   const { connectionType } = useNativeNetwork();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const [markedPostIds, setMarkedPostIds] = useState<Set<string>>(new Set());
   const pendingMarksRef = useRef<Set<string>>(new Set());
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();

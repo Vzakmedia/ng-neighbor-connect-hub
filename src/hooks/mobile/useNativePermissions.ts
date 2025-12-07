@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Geolocation } from '@capacitor/geolocation';
-import { Camera } from '@capacitor/camera';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getCapacitorPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 import { useToast } from '@/hooks/use-toast';
 
 export type PermissionType = 'location' | 'camera' | 'photos' | 'microphone';
 
 export const useNativePermissions = () => {
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const requestLocationPermission = useCallback(async (): Promise<boolean> => {
     if (!isNative) {
@@ -39,6 +38,7 @@ export const useNativePermissions = () => {
     }
 
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
       const permission = await Geolocation.checkPermissions();
       
       if (permission.location === 'granted') {
@@ -85,6 +85,7 @@ export const useNativePermissions = () => {
     }
 
     try {
+      const { Camera } = await import('@capacitor/camera');
       const permission = await Camera.checkPermissions();
       
       if (permission.camera === 'granted' && permission.photos === 'granted') {
@@ -142,6 +143,7 @@ export const useNativePermissions = () => {
     }
 
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
       const position = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 15000,
@@ -207,9 +209,9 @@ export const useNativePermissions = () => {
     if (!isNative) return;
     
     // Open device settings
-    if (Capacitor.getPlatform() === 'ios') {
+    if (getCapacitorPlatform() === 'ios') {
       window.open('app-settings:');
-    } else if (Capacitor.getPlatform() === 'android') {
+    } else if (getCapacitorPlatform() === 'android') {
       // Android will need a plugin or direct intent
       toast({
         title: "Settings",

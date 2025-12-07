@@ -49,7 +49,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { usePrivacySettings } from '@/hooks/usePrivacySettings';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import {
   AlertDialog,
   AlertDialogAction,
@@ -313,7 +313,7 @@ const SettingsContent = () => {
             <TabsTrigger value="insights">
               Insights
             </TabsTrigger>
-            {Capacitor.isNativePlatform() && (
+            {isNativePlatform() && (
               <TabsTrigger value="diagnostics">
                 Device
               </TabsTrigger>
@@ -1137,7 +1137,7 @@ const SettingsContent = () => {
         </TabsContent>
 
         {/* Diagnostics Tab - Only on native platforms */}
-        {Capacitor.isNativePlatform() && (
+        {isNativePlatform() && (
           <TabsContent value="diagnostics" className="w-full max-w-full">
             <IOSDiagnostics />
           </TabsContent>

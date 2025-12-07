@@ -1,6 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+
+// Import types only - actual module loaded dynamically
+type BiometryType = number;
+const BiometryTypeValues = {
+  none: 0,
+  faceId: 1,
+  touchId: 2,
+  fingerprintAuthentication: 3,
+  faceAuthentication: 4,
+  irisAuthentication: 5,
+};
 import { useToast } from '@/hooks/use-toast';
 import { useNativeStorage } from './useNativeStorage';
 
@@ -12,12 +22,12 @@ interface BiometricInfo {
 
 export const useBiometricAuth = () => {
   const [isAvailable, setIsAvailable] = useState(false);
-  const [biometryType, setBiometryType] = useState<BiometryType>(BiometryType.none);
+  const [biometryType, setBiometryType] = useState<BiometryType>(BiometryTypeValues.none);
   const [isLoading, setIsLoading] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const { toast } = useToast();
   const { getItem, setItem, removeItem } = useNativeStorage();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   // Check biometric availability
   useEffect(() => {
@@ -28,6 +38,7 @@ export const useBiometricAuth = () => {
       }
 
       try {
+        const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
         const result = await BiometricAuth.checkBiometry();
         setIsAvailable(result.isAvailable);
         setBiometryType(result.biometryType);
@@ -46,15 +57,15 @@ export const useBiometricAuth = () => {
 
   const getBiometricName = useCallback((): string => {
     switch (biometryType) {
-      case BiometryType.faceId:
+      case BiometryTypeValues.faceId:
         return 'Face ID';
-      case BiometryType.touchId:
+      case BiometryTypeValues.touchId:
         return 'Touch ID';
-      case BiometryType.fingerprintAuthentication:
+      case BiometryTypeValues.fingerprintAuthentication:
         return 'Fingerprint';
-      case BiometryType.faceAuthentication:
+      case BiometryTypeValues.faceAuthentication:
         return 'Face Recognition';
-      case BiometryType.irisAuthentication:
+      case BiometryTypeValues.irisAuthentication:
         return 'Iris Scan';
       default:
         return 'Biometric';
@@ -69,6 +80,7 @@ export const useBiometricAuth = () => {
 
     try {
       setIsLoading(true);
+      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
       await BiometricAuth.authenticate({
         reason: reason || `Login with ${getBiometricName()}`,
         cancelTitle: 'Use Password',
