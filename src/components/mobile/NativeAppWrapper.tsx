@@ -50,9 +50,21 @@ const NativeAppWrapper = () => {
       const timestamp = getTimestamp();
       console.log(`[NativeAppWrapper ${timestamp}] Checking splash status from storage...`);
       
+      // Timeout promise to prevent hanging on storage access
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn(`[NativeAppWrapper ${timestamp}] Storage check timed out after 3s`);
+          resolve(null);
+        }, 3000);
+      });
+      
       try {
-        // Use nativeStorageAdapter which handles native/web automatically
-        const value = await nativeStorageAdapter.getItem('splash_shown_session');
+        // Race between storage access and timeout
+        const value = await Promise.race([
+          nativeStorageAdapter.getItem('splash_shown_session'),
+          timeoutPromise
+        ]);
+        
         console.log(`[NativeAppWrapper ${timestamp}] Storage returned: '${value}'`);
         
         if (value === 'true') {
@@ -60,19 +72,24 @@ const NativeAppWrapper = () => {
           setShowSplash(false);
           setSplashShownThisSession(true);
         } else {
-          console.log(`[NativeAppWrapper ${timestamp}] Splash not shown yet, will show splash`);
+          console.log(`[NativeAppWrapper ${timestamp}] Splash not shown yet or timeout, will show splash`);
         }
       } catch (error) {
         console.warn(`[NativeAppWrapper ${timestamp}] Error checking splash status:`, error);
         // Fallback to sessionStorage
         console.log(`[NativeAppWrapper ${timestamp}] Trying sessionStorage fallback...`);
-        const shownThisSession = sessionStorage.getItem('splash_shown');
-        console.log(`[NativeAppWrapper ${timestamp}] sessionStorage returned: '${shownThisSession}'`);
-        
-        if (shownThisSession) {
-          console.log(`[NativeAppWrapper ${timestamp}] Splash shown (via sessionStorage), hiding splash`);
-          setShowSplash(false);
-          setSplashShownThisSession(true);
+        try {
+          const shownThisSession = sessionStorage.getItem('splash_shown');
+          console.log(`[NativeAppWrapper ${timestamp}] sessionStorage returned: '${shownThisSession}'`);
+          
+          if (shownThisSession) {
+            console.log(`[NativeAppWrapper ${timestamp}] Splash shown (via sessionStorage), hiding splash`);
+            setShowSplash(false);
+            setSplashShownThisSession(true);
+          }
+        } catch (sessionError) {
+          console.warn(`[NativeAppWrapper ${timestamp}] sessionStorage also failed:`, sessionError);
+          // Just show splash as fallback
         }
       }
     };
