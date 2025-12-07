@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { HashRouter, BrowserRouter } from 'react-router-dom';
 import { isNativePlatform } from '@/utils/nativeStartup';
 
@@ -12,37 +12,17 @@ interface PlatformRouterProps {
  * - BrowserRouter for web browsers (compatible with Lovable preview)
  */
 const PlatformRouter = ({ children }: PlatformRouterProps) => {
-  const [isNative, setIsNative] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    // Safety timeout: default to web if platform detection hangs
-    const timeout = setTimeout(() => {
-      if (isNative === null) {
-        console.warn('[PlatformRouter] Platform detection timed out (3s), defaulting to WEB');
-        setIsNative(false);
-      }
-    }, 3000);
-    
+  // Initialize synchronously since isNativePlatform() is safe and synchronous
+  const [isNative] = useState<boolean>(() => {
     try {
       const native = isNativePlatform();
       console.log('[PlatformRouter] Platform detected:', native ? 'NATIVE' : 'WEB');
-      setIsNative(native);
+      return native;
     } catch (error) {
       console.error('[PlatformRouter] Platform detection error:', error);
-      setIsNative(false);
+      return false;
     }
-    
-    return () => clearTimeout(timeout);
-  }, []);
-
-  // Show nothing until platform is determined to avoid router switch
-  if (isNative === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  });
 
   // Native apps need HashRouter for file system compatibility
   if (isNative) {
