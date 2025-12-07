@@ -3,10 +3,6 @@
   "appName": "Neighborlink",
   "webDir": "dist",
   "bundledWebRuntime": false,
-  "server": {
-    "url": "https://1a2a500f-c780-4032-94ca-e7185a964f07.lovableproject.com?forceHideBadge=true",
-    "cleartext": true
-  },
   "android": {
     "allowMixedContent": true,
     "backgroundColor": "#ffffff"
