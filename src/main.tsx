@@ -335,18 +335,22 @@ root.render(
   </StrictMode>
 );
 
-// Remove the temporary loader after React hydration
-const loader = document.getElementById('app-loader');
-if (loader) {
-  // Fade out smoothly
-  loader.style.transition = 'opacity 300ms ease-out';
-  loader.style.opacity = '0';
-  
-  // Remove from DOM after transition completes
+// Remove the temporary loader after React has painted
+requestAnimationFrame(() => {
   setTimeout(() => {
-    loader.remove();
-  }, 300);
-}
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      // Fade out smoothly
+      loader.style.transition = 'opacity 300ms ease-out';
+      loader.style.opacity = '0';
+      
+      // Remove from DOM after transition completes
+      setTimeout(() => {
+        loader.remove();
+      }, 300);
+    }
+  }, 100); // Small delay to ensure React has rendered
+});
 
 // EMERGENCY TIMEOUT: Force remove loader if React doesn't mount properly
 setTimeout(() => {

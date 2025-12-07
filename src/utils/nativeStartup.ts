@@ -26,18 +26,19 @@ export const isNativePlatform = (): boolean => {
     return cachedIsNative;
   }
   
-  const timestamp = getTimestamp();
   try {
-    const { Capacitor } = require('@capacitor/core');
-    const isNative = Capacitor?.isNativePlatform?.() === true;
-    console.log(`[NativeStartup ${timestamp}] Platform check: ${isNative ? 'NATIVE' : 'WEB'}`);
-    if (isNative && Capacitor?.getPlatform) {
-      console.log(`[NativeStartup ${timestamp}] Platform: ${Capacitor.getPlatform()}`);
+    // Use window.Capacitor which is injected by native runtime
+    // This is safer than require() which may fail in some contexts
+    const windowCapacitor = (window as any).Capacitor;
+    const isNative = windowCapacitor?.isNativePlatform?.() === true;
+    console.log(`[NativeStartup] Platform check: ${isNative ? 'NATIVE' : 'WEB'}`);
+    if (isNative && windowCapacitor?.getPlatform) {
+      console.log(`[NativeStartup] Platform: ${windowCapacitor.getPlatform()}`);
     }
     cachedIsNative = isNative;
     return isNative;
   } catch (error) {
-    console.log(`[NativeStartup ${timestamp}] Capacitor not available, defaulting to WEB`);
+    console.log(`[NativeStartup] Capacitor not available, defaulting to WEB`);
     cachedIsNative = false;
     return false;
   }
