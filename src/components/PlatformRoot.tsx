@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { isNativePlatform } from '@/utils/nativeStartup';
@@ -123,11 +123,13 @@ const PlatformRoot = () => {
     }
   };
 
+
+  // Stable noop callback for platform check splash
+  const noopCallback = useCallback(() => {}, []);
+
   // Show splash screen during initial platform check (unless emergency timeout triggered)
   if (!platformChecked && !emergencyTimeout) {
-    const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (platformChecked=${platformChecked})`);
-    return <SplashScreen onComplete={() => {}} />;
+    return <SplashScreen onComplete={noopCallback} />;
   }
 
   // Native app flow: Splash → Onboarding → Auth
