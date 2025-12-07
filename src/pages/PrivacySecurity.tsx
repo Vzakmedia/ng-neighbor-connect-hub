@@ -6,8 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { TwoFactorSetup } from "@/components/security/TwoFactorSetup";
 import { BiometricSettings } from "@/components/settings/BiometricSettings";
 import { useState } from "react";
@@ -44,8 +43,9 @@ export default function PrivacySecurity() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   const hapticFeedback = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.error('Haptic feedback error:', error);

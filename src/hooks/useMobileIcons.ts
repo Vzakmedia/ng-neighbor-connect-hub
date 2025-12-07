@@ -1,5 +1,6 @@
 import { useIsMobile } from './use-mobile';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Hook to determine if filled/solid icons should be used for active states.
@@ -8,7 +9,7 @@ import { Capacitor } from '@capacitor/core';
  */
 export const useMobileIcons = () => {
   const isMobile = useIsMobile();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   
   // Use filled icons for active states on mobile OR native
   const shouldUseFilledIcons = isMobile || isNative;

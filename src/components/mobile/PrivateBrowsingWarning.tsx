@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from '@/lib/icons';
 import { isPrivateBrowsing } from '@/utils/iosAuthHelper';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Warning component for iOS Safari private browsing mode
@@ -13,7 +14,7 @@ export const PrivateBrowsingWarning = () => {
 
   useEffect(() => {
     // Only check on web iOS (not native app)
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       return;
     }
 

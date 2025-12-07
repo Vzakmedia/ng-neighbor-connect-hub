@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useNativePermissions } from './useNativePermissions';
 import { useToast } from '@/hooks/use-toast';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 export const useNativeVideoRecorder = () => {
   const { requestCameraPermission, isNative } = useNativePermissions();
   const { toast } = useToast();
-  const platform = Capacitor.getPlatform();
+  const platform = getPlatform();
 
   /**
    * Fallback video recording using HTML5 file input
@@ -61,8 +62,9 @@ export const useNativeVideoRecorder = () => {
       }
 
       // Android Native: Try Capacitor Camera first, fallback to file input
-      if (platform === 'android') {
+      if (platform === 'android' && isNativePlatform()) {
         try {
+          const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
           const result = await Camera.getPhoto({
             quality: 80,
             allowEditing: false,

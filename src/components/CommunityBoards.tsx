@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
-import { Capacitor } from '@capacitor/core';
-import { App } from '@capacitor/app';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
