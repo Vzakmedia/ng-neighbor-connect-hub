@@ -1,6 +1,3 @@
-import { Capacitor } from '@capacitor/core';
-import { NativeAudio } from '@capgo/native-audio';
-
 export type SoundAssetId = 'notification' | 'message-chime' | 'emergency' | 'ringtone';
 
 interface PreloadedSound {
@@ -17,19 +14,24 @@ const SOUND_ASSETS: Record<SoundAssetId, string> = {
 };
 
 class NativeAudioManager {
-  private isNative: boolean;
+  private isNative: boolean | null = null;
   private preloadedSounds: Map<SoundAssetId, boolean> = new Map();
   private isInitialized: boolean = false;
 
-  constructor() {
-    this.isNative = Capacitor.isNativePlatform();
+  private checkIsNative(): boolean {
+    if (this.isNative === null) {
+      this.isNative = (window as any).Capacitor?.isNativePlatform?.() === true;
+    }
+    return this.isNative;
   }
 
   async initialize(): Promise<void> {
-    if (this.isInitialized || !this.isNative) return;
+    if (this.isInitialized || !this.checkIsNative()) return;
 
     try {
       console.log('NativeAudioManager: Initializing...');
+      
+      const { NativeAudio } = await import('@capgo/native-audio');
       
       // Preload all sound assets
       const preloadPromises = Object.entries(SOUND_ASSETS).map(async ([assetId, assetPath]) => {
@@ -57,7 +59,7 @@ class NativeAudioManager {
   }
 
   async play(assetId: SoundAssetId, volume: number = 1.0): Promise<boolean> {
-    if (!this.isNative) {
+    if (!this.checkIsNative()) {
       console.log('NativeAudioManager: Not on native platform, skipping');
       return false;
     }
@@ -68,6 +70,8 @@ class NativeAudioManager {
     }
 
     try {
+      const { NativeAudio } = await import('@capgo/native-audio');
+      
       await NativeAudio.play({
         assetId,
         time: 0.0
@@ -93,7 +97,7 @@ class NativeAudioManager {
   }
 
   async loop(assetId: SoundAssetId, volume: number = 1.0): Promise<boolean> {
-    if (!this.isNative) return false;
+    if (!this.checkIsNative()) return false;
 
     if (!this.preloadedSounds.get(assetId)) {
       console.warn(`NativeAudioManager: Sound ${assetId} not preloaded`);
@@ -101,6 +105,8 @@ class NativeAudioManager {
     }
 
     try {
+      const { NativeAudio } = await import('@capgo/native-audio');
+      
       await NativeAudio.loop({
         assetId
       });
@@ -121,9 +127,11 @@ class NativeAudioManager {
   }
 
   async stop(assetId: SoundAssetId): Promise<void> {
-    if (!this.isNative) return;
+    if (!this.checkIsNative()) return;
 
     try {
+      const { NativeAudio } = await import('@capgo/native-audio');
+      
       await NativeAudio.stop({
         assetId
       });
@@ -134,9 +142,11 @@ class NativeAudioManager {
   }
 
   async unload(assetId: SoundAssetId): Promise<void> {
-    if (!this.isNative) return;
+    if (!this.checkIsNative()) return;
 
     try {
+      const { NativeAudio } = await import('@capgo/native-audio');
+      
       await NativeAudio.unload({
         assetId
       });
@@ -148,7 +158,7 @@ class NativeAudioManager {
   }
 
   isNativePlatform(): boolean {
-    return this.isNative;
+    return this.checkIsNative();
   }
 
   isSoundLoaded(assetId: SoundAssetId): boolean {

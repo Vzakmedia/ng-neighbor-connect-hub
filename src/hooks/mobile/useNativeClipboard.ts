@@ -1,14 +1,17 @@
-import { Clipboard } from '@capacitor/clipboard';
-import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
+
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
 
 export const useNativeClipboard = () => {
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const writeText = async (text: string): Promise<boolean> => {
     try {
       if (isNative) {
+        const { Clipboard } = await import('@capacitor/clipboard');
         await Clipboard.write({ string: text });
       } else {
         await navigator.clipboard.writeText(text);
@@ -23,6 +26,7 @@ export const useNativeClipboard = () => {
   const readText = async (): Promise<string | null> => {
     try {
       if (isNative) {
+        const { Clipboard } = await import('@capacitor/clipboard');
         const { value } = await Clipboard.read();
         return value;
       } else {

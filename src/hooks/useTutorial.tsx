@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import { Capacitor } from '@capacitor/core';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TutorialState {
@@ -13,12 +12,16 @@ interface TutorialState {
   platform: 'mobile' | 'desktop' | 'native';
 }
 
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
+
 export const useTutorial = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
   const isMobileWeb = useIsMobile();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const platform = isNative ? 'native' : isMobileWeb ? 'mobile' : 'desktop';
   
   const [tutorialState, setTutorialState] = useState<TutorialState>({
