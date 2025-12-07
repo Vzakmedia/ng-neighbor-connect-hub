@@ -1,55 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-
-/**
- * Get timestamp for logging
- */
-const getTimestamp = (): string => {
-  return new Date().toISOString();
-};
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const mountTimestamp = getTimestamp();
-  console.log(`[SplashScreen ${mountTimestamp}] ========== COMPONENT MOUNTED ==========`);
-  
   const [animationComplete, setAnimationComplete] = useState(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    const timestamp = getTimestamp();
-    console.log(`[SplashScreen ${timestamp}] Starting 3 second splash timer...`);
-    
     const timer = setTimeout(() => {
-      const completeTimestamp = getTimestamp();
-      console.log(`[SplashScreen ${completeTimestamp}] Timer complete, setting animationComplete=true`);
       setAnimationComplete(true);
-      
-      console.log(`[SplashScreen ${completeTimestamp}] Starting 500ms exit animation delay...`);
       setTimeout(() => {
-        const callbackTimestamp = getTimestamp();
-        console.log(`[SplashScreen ${callbackTimestamp}] Exit animation complete, calling onComplete()`);
-        onComplete();
-      }, 500); // Small delay before transitioning
-    }, 3000); // 3 seconds splash duration
+        onCompleteRef.current();
+      }, 500);
+    }, 3000);
 
-    return () => {
-      const cleanupTimestamp = getTimestamp();
-      console.log(`[SplashScreen ${cleanupTimestamp}] Cleanup: clearing timer`);
-      clearTimeout(timer);
-    };
-  }, [onComplete]);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Log animation state changes
-  useEffect(() => {
-    const timestamp = getTimestamp();
-    console.log(`[SplashScreen ${timestamp}] Animation state changed: animationComplete=${animationComplete}`);
-  }, [animationComplete]);
-
-  const renderTimestamp = getTimestamp();
-  console.log(`[SplashScreen ${renderTimestamp}] Rendering splash UI`);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
