@@ -83,17 +83,23 @@ import SearchUsers from "./pages/SearchUsers";
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
+// Lazy load native push registration component
+const NativePushRegistration = React.lazy(() => import('@/components/mobile/NativePushRegistration'));
+
 // Component that initializes push notifications inside AuthProvider
 const PushNotificationWrapper = () => {
   usePushNotifications();
-  // Native push registration (iOS/Android)
-  try {
-    const { useNativePushRegistration } = require('@/hooks/mobile/useNativePushRegistration');
-    useNativePushRegistration();
-  } catch (e) {
-    // no-op on web build
+  
+  // Only render native push registration on native platforms
+  if (!window.Capacitor?.isNativePlatform?.()) {
+    return null;
   }
-  return null;
+  
+  return (
+    <React.Suspense fallback={null}>
+      <NativePushRegistration />
+    </React.Suspense>
+  );
 };
 
 // Component that manages the tutorial system
