@@ -5,6 +5,7 @@ import { isNativePlatform } from '@/utils/nativeStartup';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
 import Landing from '@/pages/Landing';
+import SplashScreen from '@/components/mobile/SplashScreen';
 
 /**
  * Get timestamp for logging
@@ -107,27 +108,18 @@ const PlatformRoot = () => {
     }
   }, [isNativeApp, platformChecked, user, loading, navigate]);
 
-  // Show loading spinner during initial auth check (unless emergency timeout triggered)
+  // Show splash screen during initial auth check (unless emergency timeout triggered)
   if ((loading || !platformChecked) && !emergencyTimeout) {
     const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Rendering: Loading spinner (loading=${loading}, platformChecked=${platformChecked})`);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(162,85%,30%)]"></div>
-      </div>
-    );
+    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (loading=${loading}, platformChecked=${platformChecked})`);
+    return <SplashScreen onComplete={() => {}} />;
   }
 
-  // For native apps, we'll navigate in the useEffect above
-  // This will only render for web browsers
+  // For native apps, show splash while navigating
   if (isNativeApp) {
     const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Rendering: Native app spinner (waiting for navigation)`);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(162,85%,30%)]"></div>
-      </div>
-    );
+    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (native app, waiting for navigation)`);
+    return <SplashScreen onComplete={() => {}} />;
   }
 
   // Web browser: show landing page
