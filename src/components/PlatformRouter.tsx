@@ -15,9 +15,24 @@ const PlatformRouter = ({ children }: PlatformRouterProps) => {
   const [isNative, setIsNative] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const native = isNativePlatform();
-    console.log('[PlatformRouter] Platform detected:', native ? 'NATIVE' : 'WEB');
-    setIsNative(native);
+    // Safety timeout: default to web if platform detection hangs
+    const timeout = setTimeout(() => {
+      if (isNative === null) {
+        console.warn('[PlatformRouter] Platform detection timed out (3s), defaulting to WEB');
+        setIsNative(false);
+      }
+    }, 3000);
+    
+    try {
+      const native = isNativePlatform();
+      console.log('[PlatformRouter] Platform detected:', native ? 'NATIVE' : 'WEB');
+      setIsNative(native);
+    } catch (error) {
+      console.error('[PlatformRouter] Platform detection error:', error);
+      setIsNative(false);
+    }
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   // Show nothing until platform is determined to avoid router switch
