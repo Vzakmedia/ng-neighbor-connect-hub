@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { useNativeStorage } from './useNativeStorage';
 import { useNativeNetwork } from './useNativeNetwork';
 import { useBatteryStatus } from './useBatteryStatus';
 import { useToast } from '@/hooks/use-toast';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export interface QueuedOperation {
   id: string;
@@ -26,7 +27,7 @@ export const useBackgroundSync = () => {
   const { isOnline, connectionType } = useNativeNetwork();
   const { shouldPauseBackgroundTasks, isLowBattery } = useBatteryStatus();
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   // Load queue from storage on mount
   useEffect(() => {

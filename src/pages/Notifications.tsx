@@ -6,8 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useState, useEffect } from "react";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 import { toast } from "sonner";
@@ -22,8 +21,9 @@ export default function Notifications() {
   const [messageVolume, setMessageVolume] = useState([70]);
 
   const hapticFeedback = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.error('Haptic feedback error:', error);

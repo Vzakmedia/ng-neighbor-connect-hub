@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { App, AppState } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface LifecycleCallbacks {
   onActive?: () => void | Promise<void>;
@@ -10,10 +10,10 @@ interface LifecycleCallbacks {
 }
 
 export const useIOSAppLifecycle = (callbacks: LifecycleCallbacks = {}) => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const previousState = useRef<string>('active');
 
-  const handleStateChange = useCallback(async (state: AppState) => {
+  const handleStateChange = useCallback(async (state: { isActive: boolean }) => {
     const isActive = state.isActive;
     const currentState = isActive ? 'active' : 'background';
 
@@ -41,7 +41,12 @@ export const useIOSAppLifecycle = (callbacks: LifecycleCallbacks = {}) => {
     let listener: any;
 
     const setupListener = async () => {
-      listener = await App.addListener('appStateChange', handleStateChange);
+      try {
+        const { App } = await import('@capacitor/app');
+        listener = await App.addListener('appStateChange', handleStateChange);
+      } catch (error) {
+        console.error('Failed to setup app lifecycle listener:', error);
+      }
     };
 
     setupListener();
@@ -55,6 +60,7 @@ export const useIOSAppLifecycle = (callbacks: LifecycleCallbacks = {}) => {
     if (!isNative) return;
 
     try {
+      const { App } = await import('@capacitor/app');
       await App.exitApp();
     } catch (error) {
       console.error('Failed to exit app:', error);

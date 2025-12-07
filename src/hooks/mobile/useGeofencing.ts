@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { useBackgroundLocation } from './useBackgroundLocation';
 import { useNativeStorage } from './useNativeStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface Geofence {
   id: string;
@@ -31,7 +32,7 @@ export const useGeofencing = () => {
   const { lastLocation } = useBackgroundLocation();
   const { getItem, setItem } = useNativeStorage();
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   // Load geofences on mount
   useEffect(() => {
