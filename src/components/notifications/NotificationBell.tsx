@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNotificationStore } from '@/store/notificationStore';
 import { cn } from '@/lib/utils';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface NotificationBellProps {
   onClick: () => void;
@@ -16,8 +16,9 @@ export const NotificationBell = ({ onClick, className }: NotificationBellProps) 
   const unreadCount = useNotificationStore(state => state.unreadCount);
 
   const handleClick = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.error('Haptics error:', error);

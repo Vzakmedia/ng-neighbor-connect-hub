@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import SplashScreen from './SplashScreen';
 import OnboardingScreen from './OnboardingScreen';
 import { AuthPage } from '@/components/auth/AuthPage';
@@ -21,7 +21,7 @@ const MobileAuthFlow = ({ skipSplash = false }: MobileAuthFlowProps) => {
   const [useIOSSafeLanding, setUseIOSSafeLanding] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   useEffect(() => {
     const initializeFlow = async () => {

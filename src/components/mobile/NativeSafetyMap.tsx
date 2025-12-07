@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { GoogleMap } from '@capacitor/google-maps';
-import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface MapMarker {
   id: string;
@@ -28,11 +28,11 @@ export const NativeSafetyMap = ({
   onMarkerClick,
 }: NativeSafetyMapProps) => {
   const mapRef = useRef<HTMLElement>(null);
-  const [map, setMap] = useState<GoogleMap | null>(null);
+  const [map, setMap] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   // Get user's current location
   useEffect(() => {
@@ -78,6 +78,9 @@ export const NativeSafetyMap = ({
 
         // Use user location if available, otherwise use default center
         const mapCenter = userLocation || center;
+
+        // Dynamically import GoogleMap
+        const { GoogleMap } = await import('@capacitor/google-maps');
 
         // Create the map
         const newMap = await GoogleMap.create({
@@ -185,8 +188,8 @@ export const NativeSafetyMap = ({
           <Skeleton className="w-full h-full" />
         </div>
       )}
-      <capacitor-google-map
-        ref={mapRef}
+      <div
+        ref={mapRef as any}
         style={{
           display: 'inline-block',
           width: '100%',
