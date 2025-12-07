@@ -24,16 +24,25 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     const isNative = isNativePlatform();
-    console.log(`[GoogleAuth] Starting ${mode}, isNative: ${isNative}`);
+    
+    console.log('[GoogleAuth] ==========================================');
+    console.log('[GoogleAuth] Starting OAuth flow');
+    console.log('[GoogleAuth] Mode:', mode);
+    console.log('[GoogleAuth] Is Native Platform:', isNative);
+    console.log('[GoogleAuth] Current URL:', window.location.href);
+    console.log('[GoogleAuth] Origin:', window.location.origin);
     
     try {
       if (isNative) {
         // Native: Use in-app browser for OAuth
+        console.log('[GoogleAuth] Using native in-app browser flow');
         const { Browser } = await import('@capacitor/browser');
         const { App } = await import('@capacitor/app');
 
         const redirectUrl = 'neighborlink://auth/callback';
+        console.log('[GoogleAuth] Native redirect URL:', redirectUrl);
         
+        console.log('[GoogleAuth] Calling supabase.auth.signInWithOAuth...');
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -46,11 +55,17 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
           },
         });
 
+        console.log('[GoogleAuth] OAuth response - data:', data);
+        console.log('[GoogleAuth] OAuth response - error:', error);
+
         if (error) {
           console.error('[GoogleAuth] OAuth init error:', error);
+          console.error('[GoogleAuth] Error code:', error.code);
+          console.error('[GoogleAuth] Error status:', error.status);
+          console.error('[GoogleAuth] Error message:', error.message);
           toast({
             title: "Authentication Error",
-            description: error.message,
+            description: `${error.message} (Code: ${error.code || 'unknown'})`,
             variant: "destructive",
           });
           setIsLoading(false);
@@ -139,7 +154,12 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
         // Web: Standard OAuth redirect
         const redirectUrl = `${window.location.origin}/auth/complete-profile`;
         
-        const { error } = await supabase.auth.signInWithOAuth({
+        console.log('[GoogleAuth] Using web OAuth redirect flow');
+        console.log('[GoogleAuth] Web redirect URL:', redirectUrl);
+        console.log('[GoogleAuth] Supabase project:', 'cowiviqhrnmhttugozbz');
+        
+        console.log('[GoogleAuth] Calling supabase.auth.signInWithOAuth for web...');
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: redirectUrl,
@@ -153,20 +173,36 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
           },
         });
 
+        console.log('[GoogleAuth] Web OAuth response - data:', data);
+        console.log('[GoogleAuth] Web OAuth response - URL:', data?.url);
+        
         if (error) {
+          console.error('[GoogleAuth] Web OAuth error:', error);
+          console.error('[GoogleAuth] Error code:', error.code);
+          console.error('[GoogleAuth] Error status:', error.status);
+          console.error('[GoogleAuth] Error message:', error.message);
           toast({
-            title: "Authentication Error",
-            description: error.message,
+            title: "Google Sign-In Failed",
+            description: `${error.message}. Please check Google OAuth configuration.`,
             variant: "destructive",
           });
           setIsLoading(false);
+        } else {
+          console.log('[GoogleAuth] OAuth initiated successfully, browser should redirect...');
+          toast({
+            title: "Redirecting to Google",
+            description: "Opening Google sign-in page...",
+          });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[GoogleAuth] Unexpected error:', error);
+      console.error('[GoogleAuth] Error name:', error?.name);
+      console.error('[GoogleAuth] Error message:', error?.message);
+      console.error('[GoogleAuth] Error stack:', error?.stack);
       toast({
         title: "Authentication Failed",
-        description: "An unexpected error occurred.",
+        description: `Unexpected error: ${error?.message || 'Unknown error'}`,
         variant: "destructive",
       });
       setIsLoading(false);
