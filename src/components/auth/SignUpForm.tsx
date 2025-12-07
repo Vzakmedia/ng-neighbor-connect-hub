@@ -17,7 +17,7 @@ import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
 import { v4 as uuidv4 } from 'uuid';
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import {
   AlertDialog,
   AlertDialogAction,
@@ -224,7 +224,7 @@ export const SignUpForm = () => {
 
     try {
       // Redirect to verification page for both web and native
-      const redirectUrl = Capacitor.isNativePlatform() 
+      const redirectUrl = isNativePlatform()
         ? 'neighborlink://auth/verify-email'
         : `${window.location.origin}/auth/verify-email`;
       

@@ -4,9 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, MapIcon, ForwardIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Capacitor } from '@capacitor/core';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileTutorial from '@/components/mobile/MobileTutorial';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface TutorialStep {
   id: string;
@@ -108,7 +109,7 @@ const getTutorialSteps = (): TutorialStep[] => {
 };
 
 const AppTutorial: React.FC<AppTutorialProps> = ({ isOpen, onClose, onComplete }) => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const isMobileWeb = useIsMobile();
   const isMobileView = isNative || isMobileWeb;
 
