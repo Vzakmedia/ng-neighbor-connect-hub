@@ -1,16 +1,14 @@
-import { Preferences } from '@capacitor/preferences';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Native secure storage hook using Capacitor Preferences
  * Automatically falls back to localStorage on web
  */
 export const useNativeStorage = () => {
-  const isNative = Capacitor.isNativePlatform();
-
   const setItem = async (key: string, value: string): Promise<void> => {
     try {
-      if (isNative) {
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
         await Preferences.set({ key, value });
       } else {
         localStorage.setItem(key, value);
@@ -22,7 +20,8 @@ export const useNativeStorage = () => {
 
   const getItem = async (key: string): Promise<string | null> => {
     try {
-      if (isNative) {
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
         const { value } = await Preferences.get({ key });
         return value;
       } else {
@@ -36,7 +35,8 @@ export const useNativeStorage = () => {
 
   const removeItem = async (key: string): Promise<void> => {
     try {
-      if (isNative) {
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
         await Preferences.remove({ key });
       } else {
         localStorage.removeItem(key);
@@ -48,7 +48,8 @@ export const useNativeStorage = () => {
 
   const clear = async (): Promise<void> => {
     try {
-      if (isNative) {
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
         await Preferences.clear();
       } else {
         localStorage.clear();
@@ -60,9 +61,10 @@ export const useNativeStorage = () => {
 
   const keys = async (): Promise<string[]> => {
     try {
-      if (isNative) {
-        const { keys } = await Preferences.keys();
-        return keys;
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
+        const result = await Preferences.keys();
+        return result.keys;
       } else {
         return Object.keys(localStorage);
       }
@@ -78,6 +80,6 @@ export const useNativeStorage = () => {
     removeItem,
     clear,
     keys,
-    isNative,
+    isNative: isNativePlatform(),
   };
 };

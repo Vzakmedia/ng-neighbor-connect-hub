@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export const useFileSave = () => {
   const [isSaving, setIsSaving] = useState(false);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const { toast } = useToast();
 
   const saveFile = async (url: string, fileName: string, mimeType?: string) => {
@@ -13,6 +13,8 @@ export const useFileSave = () => {
     
     try {
       if (isNative) {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        
         // Native: Fetch file and save to Documents directory
         const response = await fetch(url);
         const blob = await response.blob();

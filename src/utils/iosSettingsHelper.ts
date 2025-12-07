@@ -1,4 +1,5 @@
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 /**
  * iOS Settings Helper Utilities
@@ -6,7 +7,7 @@ import { Capacitor } from '@capacitor/core';
  */
 
 export const isIOS = () => {
-  const platform = Capacitor.getPlatform();
+  const platform = getPlatform();
   return platform === 'ios' || /iPad|iPhone|iPod/.test(navigator.userAgent);
 };
 
@@ -14,7 +15,7 @@ export const isIOS = () => {
  * Open iOS app settings
  */
 export const openAppSettings = async (): Promise<boolean> => {
-  if (!Capacitor.isNativePlatform()) {
+  if (!isNativePlatform()) {
     console.warn('openAppSettings only works on native platforms');
     return false;
   }
@@ -43,7 +44,7 @@ export const openAppSettings = async (): Promise<boolean> => {
 export const isPermissionDeniedAtSystemLevel = async (
   permission: 'location' | 'camera' | 'notifications'
 ): Promise<boolean> => {
-  if (!Capacitor.isNativePlatform()) return false;
+  if (!isNativePlatform()) return false;
 
   try {
     if (permission === 'location') {

@@ -1,5 +1,4 @@
-import { Browser } from '@capacitor/browser';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Opens a URL using native browser on mobile or window.open on web
@@ -10,7 +9,7 @@ export const openUrl = async (
   target: '_blank' | '_self' = '_blank',
   options?: string
 ): Promise<void> => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   
   // Special URL schemes should always use window.open
   const isSpecialScheme = url.startsWith('tel:') || 
@@ -25,6 +24,7 @@ export const openUrl = async (
   // For native platforms, use Browser plugin for external URLs
   if (isNative) {
     try {
+      const { Browser } = await import('@capacitor/browser');
       await Browser.open({ 
         url,
         presentationStyle: 'popover',
@@ -44,12 +44,12 @@ export const openUrl = async (
  * Closes the in-app browser (native only)
  */
 export const closeBrowser = async (): Promise<void> => {
-  const isNative = Capacitor.isNativePlatform();
-  if (isNative) {
-    try {
-      await Browser.close();
-    } catch (error) {
-      console.error('Failed to close browser:', error);
-    }
+  if (!isNativePlatform()) return;
+  
+  try {
+    const { Browser } = await import('@capacitor/browser');
+    await Browser.close();
+  } catch (error) {
+    console.error('Failed to close browser:', error);
   }
 };
