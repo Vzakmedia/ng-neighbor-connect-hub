@@ -7,6 +7,9 @@
 let isInitialized = false;
 let initializationError: Error | null = null;
 
+// Cache platform detection result to prevent repeated Capacitor checks
+let cachedIsNative: boolean | null = null;
+
 /**
  * Get timestamp for logging
  */
@@ -15,9 +18,14 @@ const getTimestamp = (): string => {
 };
 
 /**
- * Safely check if running on native platform
+ * Safely check if running on native platform (cached for performance)
  */
 export const isNativePlatform = (): boolean => {
+  // Return cached result if available
+  if (cachedIsNative !== null) {
+    return cachedIsNative;
+  }
+  
   const timestamp = getTimestamp();
   try {
     const { Capacitor } = require('@capacitor/core');
@@ -26,9 +34,11 @@ export const isNativePlatform = (): boolean => {
     if (isNative && Capacitor?.getPlatform) {
       console.log(`[NativeStartup ${timestamp}] Platform: ${Capacitor.getPlatform()}`);
     }
+    cachedIsNative = isNative;
     return isNative;
   } catch (error) {
     console.log(`[NativeStartup ${timestamp}] Capacitor not available, defaulting to WEB`);
+    cachedIsNative = false;
     return false;
   }
 };
