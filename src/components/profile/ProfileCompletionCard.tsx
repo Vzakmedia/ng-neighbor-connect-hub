@@ -9,10 +9,10 @@ import {
   SparklesIcon 
 } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/useWindowSize';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface ProfileSection {
   id: string;
@@ -46,8 +46,9 @@ export const ProfileCompletionCard = ({
   const { width, height } = useWindowSize();
 
   const hapticFeedback = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNativePlatform()) {
       try {
+        const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
         await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         console.error('Haptic feedback error:', error);

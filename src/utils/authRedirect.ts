@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /**
  * Get the appropriate authentication redirect URL based on the platform.
@@ -10,7 +10,7 @@ import { Capacitor } from '@capacitor/core';
  */
 export const getAuthRedirectUrl = (): string => {
   // Check if running in a native mobile app
-  const isNativeApp = Capacitor.isNativePlatform();
+  const isNativeApp = isNativePlatform();
   
   if (isNativeApp) {
     // Use custom URL scheme for deep linking in mobile apps

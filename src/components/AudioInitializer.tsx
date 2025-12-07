@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { initializeAudioOnInteraction, preloadAudioFiles } from '@/utils/audioUtils';
 import { nativeAudioManager } from '@/utils/nativeAudioManager';
 import { Button } from '@/components/ui/button';
 import { Volume2 } from '@/lib/icons';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 // Component to initialize audio on app startup with iOS-specific handling
 export const AudioInitializer = () => {
   const [needsInteraction, setNeedsInteraction] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   useEffect(() => {
     console.log('AudioInitializer: Setting up audio initialization');

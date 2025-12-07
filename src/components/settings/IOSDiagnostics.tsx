@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Capacitor } from '@capacitor/core';
-import { Device } from '@capacitor/device';
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Settings, Smartphone } from '@/lib/icons';
 import { detectIOSDevice, getSafeStorage } from '@/utils/iosCompatibility';
 import { openAppSettings, isIOS } from '@/utils/iosSettingsHelper';
 import { useToast } from '@/hooks/use-toast';
 import { testNotificationSound } from '@/utils/testNotificationSounds';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface PermissionStatus {
   name: string;
@@ -34,8 +34,11 @@ const IOSDiagnostics = () => {
 
     // Get device info
     try {
-      const info = await Device.getInfo();
-      setDeviceInfo(info);
+      if (isNativePlatform()) {
+        const { Device } = await import('@capacitor/device');
+        const info = await Device.getInfo();
+        setDeviceInfo(info);
+      }
     } catch (error) {
       console.error('Error getting device info:', error);
     }
@@ -174,7 +177,7 @@ const IOSDiagnostics = () => {
     return <Badge variant={variant}>{status}</Badge>;
   };
 
-  if (!Capacitor.isNativePlatform() && !isIOS()) {
+  if (!isNativePlatform() && !isIOS()) {
     return (
       <Card>
         <CardContent className="pt-6">
