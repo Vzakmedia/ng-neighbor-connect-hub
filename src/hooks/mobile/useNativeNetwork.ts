@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Network, ConnectionStatus } from '@capacitor/network';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export const useNativeNetwork = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [connectionType, setConnectionType] = useState<string>('unknown');
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   useEffect(() => {
     let mounted = true;
+    let networkListener: any = null;
 
     const checkStatus = async () => {
       if (isNative) {
         try {
+          const { Network } = await import('@capacitor/network');
           const status = await Network.getStatus();
           if (mounted) {
             setIsOnline(status.connected);
@@ -28,25 +30,26 @@ export const useNativeNetwork = () => {
       }
     };
 
-    checkStatus();
-
-    if (isNative) {
-      // Listen for network status changes
-      Network.addListener('networkStatusChange', (status: ConnectionStatus) => {
-        if (mounted) {
-          setIsOnline(status.connected);
-          setConnectionType(status.connectionType);
+    const setupNativeListener = async () => {
+      if (isNative) {
+        try {
+          const { Network } = await import('@capacitor/network');
+          networkListener = await Network.addListener('networkStatusChange', (status) => {
+            if (mounted) {
+              setIsOnline(status.connected);
+              setConnectionType(status.connectionType);
+            }
+          });
+        } catch (error) {
+          console.error('Failed to add network listener:', error);
         }
-      }).then(handler => {
-        return () => {
-          mounted = false;
-          handler.remove();
-        };
-      });
+      }
+    };
 
-      return () => {
-        mounted = false;
-      };
+    checkStatus();
+    
+    if (isNative) {
+      setupNativeListener();
     } else {
       // Web fallback listeners
       const handleOnline = () => setIsOnline(true);
@@ -61,6 +64,11 @@ export const useNativeNetwork = () => {
         window.removeEventListener('offline', handleOffline);
       };
     }
+
+    return () => {
+      mounted = false;
+      networkListener?.remove?.();
+    };
   }, [isNative]);
 
   return {

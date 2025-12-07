@@ -15,11 +15,21 @@ import {
   MegaphoneIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+
+const triggerHaptic = async () => {
+  if (!isNativePlatform()) return;
+  try {
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+    await Haptics.impact({ style: ImpactStyle.Light });
+  } catch (error) {
+    console.error('Haptic feedback error:', error);
+  }
+};
 
 export default function ProfileMenu() {
   const navigate = useNavigate();
@@ -45,18 +55,8 @@ export default function ProfileMenu() {
     checkAdminStatus();
   }, [user?.id]);
 
-  const hapticFeedback = async () => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Haptics.impact({ style: ImpactStyle.Light });
-      } catch (error) {
-        console.error('Haptic feedback error:', error);
-      }
-    }
-  };
-
   const handleSignOut = async () => {
-    await hapticFeedback();
+    await triggerHaptic();
     try {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
@@ -78,7 +78,7 @@ export default function ProfileMenu() {
   };
 
   const handleNavigation = async (path: string) => {
-    await hapticFeedback();
+    await triggerHaptic();
     navigate(path);
   };
 
@@ -108,7 +108,7 @@ export default function ProfileMenu() {
         <div className="flex items-center justify-between px-4 h-14">
           <button
             onClick={() => {
-              hapticFeedback();
+              triggerHaptic();
               navigate('/');
             }}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
