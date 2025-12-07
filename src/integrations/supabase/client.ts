@@ -23,14 +23,19 @@ const getCapacitor = () => {
   
   try {
     console.log('[Supabase] Checking for Capacitor...');
-    // Try importing Capacitor - will only work if @capacitor/core is available
-    const { Capacitor } = require('@capacitor/core');
-    cachedCapacitor = Capacitor;
-    console.log('[Supabase] Capacitor found, native:', Capacitor?.isNativePlatform?.());
-    return Capacitor;
+    // Use window.Capacitor which is injected by native runtime
+    // This is safer than require() which may cause bundler issues
+    const windowCapacitor = (window as any).Capacitor;
+    if (windowCapacitor?.isNativePlatform?.()) {
+      cachedCapacitor = windowCapacitor;
+      console.log('[Supabase] Capacitor found, native:', true);
+      return windowCapacitor;
+    }
+    console.log('[Supabase] Not on native platform (web mode)');
+    cachedCapacitor = null;
+    return null;
   } catch (error) {
-    // Capacitor not available (web mode)
-    console.log('[Supabase] Capacitor not available (web mode)');
+    console.log('[Supabase] Capacitor check failed (web mode)');
     cachedCapacitor = null;
     return null;
   }

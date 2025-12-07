@@ -18,22 +18,12 @@ const checkIsNativePlatform = (): boolean => {
   }
   
   try {
-    // Check for Capacitor global
-    const win = window as any;
-    if (win.Capacitor?.isNativePlatform?.()) {
-      isNativePlatformCached = true;
-      return true;
-    }
-    
-    // Try require as fallback
-    try {
-      const { Capacitor } = require('@capacitor/core');
-      isNativePlatformCached = Capacitor?.isNativePlatform?.() === true;
-      return isNativePlatformCached;
-    } catch {
-      isNativePlatformCached = false;
-      return false;
-    }
+    // Use window.Capacitor which is injected by native runtime
+    // This is safer than require() which may cause bundler issues
+    const windowCapacitor = (window as any).Capacitor;
+    isNativePlatformCached = windowCapacitor?.isNativePlatform?.() === true;
+    console.log(`[NativeEdgeFunctions] Platform: ${isNativePlatformCached ? 'NATIVE' : 'WEB'}`);
+    return isNativePlatformCached;
   } catch {
     isNativePlatformCached = false;
     return false;
