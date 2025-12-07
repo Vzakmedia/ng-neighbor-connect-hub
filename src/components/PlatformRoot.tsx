@@ -33,6 +33,7 @@ const PlatformRoot = () => {
   const { user, loading } = useAuth();
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [platformChecked, setPlatformChecked] = useState(false);
+  const [emergencyTimeout, setEmergencyTimeout] = useState(false);
   const syncWithServer = useNotificationStore(state => state.syncWithServer);
   
   // Safe native platform detection
@@ -46,17 +47,31 @@ const PlatformRoot = () => {
     console.log(`[PlatformRoot ${timestamp}] Platform state updated`);
   }, []);
   
-  // Initialize real-time notifications
+  // Emergency fallback timeout - force app out of loading state after 15s
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading || !platformChecked) {
+        console.warn(`[PlatformRoot ${getTimestamp()}] EMERGENCY TIMEOUT - forcing app out of loading state`);
+        setEmergencyTimeout(true);
+        setPlatformChecked(true);
+      }
+    }, 15000);
+    
+    return () => clearTimeout(timeout);
+  }, [loading, platformChecked]);
+  
+  // Initialize real-time notifications only after platform is checked (deferred)
+  const shouldInitRealtime = platformChecked && !loading;
   useRealtimeNotifications();
   
   // Sync notifications with server when user logs in
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && shouldInitRealtime) {
       const timestamp = getTimestamp();
       console.log(`[PlatformRoot ${timestamp}] User logged in, syncing notifications for user: ${user.id.substring(0, 8)}...`);
       syncWithServer(user.id);
     }
-  }, [user?.id, syncWithServer]);
+  }, [user?.id, syncWithServer, shouldInitRealtime]);
 
   // Log auth state changes
   useEffect(() => {
@@ -92,8 +107,8 @@ const PlatformRoot = () => {
     }
   }, [isNativeApp, platformChecked, user, loading, navigate]);
 
-  // Show loading spinner during initial auth check
-  if (loading || !platformChecked) {
+  // Show loading spinner during initial auth check (unless emergency timeout triggered)
+  if ((loading || !platformChecked) && !emergencyTimeout) {
     const timestamp = getTimestamp();
     console.log(`[PlatformRoot ${timestamp}] Rendering: Loading spinner (loading=${loading}, platformChecked=${platformChecked})`);
     return (
