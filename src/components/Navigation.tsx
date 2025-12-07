@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+
+// Safe haptic trigger - dynamically imports Capacitor only on native
+const triggerHaptic = async () => {
+  if (window.Capacitor?.isNativePlatform?.()) {
+    try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (e) {
+      // Silently fail on web or if haptics unavailable
+    }
+  }
+};
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
@@ -148,12 +159,7 @@ const Navigation = () => {
   };
 
   const handleMobileNavigation = async (path: string) => {
-    // Trigger haptic feedback on mobile
-    try {
-      await Haptics.impact({ style: ImpactStyle.Light });
-    } catch (error) {
-      // Haptics not available (e.g., on web), silently continue
-    }
+    await triggerHaptic();
     navigate(path);
   };
 
@@ -275,9 +281,7 @@ const Navigation = () => {
           {/* More Button - Centered with Primary Background and Shadow */}
           <button
             onClick={async () => {
-              try {
-                await Haptics.impact({ style: ImpactStyle.Light });
-              } catch (error) {}
+              await triggerHaptic();
               setMoreDrawerOpen(true);
             }}
             className="bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg shadow-primary/30"
@@ -329,9 +333,7 @@ const Navigation = () => {
                   <button
                     key={item.id}
                     onClick={async () => {
-                      try {
-                        await Haptics.impact({ style: ImpactStyle.Light });
-                      } catch (error) {}
+                      await triggerHaptic();
                       handleNavigation(item.path);
                       setMoreDrawerOpen(false);
                     }}
