@@ -28,6 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [user, session, loading]);
 
+  // Safety timeout - ensure loading never stays true forever (prevents infinite spinner)
+  useEffect(() => {
+    if (!loading) return;
+    
+    const timeout = setTimeout(() => {
+      console.warn('[Auth] Safety timeout triggered after 10s - forcing loading=false');
+      setLoading(false);
+    }, 10000); // 10 seconds max
+    
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   useEffect(() => {
     console.log("AuthProvider useEffect starting");
     try {
