@@ -1,8 +1,7 @@
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export const useNativeShare = () => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const share = async (options: {
     title?: string;
@@ -11,6 +10,7 @@ export const useNativeShare = () => {
   }): Promise<boolean> => {
     try {
       if (isNative) {
+        const { Share } = await import('@capacitor/share');
         await Share.share({
           title: options.title,
           text: options.text,

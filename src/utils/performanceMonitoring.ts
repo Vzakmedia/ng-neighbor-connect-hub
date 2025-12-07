@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface PerformanceMetrics {
   appLaunchTime?: number;
@@ -11,7 +11,6 @@ class PerformanceMonitor {
   private metrics: PerformanceMetrics = {
     apiLatency: new Map(),
   };
-  private isNative = Capacitor.isNativePlatform();
   private initialized = false;
 
   initialize(dsn?: string) {
@@ -92,6 +91,10 @@ class PerformanceMonitor {
 
   clearUser() {
     console.log('User cleared from performance monitoring');
+  }
+
+  isNative() {
+    return isNativePlatform();
   }
 
   // Start monitoring memory usage every 30 seconds

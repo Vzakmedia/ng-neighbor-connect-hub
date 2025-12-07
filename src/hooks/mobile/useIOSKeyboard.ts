@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Keyboard, KeyboardInfo } from '@capacitor/keyboard';
-import { Capacitor } from '@capacitor/core';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 interface KeyboardState {
   isVisible: boolean;
@@ -13,39 +14,42 @@ export const useIOSKeyboard = () => {
     keyboardHeight: 0,
   });
 
-  const isNative = Capacitor.isNativePlatform();
-  const isIOS = Capacitor.getPlatform() === 'ios';
+  const isNative = isNativePlatform();
+  const isIOS = getPlatform() === 'ios';
 
   useEffect(() => {
     if (!isNative || !isIOS) return;
-
-    const handleKeyboardWillShow = (info: KeyboardInfo) => {
-      setKeyboardState({
-        isVisible: true,
-        keyboardHeight: info.keyboardHeight,
-      });
-    };
-
-    const handleKeyboardWillHide = () => {
-      setKeyboardState({
-        isVisible: false,
-        keyboardHeight: 0,
-      });
-    };
 
     let showListener: any;
     let hideListener: any;
 
     const setupListeners = async () => {
-      showListener = await Keyboard.addListener('keyboardWillShow', handleKeyboardWillShow);
-      hideListener = await Keyboard.addListener('keyboardWillHide', handleKeyboardWillHide);
+      try {
+        const { Keyboard } = await import('@capacitor/keyboard');
+        
+        showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+          setKeyboardState({
+            isVisible: true,
+            keyboardHeight: info.keyboardHeight,
+          });
+        });
+        
+        hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+          setKeyboardState({
+            isVisible: false,
+            keyboardHeight: 0,
+          });
+        });
+      } catch (error) {
+        console.error('Failed to setup keyboard listeners:', error);
+      }
     };
 
     setupListeners();
 
     return () => {
-      showListener?.remove();
-      hideListener?.remove();
+      showListener?.remove?.();
+      hideListener?.remove?.();
     };
   }, [isNative, isIOS]);
 
@@ -61,6 +65,7 @@ export const useIOSKeyboard = () => {
     if (!isNative || !isIOS) return;
 
     try {
+      const { Keyboard } = await import('@capacitor/keyboard');
       await Keyboard.hide();
     } catch (error) {
       console.error('Failed to hide keyboard:', error);
