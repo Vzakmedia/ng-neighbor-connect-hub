@@ -41,23 +41,53 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
+    const isNative = (window as any).Capacitor?.isNativePlatform?.() === true;
+    console.log(`[LoginForm] Starting login, platform: ${isNative ? 'native' : 'web'}`);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log(`[LoginForm] signInWithPassword result:`, { 
+        hasUser: !!data?.user, 
+        hasSession: !!data?.session,
+        error: error?.message 
+      });
+
       if (error) {
-        // Record failed attempt for rate limiting
         if (recordAttempt) recordAttempt();
         
-      const errorMessage = getIOSAuthError(error.message);
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      } else if (data.user) {
+        const errorMessage = getIOSAuthError(error.message);
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (data.user && data.session) {
+        console.log(`[LoginForm] Login successful, verifying session...`);
+        
+        // Verify session is properly set
+        const { data: sessionCheck } = await supabase.auth.getSession();
+        console.log(`[LoginForm] Session verification:`, { 
+          hasSession: !!sessionCheck?.session,
+          userId: sessionCheck?.session?.user?.id 
+        });
+
+        if (!sessionCheck?.session) {
+          console.error(`[LoginForm] Session not persisted after login`);
+          toast({
+            title: "Login Error",
+            description: "Session failed to persist. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         // Check if 2FA is enabled for this user
         const { data: user2fa } = await supabase
           .from('user_2fa')
@@ -66,11 +96,8 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           .single();
 
         if (user2fa?.is_enabled) {
-          // Store user ID temporarily for 2FA verification
           sessionStorage.setItem('pending2FA', data.user.id);
-          // Sign out temporarily until 2FA is verified
           await supabase.auth.signOut();
-          // Redirect to 2FA verification
           navigate(`/auth/2fa-verify?userId=${data.user.id}`);
         } else {
           // Check if this is the user's first login
@@ -83,7 +110,6 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           const isFirstLogin = !profile?.first_login_completed;
 
           if (isFirstLogin) {
-            // Update the flag
             await supabase
               .from('profiles')
               .update({ first_login_completed: true })
@@ -96,10 +122,13 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
               ? "You've successfully signed in for the first time." 
               : "You've been successfully logged in.",
           });
+
+          console.log(`[LoginForm] Navigating to dashboard...`);
+          navigate('/dashboard');
         }
       }
     } catch (error) {
-      // Record failed attempt for rate limiting
+      console.error(`[LoginForm] Unexpected error:`, error);
       if (recordAttempt) recordAttempt();
       
       toast({
