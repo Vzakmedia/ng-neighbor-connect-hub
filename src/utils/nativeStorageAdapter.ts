@@ -6,8 +6,7 @@
  * IMPORTANT: Uses lazy initialization to prevent crashes during app startup
  */
 
-// Lazy-loaded Capacitor modules
-let CapacitorModule: any = null;
+// Cache platform detection
 let PreferencesModule: any = null;
 let isNativeChecked = false;
 let isNativePlatform = false;
@@ -21,29 +20,23 @@ const getTimestamp = (): string => {
 
 /**
  * Safely check if running on native platform
- * Uses lazy loading to prevent import crashes
+ * Uses window.Capacitor which is injected by native runtime
  */
 const checkIsNative = (): boolean => {
-  const timestamp = getTimestamp();
-  
   if (isNativeChecked) {
-    console.log(`[NativeStorage ${timestamp}] Platform check (cached): ${isNativePlatform ? 'NATIVE' : 'WEB'}`);
     return isNativePlatform;
   }
 
   try {
-    console.log(`[NativeStorage ${timestamp}] First platform check, lazy loading Capacitor...`);
-    // Lazy load Capacitor
-    if (!CapacitorModule) {
-      CapacitorModule = require('@capacitor/core');
-      console.log(`[NativeStorage ${timestamp}] Capacitor module loaded`);
-    }
-    isNativePlatform = CapacitorModule?.Capacitor?.isNativePlatform?.() === true;
+    // Use window.Capacitor which is injected by native runtime
+    // This is safer than require() which may cause bundler issues
+    const windowCapacitor = (window as any).Capacitor;
+    isNativePlatform = windowCapacitor?.isNativePlatform?.() === true;
     isNativeChecked = true;
-    console.log(`[NativeStorage ${timestamp}] Platform detection result: ${isNativePlatform ? 'NATIVE' : 'WEB'}`);
+    console.log(`[NativeStorage] Platform: ${isNativePlatform ? 'NATIVE' : 'WEB'}`);
     return isNativePlatform;
   } catch (error) {
-    console.log(`[NativeStorage ${timestamp}] Capacitor not available, defaulting to WEB storage`);
+    console.log(`[NativeStorage] Capacitor not available, defaulting to WEB storage`);
     isNativeChecked = true;
     isNativePlatform = false;
     return false;
