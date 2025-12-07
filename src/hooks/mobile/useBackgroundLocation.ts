@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Geolocation, Position } from '@capacitor/geolocation';
 import { useNativeStorage } from './useNativeStorage';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 const LOCATION_CACHE_KEY = 'last_known_location';
 const LOCATION_UPDATE_INTERVAL = 15 * 60 * 1000; // 15 minutes
@@ -24,8 +25,8 @@ export const useBackgroundLocation = () => {
   const { getItem, setItem } = useNativeStorage();
   const { toast } = useToast();
   const { user } = useAuth();
-  const isNative = Capacitor.isNativePlatform();
-  const isIOS = Capacitor.getPlatform() === 'ios';
+  const isNative = isNativePlatform();
+  const isIOS = getPlatform() === 'ios';
 
   // Load cached location and check permission status on mount
   useEffect(() => {
@@ -66,6 +67,7 @@ export const useBackgroundLocation = () => {
     if (!isNative) return;
 
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
       const result = await Geolocation.checkPermissions();
       
       if (result.location === 'granted') {
@@ -92,6 +94,8 @@ export const useBackgroundLocation = () => {
     if (!isNative) return false;
 
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      
       // First explain why we need "Always" permission
       if (isIOS && permissionStatus !== 'granted') {
         toast({
@@ -148,6 +152,7 @@ export const useBackgroundLocation = () => {
     if (!isNative) return;
 
     try {
+      const { Geolocation } = await import('@capacitor/geolocation');
       const position = await Geolocation.getCurrentPosition({
         enableHighAccuracy: highAccuracy,
         timeout: 10000,

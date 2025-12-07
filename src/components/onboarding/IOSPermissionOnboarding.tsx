@@ -11,10 +11,6 @@ import {
   ChevronRightIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
-import { LocalNotifications } from "@capacitor/local-notifications";
-import { Geolocation } from "@capacitor/geolocation";
-import { Camera as CapCamera } from "@capacitor/camera";
-import { Contacts } from "@capacitor-community/contacts";
 import { useToast } from "@/hooks/use-toast";
 
 interface PermissionStep {
@@ -103,43 +99,63 @@ export const IOSPermissionOnboarding = ({ onComplete }: { onComplete: () => void
     try {
       switch (stepId) {
         case "notifications":
-          const notifResult = await LocalNotifications.requestPermissions();
-          const granted = notifResult.display === "granted";
-          setPermissions({ ...permissions, notifications: granted });
-          toast({
-            title: granted ? "Notifications enabled" : "Notifications skipped",
-            description: granted ? "You'll receive important updates" : "You can enable this later in Settings"
-          });
+          try {
+            const { LocalNotifications } = await import("@capacitor/local-notifications");
+            const notifResult = await LocalNotifications.requestPermissions();
+            const granted = notifResult.display === "granted";
+            setPermissions({ ...permissions, notifications: granted });
+            toast({
+              title: granted ? "Notifications enabled" : "Notifications skipped",
+              description: granted ? "You'll receive important updates" : "You can enable this later in Settings"
+            });
+          } catch (error) {
+            console.error("Notification permission error:", error);
+          }
           break;
 
         case "location":
-          const locResult = await Geolocation.requestPermissions();
-          const locGranted = locResult.location === "granted";
-          setPermissions({ ...permissions, location: locGranted });
-          toast({
-            title: locGranted ? "Location enabled" : "Location skipped",
-            description: locGranted ? "You'll see nearby content" : "You can enable this later in Settings"
-          });
+          try {
+            const { Geolocation } = await import("@capacitor/geolocation");
+            const locResult = await Geolocation.requestPermissions();
+            const locGranted = locResult.location === "granted";
+            setPermissions({ ...permissions, location: locGranted });
+            toast({
+              title: locGranted ? "Location enabled" : "Location skipped",
+              description: locGranted ? "You'll see nearby content" : "You can enable this later in Settings"
+            });
+          } catch (error) {
+            console.error("Location permission error:", error);
+          }
           break;
 
         case "camera":
-          const camResult = await CapCamera.requestPermissions();
-          const camGranted = camResult.camera === "granted" && camResult.photos === "granted";
-          setPermissions({ ...permissions, camera: camGranted });
-          toast({
-            title: camGranted ? "Camera enabled" : "Camera skipped",
-            description: camGranted ? "You can now share photos" : "You can enable this later in Settings"
-          });
+          try {
+            const { Camera } = await import("@capacitor/camera");
+            const camResult = await Camera.requestPermissions();
+            const camGranted = camResult.camera === "granted" && camResult.photos === "granted";
+            setPermissions({ ...permissions, camera: camGranted });
+            toast({
+              title: camGranted ? "Camera enabled" : "Camera skipped",
+              description: camGranted ? "You can now share photos" : "You can enable this later in Settings"
+            });
+          } catch (error) {
+            console.error("Camera permission error:", error);
+          }
           break;
 
         case "contacts":
-          const contactsResult = await Contacts.requestPermissions();
-          const contactsGranted = contactsResult.contacts === "granted";
-          setPermissions({ ...permissions, contacts: contactsGranted });
-          toast({
-            title: contactsGranted ? "Contacts enabled" : "Contacts skipped",
-            description: contactsGranted ? "Find friends on NeighborLink" : "You can enable this later"
-          });
+          try {
+            const { Contacts } = await import("@capacitor-community/contacts");
+            const contactsResult = await Contacts.requestPermissions();
+            const contactsGranted = contactsResult.contacts === "granted";
+            setPermissions({ ...permissions, contacts: contactsGranted });
+            toast({
+              title: contactsGranted ? "Contacts enabled" : "Contacts skipped",
+              description: contactsGranted ? "Find friends on NeighborLink" : "You can enable this later"
+            });
+          } catch (error) {
+            console.error("Contacts permission error:", error);
+          }
           break;
       }
 
