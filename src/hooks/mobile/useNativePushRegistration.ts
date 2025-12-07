@@ -1,19 +1,8 @@
 import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { PushNotifications, PermissionStatus } from '@capacitor/push-notifications';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { nativeAudioManager } from '@/utils/nativeAudioManager';
-
-const getPlatform = () => {
-  try {
-    return Capacitor.getPlatform();
-  } catch {
-    return 'web';
-  }
-};
 
 const platformToLabel = (p: string) => (p === 'ios' || p === 'android' ? p : 'web');
 
@@ -23,13 +12,21 @@ export const useNativePushRegistration = () => {
   useEffect(() => {
     if (!user) return;
 
-    const platform = getPlatform();
-    if (platform === 'web') return; // Native only
+    // Use window.Capacitor for safe platform check
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+
+    let cleanupFn: (() => void) | undefined;
 
     const init = async () => {
       try {
+        // Dynamic imports only on native
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        
+        const platform = window.Capacitor?.getPlatform?.() || 'web';
+
         // Request push notification permissions
-        let perm: PermissionStatus;
+        let perm;
         try {
           perm = await PushNotifications.requestPermissions();
         } catch (permError) {
@@ -162,7 +159,7 @@ export const useNativePushRegistration = () => {
           });
         });
 
-        return () => {
+        cleanupFn = () => {
           regListener.remove();
           recvListener.remove();
           errListener.remove();
@@ -172,10 +169,10 @@ export const useNativePushRegistration = () => {
       }
     };
 
-    const cleanupPromise = init();
+    init();
+    
     return () => {
-      // ensure listeners removed
-      cleanupPromise.then((cleanup: any) => cleanup && cleanup());
+      cleanupFn?.();
     };
   }, [user]);
 };
