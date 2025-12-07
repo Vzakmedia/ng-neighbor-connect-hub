@@ -1,13 +1,15 @@
-import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
 
 export const useNativeHaptics = () => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const impact = async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
     if (!isNative) return;
 
     try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
       const styleMap = {
         light: ImpactStyle.Light,
         medium: ImpactStyle.Medium,
@@ -23,6 +25,7 @@ export const useNativeHaptics = () => {
     if (!isNative) return;
 
     try {
+      const { Haptics, NotificationType } = await import('@capacitor/haptics');
       const typeMap = {
         success: NotificationType.Success,
         warning: NotificationType.Warning,
@@ -54,6 +57,7 @@ export const useNativeHaptics = () => {
     if (!isNative) return;
 
     try {
+      const { Haptics } = await import('@capacitor/haptics');
       await Haptics.vibrate({ duration });
     } catch (error) {
       console.error('Haptics error:', error);
@@ -64,6 +68,7 @@ export const useNativeHaptics = () => {
     if (!isNative) return;
 
     try {
+      const { Haptics } = await import('@capacitor/haptics');
       await Haptics.selectionStart();
     } catch (error) {
       console.error('Haptics error:', error);
@@ -74,6 +79,7 @@ export const useNativeHaptics = () => {
     if (!isNative) return;
 
     try {
+      const { Haptics } = await import('@capacitor/haptics');
       await Haptics.selectionChanged();
     } catch (error) {
       console.error('Haptics error:', error);
@@ -84,6 +90,7 @@ export const useNativeHaptics = () => {
     if (!isNative) return;
 
     try {
+      const { Haptics } = await import('@capacitor/haptics');
       await Haptics.selectionEnd();
     } catch (error) {
       console.error('Haptics error:', error);
