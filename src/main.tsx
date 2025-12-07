@@ -347,3 +347,19 @@ if (loader) {
     loader.remove();
   }, 300);
 }
+
+// EMERGENCY TIMEOUT: Force remove loader if React doesn't mount properly
+setTimeout(() => {
+  const emergencyLoader = document.getElementById('app-loader');
+  if (emergencyLoader && emergencyLoader.style.opacity !== '0') {
+    console.error('[main.tsx] EMERGENCY TIMEOUT: React did not mount in 10s, forcing loader removal');
+    emergencyLoader.style.display = 'none';
+    emergencyLoader.remove();
+    
+    // Show error message to user
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'padding:40px;text-align:center;font-family:system-ui;color:#333;';
+    errorDiv.innerHTML = '<h2>App Loading Issue</h2><p>Please close and reopen the app.</p><button onclick="location.reload()" style="padding:12px 24px;font-size:16px;margin-top:16px;cursor:pointer;">Retry</button>';
+    document.body.appendChild(errorDiv);
+  }
+}, 10000);
