@@ -699,18 +699,32 @@ const CommunityBoards = () => {
 
   // Handle native back button on mobile devices
   useEffect(() => {
-    if (!Capacitor.isNativePlatform() || !isMobile) {
+    const isNative = (window as any).Capacitor?.isNativePlatform?.() === true;
+    if (!isNative || !isMobile) {
       return;
     }
 
-    const backButtonListener = App.addListener('backButton', () => {
-      if (showMobileConversation) {
-        setShowMobileConversation(false);
+    let listenerHandle: any = null;
+    
+    const setupListener = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        listenerHandle = await App.addListener('backButton', () => {
+          if (showMobileConversation) {
+            setShowMobileConversation(false);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to setup back button listener:', error);
       }
-    });
+    };
+    
+    setupListener();
 
     return () => {
-      backButtonListener.then(listener => listener.remove());
+      if (listenerHandle) {
+        listenerHandle.remove();
+      }
     };
   }, [isMobile, showMobileConversation]);
 
