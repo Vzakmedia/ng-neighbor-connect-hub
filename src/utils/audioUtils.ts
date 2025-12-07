@@ -1,6 +1,9 @@
-import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { nativeAudioManager, type SoundAssetId } from './nativeAudioManager';
+
+// Platform detection helper
+const isNativePlatform = (): boolean => {
+  return (window as any).Capacitor?.isNativePlatform?.() === true;
+};
 
 // Audio Context for sound generation
 let audioContext: AudioContext | null = null;
@@ -359,6 +362,23 @@ export const getMessageChimeSettings = async (): Promise<{ mode: 'single' | 'dou
   }
 };
 
+// Helper to trigger haptic feedback dynamically
+const triggerHapticFeedback = async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
+  if (!isNativePlatform()) return;
+  
+  try {
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+    const styleMap = {
+      light: ImpactStyle.Light,
+      medium: ImpactStyle.Medium,
+      heavy: ImpactStyle.Heavy,
+    };
+    await Haptics.impact({ style: styleMap[style] });
+  } catch (error) {
+    console.error('Haptic feedback failed:', error);
+  }
+};
+
 // Enhanced play notification with permission and settings check
 export const playNotification = async (type: 'normal' | 'emergency' | 'notification', customVolume?: number): Promise<void> => {
   // Check if sound is enabled in user settings
@@ -372,7 +392,7 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
 
   try {
     // Try native audio first on mobile
-    if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+    if (isNativePlatform() && nativeAudioManager.isNativePlatform()) {
       const assetId: SoundAssetId = type === 'emergency' ? 'emergency' : 'notification';
       const success = await nativeAudioManager.play(assetId, volume);
       
@@ -425,12 +445,8 @@ export const playNotification = async (type: 'normal' | 'emergency' | 'notificat
     console.error('Error playing notification sound:', error);
     
     // Fallback to vibration on mobile
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Haptics.impact({ style: type === 'emergency' ? ImpactStyle.Heavy : ImpactStyle.Medium });
-      } catch (hapticError) {
-        console.error('Haptic feedback failed:', hapticError);
-      }
+    if (isNativePlatform()) {
+      await triggerHapticFeedback(type === 'emergency' ? 'heavy' : 'medium');
     } else if ('vibrate' in navigator) {
       if (type === 'emergency') {
         navigator.vibrate([200, 100, 200, 100, 200]);
@@ -517,11 +533,9 @@ export const playEmergencyAlert = async (): Promise<void> => {
     await playNotification('emergency', 0.9);
 
     // Vibrate for emphasis on mobile
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Haptics.impact({ style: ImpactStyle.Heavy });
-        setTimeout(() => Haptics.impact({ style: ImpactStyle.Heavy }), 300);
-      } catch {}
+    if (isNativePlatform()) {
+      await triggerHapticFeedback('heavy');
+      setTimeout(() => triggerHapticFeedback('heavy'), 300);
     }
 
     // Show browser notification if permission granted
@@ -555,7 +569,7 @@ export const playMessagingChime = async (
     console.log(`playMessagingChime: Playing ${modeToUse} chime at volume ${vol}`);
 
     // Try native audio first on mobile
-    if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+    if (isNativePlatform() && nativeAudioManager.isNativePlatform()) {
       const success = await nativeAudioManager.play('message-chime', vol);
       
       if (success) {
@@ -672,7 +686,7 @@ export const createRingtonePlayer = () => {
       active = true;
 
       // Try native audio looping on mobile
-      if (Capacitor.isNativePlatform() && nativeAudioManager.isNativePlatform()) {
+      if (isNativePlatform() && nativeAudioManager.isNativePlatform()) {
         const success = await nativeAudioManager.loop('ringtone', 0.5);
         
         if (success) {
