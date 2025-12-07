@@ -88,8 +88,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       console.log("Auth listener set up successfully");
 
-      // THEN check for existing session with validation
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // THEN check for existing session with validation + 5s timeout
+      const sessionTimeout = new Promise<{ data: { session: null }, error: Error }>((resolve) => {
+        setTimeout(() => {
+          console.warn('[Auth] getSession() timed out after 5s');
+          resolve({ data: { session: null }, error: new Error('Session fetch timeout') });
+        }, 5000);
+      });
+      
+      Promise.race([
+        supabase.auth.getSession(),
+        sessionTimeout
+      ]).then(({ data: { session }, error }) => {
         if (error) {
           console.error("Error getting session:", error);
           setLoading(false);
