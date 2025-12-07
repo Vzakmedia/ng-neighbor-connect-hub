@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Contacts } from '@capacitor-community/contacts';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,7 +21,7 @@ export const useNativeContacts = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isNative) {
@@ -32,6 +31,7 @@ export const useNativeContacts = () => {
 
     try {
       setIsLoading(true);
+      const { Contacts } = await import('@capacitor-community/contacts');
       const result = await Contacts.requestPermissions();
       const granted = result.contacts === 'granted';
       setHasPermission(granted);
@@ -62,6 +62,7 @@ export const useNativeContacts = () => {
     if (!isNative) return false;
 
     try {
+      const { Contacts } = await import('@capacitor-community/contacts');
       const result = await Contacts.checkPermissions();
       const granted = result.contacts === 'granted';
       setHasPermission(granted);
@@ -86,6 +87,7 @@ export const useNativeContacts = () => {
         return [];
       }
 
+      const { Contacts } = await import('@capacitor-community/contacts');
       const result = await Contacts.getContacts({
         projection: {
           name: true,

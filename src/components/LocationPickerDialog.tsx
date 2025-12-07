@@ -14,7 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Navigation } from '@/lib/icons';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const getCapacitorPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 interface LocationPickerDialogProps {
   open: boolean;
@@ -180,8 +181,8 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
 
-      const isNative = Capacitor.isNativePlatform();
-      const platform = Capacitor.getPlatform();
+      const isNative = isNativePlatform();
+      const platform = getCapacitorPlatform();
       const startTime = performance.now();
 
       console.log('[MAP] Starting initialization...', {
@@ -304,7 +305,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       console.error('❌ [LocationPicker] Error initializing map:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      const isNative = Capacitor.isNativePlatform();
+      const isNative = isNativePlatform();
       
       // Native-specific error handling
       if (isNative) {

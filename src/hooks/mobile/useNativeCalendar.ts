@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useToast } from '@/hooks/use-toast';
 
 // Note: This requires @capacitor-community/calendar plugin
@@ -18,7 +18,7 @@ interface CalendarEvent {
 export const useNativeCalendar = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   const requestPermission = async (): Promise<boolean> => {
     if (!isNative) return false;

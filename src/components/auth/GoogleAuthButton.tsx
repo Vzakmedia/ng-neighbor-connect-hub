@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 interface GoogleAuthButtonProps {
   mode: 'signin' | 'signup';
@@ -23,7 +23,7 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
     
     try {
       // Redirect to complete profile page for OAuth users
-      const redirectUrl = Capacitor.isNativePlatform() 
+      const redirectUrl = isNativePlatform() 
         ? 'neighborlink://auth/complete-profile'
         : `${window.location.origin}/auth/complete-profile`;
         

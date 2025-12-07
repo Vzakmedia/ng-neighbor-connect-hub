@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Device } from '@capacitor/device';
-import { Capacitor } from '@capacitor/core';
+const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 export interface BatteryInfo {
   batteryLevel: number; // 0.0 to 1.0
@@ -16,7 +15,7 @@ export const useBatteryStatus = () => {
     isLowBattery: false,
     isCriticalBattery: false,
   });
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
 
   useEffect(() => {
     if (!isNative) {
@@ -50,6 +49,7 @@ export const useBatteryStatus = () => {
 
     const checkBattery = async () => {
       try {
+        const { Device } = await import('@capacitor/device');
         const info = await Device.getBatteryInfo();
         if (mounted && info.batteryLevel !== undefined) {
           setBatteryInfo({
