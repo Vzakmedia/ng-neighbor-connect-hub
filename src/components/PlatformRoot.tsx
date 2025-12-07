@@ -6,6 +6,8 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
 import Landing from '@/pages/Landing';
 import SplashScreen from '@/components/mobile/SplashScreen';
+import OnboardingScreen from '@/components/mobile/OnboardingScreen';
+import { AuthPage } from '@/components/auth/AuthPage';
 
 /**
  * Get timestamp for logging
@@ -14,14 +16,18 @@ const getTimestamp = (): string => {
   return new Date().toISOString();
 };
 
+type NativeFlowStep = 'splash' | 'onboarding' | 'auth';
+
 /**
  * PlatformRoot - Smart root route handler
  * 
  * Detects platform and authentication status to route users appropriately:
  * 
  * Native App (Capacitor):
- * - Authenticated → /dashboard
- * - Not Authenticated → /auth (shows NativeAppWrapper with splash + onboarding)
+ * - Shows Splash → Onboarding → Auth flow
+ * - Auth checking happens in background during splash/onboarding
+ * - If authenticated by end of onboarding → /dashboard
+ * - If not authenticated → show AuthPage
  * 
  * Web Browser:
  * - Shows Landing page (marketing content)
@@ -35,6 +41,7 @@ const PlatformRoot = () => {
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [platformChecked, setPlatformChecked] = useState(false);
   const [emergencyTimeout, setEmergencyTimeout] = useState(false);
+  const [nativeFlowStep, setNativeFlowStep] = useState<NativeFlowStep>('splash');
   const syncWithServer = useNotificationStore(state => state.syncWithServer);
   
   // Safe native platform detection
@@ -80,46 +87,66 @@ const PlatformRoot = () => {
     console.log(`[PlatformRoot ${timestamp}] Auth state changed: loading=${loading}, user=${user ? user.id.substring(0, 8) + '...' : 'null'}`);
   }, [user, loading]);
 
+  // Auto-navigate to dashboard if user becomes authenticated during onboarding/auth
   useEffect(() => {
     const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Navigation effect triggered: loading=${loading}, platformChecked=${platformChecked}, isNativeApp=${isNativeApp}, user=${user ? 'yes' : 'no'}`);
     
-    if (loading) {
-      console.log(`[PlatformRoot ${timestamp}] Auth still loading, waiting...`);
-      return;
-    }
+    if (!isNativeApp || !platformChecked) return;
     
-    if (!platformChecked) {
-      console.log(`[PlatformRoot ${timestamp}] Platform not checked yet, waiting...`);
-      return;
+    // If user is authenticated and we're past splash, go to dashboard
+    if (!loading && user && nativeFlowStep !== 'splash') {
+      console.log(`[PlatformRoot ${timestamp}] User authenticated during ${nativeFlowStep}, navigating to dashboard`);
+      navigate('/dashboard', { replace: true });
     }
+  }, [isNativeApp, platformChecked, user, loading, nativeFlowStep, navigate]);
 
-    // Native app logic
-    if (isNativeApp) {
-      if (user) {
-        console.log(`[PlatformRoot ${timestamp}] NATIVE + AUTHENTICATED → navigating to /dashboard`);
-        navigate('/dashboard', { replace: true });
-      } else {
-        console.log(`[PlatformRoot ${timestamp}] NATIVE + UNAUTHENTICATED → navigating to /auth`);
-        navigate('/auth', { replace: true });
-      }
-    } else {
-      console.log(`[PlatformRoot ${timestamp}] WEB platform → showing Landing page`);
-    }
-  }, [isNativeApp, platformChecked, user, loading, navigate]);
-
-  // Show splash screen during initial auth check (unless emergency timeout triggered)
-  if ((loading || !platformChecked) && !emergencyTimeout) {
+  // Handle splash screen completion
+  const handleSplashComplete = () => {
     const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (loading=${loading}, platformChecked=${platformChecked})`);
+    console.log(`[PlatformRoot ${timestamp}] Splash complete, moving to onboarding. Auth status: loading=${loading}, user=${user ? 'yes' : 'no'}`);
+    setNativeFlowStep('onboarding');
+  };
+
+  // Handle onboarding completion (Get Started / I Have an Account)
+  const handleOnboardingComplete = () => {
+    const timestamp = getTimestamp();
+    console.log(`[PlatformRoot ${timestamp}] Onboarding complete. Auth status: loading=${loading}, user=${user ? 'yes' : 'no'}`);
+    
+    // If auth check is done and user is authenticated, go to dashboard
+    if (!loading && user) {
+      console.log(`[PlatformRoot ${timestamp}] User already authenticated, navigating to dashboard`);
+      navigate('/dashboard', { replace: true });
+    } else {
+      // Show auth page
+      console.log(`[PlatformRoot ${timestamp}] User not authenticated, showing auth page`);
+      setNativeFlowStep('auth');
+    }
+  };
+
+  // Show splash screen during initial platform check (unless emergency timeout triggered)
+  if (!platformChecked && !emergencyTimeout) {
+    const timestamp = getTimestamp();
+    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (platformChecked=${platformChecked})`);
     return <SplashScreen onComplete={() => {}} />;
   }
 
-  // For native apps, show splash while navigating
+  // Native app flow: Splash → Onboarding → Auth
   if (isNativeApp) {
     const timestamp = getTimestamp();
-    console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (native app, waiting for navigation)`);
-    return <SplashScreen onComplete={() => {}} />;
+    
+    switch (nativeFlowStep) {
+      case 'splash':
+        console.log(`[PlatformRoot ${timestamp}] Rendering: SplashScreen (native flow step)`);
+        return <SplashScreen onComplete={handleSplashComplete} />;
+      
+      case 'onboarding':
+        console.log(`[PlatformRoot ${timestamp}] Rendering: OnboardingScreen (auth running in background: loading=${loading})`);
+        return <OnboardingScreen onGetStarted={handleOnboardingComplete} />;
+      
+      case 'auth':
+        console.log(`[PlatformRoot ${timestamp}] Rendering: AuthPage`);
+        return <AuthPage />;
+    }
   }
 
   // Web browser: show landing page
