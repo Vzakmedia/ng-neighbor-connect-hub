@@ -66,13 +66,27 @@ try {
   console.log('[main.tsx] Capacitor check error:', e);
 }
 
-// ============= PRE-INITIALIZE NATIVE STORAGE =============
-// CRITICAL: Must initialize storage BEFORE Supabase client is used
-// This loads auth tokens from Capacitor Preferences into memory cache
-console.log('[main.tsx] Starting native storage pre-initialization...');
-initializeNativeSyncStorage()
-  .then(() => console.log('[main.tsx] Native storage initialized successfully'))
-  .catch(e => console.warn('[main.tsx] Native storage init error (non-fatal):', e));
+// ============= BLOCKING STORAGE INITIALIZATION =============
+// CRITICAL: Must initialize storage BEFORE React renders and Supabase client is used
+// This ensures auth tokens are loaded from Capacitor Preferences into memory cache
+let storageInitialized = false;
+
+const initStorageBlocking = async (): Promise<void> => {
+  if (storageInitialized) {
+    console.log('[main.tsx] Storage already initialized');
+    return;
+  }
+  
+  try {
+    console.log('[main.tsx] BLOCKING: Initializing native storage...');
+    await initializeNativeSyncStorage();
+    storageInitialized = true;
+    console.log('[main.tsx] Native storage initialized successfully');
+  } catch (error) {
+    console.error('[main.tsx] Storage initialization failed:', error);
+    storageInitialized = true; // Continue anyway with fallback
+  }
+};
 
 // Defer performance monitoring to avoid blocking initial load
 setTimeout(() => {
@@ -301,48 +315,68 @@ if (!rootElement) {
 }
 
 const root = createRoot(rootElement);
-console.log('[main.tsx] React root created, rendering app...');
+console.log('[main.tsx] React root created');
 
-root.render(
-  <StrictMode>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister,
-        maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        dehydrateOptions: {
-          shouldDehydrateQuery: (query) => {
-            // Only persist successful feed queries
-            if (query.queryKey[0] === 'feed') {
-              const data = query.state.data as any;
-              if (data?.pages) {
-                // Keep only first 2 pages (~40 posts) to reduce localStorage size
-                const limitedData = {
-                  ...data,
-                  pages: data.pages.slice(0, 2),
-                };
-                query.state.data = limitedData;
-              }
-              return query.state.status === 'success'; // Only persist successful queries
-            }
-            return false;
-          },
-        },
-        hydrateOptions: {
-          // REMOVED: staleTime doesn't exist in hydrateOptions
-          // React Query will use the query's own staleTime configuration
-        },
-      }}
-      onSuccess={() => {
-        console.log('✅ React Query cache hydrated from localStorage');
-      }}
-    >
-      <IOSErrorBoundary>
-        <App />
-      </IOSErrorBoundary>
-    </PersistQueryClientProvider>
-  </StrictMode>
-);
+// CRITICAL: Initialize storage BLOCKING before rendering React
+// This ensures auth tokens are available when Supabase client initializes
+const renderApp = async () => {
+  try {
+    // MUST wait for storage to be ready before rendering
+    await initStorageBlocking();
+    
+    console.log('[main.tsx] Storage ready, rendering app...');
+    root.render(
+      <StrictMode>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister,
+            maxAge: 1000 * 60 * 60 * 24, // 24 hours
+            dehydrateOptions: {
+              shouldDehydrateQuery: (query) => {
+                // Only persist successful feed queries
+                if (query.queryKey[0] === 'feed') {
+                  const data = query.state.data as any;
+                  if (data?.pages) {
+                    // Keep only first 2 pages (~40 posts) to reduce localStorage size
+                    const limitedData = {
+                      ...data,
+                      pages: data.pages.slice(0, 2),
+                    };
+                    query.state.data = limitedData;
+                  }
+                  return query.state.status === 'success'; // Only persist successful queries
+                }
+                return false;
+              },
+            },
+          }}
+          onSuccess={() => {
+            console.log('✅ React Query cache hydrated from localStorage');
+          }}
+        >
+          <IOSErrorBoundary>
+            <App />
+          </IOSErrorBoundary>
+        </PersistQueryClientProvider>
+      </StrictMode>
+    );
+  } catch (error) {
+    console.error('[main.tsx] App initialization error:', error);
+    // Render anyway as fallback
+    root.render(
+      <StrictMode>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+          <IOSErrorBoundary>
+            <App />
+          </IOSErrorBoundary>
+        </PersistQueryClientProvider>
+      </StrictMode>
+    );
+  }
+};
+
+renderApp();
 
 // Remove the temporary loader after React has painted
 requestAnimationFrame(() => {
