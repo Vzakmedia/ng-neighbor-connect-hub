@@ -88,18 +88,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       console.log("Auth listener set up successfully");
 
-      // THEN check for existing session with validation + 5s timeout
-      const sessionTimeout = new Promise<{ data: { session: null }, error: Error }>((resolve) => {
-        setTimeout(() => {
-          console.warn('[Auth] getSession() timed out after 5s');
-          resolve({ data: { session: null }, error: new Error('Session fetch timeout') });
-        }, 5000);
-      });
+      // THEN check for existing session with validation + 15s timeout (increased for native)
+      const fetchSessionWithRetry = async (retries = 2): Promise<{ data: { session: Session | null }, error: Error | null }> => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            console.log(`[Auth] getSession attempt ${attempt + 1}/${retries + 1}`);
+            
+            const sessionTimeout = new Promise<{ data: { session: null }, error: Error }>((resolve) => {
+              setTimeout(() => {
+                console.warn(`[Auth] getSession() timed out (attempt ${attempt + 1})`);
+                resolve({ data: { session: null }, error: new Error('Session fetch timeout') });
+              }, 15000); // Increased to 15s for native storage
+            });
+            
+            const result = await Promise.race([
+              supabase.auth.getSession(),
+              sessionTimeout
+            ]);
+            
+            // If we got a session or no error, return
+            if (result.data.session || !result.error) {
+              return result;
+            }
+            
+            // If error and more retries, wait and retry
+            if (attempt < retries) {
+              console.log(`[Auth] Retrying session fetch in 1s...`);
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          } catch (e) {
+            console.error(`[Auth] getSession error (attempt ${attempt + 1}):`, e);
+            if (attempt === retries) {
+              return { data: { session: null }, error: e as Error };
+            }
+          }
+        }
+        return { data: { session: null }, error: new Error('All session fetch attempts failed') };
+      };
       
-      Promise.race([
-        supabase.auth.getSession(),
-        sessionTimeout
-      ]).then(({ data: { session }, error }) => {
+      fetchSessionWithRetry().then(({ data: { session }, error }) => {
         if (error) {
           console.error("Error getting session:", error);
           setLoading(false);

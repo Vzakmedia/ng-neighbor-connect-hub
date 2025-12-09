@@ -8,6 +8,7 @@ import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
+import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
 
 // ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
 // Fix corrupted URLs caused by HashRouter/BrowserRouter conflicts
@@ -64,6 +65,14 @@ try {
 } catch (e) {
   console.log('[main.tsx] Capacitor check error:', e);
 }
+
+// ============= PRE-INITIALIZE NATIVE STORAGE =============
+// CRITICAL: Must initialize storage BEFORE Supabase client is used
+// This loads auth tokens from Capacitor Preferences into memory cache
+console.log('[main.tsx] Starting native storage pre-initialization...');
+initializeNativeSyncStorage()
+  .then(() => console.log('[main.tsx] Native storage initialized successfully'))
+  .catch(e => console.warn('[main.tsx] Native storage init error (non-fatal):', e));
 
 // Defer performance monitoring to avoid blocking initial load
 setTimeout(() => {
