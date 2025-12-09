@@ -403,7 +403,7 @@ const InteractiveLandingPage = () => {
     }} />
 
       {/* Main full-width container */}
-      <div className="w-full bg-background relative overflow-hidden">
+      <div className="w-full bg-background relative">
         {/* Header */}
         <motion.header initial={{
         y: -100
