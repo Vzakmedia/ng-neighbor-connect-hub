@@ -7,14 +7,78 @@ const SUPABASE_URL = "https://cowiviqhrnmhttugozbz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4";
 
 // Get the original fetch that was stored before CapacitorHttp could patch it
+// and wrap it with logging for debugging
 const getUnpatchedFetch = (): typeof fetch => {
   const originalFetch = (window as any).__originalFetch__;
-  if (originalFetch) {
-    console.log('[Supabase] Using stored original fetch (bypassing CapacitorHttp)');
-    return originalFetch;
-  }
-  console.log('[Supabase] Using standard fetch');
-  return window.fetch.bind(window);
+  const baseFetch = originalFetch || window.fetch.bind(window);
+  
+  console.log('[Supabase] Using', originalFetch ? 'stored original fetch' : 'standard fetch');
+  
+  // Return a wrapped fetch with detailed logging
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const method = init?.method || 'GET';
+    const isAuthRequest = url.includes('/auth/') || url.includes('gotrue');
+    
+    // Log auth-related requests in detail
+    if (isAuthRequest) {
+      console.log(`[Auth Fetch] ${method} ${url}`);
+      console.log('[Auth Fetch] Headers:', JSON.stringify(init?.headers || {}, null, 2));
+      if (init?.body) {
+        try {
+          const bodyPreview = typeof init.body === 'string' 
+            ? JSON.parse(init.body) 
+            : init.body;
+          // Redact sensitive fields
+          const safeBody = { ...bodyPreview };
+          if (safeBody.password) safeBody.password = '[REDACTED]';
+          if (safeBody.refresh_token) safeBody.refresh_token = '[REDACTED]';
+          console.log('[Auth Fetch] Body:', JSON.stringify(safeBody, null, 2));
+        } catch {
+          console.log('[Auth Fetch] Body: [non-JSON or FormData]');
+        }
+      }
+    }
+    
+    const startTime = Date.now();
+    
+    try {
+      const response = await baseFetch(input, init);
+      const duration = Date.now() - startTime;
+      
+      if (isAuthRequest) {
+        console.log(`[Auth Fetch] Response: ${response.status} ${response.statusText} (${duration}ms)`);
+        
+        // Clone response to read body without consuming it
+        const clonedResponse = response.clone();
+        try {
+          const responseBody = await clonedResponse.json();
+          // Redact sensitive fields from response
+          const safeResponse = { ...responseBody };
+          if (safeResponse.access_token) safeResponse.access_token = '[REDACTED]';
+          if (safeResponse.refresh_token) safeResponse.refresh_token = '[REDACTED]';
+          console.log('[Auth Fetch] Response body:', JSON.stringify(safeResponse, null, 2));
+        } catch {
+          console.log('[Auth Fetch] Response body: [non-JSON]');
+        }
+        
+        if (!response.ok) {
+          console.error(`[Auth Fetch] ERROR: ${response.status} - Request failed`);
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      if (isAuthRequest) {
+        console.error(`[Auth Fetch] NETWORK ERROR after ${duration}ms:`, error);
+        console.error('[Auth Fetch] Request details:', { url, method });
+      }
+      
+      throw error;
+    }
+  };
 };
 
 // Import the supabase client like this:
