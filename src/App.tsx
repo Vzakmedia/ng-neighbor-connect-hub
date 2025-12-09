@@ -245,11 +245,7 @@ const App = () => {
         >
             <AuthProvider>
               <TooltipProvider>
-                <div style={{
-                  paddingLeft: 'var(--safe-area-left)', 
-                  paddingRight: 'var(--safe-area-right)',
-                  minHeight: '100vh'
-                }}>
+                <div style={{ minHeight: '100vh' }}>
                 <Toaster />
                 <Sonner />
                 <PlatformRouter>
