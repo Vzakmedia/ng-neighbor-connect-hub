@@ -44,14 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("AuthProvider useEffect starting");
     try {
       // Set up auth state listener FIRST
+      // CRITICAL: Only synchronous state updates in this callback to prevent deadlocks
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           console.log("Auth state changed:", event, session?.user?.email_confirmed_at);
           
-          // Detect session expiry
-          if (event === 'TOKEN_REFRESHED') {
-            console.log('Token refreshed successfully');
-          } else if (event === 'SIGNED_OUT') {
+          // Handle sign out immediately
+          if (event === 'SIGNED_OUT') {
             console.log('User signed out');
             setSession(null);
             setUser(null);
@@ -59,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
           
+          // ONLY synchronous state updates - NO Supabase calls in callback
           setSession(session);
           
           // Allow OAuth users through immediately, only require email confirmation for email/password signups
@@ -66,24 +66,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (session?.user && (session.user.email_confirmed_at || isOAuthUser)) {
             setUser(session.user);
-            
-            // Check token expiry
-            if (session.expires_at) {
-              const expiresAt = session.expires_at * 1000;
-              const now = Date.now();
-              const timeUntilExpiry = expiresAt - now;
-              
-              if (timeUntilExpiry < 0) {
-                console.warn('Session already expired, refreshing...');
-                supabase.auth.refreshSession();
-              } else if (timeUntilExpiry < 5 * 60 * 1000) { // Less than 5 minutes
-                console.log('Session expiring soon, will refresh');
-              }
-            }
           } else {
             setUser(null);
           }
-          setLoading(false);
+          
+          // Set loading false for relevant events
+          if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setLoading(false);
+          }
+          
+          // DEFER token refresh check using setTimeout(0) to prevent deadlock
+          if (session?.expires_at) {
+            const expiresAt = session.expires_at * 1000;
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            if (expiresAt - now < fiveMinutes && expiresAt > now) {
+              console.log('Token expiring soon, will refresh...');
+              // CRITICAL: Use setTimeout(0) to defer Supabase call
+              setTimeout(() => {
+                supabase.auth.refreshSession().catch(e => {
+                  console.error('Failed to refresh session:', e);
+                });
+              }, 0);
+            }
+          }
         }
       );
       console.log("Auth listener set up successfully");
