@@ -6,6 +6,17 @@ import { nativeSyncStorage } from '@/utils/nativeSyncStorage';
 const SUPABASE_URL = "https://cowiviqhrnmhttugozbz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4";
 
+// Get the original fetch that was stored before CapacitorHttp could patch it
+const getUnpatchedFetch = (): typeof fetch => {
+  const originalFetch = (window as any).__originalFetch__;
+  if (originalFetch) {
+    console.log('[Supabase] Using stored original fetch (bypassing CapacitorHttp)');
+    return originalFetch;
+  }
+  console.log('[Supabase] Using standard fetch');
+  return window.fetch.bind(window);
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -53,6 +64,7 @@ const createSupabaseClient = () => {
   console.log('[Supabase] Creating client...');
   
   const storage = getStorageAdapter();
+  const customFetch = getUnpatchedFetch();
   
   const clientConfig: any = {
     auth: {
@@ -68,6 +80,8 @@ const createSupabaseClient = () => {
         'X-Client-Info': 'neighborlink-native-sync',
         'Cache-Control': 'no-cache',
       },
+      // Use original fetch to bypass CapacitorHttp interception
+      fetch: customFetch,
     },
     realtime: {
       params: {
