@@ -1,3 +1,9 @@
+// ============= CRITICAL: STORE ORIGINAL FETCH BEFORE ANY IMPORTS =============
+// CapacitorHttp patches window.fetch - we need the original for Supabase auth
+// This MUST be at the very top before any other code runs
+(window as any).__originalFetch__ = window.fetch.bind(window);
+console.log('[main.tsx] Original fetch stored before CapacitorHttp can patch it');
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
