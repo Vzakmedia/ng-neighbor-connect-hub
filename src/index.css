@@ -74,11 +74,11 @@ All colors MUST be HSL.
     /* iOS Keyboard Safe Area */
     --ios-keyboard-height: 0px;
     
-    /* Combined Safe Areas */
-    --safe-area-top: max(var(--ios-safe-area-top), 20px);
-    --safe-area-bottom: max(var(--ios-safe-area-bottom), 0px);
-    --safe-area-left: max(var(--ios-safe-area-left), 16px);
-    --safe-area-right: max(var(--ios-safe-area-right), 16px);
+    /* Combined Safe Areas - No edge spacing */
+    --safe-area-top: 0px;
+    --safe-area-bottom: 0px;
+    --safe-area-left: 0px;
+    --safe-area-right: 0px;
 
     --radius: 0.5rem;
 
@@ -230,11 +230,7 @@ All colors MUST be HSL.
     -webkit-overflow-scrolling: touch;
     overflow-x: hidden;
     
-    /* iOS Safe Area Support */
-    padding-top: var(--ios-safe-area-top);
-    padding-bottom: var(--ios-safe-area-bottom);
-    padding-left: var(--ios-safe-area-left);
-    padding-right: var(--ios-safe-area-right);
+    /* No safe area padding */
   }
   
   /* Ensure background extends into safe areas */
