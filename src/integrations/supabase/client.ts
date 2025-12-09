@@ -124,14 +124,18 @@ if (typeof document !== 'undefined') {
     }
   });
 
-  // Validate session on startup
-  validateAndRefreshSession();
-
   // Monitor localStorage for session changes (multi-tab support)
   window.addEventListener('storage', (event) => {
-    if (event.key?.startsWith('sb-') && event.key?.includes('auth-token')) {
+    if (event.key?.startsWith('sb-') && event.key?.includes('auth-token') || event.key === 'neighborlink-auth') {
       console.log('Auth storage changed, revalidating session');
       validateAndRefreshSession();
     }
   });
+
+  // CRITICAL: Defer initial session validation by 3 seconds
+  // This prevents interference with login flow during app startup
+  setTimeout(() => {
+    console.log('Deferred session validation starting...');
+    validateAndRefreshSession();
+  }, 3000);
 }

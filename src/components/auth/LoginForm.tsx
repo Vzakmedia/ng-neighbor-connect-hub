@@ -45,10 +45,19 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     console.log(`[LoginForm] Starting login, platform: ${isNative ? 'native' : 'web'}`);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Add timeout protection - login should not hang forever
+      const LOGIN_TIMEOUT = 30000; // 30 seconds
+      
+      const signInPromise = supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Login timed out. Please check your connection and try again.')), LOGIN_TIMEOUT);
+      });
+      
+      const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
 
       console.log(`[LoginForm] signInWithPassword result:`, { 
         hasUser: !!data?.user, 
