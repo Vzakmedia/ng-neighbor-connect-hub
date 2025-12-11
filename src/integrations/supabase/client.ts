@@ -6,13 +6,29 @@ import { nativeSyncStorage } from '@/utils/nativeSyncStorage';
 const SUPABASE_URL = "https://cowiviqhrnmhttugozbz.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4";
 
-// Get the original fetch that was stored before CapacitorHttp could patch it
-// and wrap it with logging for debugging
+// Get fetch with safety guards for native platforms
+// CapacitorHttp is now disabled, so standard fetch works correctly
 const getUnpatchedFetch = (): typeof fetch => {
+  // Safe fallback chain: stored original -> window.fetch -> throw error
   const originalFetch = (window as any).__originalFetch__;
-  const baseFetch = originalFetch || window.fetch.bind(window);
   
-  console.log('[Supabase] Using', originalFetch ? 'stored original fetch' : 'standard fetch');
+  // Guard against undefined fetch on early native load
+  if (originalFetch && typeof originalFetch === 'function') {
+    console.log('[Supabase] Using stored original fetch');
+    return wrapFetchWithLogging(originalFetch);
+  }
+  
+  if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+    console.log('[Supabase] Using standard window.fetch');
+    return wrapFetchWithLogging(window.fetch.bind(window));
+  }
+  
+  console.error('[Supabase] No fetch implementation available!');
+  throw new Error('No fetch implementation available');
+};
+
+// Wrap fetch with auth request logging for debugging
+const wrapFetchWithLogging = (baseFetch: typeof fetch): typeof fetch => {
   
   // Return a wrapped fetch with detailed logging
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
