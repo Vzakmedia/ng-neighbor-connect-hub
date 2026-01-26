@@ -3,12 +3,16 @@ import { useNativeStorage } from './useNativeStorage';
 import { useNativeNetwork } from './useNativeNetwork';
 import { useBatteryStatus } from './useBatteryStatus';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
+// Exported type for queue operation types
+export type QueuedOperationType = 'post' | 'message' | 'upload' | 'update';
+
 export interface QueuedOperation {
   id: string;
-  type: 'post' | 'message' | 'upload' | 'update';
+  type: QueuedOperationType;
   data: any;
   timestamp: number;
   retryCount: number;
@@ -66,7 +70,7 @@ export const useBackgroundSync = () => {
    * Add operation to queue
    */
   const addToQueue = useCallback((
-    type: QueuedOperation['type'],
+    type: QueuedOperationType,
     data: any,
     maxRetries = MAX_RETRIES
   ): string => {
@@ -166,11 +170,78 @@ export const useBackgroundSync = () => {
   }, [isOnline, isProcessing, queue, toast, removeFromQueue, updateOperation, shouldPauseBackgroundTasks, connectionType]);
 
   /**
-   * Process individual operation (to be implemented by consumer)
+   * Process individual operation
+   * Handles different operation types with Supabase
    */
   const processOperation = async (operation: QueuedOperation): Promise<void> => {
-    // This will be overridden by the consumer
-    throw new Error('processOperation must be implemented');
+    const { type, data } = operation;
+
+    switch (type) {
+      case 'post': {
+        // Create a community post
+        const { error } = await supabase
+          .from('community_posts')
+          .insert({
+            title: data.title,
+            content: data.content,
+            post_type: data.post_type || 'general',
+            tags: data.tags || [],
+            location: data.location,
+            image_urls: data.image_urls || [],
+            user_id: data.user_id,
+          });
+        if (error) throw error;
+        break;
+      }
+
+      case 'message': {
+        // Send a direct message
+        const { error } = await supabase
+          .from('direct_messages')
+          .insert({
+            conversation_id: data.conversation_id,
+            sender_id: data.sender_id,
+            content: data.content,
+            message_type: data.message_type || 'text',
+          });
+        if (error) throw error;
+        break;
+      }
+
+      case 'update': {
+        // Generic update operation
+        // Note: Using 'as any' because table name is dynamic
+        const { table, id, updates, match_field = 'id' } = data;
+        const { error } = await (supabase as any)
+          .from(table)
+          .update(updates)
+          .eq(match_field, id);
+        if (error) throw error;
+        break;
+      }
+
+      case 'upload': {
+        // Handle file upload
+        const { bucket, path, file, contentType } = data;
+        
+        // Convert base64 back to blob if needed
+        let fileData = file;
+        if (typeof file === 'string' && file.startsWith('data:')) {
+          const response = await fetch(file);
+          fileData = await response.blob();
+        }
+
+        const { error } = await supabase.storage
+          .from(bucket)
+          .upload(path, fileData, { contentType });
+        if (error) throw error;
+        break;
+      }
+
+      default:
+        console.warn(`Unknown operation type: ${type}`);
+        throw new Error(`Unknown operation type: ${type}`);
+    }
   };
 
   /**

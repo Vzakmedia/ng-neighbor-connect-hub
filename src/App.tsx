@@ -27,6 +27,8 @@ import { useCommunityPostToasts } from "@/hooks/useCommunityPostToasts";
 import { useDirectMessageToasts } from "@/hooks/useDirectMessageToasts";
 import { useDeepLinkHandler } from "@/hooks/mobile/useDeepLinkHandler";
 import { ConnectionStatusIndicator } from "@/components/mobile/ConnectionStatusIndicator";
+import { OfflineModeBanner } from "@/components/mobile/OfflineModeBanner";
+import { SyncStatusIndicator } from "@/components/mobile/SyncStatusIndicator";
 
 import Index from "./pages/Index";
 import CreateRecommendation from "./pages/CreateRecommendation";
@@ -254,6 +256,8 @@ const App = () => {
                     <PresenceProvider>
           
           <AudioInitializer />
+          <OfflineModeBanner showWhenOnline={true} />
+          <SyncStatusIndicator position="bottom-right" />
           <ConnectionStatusIndicator />
           <PushNotificationWrapper />
           <DeepLinkHandler />
