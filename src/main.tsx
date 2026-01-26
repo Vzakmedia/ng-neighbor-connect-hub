@@ -19,6 +19,7 @@ import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
+import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS } from '@/utils/nativeQueryPersister'
 import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
 
 // ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
@@ -345,25 +346,31 @@ const renderApp = async () => {
             maxAge: 1000 * 60 * 60 * 24, // 24 hours
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
-                // Only persist successful feed queries
-                if (query.queryKey[0] === 'feed') {
-                  const data = query.state.data as any;
-                  if (data?.pages) {
-                    // Keep only first 2 pages (~40 posts) to reduce localStorage size
-                    const limitedData = {
-                      ...data,
-                      pages: data.pages.slice(0, 2),
-                    };
-                    query.state.data = limitedData;
-                  }
-                  return query.state.status === 'success'; // Only persist successful queries
+                // Only persist successful queries for allowed query keys
+                const queryKey = query.queryKey as string[];
+                
+                // Check if this query should be persisted
+                if (!shouldPersistQuery(queryKey)) {
+                  return false;
                 }
-                return false;
+                
+                // Only persist successful queries
+                if (query.state.status !== 'success') {
+                  return false;
+                }
+                
+                // Apply size limits to prevent quota exhaustion
+                if (query.state.data) {
+                  query.state.data = limitQueryData(queryKey, query.state.data);
+                }
+                
+                return true;
               },
             },
           }}
           onSuccess={() => {
             console.log('✅ React Query cache hydrated from localStorage');
+            console.log('Persisted query types:', PERSISTABLE_QUERY_KEYS.join(', '));
           }}
         >
           <IOSErrorBoundary>

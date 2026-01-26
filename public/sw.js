@@ -1,9 +1,32 @@
-// Enhanced Service Worker with caching strategies
-const CACHE_VERSION = 'v1';
+// Enhanced Service Worker with caching strategies and offline API support
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `images-${CACHE_VERSION}`;
 const AUDIO_CACHE = `audio-${CACHE_VERSION}`;
+const API_CACHE = `api-${CACHE_VERSION}`;
+
+// Supabase API endpoints that can be cached for offline access (read-only GET requests)
+const CACHEABLE_API_ENDPOINTS = [
+  '/rest/v1/community_posts',
+  '/rest/v1/profiles',
+  '/rest/v1/events',
+  '/rest/v1/businesses',
+  '/rest/v1/marketplace_items',
+  '/rest/v1/services',
+  '/rest/v1/emergency_contacts',
+  '/rest/v1/direct_conversations',
+  '/rest/v1/notifications',
+];
+
+// Cache TTL for API responses (in milliseconds)
+const API_CACHE_TTL = {
+  'emergency_contacts': 24 * 60 * 60 * 1000, // 24 hours - critical data
+  'profiles': 60 * 60 * 1000, // 1 hour
+  'community_posts': 5 * 60 * 1000, // 5 minutes
+  'events': 30 * 60 * 1000, // 30 minutes
+  'default': 10 * 60 * 1000, // 10 minutes
+};
 
 const STATIC_ASSETS = [
   '/',
@@ -174,7 +197,8 @@ self.addEventListener('activate', (event) => {
           if (cacheName !== STATIC_CACHE && 
               cacheName !== DYNAMIC_CACHE && 
               cacheName !== IMAGE_CACHE &&
-              cacheName !== AUDIO_CACHE) {
+              cacheName !== AUDIO_CACHE &&
+              cacheName !== API_CACHE) {
             console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -184,6 +208,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Check if an API endpoint should be cached
+function shouldCacheApiEndpoint(url) {
+  return CACHEABLE_API_ENDPOINTS.some(endpoint => url.pathname.includes(endpoint));
+}
+
+// Get cache TTL for an endpoint
+function getApiCacheTTL(pathname) {
+  for (const [key, ttl] of Object.entries(API_CACHE_TTL)) {
+    if (pathname.includes(key)) return ttl;
+  }
+  return API_CACHE_TTL.default;
+}
+
+// Check if cached response is still valid
+function isCacheValid(response, ttl) {
+  const cachedTime = response.headers.get('sw-cached-time');
+  if (!cachedTime) return false;
+  return (Date.now() - parseInt(cachedTime, 10)) < ttl;
+}
+
 // Fetch event - implement caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -192,7 +236,70 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Skip Supabase API calls
+  // Handle Supabase API caching for specific read-only endpoints
+  if (url.hostname.includes('supabase') && shouldCacheApiEndpoint(url)) {
+    event.respondWith(
+      caches.open(API_CACHE).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        const ttl = getApiCacheTTL(url.pathname);
+        
+        // Return cached response if valid (stale-while-revalidate)
+        if (cachedResponse && isCacheValid(cachedResponse, ttl)) {
+          // Revalidate in background
+          fetch(request).then(freshResponse => {
+            if (freshResponse.ok) {
+              const headers = new Headers(freshResponse.headers);
+              headers.set('sw-cached-time', Date.now().toString());
+              
+              freshResponse.clone().blob().then(body => {
+                const cachedWithTime = new Response(body, {
+                  status: freshResponse.status,
+                  statusText: freshResponse.statusText,
+                  headers: headers,
+                });
+                cache.put(request, cachedWithTime);
+              });
+            }
+          }).catch(() => {
+            // Silently fail background revalidation
+          });
+          
+          console.log('Service Worker: API from cache:', url.pathname);
+          return cachedResponse;
+        }
+        
+        // Fetch fresh data
+        try {
+          const freshResponse = await fetch(request);
+          
+          if (freshResponse.ok) {
+            const headers = new Headers(freshResponse.headers);
+            headers.set('sw-cached-time', Date.now().toString());
+            
+            const body = await freshResponse.clone().blob();
+            const cachedWithTime = new Response(body, {
+              status: freshResponse.status,
+              statusText: freshResponse.statusText,
+              headers: headers,
+            });
+            cache.put(request, cachedWithTime);
+          }
+          
+          return freshResponse;
+        } catch (error) {
+          // Return stale cache if available when offline
+          if (cachedResponse) {
+            console.log('Service Worker: Returning stale API cache (offline):', url.pathname);
+            return cachedResponse;
+          }
+          throw error;
+        }
+      })
+    );
+    return;
+  }
+
+  // Skip other Supabase API calls (auth, realtime, storage, etc.)
   if (url.hostname.includes('supabase')) return;
 
   // Audio files - Cache First strategy
