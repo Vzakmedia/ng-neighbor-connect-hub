@@ -345,17 +345,17 @@ const InteractiveLandingPage = () => {
   }];
   const testimonials = [{
     name: "Sarah Johnson",
-    role: "CEO — Notion.so",
-    content: "I love how simple, yet very efficient Connect CRM is. The ability to customize properties has been a huge benefit to both my sales team and our reporting.",
+    role: "Lekki Phase 1 Resident",
+    content: "Living in a gated estate, communication was always a bit disconnected until we started using Neighborlink. The 'Panic Button' feature gives my family genuine peace of mind knowing that security and neighbors are just a tap away in an emergency. It's not just an app; it feels like a digital fence that actually keeps us safe.",
     image: sarahJohnsonImg
   }, {
     name: "Ahmed Ibrahim",
-    role: "Product Manager — Google",
+    role: "Ikeja Resident",
     content: "Found amazing local services and made great friends through this platform. Highly recommended!",
     image: ahmedIbrahimImg
   }, {
     name: "Grace Okafor",
-    role: "Designer — Apple",
+    role: "Ikoyi Resident",
     content: "The marketplace feature is fantastic. I've bought and sold items easily within my neighborhood.",
     image: graceOkaforImg
   }];
@@ -417,7 +417,7 @@ const InteractiveLandingPage = () => {
             scale: 0.95
           }}>
             <Link to="/" className="flex items-center space-x-2">
-              <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-10 w-10 md:h-12 md:w-12" />
+              <img src="/neighborlink-logo.png" alt="NeighborLink Logo" className="h-10 w-10 md:h-12 md:w-12 rounded-xl" />
               <span className="font-bold text-2xl md:text-3xl">NeighborLink</span>
             </Link>
           </motion.div>
@@ -1426,7 +1426,7 @@ const InteractiveLandingPage = () => {
               viewport={{ once: true }}
             >
               <div className="flex items-center space-x-2">
-                <img src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" alt="NeighborLink Logo" className="h-8 w-8" />
+                <img src="/neighborlink-logo.png" alt="NeighborLink Logo" className="h-8 w-8 rounded-lg" />
                 <span className="font-bold text-xl">NeighborLink</span>
               </div>
               <p className="text-sm text-white/70">
