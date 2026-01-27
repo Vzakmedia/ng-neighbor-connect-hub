@@ -355,7 +355,7 @@ const InteractiveLandingPage = () => {
     image: ahmedIbrahimImg
   }, {
     name: "Grace Okafor",
-    role: "Designer — Apple",
+    role: "Ikoyi Resident",
     content: "The marketplace feature is fantastic. I've bought and sold items easily within my neighborhood.",
     image: graceOkaforImg
   }];
