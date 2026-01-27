@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.1a2a500fc780403294cae7185a964f07',
+  appId: 'com.neighborlink.app',
   appName: 'Neighborlink',
   webDir: 'dist',
   bundledWebRuntime: false,
@@ -51,12 +51,11 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true
     },
-    
+
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
-      sound: 'notification.caf'
     },
-    
+
     Geolocation: {
       permissions: ['location', 'locationAlways', 'locationWhenInUse']
     },
@@ -79,6 +78,10 @@ const config: CapacitorConfig = {
     
     CapacitorHttp: {
       enabled: false
+    },
+
+    GoogleMaps: {
+      apiKey: 'YOUR_GOOGLE_MAPS_API_KEY'
     },
 
     Haptics: {
