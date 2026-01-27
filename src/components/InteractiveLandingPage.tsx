@@ -345,7 +345,7 @@ const InteractiveLandingPage = () => {
   }];
   const testimonials = [{
     name: "Sarah Johnson",
-    role: "CEO — Notion.so",
+    role: "Lekki Phase 1 Resident",
     content: "Living in a gated estate, communication was always a bit disconnected until we started using Neighborlink. The 'Panic Button' feature gives my family genuine peace of mind knowing that security and neighbors are just a tap away in an emergency. It's not just an app; it feels like a digital fence that actually keeps us safe.",
     image: sarahJohnsonImg
   }, {
