@@ -350,7 +350,7 @@ const InteractiveLandingPage = () => {
     image: sarahJohnsonImg
   }, {
     name: "Ahmed Ibrahim",
-    role: "Product Manager — Google",
+    role: "Ikeja Resident",
     content: "Found amazing local services and made great friends through this platform. Highly recommended!",
     image: ahmedIbrahimImg
   }, {
