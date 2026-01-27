@@ -1452,6 +1452,8 @@ const InteractiveLandingPage = () => {
                 <Link to="/auth" className="block text-white/70 hover:text-white transition-colors">Web App</Link>
                 <a href="#" className="block text-white/70 hover:text-white transition-colors">Mobile App</a>
                 <Link to="/api-docs" className="block text-white/70 hover:text-white transition-colors">API Documentation</Link>
+                <Link to="/privacy" className="block text-white/70 hover:text-white transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="block text-white/70 hover:text-white transition-colors">Terms of Service</Link>
               </div>
             </div>
             
