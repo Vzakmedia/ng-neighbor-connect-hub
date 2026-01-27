@@ -29,6 +29,7 @@ import { useDeepLinkHandler } from "@/hooks/mobile/useDeepLinkHandler";
 import { ConnectionStatusIndicator } from "@/components/mobile/ConnectionStatusIndicator";
 import { OfflineModeBanner } from "@/components/mobile/OfflineModeBanner";
 import { SyncStatusIndicator } from "@/components/mobile/SyncStatusIndicator";
+import { CookieConsentBanner, CookieSettingsButton } from "@/components/cookies/CookieConsentBanner";
 
 import Index from "./pages/Index";
 import CreateRecommendation from "./pages/CreateRecommendation";
@@ -322,6 +323,8 @@ const App = () => {
               <Route path="/blog/:slug" element={<BlogPost />} />
             </Routes>
             <NeighborhoodEmergencyAlert position="top-center" />
+            <CookieConsentBanner />
+            <CookieSettingsButton />
                     </PresenceProvider>
                   </RealtimeProvider>
                  </PlatformRouter>
