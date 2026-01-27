@@ -250,9 +250,9 @@ const LandingPage = () => {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <img 
-                  src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                  src="/neighborlink-logo.png" 
                   alt="NeighborLink Logo" 
-                  className="h-8 w-8 object-contain"
+                  className="h-8 w-8 rounded-lg object-contain"
                 />
                 <span className="font-semibold text-lg text-community-primary">NeighborLink</span>
               </div>
