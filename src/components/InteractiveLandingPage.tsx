@@ -346,7 +346,7 @@ const InteractiveLandingPage = () => {
   const testimonials = [{
     name: "Sarah Johnson",
     role: "CEO — Notion.so",
-    content: "I love how simple, yet very efficient Connect CRM is. The ability to customize properties has been a huge benefit to both my sales team and our reporting.",
+    content: "Living in a gated estate, communication was always a bit disconnected until we started using Neighborlink. The 'Panic Button' feature gives my family genuine peace of mind knowing that security and neighbors are just a tap away in an emergency. It's not just an app; it feels like a digital fence that actually keeps us safe.",
     image: sarahJohnsonImg
   }, {
     name: "Ahmed Ibrahim",
