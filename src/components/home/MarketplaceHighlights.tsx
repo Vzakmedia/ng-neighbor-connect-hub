@@ -61,7 +61,7 @@ export const MarketplaceHighlights = () => {
           Autoplay({
             delay: 7000,
             stopOnInteraction: false,
-          })
+          }) as any
         ]}
         className="w-full"
         setApi={setApi}

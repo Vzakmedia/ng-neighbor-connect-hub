@@ -201,9 +201,9 @@ export const EventsNearYouCarousel = () => {
                   // Show NeighborLink logo for posts without images
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                     <img 
-                      src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                      src="/neighborlink-logo.png" 
                       alt="NeighborLink" 
-                      className="h-16 w-16 object-contain opacity-40"
+                      className="h-16 w-16 rounded-xl object-contain opacity-40"
                     />
                   </div>
                 )}

@@ -170,9 +170,9 @@ const Careers = () => {
           <div className="flex items-center justify-between">
             <Link to="/landing" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <img 
-                src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                src="/neighborlink-logo.png" 
                 alt="NeighborLink Logo" 
-                className="h-8 w-8" 
+                className="h-8 w-8 rounded-lg" 
               />
               <span className="font-bold text-xl">NeighborLink</span>
             </Link>
