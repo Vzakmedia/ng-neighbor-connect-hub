@@ -22,7 +22,7 @@ export const useNativePushRegistration = () => {
         // Dynamic imports only on native
         const { PushNotifications } = await import('@capacitor/push-notifications');
         const { LocalNotifications } = await import('@capacitor/local-notifications');
-        
+
         const platform = window.Capacitor?.getPlatform?.() || 'web';
 
         // Request push notification permissions
@@ -41,7 +41,7 @@ export const useNativePushRegistration = () => {
 
         if (perm.receive !== 'granted') {
           console.log('Push notification permission not granted:', perm.receive);
-          
+
           // Set up local notifications as fallback
           try {
             const localPerm = await LocalNotifications.requestPermissions();
@@ -59,7 +59,7 @@ export const useNativePushRegistration = () => {
           await PushNotifications.register();
         } catch (registerError) {
           console.error('Failed to register for push notifications:', registerError);
-          
+
           // iOS-specific error handling
           if (platform === 'ios') {
             toast({
@@ -68,7 +68,7 @@ export const useNativePushRegistration = () => {
               variant: 'destructive',
             });
           }
-          
+
           // Set up local notifications as fallback
           try {
             await LocalNotifications.requestPermissions();
@@ -82,7 +82,7 @@ export const useNativePushRegistration = () => {
         // Registration success
         const regListener = await PushNotifications.addListener('registration', async (token) => {
           console.log('Push registration successful:', { platform, tokenLength: token.value.length });
-          
+
           try {
             await (supabase as any).rpc('register_user_device', {
               platform: platformToLabel(platform),
@@ -91,7 +91,7 @@ export const useNativePushRegistration = () => {
               device_model: navigator.userAgent,
             });
             console.log('Device push token registered in database');
-            
+
             toast({
               title: 'Notifications Enabled',
               description: 'You will receive important updates and alerts.',
@@ -110,10 +110,10 @@ export const useNativePushRegistration = () => {
         const recvListener = await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
           // Play native notification sound
           await nativeAudioManager.play('notification', 0.7);
-          
+
           const title = notification.title || 'New notification';
           const body = notification.body || '';
-          
+
           // Handle incoming call notifications
           const notificationData = notification.data as any;
           if (notificationData?.notification_type === 'call_incoming') {
@@ -127,10 +127,10 @@ export const useNativePushRegistration = () => {
                 callType: callData.call_type,
               }
             }));
-            
-            toast({ 
-              title: `Incoming ${callData.call_type} call`, 
-              description: `${callData.caller_name} is calling...` 
+
+            toast({
+              title: `Incoming ${callData.call_type} call`,
+              description: `${callData.caller_name} is calling...`
             });
           } else {
             toast({ title, description: body });
@@ -140,10 +140,10 @@ export const useNativePushRegistration = () => {
         // Errors
         const errListener = await PushNotifications.addListener('registrationError', (error) => {
           console.error('Push registration error:', error);
-          
+
           // Provide helpful error messages
           let errorMessage = 'Could not set up push notifications.';
-          
+
           if (platform === 'ios') {
             if (error.error.includes('certificate') || error.error.includes('provision')) {
               errorMessage = 'APNs certificate issue. App needs proper provisioning profile.';
@@ -151,7 +151,7 @@ export const useNativePushRegistration = () => {
               errorMessage = 'Push notifications are not available in iOS Simulator.';
             }
           }
-          
+
           toast({
             title: 'Push Notification Error',
             description: errorMessage,
@@ -170,7 +170,7 @@ export const useNativePushRegistration = () => {
     };
 
     init();
-    
+
     return () => {
       cleanupFn?.();
     };

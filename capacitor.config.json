@@ -1,5 +1,5 @@
 {
-  "appId": "app.lovable.1a2a500fc780403294cae7185a964f07",
+  "appId": "com.neighborlink.app",
   "appName": "Neighborlink",
   "webDir": "dist",
   "bundledWebRuntime": false,
@@ -27,10 +27,6 @@
       "showSpinner": false,
       "splashFullScreen": true,
       "splashImmersive": true
-    },
-    "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"],
-      "sound": "notification.caf"
     },
     "Geolocation": {
       "permissions": ["location", "locationAlways", "locationWhenInUse"]
