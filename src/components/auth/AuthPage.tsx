@@ -30,9 +30,9 @@ export const AuthPage = () => {
         <CardHeader className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2">
             <img 
-              src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+              src="/neighborlink-logo.png" 
               alt="NeighborLink Logo" 
-              className="h-10 w-10 object-contain"
+              className="h-10 w-10 rounded-xl object-contain"
             />
             <CardTitle className="text-2xl font-bold text-community-primary">
               NeighborLink

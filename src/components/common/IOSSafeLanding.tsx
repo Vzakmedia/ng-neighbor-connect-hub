@@ -185,7 +185,7 @@ const IOSSafeLanding: React.FC<IOSSafeLandingProps> = ({ onGetStarted }) => {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2024 NeighborLink. Building communities, one connection at a time.</p>
+          <p>© 2026 NeighborLink. Building communities, one connection at a time.</p>
           {deviceInfo?.isIOS && (
             <p className="mt-2 text-xs">
               Optimized for iOS {deviceInfo.version || 'Safari'} • 

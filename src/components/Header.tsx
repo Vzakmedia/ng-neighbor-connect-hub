@@ -51,9 +51,9 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
               <img 
-                src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+                src="/neighborlink-logo.png" 
                 alt="NeighborLink Logo" 
-                className="h-10 w-10 object-contain"
+                className="h-10 w-10 rounded-xl object-contain"
               />
               <span className="font-semibold text-lg text-community-primary">NeighborLink</span>
             </div>
@@ -152,9 +152,9 @@ const Header = () => {
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+              src="/neighborlink-logo.png" 
               alt="NeighborLink Logo" 
-              className="h-8 w-8 object-contain"
+              className="h-8 w-8 rounded-lg object-contain"
             />
             <span className="font-semibold text-base text-community-primary">NeighborLink</span>
           </div>

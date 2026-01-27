@@ -47,11 +47,11 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           }}
           className="relative"
         >
-          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl">
+          <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-2xl">
             <img 
-              src="/lovable-uploads/9bca933b-29c0-4a99-894e-bc536d1a6a50.png" 
+              src="/neighborlink-logo.png" 
               alt="NeighborLink Logo" 
-              className="w-16 h-16"
+              className="w-20 h-20 rounded-xl"
             />
           </div>
           
