@@ -2,45 +2,20 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { 
-  Shield, 
-  Users, 
-  MessageCircle, 
-  MapPin, 
-  Heart, 
-  Star,
-  ArrowRight,
-  CheckCircle,
-  ArrowLeft,
-  AlertTriangle,
-  Share2 as Linkedin,
-  Facebook as Twitter,
-  Mail
-} from '@/lib/icons';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Shield, Users, MessageCircle, MapPin, Heart, Star, ArrowRight, CheckCircle, ArrowLeft, AlertTriangle, Share2 as Linkedin, Facebook as Twitter, Mail } from '@/lib/icons';
 import founderCEO from "@/assets/victor-akinfenwa-ceo.jpeg";
 import founderCTO from "@/assets/team/founder-cto.jpg";
 import headCommunity from "@/assets/team/head-community.jpg";
 import headSafety from "@/assets/team/head-safety.jpg";
-
 const About = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <img 
-                src="/neighborlink-logo.png" 
-                alt="NeighborLink Logo" 
-                className="h-8 w-8 rounded-lg" 
-              />
+              <img src="/neighborlink-logo.png" alt="NeighborLink Logo" className="h-8 w-8 rounded-lg" />
               <span className="font-bold text-xl">NeighborLink</span>
             </div>
             <Link to="/landing">
@@ -83,9 +58,7 @@ const About = () => {
                 <div className="text-3xl font-bold">4.8</div>
                 <div className="flex flex-col">
                   <div className="flex text-yellow-500">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-current" />
-                    ))}
+                    {[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
                   </div>
                   <div className="text-sm text-muted-foreground">Trusted by communities</div>
                 </div>
@@ -126,9 +99,9 @@ const About = () => {
                     <div className="text-sm text-muted-foreground mb-2">Safety Alerts Response Time</div>
                     <div className="text-3xl font-bold mb-4">2.3 min</div>
                     <div className="h-32 flex items-end justify-between gap-2">
-                      {[45, 60, 55, 70, 65, 80, 75, 85].map((height, i) => (
-                        <div key={i} className="flex-1 bg-primary/20 rounded-t" style={{ height: `${height}%` }} />
-                      ))}
+                      {[45, 60, 55, 70, 65, 80, 75, 85].map((height, i) => <div key={i} className="flex-1 bg-primary/20 rounded-t" style={{
+                      height: `${height}%`
+                    }} />)}
                     </div>
                   </Card>
                 </div>
@@ -249,7 +222,9 @@ const About = () => {
             </div>
 
             {/* Privacy & Security Card */}
-            <div className="group animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="group animate-fade-in" style={{
+            animationDelay: '0.1s'
+          }}>
               <Card className="bg-white/95 backdrop-blur-sm p-6 rounded-3xl overflow-hidden hover-scale shadow-2xl border-0">
                 <div className="aspect-[4/3] bg-gradient-to-br from-green-500/10 to-emerald-500/5 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-transparent" />
@@ -285,7 +260,9 @@ const About = () => {
             </div>
 
             {/* Innovation Card */}
-            <div className="group animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="group animate-fade-in" style={{
+            animationDelay: '0.2s'
+          }}>
               <Card className="bg-white/95 backdrop-blur-sm p-6 rounded-3xl overflow-hidden hover-scale shadow-2xl border-0">
                 <div className="aspect-[4/3] bg-gradient-to-br from-blue-500/10 to-purple-500/5 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-transparent" />
@@ -382,14 +359,11 @@ const About = () => {
             {/* Founder & CEO */}
             <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
               <div className="aspect-square overflow-hidden bg-muted">
-                <img 
-                  src={founderCEO} 
-                  alt="Victor Akinfenwa - Founder & CEO"
-                  className="w-full h-full object-cover"
-                />
+                <img src={founderCEO} alt="Victor Akinfenwa - Founder & CEO" className="w-full h-full object-cover" />
               </div>
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-1">Victor Akinfenwa</h3>
+                <h3 className="text-xl font-bold mb-1">Victor 
+Akinfenwa</h3>
                 <p className="text-sm text-primary font-semibold mb-3">Founder & CEO</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Former tech executive with 15+ years in community development and smart city solutions. Passionate about leveraging technology for social impact.
@@ -411,11 +385,7 @@ const About = () => {
             {/* Co-Founder & CTO */}
             <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
               <div className="aspect-square overflow-hidden bg-muted">
-                <img 
-                  src={founderCTO} 
-                  alt="Dr. Amara Nwosu - Co-Founder & CTO"
-                  className="w-full h-full object-cover"
-                />
+                <img src={founderCTO} alt="Dr. Amara Nwosu - Co-Founder & CTO" className="w-full h-full object-cover" />
               </div>
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold mb-1">Dr. Amara Nwosu</h3>
@@ -440,11 +410,7 @@ const About = () => {
             {/* Head of Community Engagement */}
             <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
               <div className="aspect-square overflow-hidden bg-muted">
-                <img 
-                  src={headCommunity} 
-                  alt="Oluwaseun Adeleke - Head of Community"
-                  className="w-full h-full object-cover"
-                />
+                <img src={headCommunity} alt="Oluwaseun Adeleke - Head of Community" className="w-full h-full object-cover" />
               </div>
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold mb-1">Oluwaseun Adeleke</h3>
@@ -469,11 +435,7 @@ const About = () => {
             {/* Head of Safety & Security */}
             <Card className="overflow-hidden hover-scale transition-all duration-300 border-2">
               <div className="aspect-square overflow-hidden bg-muted">
-                <img 
-                  src={headSafety} 
-                  alt="Ngozi Okeke - Head of Safety"
-                  className="w-full h-full object-cover"
-                />
+                <img src={headSafety} alt="Ngozi Okeke - Head of Safety" className="w-full h-full object-cover" />
               </div>
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold mb-1">Ngozi Okeke</h3>
@@ -679,12 +641,9 @@ const About = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                    <a 
-                      href="#" 
-                      className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-lg hover-scale transition-all duration-300 border border-white/20"
-                    >
+                    <a href="#" className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-lg hover-scale transition-all duration-300 border border-white/20">
                       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                       </svg>
                       <div className="text-left">
                         <div className="text-[9px] opacity-80">Download on the</div>
@@ -692,12 +651,9 @@ const About = () => {
                       </div>
                     </a>
 
-                    <a 
-                      href="#" 
-                      className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-lg hover-scale transition-all duration-300 border border-white/20"
-                    >
+                    <a href="#" className="inline-flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-lg hover-scale transition-all duration-300 border border-white/20">
                       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
+                        <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" />
                       </svg>
                       <div className="text-left">
                         <div className="text-[9px] opacity-80">GET IT ON</div>
@@ -741,8 +697,6 @@ const About = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default About;
