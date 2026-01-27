@@ -23,7 +23,7 @@ import {
   Facebook as Twitter,
   Mail
 } from '@/lib/icons';
-import founderCEO from "@/assets/team/founder-ceo.jpg";
+import founderCEO from "@/assets/victor-akinfenwa-ceo.jpeg";
 import founderCTO from "@/assets/team/founder-cto.jpg";
 import headCommunity from "@/assets/team/head-community.jpg";
 import headSafety from "@/assets/team/head-safety.jpg";
@@ -384,12 +384,12 @@ const About = () => {
               <div className="aspect-square overflow-hidden bg-muted">
                 <img 
                   src={founderCEO} 
-                  alt="Chukwuemeka Okonkwo - Founder & CEO"
+                  alt="Victor Akinfenwa - Founder & CEO"
                   className="w-full h-full object-cover"
                 />
               </div>
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-1">Chukwuemeka Okonkwo</h3>
+                <h3 className="text-xl font-bold mb-1">Victor Akinfenwa</h3>
                 <p className="text-sm text-primary font-semibold mb-3">Founder & CEO</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Former tech executive with 15+ years in community development and smart city solutions. Passionate about leveraging technology for social impact.
