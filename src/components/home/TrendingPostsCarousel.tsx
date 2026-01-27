@@ -93,7 +93,7 @@ export const TrendingPostsCarousel = () => {
             Autoplay({
               delay: 5000,
               stopOnInteraction: false,
-            })
+            }) as any
           ]}
           className="w-full"
           setApi={setApi}
