@@ -23,7 +23,7 @@ export const EventsNearYouCarousel = () => {
 
   // Mix all content types
   const trendingPosts = postsData?.pages[0]?.items.slice(0, 3) || [];
-  
+
   const mixedContent: Array<{
     id: string;
     type: 'event' | 'alert' | 'marketplace' | 'ad' | 'post';
@@ -42,7 +42,7 @@ export const EventsNearYouCarousel = () => {
       title: post.content.slice(0, 50) + (post.content.length > 50 ? '...' : ''),
       subtitle: post.author_name,
       location: post.author_city && post.author_state ? `${post.author_city}, ${post.author_state}` : undefined,
-      image: post.image_urls?.[0],
+      image: post.video_thumbnail_url || post.image_urls?.[0] || post.author_avatar,
       data: post
     });
   });
@@ -157,7 +157,7 @@ export const EventsNearYouCarousel = () => {
         <FireIcon className="h-5 w-5 text-primary" />
         Trending Now
       </h2>
-      
+
       <div className="overflow-x-auto scrollbar-hide px-4">
         <div className="flex gap-3 pb-2">
           {/* Trending Content Cards */}
@@ -193,24 +193,24 @@ export const EventsNearYouCarousel = () => {
                   </div>
                 ) : item.image ? (
                   // Show image if available
-                  <div 
+                  <div
                     className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-105"
                     style={{ backgroundImage: `url(${item.image})` }}
                   />
                 ) : (
                   // Show NeighborLink logo for posts without images
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                    <img 
-                      src="/neighborlink-logo.png" 
-                      alt="NeighborLink" 
+                    <img
+                      src="/neighborlink-logo.png"
+                      alt="NeighborLink"
                       className="h-16 w-16 rounded-xl object-contain opacity-40"
                     />
                   </div>
                 )}
-                
+
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                
+
                 {/* Type Badge */}
                 <div className="absolute top-2 left-2">
                   <div className="bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">

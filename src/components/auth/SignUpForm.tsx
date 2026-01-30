@@ -17,6 +17,7 @@ import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
 import { v4 as uuidv4 } from 'uuid';
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
+import { OtpVerifyForm } from "./OtpVerifyForm";
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import {
   AlertDialog,
@@ -51,18 +52,19 @@ export const SignUpForm = () => {
   const [userConsents, setUserConsents] = useState<ConsentState | null>(null);
   const [showEmailSentDialog, setShowEmailSentDialog] = useState(false);
   const [signupEmail, setSignupEmail] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [locationComplete, setLocationComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Monitor location fields to enable Google sign-up
   useEffect(() => {
-    const isLocationFilled = 
-      formData.state && 
-      formData.city && 
-      formData.neighborhood && 
+    const isLocationFilled =
+      formData.state &&
+      formData.city &&
+      formData.neighborhood &&
       formData.address.trim();
-    
+
     setLocationComplete(!!isLocationFilled);
   }, [formData.state, formData.city, formData.neighborhood, formData.address]);
 
@@ -112,7 +114,7 @@ export const SignUpForm = () => {
       // Generate unique filename using UUID to prevent collisions
       const fileName = `${uuidv4()}.jpeg`;
       const filePath = `profile-pictures/${fileName}`;
-      
+
       console.log('Upload path:', filePath);
       console.log('Cropped file size:', croppedImageBlob.size);
       console.log('Cropped file type:', croppedImageBlob.type);
@@ -167,13 +169,13 @@ export const SignUpForm = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // First, validate basic form data
     if (!userConsents) {
       setShowConsentDialog(true);
       return;
     }
-    
+
     // Validate required location fields
     if (!formData.state) {
       toast({
@@ -210,7 +212,7 @@ export const SignUpForm = () => {
       });
       return;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -227,7 +229,7 @@ export const SignUpForm = () => {
       const redirectUrl = isNativePlatform()
         ? 'neighborlink://auth/verify-email'
         : `${window.location.origin}/auth/verify-email`;
-      
+
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -269,43 +271,43 @@ export const SignUpForm = () => {
             data_processing_accepted: userConsents.dataProcessingAccepted,
             location_sharing_accepted: userConsents.locationSharingAccepted,
             communication_accepted: userConsents.communicationAccepted,
-            
+
             // Device Permissions
             camera_access_accepted: userConsents.cameraAccessAccepted,
             microphone_access_accepted: userConsents.microphoneAccessAccepted,
             push_notifications_accepted: userConsents.pushNotificationsAccepted,
             file_access_accepted: userConsents.fileAccessAccepted,
-            
+
             // Security & Analytics
             device_storage_accepted: userConsents.deviceStorageAccepted,
             analytics_accepted: userConsents.analyticsAccepted,
             crash_reporting_accepted: userConsents.crashReportingAccepted,
-            
+
             // Enhanced Location
             precise_location_accepted: userConsents.preciseLocationAccepted,
             background_location_accepted: userConsents.backgroundLocationAccepted,
             location_history_accepted: userConsents.locationHistoryAccepted,
-            
+
             // Advanced Features
             voice_video_calls_accepted: userConsents.voiceVideoCallsAccepted,
             emergency_contacts_accepted: userConsents.emergencyContactsAccepted,
             external_integrations_accepted: userConsents.externalIntegrationsAccepted,
-            
+
             // Commercial/Business
             marketplace_transactions_accepted: userConsents.marketplaceTransactionsAccepted,
             business_verification_accepted: userConsents.businessVerificationAccepted,
             payment_processing_accepted: userConsents.paymentProcessingAccepted,
-            
+
             // Content & AI
             content_processing_accepted: userConsents.contentProcessingAccepted,
             content_moderation_accepted: userConsents.contentModerationAccepted,
             recommendations_accepted: userConsents.recommendationsAccepted,
-            
+
             // Third-Party Integration
             google_services_accepted: userConsents.googleServicesAccepted,
             external_apis_accepted: userConsents.externalApisAccepted,
             cross_platform_sync_accepted: userConsents.crossPlatformSyncAccepted,
-            
+
             ip_address: null, // Could be captured server-side
             user_agent: navigator.userAgent,
             consent_version: '2.0'
@@ -317,7 +319,7 @@ export const SignUpForm = () => {
 
         // Show prominent email sent dialog instead of toast
         setSignupEmail(formData.email);
-        setShowEmailSentDialog(true);
+        setShowOtpInput(true);
       }
     } catch (error) {
       toast({
@@ -330,246 +332,227 @@ export const SignUpForm = () => {
     }
   };
 
+  if (showOtpInput) {
+    return <OtpVerifyForm email={signupEmail} />;
+  }
+
   return (
     <div className="space-y-4">
       <form onSubmit={handleSignUp} className="space-y-4">
-      {/* Profile Picture Upload */}
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative">
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={formData.avatarUrl} />
-            <AvatarFallback>
-              {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : <User className="h-8 w-8" />}
-            </AvatarFallback>
-          </Avatar>
-          <Button
-            type="button"
-            size="sm"
-            className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingAvatar}
-          >
-            {uploadingAvatar ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Camera className="h-4 w-4" />
-            )}
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleAvatarUpload}
-            className="hidden"
-          />
-        </div>
-        <p className="text-sm text-muted-foreground text-center">
-          Upload a profile picture (optional)
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
-        <Input
-          id="fullName"
-          name="fullName"
-          type="text"
-          placeholder="Enter your full name"
-          value={formData.fullName}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="Enter your email"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number</Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          placeholder="Enter your phone number"
-          value={formData.phone}
-          onChange={handleInputChange}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-base font-semibold">
-            Location Information <span className="text-destructive">*</span>
-          </Label>
-          {!locationComplete && (
-            <span className="text-xs text-muted-foreground">
-              Required for Google sign-up
-            </span>
-          )}
-        </div>
-        <SimpleLocationSelector 
-          onLocationChange={handleLocationChange}
-          defaultState={formData.state}
-          defaultCity={formData.city}
-          defaultNeighborhood={formData.neighborhood}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address">Complete Address <span className="text-destructive">*</span></Label>
-        <Input
-          id="address"
-          name="address"
-          type="text"
-          placeholder="Enter your complete address (street number, street name, etc.)"
-          value={formData.address}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Create a password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </Button>
-        </div>
-        <PasswordStrengthIndicator password={formData.password} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <div className="relative">
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirm your password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            required
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </Button>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Creating account..." : "Create Account"}
-      </Button>
-    </form>
-
-    {/* OR Divider - Only show if location is complete */}
-    {locationComplete && (
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div>
-      </div>
-    )}
-
-    {/* Google Sign-up Button - Only enabled when location is complete */}
-    {locationComplete ? (
-      <GoogleAuthButton 
-        mode="signup" 
-        locationData={{
-          state: formData.state,
-          city: formData.city,
-          neighborhood: formData.neighborhood,
-          address: formData.address,
-        }}
-      />
-    ) : (
-      <div className="w-full p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30">
-        <p className="text-sm text-muted-foreground text-center">
-          📍 Please fill in your location details above to enable Google sign-up
-        </p>
-      </div>
-    )}
-
-    {/* Consent Dialog */}
-    <ConsentDialog
-      open={showConsentDialog}
-      onConsentGiven={handleConsentGiven}
-      onCancel={() => setShowConsentDialog(false)}
-    />
-
-    {/* Avatar Cropper Dialog */}
-    <AvatarCropper
-      isOpen={cropperOpen}
-      onClose={() => {
-        setCropperOpen(false);
-        if (selectedImageSrc) {
-          URL.revokeObjectURL(selectedImageSrc);
-          setSelectedImageSrc('');
-        }
-      }}
-      imageSrc={selectedImageSrc}
-      onCropComplete={handleCropComplete}
-    />
-
-    {/* Email Sent Dialog */}
-    <AlertDialog open={showEmailSentDialog} onOpenChange={setShowEmailSentDialog}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="h-8 w-8 text-primary animate-pulse" />
-            </div>
+        {/* Profile Picture Upload */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src={formData.avatarUrl} />
+              <AvatarFallback>
+                {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : <User className="h-8 w-8" />}
+              </AvatarFallback>
+            </Avatar>
+            <Button
+              type="button"
+              size="sm"
+              className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+            >
+              {uploadingAvatar ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
-          <AlertDialogTitle className="text-center text-2xl">Check Your Email!</AlertDialogTitle>
-          <AlertDialogDescription className="text-center space-y-2">
-            <p>We've sent a confirmation link to:</p>
-            <p className="font-semibold text-foreground">{signupEmail}</p>
-            <p className="mt-4">Please check your inbox (and spam folder) and click the link to verify your account.</p>
-            <p className="text-xs text-muted-foreground mt-4">
-              Didn't receive it? You can resend the email from the verification page.
-            </p>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction className="w-full">Got it!</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          <p className="text-sm text-muted-foreground text-center">
+            Upload a profile picture (optional)
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="fullName">Full Name</Label>
+          <Input
+            id="fullName"
+            name="fullName"
+            type="text"
+            placeholder="Enter your full name"
+            value={formData.fullName}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-semibold">
+              Location Information <span className="text-destructive">*</span>
+            </Label>
+            {!locationComplete && (
+              <span className="text-xs text-muted-foreground">
+                Required for Google sign-up
+              </span>
+            )}
+          </div>
+          <SimpleLocationSelector
+            onLocationChange={handleLocationChange}
+            defaultState={formData.state}
+            defaultCity={formData.city}
+            defaultNeighborhood={formData.neighborhood}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">Complete Address <span className="text-destructive">*</span></Label>
+          <Input
+            id="address"
+            name="address"
+            type="text"
+            placeholder="Enter your complete address (street number, street name, etc.)"
+            value={formData.address}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </Button>
+          </div>
+          <PasswordStrengthIndicator password={formData.password} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <div className="relative">
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </Button>
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Create Account"}
+        </Button>
+      </form>
+
+      {/* OR Divider - Only show if location is complete */}
+      {locationComplete && (
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Google Sign-up Button - Only enabled when location is complete */}
+      {locationComplete ? (
+        <GoogleAuthButton
+          mode="signup"
+          locationData={{
+            state: formData.state,
+            city: formData.city,
+            neighborhood: formData.neighborhood,
+            address: formData.address,
+          }}
+        />
+      ) : (
+        <div className="w-full p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30">
+          <p className="text-sm text-muted-foreground text-center">
+            📍 Please fill in your location details above to enable Google sign-up
+          </p>
+        </div>
+      )}
+
+      {/* Consent Dialog */}
+      <ConsentDialog
+        open={showConsentDialog}
+        onConsentGiven={handleConsentGiven}
+        onCancel={() => setShowConsentDialog(false)}
+      />
+
+      {/* Avatar Cropper Dialog */}
+      <AvatarCropper
+        isOpen={cropperOpen}
+        onClose={() => {
+          setCropperOpen(false);
+          if (selectedImageSrc) {
+            URL.revokeObjectURL(selectedImageSrc);
+            setSelectedImageSrc('');
+          }
+        }}
+        imageSrc={selectedImageSrc}
+        onCropComplete={handleCropComplete}
+      />
+
+
     </div>
   );
 };

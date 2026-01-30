@@ -34,7 +34,7 @@ export const use2FA = () => {
         .from('user_2fa')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;

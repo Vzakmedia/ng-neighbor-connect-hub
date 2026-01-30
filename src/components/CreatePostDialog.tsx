@@ -14,18 +14,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  DrawerDescription,
 } from '@/components/ui/drawer';
 import {
   Select,
@@ -83,26 +86,33 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const [locationScope, setLocationScope] = useState<'neighborhood' | 'city' | 'state' | 'all'>('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Poll-specific state
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
   const [pollDuration, setPollDuration] = useState<string>('7');
   const [allowMultipleChoices, setAllowMultipleChoices] = useState(false);
   const [maxChoices, setMaxChoices] = useState(1);
-  
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { profile } = useProfile();
-  const { pickImages, isNative } = useNativeCamera();
+  const { pickImages, isNative, takePicture } = useNativeCamera();
   const { uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'posts');
+
+  const handleCameraCapture = async () => {
+    const file = await takePicture();
+    if (file) {
+      await handleMediaSelect([file]);
+    }
+  };
 
   // Detect screen size
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -124,7 +134,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     // Allow max 4 items total, but only 1 video
     const hasVideo = uploadedMedia.some(f => f.type === 'video');
     const newHasVideo = files.some(f => f.type.startsWith('video/'));
-    
+
     if (hasVideo || newHasVideo) {
       // If there's already a video or selecting a video, limit to 1 total item
       const attachments = await uploadMultipleFiles(files.slice(0, 1));
@@ -203,9 +213,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
     // Save uploaded media before resetting
     const savedUploadedMedia = [...uploadedMedia];
-    
+
     // Reset form and close dialog immediately
-    const formState = { 
+    const formState = {
       content, title, tags, currentTag, postType, rsvpEnabled, locationScope,
       pollQuestion, pollOptions, pollDuration, allowMultipleChoices, maxChoices
     };
@@ -290,7 +300,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
         if (optionsError) throw optionsError;
       }
-      
+
       toast({
         title: "Post created successfully!",
         description: "Your post has been shared with the community.",
@@ -327,8 +337,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
     return (
       <>
         <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent 
-            side="bottom" 
+          <SheetContent
+            side="bottom"
             className="h-full p-0 flex flex-col"
             hideClose
           >
@@ -342,11 +352,14 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
               >
                 <X className="h-5 w-5" />
               </Button>
-              
+
               <SheetTitle className="flex-1 text-center">
                 Create Post
               </SheetTitle>
-              
+              <SheetDescription className="sr-only">
+                Create a new community post
+              </SheetDescription>
+
               <Button
                 variant="ghost"
                 onClick={handleSubmit}
@@ -414,6 +427,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   uploadSpeed={uploadSpeed}
                   currentFileIndex={currentFileIndex}
                   totalFilesCount={totalFilesCount}
+                  onCameraCapture={isNative ? handleCameraCapture : undefined}
                 />
 
                 {/* Tags Display */}
@@ -488,8 +502,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                     </div>
                   )}
 
-                  <RadioGroup 
-                    value={locationScope} 
+                  <RadioGroup
+                    value={locationScope}
                     onValueChange={(value: 'neighborhood' | 'city' | 'state' | 'all') => setLocationScope(value)}
                   >
                     <div className="space-y-3">
@@ -656,8 +670,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                       {allowMultipleChoices && (
                         <div className="ml-6 space-y-2">
                           <Label>Maximum choices</Label>
-                          <Select 
-                            value={maxChoices.toString()} 
+                          <Select
+                            value={maxChoices.toString()}
                             onValueChange={(v) => setMaxChoices(parseInt(v))}
                           >
                             <SelectTrigger>
@@ -701,7 +715,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                     );
                   })}
                 </div>
-                
+
                 {/* Up Arrow to Expand */}
                 <Button
                   variant="ghost"
@@ -718,38 +732,41 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
 
         {/* Bottom Drawer for Post Type Selection */}
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <DrawerContent className="max-h-[70vh]">
-            <DrawerHeader className="flex flex-row items-center justify-between">
+          <DrawerContent className="max-h-[85vh] flex flex-col outline-none">
+            <DrawerHeader className="flex flex-row items-center justify-between border-b px-4 py-3 shrink-0">
               <DrawerTitle>Add to your post</DrawerTitle>
+              <DrawerDescription className="sr-only">
+                Select options to add to your post
+              </DrawerDescription>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setDrawerOpen(false)}
+                className="h-8 w-8 rounded-full"
               >
                 <ChevronDown className="h-5 w-5" />
               </Button>
             </DrawerHeader>
-            
-            <div className="p-4">
+
+            <div className="p-4 overflow-y-auto flex-1 pb-10">
               {/* 2-Column Grid */}
               <div className="grid grid-cols-2 gap-3">
                 {postTypes.map((type) => {
                   const Icon = type.icon;
                   const isSelected = postType === type.value;
-                  
+
                   return (
-                      <button
-                        type="button"
-                        key={type.value}
-                        onClick={() => {
-                          setPostType(type.value);
-                          setDrawerOpen(false);
-                        }}
-                      className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
-                        isSelected 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
+                    <button
+                      type="button"
+                      key={type.value}
+                      onClick={() => {
+                        setPostType(type.value);
+                        setDrawerOpen(false);
+                      }}
+                      className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <div className={`p-2 rounded-full ${type.bgColor}`}>
@@ -776,6 +793,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   onRemove={handleMediaRemove}
                   uploading={uploading}
                   progress={progress}
+                  onCameraCapture={isNative ? handleCameraCapture : undefined}
                 />
               </div>
             </div>
@@ -791,6 +809,9 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create a Post</DialogTitle>
+          <DialogDescription className="sr-only">
+            Share updates, events, or polls with your community
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 h-[60vh] pr-4 overflow-y-auto">
@@ -937,7 +958,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              
+
               {!hasRequiredLocation() && (
                 <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -946,7 +967,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   </p>
                 </div>
               )}
-              
+
               <RadioGroup value={locationScope} onValueChange={(value: any) => setLocationScope(value)}>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -959,7 +980,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                       </div>
                     </Label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="city" id="city" disabled={!profile?.city} />
                     <Label htmlFor="city" className={`flex items-center gap-2 ${!profile?.city ? 'opacity-50' : ''}`}>
@@ -970,7 +991,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                       </div>
                     </Label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="state" id="state" disabled={!profile?.state} />
                     <Label htmlFor="state" className={`flex items-center gap-2 ${!profile?.state ? 'opacity-50' : ''}`}>
@@ -981,7 +1002,7 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                       </div>
                     </Label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="all" id="all" />
                     <Label htmlFor="all" className="flex items-center gap-2">
@@ -1096,8 +1117,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 {allowMultipleChoices && (
                   <div className="space-y-2">
                     <Label htmlFor="maxChoices">Maximum Choices</Label>
-                    <Select 
-                      value={maxChoices.toString()} 
+                    <Select
+                      value={maxChoices.toString()}
                       onValueChange={(value) => setMaxChoices(parseInt(value))}
                     >
                       <SelectTrigger id="maxChoices">
@@ -1122,8 +1143,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleSubmit}
             disabled={!content.trim() || isSubmitting || !hasRequiredLocation()}
           >

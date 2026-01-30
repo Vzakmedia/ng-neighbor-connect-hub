@@ -26,9 +26,9 @@ interface NotificationPanelProps {
   position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 }
 
-export const NotificationPanel = ({ 
-  onClose, 
-  position = 'top-right' 
+export const NotificationPanel = ({
+  onClose,
+  position = 'top-right'
 }: NotificationPanelProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,14 +40,15 @@ export const NotificationPanel = ({
 
   const [filter, setFilter] = useState<'all' | NotificationData['type']>('all');
 
-  const filteredNotifications = notifications.filter(n => 
-    filter === 'all' || n.type === filter
+  const filteredNotifications = notifications.filter(n =>
+    !n.isRead && (filter === 'all' || n.type === filter)
   );
 
   const handleAcceptContactRequest = async (requestId: string, notificationId: string) => {
     try {
-      const { error } = await supabase.rpc('accept_emergency_contact_request', {
-        request_id: requestId
+      const { error } = await supabase.rpc('confirm_emergency_contact_request', {
+        _accept: true,
+        _request_id: requestId
       });
 
       if (error) throw error;
@@ -125,7 +126,7 @@ export const NotificationPanel = ({
     isRead: boolean
   ) => {
     if (isRead) return 'border-muted bg-muted/20';
-    
+
     if (priority === 'urgent' || type === 'panic_alert' || type === 'emergency') {
       return 'border-destructive bg-destructive/10';
     }
@@ -177,7 +178,7 @@ export const NotificationPanel = ({
             </Button>
           </div>
         </div>
-        
+
         <div className="flex gap-1 mt-2 flex-wrap">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}

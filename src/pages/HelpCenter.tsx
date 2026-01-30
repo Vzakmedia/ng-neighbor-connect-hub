@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import Navigation from "@/components/Navigation";
+import { SupportTicketDialog } from "@/components/support/SupportTicketDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  HelpCircle, 
-  Newspaper as BookOpen, 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  Shield, 
-  Users, 
-  MapPin, 
-  Settings, 
+import {
+  Search,
+  HelpCircle,
+  Newspaper as BookOpen,
+  MessageCircle,
+  Mail,
+  Phone,
+  Shield,
+  Users,
+  MapPin,
+  Settings,
   FileText,
   ArrowLeft,
   ExternalLink
@@ -23,7 +27,9 @@ import {
 
 const HelpCenter = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSupportTicketOpen, setIsSupportTicketOpen] = useState(false);
 
   const categories = [
     {
@@ -125,197 +131,228 @@ const HelpCenter = () => {
     faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const quickLinks = [
+  const [hasStaffRole, setHasStaffRole] = useState(false);
+
+  useEffect(() => {
+    const checkStaffRole = async () => {
+      if (!user) {
+        setHasStaffRole(false);
+        return;
+      }
+
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          // Consistent with Navigation.tsx role check
+          .in('role', ['super_admin', 'moderator', 'manager', 'support', 'staff'])
+          .maybeSingle();
+
+        setHasStaffRole(!!data?.role);
+      } catch (error) {
+        console.error('Error checking staff role:', error);
+        setHasStaffRole(false);
+      }
+    };
+
+    checkStaffRole();
+  }, [user]);
+
+  const quickLinksRaw = [
     { title: "API Documentation", icon: FileText, href: "/api-docs" },
-    { title: "Admin Dashboard", icon: Shield, href: "/admin" },
+    { title: "Admin Dashboard", icon: Shield, href: "/admin", adminOnly: true },
     { title: "Community Guidelines", icon: Users, href: "#guidelines" },
     { title: "Terms of Service", icon: BookOpen, href: "#terms" },
   ];
 
+  const quickLinks = quickLinksRaw.filter(link => !link.adminOnly || (user && hasStaffRole));
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
-          <button
-            onClick={() => navigate('/profile-menu')}
-            className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
-          >
-            <ArrowLeft className="h-6 w-6 text-foreground" />
-          </button>
-          <h1 className="text-lg font-semibold text-foreground">Help Center</h1>
-          <div className="w-10" />
-        </div>
-      </div>
-
-      <div className="container py-12 max-w-6xl">
-        {/* Hero Section */}
-        <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl font-bold">How can we help you?</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Search our knowledge base or browse categories below
-          </p>
-
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mt-8">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search for help articles, FAQs, guides..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 text-base"
-              />
-            </div>
+    <div className="flex min-h-screen bg-background">
+      {user && <Navigation />}
+      <div className={`flex-1 flex flex-col min-h-screen ${user ? 'md:pl-16 lg:pl-64 pb-20 md:pb-0' : ''}`}>
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border">
+          <div className="flex items-center justify-between px-4 h-14">
+            <button
+              onClick={() => user ? navigate('/profile-menu') : navigate('/')}
+              className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
+            >
+              <ArrowLeft className="h-6 w-6 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">Help Center</h1>
+            <div className="w-10" />
           </div>
         </div>
 
-        {/* Category Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
-          {categories.map((category, index) => (
-            <a key={index} href={category.link}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <CardHeader>
-                  <div className={`w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 ${category.color}`}>
-                    <category.icon className="w-6 h-6" />
-                  </div>
-                  <CardTitle className="text-lg">{category.title}</CardTitle>
-                  <CardDescription>{category.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </a>
-          ))}
-        </div>
+        <div className="container py-12 max-w-6xl">
+          {/* Hero Section */}
+          <div className="text-center mb-12 space-y-4">
+            <h1 className="text-4xl font-bold">How can we help you?</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Search our knowledge base or browse categories below
+            </p>
 
-        {/* FAQs */}
-        <Card className="mb-12">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Frequently Asked Questions
-            </CardTitle>
-            <CardDescription>
-              {searchQuery ? `Found ${filteredFaqs.length} results` : 'Browse common questions and answers'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredFaqs.length === 0 ? (
-              <div className="text-center py-8">
-                <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No results found. Try different keywords.</p>
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto mt-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search for help articles, FAQs, guides..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 h-12 text-base"
+                />
               </div>
-            ) : (
-              <Accordion type="single" collapsible className="w-full">
-                {filteredFaqs.map((faq, index) => (
-                  <AccordionItem key={index} value={`faq-${index}`}>
-                    <AccordionTrigger className="text-left">
-                      <div className="flex items-start gap-3">
-                        <Badge variant="outline" className="mt-1">
-                          {faq.category}
-                        </Badge>
-                        <span>{faq.question}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-20 text-muted-foreground">
-                        {faq.answer}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
 
-        {/* Quick Links */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Quick Links</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {quickLinks.map((link, index) => (
-              <Link key={index} to={link.href}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="flex items-center gap-4 p-6">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <link.icon className="w-5 h-5 text-primary" />
+          {/* Category Cards */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
+            {categories.map((category, index) => (
+              <a key={index} href={category.link}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardHeader>
+                    <div className={`w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 ${category.color}`}>
+                      <category.icon className="w-6 h-6" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{link.title}</h3>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                  </CardContent>
+                    <CardTitle className="text-lg">{category.title}</CardTitle>
+                    <CardDescription>{category.description}</CardDescription>
+                  </CardHeader>
                 </Card>
-              </Link>
+              </a>
             ))}
           </div>
+
+          {/* FAQs */}
+          <Card className="mb-12">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                Frequently Asked Questions
+              </CardTitle>
+              <CardDescription>
+                {searchQuery ? `Found ${filteredFaqs.length} results` : 'Browse common questions and answers'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredFaqs.length === 0 ? (
+                <div className="text-center py-8">
+                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No results found. Try different keywords.</p>
+                </div>
+              ) : (
+                <Accordion type="single" collapsible className="w-full">
+                  {filteredFaqs.map((faq, index) => (
+                    <AccordionItem key={index} value={`faq-${index}`}>
+                      <AccordionTrigger className="text-left">
+                        <div className="flex items-start gap-3">
+                          <Badge variant="outline" className="mt-1">
+                            {faq.category}
+                          </Badge>
+                          <span>{faq.question}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pl-20 text-muted-foreground">
+                          {faq.answer}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Links */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-6">Quick Links</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {quickLinks.map((link, index) => (
+                <Link key={index} to={link.href}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="flex items-center gap-4 p-6">
+                      <div className="p-3 rounded-lg bg-primary/10">
+                        <link.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{link.title}</h3>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact Support */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5" />
+                Still need help?
+              </CardTitle>
+              <CardDescription>
+                Our support team is here to assist you
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-background">
+                  <Mail className="w-5 h-5 text-primary mt-1" />
+                  <div>
+                    <h4 className="font-semibold mb-1">Email Support</h4>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Get help via email within 24 hours
+                    </p>
+                    <a href="mailto:support@neighborlink.com" className="text-sm text-primary hover:underline">
+                      support@neighborlink.com
+                    </a>
+                  </div>
+                </div>
+
+
+
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-background">
+                  <MessageCircle className="w-5 h-5 text-primary mt-1" />
+                  <div>
+                    <h4 className="font-semibold mb-1">Live Chat</h4>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Chat with our support team
+                    </p>
+                    <Button
+                      variant="link"
+                      className="h-auto p-0 text-sm"
+                      onClick={() => setIsSupportTicketOpen(true)}
+                    >
+                      Start chat
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Contact Support */}
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              Still need help?
-            </CardTitle>
-            <CardDescription>
-              Our support team is here to assist you
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background">
-                <Mail className="w-5 h-5 text-primary mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Email Support</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Get help via email within 24 hours
-                  </p>
-                  <a href="mailto:support@neighborlink.com" className="text-sm text-primary hover:underline">
-                    support@neighborlink.com
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background">
-                <Phone className="w-5 h-5 text-primary mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Phone Support</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Available Mon-Fri, 9AM-6PM
-                  </p>
-                  <a href="tel:+1234567890" className="text-sm text-primary hover:underline">
-                    +1 (234) 567-890
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-background">
-                <MessageCircle className="w-5 h-5 text-primary mt-1" />
-                <div>
-                  <h4 className="font-semibold mb-1">Live Chat</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Chat with our support team
-                  </p>
-                  <Button variant="link" className="h-auto p-0 text-sm">
-                    Start chat
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Footer */}
+        <footer className="hidden md:block border-t bg-muted/30 py-8 mt-12">
+          <div className="container px-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              © 2025 NeighborLink. All rights reserved. |
+              <Link to="/privacy" className="ml-1 hover:text-primary transition-colors">Privacy Policy</Link> |
+              <Link to="/terms" className="ml-1 hover:text-primary transition-colors">Terms of Service</Link>
+            </p>
+          </div>
+        </footer>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8 mt-12">
-        <div className="container px-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            © 2025 NeighborLink. All rights reserved. | 
-            <Link to="/privacy" className="ml-1 hover:text-primary transition-colors">Privacy Policy</Link> | 
-            <Link to="/terms" className="ml-1 hover:text-primary transition-colors">Terms of Service</Link>
-          </p>
-        </div>
-      </footer>
+      <SupportTicketDialog
+        open={isSupportTicketOpen}
+        onOpenChange={setIsSupportTicketOpen}
+      />
     </div>
   );
 };

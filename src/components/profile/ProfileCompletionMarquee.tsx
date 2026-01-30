@@ -50,7 +50,7 @@ export const ProfileCompletionMarquee = ({ completionStatus }: ProfileCompletion
   };
 
   const handleComplete = () => {
-    navigate('/complete-profile');
+    navigate('/auth/complete-profile');
   };
 
   if (completionStatus.isComplete || isDismissed) {
@@ -60,10 +60,10 @@ export const ProfileCompletionMarquee = ({ completionStatus }: ProfileCompletion
   const isNearComplete = completionStatus.percentage >= 80;
 
   return (
-    <div 
+    <div
       className={`
-        ${isNearComplete 
-          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800' 
+        ${isNearComplete
+          ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800'
           : 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800'
         }
         border-b

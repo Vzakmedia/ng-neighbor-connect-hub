@@ -8,7 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertCircle, Send, Flag as Ticket } from '@/lib/icons';
 import { useRealtimeSupportTickets } from '@/hooks/useRealtimeSupportTickets';
 
-const SupportTicketForm = () => {
+interface SupportTicketFormProps {
+  onSuccess?: () => void;
+}
+
+const SupportTicketForm = ({ onSuccess }: SupportTicketFormProps = {}) => {
   const { createTicket } = useRealtimeSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,6 +46,10 @@ const SupportTicketForm = () => {
         priority: 'medium',
         description: ''
       });
+
+      if (onSuccess) {
+        onSuccess();
+      }
 
     } catch (error) {
       console.error('Error creating support ticket:', error);
@@ -125,8 +133,8 @@ const SupportTicketForm = () => {
             </p>
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isSubmitting}
             className="w-full"
           >

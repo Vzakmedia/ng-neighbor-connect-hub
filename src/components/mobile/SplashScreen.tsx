@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import logoImage from '@/assets/neighborlink-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -26,11 +27,11 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.5 }}
-        animate={{ 
-          opacity: animationComplete ? 0 : 1, 
-          scale: animationComplete ? 1.2 : 1 
+        animate={{
+          opacity: animationComplete ? 0 : 1,
+          scale: animationComplete ? 1.2 : 1
         }}
-        transition={{ 
+        transition={{
           duration: 0.8,
           ease: "easeInOut"
         }}
@@ -40,7 +41,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ 
+          transition={{
             duration: 1.2,
             ease: "backOut",
             delay: 0.2
@@ -48,17 +49,17 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           className="relative"
         >
           <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-2xl">
-            <img 
-              src="/neighborlink-logo.png" 
-              alt="NeighborLink Logo" 
+            <img
+              src={logoImage}
+              alt="NeighborLink Logo"
               className="w-20 h-20 rounded-xl"
             />
           </div>
-          
+
           {/* Pulse Animation */}
           <motion.div
             animate={{ scale: [1, 1.3, 1] }}
-            transition={{ 
+            transition={{
               duration: 2,
               repeat: Infinity,
               ease: "easeInOut"
@@ -71,7 +72,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
+          transition={{
             duration: 0.8,
             delay: 1
           }}
@@ -91,7 +92,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              animate={{ 
+              animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.5, 1, 0.5]
               }}

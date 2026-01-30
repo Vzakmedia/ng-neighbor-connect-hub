@@ -21,7 +21,7 @@ interface NativeSafetyMapProps {
   onMarkerClick?: (markerId: string) => void;
 }
 
-export const NativeSafetyMap = ({ 
+export const NativeSafetyMap = ({
   center = { lat: 9.082, lng: 8.6753 }, // Abuja, Nigeria
   zoom = 12,
   markers = [],
@@ -45,7 +45,7 @@ export const NativeSafetyMap = ({
           enableHighAccuracy: true,
           timeout: 5000,
         });
-        
+
         setUserLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -85,6 +85,7 @@ export const NativeSafetyMap = ({
         // Create the map
         const newMap = await GoogleMap.create({
           id: 'safety-map',
+          mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'f9e788e912dcdf89dc54facf',
           element: mapRef.current!,
           apiKey: configData.apiKey,
           config: {
@@ -157,11 +158,11 @@ export const NativeSafetyMap = ({
           title: marker.title,
           snippet: marker.snippet,
           // Different icons for different types
-          iconUrl: marker.type === 'alert' 
+          iconUrl: marker.type === 'alert'
             ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
             : marker.type === 'incident'
-            ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
-            : 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+              ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
+              : 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
         }));
 
         await map.addMarkers(newMarkers);

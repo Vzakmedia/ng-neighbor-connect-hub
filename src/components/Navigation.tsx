@@ -14,7 +14,7 @@ const triggerHaptic = async () => {
 };
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from '@/components/ui/drawer';
 import CreatePostDialog from './CreatePostDialog';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useReadStatus } from '@/hooks/useReadStatus';
@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMobileIcons } from '@/hooks/useMobileIcons';
 import { ProfileMenu } from '@/components/mobile/ProfileMenu';
 import { supabase } from '@/integrations/supabase/client';
-import { 
+import {
   HomeIcon,
   ChatBubbleLeftIcon,
   ShoppingBagIcon,
@@ -39,7 +39,7 @@ import {
   NewspaperIcon,
   StarIcon
 } from '@heroicons/react/24/outline';
-import { 
+import {
   HomeIcon as HomeSolid,
   ChatBubbleLeftIcon as ChatBubbleLeftSolid,
   ShoppingBagIcon as ShoppingBagSolid,
@@ -73,28 +73,28 @@ const Navigation = () => {
   // Detect unread count increases and trigger animation
   useEffect(() => {
     const newAnimating: Record<string, boolean> = {};
-    
-    if (prevCountsRef.current.community !== undefined && 
-        unreadCounts.community > prevCountsRef.current.community) {
+
+    if (prevCountsRef.current.community !== undefined &&
+      unreadCounts.community > prevCountsRef.current.community) {
       newAnimating.community = true;
     }
-    
-    if (prevCountsRef.current.messages !== undefined && 
-        unreadCounts.messages > prevCountsRef.current.messages) {
+
+    if (prevCountsRef.current.messages !== undefined &&
+      unreadCounts.messages > prevCountsRef.current.messages) {
       newAnimating.messages = true;
     }
-    
+
     if (Object.keys(newAnimating).length > 0) {
       setAnimatingBadges(newAnimating);
-      
+
       // Remove animation after it completes
       const timer = setTimeout(() => {
         setAnimatingBadges({});
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
-    
+
     // Update previous counts
     prevCountsRef.current = {
       community: unreadCounts.community,
@@ -105,7 +105,7 @@ const Navigation = () => {
   useEffect(() => {
     const checkStaffRole = async () => {
       if (!user) return;
-      
+
       try {
         const { data } = await supabase
           .from('user_roles')
@@ -113,16 +113,16 @@ const Navigation = () => {
           .eq('user_id', user.id)
           .in('role', ['super_admin', 'moderator', 'manager', 'support', 'staff'])
           .maybeSingle();
-        
+
         setHasStaffRole(!!data?.role);
       } catch (error) {
         setHasStaffRole(false);
       }
     };
-    
+
     checkStaffRole();
   }, [user]);
-  
+
   const navItems = [
     { id: 'home', icon: HomeIcon, iconSolid: HomeSolid, label: 'Overview', count: 0, path: '/home' },
     { id: 'feed', icon: NewspaperIcon, iconSolid: NewspaperSolid, label: 'Feed', count: 0, path: '/' },
@@ -170,7 +170,7 @@ const Navigation = () => {
         <div className="flex-1 flex flex-col min-h-0 pt-4">
           {/* Create Post Button - hidden on tablet, full on desktop */}
           <div className="px-2 lg:px-4 mb-4">
-            <Button 
+            <Button
               className="w-full bg-gradient-primary hover:opacity-90 transition-opacity lg:px-4 md:px-2"
               onClick={() => setCreatePostOpen(true)}
               data-tutorial="create-post"
@@ -179,14 +179,14 @@ const Navigation = () => {
               <span className="hidden lg:inline">Create Post</span>
             </Button>
           </div>
-          
+
           <nav className="flex-1 px-1 lg:px-2 space-y-1">
             {navItems.map((item) => {
               // Hide User Directory for non-staff users
               if (item.id === 'users' && !hasStaffRole) {
                 return null;
               }
-              
+
               const isActive = location.pathname === item.path;
               // Only use solid icons on mobile/native platforms
               const Icon = (isActive && shouldUseFilledIcons) ? item.iconSolid : item.icon;
@@ -194,11 +194,10 @@ const Navigation = () => {
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.path)}
-                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${
-                    location.pathname === item.path
+                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${location.pathname === item.path
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-foreground hover:bg-muted'
-                  }`}
+                    }`}
                   title={item.label} // Tooltip for tablet view
                 >
                   <Icon className="h-5 w-5 lg:mr-3 flex-shrink-0" />
@@ -206,8 +205,8 @@ const Navigation = () => {
                   {item.count > 0 && (
                     <>
                       {/* Desktop badge */}
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={`hidden lg:block ml-auto ${animatingBadges[item.id] ? 'animate-bounce-subtle' : ''}`}
                       >
                         {item.count}
@@ -216,47 +215,46 @@ const Navigation = () => {
                       <div className="lg:hidden absolute -top-1 -right-1 h-2 w-2 bg-destructive rounded-full"></div>
                     </>
                   )}
-                  
+
                   {/* Tablet tooltip */}
                   <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
                     {item.label}
                     {item.count > 0 && ` (${item.count})`}
                   </div>
                 </button>
-                );
-              })}
-              
-              {/* Staff Portal Link for staff users */}
-              {hasStaffRole && (
-                <>
-                  <div className="px-2 lg:px-3 py-2">
-                    <div className="border-t border-muted" />
-                  </div>
-                  <button
-                    onClick={() => navigate('/staff')}
-                    className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${
-                      location.pathname === '/staff'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground hover:bg-muted'
+              );
+            })}
+
+            {/* Staff Portal Link for staff users */}
+            {hasStaffRole && (
+              <>
+                <div className="px-2 lg:px-3 py-2">
+                  <div className="border-t border-muted" />
+                </div>
+                <button
+                  onClick={() => navigate('/staff')}
+                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${location.pathname === '/staff'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-foreground hover:bg-muted'
                     }`}
-                    title="Staff Portal"
-                  >
-                    <Cog6ToothIcon className="h-5 w-5 lg:mr-3 flex-shrink-0" />
-                    <span className="hidden lg:block flex-1 text-left">Staff Portal</span>
-                    
-                    {/* Tablet tooltip */}
-                    <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
-                      Staff Portal
-                    </div>
-                  </button>
-                </>
-              )}
-            </nav>
+                  title="Staff Portal"
+                >
+                  <Cog6ToothIcon className="h-5 w-5 lg:mr-3 flex-shrink-0" />
+                  <span className="hidden lg:block flex-1 text-left">Staff Portal</span>
+
+                  {/* Tablet tooltip */}
+                  <div className="lg:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none whitespace-nowrap">
+                    Staff Portal
+                  </div>
+                </button>
+              </>
+            )}
+          </nav>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation - Icon only design with centered More button */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border rounded-t-3xl z-50" style={{ 
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border rounded-t-3xl z-50" style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         backgroundColor: 'hsl(var(--card))'
       }}>
@@ -269,15 +267,14 @@ const Navigation = () => {
               <button
                 key={item.id}
                 onClick={() => handleMobileNavigation(item.path)}
-                className={`p-2 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground'
-                }`}
+                className={`p-2 ${isActive ? 'text-primary' : 'text-muted-foreground'
+                  }`}
               >
                 <Icon className="h-8 w-8" />
               </button>
             );
           })}
-          
+
           {/* More Button - Centered with Primary Background and Shadow */}
           <button
             onClick={async () => {
@@ -288,13 +285,12 @@ const Navigation = () => {
           >
             <Squares2X2Icon className="h-8 w-8" />
           </button>
-          
+
           {/* Messages */}
           <button
             onClick={() => handleMobileNavigation('/messages')}
-            className={`relative p-2 ${
-              location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
-            }`}
+            className={`relative p-2 ${location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
+              }`}
           >
             {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
               <ChatBubbleLeftSolid className="h-8 w-8" />
@@ -307,7 +303,7 @@ const Navigation = () => {
               </Badge>
             )}
           </button>
-          
+
           {/* Profile Menu */}
           <ProfileMenu />
         </div>
@@ -317,10 +313,11 @@ const Navigation = () => {
       <Drawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen}>
         <DrawerContent className="max-h-[70vh] bg-background border-none rounded-t-3xl">
           {/* Header */}
-          <div className="pt-6 pb-4 px-6 border-b border-border/50">
-            <h2 className="text-center text-lg font-semibold text-foreground">More</h2>
-          </div>
-          
+          <DrawerHeader className="pt-6 pb-4 px-6 border-b border-border/50">
+            <DrawerTitle className="text-center text-lg font-semibold text-foreground">More</DrawerTitle>
+            <DrawerDescription className="sr-only">Access additional menu options</DrawerDescription>
+          </DrawerHeader>
+
           {/* Grid of Options */}
           <div className="flex-1 overflow-y-auto px-8 py-8">
             <div className="grid grid-cols-3 gap-8">
@@ -354,9 +351,9 @@ const Navigation = () => {
       </Drawer>
 
       {/* Create Post Dialog */}
-      <CreatePostDialog 
-        open={createPostOpen} 
-        onOpenChange={setCreatePostOpen} 
+      <CreatePostDialog
+        open={createPostOpen}
+        onOpenChange={setCreatePostOpen}
       />
     </>
   );

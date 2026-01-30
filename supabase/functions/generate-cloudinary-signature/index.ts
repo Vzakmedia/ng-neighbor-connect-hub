@@ -3,7 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
 serve(async (req) => {
@@ -13,11 +14,11 @@ serve(async (req) => {
 
   try {
     console.log('Cloudinary signature generation started');
-    
+
     // Check environment variables
     const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
     const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
-    
+
     if (!CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
       console.error('Missing Cloudinary credentials');
       throw new Error('Cloudinary credentials not configured');
@@ -35,7 +36,7 @@ serve(async (req) => {
 
     // Extract JWT token
     const token = authHeader.replace('Bearer ', '');
-    
+
     // Decode JWT to get user ID (JWT is already verified by Supabase when verify_jwt=true)
     const parts = token.split('.');
     if (parts.length !== 3) {
@@ -45,10 +46,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
+
     const payload = JSON.parse(atob(parts[1]));
     const userId = payload.sub;
-    
+
     if (!userId) {
       console.error('No user ID in JWT');
       return new Response(
@@ -66,7 +67,7 @@ serve(async (req) => {
 
     // Create signature string
     const signatureString = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
-    
+
     // Generate SHA-1 hash
     const encoder = new TextEncoder();
     const data = encoder.encode(signatureString);

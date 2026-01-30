@@ -4,7 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
 interface AlertRequest {
@@ -54,7 +55,7 @@ serve(async (req) => {
         .select('*')
         .eq('user_id', user_id)
         .maybeSingle();
-  
+
       if (preferencesError) {
         console.error('Error fetching emergency preferences:', preferencesError);
       }
@@ -96,18 +97,18 @@ serve(async (req) => {
       };
 
       const situationLabel = situationLabels[situation_type] || 'Emergency';
-      
+
       // Create alert message - conditionally include location
-      const locationInfo = (shareLocationWithContacts && location) 
-        ? `\nLocation: ${location.address}` 
+      const locationInfo = (shareLocationWithContacts && location)
+        ? `\nLocation: ${location.address}`
         : '\nLocation: Not shared';
-      
+
       const alertMessage = `🚨 EMERGENCY ALERT 🚨\n\n${user_name} needs help!\n\nSituation: ${situationLabel}${locationInfo}\nTime: ${new Date().toLocaleString()}\n\nThis is an automated emergency alert. Please check on ${user_name} immediately or contact emergency services if needed.`;
 
       // Send alerts to each emergency contact based on their preferred methods
       const alertPromises = contacts?.map(async (contact) => {
         const methods = contact.preferred_methods || ['in_app'];
-        
+
         // Create in-app notification for all contacts
         if (methods.includes('in_app')) {
           await supabase
@@ -145,8 +146,8 @@ serve(async (req) => {
     // Note: Public alerts are now handled by PanicButton.tsx directly
     // The edge function no longer creates duplicate public alerts
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       message: 'Emergency alerts sent successfully',
       contacts_notified: contactsNotified,
       preferences_applied: {
@@ -159,9 +160,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in emergency-alert function:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: 'Failed to send emergency alerts',
-      details: error.message 
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -208,34 +209,47 @@ async function sendSMSAlert(phoneNumber: string, message: string) {
 }
 
 async function sendWhatsAppAlert(phoneNumber: string, message: string) {
-  // This would integrate with WhatsApp Business API
-  console.log(`WhatsApp Alert to ${phoneNumber}: ${message}`);
-  
-  // Example WhatsApp Business API integration (requires setup)
-  /*
-  const whatsappToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
-  const whatsappPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
-  
-  if (whatsappToken && whatsappPhoneId) {
-    const response = await fetch(`https://graph.facebook.com/v17.0/${whatsappPhoneId}/messages`, {
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.warn('Twilio WhatsApp not configured. Missing credentials.');
+    return;
+  }
+
+  // Ensure numbers are E.164 formatted for Twilio
+  const formattedTo = phoneNumber.startsWith('whatsapp:') ? phoneNumber : `whatsapp:${phoneNumber}`;
+  const formattedFrom = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
+
+  console.log(`Sending WhatsApp from ${formattedFrom} to ${formattedTo}`);
+
+  try {
+    const body = new URLSearchParams({
+      From: formattedFrom,
+      To: formattedTo,
+      Body: message,
+    });
+
+    const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${whatsappToken}`,
-        'Content-Type': 'application/json',
+        Authorization: 'Basic ' + btoa(`${accountSid}:${authToken}`),
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phoneNumber,
-        type: 'text',
-        text: { body: message },
-      }),
+      body,
     });
-    
-    if (!response.ok) {
-      console.error('Failed to send WhatsApp message:', await response.text());
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error('Twilio WhatsApp error:', text);
+    } else {
+      const json = await resp.json();
+      console.log('Twilio WhatsApp sent:', json.sid);
     }
+  } catch (e) {
+    console.error('Error sending WhatsApp via Twilio:', e);
   }
-  */
 }
 
 async function initiateEmergencyCall(phoneNumber: string, userName: string, situationType: string) {
@@ -282,7 +296,7 @@ async function initiateEmergencyCall(phoneNumber: string, userName: string, situ
 async function sendCommunityAlerts(location: { latitude: number; longitude: number; address: string }, situationType: string, userId: string) {
   // Find users within 5km radius and send community alert
   console.log(`Sending community alerts for ${situationType} near ${location.address}`);
-  
+
   // This would query users within radius and send notifications
   // For now, we'll create a general community alert record
   await supabase

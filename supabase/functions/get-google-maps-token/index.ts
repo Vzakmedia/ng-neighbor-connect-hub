@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
 serve(async (req) => {
@@ -11,7 +12,7 @@ serve(async (req) => {
     url: req.url,
     timestamp: new Date().toISOString()
   });
-  
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log('✅ [MAPS-TOKEN] Handling CORS preflight');
@@ -20,27 +21,27 @@ serve(async (req) => {
 
   try {
     console.log('🔍 [MAPS-TOKEN] Starting API key retrieval...');
-    
+
     // Get all environment variables to debug
     const allEnvKeys = Object.keys(Deno.env.toObject());
     console.log('📋 [MAPS-TOKEN] Available env vars:', allEnvKeys.length, 'keys');
     console.log('📋 [MAPS-TOKEN] Env var names:', allEnvKeys.join(', '));
-    
+
     const token = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    
+
     console.log('🔑 [MAPS-TOKEN] API key check:', {
       found: !!token,
       length: token ? token.length : 0,
       firstChars: token ? token.substring(0, 8) + '...' : 'N/A'
     });
-    
+
     if (!token) {
       const errorMsg = 'GOOGLE_MAPS_API_KEY not found in edge function secrets. Please configure it in Supabase.';
       console.error('❌ [MAPS-TOKEN]', errorMsg);
       console.error('💡 [MAPS-TOKEN] Add the secret at: https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions');
-      
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: errorMsg,
           hint: 'Configure GOOGLE_MAPS_API_KEY in Supabase edge function secrets'
         }),
@@ -53,7 +54,7 @@ serve(async (req) => {
 
     console.log('✅ [MAPS-TOKEN] Successfully returning Google Maps API key');
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         token,
         success: true,
         timestamp: new Date().toISOString()
@@ -71,9 +72,9 @@ serve(async (req) => {
       type: typeof error,
       timestamp: new Date().toISOString()
     });
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: errorMessage,
         details: 'Failed to retrieve Google Maps API key'
       }),
