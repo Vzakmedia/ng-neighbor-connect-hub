@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, cache-control",
 };
 
 serve(async (req) => {
@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { userId } = await req.json();
-    
+
     if (!userId) {
       return new Response(
         JSON.stringify({ error: "userId is required" }),
@@ -97,21 +97,21 @@ If the user has high engagement, prioritize tag_match and engagement_quality.
             parameters: {
               type: "object",
               properties: {
-                tag_match: { 
-                  type: "number", 
-                  description: "Weight for matching user's preferred tags (0-1)" 
+                tag_match: {
+                  type: "number",
+                  description: "Weight for matching user's preferred tags (0-1)"
                 },
-                location_match: { 
-                  type: "number", 
-                  description: "Weight for matching user's location preferences (0-1)" 
+                location_match: {
+                  type: "number",
+                  description: "Weight for matching user's location preferences (0-1)"
                 },
-                recency_boost: { 
-                  type: "number", 
-                  description: "Weight for recent posts (0-1)" 
+                recency_boost: {
+                  type: "number",
+                  description: "Weight for recent posts (0-1)"
                 },
-                engagement_quality: { 
-                  type: "number", 
-                  description: "Weight for posts with high engagement (0-1)" 
+                engagement_quality: {
+                  type: "number",
+                  description: "Weight for posts with high engagement (0-1)"
                 }
               },
               required: ["tag_match", "location_match", "recency_boost", "engagement_quality"],
@@ -143,7 +143,7 @@ If the user has high engagement, prioritize tag_match and engagement_quality.
 
     const aiData = await aiResponse.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (!toolCall) {
       throw new Error("No tool call in AI response");
     }

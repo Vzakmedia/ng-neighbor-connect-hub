@@ -31,6 +31,7 @@ interface MediaUploaderProps {
   uploadSpeed?: number;
   currentFileIndex?: number;
   totalFilesCount?: number;
+  onCameraCapture?: () => Promise<void>;
 }
 
 export const MediaUploader = ({
@@ -49,6 +50,7 @@ export const MediaUploader = ({
   uploadSpeed = 0,
   currentFileIndex = 0,
   totalFilesCount = 0,
+  onCameraCapture,
 }: MediaUploaderProps) => {
   const { toast } = useToast();
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -57,17 +59,17 @@ export const MediaUploader = ({
   // Create preview URLs for pending files - only when files actually change
   useEffect(() => {
     const currentFileNames = pendingFiles.map(f => f.name).join(',');
-    
+
     // Only update if files actually changed
     if (currentFileNames === prevFileNamesRef.current) {
       return;
     }
-    
+
     prevFileNamesRef.current = currentFileNames;
-    
+
     // Revoke old URLs first
     previewUrls.forEach(url => URL.revokeObjectURL(url));
-    
+
     const urls = pendingFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(urls);
 
@@ -86,7 +88,7 @@ export const MediaUploader = ({
   const onDrop = useCallback((acceptedFiles: File[]) => {
     // Validate each file
     const validFiles: File[] = [];
-    
+
     for (const file of acceptedFiles) {
       const validation = validateMedia(file);
       if (!validation.valid) {
@@ -122,11 +124,10 @@ export const MediaUploader = ({
       {canAddMore && (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragActive 
-              ? 'border-primary bg-primary/5' 
+          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive
+              ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/50'
-          } ${disabled || uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${disabled || uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-2">
@@ -148,6 +149,23 @@ export const MediaUploader = ({
               </p>
             </div>
           </div>
+
+          {onCameraCapture && (
+            <div className="mt-4 pt-4 border-t w-full">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCameraCapture();
+                }}
+              >
+                <CameraIcon className="h-5 w-5" />
+                Take Photo with Camera
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -187,7 +205,7 @@ export const MediaUploader = ({
                         className="w-full h-full object-cover rounded"
                       />
                     )}
-                    
+
                     {onRemove && (
                       <Button
                         type="button"
@@ -199,9 +217,9 @@ export const MediaUploader = ({
                         <XMarkIcon className="h-3 w-3" />
                       </Button>
                     )}
-                    
+
                     <Badge className="absolute top-1 left-1 text-xs">Pending</Badge>
-                    
+
                     <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       {formatFileSize(file.size)}
                     </div>
@@ -232,7 +250,7 @@ export const MediaUploader = ({
                       className="w-full h-full object-cover rounded"
                     />
                   )}
-                  
+
                   {onRemove && (
                     <Button
                       type="button"
@@ -244,7 +262,7 @@ export const MediaUploader = ({
                       <XMarkIcon className="h-3 w-3" />
                     </Button>
                   )}
-                  
+
                   <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
                     {formatFileSize(file.size)}
                   </div>

@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
 interface AlertProcessingRequest {
@@ -98,7 +99,7 @@ serve(async (req) => {
     // Update alert queue status
     const { error: queueError } = await supabase
       .from('alert_queue')
-      .update({ 
+      .update({
         status: 'completed',
         completed_at: new Date().toISOString()
       })
@@ -167,7 +168,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Alert processing error:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         timestamp: new Date().toISOString()
       }),

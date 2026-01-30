@@ -41,8 +41,8 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, geocodeAddress, getPlaceId } = useGoogleMapsCache();
-  
-  
+
+
   // Use native map on mobile, web map otherwise
   if (isNative) {
     const nativeMarkers = alerts.map(alert => ({
@@ -96,7 +96,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
-        mapId: 'SAFETY_MAP', // Required for AdvancedMarkerElement
+        mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'SAFETY_MAP', // Required for AdvancedMarkerElement
         restriction: {
           latLngBounds: {
             north: 13.9,  // Northern Nigeria border
@@ -120,17 +120,17 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
             profile.state,
             'Nigeria'
           ].filter(Boolean);
-          
+
           const fullAddress = addressParts.join(', ');
-          
+
           // Use cached geocoding
           const location = await geocodeAddress(fullAddress);
-          
+
           if (location) {
             setUserLocation(location);
             map.current?.setCenter(location);
             map.current?.setZoom(14);
-            
+
             // Create custom Home icon marker
             const homeIconDiv = document.createElement('div');
             homeIconDiv.innerHTML = `
@@ -151,7 +151,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 </svg>
               </div>
             `;
-            
+
             userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
               position: location,
               map: map.current,
@@ -162,13 +162,13 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
             // Try to show neighborhood boundary with Data-Driven Styling
             try {
               const placeId = await getPlaceId(fullAddress);
-              
+
               if (placeId && map.current.getFeatureLayer) {
                 const featureLayer = map.current.getFeatureLayer('LOCALITY');
-                
+
                 if (featureLayer) {
                   neighborhoodFeatureLayer.current = featureLayer;
-                  
+
                   featureLayer.style = (options: any) => {
                     if (options.feature.placeId === placeId) {
                       return {
@@ -181,14 +181,14 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                     }
                     return null;
                   };
-                  
+
                   console.log('✅ Neighborhood boundary loaded');
                 }
               }
             } catch (error) {
               console.log('⚠️ Neighborhood boundary not available, using fallback');
             }
-            
+
             locationFound = true;
           }
         }
@@ -201,13 +201,13 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 lat: position.coords.latitude,
                 lng: position.coords.longitude
               };
-              
+
               setUserLocation(location);
-              
+
               // Pan and zoom to user's location
               map.current?.setCenter(location);
               map.current?.setZoom(14);
-              
+
               // Create custom Home icon marker
               const homeIconDiv = document.createElement('div');
               homeIconDiv.innerHTML = `
@@ -228,7 +228,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                   </svg>
                 </div>
               `;
-              
+
               userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
                 position: location,
                 map: map.current,
@@ -271,22 +271,22 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         profile.state,
         'Nigeria'
       ].filter(Boolean);
-      
+
       const fullAddress = addressParts.join(', ');
-      
+
       // Use cached geocoding
       const location = await geocodeAddress(fullAddress);
-      
+
       if (location) {
         setUserLocation(location);
         map.current.setCenter(location);
         map.current.setZoom(14);
-        
+
         // Update marker position
         if (userMarker.current) {
           userMarker.current.position = location;
         }
-        
+
         locationFound = true;
         return;
       }
@@ -300,11 +300,11 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           };
-          
+
           setUserLocation(location);
           map.current?.setCenter(location);
           map.current?.setZoom(14);
-          
+
           // Update marker if it doesn't exist
           if (!userMarker.current) {
             const homeIconDiv = document.createElement('div');
@@ -326,7 +326,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
                 </svg>
               </div>
             `;
-            
+
             userMarker.current = new (window as any).google.maps.marker.AdvancedMarkerElement({
               position: location,
               map: map.current,
@@ -362,7 +362,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         critical: '#EF4444'  // red
       };
 
-      // Create custom marker content using PinElement
+      // Create custom marker content using PinElement (updated for deprecated element property)
       const pinElement = new (window as any).google.maps.marker.PinElement({
         background: severityColors[alert.severity],
         borderColor: '#ffffff',
@@ -397,8 +397,8 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
         `
       });
 
-      // Add click listeners
-      marker.addListener('click', () => {
+      // Use gmp-click for AdvancedMarkerElement
+      marker.addListener('gmp-click', () => {
         infoWindow.open(map.current, marker);
         onAlertClick(alert);
       });
@@ -422,7 +422,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
               Reload Page
             </button>
             <div>
-              <a 
+              <a
                 href="https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/settings/functions"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -450,7 +450,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   return (
     <div className="relative h-full">
       <div ref={mapContainer} className="absolute inset-0" />
-      
+
       {/* Recenter Button - Positioned below the action buttons */}
       <div className="absolute top-28 right-4 z-20">
         <Button
@@ -474,7 +474,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
             { severity: 'low', color: '#3B82F6', label: 'Low' }
           ].map(({ severity, color, label }) => (
             <div key={severity} className="flex items-center gap-2">
-              <div 
+              <div
                 className="w-3 h-3 rounded-full border border-white"
                 style={{ backgroundColor: color }}
               />

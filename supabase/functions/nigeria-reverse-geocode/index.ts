@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 }
 
 // Nigeria geographic boundaries
@@ -20,7 +21,7 @@ interface ReverseGeocodeRequest {
 
 serve(async (req) => {
   console.log(`🗺️ Nigeria Reverse Geocode - ${req.method} ${req.url}`);
-  
+
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -32,18 +33,18 @@ serve(async (req) => {
 
     // Validate coordinates are in Nigeria
     if (
-      latitude < NIGERIA_BOUNDS.south || 
+      latitude < NIGERIA_BOUNDS.south ||
       latitude > NIGERIA_BOUNDS.north ||
-      longitude < NIGERIA_BOUNDS.west || 
+      longitude < NIGERIA_BOUNDS.west ||
       longitude > NIGERIA_BOUNDS.east
     ) {
       console.warn('⚠️ Coordinates outside Nigeria bounds');
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           address: 'Location outside Nigeria',
           status: 'out_of_bounds'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400
         }
@@ -51,7 +52,7 @@ serve(async (req) => {
     }
 
     const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    
+
     if (!GOOGLE_MAPS_API_KEY) {
       console.error('❌ Google Maps API key not configured');
       throw new Error('Google Maps API key not configured');
@@ -59,10 +60,10 @@ serve(async (req) => {
 
     // Use Google Maps Geocoding API
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}&region=ng&language=en`;
-    
+
     console.log('📍 Calling Google Maps Geocoding API...');
     const response = await fetch(geocodeUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Google Maps API error: ${response.status}`);
     }
@@ -77,15 +78,15 @@ serve(async (req) => {
 
       // Format Nigerian address style: "Neighborhood, City, State, Nigeria"
       const addressComponents = result.address_components;
-      const neighborhood = addressComponents.find((c: any) => 
+      const neighborhood = addressComponents.find((c: any) =>
         c.types.includes('neighborhood') || c.types.includes('sublocality')
       )?.long_name;
-      
-      const city = addressComponents.find((c: any) => 
+
+      const city = addressComponents.find((c: any) =>
         c.types.includes('locality') || c.types.includes('administrative_area_level_2')
       )?.long_name;
-      
-      const state = addressComponents.find((c: any) => 
+
+      const state = addressComponents.find((c: any) =>
         c.types.includes('administrative_area_level_1')
       )?.long_name;
 
@@ -96,14 +97,14 @@ serve(async (req) => {
         if (city && city !== neighborhood) parts.push(city);
         if (state) parts.push(state);
         parts.push('Nigeria');
-        
+
         address = parts.join(', ');
       }
 
       console.log('✅ Address found:', address);
-      
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           address,
           formatted_address: result.formatted_address,
           neighborhood,
@@ -111,8 +112,8 @@ serve(async (req) => {
           state,
           status: 'success'
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -120,42 +121,42 @@ serve(async (req) => {
     // Fallback: Try alternative geocoding service
     console.log('⚠️ Google Maps failed, trying fallback...');
     const fallbackUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
-    
+
     const fallbackResponse = await fetch(fallbackUrl);
-    
+
     if (!fallbackResponse.ok) {
       throw new Error('Fallback geocoding also failed');
     }
 
     const fallbackData = await fallbackResponse.json();
-    const fallbackAddress = fallbackData.locality || 
-                           fallbackData.city || 
-                           fallbackData.principalSubdivision || 
-                           `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    const fallbackAddress = fallbackData.locality ||
+      fallbackData.city ||
+      fallbackData.principalSubdivision ||
+      `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
     console.log('✅ Fallback address:', fallbackAddress);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         address: fallbackAddress + ', Nigeria',
         status: 'fallback'
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
 
   } catch (error) {
     console.error('❌ Error:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         address: 'Unable to determine address',
         status: 'error'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

@@ -14,9 +14,9 @@ export const TrendingPostSlideCard = ({
   onPostClick,
   onSave,
 }: TrendingPostSlideCardProps) => {
-  // Determine background image - prioritize video thumbnail, then first image
-  const backgroundImage = post.video_thumbnail_url || 
-    (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : null);
+  // Determine background image - prioritize video thumbnail, then first image, then author avatar
+  const backgroundImage = post.video_thumbnail_url ||
+    (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : post.author.avatar_url);
 
   const hasVideo = !!post.video_url;
 
@@ -66,9 +66,8 @@ export const TrendingPostSlideCard = ({
           }}
         >
           <Bookmark
-            className={`h-4 w-4 ${
-              post.is_saved ? "fill-white text-white" : "text-white"
-            }`}
+            className={`h-4 w-4 ${post.is_saved ? "fill-white text-white" : "text-white"
+              }`}
           />
         </Button>
       </div>

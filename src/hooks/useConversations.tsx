@@ -23,12 +23,12 @@ export const useConversations = (userId: string | undefined) => {
   const lastFetchTimeRef = useRef<number>(0);
   const FETCH_COOLDOWN_MS = 500;
   const conversationsRef = useRef<Conversation[]>([]);
-  
+
   // Update toast ref when it changes
   useEffect(() => {
     toastRef.current = toast;
   }, [toast]);
-  
+
   // Circuit breaker to prevent runaway fetching
   const failureCountRef = useRef(0);
   const MAX_FAILURES = 3;
@@ -84,14 +84,14 @@ export const useConversations = (userId: string | undefined) => {
 
       // Fetch user profiles separately using secure function
       const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
-      
+
       // Use the secure get_public_profile_info function for each user
-      const profilePromises = userIds.map(id => 
+      const profilePromises = userIds.map(id =>
         supabase.rpc('get_public_profile_info', { target_user_id: id })
       );
-      
+
       const profileResults = await Promise.all(profilePromises);
-      
+
       // Create profile map from results
       const profileMap = new Map(
         profileResults
@@ -111,7 +111,7 @@ export const useConversations = (userId: string | undefined) => {
         const isUser1 = conv.user1_id === userId;
         const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
         const otherUser = profileMap.get(otherUserId);
-        
+
         return {
           ...conv,
           other_user_id: otherUserId,
@@ -129,34 +129,34 @@ export const useConversations = (userId: string | undefined) => {
         if (prev.length !== formattedConversations.length) {
           return formattedConversations;
         }
-        
+
         // Quick check: compare IDs and timestamps only
-        const hasChanges = prev.some((conv, i) => 
+        const hasChanges = prev.some((conv, i) =>
           conv.id !== formattedConversations[i]?.id ||
           conv.last_message_at !== formattedConversations[i]?.last_message_at ||
           conv.user1_has_unread !== formattedConversations[i]?.user1_has_unread ||
           conv.user2_has_unread !== formattedConversations[i]?.user2_has_unread
         );
-        
+
         if (!hasChanges) {
           return prev; // Same reference = no re-render
         }
-        
+
         return formattedConversations;
       });
       console.timeEnd('fetchConversations');
-      
+
       // Reset failure count on success
       failureCountRef.current = 0;
-      
+
       return formattedConversations;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       console.timeEnd('fetchConversations');
       setConversations([]); // Set empty array on error to prevent infinite loading
-      
+
       return [];
-      
+
       // Increment failure count and open circuit breaker if needed
       failureCountRef.current++;
       if (failureCountRef.current >= MAX_FAILURES) {
@@ -168,7 +168,7 @@ export const useConversations = (userId: string | undefined) => {
           console.log('Circuit breaker reset');
         }, 30000); // Reset after 30 seconds
       }
-      
+
       // Only show toast for actual errors, not connection issues
       if (error && typeof error === 'object' && 'message' in error) {
         const errorMessage = (error as any).message;
@@ -184,7 +184,7 @@ export const useConversations = (userId: string | undefined) => {
       setLoading(false);
     }
   }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
-  
+
 
   const createOrFindConversation = useCallback(async (
     recipientId: string,
@@ -201,11 +201,11 @@ export const useConversations = (userId: string | undefined) => {
       const { data: conversationId, error } = await supabase.rpc(
         'create_conversation_with_request_check',
         {
-          sender_id: userId,
-          recipient_id: recipientId,
-          conversation_type: options?.conversationType || 'direct_message',
-          marketplace_item_id: options?.marketplaceItemId || null,
-          marketplace_service_id: options?.marketplaceServiceId || null,
+          _sender_id: userId,
+          _recipient_id: recipientId,
+          _conversation_type: options?.conversationType || 'direct_message',
+          _marketplace_item_id: options?.marketplaceItemId || null,
+          _marketplace_service_id: options?.marketplaceServiceId || null,
         }
       );
 
@@ -227,14 +227,14 @@ export const useConversations = (userId: string | undefined) => {
 
     try {
       // Optimistically update local state immediately
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === conversationId 
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === conversationId
             ? {
-                ...conv,
-                user1_has_unread: conv.user1_id === userId ? false : conv.user1_has_unread,
-                user2_has_unread: conv.user2_id === userId ? false : conv.user2_has_unread
-              }
+              ...conv,
+              user1_has_unread: conv.user1_id === userId ? false : conv.user1_has_unread,
+              user2_has_unread: conv.user2_id === userId ? false : conv.user2_has_unread
+            }
             : conv
         )
       );

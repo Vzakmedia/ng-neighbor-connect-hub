@@ -27,12 +27,12 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
       getUserLocation();
       subscribeToSafetyAlerts();
     }
-    
+
     return () => {
       try {
         const subscription = supabase.channel('safety-alerts-public');
         supabase.removeChannel(subscription);
-        
+
         // Clear polling fallback if it exists
         if ((window as any).publicAlertsPoll) {
           clearInterval((window as any).publicAlertsPoll);
@@ -52,28 +52,34 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
   const getUserLocation = async () => {
     try {
-      const position = await getCurrentPosition();
+      // Add timeout and high accuracy options
+      const position = await getCurrentPosition({
+        timeout: 10000,
+        enableHighAccuracy: true,
+        maximumAge: 0
+      });
+      console.log('📍 Emergency Alert Location:', position.coords);
       setUserLocation({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
       });
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error getting location for alerts:', error);
     }
   };
 
   const loadNearbyAlerts = async () => {
     if (!user || !userLocation) return;
-    
+
     try {
       // Get dismissed alerts for this user
       const { data: dismissedAlerts } = await supabase
         .from('dismissed_alerts')
         .select('alert_id')
         .eq('user_id', user.id);
-      
+
       const dismissedAlertIds = new Set(dismissedAlerts?.map(d => d.alert_id) || []);
-      
+
       // Query safety_alerts instead of public_emergency_alerts (which was removed)
       const { data: safetyAlerts, error } = await supabase
         .from('safety_alerts')
@@ -96,9 +102,9 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
         .eq('status', 'active')
         .neq('user_id', user.id) // Don't show user's own alerts
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       // Filter alerts by distance (within 10km), exclude dismissed alerts, and convert to expected format
       const nearbyAlerts = (safetyAlerts || [])
         .filter(alert => {
@@ -124,7 +130,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           user_id: alert.user_id,
           profiles: alert.profiles
         }));
-      
+
       setAlerts(nearbyAlerts);
     } catch (error) {
       console.error('Error loading nearby alerts:', error);
@@ -196,17 +202,17 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     const R = 6371; // Radius of the Earth in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in kilometers
   };
 
   const dismissAlert = async (alertId: string) => {
     if (!user) return;
-    
+
     try {
       // Store dismissal in database
       await supabase
@@ -215,7 +221,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           user_id: user.id,
           alert_id: alertId
         });
-      
+
       // Remove from local state
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
     } catch (error) {
@@ -255,7 +261,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2">
                     <ExclamationTriangleIcon className="h-5 w-5 text-orange-600" />
                     <Badge className="bg-orange-600 text-white">
                       {alert.situation_type?.replace('_', ' ').toUpperCase()}
@@ -264,33 +270,33 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                       {distance.toFixed(1)}km away
                     </Badge>
                   </div>
-                  
+
                   <h4 className="font-semibold text-orange-800 mb-1">
                     Emergency Alert in Your Area
                   </h4>
-                  
+
                   <p className="text-sm text-orange-700 mb-2">
                     Reported by {alert.profiles?.full_name || 'A neighbor'}
                   </p>
-                  
+
                   {alert.address && (
                     <p className="text-xs text-orange-600 flex items-center gap-1 mb-3">
                       <MapPinIcon className="h-3 w-3" />
                       {alert.address}
                     </p>
                   )}
-                  
+
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => getDirections(alert.latitude, alert.longitude)}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <MapIcon className="h-3 w-3 mr-1" />
                       Get Directions
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => dismissAlert(alert.id)}
                     >
@@ -298,7 +304,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col items-end">
                   <span className="text-xs text-muted-foreground mb-2">
                     {new Date(alert.created_at).toLocaleTimeString()}

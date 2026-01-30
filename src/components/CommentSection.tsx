@@ -58,7 +58,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
@@ -67,11 +67,11 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
   const fetchComments = async (silent = false) => {
     if (!user) return;
-    
+
     if (!silent) {
       setLoading(true);
     }
-    
+
     try {
       // First fetch comments
       const { data: commentsData, error: commentsError } = await supabase
@@ -87,7 +87,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
       // Get user IDs and fetch profiles separately
       const userIds = [...new Set(commentsData?.map((comment: any) => comment?.user_id).filter(Boolean) || [])];
-      
+
       const { data: profilesDataRaw, error: profilesError } = await supabase
         .from('display_profiles')
         .select('user_id, display_name, avatar_url')
@@ -99,7 +99,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
       // Get comment IDs for like counting
       const commentIds = commentsData?.map((comment: any) => comment?.id).filter(Boolean) || [];
-      
+
       // Fetch like counts and user-like flags via secure RPC
       const { data: likesSummary, error: likesError }: { data: any[]; error: any } = await (supabase as any)
         .rpc('get_comment_likes', { _comment_ids: commentIds });
@@ -192,7 +192,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
       // Silently refresh comments to get the updated structure
       fetchComments(true);
-      
+
       if (parentCommentId) {
         setReplyText('');
         setReplyingTo(null);
@@ -254,8 +254,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     // Update UI IMMEDIATELY (optimistic)
     setComments(prev => updateCommentState(prev, commentId, {
       is_liked_by_user: !comment.is_liked_by_user,
-      likes_count: comment.is_liked_by_user 
-        ? comment.likes_count - 1 
+      likes_count: comment.is_liked_by_user
+        ? comment.likes_count - 1
         : comment.likes_count + 1
     }));
 
@@ -307,7 +307,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           filter: `post_id=eq.${postId}`
         }, (payload) => {
           console.log('CommentSection: Comment change detected:', payload);
-          
+
           if (payload.eventType === 'INSERT') {
             // Silently refresh comments to get the new comment with profile data
             fetchComments(true);
@@ -322,17 +322,17 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                   if (comment.id === payload.old.id) {
                     return acc; // Skip deleted comment
                   }
-                  
+
                   const updatedComment = {
                     ...comment,
                     replies: comment.replies ? filterComments(comment.replies) : []
                   };
-                  
+
                   acc.push(updatedComment);
                   return acc;
                 }, [] as Comment[]);
               };
-              
+
               return filterComments(prev);
             });
           }
@@ -344,7 +344,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           table: 'comment_likes'
         }, (payload) => {
           console.log('CommentSection: Comment like change detected:', payload);
-          
+
           const commentId = payload.new?.comment_id || payload.old?.comment_id;
           if (!commentId) return;
 
@@ -367,7 +367,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                     };
                   }
                 }
-                
+
                 // Also check replies
                 if (comment.replies) {
                   return {
@@ -375,11 +375,11 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                     replies: updateCommentLikes(comment.replies)
                   };
                 }
-                
+
                 return comment;
               });
             };
-            
+
             return updateCommentLikes(prev);
           });
         }),
@@ -406,7 +406,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       const { data, error } = await supabase
         .from('display_profiles')
         .select('user_id, display_name, avatar_url')
-        
+
         .limit(50);
 
       if (error) {
@@ -430,21 +430,21 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
     const currentRef = textarea === 'main' ? textareaRef : replyTextareaRef;
     const cursorPosition = currentRef.current?.selectionStart || 0;
-    
+
     // Find the last @ symbol before cursor
     const textBeforeCursor = text.substring(0, cursorPosition);
     const atIndex = textBeforeCursor.lastIndexOf('@');
-    
+
     if (atIndex !== -1) {
       const afterAt = textBeforeCursor.substring(atIndex + 1);
-      
+
       // Check if we're still in a mention (no spaces after @)
       if (!afterAt.includes(' ') && afterAt.length > 0) {
         setCurrentMentionQuery(afterAt);
         setMentionPosition({ start: atIndex, end: cursorPosition });
         setActiveTextarea(textarea);
         setShowUserSuggestions(true);
-        
+
         // Filter users based on query
         const filtered = availableUsers.filter(user =>
           user.full_name?.toLowerCase().includes(afterAt.toLowerCase())
@@ -471,15 +471,15 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     const beforeMention = currentText.substring(0, mentionPosition.start);
     const afterMention = currentText.substring(mentionPosition.end);
     const newText = `${beforeMention}@${user.full_name} ${afterMention}`;
-    
+
     if (activeTextarea === 'main') {
       setNewComment(newText);
     } else {
       setReplyText(newText);
     }
-    
+
     setShowUserSuggestions(false);
-    
+
     // Focus back to textarea
     setTimeout(() => {
       const ref = activeTextarea === 'main' ? textareaRef : replyTextareaRef;
@@ -491,7 +491,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   const renderCommentContent = (content: string) => {
     const mentionRegex = /@([^@\s]+(?:\s+[^@\s]+)*)/g;
     const parts = content.split(mentionRegex);
-    
+
     return parts.map((part, index) => {
       if (index % 2 === 1) {
         // This is a mention
@@ -513,7 +513,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
   const renderComment = (comment: Comment, isReply = false) => (
     <div key={comment.id} className={`flex space-x-3 ${isReply ? 'ml-8 mt-2' : ''}`}>
-      <div 
+      <div
         className="avatar-clickable cursor-pointer"
         onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User', comment.profiles?.avatar_url || undefined)}
       >
@@ -538,8 +538,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           <p className="text-sm break-words">{renderCommentContent(comment.content)}</p>
         </div>
         <div className="flex items-center mt-1 ml-2 space-x-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => toggleCommentLike(comment.id)}
             className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
@@ -547,24 +547,22 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
             <HeartIcon className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
             {comment.likes_count > 0 && comment.likes_count}
           </Button>
-          {!isReply && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-            >
-              <ChatBubbleLeftIcon className="h-3 w-3 mr-1" />
-              Reply
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+          >
+            <ChatBubbleLeftIcon className="h-3 w-3 mr-1" />
+            Reply
+          </Button>
         </div>
-        
+
         {/* Reply input */}
         {replyingTo === comment.id && (
           <div className="mt-3 ml-2">
             <div className="flex space-x-2">
-              <div 
+              <div
                 className="avatar-clickable cursor-pointer"
                 onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
               >
@@ -622,9 +620,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                   )}
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button 
+                  <Button
                     variant="ghost"
-                    size="sm" 
+                    size="sm"
                     onClick={() => {
                       setReplyingTo(null);
                       setReplyText('');
@@ -633,8 +631,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={() => handleSubmitComment(comment.id)}
                     disabled={!replyText.trim()}
                     className="text-xs"
@@ -647,7 +645,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
             </div>
           </div>
         )}
-        
+
         {/* Render replies */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="mt-2">
@@ -682,7 +680,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       {/* Main comment input */}
       <div className={`mt-4 pt-3 ${isInline ? 'border-t-0' : 'border-t'}`}>
         <div className="flex space-x-3">
-          <div 
+          <div
             className="avatar-clickable cursor-pointer"
             onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
           >
@@ -740,8 +738,8 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
               )}
             </div>
             <div className="flex justify-end">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={() => handleSubmitComment()}
                 disabled={!newComment.trim()}
                 className="text-xs"

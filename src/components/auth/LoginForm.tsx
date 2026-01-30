@@ -24,7 +24,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
   const [showIOSWarning, setShowIOSWarning] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   // Check for iOS private browsing on mount
   useEffect(() => {
     const checkPrivateMode = async () => {
@@ -47,27 +47,27 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     try {
       // Add timeout protection - login should not hang forever
       const LOGIN_TIMEOUT = 30000; // 30 seconds
-      
+
       const signInPromise = supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Login timed out. Please check your connection and try again.')), LOGIN_TIMEOUT);
       });
-      
+
       const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
 
-      console.log(`[LoginForm] signInWithPassword result:`, { 
-        hasUser: !!data?.user, 
+      console.log(`[LoginForm] signInWithPassword result:`, {
+        hasUser: !!data?.user,
         hasSession: !!data?.session,
-        error: error?.message 
+        error: error?.message
       });
 
       if (error) {
         if (recordAttempt) recordAttempt();
-        
+
         const errorMessage = getIOSAuthError(error.message);
         toast({
           title: "Login Failed",
@@ -76,15 +76,15 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
         });
         return;
       }
-      
+
       if (data.user && data.session) {
         console.log(`[LoginForm] Login successful, verifying session...`);
-        
+
         // Verify session is properly set
         const { data: sessionCheck } = await supabase.auth.getSession();
-        console.log(`[LoginForm] Session verification:`, { 
+        console.log(`[LoginForm] Session verification:`, {
           hasSession: !!sessionCheck?.session,
-          userId: sessionCheck?.session?.user?.id 
+          userId: sessionCheck?.session?.user?.id
         });
 
         if (!sessionCheck?.session) {
@@ -102,7 +102,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           .from('user_2fa')
           .select('is_enabled')
           .eq('user_id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (user2fa?.is_enabled) {
           sessionStorage.setItem('pending2FA', data.user.id);
@@ -127,8 +127,8 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
 
           toast({
             title: isFirstLogin ? "Welcome to NeighborLink!" : "Welcome back!",
-            description: isFirstLogin 
-              ? "You've successfully signed in for the first time." 
+            description: isFirstLogin
+              ? "You've successfully signed in for the first time."
               : "You've been successfully logged in.",
           });
 
@@ -139,7 +139,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     } catch (error) {
       console.error(`[LoginForm] Unexpected error:`, error);
       if (recordAttempt) recordAttempt();
-      
+
       toast({
         title: "Login Failed",
         description: "An unexpected error occurred. Please try again.",
@@ -165,7 +165,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           )}
 
           <form
-            onSubmit={(e) => handleLogin(e, isLimited ? undefined : () => {})} 
+            onSubmit={(e) => handleLogin(e, isLimited ? undefined : () => { })}
             className="space-y-4"
           >
             {!isLimited && attemptsLeft < 5 && attemptsLeft > 0 && (
@@ -179,49 +179,49 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
               </div>
             )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <SecureInput
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={setEmail}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <SecureInput
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={setEmail}
                 required
-                disabled={isLimited}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={isLimited}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </Button>
             </div>
-          </div>
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading || isLimited}
-          >
-            {isLoading ? "Signing in..." : isLimited ? "Account Temporarily Locked" : "Sign In"}
-          </Button>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLimited}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLimited}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || isLimited}
+            >
+              {isLoading ? "Signing in..." : isLimited ? "Account Temporarily Locked" : "Sign In"}
+            </Button>
 
             <div className="text-center">
               <button

@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -20,12 +20,14 @@ export const VideoPlayerDialog = ({
 }: VideoPlayerDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 bg-black/95 border-border" aria-describedby="video-player-description">
+      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 bg-black/95 border-border [&>button]:hidden">
         <VisuallyHidden>
           <DialogTitle>{title || "Video Player"}</DialogTitle>
-          <div id="video-player-description">Fullscreen video player with playback controls</div>
         </VisuallyHidden>
-        
+        <DialogDescription className="sr-only">
+          Fullscreen video player with playback controls
+        </DialogDescription>
+
         <div className="relative w-full h-full flex items-center justify-center">
           <Button
             variant="ghost"
@@ -36,7 +38,7 @@ export const VideoPlayerDialog = ({
           >
             <X className="h-6 w-6" />
           </Button>
-          
+
           {title && (
             <div className="absolute top-4 left-4 z-50 bg-background/10 backdrop-blur-sm px-4 py-2 rounded-lg">
               <p className="text-foreground font-medium">{title}</p>

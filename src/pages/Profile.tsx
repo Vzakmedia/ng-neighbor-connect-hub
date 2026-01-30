@@ -55,9 +55,9 @@ const Profile = () => {
         <div className="container py-6 max-w-4xl">
           <div className="space-y-6">
             {!completionStatus.isComplete && !isMobile && (
-              <ProfileCompletionCard 
+              <ProfileCompletionCard
                 completionStatus={completionStatus}
-                onEditProfile={() => navigate('/complete-profile')}
+                onEditProfile={() => navigate('/auth/complete-profile')}
               />
             )}
             <ProfileOverview />

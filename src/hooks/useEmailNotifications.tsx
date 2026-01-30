@@ -36,13 +36,13 @@ export const useEmailNotifications = () => {
     queryKey: ['email-preferences', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      
+
       const { data, error } = await supabase
         .from('user_email_preferences')
         .select('*')
         .eq('user_id', user.id)
         .single();
-      
+
       if (error && error.code === 'PGRST116') {
         // No preferences yet, create default
         const { data: newPrefs, error: insertError } = await supabase
@@ -50,11 +50,11 @@ export const useEmailNotifications = () => {
           .insert({ user_id: user.id })
           .select()
           .single();
-        
+
         if (insertError) throw insertError;
         return newPrefs;
       }
-      
+
       if (error) throw error;
       return data;
     },
@@ -65,17 +65,17 @@ export const useEmailNotifications = () => {
   const updatePreferences = useMutation({
     mutationFn: async (updates: Partial<EmailPreferences>) => {
       if (!user) throw new Error('Not authenticated');
-      
+
       const { data, error } = await supabase
         .from('user_email_preferences')
         .upsert({
           user_id: user.id,
           ...updates,
           updated_at: new Date().toISOString()
-        })
+        }, { onConflict: 'user_id' })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -93,7 +93,7 @@ export const useEmailNotifications = () => {
   const sendTestEmail = useMutation({
     mutationFn: async () => {
       if (!user?.email) throw new Error('No email address');
-      
+
       const emailBody = {
         to: user.email,
         subject: 'Test Email Notification',
@@ -111,26 +111,26 @@ export const useEmailNotifications = () => {
       };
 
       console.log('Attempting to send test email via supabase.functions.invoke...');
-      
+
       try {
         const { data, error } = await supabase.functions.invoke('send-email-notification', {
           body: emailBody
         });
-        
+
         if (error) {
           console.error('supabase.functions.invoke error:', error);
           throw error;
         }
-        
+
         console.log('Test email sent successfully via invoke:', data);
         return data;
       } catch (invokeError: any) {
         console.error('Invoke failed, trying direct fetch fallback:', invokeError);
-        
+
         // Fallback to direct fetch
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cowiviqhrnmhttugozbz.supabase.co';
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4';
-        
+
         const response = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
           method: 'POST',
           headers: {
@@ -140,13 +140,13 @@ export const useEmailNotifications = () => {
           },
           body: JSON.stringify(emailBody)
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Direct fetch failed:', response.status, errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
-        
+
         const data = await response.json();
         console.log('Test email sent successfully via direct fetch:', data);
         return data;

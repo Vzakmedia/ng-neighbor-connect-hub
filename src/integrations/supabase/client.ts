@@ -11,89 +11,29 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 const getUnpatchedFetch = (): typeof fetch => {
   // Safe fallback chain: stored original -> window.fetch -> throw error
   const originalFetch = (window as any).__originalFetch__;
-  
+
   // Guard against undefined fetch on early native load
   if (originalFetch && typeof originalFetch === 'function') {
     console.log('[Supabase] Using stored original fetch');
     return wrapFetchWithLogging(originalFetch);
   }
-  
+
   if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
     console.log('[Supabase] Using standard window.fetch');
     return wrapFetchWithLogging(window.fetch.bind(window));
   }
-  
+
   console.error('[Supabase] No fetch implementation available!');
   throw new Error('No fetch implementation available');
 };
 
 // Wrap fetch with auth request logging for debugging
+// Wrap fetch with auth request logging for debugging
 const wrapFetchWithLogging = (baseFetch: typeof fetch): typeof fetch => {
-  
-  // Return a wrapped fetch with detailed logging
+
+  // Return a wrapped fetch
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const method = init?.method || 'GET';
-    const isAuthRequest = url.includes('/auth/') || url.includes('gotrue');
-    
-    // Log auth-related requests in detail
-    if (isAuthRequest) {
-      console.log(`[Auth Fetch] ${method} ${url}`);
-      console.log('[Auth Fetch] Headers:', JSON.stringify(init?.headers || {}, null, 2));
-      if (init?.body) {
-        try {
-          const bodyPreview = typeof init.body === 'string' 
-            ? JSON.parse(init.body) 
-            : init.body;
-          // Redact sensitive fields
-          const safeBody = { ...bodyPreview };
-          if (safeBody.password) safeBody.password = '[REDACTED]';
-          if (safeBody.refresh_token) safeBody.refresh_token = '[REDACTED]';
-          console.log('[Auth Fetch] Body:', JSON.stringify(safeBody, null, 2));
-        } catch {
-          console.log('[Auth Fetch] Body: [non-JSON or FormData]');
-        }
-      }
-    }
-    
-    const startTime = Date.now();
-    
-    try {
-      const response = await baseFetch(input, init);
-      const duration = Date.now() - startTime;
-      
-      if (isAuthRequest) {
-        console.log(`[Auth Fetch] Response: ${response.status} ${response.statusText} (${duration}ms)`);
-        
-        // Clone response to read body without consuming it
-        const clonedResponse = response.clone();
-        try {
-          const responseBody = await clonedResponse.json();
-          // Redact sensitive fields from response
-          const safeResponse = { ...responseBody };
-          if (safeResponse.access_token) safeResponse.access_token = '[REDACTED]';
-          if (safeResponse.refresh_token) safeResponse.refresh_token = '[REDACTED]';
-          console.log('[Auth Fetch] Response body:', JSON.stringify(safeResponse, null, 2));
-        } catch {
-          console.log('[Auth Fetch] Response body: [non-JSON]');
-        }
-        
-        if (!response.ok) {
-          console.error(`[Auth Fetch] ERROR: ${response.status} - Request failed`);
-        }
-      }
-      
-      return response;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      
-      if (isAuthRequest) {
-        console.error(`[Auth Fetch] NETWORK ERROR after ${duration}ms:`, error);
-        console.error('[Auth Fetch] Request details:', { url, method });
-      }
-      
-      throw error;
-    }
+    return baseFetch(input, init);
   };
 };
 
@@ -110,7 +50,7 @@ const getCapacitor = () => {
   if (cachedCapacitor !== undefined) {
     return cachedCapacitor;
   }
-  
+
   try {
     console.log('[Supabase] Checking for Capacitor...');
     // Use window.Capacitor which is injected by native runtime
@@ -142,10 +82,10 @@ const getStorageAdapter = () => {
 // Create Supabase client with synchronous storage adapter
 const createSupabaseClient = () => {
   console.log('[Supabase] Creating client...');
-  
+
   const storage = getStorageAdapter();
   const customFetch = getUnpatchedFetch();
-  
+
   const clientConfig: any = {
     auth: {
       storage,
@@ -182,18 +122,18 @@ export const supabase = createSupabaseClient();
 const validateAndRefreshSession = async () => {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error('Session validation error:', error);
       return;
     }
-    
+
     if (session) {
       // Check if token is about to expire (within 5 minutes)
       const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
       const now = Date.now();
       const fiveMinutes = 5 * 60 * 1000;
-      
+
       if (expiresAt - now < fiveMinutes) {
         console.log('Token expiring soon, refreshing...');
         const { error: refreshError } = await supabase.auth.refreshSession();

@@ -5,7 +5,7 @@ import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
 };
 
 serve(async (req) => {
@@ -16,19 +16,19 @@ serve(async (req) => {
 
   try {
     const { to, subject, body, type = 'notification', userId, data: templateData } = await req.json();
-    
+
     console.log('Email notification request:', { to, subject, type, userId });
 
     // Validate required fields
     if (!to || !subject || !body) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Missing required fields: to, subject, body',
           status: 'error'
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -48,13 +48,13 @@ serve(async (req) => {
     if (emailConfig?.config_value === false) {
       console.log('Email notifications are disabled globally');
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           status: 'skipped',
           reason: 'global_disabled'
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -71,13 +71,13 @@ serve(async (req) => {
       if (userPrefs && !userPrefs.email_enabled) {
         console.log('Email notifications disabled for user:', userId);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             status: 'skipped',
             reason: 'user_disabled'
           }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
@@ -88,13 +88,13 @@ serve(async (req) => {
         if (userPrefs[typeKey] === false) {
           console.log(`Email notification type '${type}' disabled for user:`, userId);
           return new Response(
-            JSON.stringify({ 
+            JSON.stringify({
               status: 'skipped',
               reason: 'type_disabled'
             }),
-            { 
-              status: 200, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             }
           );
         }
@@ -105,13 +105,13 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'RESEND_API_KEY is not configured',
           status: 'error'
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -121,7 +121,7 @@ serve(async (req) => {
 
     // Generate HTML body from template if data is provided
     let htmlBody = typeof body === 'string' ? body : JSON.stringify(body);
-    
+
     if (templateData) {
       const { generateEmailTemplate } = await import('./templates.ts');
       const appUrl = Deno.env.get('APP_URL') || 'https://yourapp.com';
@@ -135,7 +135,36 @@ serve(async (req) => {
       html: htmlBody,
     });
 
-    // Log the email for audit purposes
+    if (emailResponse.error) {
+      console.error('Error from Resend API:', emailResponse.error);
+
+      // Log the failure
+      await supabase
+        .from('email_logs')
+        .insert({
+          recipient_email: to,
+          subject: subject,
+          body: body,
+          email_type: type,
+          user_id: userId,
+          status: 'failed',
+          error_message: emailResponse.error.message,
+          created_at: new Date().toISOString()
+        });
+
+      return new Response(
+        JSON.stringify({
+          error: emailResponse.error.message,
+          status: 'error'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Log the success for audit purposes
     const { error: logError } = await supabase
       .from('email_logs')
       .insert({
@@ -145,6 +174,7 @@ serve(async (req) => {
         email_type: type,
         user_id: userId,
         status: 'sent',
+        provider_id: emailResponse.data?.id,
         sent_at: new Date().toISOString()
       });
 
@@ -155,31 +185,31 @@ serve(async (req) => {
     console.log('Email notification sent successfully via Resend');
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         message: 'Email notification sent successfully',
         recipient: to,
         subject: subject,
         type: type,
         provider: 'resend',
-        provider_id: (emailResponse as any)?.data?.id ?? null,
+        provider_id: emailResponse.data?.id,
         sentAt: new Date().toISOString()
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
 
   } catch (error) {
     console.error('Error sending email notification:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         status: 'error'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
