@@ -13,7 +13,7 @@ export class WebRTCManagerV2 {
   private callState: CallState = "idle";
   private currentCallLogId: string | null = null;
   private callStartTime: number | null = null;
-  
+
   // Session tracking and ICE candidate queue
   private callSessionId: string | null = null;
   private pendingIceCandidates: RTCIceCandidate[] = [];
@@ -122,18 +122,18 @@ export class WebRTCManagerV2 {
         console.log("Skipping negotiation - not connected yet");
         return;
       }
-      
+
       try {
         console.log("Renegotiation needed - creating new offer");
         const offer = await this.pc!.createOffer();
         await this.pc!.setLocalDescription(offer);
-        
+
         await this.sendSignal({
           type: "renegotiate",
           sdp: offer,
           session_id: this.callSessionId
         });
-        
+
         this.logAnalytics("renegotiation_initiated", { reason: "negotiation_needed" });
       } catch (error) {
         console.error("Error during renegotiation:", error);
@@ -172,6 +172,12 @@ export class WebRTCManagerV2 {
       await this.pc!.setLocalDescription(offer);
 
       await this.createCallLog();
+
+      // Send push notification to wake up the receiver (especially for native)
+      this.sendCallNotification(type).catch(err =>
+        console.error("[WebRTC] Failed to send background notification:", err)
+      );
+
       await this.sendSignal({
         type: "offer",
         sdp: offer,
@@ -224,10 +230,10 @@ export class WebRTCManagerV2 {
       this.onLocalStream?.(stream);
 
       await this.createPeerConnection();
-      
+
       // CRITICAL FIX: Set remote description BEFORE adding tracks
       await this.pc!.setRemoteDescription(new RTCSessionDescription(callData.message.sdp));
-      
+
       // Mark remote description as set and flush pending ICE candidates
       this.remoteDescriptionSet = true;
       await this.flushPendingIceCandidates();
@@ -264,7 +270,7 @@ export class WebRTCManagerV2 {
   async endCall() {
     this.clearRingingTimeout();
     const duration = this.callStartTime ? Math.floor((Date.now() - this.callStartTime) / 1000) : 0;
-    
+
     await this.sendSignal({ type: "end" });
     await this.updateCallLogStatus("ended", duration);
     this.logCallEnded(duration);
@@ -283,16 +289,16 @@ export class WebRTCManagerV2 {
           console.log("Ignoring duplicate offer for session:", session_id);
           return;
         }
-        
+
         console.log("Received new offer with session_id:", session_id);
-        
+
         // Send ringing acknowledgment to caller immediately
-        await this.sendSignal({ 
-          type: "ringing", 
-          session_id: session_id 
+        await this.sendSignal({
+          type: "ringing",
+          session_id: session_id
         });
         console.log("Sent ringing acknowledgment to caller");
-        
+
         this.onIncomingCall?.(message);
       } else if (type === "ringing") {
         console.log("Received ringing acknowledgment from receiver - call is being delivered");
@@ -303,22 +309,22 @@ export class WebRTCManagerV2 {
           console.log("Ignoring answer for different session:", session_id);
           return;
         }
-        
+
         // Only process answer if we're in the correct state (have-local-offer)
         if (this.pc.signalingState !== "have-local-offer") {
           console.warn(`Cannot set remote answer in state: ${this.pc.signalingState}`);
           return;
         }
-        
+
         console.log("Received answer for session:", session_id, "signalingState:", this.pc.signalingState);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
-        
+
         // Mark remote description as set and flush pending ICE candidates
         this.remoteDescriptionSet = true;
         await this.flushPendingIceCandidates();
       } else if ((type === "ice" || type === "ice-candidate") && candidate) {
         console.log("Received ICE candidate for session:", session_id);
-        
+
         if (!this.pc) {
           console.warn("No peer connection available for ICE candidate");
           return;
@@ -352,13 +358,13 @@ export class WebRTCManagerV2 {
           console.log("Ignoring renegotiation answer for different session:", session_id);
           return;
         }
-        
+
         // Only process answer if we're in the correct state
         if (this.pc.signalingState !== "have-local-offer") {
           console.warn(`Cannot set remote renegotiation answer in state: ${this.pc.signalingState}`);
           return;
         }
-        
+
         console.log("Received renegotiation answer from peer, signalingState:", this.pc.signalingState);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
         this.logAnalytics("renegotiation_completed", { success: true });
@@ -381,7 +387,7 @@ export class WebRTCManagerV2 {
     if (this.pendingIceCandidates.length === 0) return;
 
     console.log(`Flushing ${this.pendingIceCandidates.length} pending ICE candidates`);
-    
+
     for (const candidate of this.pendingIceCandidates) {
       try {
         await this.pc?.addIceCandidate(candidate);
@@ -389,7 +395,7 @@ export class WebRTCManagerV2 {
         console.error("Error adding queued ICE candidate:", error);
       }
     }
-    
+
     this.pendingIceCandidates = [];
   }
 
@@ -470,11 +476,11 @@ export class WebRTCManagerV2 {
 
       const newVideoTrack = newStream.getVideoTracks()[0];
       const sender = this.pc?.getSenders().find(s => s.track?.kind === "video");
-      
+
       if (sender) {
         await sender.replaceTrack(newVideoTrack);
         videoTrack.stop();
-        
+
         this.localStream.removeTrack(videoTrack);
         this.localStream.addTrack(newVideoTrack);
         this.onLocalStream?.(this.localStream);
@@ -503,7 +509,7 @@ export class WebRTCManagerV2 {
 
   cleanup() {
     this.clearRingingTimeout();
-    
+
     if (this.disconnectTimeoutRef) {
       clearTimeout(this.disconnectTimeoutRef);
       this.disconnectTimeoutRef = null;
@@ -530,7 +536,7 @@ export class WebRTCManagerV2 {
 
   private startRingingTimeout() {
     this.clearRingingTimeout();
-    
+
     this.ringingTimeoutRef = setTimeout(async () => {
       console.log("Call timeout - no answer after 45s");
       await this.sendSignal({ type: "timeout", session_id: this.callSessionId });
@@ -551,7 +557,7 @@ export class WebRTCManagerV2 {
   private async sendSignal(message: any, retryCount = 0): Promise<void> {
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 1000; // Start with 1 second
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -564,8 +570,8 @@ export class WebRTCManagerV2 {
 
       if (!conversationData.data) throw new Error("Conversation not found");
 
-      const receiverId = conversationData.data.user1_id === user.id 
-        ? conversationData.data.user2_id 
+      const receiverId = conversationData.data.user1_id === user.id
+        ? conversationData.data.user2_id
         : conversationData.data.user1_id;
 
       // Add required fields to message including session_id
@@ -595,7 +601,7 @@ export class WebRTCManagerV2 {
       });
 
       if (error) throw error;
-      
+
       console.log("[WebRTC] Signal sent successfully", {
         type: message.type,
         session_id: fullMessage.session_id
@@ -607,7 +613,7 @@ export class WebRTCManagerV2 {
         type: message.type,
         session_id: this.callSessionId
       });
-      
+
       // Retry with exponential backoff
       if (retryCount < MAX_RETRIES) {
         const delay = RETRY_DELAY * Math.pow(2, retryCount);
@@ -615,7 +621,7 @@ export class WebRTCManagerV2 {
         await new Promise(resolve => setTimeout(resolve, delay));
         return this.sendSignal(message, retryCount + 1);
       }
-      
+
       throw error;
     }
   }
@@ -650,7 +656,7 @@ export class WebRTCManagerV2 {
       });
 
       if (error) throw error;
-      
+
       this.currentCallLogId = data?.log_id || null;
       console.log("Call log created:", this.currentCallLogId);
     } catch (error) {
@@ -713,16 +719,16 @@ export class WebRTCManagerV2 {
 
   private async logCallConnected() {
     const connectionTime = this.callStartTime ? Date.now() - this.callStartTime : 0;
-    await this.logAnalytics("call_connected", { 
+    await this.logAnalytics("call_connected", {
       callType: this.callType,
-      connectionTimeMs: connectionTime 
+      connectionTimeMs: connectionTime
     });
   }
 
   private async logCallEnded(duration: number) {
-    await this.logAnalytics("call_ended", { 
+    await this.logAnalytics("call_ended", {
       callType: this.callType,
-      durationSeconds: duration 
+      durationSeconds: duration
     });
   }
 
@@ -741,6 +747,45 @@ export class WebRTCManagerV2 {
       });
     } catch (error) {
       console.error("Error logging analytics:", error);
+    }
+  }
+
+  private async sendCallNotification(type: CallType) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: callerProfile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .single();
+
+      const conversationData = await supabase
+        .from("direct_conversations")
+        .select("user1_id, user2_id")
+        .eq("id", this.conversationId)
+        .single();
+
+      if (!conversationData.data) return;
+
+      const receiverId = conversationData.data.user1_id === user.id
+        ? conversationData.data.user2_id
+        : conversationData.data.user1_id;
+
+      await supabase.functions.invoke("send-call-notification", {
+        body: {
+          recipientId: receiverId,
+          callerId: user.id,
+          callerName: callerProfile?.full_name || "Someone",
+          callType: type,
+          conversationId: this.conversationId,
+        },
+      });
+
+      console.log("[WebRTC] Background call notification sent");
+    } catch (error) {
+      console.error("[WebRTC] Failed to send call notification:", error);
     }
   }
 }

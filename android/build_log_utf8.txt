@@ -1,0 +1,301 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.13/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+The Kotlin Gradle plugin was loaded multiple times in different subprojects, which is not supported and may break the build. 
+This might happen in subprojects that apply the Kotlin plugins with the Gradle 'plugins { ... }' DSL if they specify explicit versions, even if the versions are equal.
+Please add the Kotlin plugin to the common parent project or the root project, then remove the versions in the subprojects.
+If the parent project does not need the plugin, add 'apply false' to the plugin line.
+See: https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl
+The Kotlin plugin was loaded in the following projects: ':capacitor-geolocation', ':capacitor-google-maps'
+
+> Task :aparajita-capacitor-biometric-auth:preBuild UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:preDebugBuild UP-TO-DATE
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preDebugBuild UP-TO-DATE
+> Task :capacitor-android:writeDebugAarMetadata UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:checkDebugAarMetadata UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugJniLibFolders UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugNativeLibs NO-SOURCE
+> Task :aparajita-capacitor-biometric-auth:stripDebugDebugSymbols NO-SOURCE
+> Task :aparajita-capacitor-biometric-auth:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:generateDebugResValues UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:generateDebugResources UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:packageDebugResources UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:processDebugNavigationResources UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:parseDebugLocalResources UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:generateDebugRFile UP-TO-DATE
+> Task :capacitor-android:generateDebugResValues UP-TO-DATE
+> Task :capacitor-android:generateDebugResources UP-TO-DATE
+> Task :capacitor-android:packageDebugResources UP-TO-DATE
+> Task :capacitor-android:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-android:parseDebugLocalResources UP-TO-DATE
+> Task :capacitor-android:generateDebugRFile UP-TO-DATE
+> Task :capacitor-android:javaPreCompileDebug UP-TO-DATE
+> Task :capacitor-android:compileDebugJavaWithJavac UP-TO-DATE
+> Task :capacitor-android:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:extractDebugAnnotations UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugShaders UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:compileDebugShaders NO-SOURCE
+> Task :aparajita-capacitor-biometric-auth:generateDebugAssets UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugAssets UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:javaPreCompileDebug UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:compileDebugJavaWithJavac UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:prepareDebugArtProfile UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:prepareLintJarForPublish UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:processDebugManifest UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:processDebugJavaRes NO-SOURCE
+> Task :aparajita-capacitor-biometric-auth:mergeDebugJavaResource UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:syncDebugLibJars UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:writeDebugAarMetadata UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:bundleDebugAar UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:assembleDebug UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :aparajita-capacitor-biometric-auth:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:compileDebugLibraryResources UP-TO-DATE
+> Task :capacitor-app:preBuild UP-TO-DATE
+> Task :capacitor-app:preDebugBuild UP-TO-DATE
+> Task :capacitor-app:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-browser:preBuild UP-TO-DATE
+> Task :capacitor-browser:preDebugBuild UP-TO-DATE
+> Task :capacitor-browser:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-camera:preBuild UP-TO-DATE
+> Task :capacitor-camera:preDebugBuild UP-TO-DATE
+> Task :capacitor-camera:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-clipboard:preBuild UP-TO-DATE
+> Task :capacitor-clipboard:preDebugBuild UP-TO-DATE
+> Task :capacitor-clipboard:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-community-contacts:preBuild UP-TO-DATE
+> Task :capacitor-community-contacts:preDebugBuild UP-TO-DATE
+> Task :capacitor-community-contacts:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preDebugBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-device:preBuild UP-TO-DATE
+> Task :capacitor-device:preDebugBuild UP-TO-DATE
+> Task :capacitor-device:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-dialog:preBuild UP-TO-DATE
+> Task :capacitor-dialog:preDebugBuild UP-TO-DATE
+> Task :capacitor-dialog:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-filesystem:preBuild UP-TO-DATE
+> Task :capacitor-filesystem:preDebugBuild UP-TO-DATE
+> Task :capacitor-filesystem:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-geolocation:preBuild UP-TO-DATE
+> Task :capacitor-geolocation:preDebugBuild UP-TO-DATE
+> Task :capacitor-geolocation:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-google-maps:preBuild UP-TO-DATE
+> Task :capacitor-google-maps:preDebugBuild UP-TO-DATE
+> Task :capacitor-google-maps:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-haptics:preBuild UP-TO-DATE
+> Task :capacitor-haptics:preDebugBuild UP-TO-DATE
+> Task :capacitor-haptics:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-keyboard:preBuild UP-TO-DATE
+> Task :capacitor-keyboard:preDebugBuild UP-TO-DATE
+> Task :capacitor-keyboard:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-local-notifications:preBuild UP-TO-DATE
+> Task :capacitor-local-notifications:preDebugBuild UP-TO-DATE
+> Task :capacitor-local-notifications:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-network:preBuild UP-TO-DATE
+> Task :capacitor-network:preDebugBuild UP-TO-DATE
+> Task :capacitor-network:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-preferences:preBuild UP-TO-DATE
+> Task :capacitor-preferences:preDebugBuild UP-TO-DATE
+> Task :capacitor-preferences:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-push-notifications:preBuild UP-TO-DATE
+> Task :capacitor-push-notifications:preDebugBuild UP-TO-DATE
+> Task :capacitor-push-notifications:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-share:preBuild UP-TO-DATE
+> Task :capacitor-share:preDebugBuild UP-TO-DATE
+> Task :capacitor-share:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-splash-screen:preBuild UP-TO-DATE
+> Task :capacitor-splash-screen:preDebugBuild UP-TO-DATE
+> Task :capacitor-splash-screen:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-status-bar:preBuild UP-TO-DATE
+> Task :capacitor-status-bar:preDebugBuild UP-TO-DATE
+> Task :capacitor-status-bar:writeDebugAarMetadata UP-TO-DATE
+> Task :capgo-native-audio:preBuild UP-TO-DATE
+> Task :capgo-native-audio:preDebugBuild UP-TO-DATE
+> Task :capgo-native-audio:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :capacitor-app:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-browser:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-camera:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-clipboard:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-community-contacts:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-device:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-dialog:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-filesystem:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-geolocation:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-google-maps:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-haptics:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-keyboard:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-local-notifications:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-network:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-preferences:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-push-notifications:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-share:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-splash-screen:processDebugNavigationResources UP-TO-DATE
+> Task :capacitor-status-bar:processDebugNavigationResources UP-TO-DATE
+> Task :capgo-native-audio:processDebugNavigationResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :capacitor-app:generateDebugResValues UP-TO-DATE
+> Task :capacitor-app:generateDebugResources UP-TO-DATE
+> Task :capacitor-app:packageDebugResources UP-TO-DATE
+> Task :capacitor-browser:generateDebugResValues UP-TO-DATE
+> Task :capacitor-browser:generateDebugResources UP-TO-DATE
+> Task :capacitor-browser:packageDebugResources UP-TO-DATE
+> Task :capacitor-camera:generateDebugResValues UP-TO-DATE
+> Task :capacitor-camera:generateDebugResources UP-TO-DATE
+> Task :capacitor-camera:packageDebugResources UP-TO-DATE
+> Task :capacitor-clipboard:generateDebugResValues UP-TO-DATE
+> Task :capacitor-clipboard:generateDebugResources UP-TO-DATE
+> Task :capacitor-clipboard:packageDebugResources UP-TO-DATE
+> Task :capacitor-community-contacts:generateDebugResValues UP-TO-DATE
+> Task :capacitor-community-contacts:generateDebugResources UP-TO-DATE
+> Task :capacitor-community-contacts:packageDebugResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateDebugResValues UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateDebugResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:packageDebugResources UP-TO-DATE
+> Task :capacitor-device:generateDebugResValues UP-TO-DATE
+> Task :capacitor-device:generateDebugResources UP-TO-DATE
+> Task :capacitor-device:packageDebugResources UP-TO-DATE
+> Task :capacitor-dialog:generateDebugResValues UP-TO-DATE
+> Task :capacitor-dialog:generateDebugResources UP-TO-DATE
+> Task :capacitor-dialog:packageDebugResources UP-TO-DATE
+> Task :capacitor-filesystem:generateDebugResValues UP-TO-DATE
+> Task :capacitor-filesystem:generateDebugResources UP-TO-DATE
+> Task :capacitor-filesystem:packageDebugResources UP-TO-DATE
+> Task :capacitor-geolocation:generateDebugResValues UP-TO-DATE
+> Task :capacitor-geolocation:generateDebugResources UP-TO-DATE
+> Task :capacitor-geolocation:packageDebugResources UP-TO-DATE
+> Task :capacitor-google-maps:generateDebugResValues UP-TO-DATE
+> Task :capacitor-google-maps:generateDebugResources UP-TO-DATE
+> Task :capacitor-google-maps:packageDebugResources UP-TO-DATE
+> Task :capacitor-haptics:generateDebugResValues UP-TO-DATE
+> Task :capacitor-haptics:generateDebugResources UP-TO-DATE
+> Task :capacitor-haptics:packageDebugResources UP-TO-DATE
+> Task :capacitor-keyboard:generateDebugResValues UP-TO-DATE
+> Task :capacitor-keyboard:generateDebugResources UP-TO-DATE
+> Task :capacitor-keyboard:packageDebugResources UP-TO-DATE
+> Task :capacitor-local-notifications:generateDebugResValues UP-TO-DATE
+> Task :capacitor-local-notifications:generateDebugResources UP-TO-DATE
+> Task :capacitor-local-notifications:packageDebugResources UP-TO-DATE
+> Task :capacitor-network:generateDebugResValues UP-TO-DATE
+> Task :capacitor-network:generateDebugResources UP-TO-DATE
+> Task :capacitor-network:packageDebugResources UP-TO-DATE
+> Task :capacitor-preferences:generateDebugResValues UP-TO-DATE
+> Task :capacitor-preferences:generateDebugResources UP-TO-DATE
+> Task :capacitor-preferences:packageDebugResources UP-TO-DATE
+> Task :capacitor-push-notifications:generateDebugResValues UP-TO-DATE
+> Task :capacitor-push-notifications:generateDebugResources UP-TO-DATE
+> Task :capacitor-push-notifications:packageDebugResources UP-TO-DATE
+> Task :capacitor-share:generateDebugResValues UP-TO-DATE
+> Task :capacitor-share:generateDebugResources UP-TO-DATE
+> Task :capacitor-share:packageDebugResources UP-TO-DATE
+> Task :capacitor-splash-screen:generateDebugResValues UP-TO-DATE
+> Task :capacitor-splash-screen:generateDebugResources UP-TO-DATE
+> Task :capacitor-splash-screen:packageDebugResources UP-TO-DATE
+> Task :capacitor-status-bar:generateDebugResValues UP-TO-DATE
+> Task :capacitor-status-bar:generateDebugResources UP-TO-DATE
+> Task :capacitor-status-bar:packageDebugResources UP-TO-DATE
+> Task :capgo-native-audio:generateDebugResValues UP-TO-DATE
+> Task :capgo-native-audio:generateDebugResources UP-TO-DATE
+> Task :capgo-native-audio:packageDebugResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :aparajita-capacitor-biometric-auth:extractDeepLinksDebug UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-android:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-android:processDebugManifest UP-TO-DATE
+> Task :capacitor-app:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-app:processDebugManifest UP-TO-DATE
+> Task :capacitor-browser:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-browser:processDebugManifest UP-TO-DATE
+> Task :capacitor-camera:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-camera:processDebugManifest UP-TO-DATE
+> Task :capacitor-clipboard:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-clipboard:processDebugManifest UP-TO-DATE
+> Task :capacitor-community-contacts:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-community-contacts:processDebugManifest UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-device:extractDeepLinksDebug UP-TO-DATE
+> Task :capacitor-device:processDebugManifest UP-TO-DATE
+> Task :capacitor-dialog:extractDeepLinksDebug
+> Task :capacitor-filesystem:extractDeepLinksDebug
+> Task :capacitor-geolocation:extractDeepLinksDebug
+
+> Task :capacitor-cordova-android-plugins:processDebugManifest FAILED
+./gradlew : C:\Users\PRECISE\Desktop\Projects\Neighbours\ng-neighbor
+-connect-hub\android\capacitor-cordova-android-plugins\src\main\Andr
+oidManifest.xml:5:1-9:11 Error:
+At line:1 char:1
++ ./gradlew assembleDebug --no-daemon > build_log.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\PRECIS...5:1- 
+   9:11 Error::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+	android:exported needs to be explicitly specified for element 
+<service#com.dmarc.cordovacall.MyConnectionService>. Apps targeting 
+Android 12 and higher are required to specify an explicit value for 
+`android:exported` when the corresponding component has an intent 
+filter defined. See https://developer.android.com/guide/topics/manif
+est/activity-element#exported for details.
+
+See https://developer.android.com/r/studio-ui/build/manifest-merger for more information about the manifest merger.
+
+
+> Task :capacitor-dialog:processDebugManifest
+> Task :capacitor-geolocation:processDebugManifest
+> Task :capacitor-filesystem:processDebugManifest
+
+[Incubating] Problems report is available at: file:///C:/Users/PRECISE/Desktop/Projects/Neighbours/ng-neighbor-connect-hub/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task 
+':capacitor-cordova-android-plugins:processDebugManifest'.
+> A failure occurred while executing com.android.build.gradle.tasks.
+ProcessLibraryManifest$ProcessLibWorkAction
+   > Manifest merger failed : android:exported needs to be 
+explicitly specified for element 
+<service#com.dmarc.cordovacall.MyConnectionService>. Apps targeting 
+Android 12 and higher are required to specify an explicit value for 
+`android:exported` when the corresponding component has an intent 
+filter defined. See https://developer.android.com/guide/topics/manif
+est/activity-element#exported for details.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 14s
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+177 actionable tasks: 7 executed, 170 up-to-date
