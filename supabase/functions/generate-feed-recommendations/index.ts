@@ -13,7 +13,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userId } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { userId } = body;
 
     if (!userId) {
       return new Response(
@@ -32,11 +42,7 @@ Deno.serve(async (req) => {
       .rpc('get_user_engagement_stats', { p_user_id: userId });
 
     if (engagementError) {
-      console.error('Error fetching engagement stats:', engagementError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch user engagement data" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.warn('Error fetching engagement stats (using defaults):', engagementError);
     }
 
     const stats = engagementData?.[0] || {

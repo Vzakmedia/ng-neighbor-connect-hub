@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,11 +17,13 @@ interface NeighborhoodEmergencyAlertProps {
 
 const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEmergencyAlertProps) => {
   const { user } = useAuth();
+  const location = useLocation();
   const { toast } = useToast();
   const { getCurrentPosition } = useNativePermissions();
   const { } = useNotifications(); // Emergency alerts now handled by unified system
   const [alerts, setAlerts] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -157,9 +160,10 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                   payload.new.longitude
                 );
                 if (distance <= 10) {
+                  // Use toast for initial non-disruptive notification
                   toast({
-                    title: 'Emergency alert near you',
-                    description: `${(payload.new.alert_type || 'alert').replace('_', ' ')} • ${payload.new.severity}`,
+                    title: 'New Emergency Alert',
+                    description: `${(payload.new.alert_type || 'alert').replace('_', ' ').toUpperCase()} nearby`,
                     variant: 'destructive',
                   });
                   loadNearbyAlerts();
@@ -179,16 +183,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
             loadNearbyAlerts();
           }
         )
-        .subscribe((status) => {
-          console.log('Safety alerts subscription status:', status);
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to safety alerts - falling back to polling');
-            const pollInterval = setInterval(() => {
-              loadNearbyAlerts();
-            }, 60000);
-            (window as any).publicAlertsPoll = pollInterval;
-          }
-        });
+        .subscribe();
     } catch (error) {
       console.error('Error subscribing to safety alerts:', error);
       const pollInterval = setInterval(() => {
@@ -224,10 +219,12 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
       // Remove from local state
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+      if (alerts.length <= 1) setIsExpanded(false);
     } catch (error) {
       console.error('Error dismissing alert:', error);
       // Still remove from local state even if DB operation fails
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+      if (alerts.length <= 1) setIsExpanded(false);
     }
   };
 
@@ -239,83 +236,112 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
   };
 
-  if (!user || alerts.length === 0) return null;
+  // Don't show emergency alerts on auth or onboarding pages
+  const isAuthPage = location.pathname.startsWith('/auth') ||
+    location.pathname === '/landing' ||
+    location.pathname === '/complete-profile';
+
+  if (!user || alerts.length === 0 || isAuthPage) return null;
 
   const positionClasses = {
-    'top-center': 'top-4 left-1/2 transform -translate-x-1/2',
-    'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2'
+    'top-center': 'top-20 left-1/2 -translate-x-1/2', // Moved down slightly to not hit the header
+    'bottom-center': 'bottom-20 left-1/2 -translate-x-1/2'
   };
 
   return (
-    <div className={`fixed ${positionClasses[position]} z-40 max-w-md w-full mx-4`}>
-      {alerts.map((alert) => {
-        const distance = userLocation ? calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          alert.latitude,
-          alert.longitude
-        ) : 0;
+    <div className={`fixed ${positionClasses[position]} z-40 max-w-md w-full px-4 transition-all duration-300`}>
+      {!isExpanded ? (
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="flex items-center gap-2 bg-orange-600 dark:bg-orange-500 text-white px-4 py-2 rounded-full shadow-lg border-2 border-orange-400/30 animate-pulse-slow mx-auto group hover:scale-105 transition-transform"
+        >
+          <ExclamationTriangleIcon className="h-5 w-5" />
+          <span className="font-bold text-sm">
+            {alerts.length} SAFETY {alerts.length === 1 ? 'ALERT' : 'ALERTS'} NEARBY
+          </span>
+          <div className="h-4 w-px bg-white/30 mx-1" />
+          <span className="text-xs font-medium group-hover:underline">VIEW DETAILS</span>
+        </button>
+      ) : (
+        <div className="relative animate-in fade-in slide-in-from-top-4 duration-300">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setIsExpanded(false)}
+            className="absolute -top-2 -right-2 z-50 h-8 w-8 rounded-full bg-white shadow-md hover:bg-gray-100 text-gray-500"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
 
-        return (
-          <Card key={alert.id} className="mb-3 shadow-lg border-orange-200 bg-orange-50 animate-pulse-slow">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ExclamationTriangleIcon className="h-5 w-5 text-orange-600" />
-                    <Badge className="bg-orange-600 text-white">
-                      {alert.situation_type?.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {distance.toFixed(1)}km away
-                    </Badge>
-                  </div>
+          <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-orange-200">
+            {alerts.map((alert) => {
+              const distance = userLocation ? calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                alert.latitude,
+                alert.longitude
+              ) : 0;
 
-                  <h4 className="font-semibold text-orange-800 mb-1">
-                    Emergency Alert in Your Area
-                  </h4>
+              return (
+                <Card key={alert.id} className="mb-3 shadow-xl border-orange-200 bg-orange-50/95 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-orange-600" />
+                          <Badge className="bg-orange-600 text-white border-transparent">
+                            {alert.situation_type?.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] border-orange-200 text-orange-700 bg-orange-100/50">
+                            {distance.toFixed(1)}km
+                          </Badge>
+                        </div>
 
-                  <p className="text-sm text-orange-700 mb-2">
-                    Reported by {alert.profiles?.full_name || 'A neighbor'}
-                  </p>
+                        <h4 className="font-bold text-orange-900 text-sm mb-1">
+                          Action Required: Safety Alert
+                        </h4>
 
-                  {alert.address && (
-                    <p className="text-xs text-orange-600 flex items-center gap-1 mb-3">
-                      <MapPinIcon className="h-3 w-3" />
-                      {alert.address}
-                    </p>
-                  )}
+                        <p className="text-xs text-orange-800 mb-3 leading-relaxed">
+                          Reported by <span className="font-semibold">{alert.profiles?.full_name || 'Neighbor'}</span>
+                          {alert.address && <span className="block mt-1 opacity-80 italic">at {alert.address}</span>}
+                        </p>
 
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => getDirections(alert.latitude, alert.longitude)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <MapIcon className="h-3 w-3 mr-1" />
-                      Get Directions
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => dismissAlert(alert.id)}
-                    >
-                      Dismiss
-                    </Button>
-                  </div>
-                </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => getDirections(alert.latitude, alert.longitude)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-bold"
+                          >
+                            <MapIcon className="h-3.5 w-3.5 mr-1" />
+                            MAP
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => dismissAlert(alert.id)}
+                            className="h-8 text-xs border-orange-200 text-orange-700 hover:bg-orange-100"
+                          >
+                            DISMISS
+                          </Button>
+                        </div>
+                      </div>
 
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-muted-foreground mb-2">
-                    {new Date(alert.created_at).toLocaleTimeString()}
-                  </span>
-                  <UsersIcon className="h-4 w-4 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-medium text-orange-600/70">
+                          {new Date(alert.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <div className="p-1.5 rounded-full bg-orange-100">
+                          <UsersIcon className="h-3.5 w-3.5 text-orange-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
