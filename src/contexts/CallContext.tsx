@@ -8,6 +8,7 @@ import { playMessagingChime, sendBrowserNotification } from "@/utils/audioUtils"
 import { VideoCallDialog } from "@/components/messaging/VideoCallDialog";
 import { IncomingCallDialog } from "@/components/messaging/IncomingCallDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { NativeCallManager } from "@/utils/NativeCallManager";
 
 type CallState = "idle" | "initiating" | "ringing" | "connecting" | "connected" | "ended";
 
@@ -60,6 +61,30 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const incomingCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Initialize Native Call Manager events
+    useEffect(() => {
+        if (!NativeCallManager.isAvailable()) return;
+
+        NativeCallManager.setAppName("Neighborlink");
+
+        NativeCallManager.on('answer', () => {
+            console.log("[CallContext] Native answer received");
+            // answerCall is defined within this component, but we need to ensure it's called
+            // we can use a ref or just call it if it's in scope (it is)
+            answerCall();
+        });
+
+        NativeCallManager.on('reject', () => {
+            console.log("[CallContext] Native reject received");
+            declineCall();
+        });
+
+        NativeCallManager.on('hangup', () => {
+            console.log("[CallContext] Native hangup received");
+            endCall();
+        });
+    }, []);
+
     const cleanup = useCallback(() => {
         if (managerRef.current) {
             managerRef.current.cleanup();
@@ -96,6 +121,12 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
             setIncomingCall(callData);
             setCallState("ringing");
 
+            // Trigger Native Call UI
+            NativeCallManager.receiveCall(
+                callData.sender_name || "Neighborlink User",
+                callData.conversation_id || conversationId
+            );
+
             // Play sound and show browser notification
             await playMessagingChime(undefined, 'double');
             await sendBrowserNotification(`Incoming ${callData.message?.callType || 'voice'} call`, {
@@ -117,6 +148,12 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         mgr.onCallStateUpdate = (state) => {
             setCallState(state);
             setIsInCall(state === "connected" || state === "connecting" || state === "initiating");
+
+            if (state === "connected") {
+                NativeCallManager.connectCall();
+            } else if (state === "ended" || state === "idle") {
+                NativeCallManager.endCall();
+            }
         };
 
         mgr.onLocalStream = (stream) => setLocalStream(stream);
@@ -149,6 +186,25 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     // Global listener for incoming calls when idle
     useEffect(() => {
         if (!user) return;
+
+        // Listener for push-notification triggered events (from useNativePushRegistration)
+        const handlePushIncomingCall = async (event: any) => {
+            const { conversationId, callerId, callerName, callType } = event.detail;
+
+            console.log("[CallProvider] Received push-triggered incoming call:", {
+                conversationId, callerName, callType, currentState: callState
+            });
+
+            if (callState === "idle") {
+                const mgr = initManager(conversationId);
+                // We don't have the full signal here, but setting state helps
+                // The manager's subscription (or polling) will pick up the real offer
+                setOtherUser({ name: callerName });
+                setIsVideoCall(callType === "video");
+            }
+        };
+
+        window.addEventListener('incoming-call', handlePushIncomingCall);
 
         const subscription = createSafeSubscription(
             (channel) =>
@@ -188,6 +244,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         );
 
         return () => {
+            window.removeEventListener('incoming-call', handlePushIncomingCall);
             cleanupSafeSubscription(subscription);
         };
     }, [user, callState, initManager, activeConversationId]);
@@ -200,6 +257,9 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         setOtherUser({ name, avatar });
         setIsVideoCall(false);
         setCallState("initiating");
+
+        // Trigger Native Outgoing UI
+        NativeCallManager.sendCall(name, conversationId);
 
         try {
             await mgr.startCall("voice");
@@ -218,6 +278,9 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         setOtherUser({ name, avatar });
         setIsVideoCall(true);
         setCallState("initiating");
+
+        // Trigger Native Outgoing UI
+        NativeCallManager.sendCall(name, conversationId);
 
         try {
             await mgr.startCall("video");
