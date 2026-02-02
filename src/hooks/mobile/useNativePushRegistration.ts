@@ -108,6 +108,8 @@ export const useNativePushRegistration = () => {
 
         // Foreground notifications
         const recvListener = await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+          console.log('Push notification received:', notification);
+
           // Play native notification sound
           await nativeAudioManager.play('notification', 0.7);
 
@@ -115,23 +117,40 @@ export const useNativePushRegistration = () => {
           const body = notification.body || '';
 
           // Handle incoming call notifications
-          const notificationData = notification.data as any;
-          if (notificationData?.notification_type === 'call_incoming') {
+          const notificationData = (notification.data || {}) as any;
+          if (notificationData?.notification_type === 'call_incoming' || notificationData?.type === 'call_incoming') {
+            const callData = notificationData.notification_metadata || notificationData;
+
+            console.log('[PushRegistration] Triggering incoming-call event', callData);
+
             // Trigger incoming call UI
-            const callData = notificationData.notification_metadata;
             window.dispatchEvent(new CustomEvent('incoming-call', {
               detail: {
-                conversationId: callData.conversation_id,
-                callerId: callData.caller_id,
-                callerName: callData.caller_name,
-                callType: callData.call_type,
+                conversationId: callData.conversation_id || callData.conversationId || callData.conversation_id,
+                callerId: callData.caller_id || callData.callerId,
+                callerName: callData.caller_name || callData.callerName,
+                callType: callData.call_type || callData.callType,
               }
             }));
 
-            toast({
-              title: `Incoming ${callData.call_type} call`,
-              description: `${callData.caller_name} is calling...`
-            });
+            // For background/lockscreen visibility without CallKit, we use a high-priority local notification
+            try {
+              await LocalNotifications.schedule({
+                notifications: [
+                  {
+                    title: `Incoming ${callData.call_type || 'voice'} call`,
+                    body: `${callData.caller_name || 'Someone'} is calling you`,
+                    id: Math.floor(Date.now() / 1000),
+                    sound: notificationData.sound || 'call_ringtone.wav',
+                    attachments: [],
+                    actionTypeId: 'CALL_ACTIONS',
+                    extra: notificationData
+                  }
+                ]
+              });
+            } catch (localError) {
+              console.warn('Failed to schedule local notification fallback:', localError);
+            }
           } else {
             toast({ title, description: body });
           }
