@@ -35,7 +35,7 @@ export function useWebRTCCallV2(conversationId: string) {
     mgr.onIncomingCall = (callData) => {
       setIncomingCall(callData);
       setCallState("ringing");
-      
+
       // Start 40s timeout for incoming call (slightly less than caller's 45s timeout)
       if (incomingCallTimeoutRef.current) {
         clearTimeout(incomingCallTimeoutRef.current);
@@ -65,7 +65,7 @@ export function useWebRTCCallV2(conversationId: string) {
   // Polling fallback for signaling messages
   const pollSignalingMessages = useCallback(async () => {
     if (!managerRef.current) return;
-    
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -94,7 +94,7 @@ export function useWebRTCCallV2(conversationId: string) {
     pollSignalingMessages();
 
     let subscription: any = null;
-    
+
     try {
       subscription = createSafeSubscription(
         (channel) =>
@@ -140,6 +140,28 @@ export function useWebRTCCallV2(conversationId: string) {
       }
     };
   }, [conversationId, pollSignalingMessages]);
+
+  /**
+   * Listen for window events (e.g. from push notifications)
+   */
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const handleIncomingCallEvent = (event: any) => {
+      const { conversationId: callConvId, callType } = event.detail;
+
+      // If the event is for this conversation, we can handle it if we're not already in a call
+      if (callConvId === conversationId && callState === "idle") {
+        console.log("[useWebRTCCallV2] Handling incoming-call event for conversation:", conversationId);
+        // The signal listener will pick up the actual offer, but we can set 
+        // a hint here or just wait for the signal. 
+        // For now, let's just log it as the signal listener is robust.
+      }
+    };
+
+    window.addEventListener('incoming-call', handleIncomingCallEvent);
+    return () => window.removeEventListener('incoming-call', handleIncomingCallEvent);
+  }, [conversationId, callState]);
 
   const startVoiceCall = useCallback(async () => {
     const mgr = managerRef.current;
@@ -234,7 +256,7 @@ export function useWebRTCCallV2(conversationId: string) {
         await mgr.answerCall(incomingCall, video ? "video" : "voice");
         setIncomingCall(null);
         console.log("[WebRTC] Call answered successfully");
-        
+
         // Log analytics for receiver
         await supabase.from("call_analytics").insert({
           conversation_id: conversationId,
@@ -253,7 +275,7 @@ export function useWebRTCCallV2(conversationId: string) {
         });
         toast({ title: "Failed to answer call", variant: "destructive" });
         setCallState("idle");
-        
+
         // Log analytics for error
         await supabase.from("call_analytics").insert({
           conversation_id: conversationId,

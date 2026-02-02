@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { playMessagingChime, sendBrowserNotification } from '@/utils/audioUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 
 const MessagingNotificationProvider = () => {
   const { user } = useAuth();
@@ -52,11 +53,11 @@ const MessagingNotificationProvider = () => {
         }
       }
     },
-    onMessageUpdate: () => {},
-    onConversationUpdate: () => {},
+    onMessageUpdate: () => { },
+    onConversationUpdate: () => { },
   });
 
-// Polling fallback for new messages when realtime is unavailable
+  // Polling fallback for new messages when realtime is unavailable
   const lastCheckedRef = useRef<string | null>(null);
   const notifiedIdsRef = useRef<Set<string>>(new Set());
 
@@ -144,7 +145,6 @@ const MessagingNotificationProvider = () => {
   }, [user, navigate, createOrFindConversation, isChatOpen]);
 
   // No UI required
-  useEffect(() => {}, []);
   return null;
 };
 

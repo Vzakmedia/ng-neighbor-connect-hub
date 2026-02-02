@@ -14,6 +14,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { RealtimeProvider } from "@/contexts/RealtimeContext";
+import { CallProvider } from "@/contexts/CallContext";
 import NeighborhoodEmergencyAlert from "@/components/NeighborhoodEmergencyAlert";
 
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -255,80 +256,82 @@ const App = () => {
               <PlatformRouter>
                 <ScrollToTopOnNavigate />
                 <RealtimeProvider>
-                  <PresenceProvider>
+                  <CallProvider>
+                    <PresenceProvider>
 
-                    <AudioInitializer />
-                    <OfflineModeBanner showWhenOnline={true} />
-                    <SyncStatusIndicator position="bottom-right" />
-                    <ConnectionStatusIndicator />
-                    <PushNotificationWrapper />
-                    <DeepLinkHandler />
-                    <SecurityHeaders />
-                    <OnboardingNotificationManager />
-                    <MessagingNotificationProvider />
-                    <TutorialWrapper />
-                    <CommunityPostToastWrapper />
-                    <DirectMessageToastWrapper />
-                    <Suspense fallback={<LoadingSpinner fullScreen />}>
-                      <Routes>
-                        <Route path="/" element={<PlatformRoot />} />
-                        <Route path="/feed" element={<Feed />} />
-                        <Route path="/home" element={<Home />} />
-                        <Route path="/dashboard" element={<Index />} />
-                        <Route path="/landing" element={<Landing />} />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/community" element={<Community />} />
-                        <Route path="/community/post/:id" element={<PostDetail />} />
-                        <Route path="/messages" element={<Messages />} />
-                        <Route path="/search-users" element={<SearchUsers />} />
-                        <Route path="/chat/:conversationId" element={<Chat />} />
-                        <Route path="/marketplace" element={<MarketplacePage />} />
-                        <Route path="/safety" element={<Safety />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/profile-menu" element={<ProfileMenu />} />
-                        <Route path="/notifications" element={<Notifications />} />
-                        <Route path="/privacy-security" element={<PrivacySecurity />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/services" element={<Services />} />
-                        <Route path="/users" element={<UserDirectory />} />
-                        <Route path="/my-services" element={<MyServices />} />
-                        <Route path="/my-goods" element={<MyGoods />} />
-                        <Route path="/my-bookings" element={<MyBookings />} />
-                        <Route path="/events" element={<Events />} />
-                        <Route path="/recommendations" element={<Recommendations />} />
-                        <Route path="/recommendations/create" element={<CreateRecommendation />} />
-                        <Route path="/recommendations/:id" element={<RecommendationDetail />} />
-                        <Route path="/auth" element={<Auth />} />
-                        <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                        <Route path="/auth/complete-profile" element={<CompleteProfile />} />
-                        <Route path="/admin" element={<Admin />} />
-                        <Route path="/moderator" element={<ModeratorDashboard />} />
-                        <Route path="/manager" element={<ManagerDashboard />} />
-                        <Route path="/support" element={<SupportDashboard />} />
-                        <Route path="/staff-portal" element={<StaffNavigation />} />
-                        <Route path="/staff" element={<StaffDashboard />} />
-                        <Route path="/staff-dashboard" element={<StaffDashboard />} />
-                        <Route path="/business" element={<Business />} />
-                        <Route path="/advertising" element={<Advertising />} />
-                        <Route path="/advertising/create" element={<CreateCampaign />} />
-                        <Route path="/staff-login" element={<StaffLogin />} />
-                        <Route path="/privacy" element={<PrivacyPolicy />} />
-                        <Route path="/terms" element={<TermsOfService />} />
-                        <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-                        <Route path="/press" element={<Press />} />
-                        <Route path="/careers" element={<Careers />} />
-                        <Route path="/api-docs" element={<ApiDocs />} />
-                        <Route path="/admin/api-requests" element={<ApiRequestsAdmin />} />
-                        <Route path="/help" element={<HelpCenter />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/blog" element={<Blog />} />
-                        <Route path="/blog/:slug" element={<BlogPost />} />
-                      </Routes>
-                    </Suspense>
-                    <NeighborhoodEmergencyAlert position="top-center" />
-                    <CookieConsentBanner />
-                    <CookieSettingsButton />
-                  </PresenceProvider>
+                      <AudioInitializer />
+                      <OfflineModeBanner showWhenOnline={true} />
+                      <SyncStatusIndicator position="bottom-right" />
+                      <ConnectionStatusIndicator />
+                      <PushNotificationWrapper />
+                      <DeepLinkHandler />
+                      <SecurityHeaders />
+                      <OnboardingNotificationManager />
+                      <MessagingNotificationProvider />
+                      <TutorialWrapper />
+                      <CommunityPostToastWrapper />
+                      <DirectMessageToastWrapper />
+                      <Suspense fallback={<LoadingSpinner fullScreen />}>
+                        <Routes>
+                          <Route path="/" element={<PlatformRoot />} />
+                          <Route path="/feed" element={<Feed />} />
+                          <Route path="/home" element={<Home />} />
+                          <Route path="/dashboard" element={<Index />} />
+                          <Route path="/landing" element={<Landing />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/community" element={<Community />} />
+                          <Route path="/community/post/:id" element={<PostDetail />} />
+                          <Route path="/messages" element={<Messages />} />
+                          <Route path="/search-users" element={<SearchUsers />} />
+                          <Route path="/chat/:conversationId" element={<Chat />} />
+                          <Route path="/marketplace" element={<MarketplacePage />} />
+                          <Route path="/safety" element={<Safety />} />
+                          <Route path="/profile" element={<Profile />} />
+                          <Route path="/profile-menu" element={<ProfileMenu />} />
+                          <Route path="/notifications" element={<Notifications />} />
+                          <Route path="/privacy-security" element={<PrivacySecurity />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/services" element={<Services />} />
+                          <Route path="/users" element={<UserDirectory />} />
+                          <Route path="/my-services" element={<MyServices />} />
+                          <Route path="/my-goods" element={<MyGoods />} />
+                          <Route path="/my-bookings" element={<MyBookings />} />
+                          <Route path="/events" element={<Events />} />
+                          <Route path="/recommendations" element={<Recommendations />} />
+                          <Route path="/recommendations/create" element={<CreateRecommendation />} />
+                          <Route path="/recommendations/:id" element={<RecommendationDetail />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                          <Route path="/auth/complete-profile" element={<CompleteProfile />} />
+                          <Route path="/admin" element={<Admin />} />
+                          <Route path="/moderator" element={<ModeratorDashboard />} />
+                          <Route path="/manager" element={<ManagerDashboard />} />
+                          <Route path="/support" element={<SupportDashboard />} />
+                          <Route path="/staff-portal" element={<StaffNavigation />} />
+                          <Route path="/staff" element={<StaffDashboard />} />
+                          <Route path="/staff-dashboard" element={<StaffDashboard />} />
+                          <Route path="/business" element={<Business />} />
+                          <Route path="/advertising" element={<Advertising />} />
+                          <Route path="/advertising/create" element={<CreateCampaign />} />
+                          <Route path="/staff-login" element={<StaffLogin />} />
+                          <Route path="/privacy" element={<PrivacyPolicy />} />
+                          <Route path="/terms" element={<TermsOfService />} />
+                          <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                          <Route path="/press" element={<Press />} />
+                          <Route path="/careers" element={<Careers />} />
+                          <Route path="/api-docs" element={<ApiDocs />} />
+                          <Route path="/admin/api-requests" element={<ApiRequestsAdmin />} />
+                          <Route path="/help" element={<HelpCenter />} />
+                          <Route path="/contact" element={<Contact />} />
+                          <Route path="/blog" element={<Blog />} />
+                          <Route path="/blog/:slug" element={<BlogPost />} />
+                        </Routes>
+                      </Suspense>
+                      <NeighborhoodEmergencyAlert position="top-center" />
+                      <CookieConsentBanner />
+                      <CookieSettingsButton />
+                    </PresenceProvider>
+                  </CallProvider>
                 </RealtimeProvider>
               </PlatformRouter>
             </div>

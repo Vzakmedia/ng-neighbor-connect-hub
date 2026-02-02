@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Search, X } from '@/lib/icons';
+import { ArrowLeft, Search, X, Phone, Video } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { type Conversation } from '@/hooks/useConversations';
@@ -9,6 +9,8 @@ interface MessageThreadHeaderProps {
   showSearch: boolean;
   onBack?: () => void;
   onToggleSearch: () => void;
+  onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
 }
 
 const getInitials = (fullName: string | null) => {
@@ -25,7 +27,9 @@ const MessageThreadHeader: React.FC<MessageThreadHeaderProps> = ({
   conversation,
   showSearch,
   onBack,
-  onToggleSearch
+  onToggleSearch,
+  onStartVoiceCall,
+  onStartVideoCall
 }) => {
   return (
     <div className="px-4 md:px-6 py-3 border-b bg-background">
@@ -44,15 +48,37 @@ const MessageThreadHeader: React.FC<MessageThreadHeaderProps> = ({
         <div className="flex-1">
           <h3 className="font-semibold text-base">{conversation.other_user_name || 'Unknown User'}</h3>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
+
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onToggleSearch}
           className="h-8 w-8"
         >
           {showSearch ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
         </Button>
+
+        {onStartVoiceCall && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onStartVoiceCall}
+            className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+          >
+            <Phone className="h-4 w-4" />
+          </Button>
+        )}
+
+        {onStartVideoCall && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onStartVideoCall}
+            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Video className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

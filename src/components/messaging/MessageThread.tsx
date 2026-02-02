@@ -47,6 +47,8 @@ interface MessageThreadProps {
   hideHeader?: boolean;
   showSearch?: boolean;
   onToggleSearch?: () => void;
+  onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
 }
 
 const MessageThread: React.FC<MessageThreadProps> = ({
@@ -68,14 +70,16 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   onMarkAsRead,
   hideHeader = false,
   showSearch: externalShowSearch,
-  onToggleSearch: externalToggleSearch
+  onToggleSearch: externalToggleSearch,
+  onStartVoiceCall,
+  onStartVideoCall
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [internalShowSearch, setInternalShowSearch] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-  
+
   // Use external search state if provided, otherwise use internal
   const showSearch = externalShowSearch !== undefined ? externalShowSearch : internalShowSearch;
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -90,7 +94,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const isUserScrolledUpRef = useRef(false);
   const initialScrollDoneRef = useRef(false);
   const isMobile = window.innerWidth < 768;
-  
+
   const { deleteMessages, deleteConversation, deleteSingleMessage, loading } = useMessageActions();
   const { uploading, uploadMultipleFiles } = useFileUpload(currentUserId || '');
   const { isOtherTyping, notifyTypingStart, notifyTypingStop } = useTypingIndicator(
@@ -135,9 +139,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Filter messages based on search query
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
-    
+
     const query = searchQuery.toLowerCase();
-    return messages.filter(msg => 
+    return messages.filter(msg =>
       msg.content?.toLowerCase().includes(query)
     );
   }, [messages, searchQuery]);
@@ -145,7 +149,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Get search result indices
   const searchResultIndices = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    
+
     const query = searchQuery.toLowerCase();
     return messages
       .map((msg, idx) => ({ msg, idx }))
@@ -158,10 +162,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Navigate to specific search result
   const scrollToSearchResult = useCallback((index: number) => {
     if (searchResultIndices.length === 0) return;
-    
+
     const messageIndex = searchResultIndices[index];
     const message = messages[messageIndex];
-    
+
     if (message && parentRef.current) {
       const messageEl = parentRef.current.querySelector(`[data-message-id="${message.id}"]`);
       messageEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -188,7 +192,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     } else {
       setInternalShowSearch(prev => !prev);
     }
-    
+
     if (!showSearch) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
@@ -200,10 +204,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Highlight matching text in message
   const highlightText = useCallback((text: string, query: string) => {
     if (!query.trim()) return text;
-    
+
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
-    return parts.map((part, i) => 
-      part.toLowerCase() === query.toLowerCase() 
+    return parts.map((part, i) =>
+      part.toLowerCase() === query.toLowerCase()
         ? <mark key={i} className="bg-primary/30 text-foreground rounded px-0.5">{part}</mark>
         : part
     );
@@ -235,10 +239,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const getMessageStatusIcon = (message: Message) => {
     const isOwn = message.sender_id === currentUserId;
     if (!isOwn || !showReadReceipts) return null;
-    
+
     const status: MessageStatus = message.status || 'sent';
-    
-                    switch (status) {
+
+    switch (status) {
       case 'sending':
         return <Clock className={`h-3 w-3 text-muted-foreground ${!isMobile ? 'animate-pulse' : ''}`} />;
       case 'failed':
@@ -262,7 +266,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   const handleMessageSelect = (messageId: string, checked: boolean) => {
     if (!onSelectedMessagesChange) return;
-    
+
     const newSelected = new Set(selectedMessages);
     if (checked) {
       newSelected.add(messageId);
@@ -274,7 +278,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   const handleDeleteSelected = async () => {
     if (!onSelectedMessagesChange) return;
-    
+
     const selectedArray = Array.from(selectedMessages);
     const success = await deleteMessages(selectedArray);
     if (success) {
@@ -285,7 +289,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   const handleDeleteConversation = async () => {
     if (!onSelectedMessagesChange) return;
-    
+
     const success = await deleteConversation(conversation.id);
     if (success) {
       onSelectedMessagesChange(new Set());
@@ -315,7 +319,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
     measureElement:
       typeof window !== 'undefined' &&
-      navigator.userAgent.indexOf('Firefox') === -1
+        navigator.userAgent.indexOf('Firefox') === -1
         ? (element) => element?.getBoundingClientRect().height ?? 150
         : undefined,
   });
@@ -323,7 +327,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Batch process read receipts
   const processBatchedReadReceipts = useCallback(() => {
     if (!onMarkAsRead || !currentUserId) return;
-    
+
     const batch = Array.from(readReceiptBatchRef.current);
     batch.forEach(messageId => {
       const message = messages.find(m => m.id === messageId);
@@ -331,27 +335,27 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         onMarkAsRead(messageId);
       }
     });
-    
+
     readReceiptBatchRef.current.clear();
   }, [messages, currentUserId, onMarkAsRead]);
 
   // Single shared IntersectionObserver for all messages
   useEffect(() => {
     if (!onMarkAsRead) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           const messageId = entry.target.getAttribute('data-message-id');
           if (!messageId) return;
-          
+
           const wasVisible = messageVisibilityMap.current.get(messageId);
           const isVisible = entry.isIntersecting;
-          
+
           if (!wasVisible && isVisible) {
             messageVisibilityMap.current.set(messageId, true);
             readReceiptBatchRef.current.add(messageId);
-            
+
             // Batch update after 1 second
             if (readReceiptTimerRef.current) clearTimeout(readReceiptTimerRef.current);
             readReceiptTimerRef.current = setTimeout(() => {
@@ -364,9 +368,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       },
       { threshold: 0.5, rootMargin: '50px' }
     );
-    
+
     sharedObserverRef.current = observer;
-    
+
     return () => {
       observer.disconnect();
       if (readReceiptTimerRef.current) clearTimeout(readReceiptTimerRef.current);
@@ -376,7 +380,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   // Intersection Observer for loading older messages
   useEffect(() => {
     if (!loadMoreTriggerRef.current || !onLoadOlder || !hasMoreMessages) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingOlder) {
@@ -385,9 +389,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       },
       { threshold: 0.1 }
     );
-    
+
     observer.observe(loadMoreTriggerRef.current);
-    
+
     return () => observer.disconnect();
   }, [onLoadOlder, loadingOlder, hasMoreMessages]);
 
@@ -429,7 +433,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   useEffect(() => {
     const previousCount = previousMessageCountRef.current;
     const currentCount = messages.length;
-    
+
     // Only scroll if messages were added (not loaded older messages)
     // and user hasn't scrolled up manually
     if (currentCount > previousCount && !isUserScrolledUpRef.current) {
@@ -439,24 +443,26 @@ const MessageThread: React.FC<MessageThreadProps> = ({
         }
       });
     }
-    
+
     previousMessageCountRef.current = currentCount;
   }, [messages.length, displayMessages.length, virtualizer]);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
       {!hideHeader && (
-        <MessageThreadHeader 
+        <MessageThreadHeader
           conversation={conversation}
           showSearch={showSearch}
           onBack={onBack}
           onToggleSearch={toggleSearch}
+          onStartVoiceCall={onStartVoiceCall}
+          onStartVideoCall={onStartVideoCall}
         />
       )}
-      
+
       {showSearch && (
         <div className="px-4 md:px-6">
-          <MessageSearch 
+          <MessageSearch
             searchQuery={searchQuery}
             currentSearchIndex={currentSearchIndex}
             searchResultCount={searchResultCount}
@@ -470,10 +476,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           />
         </div>
       )}
-      
+
       {/* Messages - virtualized scrolling */}
       <div ref={parentRef} className="flex-1 overflow-y-auto px-3 md:px-6">
-        <div 
+        <div
           className="py-4 pb-4"
           style={{
             height: `${virtualizer.getTotalSize()}px`,
@@ -491,7 +497,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
               )}
             </div>
           )}
-          
+
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const message = displayMessages[virtualRow.index];
             const isSearchResult = searchQuery.trim() && searchResultIndices.includes(messages.indexOf(message));
@@ -499,18 +505,18 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             const isOwn = message.sender_id === currentUserId;
             const isSelected = selectedMessages.has(message.id);
             const isFailed = message.status === 'failed';
-            
+
             return (
-              <div 
+              <div
                 key={message.id}
                 data-message-id={message.id}
                 data-index={virtualRow.index}
                 ref={(el) => {
                   if (!el) return;
-                  
+
                   // Let the virtualizer measure the real height
                   virtualizer.measureElement(el);
-                  
+
                   // Hook into the shared IntersectionObserver for read receipts
                   if (sharedObserverRef.current) {
                     sharedObserverRef.current.observe(el);
@@ -535,16 +541,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     />
                   </div>
                 )}
-                
+
                 <div className={`max-w-[75%] md:max-w-[65%] ${isOwn ? 'order-2' : 'order-1'} relative`}>
-                  <div 
-                    className={`px-4 py-3 rounded-2xl shadow-sm ${
-                      isOwn 
+                  <div
+                    className={`px-4 py-3 rounded-2xl shadow-sm ${isOwn
                         ? isFailed
                           ? 'bg-destructive/10 text-foreground border border-destructive/30'
-                          : 'bg-primary text-primary-foreground' 
+                          : 'bg-primary text-primary-foreground'
                         : 'bg-muted'
-                    } ${isSelected ? 'ring-2 ring-primary' : ''} ${isCurrentSearchResult ? 'ring-2 ring-accent' : ''}`}
+                      } ${isSelected ? 'ring-2 ring-primary' : ''} ${isCurrentSearchResult ? 'ring-2 ring-accent' : ''}`}
                   >
                     {message.content && (
                       <p className="text-sm md:text-base leading-relaxed break-words">
@@ -552,7 +557,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                       </p>
                     )}
                     {message.attachments && message.attachments.length > 0 && (
-                      <AttachmentDisplay 
+                      <AttachmentDisplay
                         attachments={message.attachments}
                         onPreview={async (attachment) => {
                           // Handle attachment preview in native browser
@@ -562,11 +567,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                       />
                     )}
                   </div>
-                  
+
                   <div className={`flex flex-col gap-1 mt-1 ${isOwn ? 'items-end' : 'items-start'}`}>
-                    <div className={`flex items-center gap-1 ${
-                      isOwn ? 'justify-end' : 'justify-start'
-                    }`}>
+                    <div className={`flex items-center gap-1 ${isOwn ? 'justify-end' : 'justify-start'
+                      }`}>
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                       </span>
@@ -582,10 +586,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                         </Button>
                       )}
                     </div>
-                    
+
                     {/* Message Reactions */}
-                    <MessageReactions 
-                      messageId={message.id} 
+                    <MessageReactions
+                      messageId={message.id}
                       currentUserId={currentUserId}
                       isOwnMessage={isOwn}
                     />
@@ -601,7 +605,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteSingleMessage(message.id)}
                             className="text-destructive focus:text-destructive"
                           >
@@ -613,7 +617,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 {!isOwn && (
                   <div className={`mr-2 md:mr-3 ${isSelectionMode ? 'order-0' : 'order-0'}`}>
                     <OnlineAvatar
@@ -670,11 +674,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           </div>
         )}
         <div className="flex items-end gap-2 md:gap-3">
-          <AttachmentButton 
+          <AttachmentButton
             onFileSelect={handleFileSelect}
             uploading={uploading}
           />
-          <EmojiPickerButton 
+          <EmojiPickerButton
             onEmojiSelect={handleEmojiSelect}
             disabled={uploading || loading}
           />
@@ -691,7 +695,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             className="flex-1 min-h-[44px] md:min-h-[48px] max-h-[120px] resize-none text-sm md:text-base rounded-2xl"
             rows={1}
           />
-          <Button 
+          <Button
             onClick={handleSendMessage}
             disabled={!newMessage.trim() && pendingAttachments.length === 0}
             size="icon"

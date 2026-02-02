@@ -34,11 +34,11 @@ serve(async (req) => {
 
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+    const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
 
     if (!accountSid || !authToken || !fromNumber) {
       return new Response(
-        JSON.stringify({ error: 'Twilio not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER.' }),
+        JSON.stringify({ error: 'Twilio not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER (or TWILIO_FROM_NUMBER).' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
