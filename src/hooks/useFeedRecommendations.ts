@@ -7,7 +7,7 @@ export function useFeedRecommendations() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['feed-recommendations', user?.id],
+    queryKey: ['feed-recommendations-items', user?.id],
     queryFn: async () => {
       let query = supabase
         .from('recommendations')

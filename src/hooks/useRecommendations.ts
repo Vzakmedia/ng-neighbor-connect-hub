@@ -24,7 +24,7 @@ export function useRecommendations() {
   const { user } = useAuth();
 
   return useQuery<RecommendationData>({
-    queryKey: ['feed-recommendations', user?.id],
+    queryKey: ['personalized-feed-weights', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
@@ -55,7 +55,7 @@ export function calculatePostScore(
 
   // Tag matching score
   const postTags = post.tags || [];
-  const tagMatches = postTags.filter((tag: string) => 
+  const tagMatches = postTags.filter((tag: string) =>
     userPreferences.preferredTags.includes(tag)
   ).length;
   const tagScore = tagMatches / Math.max(userPreferences.preferredTags.length, 1);
