@@ -17,6 +17,7 @@ import OnlineAvatar from '@/components/OnlineAvatar';
 import { Search, MessageCircle, ShoppingBag, UserPlus } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { useCallContext } from '@/contexts/CallContext';
 
 const UnifiedMessaging = () => {
   const navigate = useNavigate();
@@ -42,6 +43,44 @@ const UnifiedMessaging = () => {
   const [activeTab, setActiveTab] = useState('direct');
   const [requestCount, setRequestCount] = useState(0);
 
+  // WebRTC call functionality
+  const {
+    isInCall,
+    isVideoCall,
+    callState,
+    localStream,
+    remoteStream,
+    incomingCall,
+    startVoiceCall: startVoiceCallCtx,
+    startVideoCall: startVideoCallCtx,
+    answerCall,
+    declineCall,
+    endCall,
+    toggleAudio,
+    toggleVideo,
+    switchCamera,
+  } = useCallContext();
+
+  const startVoiceCall = useCallback(() => {
+    if (activeConversation) {
+      startVoiceCallCtx(
+        activeConversation.id,
+        activeConversation.other_user_name || 'User',
+        activeConversation.other_user_avatar || undefined
+      );
+    }
+  }, [activeConversation, startVoiceCallCtx]);
+
+  const startVideoCall = useCallback(() => {
+    if (activeConversation) {
+      startVideoCallCtx(
+        activeConversation.id,
+        activeConversation.other_user_name || 'User',
+        activeConversation.other_user_avatar || undefined
+      );
+    }
+  }, [activeConversation, startVideoCallCtx]);
+
   // Step 1: Fix infinite loop - only fetch once on mount
   useEffect(() => {
     if (user && !hasInitialFetchRef.current) {
@@ -55,7 +94,7 @@ const UnifiedMessaging = () => {
 
   const fetchRequestCount = async () => {
     if (!user) return;
-    
+
     try {
       const { count } = await supabase
         .from('direct_conversations')
@@ -63,7 +102,7 @@ const UnifiedMessaging = () => {
         .eq('user2_id', user.id)
         .eq('request_status', 'pending')
         .eq('conversation_type', 'direct_message');
-      
+
       setRequestCount(count || 0);
     } catch (error) {
       console.error('Error fetching request count:', error);
@@ -107,7 +146,7 @@ const UnifiedMessaging = () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     // Debounce conversation refetch - only refetch after 300ms of no updates
     debounceTimerRef.current = setTimeout(() => {
       console.log('[onConversationUpdate] Refetching conversations (debounced)');
@@ -133,8 +172,8 @@ const UnifiedMessaging = () => {
   // Stable subscription callbacks using refs (messages handled by useDirectMessages broadcast)
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: useCallback(() => {}, []), // No-op: handled by useDirectMessages
-    onMessageUpdate: useCallback(() => {}, []), // No-op: handled by useDirectMessages
+    onNewMessage: useCallback(() => { }, []), // No-op: handled by useDirectMessages
+    onMessageUpdate: useCallback(() => { }, []), // No-op: handled by useDirectMessages
     onConversationUpdate: onConversationUpdate, // Re-enabled with debouncing
     onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
@@ -192,29 +231,29 @@ const UnifiedMessaging = () => {
   const startConversationWithUser = async (targetUserId: string) => {
     console.log('[startConversation] Starting with user:', targetUserId);
     console.log('[startConversation] Current conversations count:', conversations.length);
-    
+
     // Guard: Prevent multiple simultaneous calls
     if (isStartingConversationRef.current) {
       console.warn('[startConversation] BLOCKED: Already in progress');
       return;
     }
-    
+
     isStartingConversationRef.current = true;
-    
+
     try {
       console.log('[startConversation] Creating/finding conversation...');
       const convId = await createOrFindConversation(targetUserId);
-      
+
       if (!convId) {
         console.error('[startConversation] Failed to get conversation ID');
         return;
       }
-      
+
       console.log('[startConversation] Conversation ID:', convId);
-      
+
       // First check current conversations
       let conv = conversations.find(c => c.id === convId);
-      
+
       if (conv) {
         console.log('[startConversation] Found in current state, selecting...');
         await selectConversation(conv);
@@ -223,13 +262,13 @@ const UnifiedMessaging = () => {
         console.log('[startConversation] ✅ Complete (found in state)');
         return; // ✅ CRITICAL: Exit here to prevent unnecessary fetch
       }
-      
+
       console.log('[startConversation] Not in current state, fetching fresh data...');
       const freshConversations = await fetchConversations();
       console.log('[startConversation] Fetched conversations:', freshConversations.length);
-      
+
       conv = freshConversations.find(c => c.id === convId);
-      
+
       if (conv) {
         console.log('[startConversation] Found in fresh data, selecting...');
         await selectConversation(conv);
@@ -239,7 +278,7 @@ const UnifiedMessaging = () => {
         navigate(`/chat/${convId}`);
         console.log('[startConversation] ✅ Complete (navigated)');
       }
-      
+
       setSearchQuery('');
       setSearchResults([]);
     } catch (error) {
@@ -260,7 +299,7 @@ const UnifiedMessaging = () => {
   useEffect(() => {
     document.title = 'Messages | Conversations';
   }, []);
-  
+
 
   return (
     <div className="h-[calc(100vh-8rem)]">
@@ -315,7 +354,7 @@ const UnifiedMessaging = () => {
                           {searchResults.map((u) => (
                             <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
                               <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
-                               <div className="text-left">
+                              <div className="text-left">
                                 <div className="text-sm font-medium">{u.full_name}</div>
                               </div>
                             </button>
@@ -367,7 +406,7 @@ const UnifiedMessaging = () => {
                             {searchResults.map((u) => (
                               <button key={u.user_id} onClick={() => startConversationWithUser(u.user_id)} className="w-full p-2 flex items-center gap-3 hover:bg-muted">
                                 <OnlineAvatar userId={u.user_id} src={u.avatar_url || undefined} fallback={getInitials(u.full_name)} size="md" />
-                                 <div className="text-left">
+                                <div className="text-left">
                                   <div className="text-sm font-medium">{u.full_name}</div>
                                 </div>
                               </button>
@@ -413,6 +452,8 @@ const UnifiedMessaging = () => {
                       }}
                       loadingOlder={loadingOlder}
                       hasMoreMessages={hasMoreMessages}
+                      onStartVoiceCall={startVoiceCall}
+                      onStartVideoCall={startVideoCall}
                     />
                   ) : (
                     <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -435,6 +476,7 @@ const UnifiedMessaging = () => {
           </TabsContent>
         </div>
       </Tabs>
+
     </div>
   );
 };

@@ -71,9 +71,9 @@ serve(async (req) => {
 
         const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
         const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+        const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
         if (!accountSid || !authToken || !fromNumber) {
-          throw new Error('Missing Twilio configuration');
+          throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER/TWILIO_FROM_NUMBER)');
         }
 
         const smsBody = `[${String(alert?.severity || 'info').toUpperCase()}] ${alert?.title || 'Safety Alert'} - ${alert?.description || ''}`.slice(0, 140);

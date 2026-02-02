@@ -7,7 +7,7 @@ import { useConversations } from '@/hooks/useConversations';
 import { usePresence } from '@/contexts/PresenceContext';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
-import { useWebRTCCallV2 } from '@/hooks/messaging/useWebRTCCallV2';
+import { useCallContext } from '@/contexts/CallContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,8 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
 import MessageThread from '@/components/messaging/MessageThread';
-import { VideoCallDialog } from '@/components/messaging/VideoCallDialog';
-import { IncomingCallDialog } from '@/components/messaging/IncomingCallDialog';
 
 const Chat = () => {
   const { isUserOnline } = usePresence();
@@ -39,14 +37,14 @@ const Chat = () => {
 
   const { deleteMessages, deleteConversation } = useMessageActions();
 
-  const { 
-    messages, 
-    fetchMessages, 
+  const {
+    messages,
+    fetchMessages,
     sendMessage,
     sendMessageWithAttachments,
     markMessageAsRead,
     addMessage,
-    updateMessage 
+    updateMessage
   } = useDirectMessages(user?.id);
 
   const { conversations, fetchConversations, markConversationAsRead } = useConversations(user?.id);
@@ -77,21 +75,21 @@ const Chat = () => {
     toggleAudio,
     toggleVideo,
     switchCamera,
-  } = useWebRTCCallV2(conversationId || '');
+  } = useCallContext();
 
   // Memoized callbacks to prevent infinite re-renders
   const onNewMessage = useCallback((message) => {
     console.log('New message received:', message);
-    if (conversation && 
-        ((conversation.user1_id === message.sender_id && conversation.user2_id === message.recipient_id) ||
-         (conversation.user1_id === message.recipient_id && conversation.user2_id === message.sender_id))) {
+    if (conversation &&
+      ((conversation.user1_id === message.sender_id && conversation.user2_id === message.recipient_id) ||
+        (conversation.user1_id === message.recipient_id && conversation.user2_id === message.sender_id))) {
       console.log('Adding message to current conversation');
       addMessage(message);
-      
+
       // Mark as read if user is recipient and also mark as delivered
       if (message.recipient_id === user?.id) {
         markConversationAsRead(conversation.id);
-        
+
         // Also mark sender's messages as delivered
         supabase.rpc('mark_messages_as_delivered', {
           recipient_user_id: user.id,
@@ -111,16 +109,16 @@ const Chat = () => {
     fetchConversations();
     // Also refresh current conversation messages
     if (conversation) {
-      const otherUserId = conversation.user1_id === user?.id 
-        ? conversation.user2_id 
+      const otherUserId = conversation.user1_id === user?.id
+        ? conversation.user2_id
         : conversation.user1_id;
       fetchMessages(otherUserId);
     }
   }, [fetchConversations, fetchMessages, conversation?.id, conversation?.user1_id, conversation?.user2_id, user?.id]);
 
   // Derive recipientId from conversation
-  const recipientId = conversation?.user1_id === user?.id 
-    ? conversation?.user2_id 
+  const recipientId = conversation?.user1_id === user?.id
+    ? conversation?.user2_id
     : conversation?.user1_id;
 
   // Set up real-time subscriptions for this specific conversation
@@ -151,7 +149,7 @@ const Chat = () => {
     const findConversation = async () => {
       setLoading(true);
       console.log('Finding conversation:', conversationId);
-      
+
       try {
         // Direct database query for the conversation
         const { data: convData, error: convError } = await supabase
@@ -184,11 +182,11 @@ const Chat = () => {
 
         console.log('Conversation found:', formattedConversation);
         setConversation(formattedConversation);
-        
+
         // Use refs to avoid dependency issues
         await fetchMessagesRef.current(otherUserId);
         await markAsReadRef.current(conversationId);
-        
+
         // Mark messages as delivered when opening conversation
         try {
           await supabase.rpc('mark_messages_as_delivered', {
@@ -198,7 +196,7 @@ const Chat = () => {
         } catch (error) {
           console.log('Error marking messages as delivered:', error);
         }
-        
+
       } catch (error) {
         console.error('Error loading conversation:', error);
         navigate('/messages');
@@ -220,15 +218,15 @@ const Chat = () => {
   // Separate useEffect for polling to prevent re-initialization
   useEffect(() => {
     if (!conversation || !user || !conversationId) return;
-    
+
     // Set up polling fallback for message updates
     const setupPolling = () => {
       // Polling disabled to prevent constant refreshes that were causing app instability
       console.log('Message polling disabled to prevent refresh loops');
     };
-    
+
     setupPolling();
-    
+
     // Cleanup polling on unmount or conversation change
     return () => {
       if (pollingIntervalRef.current) {
@@ -241,11 +239,11 @@ const Chat = () => {
   // Mark messages as read when they become visible
   useEffect(() => {
     if (messages.length > 0 && conversation && user) {
-      const unreadMessages = messages.filter(msg => 
-        msg.recipient_id === user.id && 
+      const unreadMessages = messages.filter(msg =>
+        msg.recipient_id === user.id &&
         msg.status !== 'read'
       );
-      
+
       unreadMessages.forEach(msg => {
         markMessageAsRead(msg.id);
       });
@@ -262,11 +260,11 @@ const Chat = () => {
     mimeType: string;
   }>) => {
     if (!conversation || !user) return;
-    
-    const recipientId = conversation.user1_id === user.id 
-      ? conversation.user2_id 
+
+    const recipientId = conversation.user1_id === user.id
+      ? conversation.user2_id
       : conversation.user1_id;
-    
+
     if (attachments && attachments.length > 0) {
       await sendMessageWithAttachments(content, recipientId, attachments);
     } else {
@@ -333,14 +331,14 @@ const Chat = () => {
               <Button variant="ghost" size="icon" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
               </Button>
-              
+
               <OnlineAvatar
                 userId={conversation.other_user_id}
                 src={conversation.other_user_avatar || undefined}
                 fallback={getInitials(conversation.other_user_name)}
                 size="lg"
               />
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="font-semibold truncate text-sm md:text-base">{conversation.other_user_name}</h1>
@@ -353,9 +351,24 @@ const Chat = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-1 md:gap-2">
-              {/* Call feature temporarily disabled - Coming soon */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => startVoiceCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar)}
+                className="h-8 w-8 md:h-10 md:w-10 text-green-600 hover:text-green-700 hover:bg-green-50"
+              >
+                <Phone className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => startVideoCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar)}
+                className="h-8 w-8 md:h-10 md:w-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <Video className="h-4 w-4 md:h-5 md:w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -379,7 +392,7 @@ const Chat = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleDeleteConversation}
                     className="text-destructive focus:text-destructive"
                   >
@@ -390,7 +403,7 @@ const Chat = () => {
               </DropdownMenu>
             </div>
           </div>
-          
+
           {/* Last seen status on its own line */}
           <div className="text-xs text-muted-foreground pl-12 md:pl-16">
             Last seen {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
@@ -417,8 +430,8 @@ const Chat = () => {
           onMessageDeleted={() => {
             // Refetch messages when a message is deleted
             if (conversation) {
-              const otherUserId = conversation.user1_id === user?.id 
-                ? conversation.user2_id 
+              const otherUserId = conversation.user1_id === user?.id
+                ? conversation.user2_id
                 : conversation.user1_id;
               fetchMessages(otherUserId);
             }
@@ -426,31 +439,6 @@ const Chat = () => {
         />
       </div>
 
-      {/* Video Call Dialog */}
-      <VideoCallDialog
-        open={isInCall}
-        onOpenChange={() => {}}
-        localStream={localStream}
-        remoteStream={remoteStream}
-        onEndCall={endCall}
-        onToggleAudio={toggleAudio}
-        onToggleVideo={toggleVideo}
-        onSwitchCamera={switchCamera}
-        isVideoCall={isVideoCall}
-        otherUserName={conversation?.other_user_name || 'Unknown User'}
-        otherUserAvatar={conversation?.other_user_avatar}
-        callState={callState}
-      />
-
-      {/* Incoming Call Dialog */}
-      <IncomingCallDialog
-        open={!!incomingCall}
-        callerName={conversation?.other_user_name || 'Unknown User'}
-        callerAvatar={conversation?.other_user_avatar}
-        isVideoCall={incomingCall?.message?.callType === 'video'}
-        onAccept={answerCall}
-        onDecline={declineCall}
-      />
     </div>
   );
 };

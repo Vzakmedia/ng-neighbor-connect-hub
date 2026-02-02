@@ -227,10 +227,10 @@ serve(async (req) => {
       try {
         const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
         const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+        const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
 
         if (!accountSid || !authToken || !fromNumber) {
-          throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER)');
+          throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER/TWILIO_FROM_NUMBER)');
         }
 
         const smsTpl = templateByChannel['sms'];
@@ -343,7 +343,7 @@ serve(async (req) => {
       if (!hasSmsSent && canSms && (emailFailed || pushFailed)) {
         const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
         const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_FROM_NUMBER');
+        const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
         if (!accountSid || !authToken || !fromNumber) throw new Error('Missing Twilio configuration');
 
         const smsTpl = templateByChannel['sms'];
