@@ -19,39 +19,39 @@ import './index.css'
 import { logIOSCompatibility, detectIOSDevice } from '@/utils/iosCompatibility'
 import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
-import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS } from '@/utils/nativeQueryPersister'
+import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS, createNativeQueryPersister } from '@/utils/nativeQueryPersister'
 import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
 
 // ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
 // Fix corrupted URLs caused by HashRouter/BrowserRouter conflicts
 const cleanCorruptedUrl = () => {
   const href = window.location.href;
-  
+
   // Detect corrupted URL patterns (repeated encoded hash/query strings)
   if (href.includes('%23/') || href.includes('%3F__lovable_token=')) {
     console.warn('[main.tsx] Corrupted URL detected, cleaning...');
-    
+
     // Extract the base URL and get the intended path
     const baseUrl = window.location.origin;
-    
+
     // Try to find the actual intended route from the URL
     const hashMatch = href.match(/#\/([a-zA-Z0-9-/]*)/);
     const pathMatch = href.match(/\/([a-zA-Z0-9-]+)(?:%3F|%23|\?|#|$)/);
-    
+
     let targetPath = '/';
     if (hashMatch && hashMatch[1]) {
       targetPath = '/' + hashMatch[1].split(/[?#%]/)[0];
     } else if (pathMatch && pathMatch[1] && pathMatch[1] !== 'dashboard%3F') {
       targetPath = '/' + pathMatch[1];
     }
-    
+
     // Preserve lovable token if present
     const tokenMatch = href.match(/__lovable_token=([^&#%]+)/);
     const tokenParam = tokenMatch ? `?__lovable_token=${tokenMatch[1]}` : '';
-    
+
     const cleanUrl = baseUrl + targetPath + tokenParam;
     console.log('[main.tsx] Redirecting to clean URL:', cleanUrl);
-    
+
     // Use replace to avoid adding to history
     window.location.replace(cleanUrl);
     return true; // Indicate we're redirecting
@@ -88,7 +88,7 @@ const initStorageBlocking = async (): Promise<void> => {
     console.log('[main.tsx] Storage already initialized');
     return;
   }
-  
+
   try {
     console.log('[main.tsx] BLOCKING: Initializing native storage...');
     await initializeNativeSyncStorage();
@@ -111,19 +111,19 @@ const originalWebSocket = window.WebSocket;
 window.WebSocket = class extends originalWebSocket {
   constructor(url: string | URL, protocols?: string | string[]) {
     super(url, protocols);
-    
+
     const urlString = url.toString();
-    
+
     // Intercept Lovable preview WebSocket connections
     if (urlString.includes('lovableproject.com') || urlString.includes('lovable.app')) {
       console.debug('Preview WebSocket suppressed:', urlString);
-      
+
       // Prevent error events from bubbling
       this.addEventListener('error', (event) => {
         event.preventDefault();
         event.stopPropagation();
       });
-      
+
       // Prevent close events from bubbling
       this.addEventListener('close', (event) => {
         event.preventDefault();
@@ -150,53 +150,8 @@ const queryClient = new QueryClient({
   },
 })
 
-// Create persister for offline cache with optimizations
-// Defensive persister creation with fallback for iOS private browsing
-const createPersister = () => {
-  try {
-    // Test localStorage access
-    const testKey = '__storage_test__';
-    window.localStorage.setItem(testKey, 'test');
-    window.localStorage.removeItem(testKey);
-    
-    return createSyncStoragePersister({
-      storage: window.localStorage,
-      key: 'REACT_QUERY_OFFLINE_CACHE',
-      serialize: (data) => {
-        try {
-          // Only persist essential data to reduce localStorage size
-          const optimized = {
-            ...data,
-            buster: Date.now(), // Cache buster for tracking age
-          };
-          return JSON.stringify(optimized);
-        } catch (e) {
-          console.warn('Failed to serialize cache:', e);
-          return '{}';
-        }
-      },
-      deserialize: (data) => {
-        try {
-          return JSON.parse(data);
-        } catch (e) {
-          console.warn('Failed to deserialize cache:', e);
-          return {};
-        }
-      },
-      throttleTime: 1000, // Only save to localStorage max once per second
-    });
-  } catch (error) {
-    console.warn('localStorage unavailable (likely iOS private browsing), using memory-only cache:', error);
-    // Return a no-op persister that doesn't actually persist
-    return {
-      persistClient: async () => {},
-      restoreClient: async () => undefined,
-      removeClient: async () => {},
-    } as any;
-  }
-};
-
-const persister = createPersister();
+// Create native query persister for offline cache
+const persister = createNativeQueryPersister();
 
 // Capacitor type definitions
 declare global {
@@ -211,8 +166,8 @@ declare global {
 // Global error handler for WebSocket connection errors to prevent console spam
 window.addEventListener('error', (event) => {
   // Suppress WebSocket connection errors from showing in console
-  if (event.message?.includes('WebSocket') || event.message?.includes('websocket') || 
-      event.filename?.includes('supabase') || event.error?.toString()?.includes('WebSocket')) {
+  if (event.message?.includes('WebSocket') || event.message?.includes('websocket') ||
+    event.filename?.includes('supabase') || event.error?.toString()?.includes('WebSocket')) {
     console.debug('WebSocket error suppressed (handled gracefully):', event.error || event.message);
     event.preventDefault();
     return;
@@ -248,9 +203,9 @@ const isNativeApp = () => {
 };
 
 const isLovablePreview = () => {
-  return window.location.hostname.includes('lovableproject.com') || 
-         window.location.hostname.includes('lovable.app') ||
-         window.location.hostname.includes('id-preview--');
+  return window.location.hostname.includes('lovableproject.com') ||
+    window.location.hostname.includes('lovable.app') ||
+    window.location.hostname.includes('id-preview--');
 };
 
 // Defer service worker registration to not block initial load
@@ -298,9 +253,9 @@ deviceInfo = quickIOSCheck();
 if (deviceInfo.isIOS) {
   // Add iOS-specific error handlers
   window.addEventListener('error', (event) => {
-    if (event.message?.includes('Script error') || 
-        event.message?.includes('ResizeObserver') ||
-        event.message?.includes('Non-Error promise rejection')) {
+    if (event.message?.includes('Script error') ||
+      event.message?.includes('ResizeObserver') ||
+      event.message?.includes('Non-Error promise rejection')) {
       console.debug('iOS Error suppressed (non-critical):', event.error || event.message);
       event.preventDefault();
       return;
@@ -311,7 +266,7 @@ if (deviceInfo.isIOS) {
   if (!deviceInfo.supportsLocalStorage) {
     console.warn('localStorage not available - app will use fallback storage');
   }
-  
+
   if (deviceInfo.version && deviceInfo.version < 12) {
     console.warn('iOS version is quite old, some features may not work optimally');
   }
@@ -335,7 +290,7 @@ const renderApp = async () => {
   try {
     // MUST wait for storage to be ready before rendering
     await initStorageBlocking();
-    
+
     console.log('[main.tsx] Storage ready, rendering app...');
     root.render(
       <StrictMode>
@@ -348,22 +303,22 @@ const renderApp = async () => {
               shouldDehydrateQuery: (query) => {
                 // Only persist successful queries for allowed query keys
                 const queryKey = query.queryKey as string[];
-                
+
                 // Check if this query should be persisted
                 if (!shouldPersistQuery(queryKey)) {
                   return false;
                 }
-                
+
                 // Only persist successful queries
                 if (query.state.status !== 'success') {
                   return false;
                 }
-                
+
                 // Apply size limits to prevent quota exhaustion
                 if (query.state.data) {
                   query.state.data = limitQueryData(queryKey, query.state.data);
                 }
-                
+
                 return true;
               },
             },
@@ -404,7 +359,7 @@ requestAnimationFrame(() => {
       // Fade out smoothly
       loader.style.transition = 'opacity 300ms ease-out';
       loader.style.opacity = '0';
-      
+
       // Remove from DOM after transition completes
       setTimeout(() => {
         loader.remove();
@@ -420,7 +375,7 @@ setTimeout(() => {
     console.error('[main.tsx] EMERGENCY TIMEOUT: React did not mount in 10s, forcing loader removal');
     emergencyLoader.style.display = 'none';
     emergencyLoader.remove();
-    
+
     // Show error message to user
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = 'padding:40px;text-align:center;font-family:system-ui;color:#333;';

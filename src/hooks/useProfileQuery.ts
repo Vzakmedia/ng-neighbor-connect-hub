@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { handleApiError } from '@/utils/errorHandling';
 
 export interface UserProfile {
   id: string;
@@ -127,8 +128,7 @@ export function useUpdateProfile() {
       if (context?.previousProfile) {
         queryClient.setQueryData(['profile', user?.id], context.previousProfile);
       }
-      toast.error('Failed to update profile');
-      console.error('Profile update error:', error);
+      handleApiError(error, { route: '/profile' });
     },
     onSuccess: () => {
       toast.success('Profile updated');

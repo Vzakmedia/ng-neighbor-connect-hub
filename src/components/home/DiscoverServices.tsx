@@ -12,10 +12,10 @@ export const DiscoverServices = () => {
   const { profile } = useProfile();
 
   const { data: services, isLoading } = useQuery({
-    queryKey: ['featured-services', profile?.city],
+    queryKey: ['featured-services', profile?.city || 'global'],
     queryFn: async () => {
       if (!user) return [];
-      
+
       let query = supabase
         .from('services')
         .select(`
@@ -63,7 +63,7 @@ export const DiscoverServices = () => {
           <ChevronRightIcon className="h-4 w-4 ml-1" />
         </Button>
       </div>
-      
+
       <div className="space-y-3">
         {services.map((service) => (
           <div

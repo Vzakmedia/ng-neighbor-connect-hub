@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { handleApiError } from '@/utils/errorHandling';
 
 interface EmailPreferences {
   id: string;
@@ -85,7 +86,7 @@ export const useEmailNotifications = () => {
     },
     onError: (error) => {
       console.error('Error updating email preferences:', error);
-      toast.error('Failed to update email preferences');
+      handleApiError(error, { route: '/profile/notifications' });
     }
   });
 
@@ -144,7 +145,7 @@ export const useEmailNotifications = () => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Direct fetch failed:', response.status, errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+          throw new Error(`The email service is temporarily unavailable. Error ${response.status}`);
         }
 
         const data = await response.json();
@@ -157,8 +158,7 @@ export const useEmailNotifications = () => {
     },
     onError: (error: any) => {
       console.error('Error sending test email:', error);
-      const errorMessage = error?.message || 'Unknown error';
-      toast.error(`Failed to send test email: ${errorMessage}`);
+      handleApiError(error, { route: '/profile/notifications' });
     }
   });
 

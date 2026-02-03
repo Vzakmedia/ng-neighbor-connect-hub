@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Neighborlink',
   webDir: 'dist',
   bundledWebRuntime: false,
-  
+
   server: {
     // Only use development server URL when explicitly set
     // For production builds, this should be undefined to use webDir
@@ -59,29 +59,29 @@ const config: CapacitorConfig = {
     Geolocation: {
       permissions: ['location', 'locationAlways', 'locationWhenInUse']
     },
-    
+
     Camera: {
       permissions: ['camera', 'photos']
     },
-    
+
     StatusBar: {
       style: 'dark',
       backgroundColor: '#667eea',
       overlaysWebView: false
     },
-    
+
     Keyboard: {
       resize: 'body',
       style: 'dark',
       resizeOnFullScreen: true
     },
-    
+
     CapacitorHttp: {
       enabled: false
     },
 
     GoogleMaps: {
-      apiKey: 'YOUR_GOOGLE_MAPS_API_KEY'
+      apiKey: 'AIzaSyBqkepJX9aVJFKkwfBNW62IfOVYkM1Cb3s'
     },
 
     Haptics: {

@@ -1,0 +1,23 @@
+-- Add new consent fields to user_consents table
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS camera_access_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS microphone_access_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS push_notifications_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS file_access_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS device_storage_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS analytics_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS crash_reporting_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS precise_location_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS background_location_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS location_history_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS voice_video_calls_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS emergency_contacts_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS external_integrations_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS marketplace_transactions_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS business_verification_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS payment_processing_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS content_processing_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS content_moderation_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS recommendations_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS google_services_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS external_apis_accepted boolean DEFAULT false NOT NULL;
+ALTER TABLE public.user_consents ADD COLUMN IF NOT EXISTS cross_platform_sync_accepted boolean DEFAULT false NOT NULL;

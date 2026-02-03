@@ -328,8 +328,12 @@ const App = () => {
                         </Routes>
                       </Suspense>
                       <NeighborhoodEmergencyAlert position="top-center" />
-                      <CookieConsentBanner />
-                      <CookieSettingsButton />
+                      {!isNativePlatform() && (
+                        <>
+                          <CookieConsentBanner />
+                          <CookieSettingsButton />
+                        </>
+                      )}
                     </PresenceProvider>
                   </CallProvider>
                 </RealtimeProvider>

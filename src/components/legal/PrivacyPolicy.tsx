@@ -5,16 +5,16 @@ import { Shield, Lock, Eye, Users, MapPin, Bell, Camera, Mic, Trash2, Clock } fr
 export const PrivacyPolicy = () => {
   return (
     <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-      <div className="space-y-6 text-sm">
+      <div className="space-y-6 text-xs">
         <div className="text-center pb-4 border-b">
           <Badge variant="secondary" className="mb-2">
             <Lock className="w-3 h-3 mr-1" />
             Privacy Policy
           </Badge>
-          <h2 className="text-lg font-semibold">NeighborLink Privacy Policy</h2>
-          <p className="text-xs text-muted-foreground mt-1">Effective Date: January 27, 2026</p>
+          <h2 className="text-sm font-semibold">NeighborLink Privacy Policy</h2>
+          <p className="text-[10px] text-muted-foreground mt-1">Effective Date: January 27, 2026</p>
         </div>
-        
+
         {/* Quick Summary */}
         <section className="bg-primary/5 p-3 rounded-lg">
           <h3 className="font-medium mb-2 flex items-center gap-2">
@@ -126,8 +126,8 @@ export const PrivacyPolicy = () => {
             6. Data Security
           </h3>
           <p className="text-muted-foreground">
-            We protect your information using TLS/SSL encryption, secure password hashing, 
-            multi-factor authentication options, and regular security assessments. 
+            We protect your information using TLS/SSL encryption, secure password hashing,
+            multi-factor authentication options, and regular security assessments.
             We implement access controls and monitor for unauthorized access.
           </p>
         </section>
@@ -139,8 +139,8 @@ export const PrivacyPolicy = () => {
             7. Data Retention
           </h3>
           <p className="text-muted-foreground">
-            We retain your information while your account is active. When you delete your account, 
-            we remove your personal information within 30 days, except data required for legal 
+            We retain your information while your account is active. When you delete your account,
+            we remove your personal information within 30 days, except data required for legal
             compliance or safety purposes.
           </p>
         </section>
@@ -152,8 +152,8 @@ export const PrivacyPolicy = () => {
             8. Children's Privacy
           </h3>
           <p className="text-muted-foreground">
-            NeighborLink is not intended for children under 13. We do not knowingly collect 
-            personal information from children under 13 years of age. If we discover we have 
+            NeighborLink is not intended for children under 13. We do not knowingly collect
+            personal information from children under 13 years of age. If we discover we have
             collected such data, we will delete it promptly.
           </p>
         </section>
@@ -162,8 +162,8 @@ export const PrivacyPolicy = () => {
         <section>
           <h3 className="font-medium mb-2">9. Nigerian Data Protection Compliance</h3>
           <p className="text-muted-foreground">
-            We comply with the Nigeria Data Protection Regulation (NDPR) 2019 and Nigeria Data 
-            Protection Act (NDPA) 2023, ensuring your data is processed lawfully and protected 
+            We comply with the Nigeria Data Protection Regulation (NDPR) 2019 and Nigeria Data
+            Protection Act (NDPA) 2023, ensuring your data is processed lawfully and protected
             according to Nigerian standards.
           </p>
         </section>
@@ -172,7 +172,7 @@ export const PrivacyPolicy = () => {
         <section>
           <h3 className="font-medium mb-2">10. Policy Updates</h3>
           <p className="text-muted-foreground">
-            We may update this privacy policy from time to time. We will notify users of material 
+            We may update this privacy policy from time to time. We will notify users of material
             changes via email or in-app notification. Continued use after changes constitutes acceptance.
           </p>
         </section>

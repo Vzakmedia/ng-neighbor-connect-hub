@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useRecommendations, calculatePostScore } from '@/hooks/useRecommendations';
 import { toast } from 'sonner';
+import { handleApiError } from '@/utils/errorHandling';
 
 interface FeedFilters {
   locationScope: 'neighborhood' | 'city' | 'state' | 'all';
@@ -68,8 +69,8 @@ export function useFeedQuery(filters: FeedFilters) {
 
   // Check cache age to determine refetch strategy
   const queryState = queryClient.getQueryState(queryKey);
-  const cacheAge = queryState?.dataUpdatedAt 
-    ? Date.now() - queryState.dataUpdatedAt 
+  const cacheAge = queryState?.dataUpdatedAt
+    ? Date.now() - queryState.dataUpdatedAt
     : Infinity;
 
   const query = useInfiniteQuery<FeedPage>({
@@ -135,9 +136,9 @@ export function useFeedQuery(filters: FeedFilters) {
       // Batch fetch all profiles for these users in ONE query using display_profiles view
       const { data: profilesData } = uniqueUserIds.length > 0
         ? await supabase
-            .from('display_profiles')
-            .select('user_id, display_name, avatar_url, city, state')
-            .in('user_id', uniqueUserIds)
+          .from('display_profiles')
+          .select('user_id, display_name, avatar_url, city, state')
+          .in('user_id', uniqueUserIds)
         : { data: [] };
 
       // Create a Map for O(1) profile lookups
@@ -152,17 +153,17 @@ export function useFeedQuery(filters: FeedFilters) {
       const [userLikesData, userSavesData] = await Promise.all([
         user && postIds.length > 0
           ? supabase
-              .from('post_likes')
-              .select('post_id')
-              .eq('user_id', user.id)
-              .in('post_id', postIds)
+            .from('post_likes')
+            .select('post_id')
+            .eq('user_id', user.id)
+            .in('post_id', postIds)
           : Promise.resolve({ data: [] }),
         user && postIds.length > 0
           ? supabase
-              .from('saved_posts')
-              .select('post_id')
-              .eq('user_id', user.id)
-              .in('post_id', postIds)
+            .from('saved_posts')
+            .select('post_id')
+            .eq('user_id', user.id)
+            .in('post_id', postIds)
           : Promise.resolve({ data: [] }),
       ]);
 
@@ -255,22 +256,22 @@ export function useFeedQuery(filters: FeedFilters) {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
     enabled: !!user && !!profile,
-    
+
     // IMPROVED CACHING CONFIGURATION
     staleTime: 30 * 1000, // 30s - data considered fresh for this duration
     gcTime: 10 * 60 * 1000, // Keep in cache for 10min
-    
+
     // Show cached data immediately while fetching fresh data
     placeholderData: (previousData) => previousData,
-    
+
     // Always check for updates to ensure fresh content
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    
+
     // Add automatic background refetch
     refetchInterval: 60000, // Poll every 60 seconds for new posts
-    
+
     // Use online mode to ensure fetch happens
     networkMode: 'online',
   });
@@ -321,10 +322,10 @@ export function useLikePost() {
             items: page.items.map(post =>
               post.id === postId
                 ? {
-                    ...post,
-                    is_liked: !isLiked,
-                    like_count: post.like_count + (isLiked ? -1 : 1),
-                  }
+                  ...post,
+                  is_liked: !isLiked,
+                  like_count: post.like_count + (isLiked ? -1 : 1),
+                }
                 : post
             ),
           })),
@@ -340,7 +341,7 @@ export function useLikePost() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error('Failed to update like');
+      handleApiError(err, { route: '/feed' });
     },
   });
 }
@@ -379,10 +380,10 @@ export function useSavePost() {
             items: page.items.map(post =>
               post.id === postId
                 ? {
-                    ...post,
-                    is_saved: !isSaved,
-                    save_count: post.save_count + (isSaved ? -1 : 1),
-                  }
+                  ...post,
+                  is_saved: !isSaved,
+                  save_count: post.save_count + (isSaved ? -1 : 1),
+                }
                 : post
             ),
           })),
@@ -397,7 +398,7 @@ export function useSavePost() {
           queryClient.setQueryData(queryKey, data);
         });
       }
-      toast.error('Failed to update save');
+      handleApiError(err, { route: '/feed' });
     },
   });
 }
@@ -478,7 +479,7 @@ export function useCreatePost() {
     },
     onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      toast.error('Failed to create post');
+      handleApiError(err, { route: '/feed' });
     },
   });
 }
@@ -535,9 +536,9 @@ export function useUpdatePost() {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       toast.success('Post updated successfully');
     },
-    onError: () => {
+    onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      toast.error('Failed to update post');
+      handleApiError(err, { route: '/feed' });
     },
   });
 }
@@ -573,9 +574,9 @@ export function useDeletePost() {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       toast.success('Post deleted successfully');
     },
-    onError: () => {
+    onError: (err) => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      toast.error('Failed to delete post');
+      handleApiError(err, { route: '/feed' });
     },
   });
 }

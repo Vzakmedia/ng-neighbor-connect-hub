@@ -12,30 +12,26 @@ interface DashboardStats {
   loading: boolean;
 }
 
+import { useQuery } from '@tanstack/react-query';
+
 export const useDashboardStats = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const [stats, setStats] = useState<DashboardStats>({
-    activeNeighbors: 0,
-    postsToday: 0,
-    upcomingEvents: 0,
-    itemsForSale: 0,
-    loading: true,
-  });
 
-  const fetchStats = async () => {
-    if (!user || !profile) return;
+  const { data: stats, isLoading, refetch } = useQuery({
+    queryKey: ['dashboard-stats', profile?.user_id],
+    queryFn: async () => {
+      if (!user || !profile) return null;
 
-    try {
       // Get date boundaries
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       const nextMonth = new Date();
       nextMonth.setDate(nextMonth.getDate() + 30);
 
@@ -48,14 +44,14 @@ export const useDashboardStats = () => {
           .gte('created_at', thirtyDaysAgo.toISOString())
           .neq('user_id', user.id)
           .limit(1000),
-        
+
         // Get posts today count using head:true (much faster - no data returned)
         supabase
           .from('community_posts')
           .select('*', { count: 'exact', head: true })
           .gte('created_at', today.toISOString())
           .lt('created_at', tomorrow.toISOString()),
-        
+
         // Get upcoming events count
         supabase
           .from('community_posts')
@@ -63,7 +59,7 @@ export const useDashboardStats = () => {
           .eq('post_type', 'event')
           .gte('created_at', new Date().toISOString())
           .lte('created_at', nextMonth.toISOString()),
-        
+
         // Get active marketplace items count
         supabase
           .from('marketplace_items')
@@ -73,24 +69,17 @@ export const useDashboardStats = () => {
 
       const uniqueNeighbors = new Set(activeNeighborsData.data?.map(post => post.user_id) || []);
 
-      setStats({
+      return {
         activeNeighbors: uniqueNeighbors.size,
         postsToday: postsTodayResult.count || 0,
         upcomingEvents: upcomingEventsResult.count || 0,
         itemsForSale: itemsForSaleResult.count || 0,
-        loading: false,
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      setStats(prev => ({ ...prev, loading: false }));
-    }
-  };
+      };
+    },
+    enabled: !!user && !!profile,
+  });
 
-  useEffect(() => {
-    fetchStats();
-  }, [user?.id, profile?.user_id]);
-
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions to trigger refetch
   useEffect(() => {
     if (!user) return;
 
@@ -101,18 +90,18 @@ export const useDashboardStats = () => {
           schema: 'public',
           table: 'community_posts'
         }, () => {
-          fetchStats();
+          refetch();
         })
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'marketplace_items'
         }, () => {
-          fetchStats();
+          refetch();
         }),
       {
         channelName: 'dashboard_stats_changes',
-        onError: fetchStats,
+        onError: () => refetch(),
         pollInterval: 60000, // Poll every minute for stats
         debugName: 'DashboardStats'
       }
@@ -121,7 +110,10 @@ export const useDashboardStats = () => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user]);
+  }, [user, refetch]);
 
-  return stats;
+  return {
+    ...stats,
+    loading: isLoading,
+  };
 };

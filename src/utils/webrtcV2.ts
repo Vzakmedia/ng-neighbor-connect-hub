@@ -24,6 +24,7 @@ export class WebRTCManagerV2 {
   // Callbacks
   onIncomingCall: ((callData: any) => void) | null = null;
   onCallStateUpdate: ((state: CallState) => void) | null = null;
+  onError: ((code: string, message: string) => void) | null = null;
   onLocalStream: ((stream: MediaStream) => void) | null = null;
   onRemoteStream: ((stream: MediaStream) => void) | null = null;
 
@@ -98,11 +99,11 @@ export class WebRTCManagerV2 {
         }
       } else if (this.pc?.connectionState === "failed") {
         console.warn("Connection failed - attempting ICE restart");
-        this.logCallError("Connection failed - attempting restart");
+        this.logCallError("ICE_CONNECTION_FAILED", "Connection failed - attempting restart");
         this.restartIce();
       } else if (this.pc?.connectionState === "disconnected") {
         console.warn("Connection disconnected - waiting 5s before ICE restart");
-        this.logCallError("Connection disconnected");
+        this.logCallError("ICE_DISCONNECTED", "Connection disconnected");
         // Wait 5 seconds, then attempt ICE restart if still disconnected
         if (this.disconnectTimeoutRef) {
           clearTimeout(this.disconnectTimeoutRef);
@@ -134,10 +135,10 @@ export class WebRTCManagerV2 {
           session_id: this.callSessionId
         });
 
-        this.logAnalytics("renegotiation_initiated", { reason: "negotiation_needed" });
-      } catch (error) {
+        this.logAnalytics("ice_restart", { reason: "negotiation_needed" });
+      } catch (error: any) {
         console.error("Error during renegotiation:", error);
-        this.logCallError(`Renegotiation failed: ${error}`);
+        this.logCallError("RENEGOTIATION_FAILED", `Renegotiation failed: ${error.message || error}`);
       }
     };
   }
@@ -193,10 +194,10 @@ export class WebRTCManagerV2 {
 
       this.callStartTime = Date.now();
       this.logCallInitiated();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting call:", error);
       this.updateCallState("idle");
-      this.logCallError(`Failed to start call: ${error}`);
+      this.logCallError("START_CALL_FAILED", `Failed to start call: ${error.message || error}`);
       throw error;
     }
   }
@@ -252,10 +253,10 @@ export class WebRTCManagerV2 {
 
       this.callStartTime = Date.now();
       await this.updateCallLogStatus("connected");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error answering call:", error);
       this.updateCallState("idle");
-      this.logCallError(`Failed to answer call: ${error}`);
+      this.logCallError("ANSWER_CALL_FAILED", `Failed to answer call: ${error.message || error}`);
       throw error;
     }
   }
@@ -351,7 +352,7 @@ export class WebRTCManagerV2 {
           sdp: answer,
           session_id: this.callSessionId
         });
-        this.logAnalytics("renegotiation_answered", { success: true });
+        this.logAnalytics("ice_restart", { success: true, sub_type: "renegotiation_answered" });
       } else if (type === "renegotiate-answer" && this.pc) {
         // Verify this answer is for our current call session
         if (this.callSessionId !== session_id) {
@@ -367,7 +368,7 @@ export class WebRTCManagerV2 {
 
         console.log("Received renegotiation answer from peer, signalingState:", this.pc.signalingState);
         await this.pc.setRemoteDescription(new RTCSessionDescription(sdp));
-        this.logAnalytics("renegotiation_completed", { success: true });
+        this.logAnalytics("call_connected", { success: true, sub_type: "renegotiation_completed" });
       } else if (type === "timeout") {
         console.log("Call timed out (no answer) for session:", session_id);
         this.updateCallState("ended");
@@ -377,9 +378,9 @@ export class WebRTCManagerV2 {
         this.updateCallState("ended");
         this.cleanup();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error handling signaling message:", error);
-      this.logCallError(`Signaling error: ${error}`);
+      this.logCallError("SIGNALING_ERROR", `Signaling error: ${error.message || error}`);
     }
   }
 
@@ -416,9 +417,9 @@ export class WebRTCManagerV2 {
       });
 
       this.logAnalytics("ice_restart", { reason: "connection_failed" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during ICE restart:", error);
-      this.logCallError(`ICE restart failed: ${error}`);
+      this.logCallError("ICE_RESTART_FAILED", `ICE restart failed: ${error.message || error}`);
     }
   }
 
@@ -438,10 +439,10 @@ export class WebRTCManagerV2 {
         session_id: this.callSessionId
       });
 
-      this.logAnalytics("ice_restart_response", { success: true });
-    } catch (error) {
+      this.logAnalytics("ice_restart", { success: true, sub_type: "remote_response" });
+    } catch (error: any) {
       console.error("Error handling remote ICE restart:", error);
-      this.logCallError(`Remote ICE restart handling failed: ${error}`);
+      this.logCallError("REMOTE_ICE_RESTART_FAILED", `Remote ICE restart handling failed: ${error.message || error}`);
     }
   }
 
@@ -541,13 +542,14 @@ export class WebRTCManagerV2 {
       console.log("Call timeout - no answer after 45s");
       await this.sendSignal({ type: "timeout", session_id: this.callSessionId });
       await this.updateCallLogStatus("missed");
-      this.logCallError("Call timeout - no answer");
+      this.logCallError("SIGNALING_TIMEOUT", "Call timeout - no answer");
       this.cleanup();
-    }, 45000); // 45 seconds - increased to account for polling delays
+    }, 85000); // Increased to 85s to allow at least 75s of ringing plus some buffer
   }
 
   private clearRingingTimeout() {
     if (this.ringingTimeoutRef) {
+      console.log("Clearing ringing timeout");
       clearTimeout(this.ringingTimeoutRef);
       this.ringingTimeoutRef = null;
     }
@@ -611,7 +613,7 @@ export class WebRTCManagerV2 {
         error,
         message: error?.message,
         type: message.type,
-        session_id: this.callSessionId
+        session_id: this.callSessionId || message.session_id
       });
 
       // Retry with exponential backoff
@@ -732,8 +734,9 @@ export class WebRTCManagerV2 {
     });
   }
 
-  private async logCallError(message: string) {
-    await this.logAnalytics("call_error", { error: message });
+  private async logCallError(code: string, message: string) {
+    this.onError?.(code, message);
+    await this.logAnalytics("call_failed", { code, error: message });
   }
 
   private async logAnalytics(eventType: string, data: any) {

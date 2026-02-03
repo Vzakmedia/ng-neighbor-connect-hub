@@ -41,16 +41,17 @@ interface TrendingTopic {
   posts: number;
 }
 
+import { useQuery } from '@tanstack/react-query';
+
 export const useUpcomingEvents = (limit: number = 3) => {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const [events, setEvents] = useState<UpcomingEvent[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchEvents = async () => {
-    if (!user || !profile) return;
+  const { data: events = [], isLoading, refetch } = useQuery({
+    queryKey: ['community-highlights', 'events', limit, profile?.city],
+    queryFn: async () => {
+      if (!user || !profile) return [];
 
-    try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
@@ -92,17 +93,16 @@ export const useUpcomingEvents = (limit: number = 3) => {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
 
       // Get RSVP counts for each event
       const eventIds = (data || []).map(event => event.id);
       const { data: rsvpData } = eventIds.length > 0
         ? await supabase
-            .from('event_rsvps')
-            .select('post_id')
-            .in('post_id', eventIds)
-            .eq('status', 'attending')
+          .from('event_rsvps')
+          .select('post_id')
+          .in('post_id', eventIds)
+          .eq('status', 'attending')
         : { data: [] };
 
       const rsvpCounts = (rsvpData || []).reduce((acc, rsvp) => {
@@ -110,21 +110,21 @@ export const useUpcomingEvents = (limit: number = 3) => {
         return acc;
       }, {} as Record<string, number>);
 
-      const formattedEvents: UpcomingEvent[] = (data || []).map((event) => {
+      return (data || []).map((event) => {
         const eventDate = event.event_date ? new Date(event.event_date) : new Date(event.created_at);
-        
+
         return {
           id: event.id,
           title: event.title || 'Community Event',
-          date: eventDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            month: 'short', 
-            day: 'numeric' 
+          date: eventDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric'
           }),
-          time: eventDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
+          time: eventDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
           }),
           location: event.location || (event.profiles as any)?.neighborhood || (event.profiles as any)?.city || 'TBA',
           attendees: rsvpCounts[event.id] || 0,
@@ -132,18 +132,9 @@ export const useUpcomingEvents = (limit: number = 3) => {
           created_at: event.created_at
         };
       });
-
-      setEvents(formattedEvents);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEvents();
-  }, [user?.id, profile?.user_id, limit]);
+    },
+    enabled: !!user && !!profile,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -156,11 +147,11 @@ export const useUpcomingEvents = (limit: number = 3) => {
           table: 'community_posts',
           filter: 'post_type=eq.event'
         }, () => {
-          fetchEvents();
+          refetch();
         }),
       {
         channelName: 'upcoming_events_changes',
-        onError: fetchEvents,
+        onError: () => refetch(),
         pollInterval: 180000, // 3 minutes
         debugName: 'UpcomingEvents'
       }
@@ -169,30 +160,20 @@ export const useUpcomingEvents = (limit: number = 3) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, limit]);
+  }, [user, limit, refetch]);
 
-  return { events, loading, refetch: fetchEvents };
+  return { events, loading: isLoading, refetch };
 };
 
 export const useSafetyAlerts = (limit: number = 3) => {
   const { user } = useAuth();
-  const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
-  const [loading, setLoading] = useState(true);
   const alertCountRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchAlerts = async () => {
-    if (!user) return;
+  const { data: alerts = [], isLoading, refetch } = useQuery({
+    queryKey: ['safety-alerts', limit],
+    queryFn: async () => {
+      if (!user) return [];
 
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-
-    try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
@@ -210,14 +191,13 @@ export const useSafetyAlerts = (limit: number = 3) => {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
 
       const formattedAlerts: SafetyAlert[] = (data || []).map(alert => {
         const createdDate = new Date(alert.created_at);
         const now = new Date();
         const diffInHours = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60));
-        
+
         let timeAgo = '';
         if (diffInHours < 1) {
           timeAgo = 'Just now';
@@ -242,45 +222,18 @@ export const useSafetyAlerts = (limit: number = 3) => {
       // Play notification sound if new alerts arrived
       if (formattedAlerts.length > alertCountRef.current && alertCountRef.current > 0) {
         try {
-          // Get audio settings from native storage
-          const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
-          const { getItem } = useNativeStorage();
-          const audioSettingsRaw = await getItem('audioSettings');
-          const audioSettings = audioSettingsRaw ? JSON.parse(audioSettingsRaw) : {};
-          const soundEnabled = audioSettings.soundEnabled !== false; // Default to true
-          const volume = audioSettings.emergencyVolume?.[0] || 0.7;
-          
-          if (soundEnabled) {
-            // Use emergency sound for safety alerts
-            playNotification('emergency');
-          }
+          const { playNotification } = await import('@/utils/audioUtils');
+          playNotification('emergency');
         } catch (error) {
           console.error('Error playing safety alert notification sound:', error);
         }
       }
-      
+
       alertCountRef.current = formattedAlerts.length;
-      setAlerts(formattedAlerts);
-    } catch (error) {
-      // Ignore AbortError - it's expected when cancelling requests
-      if (error instanceof Error && error.name !== 'AbortError') {
-        console.error('Error fetching safety alerts:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAlerts();
-
-    // Cleanup: abort any pending requests when component unmounts or deps change
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [user?.id, limit]);
+      return formattedAlerts;
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -292,11 +245,11 @@ export const useSafetyAlerts = (limit: number = 3) => {
           schema: 'public',
           table: 'safety_alerts'
         }, () => {
-          fetchAlerts();
+          refetch();
         }),
       {
         channelName: 'safety_alerts_changes',
-        onError: fetchAlerts,
+        onError: () => refetch(),
         pollInterval: 10000, // Poll every 10 seconds for safety alerts
         debugName: 'SafetyAlerts'
       }
@@ -305,21 +258,20 @@ export const useSafetyAlerts = (limit: number = 3) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, limit]);
+  }, [user, limit, refetch]);
 
-  return { alerts, loading, refetch: fetchAlerts };
+  return { alerts, loading: isLoading, refetch };
 };
 
 export const useMarketplaceHighlights = (limit: number = 3) => {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchItems = async () => {
-    if (!user || !profile) return;
+  const { data: items = [], isLoading, refetch } = useQuery({
+    queryKey: ['marketplace', 'highlights', limit, profile?.city],
+    queryFn: async () => {
+      if (!user || !profile) return [];
 
-    try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
@@ -349,10 +301,9 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
 
-      const formattedItems: MarketplaceItem[] = (data || []).map(item => ({
+      return (data || []).map(item => ({
         id: item.id,
         title: item.title,
         price: `₦${item.price?.toLocaleString()}`,
@@ -361,18 +312,9 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
         category: item.category,
         created_at: item.created_at
       }));
-
-      setItems(formattedItems);
-    } catch (error) {
-      console.error('Error fetching marketplace items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, [user?.id, profile?.user_id, limit]);
+    },
+    enabled: !!user && !!profile,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -384,11 +326,11 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
           schema: 'public',
           table: 'marketplace_items'
         }, () => {
-          fetchItems();
+          refetch();
         }),
       {
         channelName: 'marketplace_highlights_changes',
-        onError: fetchItems,
+        onError: () => refetch(),
         pollInterval: 300000, // 5 minutes
         debugName: 'MarketplaceHighlights'
       }
@@ -397,20 +339,19 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, limit]);
+  }, [user, limit, refetch]);
 
-  return { items, loading, refetch: fetchItems };
+  return { items, loading: isLoading, refetch };
 };
 
 export const useTrendingTopics = (limit: number = 4) => {
   const { user } = useAuth();
-  const [topics, setTopics] = useState<TrendingTopic[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchTrendingTopics = async () => {
-    if (!user) return;
+  const { data: topics = [], isLoading, refetch } = useQuery({
+    queryKey: ['community-highlights', 'trending', limit],
+    queryFn: async () => {
+      if (!user) return [];
 
-    try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
@@ -420,8 +361,8 @@ export const useTrendingTopics = (limit: number = 4) => {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
       // Use the more recent date between user creation and 7 days ago
-      const filterDate = userCreatedAt && new Date(userCreatedAt) > sevenDaysAgo 
-        ? userCreatedAt 
+      const filterDate = userCreatedAt && new Date(userCreatedAt) > sevenDaysAgo
+        ? userCreatedAt
         : sevenDaysAgo.toISOString();
 
       const { data, error } = await supabase
@@ -434,7 +375,7 @@ export const useTrendingTopics = (limit: number = 4) => {
 
       // Count tag occurrences
       const tagCounts: Record<string, number> = {};
-      
+
       (data || []).forEach(post => {
         if (post.tags && Array.isArray(post.tags)) {
           post.tags.forEach(tag => {
@@ -444,24 +385,13 @@ export const useTrendingTopics = (limit: number = 4) => {
         }
       });
 
-      // Convert to array and sort by count
-      const sortedTopics = Object.entries(tagCounts)
+      return Object.entries(tagCounts)
         .map(([tag, posts]) => ({ tag, posts }))
         .sort((a, b) => b.posts - a.posts)
         .slice(0, limit);
-
-      setTopics(sortedTopics);
-    } catch (error) {
-      console.error('Error fetching trending topics:', error);
-      setTopics([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrendingTopics();
-  }, [user?.id, limit]);
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -473,11 +403,11 @@ export const useTrendingTopics = (limit: number = 4) => {
           schema: 'public',
           table: 'community_posts'
         }, () => {
-          fetchTrendingTopics();
+          refetch();
         }),
       {
         channelName: 'trending_topics_changes',
-        onError: fetchTrendingTopics,
+        onError: () => refetch(),
         pollInterval: 600000, // 10 minutes
         debugName: 'TrendingTopics'
       }
@@ -486,7 +416,7 @@ export const useTrendingTopics = (limit: number = 4) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [user, limit]);
+  }, [user, limit, refetch]);
 
-  return { topics, loading, refetch: fetchTrendingTopics };
+  return { topics, loading: isLoading, refetch };
 };

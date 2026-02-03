@@ -22,6 +22,7 @@ import { formatDistanceToNow } from 'date-fns';
 import MessageThread from '@/components/messaging/MessageThread';
 
 const Chat = () => {
+  console.log("[Chat] Component rendering...");
   const { isUserOnline } = usePresence();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
@@ -356,7 +357,7 @@ const Chat = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => startVoiceCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar)}
+                onClick={() => startVoiceCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar, conversation?.other_user_id)}
                 className="h-8 w-8 md:h-10 md:w-10 text-green-600 hover:text-green-700 hover:bg-green-50"
               >
                 <Phone className="h-4 w-4 md:h-5 md:w-5" />
@@ -364,7 +365,7 @@ const Chat = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => startVideoCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar)}
+                onClick={() => startVideoCall(conversationId || '', conversation?.other_user_name || 'User', conversation?.other_user_avatar, conversation?.other_user_id)}
                 className="h-8 w-8 md:h-10 md:w-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
                 <Video className="h-4 w-4 md:h-5 md:w-5" />

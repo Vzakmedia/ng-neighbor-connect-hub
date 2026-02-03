@@ -63,6 +63,8 @@ export const ConnectionStatusIndicator = () => {
     return () => clearInterval(interval);
   }, [isIOS, initialLoadComplete]);
 
+  if (isNativePlatform()) return null;
+
   if (!showIndicator) return null;
 
   return (

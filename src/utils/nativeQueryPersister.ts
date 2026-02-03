@@ -128,7 +128,7 @@ export const createNativeQueryPersister = () => {
   return {
     async persistClient(client: any): Promise<void> {
       const now = Date.now();
-      
+
       // Throttle persistence calls
       if (now - lastPersistTime < THROTTLE_MS) {
         // Queue this persist for later
@@ -198,7 +198,7 @@ export const createNativeQueryPersister = () => {
         }
 
         const manifest: CacheManifest = JSON.parse(manifestStr);
-        
+
         // Check if cache is too old (24 hours)
         const maxAge = 24 * 60 * 60 * 1000;
         if (Date.now() - manifest.timestamp > maxAge) {
@@ -254,20 +254,36 @@ export const PERSISTABLE_QUERY_KEYS = [
   'marketplace',
   'emergency-contacts',
   'saved-posts',
+  'featured-services',
+  'recommendations',
+  'recommendation-details',
+  'blog-posts',
+  'blog-categories',
+  'polls',
+  'user-profile',
+  'community-highlights',
+  'safety-alerts'
 ] as const;
 
 /**
  * Size limits per query type to prevent storage quota exhaustion
  */
 export const QUERY_SIZE_LIMITS: Record<string, number> = {
-  feed: 2, // pages
-  profile: 1, // single profile
-  conversations: 20, // conversations
-  notifications: 50, // notifications
-  events: 30, // events
-  marketplace: 20, // listings
-  'emergency-contacts': 100, // all contacts (critical)
-  'saved-posts': 50, // saved posts
+  feed: 3, // pages
+  profile: 1,
+  conversations: 30,
+  notifications: 50,
+  events: 30,
+  marketplace: 20,
+  'emergency-contacts': 100,
+  'saved-posts': 50,
+  'featured-services': 10,
+  recommendations: 20,
+  'recommendation-details': 5,
+  'blog-posts': 10,
+  polls: 5,
+  'community-highlights': 10,
+  'safety-alerts': 10
 };
 
 /**

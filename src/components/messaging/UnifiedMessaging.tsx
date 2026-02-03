@@ -18,6 +18,7 @@ import { Search, MessageCircle, ShoppingBag, UserPlus } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useCallContext } from '@/contexts/CallContext';
+import { handleApiError } from '@/utils/errorHandling';
 
 const UnifiedMessaging = () => {
   const navigate = useNavigate();
@@ -43,6 +44,11 @@ const UnifiedMessaging = () => {
   const [activeTab, setActiveTab] = useState('direct');
   const [requestCount, setRequestCount] = useState(0);
 
+  const otherUserId = useMemo(() => {
+    if (!user || !activeConversation) return undefined;
+    return activeConversation.user1_id === user.id ? activeConversation.user2_id : activeConversation.user1_id;
+  }, [user?.id, activeConversation?.id]);
+
   // WebRTC call functionality
   const {
     isInCall,
@@ -62,24 +68,26 @@ const UnifiedMessaging = () => {
   } = useCallContext();
 
   const startVoiceCall = useCallback(() => {
-    if (activeConversation) {
+    if (activeConversation && otherUserId) {
       startVoiceCallCtx(
         activeConversation.id,
         activeConversation.other_user_name || 'User',
-        activeConversation.other_user_avatar || undefined
+        activeConversation.other_user_avatar || undefined,
+        otherUserId
       );
     }
-  }, [activeConversation, startVoiceCallCtx]);
+  }, [activeConversation, otherUserId, startVoiceCallCtx]);
 
   const startVideoCall = useCallback(() => {
-    if (activeConversation) {
+    if (activeConversation && otherUserId) {
       startVideoCallCtx(
         activeConversation.id,
         activeConversation.other_user_name || 'User',
-        activeConversation.other_user_avatar || undefined
+        activeConversation.other_user_avatar || undefined,
+        otherUserId
       );
     }
-  }, [activeConversation, startVideoCallCtx]);
+  }, [activeConversation, otherUserId, startVideoCallCtx]);
 
   // Step 1: Fix infinite loop - only fetch once on mount
   useEffect(() => {
@@ -111,11 +119,6 @@ const UnifiedMessaging = () => {
 
   // Fix 5: Remove unnecessary effect - update ref during render instead
   conversationsRef.current = conversations;
-
-  const otherUserId = useMemo(() => {
-    if (!user || !activeConversation) return undefined;
-    return activeConversation.user1_id === user.id ? activeConversation.user2_id : activeConversation.user1_id;
-  }, [user?.id, activeConversation?.id]);
 
   const selectConversation = useCallback(async (conv: Conversation) => {
     if (window.innerWidth < 640) {
@@ -196,11 +199,7 @@ const UnifiedMessaging = () => {
       // Don't refetch - real-time subscription will update the message
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
-      toast({
-        title: "Failed to send",
-        description: "Your message couldn't be sent. Please try again.",
-        variant: "destructive",
-      });
+      handleApiError(error, { route: '/messages' });
     }
   };
 
