@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+import {
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  USER_LOCATION_ZOOM,
+  isNativePlatform,
+  MapLocation
+} from '@/utils/map-utils';
 
 interface MapMarker {
   id: string;
@@ -15,22 +20,22 @@ interface MapMarker {
 }
 
 interface NativeSafetyMapProps {
-  center?: { lat: number; lng: number };
+  center?: MapLocation;
   zoom?: number;
   markers?: MapMarker[];
   onMarkerClick?: (markerId: string) => void;
 }
 
 export const NativeSafetyMap = ({
-  center = { lat: 9.082, lng: 8.6753 }, // Abuja, Nigeria
-  zoom = 12,
+  center = DEFAULT_CENTER,
+  zoom = DEFAULT_ZOOM,
   markers = [],
   onMarkerClick,
 }: NativeSafetyMapProps) => {
   const mapRef = useRef<HTMLElement>(null);
   const [map, setMap] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<MapLocation | null>(null);
   const { toast } = useToast();
   const isNative = isNativePlatform();
 
@@ -72,7 +77,7 @@ export const NativeSafetyMap = ({
           'get-google-maps-token'
         );
 
-        if (configError || !configData?.apiKey) {
+        if (configError || !configData?.token) {
           throw new Error('Failed to get Google Maps API key');
         }
 
@@ -85,15 +90,14 @@ export const NativeSafetyMap = ({
         // Create the map
         const newMap = await GoogleMap.create({
           id: 'safety-map',
-          mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'f9e788e912dcdf89dc54facf',
           element: mapRef.current!,
-          apiKey: configData.apiKey,
+          apiKey: configData.token,
           config: {
             center: {
               lat: mapCenter.lat,
               lng: mapCenter.lng,
             },
-            zoom: userLocation ? 14 : zoom, // Zoom in more if we have user location
+            zoom: userLocation ? USER_LOCATION_ZOOM : zoom, // Zoom in more if we have user location
           },
         });
 
@@ -119,6 +123,8 @@ export const NativeSafetyMap = ({
 
         setMap(newMap);
         setIsLoading(false);
+        // Add class to html to enable transparency in index.css
+        document.documentElement.classList.add('native-map-active');
       } catch (error) {
         console.error('Error initializing native map:', error);
         toast({
@@ -134,6 +140,7 @@ export const NativeSafetyMap = ({
 
     // Cleanup
     return () => {
+      document.documentElement.classList.remove('native-map-active');
       if (map) {
         map.destroy();
       }
@@ -183,7 +190,7 @@ export const NativeSafetyMap = ({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-transparent">
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
           <Skeleton className="w-full h-full" />
@@ -192,9 +199,10 @@ export const NativeSafetyMap = ({
       <div
         ref={mapRef as any}
         style={{
-          display: 'inline-block',
+          display: 'block',
           width: '100%',
           height: '100%',
+          backgroundColor: 'transparent',
         }}
       />
     </div>

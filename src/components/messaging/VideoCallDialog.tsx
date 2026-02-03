@@ -35,7 +35,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   isVideoCall,
   otherUserName,
   otherUserAvatar,
-  callState = 'connecting'
+  callState = 'initiating' // Default to initiating to keep UI stable
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -113,7 +113,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
           label: t.label
         }))
       });
-      
+
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.play().catch(err => {
         console.error('[VideoCallDialog] Error playing remote video:', err);
@@ -133,7 +133,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
         }))
       });
       remoteAudioRef.current.srcObject = remoteStream;
-      
+
       // Explicitly try to play
       remoteAudioRef.current.play().catch(err => {
         console.error('[VideoCallDialog] Error playing remote audio:', err);
@@ -150,15 +150,15 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
             {isVideoCall ? 'Video' : 'Voice'} call with {otherUserName}
           </DialogDescription>
         </VisuallyHidden>
-        
+
         {/* Blurred background image */}
         {otherUserAvatar && (
-          <div 
+          <div
             className="absolute inset-0 bg-cover bg-center scale-110 blur-2xl"
             style={{ backgroundImage: `url(${otherUserAvatar})` }}
           />
         )}
-        
+
         {/* Dark overlay for readability */}
         {otherUserAvatar && (
           <div className="absolute inset-0 bg-black/40" />
@@ -171,7 +171,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
           playsInline
           style={{ display: 'none' }}
         />
-        
+
         {/* Video elements - full screen remote, PIP local */}
         {isVideoCall && (
           <>
@@ -182,7 +182,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
               playsInline
               className="absolute inset-0 w-full h-full object-cover"
             />
-            
+
             {/* Local video - picture-in-picture overlay */}
             <video
               ref={localVideoRef}
@@ -193,7 +193,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
             />
           </>
         )}
-        
+
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-12">
           {/* Top spacer */}
           <div className="flex-1" />
@@ -269,8 +269,8 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
           {/* Call controls at bottom */}
           <div className="w-full flex flex-col items-center">
             <CallControls
-              onStartVoiceCall={() => {}}
-              onStartVideoCall={() => {}}
+              onStartVoiceCall={() => { }}
+              onStartVideoCall={() => { }}
               onEndCall={handleEndCall}
               onToggleAudio={(enabled) => {
                 setAudioEnabled(enabled);
@@ -286,7 +286,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
             />
 
             {/* Collapse handle */}
-            <button 
+            <button
               onClick={() => onOpenChange(false)}
               className="mt-6 flex flex-col items-center gap-1 text-white/60 hover:text-white/80 transition-colors"
             >

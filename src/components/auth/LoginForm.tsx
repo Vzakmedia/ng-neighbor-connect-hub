@@ -10,6 +10,7 @@ import { RateLimiter } from "@/components/security/RateLimiter";
 import { SecureInput } from "@/components/auth/SecureAuthForms";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isPrivateBrowsing, detectIOSAuth, getIOSAuthError } from "@/utils/iosAuthHelper";
+import { handleApiError } from "@/utils/errorHandling";
 
 
 interface LoginFormProps {
@@ -67,13 +68,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
 
       if (error) {
         if (recordAttempt) recordAttempt();
-
-        const errorMessage = getIOSAuthError(error.message);
-        toast({
-          title: "Login Failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        handleApiError(error, { route: '/auth/login' });
         return;
       }
 
@@ -139,12 +134,7 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
     } catch (error) {
       console.error(`[LoginForm] Unexpected error:`, error);
       if (recordAttempt) recordAttempt();
-
-      toast({
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      handleApiError(error, { route: '/auth/login' });
     } finally {
       setIsLoading(false);
     }

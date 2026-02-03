@@ -11,11 +11,12 @@ import { useState, useEffect } from "react";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
 import { toast } from "sonner";
 import { playNotification } from "@/utils/audioUtils";
+import { handleApiError } from "@/utils/errorHandling";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const { preferences, isLoading, updatePreferences, sendTestEmail } = useEmailNotifications();
-  
+
   const [notificationVolume, setNotificationVolume] = useState([80]);
   const [emergencyVolume, setEmergencyVolume] = useState([100]);
   const [messageVolume, setMessageVolume] = useState([70]);
@@ -42,7 +43,7 @@ export default function Notifications() {
       await playNotification('notification');
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} sound played`);
     } catch (error) {
-      toast.error("Could not play sound");
+      handleApiError(error, { route: '/profile/notifications' });
     }
   };
 
@@ -75,7 +76,7 @@ export default function Notifications() {
 
       {/* Content */}
       <div className="pb-20 px-4 pt-4 space-y-4">
-        
+
         {/* Notification Types */}
         <Card>
           <CardHeader>
@@ -244,7 +245,7 @@ export default function Notifications() {
                 defaultChecked={false}
               />
             </div>
-            
+
             {false && (
               <>
                 <div className="space-y-2">

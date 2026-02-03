@@ -201,16 +201,27 @@ serve(async (req) => {
     // Push notification delivery (requires FCM setup)
     if (orderedAllowed.includes('push')) {
       try {
-        // This would require FCM implementation
-        // For now, we'll simulate success
-        deliveryResults.push({
-          channel: 'push',
-          status: 'sent',
-          timestamp: new Date().toISOString(),
-          note: 'Push notification delivery simulated'
+        const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
+          body: {
+            userId: userId,
+            title: alert.title || 'Safety Alert',
+            message: alert.description || 'New notification',
+            type: alert.severity === 'critical' ? 'emergency' : 'notification',
+            priority: alert.severity === 'critical' ? 'high' : 'normal',
+            data: { alertId: alert.id }
+          }
         });
 
-        console.log(`Push notification sent to user ${userId}`);
+        if (pushError) throw pushError;
+
+        deliveryResults.push({
+          channel: 'push',
+          status: pushData.success ? 'sent' : 'failed',
+          timestamp: new Date().toISOString(),
+          error: pushData.error || null
+        });
+
+        console.log(`Push notification handled for user ${userId}:`, pushData);
       } catch (error) {
         console.error('Push notification error:', error);
         deliveryResults.push({

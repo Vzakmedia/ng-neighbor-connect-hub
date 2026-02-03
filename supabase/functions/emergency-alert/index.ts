@@ -119,6 +119,18 @@ serve(async (req) => {
               recipient_id: contact.user_id,
               sent_at: new Date().toISOString()
             });
+
+          // Also trigger real push notification
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: contact.user_id,
+              title: '🚨 EMERGENCY ALERT',
+              message: `${user_name} needs help!`,
+              type: 'emergency',
+              priority: 'high',
+              data: { panic_alert_id }
+            }
+          });
         }
 
         // Send SMS alerts

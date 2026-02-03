@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,16 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
     const [resending, setResending] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
+
+    const [timeLeft, setTimeLeft] = useState(60);
+
+    // Timer countdown effect
+    useEffect(() => {
+        if (timeLeft > 0) {
+            const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+            return () => clearTimeout(timerId);
+        }
+    }, [timeLeft]);
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,6 +72,8 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
     };
 
     const handleResend = async () => {
+        if (timeLeft > 0) return;
+
         setResending(true);
         try {
             const { error } = await supabase.auth.resend({
@@ -75,6 +87,8 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
                 title: "Code Resent",
                 description: "A new verification code has been sent to your email.",
             });
+            // Reset timer
+            setTimeLeft(60);
         } catch (error: any) {
             toast({
                 title: "Resend Failed",
@@ -130,15 +144,27 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
                         )}
                     </Button>
 
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="text-sm text-muted-foreground hover:text-primary"
-                        onClick={handleResend}
-                        disabled={resending}
-                    >
-                        {resending ? "Resending..." : "Didn't receive code? Resend"}
-                    </Button>
+                    <div className="text-sm text-center">
+                        <p className="text-muted-foreground mb-2">Didn't receive the code?</p>
+                        <Button
+                            type="button"
+                            variant={timeLeft > 0 ? "ghost" : "link"}
+                            className="text-primary hover:text-primary/90 p-0 h-auto font-medium"
+                            onClick={handleResend}
+                            disabled={resending || timeLeft > 0}
+                        >
+                            {resending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                    Resending...
+                                </>
+                            ) : timeLeft > 0 ? (
+                                `Resend code in ${timeLeft}s`
+                            ) : (
+                                "Resend Code"
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </form>
         </div>

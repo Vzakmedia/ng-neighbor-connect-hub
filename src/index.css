@@ -264,6 +264,15 @@ All colors MUST be HSL.
     min-height: -webkit-fill-available;
     position: relative;
   }
+
+  /* Support for Capacitor Google Maps transparency */
+  html.native-map-active,
+  html.native-map-active body,
+  html.native-map-active #root {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
 }
 
 /* iOS Safari viewport height fix and compatibility */

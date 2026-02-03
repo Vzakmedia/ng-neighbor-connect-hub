@@ -30,10 +30,15 @@ const SafetyAlertsSplitView = ({
 }: SafetyAlertsSplitViewProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const isNative = (window as any).Capacitor?.isNativePlatform?.() === true;
+
   return (
-    <div className="relative h-[calc(100vh-140px)] md:rounded-lg overflow-hidden">
+    <div className={cn(
+      "relative h-[calc(100vh-140px)] md:rounded-lg overflow-hidden",
+      isNative && "bg-transparent"
+    )}>
       {/* Full Background Map */}
-      <div className="absolute inset-0">
+      <div className={cn("absolute inset-0", isNative && "bg-transparent")}>
         <SafetyMap alerts={alerts} onAlertClick={onAlertClick} />
       </div>
 
@@ -42,9 +47,9 @@ const SafetyAlertsSplitView = ({
         <PanicButton />
         <ReportIncidentDialog
           trigger={
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="bg-background hover:bg-accent shadow-lg border-border h-10 px-4 flex items-center gap-2"
             >
               <PlusIcon className="h-4 w-4" />
@@ -57,15 +62,15 @@ const SafetyAlertsSplitView = ({
       {/* Left Sidebar Card - Bottom drawer on mobile, left floating card on desktop */}
       <div className={cn(
         "absolute left-0 right-0 lg:left-4 lg:top-4 lg:right-auto lg:w-full lg:max-w-md z-10 transition-all duration-300",
-        isCollapsed 
-          ? "bottom-0 lg:bottom-auto" 
+        isCollapsed
+          ? "bottom-0 lg:bottom-auto"
           : "bottom-0 lg:bottom-4"
       )}>
         <Card className={cn(
           "backdrop-blur-sm shadow-xl border-border transition-all duration-300",
           "rounded-t-2xl lg:rounded-lg",
-          isCollapsed 
-            ? "h-auto bg-background/50 dark:bg-background/50" 
+          isCollapsed
+            ? "h-auto bg-background/50 dark:bg-background/50"
             : "h-[50vh] lg:h-full bg-background/95 dark:bg-background/95"
         )}>
           <div className="flex flex-col h-full">
@@ -85,7 +90,7 @@ const SafetyAlertsSplitView = ({
             {/* Filter Pills */}
             {!isCollapsed && (
               <div className="px-4 pt-3 pb-2 border-b border-border">
-                <HorizontalFilters 
+                <HorizontalFilters
                   selectedCategory={selectedCategory}
                   onCategoryChange={onCategoryChange}
                 />

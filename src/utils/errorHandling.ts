@@ -93,13 +93,13 @@ class ErrorHandler {
   // Handle different types of errors
   handleError(error: any, context?: { route?: string; userId?: string }): ErrorInfo {
     const errorInfo = this.classifyError(error, context);
-    
+
     // Log the error
     this.logError(errorInfo);
-    
+
     // Show user notification
     this.showUserNotification(errorInfo);
-    
+
     return errorInfo;
   }
 
@@ -113,50 +113,97 @@ class ErrorHandler {
       stack: this.isDevelopment ? error.stack : undefined
     };
 
+    // Network errors (handle before generic status codes)
+    if (error.name === 'NetworkError' ||
+      error.message?.toLowerCase().includes('fetch') ||
+      error.message?.toLowerCase().includes('network') ||
+      error.message?.toLowerCase().includes('connection reset')) {
+      return {
+        ...baseInfo,
+        type: ErrorType.NETWORK,
+        severity: ErrorSeverity.HIGH,
+        message: error.message || 'Network error',
+        userMessage: 'We\'re having trouble connecting. Please check your internet and try again.',
+        code: 'NET_001'
+      };
+    }
+
     // Authentication errors
-    if (error.message?.includes('JWT') || error.message?.includes('session') || error.status === 401) {
+    const authMessage = error.message?.toLowerCase() || '';
+    if (authMessage.includes('invalid login credentials') ||
+      authMessage.includes('invalid credentials') ||
+      authMessage.includes('password') && authMessage.includes('incorrect')) {
+      return {
+        ...baseInfo,
+        type: ErrorType.AUTHENTICATION,
+        severity: ErrorSeverity.MEDIUM,
+        message: error.message || 'Auth failure',
+        userMessage: 'Incorrect email or password. Please try again.',
+        code: 'AUTH_001'
+      };
+    }
+
+    if (authMessage.includes('email not confirmed')) {
+      return {
+        ...baseInfo,
+        type: ErrorType.AUTHENTICATION,
+        severity: ErrorSeverity.MEDIUM,
+        message: error.message || 'Email not confirmed',
+        userMessage: 'Please confirm your email address before logging in.',
+        code: 'AUTH_003'
+      };
+    }
+
+    if (authMessage.includes('jwt') ||
+      authMessage.includes('session') ||
+      authMessage.includes('token') ||
+      error.status === 401) {
       return {
         ...baseInfo,
         type: ErrorType.AUTHENTICATION,
         severity: ErrorSeverity.HIGH,
         message: error.message || 'Authentication failed',
-        userMessage: 'Your session has expired. Please log in again.',
-        code: 'AUTH_001'
+        userMessage: 'Your session has expired. Please sign in again.',
+        code: 'AUTH_002'
       };
     }
 
     // Authorization errors
-    if (error.status === 403 || error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+    if (error.status === 403 ||
+      authMessage.includes('permission') ||
+      authMessage.includes('unauthorized') ||
+      authMessage.includes('policy')) {
       return {
         ...baseInfo,
         type: ErrorType.AUTHORIZATION,
         severity: ErrorSeverity.MEDIUM,
         message: error.message || 'Authorization failed',
         userMessage: 'You don\'t have permission to perform this action.',
-        code: 'AUTH_002'
+        code: 'AUTH_004'
       };
     }
 
-    // Network errors
-    if (error.name === 'NetworkError' || error.message?.includes('fetch') || error.message?.includes('network')) {
-      return {
-        ...baseInfo,
-        type: ErrorType.NETWORK,
-        severity: ErrorSeverity.HIGH,
-        message: error.message || 'Network error',
-        userMessage: 'Connection error. Please check your internet connection and try again.',
-        code: 'NET_001'
-      };
-    }
+    // Database errors (Postgres codes)
+    const dbCode = error.code;
+    const dbMessage = error.message?.toLowerCase() || '';
 
-    // Database errors
-    if (error.code?.startsWith('23') || error.message?.includes('duplicate') || error.message?.includes('constraint')) {
-      let userMessage = 'A database error occurred. Please try again.';
-      
-      if (error.message?.includes('duplicate')) {
-        userMessage = 'This record already exists.';
-      } else if (error.message?.includes('foreign key')) {
-        userMessage = 'Cannot complete this action due to related data.';
+    if (dbCode?.startsWith('23') || dbMessage.includes('duplicate') || dbMessage.includes('constraint')) {
+      let userMessage = 'A data error occurred. Please try again.';
+
+      // 23505: Unique violation
+      if (dbCode === '23505' || dbMessage.includes('duplicate key')) {
+        userMessage = 'This item already exists.';
+        // Try to find if it's a profile/username issue
+        if (dbMessage.includes('profiles_username_key')) userMessage = 'This username is already taken.';
+        if (dbMessage.includes('profiles_email_key')) userMessage = 'This email is already registered.';
+      }
+      // 23503: Foreign key violation
+      else if (dbCode === '23503' || dbMessage.includes('foreign key')) {
+        userMessage = 'This action cannot be completed because this item is being used elsewhere.';
+      }
+      // 23502: Not null violation
+      else if (dbCode === '23502') {
+        userMessage = 'Some required information is missing.';
       }
 
       return {
@@ -165,7 +212,7 @@ class ErrorHandler {
         severity: ErrorSeverity.MEDIUM,
         message: error.message || 'Database error',
         userMessage,
-        code: 'DB_001',
+        code: dbCode || 'DB_001',
         details: error.details
       };
     }
@@ -220,15 +267,14 @@ class ErrorHandler {
 
   // Show appropriate user notification
   private showUserNotification(errorInfo: ErrorInfo): void {
-    const variant = errorInfo.severity === ErrorSeverity.CRITICAL || errorInfo.severity === ErrorSeverity.HIGH 
-      ? 'destructive' 
-      : 'default';
+    const isError = errorInfo.severity === ErrorSeverity.CRITICAL || errorInfo.severity === ErrorSeverity.HIGH;
+    const variant = isError ? 'destructive' : 'default';
 
     toast({
       title: this.getErrorTitle(errorInfo.type),
       description: errorInfo.userMessage,
       variant,
-      duration: errorInfo.severity === ErrorSeverity.CRITICAL ? 0 : 5000, // Critical errors don't auto-dismiss
+      duration: errorInfo.severity === ErrorSeverity.CRITICAL ? 10000 : 5000,
     });
   }
 
@@ -272,31 +318,31 @@ export const withRetry = async <T>(
   baseDelay = 1000
 ): Promise<T> => {
   let lastError: any;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error;
-      
+
       if (attempt === maxRetries) {
         break;
       }
-      
+
       // Don't retry on authentication or validation errors
       const errorInfo = errorHandler.classifyError(error);
-      if (errorInfo.type === ErrorType.AUTHENTICATION || 
-          errorInfo.type === ErrorType.VALIDATION ||
-          errorInfo.type === ErrorType.AUTHORIZATION) {
+      if (errorInfo.type === ErrorType.AUTHENTICATION ||
+        errorInfo.type === ErrorType.VALIDATION ||
+        errorInfo.type === ErrorType.AUTHORIZATION) {
         break;
       }
-      
+
       // Exponential backoff
       const delay = baseDelay * Math.pow(2, attempt);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 };
 
@@ -305,7 +351,7 @@ export const handleValidationErrors = (errors: Record<string, string[]>) => {
   const errorMessages = Object.entries(errors)
     .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
     .join('\n');
-    
+
   toast({
     title: 'Validation Error',
     description: errorMessages,

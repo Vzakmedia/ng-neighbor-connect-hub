@@ -7,9 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, User, Loader2, Mail } from '@/lib/icons';
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
-import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
 import { GoogleAuthButton } from "./GoogleAuthButton";
-import { validateEmail, validatePhoneNumber, sanitizeText, validatePasswordStrength } from "@/utils/security";
+import { validateEmail, validatePhoneNumber, sanitizeText } from "@/utils/security";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload } from '@/lib/icons';
@@ -466,7 +465,6 @@ export const SignUpForm = () => {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </Button>
           </div>
-          <PasswordStrengthIndicator password={formData.password} />
         </div>
 
         <div className="space-y-2">
@@ -496,40 +494,44 @@ export const SignUpForm = () => {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Creating account..." : "Create Account"}
         </Button>
-      </form>
+      </form >
 
       {/* OR Divider - Only show if location is complete */}
-      {locationComplete && (
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
+      {
+        locationComplete && (
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Google Sign-up Button - Only enabled when location is complete */}
-      {locationComplete ? (
-        <GoogleAuthButton
-          mode="signup"
-          locationData={{
-            state: formData.state,
-            city: formData.city,
-            neighborhood: formData.neighborhood,
-            address: formData.address,
-          }}
-        />
-      ) : (
-        <div className="w-full p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30">
-          <p className="text-sm text-muted-foreground text-center">
-            📍 Please fill in your location details above to enable Google sign-up
-          </p>
-        </div>
-      )}
+      {
+        locationComplete ? (
+          <GoogleAuthButton
+            mode="signup"
+            locationData={{
+              state: formData.state,
+              city: formData.city,
+              neighborhood: formData.neighborhood,
+              address: formData.address,
+            }}
+          />
+        ) : (
+          <div className="w-full p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30">
+            <p className="text-sm text-muted-foreground text-center">
+              📍 Please fill in your location details above to enable Google sign-up
+            </p>
+          </div>
+        )
+      }
 
       {/* Consent Dialog */}
       <ConsentDialog
@@ -553,6 +555,6 @@ export const SignUpForm = () => {
       />
 
 
-    </div>
+    </div >
   );
 };

@@ -16,6 +16,7 @@ import {
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 import { supabase } from "@/integrations/supabase/client";
+import { handleApiError } from "@/utils/errorHandling";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
@@ -63,7 +64,7 @@ export default function ProfileMenu() {
       navigate("/auth");
     } catch (error) {
       console.error("Sign out error:", error);
-      toast.error("Failed to sign out");
+      handleApiError(error, { route: '/profile-menu' });
     }
   };
 
@@ -164,7 +165,7 @@ export default function ProfileMenu() {
           Sign Out
         </button>
       </div>
-      
+
       <Navigation />
     </div>
   );

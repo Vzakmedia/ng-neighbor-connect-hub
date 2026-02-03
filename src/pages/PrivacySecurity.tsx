@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { usePrivacySettings } from "@/hooks/usePrivacySettings";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { handleApiError } from "@/utils/errorHandling";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,14 +30,14 @@ import {
 export default function PrivacySecurity() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { 
-    privacySettings, 
-    messagingPreferences, 
-    isLoading, 
-    updatePrivacySettings, 
-    updateMessagingPreferences 
+  const {
+    privacySettings,
+    messagingPreferences,
+    isLoading,
+    updatePrivacySettings,
+    updateMessagingPreferences
   } = usePrivacySettings();
-  
+
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,18 +57,18 @@ export default function PrivacySecurity() {
   const handleSignOutAll = async () => {
     await hapticFeedback();
     setIsSigningOutAll(true);
-    
+
     try {
       // Sign out from all sessions using global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
+
       if (error) throw error;
-      
+
       toast.success("Signed out from all devices");
       // The auth state change will handle redirect
     } catch (error) {
       console.error('Error signing out all devices:', error);
-      toast.error("Failed to sign out from all devices");
+      handleApiError(error, { route: '/profile/privacy' });
     } finally {
       setIsSigningOutAll(false);
     }
@@ -75,39 +76,39 @@ export default function PrivacySecurity() {
 
   const handleClearCache = async () => {
     await hapticFeedback();
-    
+
     try {
       // Clear localStorage cache items
-      const keysToRemove = Object.keys(localStorage).filter(key => 
+      const keysToRemove = Object.keys(localStorage).filter(key =>
         key.startsWith('supabase.') || key.startsWith('audio') || key.startsWith('cache')
       );
       keysToRemove.forEach(key => localStorage.removeItem(key));
-      
+
       // Clear sessionStorage
       sessionStorage.clear();
-      
+
       toast.success("Cache cleared successfully");
     } catch (error) {
       console.error('Error clearing cache:', error);
-      toast.error("Failed to clear cache");
+      handleApiError(error, { route: '/profile/privacy' });
     }
   };
 
   const handleDownloadData = async () => {
     await hapticFeedback();
     setIsExporting(true);
-    
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      
+
       const { data, error } = await supabase.functions.invoke('export-user-data', {
         headers: {
           Authorization: `Bearer ${sessionData.session?.access_token}`,
         },
       });
-      
+
       if (error) throw error;
-      
+
       // Create and download JSON file
       const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -118,11 +119,11 @@ export default function PrivacySecurity() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast.success("Your data has been downloaded");
     } catch (error) {
       console.error('Error exporting data:', error);
-      toast.error("Failed to export data. Please try again.");
+      handleApiError(error, { route: '/profile/privacy' });
     } finally {
       setIsExporting(false);
     }
@@ -130,31 +131,31 @@ export default function PrivacySecurity() {
 
   const handleDeleteAccount = async () => {
     await hapticFeedback();
-    
+
     if (deleteConfirmation !== 'DELETE_MY_ACCOUNT') {
       toast.error("Please type DELETE_MY_ACCOUNT to confirm");
       return;
     }
-    
+
     setIsDeleting(true);
-    
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      
+
       const { error } = await supabase.functions.invoke('delete-account', {
         body: { confirmation: deleteConfirmation },
         headers: {
           Authorization: `Bearer ${sessionData.session?.access_token}`,
         },
       });
-      
+
       if (error) throw error;
-      
+
       toast.success("Your account has been deleted");
       await signOut();
     } catch (error: any) {
       console.error('Error deleting account:', error);
-      toast.error(error.message || "Failed to delete account. Please try again.");
+      handleApiError(error, { route: '/profile/privacy' });
     } finally {
       setIsDeleting(false);
       setDeleteConfirmation("");
@@ -190,7 +191,7 @@ export default function PrivacySecurity() {
 
       {/* Content */}
       <div className="pb-20 px-4 pt-4 space-y-4">
-        
+
         {/* Account Security */}
         <Card>
           <CardHeader>
@@ -264,9 +265,9 @@ export default function PrivacySecurity() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm">Profile Visibility</Label>
-              <Select 
-                value={privacySettings.profileVisibility} 
-                onValueChange={(value: 'public' | 'neighbors' | 'verified' | 'private') => 
+              <Select
+                value={privacySettings.profileVisibility}
+                onValueChange={(value: 'public' | 'neighbors' | 'verified' | 'private') =>
                   updatePrivacySettings({ profileVisibility: value })
                 }
               >
@@ -298,8 +299,8 @@ export default function PrivacySecurity() {
 
             <div className="space-y-2">
               <Label className="text-sm">Allow Direct Messages From</Label>
-              <Select 
-                value={privacySettings.allowDMsFrom} 
+              <Select
+                value={privacySettings.allowDMsFrom}
                 onValueChange={(value: 'everyone' | 'neighbors' | 'none') => {
                   updatePrivacySettings({ allowDMsFrom: value });
                   updateMessagingPreferences({ allow_messages: value !== 'none' });
@@ -463,7 +464,7 @@ export default function PrivacySecurity() {
                   <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>
                     Cancel
                   </AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={handleDeleteAccount}
                     disabled={deleteConfirmation !== 'DELETE_MY_ACCOUNT' || isDeleting}

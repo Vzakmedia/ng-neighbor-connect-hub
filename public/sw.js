@@ -31,22 +31,26 @@ const API_CACHE_TTL = {
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
+  '/favicon.ico',
+  '/logo.png',
   '/notification.mp3',
   '/notification-bell.mp3',
   '/notification-chime.mp3',
-  '/notification-ding.mp3'
+  '/notification-ding.mp3',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 console.log('Service Worker: Starting...');
 
 // Listen for push notifications
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   console.log('Service Worker: Push event received');
-  
+
   if (event.data) {
     const data = event.data.json();
     console.log('Service Worker: Push data:', data);
-    
+
     const options = {
       body: data.body || 'New notification',
       icon: '/favicon.ico',
@@ -76,9 +80,9 @@ self.addEventListener('push', function(event) {
 });
 
 // Handle notification clicks
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   console.log('Service Worker: Notification clicked');
-  
+
   event.notification.close();
 
   const notificationData = event.notification.data;
@@ -113,14 +117,14 @@ self.addEventListener('notificationclick', function(event) {
   } else {
     // Default action - open the app to specific URL
     event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
         // Check if there's already a window/tab open with the target URL
         for (const client of clientList) {
           if (client.url.includes(urlToOpen.split('?')[0]) && 'focus' in client) {
             return client.focus();
           }
         }
-        
+
         // If no existing window/tab, open a new one
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
@@ -131,9 +135,9 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // Handle background sync
-self.addEventListener('sync', function(event) {
+self.addEventListener('sync', function (event) {
   console.log('Service Worker: Background sync triggered');
-  
+
   if (event.tag === 'background-notifications') {
     event.waitUntil(
       checkForNotifications()
@@ -153,12 +157,12 @@ async function checkForNotifications() {
 }
 
 // Handle message events from the main thread
-self.addEventListener('message', function(event) {
+self.addEventListener('message', function (event) {
   console.log('Service Worker: Message received:', event.data);
-  
+
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, body, type, tag } = event.data;
-    
+
     const options = {
       body: body,
       icon: '/favicon.ico',
@@ -194,11 +198,11 @@ self.addEventListener('activate', (event) => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== STATIC_CACHE && 
-              cacheName !== DYNAMIC_CACHE && 
-              cacheName !== IMAGE_CACHE &&
-              cacheName !== AUDIO_CACHE &&
-              cacheName !== API_CACHE) {
+          if (cacheName !== STATIC_CACHE &&
+            cacheName !== DYNAMIC_CACHE &&
+            cacheName !== IMAGE_CACHE &&
+            cacheName !== AUDIO_CACHE &&
+            cacheName !== API_CACHE) {
             console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -242,7 +246,7 @@ self.addEventListener('fetch', (event) => {
       caches.open(API_CACHE).then(async (cache) => {
         const cachedResponse = await cache.match(request);
         const ttl = getApiCacheTTL(url.pathname);
-        
+
         // Return cached response if valid (stale-while-revalidate)
         if (cachedResponse && isCacheValid(cachedResponse, ttl)) {
           // Revalidate in background
@@ -250,7 +254,7 @@ self.addEventListener('fetch', (event) => {
             if (freshResponse.ok) {
               const headers = new Headers(freshResponse.headers);
               headers.set('sw-cached-time', Date.now().toString());
-              
+
               freshResponse.clone().blob().then(body => {
                 const cachedWithTime = new Response(body, {
                   status: freshResponse.status,
@@ -263,19 +267,19 @@ self.addEventListener('fetch', (event) => {
           }).catch(() => {
             // Silently fail background revalidation
           });
-          
+
           console.log('Service Worker: API from cache:', url.pathname);
           return cachedResponse;
         }
-        
+
         // Fetch fresh data
         try {
           const freshResponse = await fetch(request);
-          
+
           if (freshResponse.ok) {
             const headers = new Headers(freshResponse.headers);
             headers.set('sw-cached-time', Date.now().toString());
-            
+
             const body = await freshResponse.clone().blob();
             const cachedWithTime = new Response(body, {
               status: freshResponse.status,
@@ -284,7 +288,7 @@ self.addEventListener('fetch', (event) => {
             });
             cache.put(request, cachedWithTime);
           }
-          
+
           return freshResponse;
         } catch (error) {
           // Return stale cache if available when offline
@@ -322,13 +326,13 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Images - Cache First with fallback
-  if (request.destination === 'image' || 
-      request.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
+  if (request.destination === 'image' ||
+    request.url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(cache => {
         return cache.match(request).then(response => {
           if (response) return response;
-          
+
           return fetch(request).then(fetchResponse => {
             // Only cache successful responses
             if (fetchResponse.ok) {

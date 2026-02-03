@@ -3,7 +3,7 @@ import { decode } from "https://deno.land/std@0.177.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
 };
 
 // Helper to get FCM Access Token using Service Account
@@ -110,24 +110,20 @@ Deno.serve(async (req) => {
     const fcmPayload = {
       message: {
         token: fcmToken,
-        notification: {
-          title: `Incoming ${callType} call`,
-          body: `${callerName} is calling you`,
-        },
+        // For Android, we omit the top-level 'notification' to make it a data-only message
+        // which allows the app to handle it in the background and show our own UI.
+        // For iOS, we still include standard notification for APNs compatibility.
         data: {
           notification_type: 'call_incoming',
           conversation_id: conversationId,
           caller_id: callerId,
           caller_name: callerName,
           call_type: callType,
+          is_background_call: 'true',
         },
         android: {
           priority: 'high',
-          notification: {
-            channel_id: 'calls',
-            priority: 'high',
-            visibility: 'public',
-          },
+          // Note: No notification block here for Android to ensure it's handled as a data message
         },
         apns: {
           payload: {

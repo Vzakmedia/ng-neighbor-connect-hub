@@ -121,12 +121,22 @@ export const useNativePushRegistration = () => {
           if (notificationData?.notification_type === 'call_incoming' || notificationData?.type === 'call_incoming') {
             const callData = notificationData.notification_metadata || notificationData;
 
-            console.log('[PushRegistration] Triggering incoming-call event', callData);
+            console.log('[PushRegistration] Triggering native incoming call', callData);
 
-            // Trigger incoming call UI
+            // Import and trigger NativeCallManager directly if on native
+            if (window.Capacitor?.isNativePlatform()) {
+              import('@/utils/NativeCallManager').then(({ NativeCallManager }) => {
+                NativeCallManager.receiveCall(
+                  callData.caller_name || callData.callerName || 'Someone',
+                  callData.conversation_id || callData.conversationId || 'default'
+                );
+              });
+            }
+
+            // Trigger internal event for UI state
             window.dispatchEvent(new CustomEvent('incoming-call', {
               detail: {
-                conversationId: callData.conversation_id || callData.conversationId || callData.conversation_id,
+                conversationId: callData.conversation_id || callData.conversationId,
                 callerId: callData.caller_id || callData.callerId,
                 callerName: callData.caller_name || callData.callerName,
                 callType: callData.call_type || callData.callType,
