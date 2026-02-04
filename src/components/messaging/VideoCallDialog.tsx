@@ -16,6 +16,7 @@ interface VideoCallDialogProps {
   onEndCall: () => void;
   onToggleAudio: (enabled: boolean) => void;
   onToggleVideo: (enabled: boolean) => void;
+  onToggleSpeaker: (enabled: boolean) => void;
   onSwitchCamera?: () => void;
   isVideoCall: boolean;
   otherUserName: string;
@@ -31,6 +32,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   onEndCall,
   onToggleAudio,
   onToggleVideo,
+  onToggleSpeaker,
   onSwitchCamera,
   isVideoCall,
   otherUserName,
@@ -77,7 +79,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
 
   // Call duration timer
   useEffect(() => {
-    if (!open) {
+    if (!open || callState !== 'connected') {
       setCallDuration(0);
       return;
     }
@@ -87,7 +89,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [open]);
+  }, [open, callState]);
 
   // Format duration as MM:SS
   const formatDuration = (seconds: number) => {
@@ -219,18 +221,18 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
                 {otherUserName}
               </h2>
 
-              {/* Call duration */}
+              {/* Call duration or Status */}
               <div className="text-white/80 text-xl font-medium">
-                {formatDuration(callDuration)}
+                {callState === 'connected' ? formatDuration(callDuration) : ''}
               </div>
 
               {/* Connection status */}
-              {callState === 'initiating' && (
+              {(callState === 'initiating' || callState === 'calling') && (
                 <div className="flex items-center gap-2 mt-2">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-150" />
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse delay-300" />
-                  <span className="text-white/60 text-sm ml-2">Initiating...</span>
+                  <span className="text-white/60 text-sm ml-2">Calling...</span>
                 </div>
               )}
               {callState === 'ringing' && (
@@ -280,6 +282,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
                 setVideoEnabled(enabled);
                 onToggleVideo(enabled);
               }}
+              onToggleSpeaker={onToggleSpeaker}
               onSwitchCamera={onSwitchCamera}
               isInCall={true}
               isVideoCall={isVideoCall}

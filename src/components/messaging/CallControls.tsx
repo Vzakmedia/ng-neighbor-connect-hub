@@ -9,6 +9,7 @@ interface CallControlsProps {
   onEndCall: () => void;
   onToggleAudio: (enabled: boolean) => void;
   onToggleVideo: (enabled: boolean) => void;
+  onToggleSpeaker: (enabled: boolean) => void;
   onSwitchCamera?: () => void;
   isInCall: boolean;
   isVideoCall: boolean;
@@ -21,6 +22,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
   onEndCall,
   onToggleAudio,
   onToggleVideo,
+  onToggleSpeaker,
   onSwitchCamera,
   isInCall,
   isVideoCall,
@@ -28,6 +30,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
 }) => {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [speakerEnabled, setSpeakerEnabled] = useState(false);
 
   const handleToggleAudio = () => {
     const newState = !audioEnabled;
@@ -39,6 +42,12 @@ export const CallControls: React.FC<CallControlsProps> = ({
     const newState = !videoEnabled;
     setVideoEnabled(newState);
     onToggleVideo(newState);
+  };
+
+  const handleToggleSpeaker = () => {
+    const newState = !speakerEnabled;
+    setSpeakerEnabled(newState);
+    onToggleSpeaker(newState);
   };
 
   if (!isInCall) {
@@ -68,7 +77,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
     <div className={cn("flex flex-col items-center gap-6 pb-4", className)}>
       {/* First row: Mute, Video (if video call), Chat */}
       <div className="flex items-center justify-center gap-8">
-        <button 
+        <button
           onClick={handleToggleAudio}
           className="flex flex-col items-center gap-1.5"
         >
@@ -82,7 +91,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
         </button>
 
         {isVideoCall && (
-          <button 
+          <button
             onClick={handleToggleVideo}
             className="flex flex-col items-center gap-1.5"
           >
@@ -96,12 +105,15 @@ export const CallControls: React.FC<CallControlsProps> = ({
           </button>
         )}
 
-        <button 
-          onClick={() => console.log('Speaker clicked')}
+        <button
+          onClick={handleToggleSpeaker}
           className="flex flex-col items-center gap-1.5"
         >
-          <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
-            <Volume2 className="h-6 w-6 text-white" />
+          <div className={cn(
+            "w-14 h-14 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors",
+            speakerEnabled ? "bg-white/40 hover:bg-white/50" : "bg-white/20 hover:bg-white/30"
+          )}>
+            {speakerEnabled ? <Volume2 className="h-6 w-6 text-white" /> : <VolumeX className="h-6 w-6 text-white opacity-70" />}
           </div>
           <span className="text-white text-xs font-medium">Speaker</span>
         </button>
@@ -110,7 +122,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
       {/* Second row: Camera Switch (if video), Record, End */}
       <div className="flex items-center justify-center gap-8">
         {isVideoCall && onSwitchCamera && (
-          <button 
+          <button
             onClick={onSwitchCamera}
             className="flex flex-col items-center gap-1.5"
           >
@@ -121,7 +133,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
           </button>
         )}
 
-        <button 
+        <button
           onClick={() => console.log('Record clicked')}
           className="flex flex-col items-center gap-1.5"
         >
@@ -131,7 +143,7 @@ export const CallControls: React.FC<CallControlsProps> = ({
           <span className="text-white text-xs font-medium">Record</span>
         </button>
 
-        <button 
+        <button
           onClick={onEndCall}
           className="flex flex-col items-center gap-1.5"
         >
