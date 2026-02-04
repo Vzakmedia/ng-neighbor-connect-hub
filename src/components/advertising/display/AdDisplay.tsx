@@ -37,7 +37,7 @@ export const AdDisplay = ({
     return (
       <div className={`space-y-4 ${className}`}>
         {Array.from({ length: maxAds }).map((_, i) => (
-          <Skeleton key={i} className=\"h-48 w-full\" />
+          <Skeleton key={i} className="h-48 w-full" />
         ))}
       </div>
     );
@@ -58,26 +58,24 @@ export const AdDisplay = ({
   return (
     <div className={`${containerClass} ${className}`}>
       {placement === 'feed' && (
-        <div className=\"flex items-center gap-2 mb-2\">
-          <div className=\"h-px flex-1 bg-border\" />
-          <span className=\"text-xs font-medium text-muted-foreground px-2\">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium text-muted-foreground px-2">
             Sponsored Content
           </span>
-          <div className=\"h-px flex-1 bg-border\" />
-        </div >
+          <div className="h-px flex-1 bg-border" />
+        </div>
       )}
 
-{
-  filteredAds.map((ad) => (
-    <AdCard
-      key={ad.campaign_id}
-      ad={ad}
-      placement={placement}
-      onAdClick={() => logClick(ad.campaign_id)}
-      showEngagement={showEngagement}
-    />
-  ))
-}
-    </div >
+      {filteredAds.map((ad) => (
+        <AdCard
+          key={ad.campaign_id}
+          ad={ad}
+          placement={placement}
+          onAdClick={() => logClick(ad.campaign_id)}
+          showEngagement={showEngagement}
+        />
+      ))}
+    </div>
   );
 };
