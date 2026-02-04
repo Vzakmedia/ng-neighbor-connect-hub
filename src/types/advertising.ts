@@ -1,10 +1,10 @@
 // Unified Advertisement System Types
 
-export type CampaignType = 
-  | 'business_promotion' 
-  | 'service_ad' 
-  | 'marketplace_ad' 
-  | 'event_promotion' 
+export type CampaignType =
+  | 'business_promotion'
+  | 'service_ad'
+  | 'marketplace_ad'
+  | 'event_promotion'
   | 'community_boost';
 
 export type CampaignStatus = 'draft' | 'pending_payment' | 'pending_approval' | 'active' | 'paused' | 'completed';
@@ -17,7 +17,7 @@ export interface Campaign {
   user_id: string;
   campaign_name: string;
   campaign_type: CampaignType;
-  
+
   // Ad Content
   ad_title: string;
   ad_description: string;
@@ -26,33 +26,33 @@ export interface Campaign {
   video_thumbnail_url?: string;
   ad_url?: string;
   ad_call_to_action: string;
-  
+
   // Content References (only one should be set)
   service_id?: string;
   marketplace_item_id?: string;
   business_id?: string;
   event_id?: string;
   community_post_id?: string;
-  
+
   // Targeting
   target_geographic_scope: GeographicScope;
   target_states?: string[];
   target_cities?: string[];
   target_coordinates?: any;
-  
+
   // Budget & Dates
   pricing_tier_id: string;
   daily_budget: number;
   total_budget: number;
   start_date: string;
   end_date: string;
-  
+
   // Tracking
   total_impressions: number;
   total_clicks: number;
   total_spent: number;
   priority_level: number;
-  
+
   // Status
   status: CampaignStatus;
   approval_status: ApprovalStatus;
@@ -63,10 +63,33 @@ export interface Campaign {
   stripe_session_id?: string;
   payment_amount?: number;
   payment_completed_at?: string;
-  
+
   // Metadata
   created_at: string;
   updated_at: string;
+}
+
+export interface AdEngagement {
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+}
+
+export interface AdFrequencyCap {
+  max_impressions_per_day: number;
+  max_impressions_per_week: number;
+  cooldown_hours: number;
+  last_shown_at?: string;
+  impression_count_today: number;
+}
+
+export interface AdQualityScore {
+  overall_score: number; // 0-100
+  image_quality: number;
+  cta_effectiveness: number;
+  engagement_rate: number;
+  relevance_score: number;
 }
 
 export interface Ad {
@@ -81,7 +104,7 @@ export interface Ad {
   ad_call_to_action: string;
   campaign_type: CampaignType;
   priority_level: number;
-  
+
   // Content details (from joins)
   service_name?: string;
   service_price?: string;
@@ -89,17 +112,23 @@ export interface Ad {
   marketplace_price?: number;
   business_name?: string;
   business_logo?: string;
+  business_verified?: boolean;
   event_title?: string;
   event_date?: string;
-  
+
   location?: string;
   created_at: string;
+
+  // Enhanced features
+  engagement?: AdEngagement;
+  quality_score?: AdQualityScore;
+  frequency_cap?: AdFrequencyCap;
 }
 
 export interface CreateCampaignData {
   campaign_name: string;
   campaign_type: CampaignType;
-  
+
   // Ad Content
   ad_title: string;
   ad_description: string;
@@ -108,19 +137,19 @@ export interface CreateCampaignData {
   video_thumbnail_url?: string;
   ad_url?: string;
   ad_call_to_action: string;
-  
+
   // Content Reference
   service_id?: string;
   marketplace_item_id?: string;
   business_id?: string;
   event_id?: string;
   community_post_id?: string;
-  
+
   // Targeting
   target_geographic_scope: GeographicScope;
   target_states?: string[];
   target_cities?: string[];
-  
+
   // Budget & Dates
   pricing_tier_id: string;
   daily_budget: number;
@@ -185,4 +214,15 @@ export interface AdDisplayProps {
     state?: string;
   };
   className?: string;
+  enableFrequencyCapping?: boolean;
+  showEngagement?: boolean;
+}
+
+export interface AdInteractionLog {
+  campaign_id: string;
+  user_id?: string;
+  interaction_type: 'impression' | 'click' | 'conversion';
+  timestamp: string;
+  device_type?: string;
+  placement?: string;
 }

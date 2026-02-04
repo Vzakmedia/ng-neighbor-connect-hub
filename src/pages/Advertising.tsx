@@ -25,8 +25,8 @@ const Advertising = () => {
     totalImpressions: campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0),
     totalClicks: campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0),
     averageCTR: campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0) > 0
-      ? (campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0) / 
-         campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0)) * 100
+      ? (campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0) /
+        campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0)) * 100
       : 0,
   };
 
@@ -158,120 +158,120 @@ const Advertising = () => {
         <div className="container mx-auto p-6 space-y-6">
           <PaymentStatusHandler />
 
-      {/* Analytics Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalCampaigns}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Active and completed campaigns
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₦{analytics.totalSpent.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Across all campaigns
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Impressions</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {analytics.totalImpressions.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ad views across all campaigns
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average CTR</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {analytics.averageCTR.toFixed(2)}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Click-through rate
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Campaigns List */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="pending_approval">Pending Approval</TabsTrigger>
-          <TabsTrigger value="pending_payment">Pending Payment</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all">
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
-            {campaigns.map((campaign) => renderCampaignCard(campaign))}
-          </div>
-
-          {campaigns.length === 0 && (
-            <Card className="p-12 text-center mt-6">
-              <div className="max-w-md mx-auto">
-                <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
-                <p className="text-muted-foreground mb-6">
-                  Create your first advertising campaign to start reaching your audience
+          {/* Analytics Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analytics.totalCampaigns}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Active and completed campaigns
                 </p>
-                <CreateCampaignDialog onCampaignCreated={refetch} />
-              </div>
+              </CardContent>
             </Card>
-          )}
-        </TabsContent>
 
-        <TabsContent value="active">
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
-            {campaigns.filter(c => c.status === 'active').map((campaign) => renderCampaignCard(campaign))}
-          </div>
-        </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ₦{analytics.totalSpent.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Across all campaigns
+                </p>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="pending_approval">
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
-            {campaigns.filter(c => c.approval_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
-          </div>
-        </TabsContent>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Impressions</CardTitle>
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics.totalImpressions.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ad views across all campaigns
+                </p>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="pending_payment">
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
-            {campaigns.filter(c => c.payment_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average CTR</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics.averageCTR.toFixed(2)}%
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click-through rate
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </TabsContent>
 
-        <TabsContent value="completed">
-          <div className="grid grid-cols-2 md:grid-cols-1 gap-4 mt-6">
-            {campaigns.filter(c => c.status === 'completed').map((campaign) => renderCampaignCard(campaign))}
-          </div>
-        </TabsContent>
-      </Tabs>
+          {/* Campaigns List */}
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="pending_approval">Pending Approval</TabsTrigger>
+              <TabsTrigger value="pending_payment">Pending Payment</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all">
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                {campaigns.map((campaign) => renderCampaignCard(campaign))}
+              </div>
+
+              {campaigns.length === 0 && (
+                <Card className="p-12 text-center mt-6">
+                  <div className="max-w-md mx-auto">
+                    <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Create your first advertising campaign to start reaching your audience
+                    </p>
+                    <CreateCampaignDialog onCampaignCreated={refetch} />
+                  </div>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="active">
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                {campaigns.filter(c => c.status === 'active').map((campaign) => renderCampaignCard(campaign))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pending_approval">
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                {campaigns.filter(c => c.approval_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pending_payment">
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                {campaigns.filter(c => c.payment_status === 'pending').map((campaign) => renderCampaignCard(campaign))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="completed">
+              <div className="grid grid-cols-1 gap-4 mt-6">
+                {campaigns.filter(c => c.status === 'completed').map((campaign) => renderCampaignCard(campaign))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
