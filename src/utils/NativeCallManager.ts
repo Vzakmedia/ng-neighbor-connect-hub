@@ -42,5 +42,19 @@ export const NativeCallManager = {
     on(event: 'answer' | 'reject' | 'hangup' | 'mute' | 'unmute', callback: (data?: any) => void): void {
         if (!this.isAvailable()) return;
         this.plugin.on(event, callback);
+    },
+
+    setSpeakerphone(enabled: boolean): void {
+        if (!this.isAvailable()) return;
+        const action = enabled ? 'speakerOn' : 'speakerOff';
+        console.log(`[NativeCallManager] Turning speaker ${enabled ? 'ON' : 'OFF'}`);
+        this.plugin[action](() => { }, (err: any) => console.error(`NativeCallManager: ${action} error`, err));
+    },
+
+    setMute(enabled: boolean): void {
+        if (!this.isAvailable()) return;
+        const action = enabled ? 'mute' : 'unmute';
+        console.log(`[NativeCallManager] Turning mute ${enabled ? 'ON' : 'OFF'}`);
+        this.plugin[action](() => { }, (err: any) => console.error(`NativeCallManager: ${action} error`, err));
     }
 };

@@ -5,11 +5,13 @@ import { MapLocation, isNativePlatform } from '@/utils/map-utils';
 
 export const useUserLocation = () => {
     const { profile } = useProfile();
-    const { geocodeAddress } = useGoogleMapsCache();
+    const { geocodeAddress, isScriptLoaded } = useGoogleMapsCache();
     const [userLocation, setUserLocation] = useState<MapLocation | null>(null);
     const [isLocating, setIsLocating] = useState(false);
 
     const getProfileLocation = useCallback(async () => {
+        if (!isScriptLoaded) return null;
+
         if (profile?.neighborhood || profile?.city || profile?.state) {
             const addressParts = [
                 profile.neighborhood,
@@ -27,7 +29,7 @@ export const useUserLocation = () => {
             }
         }
         return null;
-    }, [profile, geocodeAddress]);
+    }, [profile, geocodeAddress, isScriptLoaded]);
 
     const getDeviceLocation = useCallback(async () => {
         return new Promise<MapLocation | null>((resolve) => {
@@ -61,7 +63,13 @@ export const useUserLocation = () => {
     const refreshLocation = useCallback(async () => {
         setIsLocating(true);
         try {
-            let location = await getProfileLocation();
+            let location = null;
+            // Only try profile location if map script is ready, otherwise we might fail or just need to wait
+            if (isScriptLoaded) {
+                location = await getProfileLocation();
+            }
+
+            // If no profile location (or script not ready), try device location as fallback
             if (!location) {
                 location = await getDeviceLocation();
             }
@@ -69,7 +77,7 @@ export const useUserLocation = () => {
         } finally {
             setIsLocating(false);
         }
-    }, [getProfileLocation, getDeviceLocation]);
+    }, [getProfileLocation, getDeviceLocation, isScriptLoaded]);
 
     useEffect(() => {
         refreshLocation();

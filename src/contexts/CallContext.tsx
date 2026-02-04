@@ -12,6 +12,7 @@ interface CallContextType extends CallServiceState {
     endCall: () => Promise<void>;
     toggleAudio: () => void;
     toggleVideo: () => void;
+    toggleSpeaker: (enabled: boolean) => void;
     switchCamera: () => void;
     isInCall: boolean;
 }
@@ -42,7 +43,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = CallService.getInstance().subscribe((state) => {
             setCallServiceState(state);
         });
-        return () => unsubscribe();
+        return () => { unsubscribe(); };
     }, []);
 
     const startVoiceCall = useCallback(async (conversationId: string, name: string, avatar?: string, userId?: string) => {
@@ -71,6 +72,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         endCall: () => CallService.getInstance().endCall(),
         toggleAudio: () => CallService.getInstance().toggleAudio(),
         toggleVideo: () => CallService.getInstance().toggleVideo(),
+        toggleSpeaker: (enabled) => CallService.getInstance().toggleSpeaker(enabled),
         switchCamera: () => CallService.getInstance().switchCamera(),
     };
 
@@ -86,6 +88,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
                 onEndCall={value.endCall}
                 onToggleAudio={value.toggleAudio}
                 onToggleVideo={value.toggleVideo}
+                onToggleSpeaker={value.toggleSpeaker}
                 onSwitchCamera={value.switchCamera}
                 isVideoCall={callServiceState.isVideo}
                 otherUserName={callServiceState.otherUser?.name || "Unknown User"}
