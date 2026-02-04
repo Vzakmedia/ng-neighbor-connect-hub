@@ -88,6 +88,7 @@
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.3.0",
     "emoji-picker-react": "^4.15.1",
+    "esbuild": "^0.27.2",
     "framer-motion": "^12.23.12",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.555.0",
