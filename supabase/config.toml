@@ -71,3 +71,48 @@ verify_jwt = true
 
 [functions.logout-user]
 verify_jwt = true
+
+[functions.ad-payment-webhook]
+verify_jwt = false
+
+[functions.admin-resend-verification]
+verify_jwt = true
+
+[functions.alert-processor]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = true
+
+[functions.emergency-alert]
+verify_jwt = false
+
+[functions.get-deleted-users]
+verify_jwt = true
+
+[functions.nigeria-reverse-geocode]
+verify_jwt = false
+
+[functions.notification-delivery]
+verify_jwt = false
+
+[functions.process-escalations]
+verify_jwt = false
+
+[functions.process-webhook]
+verify_jwt = false
+
+[functions.restore-user]
+verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.send-sms-notification]
+verify_jwt = false
+
+[functions.test-mapbox-api]
+verify_jwt = true
+
+[functions.test-stripe-api]
+verify_jwt = true
