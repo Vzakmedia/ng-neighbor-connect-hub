@@ -7,6 +7,7 @@ import { ChevronDown, Phone } from '@/lib/icons';
 import { NetworkQualityIndicator } from '@/components/mobile/NetworkQualityIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { CallState } from '@/hooks/messaging/useWebRTCCall';
+import { LiveKitCallInterface } from './LiveKitCallInterface';
 
 interface VideoCallDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface VideoCallDialogProps {
   otherUserName: string;
   otherUserAvatar?: string;
   callState?: CallState;
+  liveKitToken?: string | null;
 }
 
 export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
@@ -37,7 +39,8 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   isVideoCall,
   otherUserName,
   otherUserAvatar,
-  callState = 'initiating' // Default to initiating to keep UI stable
+  callState = 'initiating', // Default to initiating to keep UI stable
+  liveKitToken
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -143,8 +146,28 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
     }
   }, [remoteStream]);
 
+  if (liveKitToken) {
+    return (
+      <Dialog open={open} onOpenChange={handleEndCall}>
+        <DialogContent className="sm:max-w-4xl h-[80vh] p-0 bg-black border-none text-white overflow-hidden">
+          <VisuallyHidden>
+            <DialogTitle>Video Call with {otherUserName}</DialogTitle>
+            <DialogDescription>LiveKit Video Call</DialogDescription>
+          </VisuallyHidden>
+
+          <LiveKitCallInterface
+            token={liveKitToken}
+            serverUrl={import.meta.env.VITE_LIVEKIT_URL || "wss://neighborlink-94uewje2.livekit.cloud"}
+            onDisconnected={handleEndCall}
+            audioOnly={!isVideoCall}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => !val && handleEndCall()}>
       <DialogContent className={`max-w-full w-full h-screen p-0 border-0 overflow-hidden ${!otherUserAvatar ? 'bg-gradient-to-b from-primary via-primary/95 to-secondary' : ''}`} aria-describedby="call-dialog-description">
         <VisuallyHidden>
           <DialogTitle>{isVideoCall ? 'Video Call' : 'Voice Call'}</DialogTitle>
