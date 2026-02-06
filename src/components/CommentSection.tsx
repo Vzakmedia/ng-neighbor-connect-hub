@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PaperAirplaneIcon, HeartIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon, HeartIcon, ChatBubbleLeftIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -510,6 +510,50 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     fetchAvailableUsers();
   }, [postId]);
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+
+    const comment = findComment(comments, commentId);
+    if (!comment) return;
+
+    // Optimistic UI update
+    const previousComments = [...comments];
+    setComments(prev => {
+      const filterComments = (commentsList: Comment[]): Comment[] => {
+        return commentsList.reduce((acc, c) => {
+          if (c.id === commentId) return acc;
+          const updated = { ...c, replies: c.replies ? filterComments(c.replies) : [] };
+          acc.push(updated);
+          return acc;
+        }, [] as Comment[]);
+      };
+      return filterComments(prev);
+    });
+
+    try {
+      const { error } = await supabase
+        .from('post_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', user.id); // Security: ensure user owns comment
+
+      if (error) throw error;
+
+      toast({
+        title: "Comment deleted",
+        description: "Your comment has been removed.",
+      });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setComments(previousComments); // Rollback
+      toast({
+        title: "Error",
+        description: "Failed to delete comment.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const renderComment = (comment: Comment, isReply = false, isLastReply = false) => (
     <div key={comment.id} className={`relative flex gap-3 ${isReply ? 'mt-4' : 'mt-6'}`}>
       {/* Vertical spine for nested replies */}
@@ -577,6 +621,17 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
               <ChatBubbleLeftIcon className="h-3.5 w-3.5" />
               Reply
             </button>
+
+            {user && user.id === comment.user_id && (
+              <button
+                onClick={() => handleDeleteComment(comment.id)}
+                className="text-xs font-medium text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors ml-auto mr-2"
+                title="Delete comment"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            )}
           </div>
         </div>
 

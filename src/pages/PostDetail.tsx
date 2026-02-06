@@ -149,7 +149,7 @@ export default function PostDetail() {
           <ArrowLeftIcon className="h-4 w-4 mr-2" />
           Back
         </Button>
-        
+
         <PostCard
           post={transformedPost}
           onLike={handleLike}
@@ -171,7 +171,8 @@ export default function PostDetail() {
           onImageClick={handleImageClick}
           showComments={showComments}
           onToggleComments={() => setShowComments(!showComments)}
-          onPostClick={() => {}}
+          onPostClick={() => { }}
+          isFullPost={true}
         />
       </div>
     </div>
