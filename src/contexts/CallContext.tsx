@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { CallService, CallServiceState } from "@/utils/call/CallService";
 import { useAuth } from "@/hooks/useAuth";
+import { useLiveKitToken } from "@/hooks/useLiveKitToken";
 import { VideoCallDialog } from "@/components/messaging/VideoCallDialog";
 import { IncomingCallDialog } from "@/components/messaging/IncomingCallDialog";
 
@@ -32,6 +33,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     const [callServiceState, setCallServiceState] = useState<CallServiceState>(
         CallService.getInstance().getState()
     );
+    const { fetchToken, token: liveKitToken } = useLiveKitToken();
 
     useEffect(() => {
         if (user?.id) {
@@ -52,7 +54,12 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
         await CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "voice");
-    }, []);
+        // Check if we found a conversationId (roomName)
+        if (conversationId) {
+            const token = await fetchToken(conversationId, user?.user_metadata?.full_name);
+            console.log("LiveKit Voice Token fetched:", !!token);
+        }
+    }, [fetchToken, user]);
 
     const startVideoCall = useCallback(async (conversationId: string, name: string, avatar?: string, userId?: string) => {
         if (!userId) {
@@ -60,14 +67,26 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
         await CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "video");
-    }, []);
+        if (conversationId) {
+            const token = await fetchToken(conversationId, user?.user_metadata?.full_name);
+            console.log("LiveKit Video Token fetched:", !!token);
+        }
+    }, [fetchToken, user]);
 
     const value: CallContextType = {
         ...callServiceState,
         isInCall: callServiceState.state !== "idle" && callServiceState.state !== "ended",
         startVoiceCall,
         startVideoCall,
-        answerCall: (video) => CallService.getInstance().answerCall(video),
+        answerCall: async (video) => {
+            await CallService.getInstance().answerCall(video);
+            // Validating we have a room name from the state or service
+            const freshState = CallService.getInstance().getState();
+            // Use conversationId as the room name
+            if (freshState.conversationId) {
+                await fetchToken(freshState.conversationId, user?.user_metadata?.full_name);
+            }
+        },
         declineCall: () => CallService.getInstance().declineCall(),
         endCall: () => CallService.getInstance().endCall(),
         toggleAudio: () => CallService.getInstance().toggleAudio(),
@@ -94,6 +113,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
                 otherUserName={callServiceState.otherUser?.name || "Unknown User"}
                 otherUserAvatar={callServiceState.otherUser?.avatar}
                 callState={callServiceState.state as any}
+                liveKitToken={liveKitToken}
             />
 
             <IncomingCallDialog

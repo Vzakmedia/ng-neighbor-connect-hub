@@ -406,7 +406,6 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
       const { data, error } = await supabase
         .from('display_profiles')
         .select('user_id, display_name, avatar_url')
-
         .limit(50);
 
       if (error) {
@@ -511,10 +510,23 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
     fetchAvailableUsers();
   }, [postId]);
 
-  const renderComment = (comment: Comment, isReply = false) => (
-    <div key={comment.id} className={`flex space-x-3 ${isReply ? 'ml-8 mt-2' : ''}`}>
+  const renderComment = (comment: Comment, isReply = false, isLastReply = false) => (
+    <div key={comment.id} className={`relative flex gap-3 ${isReply ? 'mt-4' : 'mt-6'}`}>
+      {/* Vertical spine for nested replies */}
+      {isReply && (
+        <div
+          className="absolute -left-6 top-0 bottom-0 w-px bg-border/50"
+          style={{
+            height: isLastReply ? '20px' : '100%',
+            borderBottomLeftRadius: isLastReply ? '12px' : '0'
+          }}
+        >
+          {isLastReply && <div className="absolute bottom-0 left-0 w-6 h-px bg-border/50" />}
+        </div>
+      )}
+
       <div
-        className="avatar-clickable cursor-pointer"
+        className="avatar-clickable cursor-pointer z-10"
         onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User', comment.profiles?.avatar_url || undefined)}
       >
         <OnlineAvatar
@@ -525,45 +537,55 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           className="hover:ring-2 hover:ring-primary/50 transition-all"
         />
       </div>
+
       <div className="flex-1 min-w-0">
-        <div className="bg-background rounded-lg p-3">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium truncate">
-              {comment.profiles?.full_name || 'Anonymous User'}
-            </span>
-            <span className="text-xs text-muted-foreground shrink-0">
-              {formatTimeAgo(comment.created_at)}
-            </span>
+        <div className="group relative">
+          <div className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors rounded-lg px-4 py-3 border-l-4 border-primary shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-semibold comment-text-visible truncate cursor-pointer hover:underline" onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User')}>
+                {comment.profiles?.full_name || 'Anonymous User'}
+              </span>
+              <span className="text-xs comment-timestamp-visible shrink-0">
+                {formatTimeAgo(comment.created_at)}
+              </span>
+            </div>
+            <p className="text-sm comment-text-visible leading-relaxed whitespace-pre-wrap break-words">
+              {renderCommentContent(comment.content)}
+            </p>
           </div>
-          <p className="text-sm break-words">{renderCommentContent(comment.content)}</p>
-        </div>
-        <div className="flex items-center mt-1 ml-2 space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleCommentLike(comment.id)}
-            className={`h-6 px-2 text-xs ${comment.is_liked_by_user ? 'text-destructive' : 'text-muted-foreground'} hover:text-destructive`}
-          >
-            <HeartIcon className={`h-3 w-3 mr-1 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
-            {comment.likes_count > 0 && comment.likes_count}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-            className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-          >
-            <ChatBubbleLeftIcon className="h-3 w-3 mr-1" />
-            Reply
-          </Button>
+
+          {/* Actions outside the bubble */}
+          <div className="flex items-center mt-1 ml-1 space-x-4">
+            <button
+              onClick={() => toggleCommentLike(comment.id)}
+              className={`text-xs font-medium flex items-center gap-1 transition-colors ${comment.is_liked_by_user
+                ? 'text-primary dark:text-emerald-400'
+                : 'text-slate-700 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300'
+                }`}
+            >
+              <HeartIcon className={`h-3.5 w-3.5 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
+              {comment.likes_count > 0 ? (
+                <span>{comment.likes_count} {comment.likes_count === 1 ? 'Like' : 'Likes'}</span>
+              ) : (
+                <span>Like</span>
+              )}
+            </button>
+            <button
+              onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+              className="text-xs font-medium text-slate-700 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300 flex items-center gap-1 transition-colors"
+            >
+              <ChatBubbleLeftIcon className="h-3.5 w-3.5" />
+              Reply
+            </button>
+          </div>
         </div>
 
         {/* Reply input */}
         {replyingTo === comment.id && (
-          <div className="mt-3 ml-2">
-            <div className="flex space-x-2">
+          <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex gap-3">
               <div
-                className="avatar-clickable cursor-pointer"
+                className="shrink-0 cursor-pointer"
                 onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
               >
                 <OnlineAvatar
@@ -571,17 +593,18 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                   src={profile?.avatar_url || undefined}
                   fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                   size="sm"
-                  className="hover:ring-2 hover:ring-primary/50 transition-all"
                 />
               </div>
               <div className="flex-1 space-y-2">
                 <div className="relative">
                   <Textarea
                     ref={replyTextareaRef}
-                    placeholder={`Reply to ${comment.profiles?.full_name || 'this comment'}...`}
+                    placeholder={`Reply to ${comment.profiles?.full_name}...`}
                     value={replyText}
                     onChange={(e) => handleTextChange(e.target.value, 'reply')}
-                    className="min-h-[60px] resize-none text-sm"
+                    className="min-h-[40px] py-2 bg-background resize-none text-sm rounded-xl focus-visible:ring-1 focus-visible:ring-emerald-500"
+                    rows={1}
+                    autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -590,26 +613,26 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                     }}
                   />
                   {showUserSuggestions && activeTextarea === 'reply' && (
-                    <div className="absolute bottom-full left-0 w-full max-w-xs mb-1 bg-background border rounded-md shadow-lg z-50">
+                    <div className="absolute top-full left-0 w-full max-w-xs mt-1 bg-popover border rounded-md shadow-lg z-50 overflow-hidden">
                       <Command>
                         <CommandList className="max-h-32">
                           {filteredUsers.length === 0 ? (
-                            <CommandEmpty>No users found.</CommandEmpty>
+                            <CommandEmpty className="py-2 text-center text-xs text-muted-foreground">No users found.</CommandEmpty>
                           ) : (
                             <CommandGroup>
                               {filteredUsers.slice(0, 5).map((user) => (
                                 <CommandItem
                                   key={user.user_id}
                                   onSelect={() => handleUserSelect(user)}
-                                  className="flex items-center gap-2 cursor-pointer"
+                                  className="flex items-center gap-2 cursor-pointer py-2 px-3"
                                 >
                                   <Avatar className="h-5 w-5">
                                     <AvatarImage src={user.avatar_url || undefined} />
-                                    <AvatarFallback className="text-xs">
+                                    <AvatarFallback className="text-[10px]">
                                       {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <span className="text-sm">{user.full_name}</span>
+                                  <span className="text-xs">{user.full_name}</span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -619,7 +642,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -627,17 +650,16 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                       setReplyingTo(null);
                       setReplyText('');
                     }}
-                    className="text-xs"
+                    className="h-7 text-xs rounded-full px-3"
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
+                    className="h-7 text-xs rounded-full px-3 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
                     onClick={() => handleSubmitComment(comment.id)}
                     disabled={!replyText.trim()}
-                    className="text-xs"
                   >
-                    <PaperAirplaneIcon className="h-3 w-3 mr-1" />
                     Reply
                   </Button>
                 </div>
@@ -646,10 +668,10 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
           </div>
         )}
 
-        {/* Render replies */}
+        {/* Render replies with indentation */}
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2">
-            {comment.replies.map(reply => renderComment(reply, true))}
+          <div className="pl-2">
+            {comment.replies.map((reply, index) => renderComment(reply, true, index === comment.replies!.length - 1))}
           </div>
         )}
       </div>
@@ -657,49 +679,27 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   );
 
   return (
-    <div className={`space-y-4 ${isInline ? '' : 'border-t bg-muted/20 dark:bg-muted/40 mt-4 p-4'}`}>
-      {/* Comments list */}
-      <div className={isInline ? "h-64 overflow-hidden" : ""}>
-        <ScrollArea className={isInline ? "h-full pr-4" : "max-h-96 pr-4"}>
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-              </div>
-            ) : comments.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No comments yet. Be the first to comment!
-              </p>
-            ) : (
-              comments.map(comment => renderComment(comment))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Main comment input */}
-      <div className={`mt-4 pt-3 ${isInline ? 'border-t-0' : 'border-t'}`}>
-        <div className="flex space-x-3">
-          <div
-            className="avatar-clickable cursor-pointer"
-            onClick={() => onAvatarClick?.(profile?.full_name || 'You', profile?.avatar_url || undefined)}
-          >
+    <div className={`flex flex-col h-full ${isInline ? 'bg-white dark:bg-gray-900' : 'border-t bg-white dark:bg-gray-900 mt-4'}`}>
+      {/* Main comment input - Fixed at bottom if needed, or top/bottom logic */}
+      <div className={`p-4 ${isInline ? 'border-b pb-4 bg-white dark:bg-gray-900' : 'border-t order-last bg-white dark:bg-gray-900'}`}>
+        <div className="flex gap-3">
+          <div className="shrink-0 mt-1">
             <OnlineAvatar
               userId={user?.id}
               src={profile?.avatar_url || undefined}
               fallback={profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
               size="md"
-              className="hover:ring-2 hover:ring-primary/50 transition-all"
             />
           </div>
-          <div className="flex-1 space-y-2 relative">
-            <div className="relative">
+          <div className="flex-1 relative group">
+            <div className="relative bg-white dark:bg-gray-800 rounded-3xl border-2 border-emerald-500 dark:border-emerald-600 focus-within:border-emerald-600 dark:focus-within:border-emerald-500 shadow-sm transition-all">
               <Textarea
                 ref={textareaRef}
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => handleTextChange(e.target.value, 'main')}
-                className="min-h-[60px] resize-none text-sm"
+                className="min-h-[44px] max-h-32 py-3 px-4 resize-none text-sm bg-transparent border-0 focus-visible:ring-0 shadow-none rounded-3xl pr-12"
+                rows={1}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -707,50 +707,70 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                   }
                 }}
               />
-              {showUserSuggestions && activeTextarea === 'main' && (
-                <div className="absolute bottom-full left-0 w-full max-w-xs mb-1 bg-background border rounded-md shadow-lg z-50">
-                  <Command>
-                    <CommandList className="max-h-32">
-                      {filteredUsers.length === 0 ? (
-                        <CommandEmpty>No users found.</CommandEmpty>
-                      ) : (
-                        <CommandGroup>
-                          {filteredUsers.slice(0, 5).map((user) => (
-                            <CommandItem
-                              key={user.user_id}
-                              onSelect={() => handleUserSelect(user)}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={user.avatar_url || undefined} />
-                                <AvatarFallback className="text-xs">
-                                  {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">{user.full_name}</span>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </div>
-              )}
+              <div className="absolute right-1.5 bottom-1.5">
+                <Button
+                  size="icon"
+                  className="h-8 w-8 rounded-full shrink-0 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+                  onClick={() => handleSubmitComment()}
+                  disabled={!newComment.trim()}
+                >
+                  <PaperAirplaneIcon className="h-4 w-4" />
+                  <span className="sr-only">Post</span>
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-end">
-              <Button
-                size="sm"
-                onClick={() => handleSubmitComment()}
-                disabled={!newComment.trim()}
-                className="text-xs"
-              >
-                <PaperAirplaneIcon className="h-3 w-3 mr-1" />
-                Post
-              </Button>
-            </div>
+
+            {showUserSuggestions && activeTextarea === 'main' && (
+              <div className="absolute bottom-full left-0 w-full max-w-xs mb-2 bg-popover border rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <Command>
+                  <CommandList className="max-h-48">
+                    {filteredUsers.length === 0 ? (
+                      <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">No users found.</CommandEmpty>
+                    ) : (
+                      <CommandGroup heading="Suggestions">
+                        {filteredUsers.slice(0, 5).map((user) => (
+                          <CommandItem
+                            key={user.user_id}
+                            onSelect={() => handleUserSelect(user)}
+                            className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback className="text-[10px]">
+                                {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">{user.full_name}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Comments list */}
+      <ScrollArea className={`${isInline ? 'flex-1' : 'max-h-[500px]'} px-4 py-2`}>
+        <div className="space-y-1 pb-4">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-8 opacity-50 space-y-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <p className="text-xs text-muted-foreground">Loading comments...</p>
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-10 bg-muted/10 rounded-xl my-4">
+              <p className="text-muted-foreground font-medium">No comments yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Be the first to share your thoughts!</p>
+            </div>
+          ) : (
+            comments.map(comment => renderComment(comment))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
