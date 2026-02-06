@@ -9,21 +9,27 @@ interface PostCardContentProps {
   location?: string | null;
   tags: string[];
   onPostClick: () => void;
+  isFullPost?: boolean;
 }
 
-export const PostCardContent = ({ 
-  title, 
-  content, 
-  location, 
+export const PostCardContent = ({
+  title,
+  content,
+  location,
   tags,
-  onPostClick 
+  onPostClick,
+  isFullPost = false
 }: PostCardContentProps) => {
   const { text, isTruncated } = truncateText(content, 150);
+
+  // Decide what text to show: if full post or not truncated, show full content.
+  // Otherwise show truncated text.
+  const displayContent = isFullPost ? content : (isTruncated ? `${text}...` : content);
 
   return (
     <>
       <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-        {isTruncated ? `${text}...` : content}
+        {displayContent}
       </div>
 
       {tags && tags.length > 0 && (

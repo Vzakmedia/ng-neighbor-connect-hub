@@ -26,6 +26,7 @@ interface PostCardProps {
   onToggleComments: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  isFullPost?: boolean;
 }
 
 const PostCardComponent = ({
@@ -40,7 +41,8 @@ const PostCardComponent = ({
   showComments,
   onToggleComments,
   onEdit,
-  onDelete
+  onDelete,
+  isFullPost = false
 }: PostCardProps) => {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
@@ -98,7 +100,7 @@ const PostCardComponent = ({
   };
 
   return (
-    <Card 
+    <Card
       className="w-full max-w-full animate-fade-in hover:shadow-md transition-shadow cursor-pointer rounded-xl overflow-hidden"
       onClick={onPostClick}
     >
@@ -116,7 +118,7 @@ const PostCardComponent = ({
         onEdit={onEdit}
         onDelete={onDelete}
       />
-      
+
       <div className="px-3 sm:px-4 pb-3 space-y-3">
         <PostCardContent
           title={post.title}
@@ -124,8 +126,9 @@ const PostCardComponent = ({
           location={post.location}
           tags={post.tags}
           onPostClick={onPostClick}
+          isFullPost={isFullPost}
         />
-        
+
         {/* Poll Card */}
         {post.post_type === 'poll' && poll && !isLoading && (
           <PollCard
@@ -139,7 +142,7 @@ const PostCardComponent = ({
           />
         )}
       </div>
-      
+
       {((post.image_urls && post.image_urls.length > 0) || post.video_url) && (
         <PostCardMedia
           images={post.image_urls}
@@ -162,7 +165,7 @@ const PostCardComponent = ({
           title={post.title || undefined}
         />
       )}
-      
+
       <div className="px-3 sm:px-4 bg-primary text-white [&_*]:text-white [&_button]:text-white [&_svg]:text-white">
         <PostCardActions
           post={post}
@@ -173,7 +176,7 @@ const PostCardComponent = ({
           onRSVP={post.rsvp_enabled ? onRSVP : undefined}
           onToggleComments={onToggleComments}
         />
-        
+
         {showComments && (
           <div className="pt-2 pb-4 border-t border-white/20 animate-fade-in">
             <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
