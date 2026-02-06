@@ -16,7 +16,7 @@ export const useReadStatus = () => {
     if (!user) return;
 
     loadUnreadCounts();
-    
+
     console.log('[ReadStatus] Using unified real-time subscriptions');
 
     // Subscribe to community post events
@@ -57,11 +57,13 @@ export const useReadStatus = () => {
 
   const loadCommunityUnreadCount = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_unread_community_posts_count');
+      // Changed to use board posts count for "Groups" tab instead of community feed
+      const { data, error } = await supabase.rpc('get_unread_board_posts_count');
       if (error) throw error;
       setUnreadCounts(prev => ({ ...prev, community: data || 0 }));
     } catch (error) {
-      console.error('Error loading community unread count:', error);
+      console.error('Error loading community/groups unread count:', error);
+      // Fallback or ignore error
     }
   };
 
@@ -126,7 +128,7 @@ export const useReadStatus = () => {
 
   const checkIfPostIsRead = async (postId: string): Promise<boolean> => {
     if (!user) return false;
-    
+
     try {
       const { data, error } = await supabase
         .from('post_read_status')
@@ -134,7 +136,7 @@ export const useReadStatus = () => {
         .eq('user_id', user.id)
         .eq('post_id', postId)
         .maybeSingle();
-      
+
       if (error) {
         console.error('Error checking if post is read:', error);
         return false;
@@ -148,7 +150,7 @@ export const useReadStatus = () => {
 
   const checkIfBoardPostIsRead = async (postId: string): Promise<boolean> => {
     if (!user) return false;
-    
+
     try {
       const { data, error } = await supabase
         .from('board_post_read_status')
@@ -156,7 +158,7 @@ export const useReadStatus = () => {
         .eq('user_id', user.id)
         .eq('post_id', postId)
         .maybeSingle();
-      
+
       if (error) {
         console.error('Error checking if board post is read:', error);
         return false;

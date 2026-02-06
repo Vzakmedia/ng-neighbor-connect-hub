@@ -32,13 +32,11 @@ const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico',
-  '/logo.png',
+  '/neighborlink-logo.png',
   '/notification.mp3',
   '/notification-bell.mp3',
   '/notification-chime.mp3',
-  '/notification-ding.mp3',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/notification-ding.mp3'
 ];
 
 console.log('Service Worker: Starting...');
