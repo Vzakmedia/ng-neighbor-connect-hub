@@ -1,6 +1,6 @@
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { AccessToken } from 'https://esm.sh/livekit-server-sdk@1.2.7'
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { AccessToken } from 'https://esm.sh/livekit-server-sdk@1.2.7?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const corsHeaders = {
@@ -9,7 +9,7 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -29,25 +29,33 @@ serve(async (req) => {
             { global: { headers: { Authorization: authHeader } } }
         );
 
-        // Get the user from the JWT
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
         if (userError || !user) {
             console.error('Auth User Error:', userError);
-            throw new Error('Unauthorized: Invalid user token. ' + (userError?.message || ''));
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized', details: userError }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
-        // 3. Get Request Body (Room Name & Participant Name)
+        // 3. Get Request Body
         let body;
         try {
             body = await req.json();
         } catch (e) {
-            throw new Error('Invalid JSON body');
+            return new Response(
+                JSON.stringify({ error: 'Invalid JSON body' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
         const { roomName, participantName } = body;
 
         if (!roomName) {
-            throw new Error('Missing roomName in request body');
+            return new Response(
+                JSON.stringify({ error: 'Missing roomName' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
         // 4. Generate LiveKit Token
@@ -55,13 +63,14 @@ serve(async (req) => {
         const apiSecret = Deno.env.get('LIVEKIT_API_SECRET');
 
         if (!apiKey || !apiSecret) {
-            console.error('Missing LiveKit Credentials in Env');
-            throw new Error('Server misconfiguration: Missing LiveKit credentials');
+            console.error('Missing LiveKit Credentials');
+            return new Response(
+                JSON.stringify({ error: 'Server Configuration Error' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
-        // We use the User ID as identity for consistency
         const participantIdentity = user.id;
-        // Use provided name or metadata name, fallback to email/id
         const pName = participantName || user.user_metadata?.full_name || user.email || user.id;
 
         const at = new AccessToken(
@@ -73,7 +82,6 @@ serve(async (req) => {
             }
         );
 
-        // Grant permissions
         at.addGrant({
             roomJoin: true,
             room: roomName,
@@ -81,10 +89,8 @@ serve(async (req) => {
             canSubscribe: true,
         });
 
-        // 5. Create Token string
         const token = await at.toJwt();
 
-        // 6. Return Token
         return new Response(
             JSON.stringify({ token }),
             {
@@ -94,13 +100,13 @@ serve(async (req) => {
         )
 
     } catch (error) {
-        console.error('Error generating LiveKit token:', error);
+        console.error('Error:', error);
         return new Response(
             JSON.stringify({ error: error.message || 'Unknown error' }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 400
-            } // Return 400 so client knows it failed, but with CORS headers
+                status: 500
+            }
         )
     }
 })
