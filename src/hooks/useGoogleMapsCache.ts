@@ -156,7 +156,8 @@ export const useGoogleMapsCache = () => {
       }
 
       if (!window.google?.maps?.Geocoder) {
-        throw new Error('Geocoder not available (script not loaded)');
+        console.warn('⚠️ [Geocode Cache] Google Maps script not loaded yet, skipping geocode');
+        return null; // Return null instead of throwing error
       }
 
       const geocoder = new window.google.maps.Geocoder();
