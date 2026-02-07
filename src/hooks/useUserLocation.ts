@@ -81,7 +81,8 @@ export const useUserLocation = () => {
 
     useEffect(() => {
         refreshLocation();
-    }, [refreshLocation]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only once on mount
 
     return {
         userLocation,
