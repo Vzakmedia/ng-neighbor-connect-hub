@@ -604,7 +604,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
               onClick={() => toggleCommentLike(comment.id)}
               className={`text-xs font-medium flex items-center gap-1 transition-colors ${comment.is_liked_by_user
                 ? 'text-primary dark:text-emerald-400'
-                : 'text-slate-700 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300'
+                : 'text-gray-600 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300'
                 }`}
             >
               <HeartIcon className={`h-3.5 w-3.5 ${comment.is_liked_by_user ? 'fill-current' : ''}`} />
@@ -616,7 +616,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
             </button>
             <button
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="text-xs font-medium text-slate-700 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300 flex items-center gap-1 transition-colors"
+              className="text-xs font-medium text-gray-600 dark:text-emerald-400 hover:text-primary dark:hover:text-emerald-300 flex items-center gap-1 transition-colors"
             >
               <ChatBubbleLeftIcon className="h-3.5 w-3.5" />
               Reply
