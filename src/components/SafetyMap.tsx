@@ -117,7 +117,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full min-h-screen w-full">
       <div ref={mapContainer} className="absolute inset-0" />
 
       <SafetyMapOverlay
