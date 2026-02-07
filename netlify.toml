@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  # Omit public Supabase variables from secrets scanning
+  # These are intentionally public and safe to expose in client-side code
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"
+
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
