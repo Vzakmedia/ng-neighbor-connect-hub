@@ -178,7 +178,7 @@ const PostCardComponent = ({
         />
 
         {showComments && (
-          <div className="pt-2 pb-4 border-t border-white/20 animate-fade-in">
+          <div className="pt-2 pb-4 border-t border-white/20 animate-fade-in [&_*]:!text-inherit [&_button]:!text-inherit">
             <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
           </div>
         )}
