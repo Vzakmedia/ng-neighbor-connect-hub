@@ -3,9 +3,11 @@
   publish = "dist"
 
 [build.environment]
-  # Omit public Supabase variables from secrets scanning
+  # Omit public environment variables from secrets scanning
   # These are intentionally public and safe to expose in client-side code
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"
+  # Supabase public keys, Cloudinary public name, Google Maps ID, Render API URL, and LiveKit URL
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_PROJECT_ID,VITE_SUPABASE_PUBLISHABLE_KEY,VITE_CLOUDINARY_CLOUD_NAME,VITE_GOOGLE_MAPS_MAP_ID,VITE_RENDER_API_URL,LIVEKIT_URL"
+
 
 
 [[redirects]]
