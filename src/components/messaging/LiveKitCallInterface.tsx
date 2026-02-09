@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LiveKitRoom,
     VideoConference,
@@ -11,8 +11,10 @@ import {
     TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track } from 'livekit-client';
-import { Loader2 } from 'lucide-react';
+import { Track, RoomOptions, VideoPresets, Room } from 'livekit-client';
+import { Loader2, Mic, MicOff } from 'lucide-react';
+import { useAudioPermissions } from '@/hooks/useAudioPermissions';
+import { useToast } from '@/hooks/use-toast';
 
 interface LiveKitCallInterfaceProps {
     token: string;
@@ -28,9 +30,94 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     audioOnly = false,
 }) => {
     const [connected, setConnected] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const { granted, requesting, requestPermission, error: permError } = useAudioPermissions();
+    const { toast } = useToast();
 
-    // If audio only, we can configure logic here to turn off video track initially
-    // but LiveKitRoom connect options usually handle this.
+    // Request permissions before connecting
+    useEffect(() => {
+        const checkAndRequestPermission = async () => {
+            if (!granted && !requesting) {
+                const result = await requestPermission();
+                if (!result) {
+                    setError('Microphone permission is required for calls');
+                    toast({
+                        title: 'Permission Required',
+                        description: 'Please enable microphone access to join the call',
+                        variant: 'destructive',
+                    });
+                }
+            }
+        };
+        checkAndRequestPermission();
+    }, []);
+
+    // LiveKit room options with optimized audio settings
+    const roomOptions: RoomOptions = {
+        adaptiveStream: true,
+        dynacast: true,
+        publishDefaults: {
+            audioPreset: {
+                maxBitrate: 20_000,
+            },
+            dtx: true, // Discontinuous transmission
+            red: true, // Redundant encoding
+        },
+        audioCaptureDefaults: {
+            autoGainControl: true,
+            echoCancellation: true,
+            noiseSuppression: true,
+        },
+        videoCaptureDefaults: {
+            resolution: VideoPresets.h720.resolution,
+        },
+    };
+
+    const handleError = (error: Error) => {
+        console.error('LiveKit error:', error);
+        setError(error.message);
+        toast({
+            title: 'Call Error',
+            description: error.message || 'An error occurred during the call',
+            variant: 'destructive',
+        });
+    };
+
+    const handleDisconnected = () => {
+        setConnected(false);
+        onDisconnected?.();
+    };
+
+    // Show permission error
+    if (permError || error) {
+        return (
+            <div className="h-full w-full bg-black flex items-center justify-center">
+                <div className="text-center text-white p-6">
+                    <MicOff className="w-16 h-16 mx-auto mb-4 text-red-500" />
+                    <h3 className="text-xl font-semibold mb-2">Cannot Join Call</h3>
+                    <p className="text-gray-300">{permError || error}</p>
+                    <button
+                        onClick={() => requestPermission()}
+                        className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg"
+                    >
+                        Request Permission
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Show loading while requesting permissions
+    if (requesting || !granted) {
+        return (
+            <div className="h-full w-full bg-black flex items-center justify-center">
+                <div className="text-center text-white">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                    <p>Requesting microphone permission...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full w-full bg-black relative">
@@ -40,11 +127,10 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                 connect={true}
                 video={!audioOnly}
                 audio={true}
+                options={roomOptions}
                 onConnected={() => setConnected(true)}
-                onDisconnected={() => {
-                    setConnected(false);
-                    onDisconnected?.();
-                }}
+                onDisconnected={handleDisconnected}
+                onError={handleError}
                 className="h-full w-full"
                 data-lk-theme="default"
             >

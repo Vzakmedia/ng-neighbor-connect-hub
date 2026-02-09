@@ -292,7 +292,7 @@ export const useDirectMessages = (userId: string | undefined) => {
   const sendMessageWithAttachments = useCallback(
     async (content: string, recipientId: string, attachments: any[]) => {
       if (!userId || !content.trim()) return false;
-      
+
       const optimisticId = `temp-${Date.now()}-${Math.random()}`;
       const optimisticMessage: Message = {
         id: optimisticId,
@@ -311,12 +311,12 @@ export const useDirectMessages = (userId: string | undefined) => {
         setLoading(true);
         const { data: message, error } = await supabase
           .from("direct_messages")
-          .insert({ 
-            content: content.trim(), 
-            sender_id: userId, 
-            recipient_id: recipientId, 
+          .insert({
+            content: content.trim(),
+            sender_id: userId,
+            recipient_id: recipientId,
             status: "sent",
-            attachments 
+            attachments
           })
           .select()
           .single();
@@ -384,14 +384,72 @@ export const useDirectMessages = (userId: string | undefined) => {
   );
 
   // -------------------------------
+  // Mark all messages in conversation as read
+  // -------------------------------
+  const markAllMessagesAsRead = useCallback(
+    async (otherUserId: string) => {
+      if (!userId) return;
+
+      try {
+        // Get all unread messages from this user
+        const unreadMessages = messagesRef.current.filter(
+          (m) => m.sender_id === otherUserId && m.recipient_id === userId && m.status !== "read"
+        );
+
+        if (unreadMessages.length === 0) return;
+
+        // Optimistically update UI
+        setMessages((prev) =>
+          prev.map((m) =>
+            unreadMessages.some((u) => u.id === m.id)
+              ? { ...m, status: "read" as MessageStatus, read_at: new Date().toISOString() }
+              : m
+          )
+        );
+
+        // Broadcast read receipts to sender
+        if (broadcastChannelRef.current) {
+          for (const msg of unreadMessages) {
+            await broadcastChannelRef.current.send({
+              type: "broadcast",
+              event: "read_receipt",
+              payload: { messageId: msg.id, readBy: userId },
+            });
+          }
+        }
+
+        // Update database
+        const messageIds = unreadMessages.map((m) => m.id);
+        const { error } = await supabase
+          .from("direct_messages")
+          .update({ status: "read", read_at: new Date().toISOString() })
+          .in("id", messageIds)
+          .eq("recipient_id", userId);
+
+        if (error) {
+          console.error("Error marking messages as read:", error);
+        }
+      } catch (error) {
+        console.error("Error in markAllMessagesAsRead:", error);
+      }
+    },
+    [userId]
+  );
+
+  // -------------------------------
   // Mark conversation as read (compatibility method)
   // -------------------------------
   const markConversationAsRead = useCallback(
     async (conversationId: string) => {
-      // Mark all unread messages in this conversation as read
-      await markMessagesAsDelivered();
+      // Extract other user ID from conversation ID
+      // Conversation ID format: "userId1-userId2" (sorted)
+      const userIds = conversationId.split("-");
+      const otherUserId = userIds.find((id) => id !== userId);
+      if (otherUserId) {
+        await markAllMessagesAsRead(otherUserId);
+      }
     },
-    [markMessagesAsDelivered],
+    [userId, markAllMessagesAsRead]
   );
 
   // -------------------------------
@@ -515,6 +573,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     retryMessage,
     markMessagesAsDelivered,
     markMessageAsRead,
+    markAllMessagesAsRead,
     markConversationAsRead,
     fetchMissedMessages,
     addMessage,
