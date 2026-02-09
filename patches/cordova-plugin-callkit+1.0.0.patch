@@ -1,3 +1,17 @@
+diff --git a/node_modules/cordova-plugin-callkit/plugin.xml b/node_modules/cordova-plugin-callkit/plugin.xml
+index 4ec73a5..a7bbc7c 100644
+--- a/node_modules/cordova-plugin-callkit/plugin.xml
++++ b/node_modules/cordova-plugin-callkit/plugin.xml
+@@ -26,7 +26,8 @@
+ 
+         <config-file parent="/manifest/application" target="AndroidManifest.xml">
+             <service android:name="com.dmarc.cordovacall.MyConnectionService"
+-                    android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
++                    android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
++                    android:exported="true">
+                 <intent-filter>
+                     <action android:name="android.telecom.ConnectionService" />
+                 </intent-filter>
 diff --git a/node_modules/cordova-plugin-callkit/src/android/CordovaCall.java b/node_modules/cordova-plugin-callkit/src/android/CordovaCall.java
 index 53dbd95..7c55b3d 100644
 --- a/node_modules/cordova-plugin-callkit/src/android/CordovaCall.java
