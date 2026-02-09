@@ -35,7 +35,7 @@ const UnifiedMessaging = () => {
   const isStartingConversationRef = useRef(false);
 
   const { conversations, loading: conversationsLoading, fetchConversations, createOrFindConversation, markConversationAsRead, setConversations } = useConversations(user?.id);
-  const { messages, fetchMessages, fetchMissedMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, retryMessage, setActiveConversationId } = useDirectMessages(user?.id);
+  const { messages, fetchMessages, fetchMissedMessages, fetchOlderMessages, loadingOlder, hasMoreMessages, sendMessage, sendMessageWithAttachments, addMessage, updateMessage, markMessageAsRead, markAllMessagesAsRead, retryMessage, setActiveConversationId } = useDirectMessages(user?.id);
 
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,7 +131,9 @@ const UnifiedMessaging = () => {
     const targetUserId = conv.user1_id === user?.id ? conv.user2_id : conv.user1_id;
     await fetchMessages(targetUserId);
     await markConversationAsRead(conv.id);
-  }, [navigate, user?.id, fetchMessages, markConversationAsRead, setActiveConversationId]);
+    // Auto-mark all messages from this user as read
+    await markAllMessagesAsRead(targetUserId);
+  }, [navigate, user?.id, fetchMessages, markConversationAsRead, markAllMessagesAsRead, setActiveConversationId]);
 
   // No-op: Message handling moved to useDirectMessages broadcast channel
   const onNewMessage = useCallback((message: Message) => {
