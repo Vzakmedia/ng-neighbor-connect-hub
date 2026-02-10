@@ -1,5 +1,5 @@
 // Enhanced Service Worker with caching strategies and offline API support
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `images-${CACHE_VERSION}`;
@@ -29,7 +29,8 @@ const API_CACHE_TTL = {
 };
 
 const STATIC_ASSETS = [
-  '/',
+  // Removed '/' to prevent caching the main index.html statically, 
+  // ensuring the browser always checks for the latest version.
   '/manifest.json',
   '/favicon.ico',
   '/neighborlink-logo.png',
