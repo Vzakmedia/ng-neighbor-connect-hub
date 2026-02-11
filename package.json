@@ -14,7 +14,7 @@
     "android:build": "npm run android:clean && npm run android:sync && cd android && .\\gradlew assembleDebug",
     "android:run": "npm run android:clean && npx cap run android",
     "android:open": "npx cap open android",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package || true"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^9.1.2",
