@@ -219,8 +219,10 @@ export const useSafetyAlerts = (limit: number = 3) => {
         };
       });
 
-      // Play notification sound if new alerts arrived
-      if (formattedAlerts.length > alertCountRef.current && alertCountRef.current > 0) {
+      // Only play notification sound if new alerts arrived AFTER initial load
+      // Don't play sound on first load or for existing alerts
+      const isInitialLoad = alertCountRef.current === 0;
+      if (formattedAlerts.length > alertCountRef.current && !isInitialLoad) {
         try {
           const { playNotification } = await import('@/utils/audioUtils');
           playNotification('emergency');
