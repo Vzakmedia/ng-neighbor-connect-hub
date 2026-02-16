@@ -1,4 +1,5 @@
 import React, { useEffect, Suspense, lazy } from "react";
+import { lazyWithRetry } from "@/utils/lazyWithRetry";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,63 +34,63 @@ import { OfflineModeBanner } from "@/components/mobile/OfflineModeBanner";
 import { SyncStatusIndicator } from "@/components/mobile/SyncStatusIndicator";
 import { CookieConsentBanner, CookieSettingsButton } from "@/components/cookies/CookieConsentBanner";
 
-const Index = lazy(() => import("./pages/Index"));
-const CreateRecommendation = lazy(() => import("./pages/CreateRecommendation"));
-const CreateCampaign = lazy(() => import("./pages/CreateCampaign"));
-const Home = lazy(() => import("./pages/Home"));
-const Feed = lazy(() => import("./pages/Feed"));
-const Landing = lazy(() => import("./pages/Landing"));
-const PlatformRoot = lazy(() => import("@/components/PlatformRoot"));
-const About = lazy(() => import("./pages/About"));
-const Community = lazy(() => import("./pages/Community"));
-const Messages = lazy(() => import("./pages/Messages"));
-const Chat = lazy(() => import("./pages/Chat"));
-const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
-const Safety = lazy(() => import("./pages/Safety"));
-const Profile = lazy(() => import("./pages/Profile"));
-const UserDirectory = lazy(() => import("./pages/UserDirectory"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Services = lazy(() => import("./pages/Services"));
-const Events = lazy(() => import("./pages/Events"));
-const MyServices = lazy(() => import("./pages/MyServices"));
-const MyGoods = lazy(() => import("./pages/MyGoods"));
-const MyBookings = lazy(() => import("./pages/MyBookings"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Auth = lazy(() => import("./pages/Auth"));
-const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Business = lazy(() => import("./pages/Business"));
-const Advertising = lazy(() => import("./pages/Advertising"));
-const ModeratorDashboard = lazy(() => import("./pages/ModeratorDashboard"));
-const ManagerDashboard = lazy(() => import("./pages/ManagerDashboard"));
-const SupportDashboard = lazy(() => import("./pages/SupportDashboard"));
-const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
-const StaffNavigation = lazy(() => import("./components/StaffNavigation"));
-const StaffLogin = lazy(() => import("./pages/StaffLogin"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
-const Press = lazy(() => import("./pages/Press"));
-const Careers = lazy(() => import("./pages/Careers"));
-const ApiDocs = lazy(() => import("./pages/ApiDocs"));
-const ApiRequestsAdmin = lazy(() => import("./pages/ApiRequestsAdmin"));
-const HelpCenter = lazy(() => import("./pages/HelpCenter"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
-const Blog = lazy(() => import("./pages/Blog"));
-const Contact = lazy(() => import("./pages/Contact"));
-const ProfileMenu = lazy(() => import("./pages/ProfileMenu"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const PrivacySecurity = lazy(() => import("./pages/PrivacySecurity"));
-const Recommendations = lazy(() => import("./pages/Recommendations"));
-const RecommendationDetail = lazy(() => import("./pages/RecommendationDetail"));
-const PostDetail = lazy(() => import("./pages/PostDetail"));
-const SearchUsers = lazy(() => import("./pages/SearchUsers"));
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const CreateRecommendation = lazyWithRetry(() => import("./pages/CreateRecommendation"));
+const CreateCampaign = lazyWithRetry(() => import("./pages/CreateCampaign"));
+const Home = lazyWithRetry(() => import("./pages/Home"));
+const Feed = lazyWithRetry(() => import("./pages/Feed"));
+const Landing = lazyWithRetry(() => import("./pages/Landing"));
+const PlatformRoot = lazyWithRetry(() => import("@/components/PlatformRoot"));
+const About = lazyWithRetry(() => import("./pages/About"));
+const Community = lazyWithRetry(() => import("./pages/Community"));
+const Messages = lazyWithRetry(() => import("./pages/Messages"));
+const Chat = lazyWithRetry(() => import("./pages/Chat"));
+const MarketplacePage = lazyWithRetry(() => import("./pages/MarketplacePage"));
+const Safety = lazyWithRetry(() => import("./pages/Safety"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const UserDirectory = lazyWithRetry(() => import("./pages/UserDirectory"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Services = lazyWithRetry(() => import("./pages/Services"));
+const Events = lazyWithRetry(() => import("./pages/Events"));
+const MyServices = lazyWithRetry(() => import("./pages/MyServices"));
+const MyGoods = lazyWithRetry(() => import("./pages/MyGoods"));
+const MyBookings = lazyWithRetry(() => import("./pages/MyBookings"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const CompleteProfile = lazyWithRetry(() => import("./pages/CompleteProfile"));
+const VerifyEmail = lazyWithRetry(() => import("./pages/VerifyEmail"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const Business = lazyWithRetry(() => import("./pages/Business"));
+const Advertising = lazyWithRetry(() => import("./pages/Advertising"));
+const ModeratorDashboard = lazyWithRetry(() => import("./pages/ModeratorDashboard"));
+const ManagerDashboard = lazyWithRetry(() => import("./pages/ManagerDashboard"));
+const SupportDashboard = lazyWithRetry(() => import("./pages/SupportDashboard"));
+const StaffDashboard = lazyWithRetry(() => import("./pages/StaffDashboard"));
+const StaffNavigation = lazyWithRetry(() => import("./components/StaffNavigation"));
+const StaffLogin = lazyWithRetry(() => import("./pages/StaffLogin"));
+const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
+const CommunityGuidelines = lazyWithRetry(() => import("./pages/CommunityGuidelines"));
+const Press = lazyWithRetry(() => import("./pages/Press"));
+const Careers = lazyWithRetry(() => import("./pages/Careers"));
+const ApiDocs = lazyWithRetry(() => import("./pages/ApiDocs"));
+const ApiRequestsAdmin = lazyWithRetry(() => import("./pages/ApiRequestsAdmin"));
+const HelpCenter = lazyWithRetry(() => import("./pages/HelpCenter"));
+const BlogPost = lazyWithRetry(() => import("./pages/BlogPost"));
+const Blog = lazyWithRetry(() => import("./pages/Blog"));
+const Contact = lazyWithRetry(() => import("./pages/Contact"));
+const ProfileMenu = lazyWithRetry(() => import("./pages/ProfileMenu"));
+const Notifications = lazyWithRetry(() => import("./pages/Notifications"));
+const PrivacySecurity = lazyWithRetry(() => import("./pages/PrivacySecurity"));
+const Recommendations = lazyWithRetry(() => import("./pages/Recommendations"));
+const RecommendationDetail = lazyWithRetry(() => import("./pages/RecommendationDetail"));
+const PostDetail = lazyWithRetry(() => import("./pages/PostDetail"));
+const SearchUsers = lazyWithRetry(() => import("./pages/SearchUsers"));
 
 // REMOVED: Duplicate QueryClient - using the one from main.tsx instead
 
 // Lazy load native push registration component
-const NativePushRegistration = React.lazy(() => import('@/components/mobile/NativePushRegistration'));
+const NativePushRegistration = lazyWithRetry(() => import('@/components/mobile/NativePushRegistration'));
 
 // Component that initializes push notifications inside AuthProvider
 const PushNotificationWrapper = () => {
@@ -193,6 +194,14 @@ const App = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     const handleGlobalError = (event: ErrorEvent) => {
+      // Handle dynamic import/chunk load errors
+      if (event.message?.includes('Failed to fetch dynamically imported module') ||
+        event.message?.includes('Loading chunk')) {
+        console.warn('Global ChunkLoadError detected - forcing refresh...');
+        window.location.reload();
+        return;
+      }
+
       if (event.error?.name === 'SecurityError' || event.message?.includes('SecurityError')) {
         console.warn('Global SecurityError caught (suppressed to prevent crash):', event.error?.message || event.message);
 
@@ -213,6 +222,16 @@ const App = () => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const reason = event.reason?.toString() || '';
       const reasonMessage = event.reason?.message || '';
+
+      // Handle dynamic import/chunk load errors in promises
+      if (reason.includes('Failed to fetch dynamically imported module') ||
+        reasonMessage.includes('Failed to fetch dynamically imported module') ||
+        reason.includes('Loading chunk') ||
+        reasonMessage.includes('Loading chunk')) {
+        console.warn('Global Promise ChunkLoadError detected - forcing refresh...');
+        window.location.reload();
+        return;
+      }
 
       if (reason.includes('SecurityError') || reason.includes('insecure') ||
         reasonMessage.includes('insecure') || reasonMessage.includes('SecurityError')) {
