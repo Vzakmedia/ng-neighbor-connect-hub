@@ -270,15 +270,111 @@ const CommunityBoards = () => {
 
   // Simplified functions that bypass complex database operations
   const togglePinPost = async (post: BoardPost) => {
-    console.log('Pin functionality temporarily disabled');
+    if (!user) return;
+
+    const currentBoard = boards.find(b => b.id === selectedBoard);
+    const isModOrAdmin = currentBoard?.user_role === 'admin' || currentBoard?.user_role === 'moderator';
+    const isAuthor = post.user_id === user.id;
+
+    if (!isModOrAdmin && !isAuthor) {
+      toast({
+        title: "Permission denied",
+        description: "Only admins, moderators, or the post author can pin messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('board_posts')
+        .update({ is_pinned: !post.is_pinned } as any)
+        .eq('id', post.id);
+
+      if (error) throw error;
+
+      setPosts(prev => prev.map(p =>
+        p.id === post.id ? { ...p, is_pinned: !post.is_pinned } : p
+      ));
+
+      toast({
+        title: !post.is_pinned ? "Post Pinned" : "Post Unpinned",
+        description: `Message has been ${!post.is_pinned ? 'pinned' : 'unpinned'}.`,
+      });
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update pin status.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const addReaction = async (postId: string, reaction: string) => {
-    console.log('Reaction functionality temporarily disabled');
+  const addReaction = async (postId: string, emoji: string) => {
+    if (!user) return;
+
+    // Check if user already has this specific reaction on this post
+    const post = posts.find(p => p.id === postId);
+    if (post?.reactions?.some(r => r.user_id === user.id && r.reaction === emoji)) {
+      await removeReaction(postId, emoji);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('board_post_reactions')
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          reaction: emoji
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              reactions: [...(p.reactions || []), data as any]
+            };
+          }
+          return p;
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
   };
 
-  const removeReaction = async (postId: string, reaction: string) => {
-    console.log('Reaction removal temporarily disabled');
+  const removeReaction = async (postId: string, emoji: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('board_post_reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', user.id)
+        .eq('reaction', emoji);
+
+      if (error) throw error;
+
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            reactions: (p.reactions || []).filter(r => !(r.user_id === user.id && r.reaction === emoji))
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error('Error removing reaction:', error);
+    }
   };
 
   const fetchBoardMembers = async () => {
@@ -872,13 +968,14 @@ const CommunityBoards = () => {
           .on(
             'postgres_changes',
             {
-              event: 'INSERT',
+              event: '*',
               schema: 'public',
               table: 'board_posts',
               filter: `board_id=eq.${selectedBoard}`
             },
             async (payload: any) => {
-              if (payload.new) {
+              if (payload.eventType === 'INSERT') {
+                const newPost = payload.new;
                 // Check if post already exists (to avoid duplicates from optimistic UI)
                 setPosts(currentPosts => {
                   if (currentPosts.some(p => p.id === payload.new.id)) {
@@ -922,9 +1019,33 @@ const CommunityBoards = () => {
                   fetchNewPost();
                   return currentPosts;
                 });
+              } else if (payload.eventType === 'UPDATE') {
+                setPosts(currentPosts =>
+                  currentPosts.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p)
+                );
+              } else if (payload.eventType === 'DELETE') {
+                setPosts(currentPosts => currentPosts.filter(p => p.id !== payload.old.id));
               }
             }
           );
+
+        // Subscribe to reaction changes
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'board_post_reactions'
+            },
+            () => {
+              // Refresh posts to get new reactions
+              // In a more optimized version, we would update specific post reactions
+              fetchPosts();
+            }
+          );
+
+        return channel;
       }, {
         channelName,
         debugName: `Board(${selectedBoard})`
@@ -1168,26 +1289,80 @@ const CommunityBoards = () => {
                           ))}
                         </div>
                       )}
-                      {/* Reactions */}
+                      {/* Reactions Display */}
+                      {post.reactions && post.reactions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {Object.entries(
+                            post.reactions.reduce((acc, r) => {
+                              acc[r.reaction] = (acc[r.reaction] || 0) + 1;
+                              return acc;
+                            }, {} as Record<string, number>)
+                          ).map(([emoji, count]) => {
+                            const hasReacted = post.reactions?.some(r => r.user_id === user.id && r.reaction === emoji);
+                            return (
+                              <Badge
+                                key={emoji}
+                                variant={hasReacted ? "default" : "secondary"}
+                                className="px-1.5 py-0.5 cursor-pointer hover:bg-muted-foreground/20 text-xs gap-1"
+                                onClick={() => addReaction(post.id, emoji)}
+                              >
+                                <span>{emoji}</span>
+                                <span>{count}</span>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Message Actions */}
                       <div className="flex items-center gap-2 mt-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 px-2 text-xs"
+                          className="h-7 px-2 text-xs"
                           onClick={() => toggleBoardPostLike(post.id)}
                         >
                           <ThumbsUp
-                            className={`h-3 w-3 mr-1 ${post.is_liked_by_user ? 'fill-current text-primary' : ''}`}
+                            className={`h-3.5 w-3.5 mr-1 ${post.is_liked_by_user ? 'fill-current text-primary' : ''}`}
                           />
-                          {post.likes_count}
+                          {post.likes_count > 0 && <span>{post.likes_count}</span>}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-xs"
-                        >
-                          <Smile className="h-3 w-3" />
-                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                            >
+                              <Smile className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="flex gap-1 p-1">
+                            {['👍', '❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
+                              <DropdownMenuItem
+                                key={emoji}
+                                className="cursor-pointer p-2 hover:bg-muted text-lg"
+                                onClick={() => addReaction(post.id, emoji)}
+                              >
+                                {emoji}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {(boards.find(b => b.id === selectedBoard)?.user_role === 'admin' ||
+                          boards.find(b => b.id === selectedBoard)?.user_role === 'moderator' ||
+                          post.user_id === user.id) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-7 px-2 text-xs ${post.is_pinned ? 'text-primary' : ''}`}
+                              onClick={() => togglePinPost(post)}
+                            >
+                              <Pin className={`h-3.5 w-3.5 ${post.is_pinned ? 'fill-current' : ''}`} />
+                            </Button>
+                          )}
                       </div>
                     </div>
                   </div>

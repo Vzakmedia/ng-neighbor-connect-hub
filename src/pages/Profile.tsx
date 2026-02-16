@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
@@ -11,6 +11,7 @@ import { ProfileCompletionCard } from '@/components/profile/ProfileCompletionCar
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const Profile = () => {
+  const { id } = useParams<{ id: string }>();
   const { user, loading } = useAuth();
   const { profile } = useProfile();
   const completionStatus = useProfileCompletion(profile);
@@ -41,12 +42,14 @@ const Profile = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
-            onClick={() => navigate('/profile-menu')}
+            onClick={() => id ? navigate(-1) : navigate('/profile-menu')}
             className="p-2 -ml-2 hover:bg-accent rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="h-6 w-6 text-foreground" />
           </button>
-          <h1 className="text-lg font-semibold text-foreground">Profile</h1>
+          <h1 className="text-lg font-semibold text-foreground">
+            {id ? 'User Profile' : 'My Profile'}
+          </h1>
           <div className="w-10" />
         </div>
       </div>
@@ -54,14 +57,14 @@ const Profile = () => {
       <main className="pb-20 md:pb-4">
         <div className="container py-6 max-w-4xl">
           <div className="space-y-6">
-            {!completionStatus.isComplete && !isMobile && (
+            {!completionStatus.isComplete && !isMobile && !id && (
               <ProfileCompletionCard
                 completionStatus={completionStatus}
                 onEditProfile={() => navigate('/auth/complete-profile')}
               />
             )}
-            <ProfileOverview />
-            <ActivityHistory />
+            <ProfileOverview userId={id} />
+            {!id && <ActivityHistory />}
           </div>
         </div>
       </main>

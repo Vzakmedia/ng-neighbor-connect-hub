@@ -32,8 +32,14 @@ interface Profile {
   created_at: string;
 }
 
-const ProfileOverview = () => {
+interface ProfileOverviewProps {
+  userId?: string;
+}
+
+const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
   const { user } = useAuth();
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
   const { toast } = useToast();
   const { updateLocationFilter } = useLocationPreferences();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,24 +64,25 @@ const ProfileOverview = () => {
   const [requestingVerification, setRequestingVerification] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (targetUserId) {
       fetchProfile();
     }
-  }, [user]);
+  }, [targetUserId]);
 
   const fetchProfile = async () => {
+    if (!targetUserId) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
         return;
       }
-      
+
       setProfile(data);
       setFormData({
         full_name: data.full_name || '',
@@ -105,28 +112,28 @@ const ProfileOverview = () => {
     if (oldState === newState && oldCity === newCity && oldNeighborhood === newNeighborhood) {
       return null;
     }
-    
+
     // State changed - user moved to different state
     if (oldState !== newState) {
       return 'city';
     }
-    
+
     // City (LGA) changed - user moved to different LGA
     if (oldCity !== newCity) {
       return 'city';
     }
-    
+
     // Only neighborhood changed - user moved within same LGA
     if (oldNeighborhood !== newNeighborhood) {
       return 'neighborhood';
     }
-    
+
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Store old location data for comparison
       const oldLocationData = {
@@ -134,7 +141,7 @@ const ProfileOverview = () => {
         city: profile?.city || '',
         neighborhood: profile?.neighborhood || ''
       };
-      
+
       const { error } = await supabase
         .from('profiles')
         .update(formData)
@@ -151,11 +158,11 @@ const ProfileOverview = () => {
         formData.city,
         formData.neighborhood
       );
-      
+
       if (optimalFilter) {
         // Update the default location filter
         await updateLocationFilter(optimalFilter);
-        
+
         const filterLabel = optimalFilter === 'city' ? 'City Wide' : 'Neighborhood Only';
         toast({
           title: "Profile updated",
@@ -232,7 +239,7 @@ const ProfileOverview = () => {
   const getCroppedImg = (image: HTMLImageElement, crop: Crop): Promise<Blob> => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     if (!ctx) {
       throw new Error('No 2d context');
     }
@@ -266,7 +273,7 @@ const ProfileOverview = () => {
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    
+
     const crop = centerCrop(
       makeAspectCrop(
         {
@@ -280,7 +287,7 @@ const ProfileOverview = () => {
       width,
       height,
     );
-    
+
     setCrop(crop);
   };
 
@@ -410,9 +417,9 @@ const ProfileOverview = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <UserIcon className="h-5 w-5 flex-shrink-0" />
-              <span className="truncate">My Profile</span>
+              <span className="truncate">{isOwnProfile ? 'My Profile' : 'User Profile'}</span>
             </CardTitle>
-            {!editing ? (
+            {isOwnProfile && (!editing ? (
               <Button variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto">
                 <PencilIcon className="h-4 w-4 mr-2" />
                 <span className="sm:inline">Edit Profile</span>
@@ -428,16 +435,16 @@ const ProfileOverview = () => {
                   <span className="sm:inline">Save</span>
                 </Button>
               </div>
-            )}
+            ))}
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Profile Picture Section */}
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
             <div className="relative flex-shrink-0 mx-auto sm:mx-0">
               <OnlineAvatar
-                userId={user?.id}
+                userId={targetUserId}
                 src={profile?.avatar_url || undefined}
                 fallback={profile?.full_name ? getInitials(profile.full_name) : 'U'}
                 size="xl"
@@ -466,7 +473,7 @@ const ProfileOverview = () => {
                 className="hidden"
               />
             </div>
-            
+
             <div className="flex-1 w-full space-y-3 sm:space-y-4">
               {/* Name Section */}
               <div className="text-center sm:text-left">
@@ -522,42 +529,44 @@ const ProfileOverview = () => {
       </Card>
 
       {/* Contact Information */}
-      <Card className="w-full max-w-full overflow-hidden">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <PhoneIcon className="h-5 w-5 flex-shrink-0" />
-            <span className="truncate">Contact Information</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="w-full">
-              {editing ? (
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Enter your phone number"
-                    className="w-full"
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 w-full">
-                  <PhoneIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm sm:text-base truncate">{profile?.phone || 'No phone number'}</span>
-                </div>
-              )}
-            </div>
+      {isOwnProfile && (
+        <Card className="w-full max-w-full overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <PhoneIcon className="h-5 w-5 flex-shrink-0" />
+              <span className="truncate">Contact Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="w-full">
+                {editing ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-sm">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Enter your phone number"
+                      className="w-full"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 w-full">
+                    <PhoneIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm sm:text-base truncate">{profile?.phone || 'No phone number'}</span>
+                  </div>
+                )}
+              </div>
 
-            <div className="flex items-center gap-2 w-full">
-              <EnvelopeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm sm:text-base truncate">{user?.email || 'No email'}</span>
+              <div className="flex items-center gap-2 w-full">
+                <EnvelopeIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm sm:text-base truncate">{user?.email || 'No email'}</span>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Location Information */}
       <Card className="w-full max-w-full overflow-hidden">
@@ -569,34 +578,34 @@ const ProfileOverview = () => {
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {editing ? (
-            <div className="lg:col-span-2 space-y-4">
-              <Label className="text-sm">Location</Label>
-              <SimpleLocationSelector 
-                onLocationChange={handleLocationChange}
-                defaultState={formData.state}
-                defaultCity={formData.city}
-                defaultNeighborhood={formData.neighborhood}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="w-full">
-                <Label className="text-xs sm:text-sm text-muted-foreground">State</Label>
-                <p className="font-medium text-sm sm:text-base truncate">{profile?.state || 'Not specified'}</p>
+            {editing ? (
+              <div className="lg:col-span-2 space-y-4">
+                <Label className="text-sm">Location</Label>
+                <SimpleLocationSelector
+                  onLocationChange={handleLocationChange}
+                  defaultState={formData.state}
+                  defaultCity={formData.city}
+                  defaultNeighborhood={formData.neighborhood}
+                />
               </div>
+            ) : (
+              <>
+                <div className="w-full">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">State</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.state || 'Not specified'}</p>
+                </div>
 
-              <div className="w-full">
-                <Label className="text-xs sm:text-sm text-muted-foreground">City</Label>
-                <p className="font-medium text-sm sm:text-base truncate">{profile?.city || 'Not specified'}</p>
-              </div>
+                <div className="w-full">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">City</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.city || 'Not specified'}</p>
+                </div>
 
-              <div className="w-full">
-                <Label className="text-xs sm:text-sm text-muted-foreground">Neighborhood</Label>
-                <p className="font-medium text-sm sm:text-base truncate">{profile?.neighborhood || 'Not specified'}</p>
-              </div>
-            </>
-          )}
+                <div className="w-full">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Neighborhood</Label>
+                  <p className="font-medium text-sm sm:text-base truncate">{profile?.neighborhood || 'Not specified'}</p>
+                </div>
+              </>
+            )}
 
             <div className="w-full lg:col-span-2">
               {editing ? (
@@ -610,12 +619,12 @@ const ProfileOverview = () => {
                     className="w-full"
                   />
                 </div>
-              ) : (
+              ) : isOwnProfile ? (
                 <div>
                   <Label className="text-xs sm:text-sm text-muted-foreground">Full Address</Label>
                   <p className="font-medium text-sm sm:text-base break-words">{profile?.address || 'Not specified'}</p>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </CardContent>
@@ -669,7 +678,7 @@ const ProfileOverview = () => {
             </div>
           </div>
 
-          {!profile?.is_verified && (
+          {isOwnProfile && !profile?.is_verified && (
             <div className="pt-4 border-t">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1">
@@ -678,7 +687,7 @@ const ProfileOverview = () => {
                     Get your account verified to build trust in the community
                   </p>
                 </div>
-                <Button 
+                <Button
                   onClick={handleVerificationRequest}
                   disabled={requestingVerification}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto flex-shrink-0"
@@ -705,7 +714,7 @@ const ProfileOverview = () => {
               Crop Profile Picture
             </DialogTitle>
           </DialogHeader>
-          
+
           {imageToCrop && (
             <div className="flex justify-center">
               <ReactCrop
@@ -725,7 +734,7 @@ const ProfileOverview = () => {
               </ReactCrop>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button
               variant="outline"
