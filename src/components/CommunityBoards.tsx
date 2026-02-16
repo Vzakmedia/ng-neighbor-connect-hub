@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { 
+import {
   MessageSquare,
   Send,
   Pin,
@@ -282,23 +282,201 @@ const CommunityBoards = () => {
   };
 
   const fetchBoardMembers = async () => {
-    console.log('Board members functionality temporarily disabled');
-    setBoardMembers([]);
+    if (!selectedBoard) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('board_members')
+        .select(`
+          *,
+          profiles (
+            full_name,
+            avatar_url,
+            city,
+            state
+          )
+        `)
+        .eq('board_id', selectedBoard);
+
+      if (error) throw error;
+
+      setBoardMembers(data as BoardMember[]);
+    } catch (error) {
+      console.error('Error fetching board members:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load member list.",
+        variant: "destructive",
+      });
+    }
   };
 
   const updateBoardSettings = async (updates: Partial<DiscussionBoard>) => {
-    console.log('Board settings update temporarily disabled');
+    if (!selectedBoard) return;
+
+    try {
+      const { error } = await supabase
+        .from('discussion_boards')
+        .update(updates)
+        .eq('id', selectedBoard);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Group settings updated.",
+      });
+
+      fetchBoards();
+      // If updating privacy, refresh public boards
+      if ('is_public' in updates) {
+        fetchPublicBoards();
+      }
+    } catch (error) {
+      console.error('Error updating board settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update settings.",
+        variant: "destructive",
+      });
+    }
   };
 
   const fetchInviteLinks = async () => {
-    console.log('Invite links functionality temporarily disabled');
-    setInviteLinks([]);
+    if (!selectedBoard) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('group_invites')
+        .select('*')
+        .eq('board_id', selectedBoard)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setInviteLinks(data as InviteLink[]);
+    } catch (error) {
+      console.error('Error fetching invite links:', error);
+    }
+  };
+
+  const createInviteLink = async () => {
+    if (!selectedBoard || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('group_invites')
+        .insert({
+          board_id: selectedBoard,
+          token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          created_by: user.id,
+          expires_at: newInviteExpiry ? new Date(newInviteExpiry).toISOString() : null,
+          max_uses: newInviteMaxUses ? parseInt(newInviteMaxUses) : null
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setInviteLinks(prev => [data as InviteLink, ...prev]);
+      setNewInviteExpiry('');
+      setNewInviteMaxUses('');
+
+      toast({
+        title: "Link created",
+        description: "Invite link has been generated.",
+      });
+    } catch (error) {
+      console.error('Error creating invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create invite link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteInviteLink = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('group_invites')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInviteLinks(prev => prev.filter(link => link.id !== id));
+      toast({
+        title: "Deleted",
+        description: "Invite link has been removed.",
+      });
+    } catch (error) {
+      console.error('Error deleting invite link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete invite link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateMemberRole = async (memberId: string, newRole: 'admin' | 'moderator' | 'member') => {
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      setBoardMembers(prev => prev.map(m =>
+        m.id === memberId ? { ...m, role: newRole } : m
+      ));
+
+      toast({
+        title: "Updated",
+        description: "Member role updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating member role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member role.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeMember = async (memberId: string) => {
+    try {
+      const { error } = await supabase
+        .from('board_members')
+        .delete()
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      setBoardMembers(prev => prev.filter(m => m.id !== memberId));
+      fetchBoards(); // Update member counts
+
+      toast({
+        title: "Removed",
+        description: "Member removed from group.",
+      });
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove member.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Fetch groups
   const fetchBoards = async () => {
     if (!user) return;
-    
+
     try {
       const { data: membershipData, error: membershipError } = await supabase
         .from('board_members')
@@ -312,7 +490,7 @@ const CommunityBoards = () => {
         return;
       }
 
-      const boardIds = membershipData.map(m => 
+      const boardIds = membershipData.map(m =>
         typeof m === 'object' && 'board_id' in m ? (m as any).board_id : null
       ).filter(Boolean);
 
@@ -331,7 +509,7 @@ const CommunityBoards = () => {
             .select('*', { count: 'exact' })
             .eq('board_id', board.id);
 
-          const userMembership = membershipData.find(m => 
+          const userMembership = membershipData.find(m =>
             typeof m === 'object' && 'board_id' in m && (m as any).board_id === board.id
           );
 
@@ -344,7 +522,7 @@ const CommunityBoards = () => {
       );
 
       setBoards(boardsWithCounts as DiscussionBoard[]);
-      
+
       if (!selectedBoard && boardsWithCounts.length > 0) {
         setSelectedBoard(boardsWithCounts[0].id);
       }
@@ -560,7 +738,7 @@ const CommunityBoards = () => {
 
     // Add to UI immediately
     setPosts(prev => [...prev, tempPost]);
-    
+
     // Clear input
     const messageContent = newMessage.trim();
     const imageUrls = images.map(img => img.url);
@@ -570,7 +748,7 @@ const CommunityBoards = () => {
     setNewMessage('');
     setAdMedia([]);
     setTaggedMembers([]);
-    
+
     // Scroll
     setTimeout(() => scrollToBottom(), 50);
 
@@ -597,14 +775,14 @@ const CommunityBoards = () => {
 
       // Replace temp post with real post
       if (data) {
-        setPosts(prev => prev.map(p => 
+        setPosts(prev => prev.map(p =>
           p.id === tempId ? { ...tempPost, id: data.id } : p
         ));
       }
     } catch (error) {
       // Remove temporary post on error
       setPosts(prev => prev.filter(p => p.id !== tempId));
-      
+
       toast({
         title: "Failed to send",
         description: "Your message couldn't be sent. Please try again.",
@@ -623,13 +801,13 @@ const CommunityBoards = () => {
     const previousPosts = [...posts];
 
     // Update UI immediately
-    setPosts(prev => prev.map(p => 
-      p.id === postId 
+    setPosts(prev => prev.map(p =>
+      p.id === postId
         ? {
-            ...p,
-            is_liked_by_user: !p.is_liked_by_user,
-            likes_count: p.is_liked_by_user ? p.likes_count - 1 : p.likes_count + 1
-          }
+          ...p,
+          is_liked_by_user: !p.is_liked_by_user,
+          likes_count: p.is_liked_by_user ? p.likes_count - 1 : p.likes_count + 1
+        }
         : p
     ));
 
@@ -642,7 +820,7 @@ const CommunityBoards = () => {
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
-        
+
         if (error) throw error;
       } else {
         // Like
@@ -652,7 +830,7 @@ const CommunityBoards = () => {
             post_id: postId,
             user_id: user.id
           });
-        
+
         if (error) throw error;
       }
     } catch (error) {
@@ -683,6 +861,78 @@ const CommunityBoards = () => {
     if (selectedBoard) {
       fetchPosts();
       fetchBoardMembers();
+      if (showInviteLinks) {
+        fetchInviteLinks();
+      }
+
+      // Set up real-time subscription for new posts
+      const channelName = `board_posts:${selectedBoard}`;
+      const subscription = createSafeSubscription((channel) => {
+        return channel
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'board_posts',
+              filter: `board_id=eq.${selectedBoard}`
+            },
+            async (payload: any) => {
+              if (payload.new) {
+                // Check if post already exists (to avoid duplicates from optimistic UI)
+                setPosts(currentPosts => {
+                  if (currentPosts.some(p => p.id === payload.new.id)) {
+                    return currentPosts;
+                  }
+
+                  // For a proper UI update, we need the profile data which isn't in the realtime payload
+                  // We'll fetch the single new post with its relations
+                  const fetchNewPost = async () => {
+                    const { data, error } = await supabase
+                      .from('board_posts')
+                      .select(`
+                        *,
+                        profiles!user_id (
+                          full_name,
+                          avatar_url,
+                          neighborhood,
+                          city,
+                          state
+                        )
+                      `)
+                      .eq('id', payload.new.id)
+                      .single();
+
+                    if (!error && data) {
+                      setPosts(prev => {
+                        if (prev.some(p => p.id === data.id)) return prev;
+                        return [...prev, {
+                          ...data,
+                          likes_count: 0,
+                          is_liked_by_user: false,
+                          reactions: []
+                        } as BoardPost];
+                      });
+
+                      // Scroll to bottom when new message arrives
+                      setTimeout(() => scrollToBottom(), 100);
+                    }
+                  };
+
+                  fetchNewPost();
+                  return currentPosts;
+                });
+              }
+            }
+          );
+      }, {
+        channelName,
+        debugName: `Board(${selectedBoard})`
+      });
+
+      return () => {
+        cleanupSafeSubscription(subscription);
+      };
     }
   }, [selectedBoard]);
 
@@ -705,7 +955,7 @@ const CommunityBoards = () => {
     }
 
     let listenerHandle: any = null;
-    
+
     const setupListener = async () => {
       try {
         const { App } = await import('@capacitor/app');
@@ -718,7 +968,7 @@ const CommunityBoards = () => {
         console.error('Failed to setup back button listener:', error);
       }
     };
-    
+
     setupListener();
 
     return () => {
@@ -781,9 +1031,8 @@ const CommunityBoards = () => {
               boards.map((board) => (
                 <div
                   key={board.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedBoard === board.id ? 'bg-muted' : 'hover:bg-muted/50'
-                  }`}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedBoard === board.id ? 'bg-muted' : 'hover:bg-muted/50'
+                    }`}
                   onClick={() => {
                     setSelectedBoard(board.id);
                     if (isMobile) {
@@ -927,8 +1176,8 @@ const CommunityBoards = () => {
                           className="h-6 px-2 text-xs"
                           onClick={() => toggleBoardPostLike(post.id)}
                         >
-                          <ThumbsUp 
-                            className={`h-3 w-3 mr-1 ${post.is_liked_by_user ? 'fill-current text-primary' : ''}`} 
+                          <ThumbsUp
+                            className={`h-3 w-3 mr-1 ${post.is_liked_by_user ? 'fill-current text-primary' : ''}`}
                           />
                           {post.likes_count}
                         </Button>
@@ -1097,6 +1346,184 @@ const CommunityBoards = () => {
               </div>
             </ScrollArea>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Members List Dialog */}
+      <Dialog open={showMembersList} onOpenChange={setShowMembersList}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Group Members</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-4">
+              {boardMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-2 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={member.profiles?.avatar_url || ''} />
+                      <AvatarFallback>{member.profiles?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{member.profiles?.full_name || 'Unknown User'}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                    </div>
+                  </div>
+
+                  {/* Only admins can manage members */}
+                  {boards.find(b => b.id === selectedBoard)?.user_role === 'admin' && member.user_id !== user?.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'admin')}>
+                          Make Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'moderator')}>
+                          Make Moderator
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateMemberRole(member.id, 'member')}>
+                          Make Member
+                        </DropdownMenuItem>
+                        <Separator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => removeMember(member.id)}
+                        >
+                          Remove from Group
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Board Settings Dialog */}
+      <Dialog open={showBoardSettings} onOpenChange={setShowBoardSettings}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Group Settings</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Group Name</Label>
+                  <Input
+                    defaultValue={boards.find(b => b.id === selectedBoard)?.name}
+                    onBlur={(e) => {
+                      if (e.target.value !== boards.find(b => b.id === selectedBoard)?.name) {
+                        updateBoardSettings({ name: e.target.value });
+                      }
+                    }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    defaultValue={boards.find(b => b.id === selectedBoard)?.description || ''}
+                    onBlur={(e) => {
+                      if (e.target.value !== boards.find(b => b.id === selectedBoard)?.description) {
+                        updateBoardSettings({ description: e.target.value });
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Privacy & Access</h3>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Public Group</Label>
+                    <p className="text-sm text-muted-foreground">Anyone can find and join this group</p>
+                  </div>
+                  <Switch
+                    checked={boards.find(b => b.id === selectedBoard)?.is_public}
+                    onCheckedChange={(checked) => updateBoardSettings({ is_public: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Require Approval</Label>
+                    <p className="text-sm text-muted-foreground">New members must be approved by admin</p>
+                  </div>
+                  <Switch
+                    checked={boards.find(b => b.id === selectedBoard)?.requires_approval}
+                    onCheckedChange={(checked) => updateBoardSettings({ requires_approval: checked })}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">Invite Links</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!showInviteLinks) fetchInviteLinks();
+                      setShowInviteLinks(!showInviteLinks);
+                    }}
+                  >
+                    {showInviteLinks ? 'Hide' : 'Manage'}
+                  </Button>
+                </div>
+
+                {showInviteLinks && (
+                  <div className="space-y-4 border p-4 rounded-lg">
+                    <div className="flex gap-2">
+                      <Button onClick={createInviteLink} size="sm" className="w-full">
+                        <Link className="h-4 w-4 mr-2" />
+                        Generate New Invite Link
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {inviteLinks.map(link => (
+                        <div key={link.id} className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                          <div className="truncate flex-1 mr-2 font-mono">
+                            {link.token}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {link.uses} uses
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-destructive"
+                              onClick={() => deleteInviteLink(link.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {inviteLinks.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          No active invite links
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

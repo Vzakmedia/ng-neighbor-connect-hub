@@ -8,6 +8,7 @@ import { NetworkQualityIndicator } from '@/components/mobile/NetworkQualityIndic
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { CallState } from '@/hooks/messaging/useWebRTCCall';
 import { LiveKitCallInterface } from './LiveKitCallInterface';
+import { useRingbackTone } from '@/hooks/messaging/useRingbackTone';
 
 interface VideoCallDialogProps {
   open: boolean;
@@ -48,6 +49,15 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   const [callDuration, setCallDuration] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+
+  // Determine when to play ringback tone
+  // Play during initiating, calling, and ringing states
+  // Stop when connected, ending, ended, or if remote stream is active (which implies connection)
+  const shouldPlayRingback = open &&
+    (callState === 'initiating' || callState === 'calling' || callState === 'ringing') &&
+    !remoteStream;
+
+  useRingbackTone(shouldPlayRingback);
 
   const handleEndCall = () => {
     onEndCall();
