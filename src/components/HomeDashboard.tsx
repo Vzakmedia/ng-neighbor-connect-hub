@@ -33,7 +33,7 @@ const HomeDashboard = () => {
   const handleTabChange = (tab: 'for-you' | 'recent' | 'nearby' | 'trending') => {
     setActiveTab(tab);
     setSelectedLocationScope(null); // Clear location pill when switching main tabs
-    
+
     switch (tab) {
       case 'for-you':
         // Personalized feed using AI recommendations
@@ -80,7 +80,7 @@ const HomeDashboard = () => {
 
   const handleLocationScopeChange = (scope: 'neighborhood' | 'city' | 'state' | null) => {
     setSelectedLocationScope(scope);
-    
+
     if (scope) {
       setFeedFilters(prev => ({
         ...prev,
@@ -127,7 +127,7 @@ const HomeDashboard = () => {
           sortBy: 'recent',
           searchQuery: '',
         }];
-        
+
         // Only prefetch if not already cached
         const existing = queryClient.getQueryData(queryKey);
         if (!existing) {
@@ -168,11 +168,11 @@ const HomeDashboard = () => {
             selectedLocationScope={selectedLocationScope}
             onLocationScopeChange={handleLocationScopeChange}
           />
-          
+
           {/* Feed Content */}
           <Card className="shadow-card border-0">
             <CardContent className="px-0 lg:px-6 pt-6" data-tutorial="community-feed">
-              <CommunityFeed 
+              <CommunityFeed
                 filters={feedFilters}
                 onFiltersChange={setFeedFilters}
               />
@@ -181,11 +181,11 @@ const HomeDashboard = () => {
         </div>
 
         {/* Sidebar - Visible on desktop only due to space constraints */}
-        <div className="hidden lg:block space-y-4 sm:space-y-5 md:space-y-6 fixed top-20 right-8 w-80 max-h-[calc(100vh-6rem)] overflow-x-hidden overflow-y-auto z-10">
+        <div className="hidden xl:block space-y-4 sm:space-y-5 md:space-y-6 fixed top-20 right-8 w-80 max-h-[calc(100vh-6rem)] overflow-x-hidden overflow-y-auto z-10">
           {/* Business CTA */}
           <BusinessCardCTA />
         </div>
-          </div>
+      </div>
 
       <CreatePostDialog
         open={createPostOpen}

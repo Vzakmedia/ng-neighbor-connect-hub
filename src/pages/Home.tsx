@@ -37,7 +37,9 @@ const Home = () => {
           <EventsPreview />
           <DiscoverServices />
           <MarketplaceHighlights />
-          <BusinessCardCTA />
+          <div className="md:hidden">
+            <BusinessCardCTA />
+          </div>
         </div>
       </div>
     </div>
