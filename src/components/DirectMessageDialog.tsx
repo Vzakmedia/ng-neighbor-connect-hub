@@ -38,6 +38,9 @@ export const DirectMessageDialog = ({
   const [requestStatus, setRequestStatus] = useState<'pending' | 'accepted' | 'declined' | null>(null);
   const [isRecipient, setIsRecipient] = useState(false);
   const [handlingRequest, setHandlingRequest] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Use custom hooks
   const {
@@ -262,10 +265,10 @@ export const DirectMessageDialog = ({
                       <div className="flex items-end gap-2">
                         <div
                           className={`max-w-[70%] p-3 rounded-lg ${isOwnMessage
-                              ? isFailed
-                                ? 'bg-destructive/10 text-foreground border border-destructive/30'
-                                : 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
+                            ? isFailed
+                              ? 'bg-destructive/10 text-foreground border border-destructive/30'
+                              : 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
                             }`}
                         >
                           <p className="text-sm">{message.content}</p>
