@@ -13,6 +13,7 @@ export interface Conversation {
   other_user_name: string;
   other_user_avatar: string | null;
   other_user_phone: string | null;
+  request_status?: 'pending' | 'accepted' | 'declined';
 }
 
 export const useConversations = (userId: string | undefined) => {
@@ -71,7 +72,8 @@ export const useConversations = (userId: string | undefined) => {
           user1_has_unread,
           user2_has_unread,
           created_at,
-          updated_at
+          updated_at,
+          request_status
         `)
         .eq('conversation_type', 'direct_message')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
@@ -82,8 +84,15 @@ export const useConversations = (userId: string | undefined) => {
         throw error;
       }
 
+      // Filter out pending requests where the current user is the recipient
+      // Pending requests where current user is sender (user1) should still be visible (as "Pending")
+      // Pending requests where current user is recipient (user2) should only appear in "Message Requests"
+      const filteredData = (data || []).filter(conv =>
+        !(conv.user2_id === userId && conv.request_status === 'pending')
+      );
+
       // Fetch user profiles separately using secure function
-      const userIds = [...new Set((data || []).flatMap(conv => [conv.user1_id, conv.user2_id]))];
+      const userIds = [...new Set(filteredData.flatMap(conv => [conv.user1_id, conv.user2_id]))];
 
       // Use the secure get_public_profile_info function for each user
       const profilePromises = userIds.map(id =>
@@ -107,7 +116,7 @@ export const useConversations = (userId: string | undefined) => {
           })
       );
 
-      const formattedConversations = (data || []).map(conv => {
+      const formattedConversations = filteredData.map(conv => {
         const isUser1 = conv.user1_id === userId;
         const otherUserId = isUser1 ? conv.user2_id : conv.user1_id;
         const otherUser = profileMap.get(otherUserId);

@@ -56,7 +56,6 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const subscriptionsRef = useRef<Array<{ unsubscribe: () => void }>>([]);
   const seenClientMessageIds = useRef<Set<string>>(new Set()); // dedupe
 
-  const isMessagingRoute = location.pathname.startsWith("/messages") || location.pathname.startsWith("/chat");
   const isCommunityRoute = location.pathname === "/community" || location.pathname === "/";
   const isSafetyRoute = location.pathname.startsWith("/safety");
 
@@ -68,83 +67,80 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
     // ================================
-    // 1. Direct Messages Subscription (FILTERED by recipient_id)
+    // 1. Direct Messages Subscription (Global)
     // ================================
-    if (isMessagingRoute) {
-      // Subscribe to messages where user is the RECIPIENT (incoming)
-      const incomingMessagesSub = createSafeSubscription(
-        (channel) =>
-          channel.on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "direct_messages",
-              filter: `recipient_id=eq.${user.id}`, // Only receive messages sent TO this user
-            },
-            (payload) => {
-              const msg = payload.new;
+    // Subscribe to messages where user is the RECIPIENT (incoming)
+    const incomingMessagesSub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "direct_messages",
+            filter: `recipient_id=eq.${user.id}`, // Only receive messages sent TO this user
+          },
+          (payload) => {
+            const msg = payload.new;
 
-              // Deduplication: ignore if client_message_id already exists locally
-              if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
-              if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+            // Deduplication: ignore if client_message_id already exists locally
+            if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
+            if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
 
-              console.log('[RealtimeProvider] Incoming message received:', msg.id);
-              messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
-            },
-          ),
-        {
-          channelName: `realtime-incoming-messages:${user.id}`,
-          pollInterval: 30000,
-          debugName: "RealtimeProvider-IncomingMessages",
-        },
-      );
-      subscriptions.push(incomingMessagesSub);
+            console.log('[RealtimeProvider] Incoming message received:', msg.id);
+            messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
+          },
+        ),
+      {
+        channelName: `realtime-incoming-messages:${user.id}`,
+        pollInterval: 30000,
+        debugName: "RealtimeProvider-IncomingMessages",
+      },
+    );
+    subscriptions.push(incomingMessagesSub);
 
-      // Subscribe to messages where user is the SENDER (for optimistic UI confirmations)
-      const outgoingMessagesSub = createSafeSubscription(
-        (channel) =>
-          channel.on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "direct_messages",
-              filter: `sender_id=eq.${user.id}`, // Only receive messages sent BY this user
-            },
-            (payload) => {
-              const msg = payload.new;
+    // Subscribe to messages where user is the SENDER (for optimistic UI confirmations)
+    const outgoingMessagesSub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "direct_messages",
+            filter: `sender_id=eq.${user.id}`, // Only receive messages sent BY this user
+          },
+          (payload) => {
+            const msg = payload.new;
 
-              // Deduplication
-              if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
-              if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+            // Deduplication
+            if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
+            if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
 
-              console.log('[RealtimeProvider] Outgoing message confirmed:', msg.id);
-              messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
-            },
-          ),
-        {
-          channelName: `realtime-outgoing-messages:${user.id}`,
-          pollInterval: 30000,
-          debugName: "RealtimeProvider-OutgoingMessages",
-        },
-      );
-      subscriptions.push(outgoingMessagesSub);
-    }
+            console.log('[RealtimeProvider] Outgoing message confirmed:', msg.id);
+            messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
+          },
+        ),
+      {
+        channelName: `realtime-outgoing-messages:${user.id}`,
+        pollInterval: 30000,
+        debugName: "RealtimeProvider-OutgoingMessages",
+      },
+    );
+    subscriptions.push(outgoingMessagesSub);
+
 
     // ================================
     // 2. Read Receipts (Broadcast)
     // ================================
-    if (isMessagingRoute) {
-      const readReceiptChannel = supabase
-        .channel(`unified-read-receipts:${user.id}`)
-        .on("broadcast", { event: "read_receipt" }, (payload: any) => {
-          const { messageId } = payload.payload;
-          if (messageId) readReceiptCallbacks.current.forEach((cb) => cb(messageId));
-        })
-        .subscribe();
-      subscriptions.push({ unsubscribe: () => supabase.removeChannel(readReceiptChannel) });
-    }
+    const readReceiptChannel = supabase
+      .channel(`unified-read-receipts:${user.id}`)
+      .on("broadcast", { event: "read_receipt" }, (payload: any) => {
+        const { messageId } = payload.payload;
+        if (messageId) readReceiptCallbacks.current.forEach((cb) => cb(messageId));
+      })
+      .subscribe();
+    subscriptions.push({ unsubscribe: () => supabase.removeChannel(readReceiptChannel) });
 
     // ================================
     // 3. Community Posts Subscription
@@ -244,9 +240,9 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
         (channel) =>
           channel.on(
             "postgres_changes",
-            { 
-              event: "*", 
-              schema: "public", 
+            {
+              event: "*",
+              schema: "public",
               table: "post_likes",
               filter: `user_id=eq.${user.id}`, // Likes by this user (for optimistic updates)
             },
@@ -261,9 +257,9 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
         (channel) =>
           channel.on(
             "postgres_changes",
-            { 
-              event: "*", 
-              schema: "public", 
+            {
+              event: "*",
+              schema: "public",
               table: "post_comments",
               filter: `user_id=eq.${user.id}`, // Comments by this user
             },
@@ -284,7 +280,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       subscriptionsRef.current = [];
       seenClientMessageIds.current.clear(); // reset dedupe cache
     };
-  }, [user, location.pathname, isMessagingRoute, isCommunityRoute, isSafetyRoute]);
+  }, [user, location.pathname, isCommunityRoute, isSafetyRoute]);
 
   // -----------------------------
   // Registration Methods

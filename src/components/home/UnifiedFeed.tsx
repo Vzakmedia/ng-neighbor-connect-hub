@@ -15,6 +15,7 @@ import { BusinessCardCTA } from "@/components/home/BusinessCardCTA";
 import { RecommendationsCarousel } from "@/components/home/RecommendationsCarousel";
 import { Loader2 } from "@/lib/icons";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { MiniProfile } from "@/components/profile/MiniProfile";
 
 /**
  * UnifiedFeed - Facebook-style vertical feed with mixed content
@@ -25,20 +26,21 @@ export const UnifiedFeed = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { handleLike, handleSave } = usePostEngagement();
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Fetch posts with infinite scroll support
-  const { 
-    data, 
-    isLoading, 
-    fetchNextPage, 
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
     hasNextPage,
-    isFetchingNextPage 
+    isFetchingNextPage
   } = useFeedQuery({
     sortBy: 'recent',
     locationScope: 'all',
   });
 
-  const allPosts = data?.pages.flatMap(page => 
+  const allPosts = data?.pages.flatMap(page =>
     page.items.map(post => transformToCardData({
       ...post,
       post_type: 'general',
@@ -49,6 +51,10 @@ export const UnifiedFeed = () => {
   const handlePostClick = useCallback((postId: string) => {
     navigate(`/community/post/${postId}`);
   }, [navigate]);
+
+  const handleAvatarClick = useCallback((userId: string) => {
+    setSelectedUserId(userId);
+  }, []);
 
   const handleShare = useCallback((postId: string) => {
     const postUrl = `${window.location.origin}/community/post/${postId}`;
@@ -68,7 +74,7 @@ export const UnifiedFeed = () => {
 
   // Create a mixed content array with strategic widget placement
   const mixedContent: Array<{ type: 'widget' | 'post' | 'ad'; component: React.ReactNode; key: string }> = [];
-  
+
   // Always start with Events Near You
   mixedContent.push({
     type: 'widget',
@@ -87,9 +93,9 @@ export const UnifiedFeed = () => {
           onLike={() => handleLike(post.id, post.isLiked)}
           onSave={() => handleSave(post.id, post.isSaved)}
           onShare={() => handleShare(post.id)}
-          onRSVP={() => {}}
-          onAvatarClick={() => {}}
-          onImageClick={() => {}}
+          onRSVP={() => { }}
+          onAvatarClick={handleAvatarClick}
+          onImageClick={() => { }}
           onPostClick={() => handlePostClick(post.id)}
           showComments={showComments[post.id] || false}
           onToggleComments={() => toggleComments(post.id)}
@@ -179,7 +185,8 @@ export const UnifiedFeed = () => {
       });
     }
 
-    // Business Card CTA after 17th post
+    // Business Card CTA removed as per user request
+    /*
     if (index === 16) {
       mixedContent.push({
         type: 'widget',
@@ -187,6 +194,7 @@ export const UnifiedFeed = () => {
         key: 'business-card-cta'
       });
     }
+    */
 
     // Continue adding ads every 8 posts after initial placements
     if (index > 16 && (index - 16) % 8 === 0) {
@@ -234,6 +242,12 @@ export const UnifiedFeed = () => {
           You're all caught up!
         </div>
       )}
+
+      <MiniProfile
+        userId={selectedUserId}
+        isOpen={!!selectedUserId}
+        onClose={() => setSelectedUserId(null)}
+      />
     </div>
   );
 };
