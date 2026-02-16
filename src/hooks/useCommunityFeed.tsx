@@ -77,7 +77,7 @@ export const useCommunityFeed = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<CommunityFilters>({
     tags: [],
-    locationScope: 'all', // Will be set based on user preference
+    locationScope: 'neighborhood', // Defaulting to neighborhood as per user request
     postTypes: 'all',
     dateRange: 'all',
     sortBy: 'newest'
@@ -101,11 +101,11 @@ export const useCommunityFeed = () => {
 
   const filteredAndSortedEvents = useMemo(() => {
     let result = [...events];
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(event => 
+      result = result.filter(event =>
         event.content?.toLowerCase().includes(query) ||
         event.title?.toLowerCase().includes(query) ||
         event.author?.full_name?.toLowerCase().includes(query) ||
@@ -115,7 +115,7 @@ export const useCommunityFeed = () => {
 
     // Apply tag filters
     if (filters.tags.length > 0) {
-      result = result.filter(event => 
+      result = result.filter(event =>
         event.tags?.some(tag => filters.tags.includes(tag))
       );
     }
@@ -136,7 +136,7 @@ export const useCommunityFeed = () => {
     if (filters.dateRange !== 'all') {
       const now = new Date();
       const filterDate = new Date();
-      
+
       switch (filters.dateRange) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
@@ -148,8 +148,8 @@ export const useCommunityFeed = () => {
           filterDate.setMonth(now.getMonth() - 1);
           break;
       }
-      
-      result = result.filter(event => 
+
+      result = result.filter(event =>
         new Date(event.created_at) >= filterDate
       );
     }
@@ -180,7 +180,7 @@ export const useCommunityFeed = () => {
       }
       return tags;
     }, []);
-    
+
     const uniqueTags = Array.from(new Set(allTags)).sort();
     setAvailableTags(uniqueTags);
   }, [events]);
@@ -222,7 +222,7 @@ export const useCommunityFeed = () => {
 
       if (posts) {
         console.log('Fetched posts from PostGIS:', posts.length);
-        
+
         // Transform PostGIS results to Event format
         const transformedPosts = posts.map((post: any) => ({
           id: post.id,
@@ -315,13 +315,13 @@ export const useCommunityFeed = () => {
       }
 
       // Update local state immediately for better UX
-      setEvents(prev => prev.map(e => 
-        e.id === eventId 
-          ? { 
-              ...e, 
-              isLiked: !e.isLiked,
-              likes_count: e.isLiked ? (e.likes_count || 1) - 1 : (e.likes_count || 0) + 1
-            }
+      setEvents(prev => prev.map(e =>
+        e.id === eventId
+          ? {
+            ...e,
+            isLiked: !e.isLiked,
+            likes_count: e.isLiked ? (e.likes_count || 1) - 1 : (e.likes_count || 0) + 1
+          }
           : e
       ));
     } catch (error) {
@@ -344,13 +344,13 @@ export const useCommunityFeed = () => {
     const previousEvents = [...events];
 
     // Optimistic UI: Update state immediately
-    setEvents(prev => prev.map(e => 
-      e.id === eventId 
-        ? { 
-            ...e, 
-            isSaved: !e.isSaved,
-            saves_count: e.isSaved ? (e.saves_count || 1) - 1 : (e.saves_count || 0) + 1
-          }
+    setEvents(prev => prev.map(e =>
+      e.id === eventId
+        ? {
+          ...e,
+          isSaved: !e.isSaved,
+          saves_count: e.isSaved ? (e.saves_count || 1) - 1 : (e.saves_count || 0) + 1
+        }
         : e
     ));
 
@@ -367,21 +367,21 @@ export const useCommunityFeed = () => {
           .delete()
           .eq('post_id', eventId)
           .eq('user_id', user.id);
-        
+
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('saved_posts')
           .insert({ post_id: eventId, user_id: user.id });
-        
+
         if (error) throw error;
       }
     } catch (error) {
       console.error('Error toggling save:', error);
-      
+
       // Rollback on error
       setEvents(previousEvents);
-      
+
       toast({
         title: "Error",
         description: "Failed to save post. Please try again.",
@@ -392,8 +392,8 @@ export const useCommunityFeed = () => {
 
   const updatePostLikes = async (postId: string) => {
     const engagementData = await fetchEngagementData(postId);
-    setEvents(prev => prev.map(event => 
-      event.id === postId 
+    setEvents(prev => prev.map(event =>
+      event.id === postId
         ? { ...event, ...engagementData }
         : event
     ));
@@ -401,8 +401,8 @@ export const useCommunityFeed = () => {
 
   const updatePostComments = async (postId: string) => {
     const engagementData = await fetchEngagementData(postId);
-    setEvents(prev => prev.map(event => 
-      event.id === postId 
+    setEvents(prev => prev.map(event =>
+      event.id === postId
         ? { ...event, comments_count: engagementData.comments_count }
         : event
     ));
@@ -412,7 +412,7 @@ export const useCommunityFeed = () => {
     setRefreshing(true);
     setHasNewContent(false);
     setUnreadCounts(prev => ({ ...prev, community: 0 }));
-    
+
     try {
       // Fetch fresh data using PostGIS
       await fetchPosts();

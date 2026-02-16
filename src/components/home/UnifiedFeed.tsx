@@ -37,7 +37,7 @@ export const UnifiedFeed = () => {
     isFetchingNextPage
   } = useFeedQuery({
     sortBy: 'recent',
-    locationScope: 'all',
+    locationScope: 'neighborhood',
   });
 
   const allPosts = data?.pages.flatMap(page =>
