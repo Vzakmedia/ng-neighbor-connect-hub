@@ -306,6 +306,7 @@ const App = () => {
                           <Route path="/marketplace" element={<MarketplacePage />} />
                           <Route path="/safety" element={<Safety />} />
                           <Route path="/profile" element={<Profile />} />
+                          <Route path="/profile/:id" element={<Profile />} />
                           <Route path="/profile-menu" element={<ProfileMenu />} />
                           <Route path="/notifications" element={<Notifications />} />
                           <Route path="/privacy-security" element={<PrivacySecurity />} />
