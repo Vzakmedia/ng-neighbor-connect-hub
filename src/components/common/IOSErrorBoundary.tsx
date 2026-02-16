@@ -16,6 +16,7 @@ interface State {
   errorInfo?: ErrorInfo;
   deviceInfo?: any;
   isSecurityError?: boolean;
+  isChunkLoadError?: boolean;
 }
 
 export class IOSErrorBoundary extends Component<Props, State> {
@@ -25,26 +26,31 @@ export class IOSErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    const isSecurityError = error.name === 'SecurityError' || 
-                           error.message?.includes('insecure') ||
-                           error.message?.includes('SecurityError');
-    
-    return { 
-      hasError: true, 
+    const isSecurityError = error.name === 'SecurityError' ||
+      error.message?.includes('insecure') ||
+      error.message?.includes('SecurityError');
+
+    const isChunkLoadError = error.name === 'ChunkLoadError' ||
+      error.message?.includes('Failed to fetch dynamically imported module') ||
+      error.message?.includes('Loading chunk');
+
+    return {
+      hasError: true,
       error,
       deviceInfo: detectIOSDevice(),
-      isSecurityError
+      isSecurityError,
+      isChunkLoadError
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('iOS Error Boundary caught an error:', error, errorInfo);
     logIOSCompatibility();
-    
-    const isSecurityError = error.name === 'SecurityError' || 
-                           error.message?.includes('insecure') ||
-                           error.message?.includes('SecurityError');
-    
+
+    const isSecurityError = error.name === 'SecurityError' ||
+      error.message?.includes('insecure') ||
+      error.message?.includes('SecurityError');
+
     this.setState({
       error,
       errorInfo,
@@ -82,7 +88,7 @@ export class IOSErrorBoundary extends Component<Props, State> {
     } catch (e) {
       console.debug('Storage cleanup failed, continuing with retry');
     }
-    
+
     this.setState({ hasError: false, error: undefined, errorInfo: undefined, isSecurityError: false });
   };
 
@@ -101,7 +107,7 @@ export class IOSErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      const { deviceInfo, error, isSecurityError } = this.state;
+      const { deviceInfo, error, isSecurityError, isChunkLoadError } = this.state;
       const isIOSDevice = deviceInfo?.isIOS;
 
       return (
@@ -118,22 +124,26 @@ export class IOSErrorBoundary extends Component<Props, State> {
                 )}
               </div>
               <CardTitle className="text-xl">
-                {isSecurityError 
-                  ? 'Security Error' 
-                  : isIOSDevice 
-                    ? 'iOS Compatibility Issue' 
-                    : 'Something went wrong'}
+                {isSecurityError
+                  ? 'Security Error'
+                  : isChunkLoadError
+                    ? 'App Update Available'
+                    : isIOSDevice
+                      ? 'iOS Compatibility Issue'
+                      : 'Something went wrong'}
               </CardTitle>
               <CardDescription>
                 {isSecurityError
                   ? 'A browser security restriction is preventing the app from loading properly.'
-                  : isIOSDevice 
-                    ? 'We detected an issue with iOS Safari compatibility.'
-                    : 'An unexpected error occurred while loading the app.'
+                  : isChunkLoadError
+                    ? 'A new version of the app is available. Please reload to update.'
+                    : isIOSDevice
+                      ? 'We detected an issue with iOS Safari compatibility.'
+                      : 'An unexpected error occurred while loading the app.'
                 }
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               {isSecurityError && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm">
@@ -168,14 +178,16 @@ export class IOSErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="flex flex-col gap-2">
-                <Button onClick={this.handleRetry} variant="default" className="w-full">
+                <Button onClick={this.handleReload} variant="default" className="w-full">
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Try Again
+                  {isChunkLoadError ? 'Update App' : 'Reload Page'}
                 </Button>
-                
-                <Button onClick={this.handleReload} variant="outline" className="w-full">
-                  Reload Page
-                </Button>
+
+                {!isChunkLoadError && (
+                  <Button onClick={this.handleRetry} variant="outline" className="w-full">
+                    Try Again
+                  </Button>
+                )}
 
                 {deviceInfo?.isInPrivateBrowsing && (
                   <Button onClick={this.handlePrivateModeSwitch} variant="secondary" className="w-full text-xs">

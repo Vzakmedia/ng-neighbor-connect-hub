@@ -10,6 +10,7 @@ export enum ErrorType {
   DATABASE = 'database',
   NOT_FOUND = 'not_found',
   SERVER = 'server',
+  ABORTED = 'aborted',
   UNKNOWN = 'unknown'
 }
 
@@ -113,6 +114,20 @@ class ErrorHandler {
       stack: this.isDevelopment ? error.stack : undefined
     };
 
+    // Handle AbortError / Signal Aborted
+    if (error.name === 'AbortError' ||
+      error.message?.includes('Aborted') ||
+      error.message?.includes('signal is aborted')) {
+      return {
+        ...baseInfo,
+        type: ErrorType.ABORTED,
+        severity: ErrorSeverity.LOW,
+        message: error.message || 'Request aborted',
+        userMessage: '', // Don't show to user
+        code: 'ABORT_001'
+      };
+    }
+
     // Network errors (handle before generic status codes)
     if (error.name === 'NetworkError' ||
       error.message?.toLowerCase().includes('fetch') ||
@@ -184,7 +199,7 @@ class ErrorHandler {
     }
 
     // Database errors (Postgres codes)
-    const dbCode = error.code;
+    const dbCode = error.code ? String(error.code) : undefined;
     const dbMessage = error.message?.toLowerCase() || '';
 
     if (dbCode?.startsWith('23') || dbMessage.includes('duplicate') || dbMessage.includes('constraint')) {
@@ -267,6 +282,11 @@ class ErrorHandler {
 
   // Show appropriate user notification
   private showUserNotification(errorInfo: ErrorInfo): void {
+    // Don't show notification for aborted requests or low severity non-critical errors
+    if (errorInfo.type === ErrorType.ABORTED || !errorInfo.userMessage) {
+      return;
+    }
+
     const isError = errorInfo.severity === ErrorSeverity.CRITICAL || errorInfo.severity === ErrorSeverity.HIGH;
     const variant = isError ? 'destructive' : 'default';
 
