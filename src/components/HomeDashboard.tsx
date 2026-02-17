@@ -181,7 +181,7 @@ const HomeDashboard = () => {
         </div>
 
         {/* Sidebar - Visible on desktop only due to space constraints */}
-        <div className="hidden xl:block space-y-4 sm:space-y-5 md:space-y-6 fixed top-20 right-8 w-80 max-h-[calc(100vh-6rem)] overflow-x-hidden overflow-y-auto z-10">
+        <div className="hidden 2xl:block space-y-4 sm:space-y-5 md:space-y-6 fixed top-20 right-8 w-80 max-h-[calc(100vh-6rem)] overflow-x-hidden overflow-y-auto z-10">
           {/* Business CTA */}
           <BusinessCardCTA />
         </div>
