@@ -15,6 +15,7 @@ This guide covers building and deploying the NeighborLink app for iOS and Androi
 
 1. Click "Export to GitHub" in Lovable
 2. Clone your repository locally:
+
 ```bash
 git clone <your-repo-url>
 cd <your-repo>
@@ -87,7 +88,7 @@ Add the following entries inside the `<dict>` tag:
 
 After running `npx cap add android`, configure permissions in `android/app/src/main/AndroidManifest.xml`:
 
-#### 1. Add Permissions (before the `<application>` tag):
+#### 1. Add Permissions (before the `<application>` tag)
 
 ```xml
 <!-- Location Permissions -->
@@ -114,7 +115,7 @@ After running `npx cap add android`, configure permissions in `android/app/src/m
 <uses-permission android:name="android.permission.VIBRATE" />
 ```
 
-#### 2. Add Google Maps API Key (inside the `<application>` tag):
+#### 2. Add Google Maps API Key (inside the `<application>` tag)
 
 Add the following meta-data entry inside your `<application>` tag:
 
@@ -122,7 +123,7 @@ Add the following meta-data entry inside your `<application>` tag:
 <!-- Google Maps API Key -->
 <meta-data
     android:name="com.google.android.geo.API_KEY"
-    android:value="AIzaSyBqkepJX9aVJFKkwfBNW62IfOVYkM1Cb3s"/>
+    android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
 ```
 
 **Important:** This must be added after running `npx cap add android`. The key persists across `npx cap sync` but must be re-added if you delete and regenerate the `android` folder.
@@ -130,16 +131,19 @@ Add the following meta-data entry inside your `<application>` tag:
 ### Development Build (Testing)
 
 1. Build the web assets:
+
 ```bash
 npm run build
 ```
 
-2. Sync with native platforms:
+1. Sync with native platforms:
+
 ```bash
 npx cap sync
 ```
 
-3. Run on device/emulator:
+1. Run on device/emulator:
+
 ```bash
 # For iOS (requires macOS and Xcode)
 npx cap run ios
@@ -165,6 +169,7 @@ npx cap open android
 Before releasing, test these features on a physical device:
 
 ### Core Features
+
 - [ ] App launches and shows splash screen
 - [ ] Status bar appears correctly (not overlapping content)
 - [ ] Onboarding screens appear on first launch
@@ -172,6 +177,7 @@ Before releasing, test these features on a physical device:
 - [ ] Profile completion works
 
 ### Permissions
+
 - [ ] Location permission request appears when needed
 - [ ] Camera permission request appears when taking photos
 - [ ] Photo library permission request appears when uploading
@@ -179,6 +185,7 @@ Before releasing, test these features on a physical device:
 - [ ] All permissions can be granted/denied gracefully
 
 ### Native Features
+
 - [ ] Camera opens and can take photos
 - [ ] Photo picker opens and can select images
 - [ ] Push notifications arrive and display
@@ -188,6 +195,7 @@ Before releasing, test these features on a physical device:
 - [ ] Deep links work (if configured)
 
 ### UI/UX
+
 - [ ] Safe area insets respected (notch/island/home indicator)
 - [ ] Keyboard behavior is correct
 - [ ] Orientation changes work (if enabled)
@@ -207,44 +215,51 @@ Before releasing, test these features on a physical device:
 ### Android Production
 
 1. Generate a signing key (first time only):
+
 ```bash
 cd android
 ./gradlew assembleRelease
 ```
 
-2. Configure signing in `android/app/build.gradle`
-3. Build release APK/AAB:
+1. Configure signing in `android/app/build.gradle`
+2. Build release APK/AAB:
+
 ```bash
 cd android
 ./gradlew bundleRelease
 ```
 
-4. Upload to Google Play Console
+1. Upload to Google Play Console
 
 ## Troubleshooting
 
 ### Status Bar Issues
+
 - Make sure `contentInset: "always"` is set in `capacitor.config.json`
 - Check that viewport meta tag includes `viewport-fit=cover`
 - Verify status bar initialization in `App.tsx`
 
 ### Splash Screen Not Showing
+
 - Check `SplashScreen` plugin config in `capacitor.config.json`
 - Verify `launchAutoHide: false` is set
 - Ensure hide delay is sufficient (1500ms+)
 
 ### Onboarding Skipped
+
 - Clear app data/reinstall app
 - Check Capacitor Preferences storage
 - Verify onboarding completion flag logic
 
 ### Permissions Not Working
+
 - Double-check Info.plist (iOS) or AndroidManifest.xml (Android)
 - Ensure permission descriptions are user-friendly
 - Test on physical device (simulator limitations apply)
 - Check app settings on device to verify permissions
 
 ### Build Errors
+
 - Run `npx cap sync` after pulling latest code
 - Clean build: `npx cap sync --clean`
 - Delete `node_modules` and reinstall
@@ -256,21 +271,25 @@ cd android
 Every time you pull new code from GitHub:
 
 1. Install any new dependencies:
+
 ```bash
 npm install
 ```
 
-2. Build the web assets:
+1. Build the web assets:
+
 ```bash
 npm run build
 ```
 
-3. Sync to native platforms:
+1. Sync to native platforms:
+
 ```bash
 npx cap sync
 ```
 
-4. Rebuild and run:
+1. Rebuild and run:
+
 ```bash
 # iOS
 npx cap run ios
@@ -289,6 +308,7 @@ npx cap run android
 ## Support
 
 If you encounter issues:
+
 1. Check this guide's troubleshooting section
 2. Review Capacitor documentation
 3. Check iOS/Android platform-specific docs
