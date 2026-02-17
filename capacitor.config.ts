@@ -81,7 +81,7 @@ const config: CapacitorConfig = {
     },
 
     GoogleMaps: {
-      apiKey: 'AIzaSyBqkepJX9aVJFKkwfBNW62IfOVYkM1Cb3s'
+      apiKey: process.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY'
     },
 
     Haptics: {
