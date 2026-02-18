@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.neighborlink.app",
+      "sha256_cert_fingerprints": [
+        "A3:AB:A6:67:C5:CA:94:5E:CF:52:E9:1C:CB:76:CF:E1:65:56:D1:D7:B1:51:FE:52:AA:09:1F:F9:32:60:C2:B0"
+      ]
+    }
+  }
+]

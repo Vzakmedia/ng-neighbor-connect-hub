@@ -72,13 +72,19 @@ export const NativeSafetyMap = ({
       try {
         setIsLoading(true);
 
-        // Get Google Maps API key from edge function
-        const { data: configData, error: configError } = await supabase.functions.invoke(
-          'get-google-maps-token'
-        );
+        let apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-        if (configError || !configData?.token) {
-          throw new Error('Failed to get Google Maps API key');
+        if (!apiKey) {
+          // Get Google Maps API key from edge function if not available locally
+          const { data: configData, error: configError } = await supabase.functions.invoke(
+            'get-google-maps-token'
+          );
+
+          if (configError || !configData?.token) {
+            throw new Error('Failed to get Google Maps API key');
+          }
+
+          apiKey = configData.token;
         }
 
         // Use user location if available, otherwise use default center
@@ -91,7 +97,7 @@ export const NativeSafetyMap = ({
         const newMap = await GoogleMap.create({
           id: 'safety-map',
           element: mapRef.current!,
-          apiKey: configData.token,
+          apiKey: apiKey,
           config: {
             center: {
               lat: mapCenter.lat,
