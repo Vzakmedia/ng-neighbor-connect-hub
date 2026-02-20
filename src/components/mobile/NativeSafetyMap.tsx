@@ -155,7 +155,7 @@ export const NativeSafetyMap = ({
 
   // Update markers when they change
   useEffect(() => {
-    if (!map || !markers.length) return;
+    if (!map || !markers || !markers.length) return;
 
     const updateMarkers = async () => {
       try {
@@ -163,7 +163,7 @@ export const NativeSafetyMap = ({
         await map.removeMarkers([]);
 
         // Add new markers
-        const newMarkers = markers.map(marker => ({
+        const newMarkers = (markers || []).map(marker => ({
           coordinate: {
             lat: marker.latitude,
             lng: marker.longitude,

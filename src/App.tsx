@@ -12,7 +12,8 @@ import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 import { AuthProvider } from "@/hooks/useAuth";
-import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
+import { AppLifecycleManager } from "@/components/AppLifecycleManager";
+import { useAppVersionCheck } from "@/hooks/useAppVersionCheck";
 import { PresenceProvider } from "@/contexts/PresenceContext";
 import { RealtimeProvider } from "@/contexts/RealtimeContext";
 import { CallProvider } from "@/contexts/CallContext";
@@ -136,6 +137,12 @@ const DirectMessageToastWrapper = () => {
 // Component that handles deep link authentication callbacks on native
 const DeepLinkHandler = () => {
   useDeepLinkHandler();
+  return null;
+};
+
+// Component that handles app version checking and cache clearing
+const VersionCheckWrapper = () => {
+  useAppVersionCheck();
   return null;
 };
 
@@ -273,7 +280,8 @@ const App = () => {
               <Toaster />
               <Sonner />
               <PlatformRouter>
-                <ScrollToTopOnNavigate />
+                <AppLifecycleManager />
+                <VersionCheckWrapper />
                 <RealtimeProvider>
                   <CallProvider>
                     <PresenceProvider>

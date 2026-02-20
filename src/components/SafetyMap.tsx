@@ -35,7 +35,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
 
   // Native map rendering
   if (isNative) {
-    const nativeMarkers = alerts.map(alert => ({
+    const nativeMarkers = (alerts || []).map(alert => ({
       id: alert.id,
       latitude: alert.latitude,
       longitude: alert.longitude,
@@ -121,7 +121,7 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
       <div ref={mapContainer} className="absolute inset-0" />
 
       <SafetyMapOverlay
-        alertCount={alerts.length}
+        alertCount={(alerts || []).length}
         onRecenter={refreshLocation}
         showUserLegend={!!userLocation}
       />

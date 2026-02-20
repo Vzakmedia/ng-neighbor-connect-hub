@@ -13,7 +13,8 @@ import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
 import { BusinessCardCTA } from "@/components/home/BusinessCardCTA";
 import { RecommendationsCarousel } from "@/components/home/RecommendationsCarousel";
-import { Loader2 } from "@/lib/icons";
+import { Loader2, ArrowUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { MiniProfile } from "@/components/profile/MiniProfile";
 
@@ -34,7 +35,9 @@ export const UnifiedFeed = () => {
     isLoading,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    newPostsCount,
+    refreshFeed
   } = useFeedQuery({
     sortBy: 'recent',
     locationScope: 'neighborhood',
@@ -47,6 +50,8 @@ export const UnifiedFeed = () => {
       views_count: 0
     } as any))
   ) || [];
+
+  // ... (existing callbacks)
 
   const handlePostClick = useCallback((postId: string) => {
     navigate(`/community/post/${postId}`);
@@ -228,7 +233,20 @@ export const UnifiedFeed = () => {
         scrollThreshold={0.9}
         style={{ overflow: 'visible' }}
       >
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+          {newPostsCount > 0 && (
+            <div className="sticky top-4 z-50 flex justify-center w-full pointer-events-none">
+              <Button
+                onClick={refreshFeed}
+                className="shadow-lg rounded-full px-6 py-2 bg-primary text-primary-foreground hover:scale-105 transition-transform pointer-events-auto flex items-center gap-2 animate-in fade-in slide-in-from-top-4"
+                size="sm"
+              >
+                <ArrowUp className="h-4 w-4" />
+                {newPostsCount} New Post{newPostsCount > 1 ? 's' : ''}
+              </Button>
+            </div>
+          )}
+
           {mixedContent.map((item) => (
             <div key={item.key} className={item.type === 'widget' ? '' : 'px-4'}>
               {item.component}

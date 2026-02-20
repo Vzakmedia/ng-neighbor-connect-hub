@@ -38,9 +38,9 @@ export default defineConfig(({ mode }) => ({
         },
         // Ensure proper module format for iOS
         format: 'es',
-        entryFileNames: '[name]-[hash].js',
-        chunkFileNames: '[name]-[hash].js',
-        assetFileNames: '[name]-[hash].[ext]'
+        entryFileNames: `assets/[name].[hash].js`,
+        chunkFileNames: `assets/[name].[hash].js`,
+        assetFileNames: `assets/[name].[hash].[ext]`
       },
     },
     // iOS-specific optimizations

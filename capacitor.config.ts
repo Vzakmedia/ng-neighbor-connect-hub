@@ -86,6 +86,19 @@ const config: CapacitorConfig = {
 
     Haptics: {
       // iOS-specific haptic configuration
+    },
+
+    CapacitorUpdater: {
+      autoUpdate: true,
+      appReadyTimeout: 1000,
+      responseTimeout: 10,
+      autoDeleteFailed: false,
+      autoDeletePrevious: false,
+      resetWhenUpdate: false,
+      updateUrl: 'https://capgo.app/api',
+      statsUrl: 'https://capgo.app/api/stats',
+      appId: '11822768-a742-46f3-810d-bb57a1453063',
+      channel: 'production'
     }
   }
 };
