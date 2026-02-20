@@ -41,6 +41,7 @@
     "@capacitor/share": "^7.0.2",
     "@capacitor/splash-screen": "^7.0.3",
     "@capacitor/status-bar": "^7.0.3",
+    "@capgo/capacitor-updater": "^8.43.7",
     "@capgo/native-audio": "^7.9.0",
     "@emotion/is-prop-valid": "^1.4.0",
     "@googlemaps/js-api-loader": "^1.16.10",

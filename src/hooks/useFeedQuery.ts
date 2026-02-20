@@ -1,4 +1,6 @@
+import { useEffect, useState, useCallback } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createSafeSubscription } from '@/utils/realtimeUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -279,10 +281,52 @@ export function useFeedQuery(filters: FeedFilters) {
     networkMode: 'online',
   });
 
-  // Return extended query with cache metadata
+  // Real-time Feed Updates
+  const [newPostsCount, setNewPostsCount] = useState(0);
+
+  // Function to manually refresh the feed (Facebook style)
+  const refreshFeed = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['feed'] });
+    setNewPostsCount(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Subscribe to NEW posts (INSERT only)
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'community_posts'
+        }, (payload) => {
+          // Check if the new post is relevant to the current filter
+          // This is a basic client-side check to avoid showing "New Posts" for irrelevant content
+          // Ideally we'd check payload.new.location_scope vs profile, but for now we just increment
+          // to let the user know *something* happened.
+          setNewPostsCount(prev => prev + 1);
+        }),
+      {
+        channelName: `feed_updates_${filters.locationScope}`,
+        // If connection error, we might as well invalidate to be safe
+        onError: () => queryClient.invalidateQueries({ queryKey: ['feed'] }),
+        debugName: 'FeedRealtime'
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [user, queryClient, filters.locationScope]);
+
+  // Return extended query with realtime state
   return {
     ...query,
-    cacheAge, // Expose cache age for debugging
+    newPostsCount,
+    refreshFeed,
+    cacheAge,
   };
 }
 

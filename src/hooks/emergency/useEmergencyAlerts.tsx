@@ -19,28 +19,28 @@ const createDataHash = (data: any[]): string => {
 export const useEmergencyAlerts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [panicAlerts, setPanicAlerts] = useState<PanicAlert[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Cache and comparison refs
   const alertsHashRef = useRef<string>('');
   const panicAlertsHashRef = useRef<string>('');
   const lastFetchTimeRef = useRef<number>(0);
-  const profileCacheRef = useRef<{neighborhood: string; phone: string} | null>(null);
-  
+  const profileCacheRef = useRef<{ neighborhood: string; phone: string } | null>(null);
+
   // Debounce mechanism
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
   const fetchAlerts = useCallback(async (filters: EmergencyFilters, forceRefresh = false) => {
     if (!user) return;
-    
+
     // Debounce rapid calls
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
-    
+
     return new Promise<void>((resolve) => {
       debounceTimeoutRef.current = setTimeout(async () => {
         // Rate limiting: don't fetch more than once every 5 seconds unless forced
@@ -58,7 +58,7 @@ export const useEmergencyAlerts = () => {
 
           // Use cached profile if available
           let currentUserProfile = profileCacheRef.current;
-          
+
           if (!currentUserProfile) {
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
@@ -109,7 +109,7 @@ export const useEmergencyAlerts = () => {
 
           if (error) {
             console.error('Error fetching safety alerts:', error);
-            
+
             if (error.message?.includes('Failed to fetch')) {
               toast({
                 title: "Connection Issue",
@@ -123,34 +123,39 @@ export const useEmergencyAlerts = () => {
                 variant: "destructive",
               });
             }
-            
+
             setLoading(false);
             resolve();
             return;
           }
 
           // Filter alerts by user's neighborhood if profile is available
-          let filteredAlerts = data || [];
+          let filteredAlerts: any[] = [];
           if (currentUserProfile?.neighborhood) {
             console.log('Filtering alerts by neighborhood:', currentUserProfile.neighborhood);
             console.log('Raw alerts data:', data?.length, 'alerts');
             filteredAlerts = (data || []).filter((alert: any) => {
-              if (!alert.profiles) {
-                console.log('Alert without profile data:', alert.id);
-                return true; // Include alerts without profile data
+              // Strict filtering: Alert MUST have a profile and that profile MUST match the user's neighborhood
+              if (!alert.profiles || !alert.profiles.neighborhood) {
+                console.log('Skipping alert without valid neighborhood data:', alert.id);
+                return false;
               }
-              // Check if the alert creator's neighborhood matches the user's neighborhood
+
               const alertNeighborhood = alert.profiles.neighborhood;
               const matches = alertNeighborhood === currentUserProfile.neighborhood;
-              console.log(`Alert ${alert.id} neighborhood check:`, 
-                         `Alert: ${alertNeighborhood} vs User: ${currentUserProfile.neighborhood} = ${matches}`);
+
+              if (!matches) {
+                console.log(`Skipping alert ${alert.id} from different neighborhood: ${alertNeighborhood}`);
+              }
+
               return matches;
             });
             console.log('Filtered alerts:', filteredAlerts.length, 'alerts');
           } else {
-            console.log('No user neighborhood - showing all alerts:', data?.length);
+            console.log('No user neighborhood found - showing NO alerts for safety');
+            filteredAlerts = []; // STRICT: No neighborhood = No alerts
           }
-          
+
           // Compare with previous data using hash
           const newHash = createDataHash(filteredAlerts);
           if (newHash !== alertsHashRef.current) {
@@ -160,10 +165,10 @@ export const useEmergencyAlerts = () => {
           } else {
             console.log('Safety alerts unchanged, skipping UI update');
           }
-          
+
         } catch (error: any) {
           console.error('Error fetching safety alerts:', error);
-          
+
           // Handle network errors gracefully
           if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError' || !navigator.onLine) {
             toast({
@@ -188,12 +193,12 @@ export const useEmergencyAlerts = () => {
 
   const fetchPanicAlerts = useCallback(async (forceRefresh = false) => {
     if (!user) return;
-    
+
     // Use same debouncing mechanism
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
-    
+
     return new Promise<void>((resolve) => {
       debounceTimeoutRef.current = setTimeout(async () => {
         try {
@@ -237,7 +242,7 @@ export const useEmergencyAlerts = () => {
 
           let contactPanicAlerts: any[] = [];
           let areaPanicAlerts: any[] = [];
-      
+
           // Only fetch contact and area alerts if we have profile data
           if (userProfile) {
             // Get panic alerts where user is an emergency contact
@@ -250,7 +255,7 @@ export const useEmergencyAlerts = () => {
                   console.error('Error fetching users who listed my phone:', listedByError);
                 } else if (listedByUsers && listedByUsers.length > 0) {
                   const contactUserIds = listedByUsers.map((u: { user_id: string }) => u.user_id);
-                  
+
                   let contactQuery = supabase
                     .from('panic_alerts')
                     .select('*')
@@ -298,7 +303,7 @@ export const useEmergencyAlerts = () => {
                 if (areaError) {
                   console.error('Error fetching area panic alerts:', areaError);
                 } else {
-                  areaPanicAlerts = (areaAlerts || []).filter((alert: any) => 
+                  areaPanicAlerts = (areaAlerts || []).filter((alert: any) =>
                     alert.profiles?.neighborhood === userProfile.neighborhood
                   );
                 }
@@ -310,7 +315,7 @@ export const useEmergencyAlerts = () => {
 
           // Combine and deduplicate alerts
           const allPanicAlerts = [...(userPanicAlerts || []), ...contactPanicAlerts, ...areaPanicAlerts];
-          const uniqueAlerts = allPanicAlerts.filter((alert, index, self) => 
+          const uniqueAlerts = allPanicAlerts.filter((alert, index, self) =>
             index === self.findIndex(a => a.id === alert.id)
           );
 
@@ -326,7 +331,7 @@ export const useEmergencyAlerts = () => {
 
         } catch (error: any) {
           console.error('Error fetching panic alerts:', error);
-          
+
           // Handle network errors gracefully
           if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError' || !navigator.onLine) {
             toast({
@@ -336,7 +341,7 @@ export const useEmergencyAlerts = () => {
             });
           } else {
             toast({
-              title: "Failed to load panic alerts", 
+              title: "Failed to load panic alerts",
               description: "Unable to fetch panic alerts. Please try refreshing.",
               variant: "destructive"
             });
@@ -349,9 +354,9 @@ export const useEmergencyAlerts = () => {
   }, [user, toast]);
 
   const updateAlertStatus = useCallback((alertId: string, newStatus: string) => {
-    setAlerts(prev => 
-      prev.map(alert => 
-        alert.id === alertId 
+    setAlerts(prev =>
+      prev.map(alert =>
+        alert.id === alertId
           ? { ...alert, status: newStatus as any, updated_at: new Date().toISOString() }
           : alert
       )
@@ -364,15 +369,15 @@ export const useEmergencyAlerts = () => {
   }, [toast]);
 
   const updatePanicAlertStatus = useCallback((alertId: string, newStatus: string) => {
-    setPanicAlerts(prev => 
-      prev.map(alert => 
-        alert.id === alertId 
-          ? { 
-              ...alert, 
-              is_resolved: newStatus === 'resolved',
-              resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null,
-              updated_at: new Date().toISOString() 
-            }
+    setPanicAlerts(prev =>
+      prev.map(alert =>
+        alert.id === alertId
+          ? {
+            ...alert,
+            is_resolved: newStatus === 'resolved',
+            resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString()
+          }
           : alert
       )
     );

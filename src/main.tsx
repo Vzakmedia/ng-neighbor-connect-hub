@@ -21,6 +21,7 @@ import { IOSErrorBoundary } from '@/components/common/IOSErrorBoundary'
 import { performanceMonitor } from './utils/performanceMonitoring'
 import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS, createNativeQueryPersister } from '@/utils/nativeQueryPersister'
 import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
+import { CapacitorUpdater } from '@capgo/capacitor-updater'
 
 // ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
 // Fix corrupted URLs caused by HashRouter/BrowserRouter conflicts
@@ -350,6 +351,17 @@ const renderApp = async () => {
 };
 
 renderApp();
+
+// Notify Capgo that the app is ready (prevents rollback)
+// This should be called after successful render/init
+if (typeof window !== 'undefined' && 'Capacitor' in window) {
+  try {
+    CapacitorUpdater.notifyAppReady();
+    console.log('[main.tsx] Notified Capgo: App Ready');
+  } catch (e) {
+    console.error('[main.tsx] Failed to notify Capgo:', e);
+  }
+}
 
 // Remove the temporary loader after React has painted
 requestAnimationFrame(() => {
