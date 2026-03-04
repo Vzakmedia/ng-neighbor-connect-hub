@@ -176,13 +176,13 @@ const PostCardComponent = ({
           onRSVP={post.rsvp_enabled ? onRSVP : undefined}
           onToggleComments={onToggleComments}
         />
-
-        {showComments && (
-          <div className="pt-2 pb-4 border-t border-white/20 animate-fade-in [&_*]:!text-inherit [&_button]:!text-inherit">
-            <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
-          </div>
-        )}
       </div>
+
+      {showComments && (
+        <div className="px-3 sm:px-4 pt-2 pb-4 border-t animate-fade-in">
+          <CommentSection postId={post.id} commentCount={post.comments_count || 0} />
+        </div>
+      )}
     </Card>
   );
 };
