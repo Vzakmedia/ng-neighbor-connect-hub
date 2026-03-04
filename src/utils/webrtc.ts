@@ -33,12 +33,12 @@ export class WebRTCManager {
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
   private remoteAudioEl: HTMLAudioElement | null = null;
-  
+
   // Configuration
   private conversationId: string;
   private currentUserId: string;
   private otherUserId: string = '';
-  
+
   // Call state
   private callState: CallState = 'idle';
   private callStartTime: Date | null = null;
@@ -46,28 +46,28 @@ export class WebRTCManager {
   private currentCallLogId: string | null = null;
   private isEnding: boolean = false;
   private currentFacingMode: 'user' | 'environment' = 'user';
-  
+
   // Analytics tracking
   private callInitiatedAt: Date | null = null;
-  
+
   // ICE handling
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
   private hasRemoteDescription: boolean = false;
   private iceRestartAttempts: number = 0;
   private maxIceRestarts: number = 3;
-  
+
   // Message deduplication
   private seenMessages = new Set<string>();
-  
+
   // Negotiation state tracking
   private isInitialNegotiation: boolean = false;
-  
+
   // Stats logging
   private statsLogInterval: NodeJS.Timeout | null = null;
-  
+
   // Realtime subscription
   private subscription: any = null;
-  
+
   // Callbacks
   private onRemoteStream?: (stream: MediaStream) => void;
   private onCallStateChange?: (state: CallState) => void;
@@ -136,10 +136,10 @@ export class WebRTCManager {
       // Create offer
       const offer = await this.pc!.createOffer();
       await this.pc!.setLocalDescription(offer);
-      
+
       // Reset flag after initial negotiation is complete
       this.isInitialNegotiation = false;
-      
+
       console.log('Created offer');
 
       // Send push notification
@@ -148,7 +148,7 @@ export class WebRTCManager {
       // Send offer via signaling with retry
       let retryCount = 0;
       const maxRetries = 3;
-      
+
       while (retryCount < maxRetries) {
         try {
           await this._sendSignalingMessage({
@@ -161,7 +161,7 @@ export class WebRTCManager {
             timestamp: new Date().toISOString(),
             metadata: { callType: video ? 'video' : 'audio' }
           });
-          
+
           this.onOfferSent?.();
           break;
         } catch (signalError) {
@@ -175,23 +175,23 @@ export class WebRTCManager {
       }
 
       this._setCallState('ringing');
-      
+
       // Log call ringing
       await this._logCallEvent('call_ringing', {
         callType: video ? 'video' : 'voice'
       });
-      
+
       console.log('Call initiated successfully');
       return this.localStream!;
     } catch (error) {
       console.error('Error starting call:', error);
-      
+
       // Log call failure
       await this._logCallEvent('call_failed', {
         error: error instanceof Error ? error.message : String(error),
         stage: 'initiation'
       });
-      
+
       if (this.currentCallLogId) {
         await this.updateCallLog('failed');
       }
@@ -226,7 +226,7 @@ export class WebRTCManager {
       // Create answer
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
-      
+
       // Reset flag after initial negotiation is complete
       this.isInitialNegotiation = false;
 
@@ -267,7 +267,7 @@ export class WebRTCManager {
     if (this.callStartTime && this.currentCallLogId) {
       const duration = Math.floor((new Date().getTime() - this.callStartTime.getTime()) / 1000);
       await this.updateCallLog('ended', duration);
-      
+
       // Log call end with total duration
       await this._logCallEvent('call_ended', {
         total_duration_ms: duration * 1000,
@@ -300,7 +300,7 @@ export class WebRTCManager {
     try {
       // Handle legacy message format (without id)
       const msgId = message.id || uuidv4();
-      
+
       if (this.seenMessages.has(msgId)) {
         console.log('[WebRTCManager] Duplicate message ignored', msgId);
         return;
@@ -313,7 +313,7 @@ export class WebRTCManager {
       }
 
       console.log('Handling signaling message:', message.type);
-      
+
       switch (message.type) {
         case 'offer':
           // Handle ICE restart offers
@@ -394,7 +394,7 @@ export class WebRTCManager {
   // Toggle audio using replaceTrack
   async toggleAudio(enabled: boolean): Promise<void> {
     if (!this.localStream || !this.pc) return;
-    
+
     const audioTrack = this.localStream.getAudioTracks()[0];
     if (!audioTrack) return;
 
@@ -448,7 +448,7 @@ export class WebRTCManager {
     try {
       // Toggle facing mode
       this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
-      
+
       // Get new stream with opposite facing mode
       const newStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
@@ -460,21 +460,21 @@ export class WebRTCManager {
       });
 
       const newVideoTrack = newStream.getVideoTracks()[0];
-      
+
       // Find the sender that is sending the old video track
       const sender = this.pc?.getSenders().find(s => s.track?.kind === 'video');
-      
+
       if (sender) {
         // Replace the track in the peer connection
         await sender.replaceTrack(newVideoTrack);
-        
+
         // Stop the old track
         videoTrack.stop();
-        
+
         // Update the local stream
         this.localStream.removeTrack(videoTrack);
         this.localStream.addTrack(newVideoTrack);
-        
+
         console.log(`Switched camera to ${this.currentFacingMode} facing mode`);
       }
     } catch (error) {
@@ -489,7 +489,7 @@ export class WebRTCManager {
     connectionState: RTCPeerConnectionState | null;
     iceConnectionState: RTCIceConnectionState | null;
     iceGatheringState: RTCIceGatheringState | null;
-    transceivers: Array<{kind: string; direction: RTCRtpTransceiverDirection}>;
+    transceivers: Array<{ kind: string; direction: RTCRtpTransceiverDirection }>;
     bytesSent: number;
     bytesReceived: number;
   }> {
@@ -503,15 +503,15 @@ export class WebRTCManager {
         bytesReceived: 0,
       };
     }
-    
+
     const stats = await this.pc.getStats();
     let bytesSent = 0, bytesReceived = 0;
-    
+
     stats.forEach(report => {
       if (report.type === 'outbound-rtp') bytesSent += (report as any).bytesSent || 0;
       if (report.type === 'inbound-rtp') bytesReceived += (report as any).bytesReceived || 0;
     });
-    
+
     return {
       connectionState: this.pc.connectionState,
       iceConnectionState: this.pc.iceConnectionState,
@@ -692,7 +692,7 @@ export class WebRTCManager {
         this.updateCallLog('connected');
         this.iceRestartAttempts = 0;
         this._startStatsLogging();
-        
+
         // Log successful connection with connection time
         if (this.callInitiatedAt) {
           const connectionTime = new Date().getTime() - this.callInitiatedAt.getTime();
@@ -703,14 +703,14 @@ export class WebRTCManager {
         }
       } else if (this.pc.connectionState === 'failed') {
         this._setCallState('failed');
-        
+
         // Log ICE failure
         this._logCallEvent('ice_failed', {
           ice_connection_state: this.pc.iceConnectionState,
           ice_gathering_state: this.pc.iceGatheringState,
           restart_attempts: this.iceRestartAttempts
         });
-        
+
         this._attemptIceRestart();
       } else if (this.pc.connectionState === 'disconnected') {
         setTimeout(() => {
@@ -728,7 +728,7 @@ export class WebRTCManager {
         console.log('Skipping onnegotiationneeded during initial negotiation');
         return;
       }
-      
+
       // Only handle renegotiations (ICE restarts, track changes, etc.)
       try {
         console.log('Negotiation needed - renegotiating');
@@ -758,19 +758,25 @@ export class WebRTCManager {
 
     // Add audio transceiver if missing
     let audioTransceiver = this.pc.getTransceivers().find(
-      t => t.receiver?.track && t.sender?.track?.kind === 'audio'
+      t => t.receiver?.track?.kind === 'audio'
     );
     if (!audioTransceiver) {
-      audioTransceiver = this.pc.addTransceiver('audio', { direction: 'sendrecv' });
+      audioTransceiver = this.pc.addTransceiver('audio', {
+        direction: 'sendrecv',
+        streams: [this.localStream]
+      });
     }
 
     // Add video transceiver if local stream has video
     const hasVideoTrack = this.localStream.getVideoTracks().length > 0;
     let videoTransceiver = this.pc.getTransceivers().find(
-      t => t.sender?.track?.kind === 'video'
+      t => t.receiver?.track?.kind === 'video'
     );
     if (!videoTransceiver && hasVideoTrack) {
-      videoTransceiver = this.pc.addTransceiver('video', { direction: 'sendrecv' });
+      videoTransceiver = this.pc.addTransceiver('video', {
+        direction: 'sendrecv',
+        streams: [this.localStream]
+      });
     }
 
     // Replace tracks on senders
@@ -784,11 +790,6 @@ export class WebRTCManager {
       if (videoTrack) {
         await videoTransceiver.sender.replaceTrack(videoTrack);
       }
-    }
-
-    // Also add tracks if no senders exist (legacy compatibility)
-    if (!this.pc.getSenders().some(s => s.track)) {
-      this.localStream.getTracks().forEach(t => this.pc!.addTrack(t, this.localStream!));
     }
 
     // Verify transceivers are set to sendrecv
@@ -816,7 +817,7 @@ export class WebRTCManager {
 
   private async _handleRemoteCandidate(candidate: RTCIceCandidateInit | undefined) {
     if (!candidate) return;
-    
+
     if (!this.pc || !this.hasRemoteDescription) {
       this.pendingIceCandidates.push(candidate);
     } else {
@@ -862,7 +863,7 @@ export class WebRTCManager {
       return this.localStream;
     } catch (err: any) {
       console.error('Error getting user media:', err);
-      
+
       if (err.name === 'NotAllowedError') {
         throw new Error('Camera or microphone access denied. Please enable permissions and try again.');
       } else if (err.name === 'NotFoundError') {
@@ -911,7 +912,7 @@ export class WebRTCManager {
         max_attempts_reached: true,
         attempts: this.iceRestartAttempts
       });
-      
+
       this._handleError('ICE restart failed multiple times', 'ice_restart_failed');
       await this.endCall();
       return;
@@ -919,7 +920,7 @@ export class WebRTCManager {
 
     this.iceRestartAttempts++;
     const delay = 2000 * Math.pow(2, this.iceRestartAttempts - 1);
-    
+
     // Log ICE restart attempt
     await this._logCallEvent('ice_restart', {
       attempt: this.iceRestartAttempts,
@@ -927,7 +928,7 @@ export class WebRTCManager {
       delay_ms: delay,
       ice_connection_state: this.pc.iceConnectionState
     });
-    
+
     console.log(`Connection failed, attempting ICE restart ${this.iceRestartAttempts}/${this.maxIceRestarts} in ${delay}ms`);
 
     setTimeout(async () => {
@@ -986,7 +987,7 @@ export class WebRTCManager {
         this.localStream.getTracks().forEach(t => {
           try {
             t.stop();
-          } catch (_) {}
+          } catch (_) { }
         });
         this.localStream = null;
       }
@@ -996,7 +997,7 @@ export class WebRTCManager {
         try {
           this.remoteAudioEl.pause();
           this.remoteAudioEl.srcObject = null;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       this.remoteStream = null;
@@ -1005,7 +1006,7 @@ export class WebRTCManager {
       this.callStartTime = null;
       this.currentCallLogId = null;
       this.isInitialNegotiation = false;
-      
+
       // Unsubscribe from signaling
       this.unsubscribeSignaling();
     } catch (e) {
@@ -1182,7 +1183,7 @@ export class WebRTCManager {
         .single();
 
       if (error) throw error;
-      
+
       return data.user1_id === this.currentUserId ? data.user2_id : data.user1_id;
     } catch (error) {
       console.error('Error getting other user ID:', error);
@@ -1207,7 +1208,7 @@ export class WebRTCManager {
           conversationId: this.conversationId,
         },
       });
-      
+
       console.log('[WebRTC] Call notification sent');
     } catch (error) {
       console.error('[WebRTC] Failed to send call notification:', error);

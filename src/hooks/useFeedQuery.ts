@@ -77,84 +77,57 @@ export function useFeedQuery(filters: FeedFilters) {
 
   const query = useInfiniteQuery<FeedPage>({
     queryKey,
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = null }) => {
       if (!user || !profile) {
         throw new Error('User not authenticated');
       }
 
-      const offset = pageParam as number;
+      const cursor = pageParam as string | null;
 
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
-
-      // Build query for community posts (WITHOUT JOIN - we'll fetch profiles separately)
-      let query = supabase
-        .from('community_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Filter posts to only show those created after user joined (clean slate)
-      if (userCreatedAt) {
-        query = query.gte('created_at', userCreatedAt);
-      }
-
-      // Apply hierarchical location-based filtering using exact profile values
-      // URL-encode neighborhood names to handle special characters like parentheses
-      // Users see posts at their level AND broader levels
-      if (filters.locationScope === 'neighborhood' && profile.neighborhood && profile.city && profile.state) {
-        const safeNeighborhood = encodeURIComponent(profile.neighborhood);
-        const safeCity = encodeURIComponent(profile.city);
-        const safeState = encodeURIComponent(profile.state);
-        // Show: exact neighborhood match, city-wide posts, state-wide posts
-        // REMOVED: global posts (location_scope.eq.all) to ensure strict region filtering
-        query = query.or(`and(location_scope.eq.neighborhood,target_neighborhood.eq.${safeNeighborhood},target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.city,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.state,target_state.eq.${safeState})`);
-      } else if (filters.locationScope === 'city' && profile.city && profile.state) {
-        const safeCity = encodeURIComponent(profile.city);
-        const safeState = encodeURIComponent(profile.state);
-        // Show: city-wide posts, neighborhood posts in same city, state-wide posts
-        // REMOVED: global posts (location_scope.eq.all) to ensure strict region filtering
-        query = query.or(`and(location_scope.eq.city,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.neighborhood,target_city.eq.${safeCity},target_state.eq.${safeState}),and(location_scope.eq.state,target_state.eq.${safeState})`);
-      } else if (filters.locationScope === 'state' && profile.state) {
-        const safeState = encodeURIComponent(profile.state);
-        // Show: state-wide posts, all city/neighborhood posts in same state
-        // REMOVED: global posts (location_scope.eq.all) to ensure strict region filtering
-        query = query.or(`and(location_scope.eq.state,target_state.eq.${safeState}),and(location_scope.eq.city,target_state.eq.${safeState}),and(location_scope.eq.neighborhood,target_state.eq.${safeState})`);
-      } else if (filters.locationScope === 'all') {
-        // Show all posts platform-wide (no filtering)
-        // This is the broadest scope - no location filter needed
-      }
-
-      // Apply pagination LAST (after all filters)
-      query = query.range(offset, offset + POSTS_PER_PAGE - 1);
-
-      const { data: postsData, error } = await query;
+      // Use the RPC get_feed which handles hierarchical location filtering,
+      // scope privacy, and the critical "author exception" (users seeing their own posts).
+      const { data: postsData, error } = await supabase.rpc('get_feed', {
+        target_user_id: user.id,
+        filter_level: filters.locationScope,
+        limit_count: POSTS_PER_PAGE,
+        cursor: cursor
+      });
 
       if (error) {
         console.error('Feed fetch error:', error);
         throw error;
       }
 
-      // Extract unique user IDs from posts
-      const uniqueUserIds = [...new Set((postsData || []).map(post => post.user_id).filter(Boolean))];
+      // Transform RPC results to FeedPost format
+      // Note: likes_count and comments_count are bigint in SQL, converted to numbers here
+      const posts: FeedPost[] = (postsData || []).map((post: any) => ({
+        id: post.id,
+        user_id: post.user_id,
+        content: post.content,
+        title: post.title,
+        image_urls: post.image_urls || [],
+        file_urls: post.file_urls || [],
+        tags: post.tags || [],
+        location: post.location,
+        location_scope: post.location_scope,
+        created_at: post.created_at,
+        updated_at: post.updated_at,
+        author_name: post.author_name || 'Anonymous User',
+        author_avatar: post.author_avatar || null,
+        author_city: post.author_city || post.target_city || null,
+        author_state: post.author_state || post.target_state || null,
+        like_count: Number(post.likes_count) || 0,
+        comment_count: Number(post.comments_count) || 0,
+        save_count: Number(post.saves_count) || 0,
+        is_liked: false,
+        is_saved: false,
+        rsvp_enabled: post.rsvp_enabled || false,
+        video_url: post.video_url || null,
+        video_thumbnail_url: post.video_thumbnail_url || null,
+      }));
 
-      // Batch fetch all profiles for these users in ONE query using display_profiles view
-      const { data: profilesData } = uniqueUserIds.length > 0
-        ? await supabase
-          .from('display_profiles')
-          .select('user_id, display_name, avatar_url, city, state')
-          .in('user_id', uniqueUserIds)
-        : { data: [] };
-
-      // Create a Map for O(1) profile lookups
-      const profileMap = new Map(
-        (profilesData || []).map((profile: any) => [profile.user_id, profile])
-      );
-
-      // Get all post IDs for batch user engagement check
-      const postIds = (postsData || []).map((p: any) => p.id);
-
-      // Batch fetch user's likes and saves for all posts (2 queries instead of 2 per post)
+      // Batch fetch user's likes and saves for all posts
+      const postIds = posts.map(p => p.id);
       const [userLikesData, userSavesData] = await Promise.all([
         user && postIds.length > 0
           ? supabase
@@ -172,94 +145,55 @@ export function useFeedQuery(filters: FeedFilters) {
           : Promise.resolve({ data: [] }),
       ]);
 
-      // Create Sets for O(1) lookup
       const userLikedPosts = new Set((userLikesData?.data || []).map((l: any) => l.post_id));
       const userSavedPosts = new Set((userSavesData?.data || []).map((s: any) => s.post_id));
 
-      // Transform posts using denormalized counts (no additional queries needed!)
-      const posts: FeedPost[] = (postsData || []).map((post: any) => {
-        const authorProfile = profileMap.get(post.user_id);
-
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          content: post.content,
-          title: post.title,
-          image_urls: post.image_urls || [],
-          file_urls: post.file_urls || [],
-          tags: post.tags || [],
-          location: post.location,
-          location_scope: post.location_scope,
-          created_at: post.created_at,
-          updated_at: post.updated_at,
-          author_name: (authorProfile as any)?.display_name || 'Anonymous User',
-          author_avatar: (authorProfile as any)?.avatar_url || null,
-          author_city: (authorProfile as any)?.city || null,
-          author_state: (authorProfile as any)?.state || null,
-          // Use denormalized counts from community_posts table
-          like_count: post.likes_count || 0,
-          comment_count: post.comments_count || 0,
-          save_count: post.saves_count || 0,
-          is_liked: userLikedPosts.has(post.id),
-          is_saved: userSavedPosts.has(post.id),
-          rsvp_enabled: post.rsvp_enabled || false,
-          video_url: post.video_url || null,
-          video_thumbnail_url: post.video_thumbnail_url || null,
-        };
+      // Final post update for interaction status
+      posts.forEach(post => {
+        post.is_liked = userLikedPosts.has(post.id);
+        post.is_saved = userSavedPosts.has(post.id);
       });
 
-      // Apply client-side filters
+      // Apply client-side filters (for search and tags which are not currently in the RPC)
       let filteredPosts = posts;
 
-      // Filter by tags
       if (filters.tags && filters.tags.length > 0) {
         filteredPosts = filteredPosts.filter(post =>
           filters.tags!.some(tag => post.tags?.includes(tag))
         );
       }
 
-      // Filter by search query
       if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
+        const q = filters.searchQuery.toLowerCase();
         filteredPosts = filteredPosts.filter(post =>
-          post.content?.toLowerCase().includes(query) ||
-          post.title?.toLowerCase().includes(query) ||
-          post.author_name?.toLowerCase().includes(query)
+          post.content?.toLowerCase().includes(q) ||
+          post.title?.toLowerCase().includes(q) ||
+          post.author_name?.toLowerCase().includes(q)
         );
       }
 
-      // Filter by date range
-      if (filters.dateRange) {
-        filteredPosts = filteredPosts.filter(post => {
-          const postDate = new Date(post.created_at);
-          return postDate >= filters.dateRange!.start && postDate <= filters.dateRange!.end;
-        });
-      }
-
-      // Sort
+      // Sort by popular/recommended if requested
       if (filters.sortBy === 'popular') {
         filteredPosts.sort((a, b) => {
-          const scoreA = (a.like_count * 2) + a.comment_count + (a.save_count * 1.5);
-          const scoreB = (b.like_count * 2) + b.comment_count + (b.save_count * 1.5);
+          const scoreA = (a.like_count * 2) + a.comment_count;
+          const scoreB = (b.like_count * 2) + b.comment_count;
           return scoreB - scoreA;
         });
       } else if (filters.sortBy === 'recommended' && recommendations) {
-        // Use AI-powered personalized scoring
         filteredPosts.sort((a, b) => {
           const scoreA = calculatePostScore(a, recommendations);
           const scoreB = calculatePostScore(b, recommendations);
           return scoreB - scoreA;
         });
       }
-      // Default 'recent' sorting is already applied by database order
 
       return {
         items: filteredPosts,
-        nextCursor: filteredPosts.length === POSTS_PER_PAGE ? offset + POSTS_PER_PAGE : null,
+        nextCursor: posts.length === POSTS_PER_PAGE ? posts[posts.length - 1].created_at : null,
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: 0,
+    initialPageParam: null,
     enabled: !!user && !!profile,
 
     // IMPROVED CACHING CONFIGURATION
