@@ -1,4 +1,4 @@
--- Fix get_feed function: file_urls column is jsonb, not jsonb[]
+-- Fix get_feed function: strict location_scope check for neighborhood/city/state filters
 DROP FUNCTION IF EXISTS public.get_feed(uuid, text, int, timestamptz, timestamptz);
 CREATE OR REPLACE FUNCTION public.get_feed(
         target_user_id uuid,
@@ -53,7 +53,7 @@ SELECT cp.id,
     cp.file_urls,
     cp.tags,
     cp.location,
-    cp.location_scope,
+    cp.location_scope::text,
     cp.target_neighborhood,
     cp.target_city,
     cp.target_state,
@@ -124,14 +124,17 @@ WHERE -- 1. Optimization: Apply cursor pagination first
         (
             filter_level = 'neighborhood'
             AND cp.target_neighborhood = user_neighborhood
+            AND cp.location_scope = 'neighborhood'
         )
         OR (
             filter_level = 'city'
             AND cp.target_city = user_city
+            AND cp.location_scope IN ('neighborhood', 'city')
         )
         OR (
             filter_level = 'state'
             AND cp.target_state = user_state
+            AND cp.location_scope IN ('neighborhood', 'city', 'state')
         )
         OR (
             filter_level NOT IN ('neighborhood', 'city', 'state')

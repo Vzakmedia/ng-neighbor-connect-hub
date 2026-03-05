@@ -4,11 +4,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   MapPin,
   MessageCircle,
   User,
@@ -46,11 +48,11 @@ interface UserProfileDialogProps {
   userAvatar?: string;
 }
 
-export const UserProfileDialog = ({ 
-  isOpen, 
-  onClose, 
-  userName, 
-  userAvatar 
+export const UserProfileDialog = ({
+  isOpen,
+  onClose,
+  userName,
+  userAvatar
 }: UserProfileDialogProps) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,7 +200,7 @@ export const UserProfileDialog = ({
         isSaved: false,
         images: post.image_urls || []
       };
-      
+
       setSelectedPost(transformedPost);
       setShowPostDialog(true);
     } catch (error) {
@@ -218,8 +220,13 @@ export const UserProfileDialog = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">User Profile</DialogTitle>
+          <VisuallyHidden.Root>
+            <DialogDescription>
+              User profile details and recent posts for {userName}
+            </DialogDescription>
+          </VisuallyHidden.Root>
         </DialogHeader>
-        
+
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -228,7 +235,7 @@ export const UserProfileDialog = ({
           <div className="space-y-6">
             {/* Profile Header */}
             <div className="flex items-start space-x-4">
-              <Avatar 
+              <Avatar
                 className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleAvatarClick}
               >
@@ -237,7 +244,7 @@ export const UserProfileDialog = ({
                   {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
                   <h2 className="text-2xl font-bold">{profile.full_name || 'Anonymous User'}</h2>
@@ -248,12 +255,12 @@ export const UserProfileDialog = ({
                     </Badge>
                   )}
                 </div>
-                
+
                 <div className="flex items-center space-x-2 text-muted-foreground mb-3">
                   <MapPin className="h-4 w-4" />
                   <span>{getLocation()}</span>
                 </div>
-                
+
                 <div className="flex items-center space-x-2 text-muted-foreground mb-4">
                   <Calendar className="h-4 w-4" />
                   <span>Member since {formatDate(profile.created_at)}</span>
@@ -275,7 +282,7 @@ export const UserProfileDialog = ({
             {/* Recent Posts */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Recent Posts ({userPosts.length})</h3>
-              
+
               {userPosts.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
                   No posts yet
@@ -283,8 +290,8 @@ export const UserProfileDialog = ({
               ) : (
                 <div className="space-y-3">
                   {userPosts.map((post) => (
-                    <div 
-                      key={post.id} 
+                    <div
+                      key={post.id}
                       className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => handlePostClick(post)}
                     >
@@ -298,8 +305,8 @@ export const UserProfileDialog = ({
                           </p>
                         </div>
                         {post.image_urls && post.image_urls.length > 0 && (
-                          <img 
-                            src={post.image_urls[0]} 
+                          <img
+                            src={post.image_urls[0]}
                             alt="Post preview"
                             className="w-16 h-16 object-cover rounded ml-3"
                           />
@@ -341,10 +348,10 @@ export const UserProfileDialog = ({
           isOpen={showPostDialog}
           onClose={() => setShowPostDialog(false)}
           post={selectedPost}
-          onLike={() => {}}
-          onSave={() => {}}
-          onShare={() => {}}
-          onProfileClick={() => {}}
+          onLike={() => { }}
+          onSave={() => { }}
+          onShare={() => { }}
+          onProfileClick={() => { }}
         />
       )}
 

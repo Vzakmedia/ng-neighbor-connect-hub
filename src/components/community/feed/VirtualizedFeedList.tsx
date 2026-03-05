@@ -59,6 +59,8 @@ const VirtualizedFeedListComponent = ({
   const [viewEventDialogOpen, setViewEventDialogOpen] = useState(false);
   const [userProfileDialogOpen, setUserProfileDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string | undefined>();
+  const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>();
   const [visibleComments, setVisibleComments] = useState<Set<string>>(new Set());
   const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
   const [postFullScreenOpen, setPostFullScreenOpen] = useState(false);
@@ -122,8 +124,10 @@ const VirtualizedFeedListComponent = ({
     setViewEventDialogOpen(true);
   };
 
-  const handleAvatarClick = (userId: string) => {
+  const handleAvatarClick = (userId: string, userName?: string, userAvatar?: string) => {
     setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setSelectedUserAvatar(userAvatar);
     setUserProfileDialogOpen(true);
   };
 
@@ -209,7 +213,7 @@ const VirtualizedFeedListComponent = ({
                 onSave={() => onSave(post.id)}
                 onShare={() => handleShare(post)}
                 onRSVP={() => handleRSVP(post)}
-                onAvatarClick={handleAvatarClick}
+                onAvatarClick={(userId) => handleAvatarClick(userId, post.author.full_name, post.author.avatar_url)}
                 onImageClick={(imageIndex) => handleImageClick(post, imageIndex)}
                 onPostClick={() => handlePostClick(post)}
                 showComments={visibleComments.has(post.id)}
@@ -247,6 +251,8 @@ const VirtualizedFeedListComponent = ({
         setPostFullScreenOpen={setPostFullScreenOpen}
         selectedEvent={selectedEvent}
         selectedUserId={selectedUserId}
+        selectedUserName={selectedUserName}
+        selectedUserAvatar={selectedUserAvatar}
         selectedImageIndex={selectedImageIndex}
         onLike={onLike}
         onSave={onSave}

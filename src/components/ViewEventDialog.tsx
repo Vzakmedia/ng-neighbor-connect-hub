@@ -1,18 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Download, 
-  Play, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Download,
+  Play,
   Image as ImageIcon,
   FileIcon,
   ExternalLink
@@ -185,7 +192,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
     try {
       // Get Google Maps API key from Supabase function
       const { data, error } = await supabase.functions.invoke('get-google-maps-token');
-      
+
       if (error) {
         console.error('Error getting API key:', error);
         return;
@@ -219,15 +226,15 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
     if (!window.google || !mapContainer.current || !event?.location) return;
 
     const geocoder = new window.google.maps.Geocoder();
-    
-    geocoder.geocode({ 
+
+    geocoder.geocode({
       address: event.location,
       componentRestrictions: { country: 'NG' },
       region: 'ng'
     }, (results, status) => {
       if (status === 'OK' && results && results[0]) {
         const location = results[0].geometry.location;
-        
+
         const map = new window.google.maps.Map(mapContainer.current!, {
           zoom: 15,
           center: location,
@@ -270,7 +277,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
 
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
       return <ImageIcon className="h-5 w-5" />;
     } else if (['mp4', 'avi', 'mov', 'wmv'].includes(extension || '')) {
@@ -309,6 +316,11 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
             <Calendar className="h-5 w-5" />
             {event.title}
           </DialogTitle>
+          <VisuallyHidden.Root>
+            <DialogDescription>
+              Detailed view of the event: {event.title}, including location, media, and RSVPs.
+            </DialogDescription>
+          </VisuallyHidden.Root>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -346,7 +358,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground whitespace-pre-wrap">{event.content}</p>
-                  
+
                   {event.location && (
                     <div className="flex items-center gap-2 mt-4 text-sm">
                       <MapPin className="h-4 w-4" />
@@ -433,8 +445,8 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">{event.location}</p>
-                    <div 
-                      ref={mapContainer} 
+                    <div
+                      ref={mapContainer}
                       className="w-full h-64 rounded-lg bg-muted"
                     />
                   </CardContent>
@@ -534,15 +546,15 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                 </Card>
               )}
 
-              {(!event.image_urls || event.image_urls.length === 0) && 
-               (!event.file_urls || event.file_urls.length === 0) && (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No media files attached to this event</p>
-                  </CardContent>
-                </Card>
-              )}
+              {(!event.image_urls || event.image_urls.length === 0) &&
+                (!event.file_urls || event.file_urls.length === 0) && (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No media files attached to this event</p>
+                    </CardContent>
+                  </Card>
+                )}
             </TabsContent>
 
             <TabsContent value="rsvps" className="space-y-4">
@@ -571,27 +583,27 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
                                   {rsvp.profiles.full_name?.charAt(0) || "U"}
                                 </AvatarFallback>
                               </Avatar>
-                            <div>
-                              <p className="font-medium">{rsvp.full_name || rsvp.profiles.full_name}</p>
-                              {rsvp.email_address && (
-                                <p className="text-xs text-muted-foreground">{rsvp.email_address}</p>
-                              )}
-                              {rsvp.phone_number && (
-                                <p className="text-xs text-muted-foreground">{rsvp.phone_number}</p>
-                              )}
-                              <p className="text-sm text-muted-foreground">
-                                {formatTimeAgo(rsvp.created_at)}
-                              </p>
+                              <div>
+                                <p className="font-medium">{rsvp.full_name || rsvp.profiles.full_name}</p>
+                                {rsvp.email_address && (
+                                  <p className="text-xs text-muted-foreground">{rsvp.email_address}</p>
+                                )}
+                                {rsvp.phone_number && (
+                                  <p className="text-xs text-muted-foreground">{rsvp.phone_number}</p>
+                                )}
+                                <p className="text-sm text-muted-foreground">
+                                  {formatTimeAgo(rsvp.created_at)}
+                                </p>
+                              </div>
                             </div>
-                            </div>
-                            <Badge 
+                            <Badge
                               variant={
-                                rsvp.status === 'going' ? 'default' : 
-                                rsvp.status === 'interested' ? 'secondary' : 'outline'
+                                rsvp.status === 'going' ? 'default' :
+                                  rsvp.status === 'interested' ? 'secondary' : 'outline'
                               }
                             >
-                              {rsvp.status === 'going' ? 'Going' : 
-                               rsvp.status === 'interested' ? 'Interested' : 'Not Going'}
+                              {rsvp.status === 'going' ? 'Going' :
+                                rsvp.status === 'interested' ? 'Interested' : 'Not Going'}
                             </Badge>
                           </div>
                           {rsvp.message && (

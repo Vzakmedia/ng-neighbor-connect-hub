@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Copy, 
+import {
+  Copy,
   Check,
   Mail,
   MessageCircle
 } from '@/lib/icons';
-import { 
-  FaFacebook, 
-  FaTwitter, 
-  FaLinkedin, 
-  FaWhatsapp 
+import {
+  FaFacebook,
+  FaTwitter,
+  FaLinkedin,
+  FaWhatsapp
 } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
 import { useNativeShare } from '@/hooks/mobile/useNativeShare';
@@ -51,9 +58,9 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedText = encodeURIComponent(shareText);
     const encodedFullText = encodeURIComponent(fullShareText);
-    
+
     let shareLink = '';
-    
+
     switch (platform) {
       case 'facebook':
         shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
@@ -73,7 +80,7 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
       default:
         return;
     }
-    
+
     openUrl(shareLink, '_blank', 'width=600,height=400');
   };
 
@@ -83,7 +90,7 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
       text: postContent,
       url: shareUrl,
     });
-    
+
     if (!shared) {
       // Fallback to copy to clipboard
       copyLink();
@@ -133,6 +140,11 @@ const ShareDialog = ({ open, onOpenChange, postId, postTitle, postContent, postA
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Share Post</DialogTitle>
+          <VisuallyHidden.Root>
+            <DialogDescription>
+              Share this post via social media, email, or copy the direct link.
+            </DialogDescription>
+          </VisuallyHidden.Root>
         </DialogHeader>
 
         <div className="space-y-6">

@@ -28,6 +28,8 @@ export const UnifiedFeed = () => {
   const { toast } = useToast();
   const { handleLike, handleSave } = usePostEngagement();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | undefined>();
+  const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>();
 
   // Fetch posts with infinite scroll support
   const {
@@ -48,7 +50,7 @@ export const UnifiedFeed = () => {
       ...post,
       post_type: 'general',
       views_count: 0
-    } as any))
+    } as PostCardData))
   ) || [];
 
   // ... (existing callbacks)
@@ -57,8 +59,10 @@ export const UnifiedFeed = () => {
     navigate(`/community/post/${postId}`);
   }, [navigate]);
 
-  const handleAvatarClick = useCallback((userId: string) => {
+  const handleAvatarClick = useCallback((userId: string, userName?: string, userAvatar?: string) => {
     setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setSelectedUserAvatar(userAvatar);
   }, []);
 
   const handleShare = useCallback((postId: string) => {
@@ -99,7 +103,7 @@ export const UnifiedFeed = () => {
           onSave={() => handleSave(post.id, post.isSaved)}
           onShare={() => handleShare(post.id)}
           onRSVP={() => { }}
-          onAvatarClick={handleAvatarClick}
+          onAvatarClick={(userId) => handleAvatarClick(userId, post.author.full_name, post.author.avatar_url)}
           onImageClick={() => { }}
           onPostClick={() => handlePostClick(post.id)}
           showComments={showComments[post.id] || false}
@@ -263,8 +267,14 @@ export const UnifiedFeed = () => {
 
       <MiniProfile
         userId={selectedUserId}
+        userName={selectedUserName}
+        userAvatar={selectedUserAvatar}
         isOpen={!!selectedUserId}
-        onClose={() => setSelectedUserId(null)}
+        onClose={() => {
+          setSelectedUserId(null);
+          setSelectedUserName(undefined);
+          setSelectedUserAvatar(undefined);
+        }}
       />
     </div>
   );
