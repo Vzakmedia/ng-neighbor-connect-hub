@@ -9,7 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import {
   Select,
   SelectContent,
@@ -30,12 +32,12 @@ interface RSVPDialogProps {
   onRSVPSubmitted?: () => void;
 }
 
-const RSVPDialog = ({ 
-  open, 
-  onOpenChange, 
-  eventId, 
-  eventTitle, 
-  onRSVPSubmitted 
+const RSVPDialog = ({
+  open,
+  onOpenChange,
+  eventId,
+  eventTitle,
+  onRSVPSubmitted
 }: RSVPDialogProps) => {
   const [status, setStatus] = useState<'going' | 'interested' | 'not_going'>('going');
   const [message, setMessage] = useState('');
@@ -143,7 +145,7 @@ const RSVPDialog = ({
 
     } catch (error) {
       console.error('Error submitting RSVP:', error);
-      
+
       // Rollback: Restore form state and reopen dialog
       setStatus(previousFormState.status);
       setMessage(previousFormState.message);
@@ -151,7 +153,7 @@ const RSVPDialog = ({
       setPhoneNumber(previousFormState.phoneNumber);
       setEmailAddress(previousFormState.emailAddress);
       onOpenChange(true);
-      
+
       toast({
         title: "Error",
         description: "Failed to submit RSVP. Please try again.",
@@ -167,6 +169,11 @@ const RSVPDialog = ({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>RSVP to Event</DialogTitle>
+          <VisuallyHidden.Root>
+            <DialogDescription>
+              Submit your RSVP status and information for the event: {eventTitle}
+            </DialogDescription>
+          </VisuallyHidden.Root>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -178,7 +185,7 @@ const RSVPDialog = ({
           {/* Personal Information */}
           <div className="space-y-4">
             <h4 className="font-medium text-sm border-t pt-4">Registration Information</h4>
-            
+
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>
@@ -190,7 +197,7 @@ const RSVPDialog = ({
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="emailAddress">Email Address *</Label>
                 <Input

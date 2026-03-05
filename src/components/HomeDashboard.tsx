@@ -13,17 +13,21 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useLocationPreferences } from '@/hooks/useLocationPreferences';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { preferences, loading: locationLoading } = useLocationPreferences();
+  const defaultForYouScope = preferences?.default_location_filter || 'all';
+
   const [activeTab, setActiveTab] = useState<'for-you' | 'recent' | 'nearby' | 'trending'>('for-you');
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [selectedLocationScope, setSelectedLocationScope] = useState<'neighborhood' | 'city' | 'state' | null>(null);
   const [feedFilters, setFeedFilters] = useState({
-    locationScope: 'neighborhood',
+    locationScope: defaultForYouScope,
     tags: [] as string[],
     postTypes: 'all',
     sortBy: 'recommended',
@@ -38,7 +42,7 @@ const HomeDashboard = () => {
       case 'for-you':
         // Personalized feed using AI recommendations
         setFeedFilters({
-          locationScope: 'neighborhood',
+          locationScope: defaultForYouScope,
           tags: [],
           postTypes: 'all',
           sortBy: 'recommended',
@@ -48,7 +52,7 @@ const HomeDashboard = () => {
       case 'recent':
         // Most recent posts from entire platform
         setFeedFilters({
-          locationScope: 'all',
+          locationScope: defaultForYouScope,
           tags: [],
           postTypes: 'all',
           sortBy: 'recent',
@@ -68,7 +72,7 @@ const HomeDashboard = () => {
       case 'trending':
         // Popular posts based on engagement
         setFeedFilters({
-          locationScope: 'neighborhood',
+          locationScope: defaultForYouScope,
           tags: [],
           postTypes: 'all',
           sortBy: 'popular',
@@ -87,10 +91,17 @@ const HomeDashboard = () => {
         locationScope: scope
       }));
     } else {
-      // Reset to default neighborhood when clearing
+      // Reset to default scope based on active tab when clearing
+      const defaultScopes: Record<typeof activeTab, string> = {
+        'for-you': defaultForYouScope,
+        'recent': defaultForYouScope,
+        'nearby': 'neighborhood',
+        'trending': defaultForYouScope
+      };
+
       setFeedFilters(prev => ({
         ...prev,
-        locationScope: 'neighborhood'
+        locationScope: defaultScopes[activeTab] || 'all'
       }));
     }
   };
@@ -102,6 +113,16 @@ const HomeDashboard = () => {
     { key: '3', callback: () => handleTabChange('nearby') },
     { key: '4', callback: () => handleTabChange('trending') },
   ]);
+
+  // Sync feed filters once location preferences are loaded if on tabs that use default scope
+  useEffect(() => {
+    if (!locationLoading && preferences?.default_location_filter && ['for-you', 'recent', 'trending'].includes(activeTab) && !selectedLocationScope) {
+      setFeedFilters(prev => ({
+        ...prev,
+        locationScope: preferences.default_location_filter!
+      }));
+    }
+  }, [preferences?.default_location_filter, locationLoading, activeTab, selectedLocationScope]);
 
 
   // Prefetch common feed filter combinations for instant switching
@@ -136,7 +157,7 @@ const HomeDashboard = () => {
           queryClient.prefetchInfiniteQuery({
             queryKey,
             initialPageParam: 0,
-          } as any); // Type assertion to bypass strict typing
+          } as Parameters<typeof queryClient.prefetchInfiniteQuery>[0]); // Type assertion to bypass strict typing
         }
       });
     }, 2000); // Prefetch after 2 seconds

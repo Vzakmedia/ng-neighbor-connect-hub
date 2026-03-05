@@ -2,7 +2,7 @@ import React from 'react';
 import ShareDialog from '@/components/ShareDialog';
 import RSVPDialog from '@/components/RSVPDialog';
 import ViewEventDialog from '@/components/ViewEventDialog';
-import { UserProfileDialog } from '@/components/UserProfileDialog';
+import { MiniProfile } from '@/components/profile/MiniProfile';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { PostCardData } from '@/types/community';
@@ -22,11 +22,13 @@ interface FeedDialogsProps {
   setPostFullScreenOpen: (open: boolean) => void;
   selectedEvent: PostCardData | null;
   selectedUserId: string;
+  selectedUserName?: string;
+  selectedUserAvatar?: string;
   selectedImageIndex: number;
   onLike: (eventId: string) => void;
   onSave: (eventId: string) => void;
   handleShare: (event: PostCardData) => void;
-  handleAvatarClick: (userId: string) => void;
+  handleAvatarClick: (userId: string, userName?: string, userAvatar?: string) => void;
 }
 
 export const FeedDialogs = ({
@@ -44,6 +46,8 @@ export const FeedDialogs = ({
   setPostFullScreenOpen,
   selectedEvent,
   selectedUserId,
+  selectedUserName,
+  selectedUserAvatar,
   selectedImageIndex,
   onLike,
   onSave,
@@ -74,10 +78,12 @@ export const FeedDialogs = ({
         event={selectedEvent as any}
       />
 
-      <UserProfileDialog
+      <MiniProfile
+        userId={selectedUserId}
+        userName={selectedUserName}
+        userAvatar={selectedUserAvatar}
         isOpen={userProfileDialogOpen}
         onClose={() => setUserProfileDialogOpen(false)}
-        userName={selectedUserId}
       />
 
       <ImageGalleryDialog
@@ -118,8 +124,8 @@ export const FeedDialogs = ({
           const event = selectedEvent;
           if (event) handleShare(event);
         }}
-        onProfileClick={(name) => {
-          if (selectedEvent) handleAvatarClick(selectedEvent.author?.user_id || selectedEvent.user_id);
+        onProfileClick={(name, avatar) => {
+          if (selectedEvent) handleAvatarClick(selectedEvent.author?.user_id || selectedEvent.user_id, name, avatar);
         }}
       />
     </>

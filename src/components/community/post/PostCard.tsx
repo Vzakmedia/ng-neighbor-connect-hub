@@ -19,7 +19,7 @@ interface PostCardProps {
   onSave: () => void;
   onShare: () => void;
   onRSVP: () => void;
-  onAvatarClick: (userId: string) => void;
+  onAvatarClick: (userId: string, userName?: string, userAvatar?: string) => void;
   onImageClick: (imageIndex: number) => void;
   onPostClick: () => void;
   showComments: boolean;
@@ -62,10 +62,10 @@ const PostCardComponent = ({
 
   // Get visibility indicator
   const getVisibilityBadge = () => {
-    const locationScope = (post as any).location_scope;
-    const targetNeighborhood = (post as any).target_neighborhood;
-    const targetCity = (post as any).target_city;
-    const targetState = (post as any).target_state;
+    const locationScope = post.location_scope;
+    const targetNeighborhood = post.target_neighborhood;
+    const targetCity = post.target_city;
+    const targetState = post.target_state;
 
     if (locationScope === 'neighborhood' && targetNeighborhood) {
       return (
@@ -108,10 +108,10 @@ const PostCardComponent = ({
         author={post.author}
         createdAt={post.created_at}
         rsvpEnabled={post.rsvp_enabled}
-        locationScope={(post as any).location_scope}
-        targetNeighborhood={(post as any).target_neighborhood}
-        targetCity={(post as any).target_city}
-        targetState={(post as any).target_state}
+        locationScope={post.location_scope}
+        targetNeighborhood={post.target_neighborhood || undefined}
+        targetCity={post.target_city || undefined}
+        targetState={post.target_state || undefined}
         onAvatarClick={onAvatarClick}
         currentUserId={user?.id}
         postUserId={post.user_id}

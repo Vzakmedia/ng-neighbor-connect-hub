@@ -11,15 +11,28 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom"; // Assuming we have this
 import { DirectMessageDialog } from "@/components/DirectMessageDialog";
 
+interface PublicProfile {
+    user_id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    neighborhood: string | null;
+    city: string | null;
+    is_verified: boolean | null;
+    created_at: string | null;
+    bio: string | null;
+}
+
 interface MiniProfileProps {
-    userId: string | null; // If null, the component is closed (or handles internal state if controlled differently)
+    userId: string | null;
+    userName?: string;
+    userAvatar?: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
+export const MiniProfile = ({ userId, userName, userAvatar, isOpen, onClose }: MiniProfileProps) => {
     const isMobile = useIsMobile();
-    const [profile, setProfile] = useState<any>(null);
+    const [profile, setProfile] = useState<PublicProfile | null>(null);
     const [loading, setLoading] = useState(false);
     const { user: currentUser } = useAuth();
     const navigate = useNavigate();
@@ -60,7 +73,12 @@ export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
     };
 
     const handleViewFullProfile = () => {
-        navigate(`/profile/${profile?.user_id}`); // Assuming this route exists
+        // Since UserProfileDialog is what this used to be, and MiniProfile is "mini",
+        // for now let's just keep the navigate logic or close and let the parent handle it.
+        // Actually, the user specifically asked to see the "mini user profile".
+        if (profile?.display_name || userName) {
+            navigate(`/profile/${profile?.user_id || userId}`);
+        }
         onClose();
     };
 
@@ -81,14 +99,14 @@ export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
             ) : profile ? (
                 <>
                     <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                        <AvatarImage src={profile.avatar_url} />
-                        <AvatarFallback className="text-2xl">{profile.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={profile?.avatar_url || userAvatar} />
+                        <AvatarFallback className="text-2xl">{(profile?.display_name || userName || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
 
                     <div className="text-center space-y-1 w-full">
                         <div className="flex items-center justify-center gap-2">
-                            <h3 className="text-xl font-bold">{profile.display_name || 'Anonymous'}</h3>
-                            {profile.is_verified && <Shield className="w-4 h-4 text-blue-500" />}
+                            <h3 className="text-xl font-bold">{profile?.display_name || userName || 'Anonymous'}</h3>
+                            {profile?.is_verified && <Shield className="w-4 h-4 text-blue-500" />}
                         </div>
 
                         {(profile.neighborhood || profile.city) && (
@@ -113,7 +131,7 @@ export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
                     )}
 
                     <div className="flex gap-3 w-full max-w-xs pt-2">
-                        {currentUser?.id !== profile.user_id && (
+                        {currentUser?.id !== profile?.user_id && (
                             <Button className="flex-1" onClick={handleMessage}>
                                 <MessageCircle className="w-4 h-4 mr-2" />
                                 Message
@@ -153,8 +171,8 @@ export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
                         isOpen={showDirectMessage}
                         onClose={() => setShowDirectMessage(false)}
                         recipientId={profile.user_id}
-                        recipientName={profile.display_name || 'User'}
-                        recipientAvatar={profile.avatar_url}
+                        recipientName={profile.display_name || userName || 'User'}
+                        recipientAvatar={profile.avatar_url || userAvatar}
                     />
                 )}
             </>
@@ -178,8 +196,8 @@ export const MiniProfile = ({ userId, isOpen, onClose }: MiniProfileProps) => {
                     isOpen={showDirectMessage}
                     onClose={() => setShowDirectMessage(false)}
                     recipientId={profile.user_id}
-                    recipientName={profile.display_name || 'User'}
-                    recipientAvatar={profile.avatar_url}
+                    recipientName={profile.display_name || userName || 'User'}
+                    recipientAvatar={profile.avatar_url || userAvatar}
                 />
             )}
         </>

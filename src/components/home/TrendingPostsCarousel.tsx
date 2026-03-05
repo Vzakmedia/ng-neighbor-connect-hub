@@ -5,6 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselApi } from "@/componen
 import { TrendingPostSlideCard } from "@/components/home/TrendingPostSlideCard";
 import { useFeedQuery } from "@/hooks/useFeedQuery";
 import { usePostEngagement } from "@/hooks/community/usePostEngagement";
+import { useLocationPreferences } from "@/hooks/useLocationPreferences";
 import { transformToCardData } from "@/lib/community/postTransformers";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -21,14 +22,16 @@ export const TrendingPostsCarousel = () => {
   const { toast } = useToast();
   const { handleSave } = usePostEngagement();
 
+  const { preferences } = useLocationPreferences();
+
   // Fetch trending posts (sorted by popularity)
   const { data, isLoading } = useFeedQuery({
     sortBy: 'popular',
-    locationScope: 'all',
+    locationScope: preferences?.default_location_filter || 'all',
   });
 
   const rawPosts = data?.pages[0]?.items.slice(0, 8) || [];
-  
+
   const allPosts = rawPosts.map(post => transformToCardData({
     ...post,
     post_type: 'general',
@@ -124,11 +127,10 @@ export const TrendingPostsCarousel = () => {
                   api?.scrollTo(index);
                 }
               }}
-              className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${
-                index === current 
-                  ? "bg-primary" 
-                  : "bg-muted-foreground/30"
-              }`}
+              className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${index === current
+                ? "bg-primary"
+                : "bg-muted-foreground/30"
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

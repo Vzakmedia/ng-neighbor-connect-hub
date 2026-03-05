@@ -16,16 +16,25 @@ export interface PostEngagement {
   is_saved: boolean;
 }
 
+export interface CommunityFile {
+  name: string;
+  size?: number;
+  url: string;
+}
+
 export interface CommunityPost {
   id: string;
   user_id: string;
   content: string;
   title?: string | null;
   image_urls: string[];
-  file_urls: any[];
+  file_urls: CommunityFile[];
   tags: string[];
   location?: string | null;
   location_scope: string;
+  target_neighborhood?: string | null;
+  target_city?: string | null;
+  target_state?: string | null;
   created_at: string;
   updated_at: string;
   author_name: string;
