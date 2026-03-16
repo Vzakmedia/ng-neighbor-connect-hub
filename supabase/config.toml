@@ -16,7 +16,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.emergency-contact-invitation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.update-panic-alert-status]
 verify_jwt = true
@@ -37,7 +37,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.send-email-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-feed-recommendations]
 verify_jwt = true
@@ -55,13 +55,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.send-call-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.log-call-event]
-verify_jwt = false
+verify_jwt = true
 
 [functions.clean-expired-calls]
-verify_jwt = false
+verify_jwt = true
 
 [functions.export-user-data]
 verify_jwt = true
@@ -79,13 +79,13 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.alert-processor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-user]
 verify_jwt = true
 
 [functions.emergency-alert]
-verify_jwt = false
+verify_jwt = true
 
 [functions.get-deleted-users]
 verify_jwt = true
@@ -94,10 +94,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.notification-delivery]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-escalations]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-webhook]
 verify_jwt = false
@@ -106,10 +106,10 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-push-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-sms-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.test-mapbox-api]
 verify_jwt = true

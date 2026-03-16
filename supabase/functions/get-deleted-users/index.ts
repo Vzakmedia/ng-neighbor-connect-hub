@@ -1,85 +1,65 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext, hasAnyRole } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  return 500;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    if (!context.user || !hasAnyRole(context.roles, ["super_admin", "admin"])) {
+      throw new Error("Forbidden");
     }
 
-    // Verify the user making the request
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
-    if (authError || !user) {
-      throw new Error('Unauthorized')
-    }
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "get-deleted-users",
+      scope: `user:${context.user.id}`,
+      limit: 30,
+      windowMinutes: 15,
+    });
 
-    // Check if user has admin permissions
-    const { data: userRoles, error: roleError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['super_admin', 'admin'])
-
-    if (roleError || !userRoles || userRoles.length === 0) {
-      throw new Error('Insufficient permissions')
-    }
-
-    // Get deleted users from auth.users table
-    const { data: deletedUsers, error: deletedError } = await supabaseClient.auth.admin.listUsers({
+    const { data: deletedUsers, error: deletedError } = await context.admin.auth.admin.listUsers({
       page: 1,
-      perPage: 1000
-    })
+      perPage: 1000,
+    });
 
     if (deletedError) {
-      throw new Error(`Failed to fetch users: ${deletedError.message}`)
+      throw new Error("Failed to fetch users");
     }
 
-    // Filter only deleted users
-    const filteredDeletedUsers = deletedUsers.users.filter(u => u.deleted_at !== null)
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        users: filteredDeletedUsers.map(u => ({
-          id: u.id,
-          email: u.email,
-          deleted_at: u.deleted_at,
-          created_at: u.created_at
-        }))
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
+    return jsonResponse(req, {
+      success: true,
+      users: deletedUsers.users
+        .filter((user) => user.deleted_at !== null)
+        .map((user) => ({
+          id: user.id,
+          email: user.email,
+          deleted_at: user.deleted_at,
+          created_at: user.created_at,
+        })),
+    });
   } catch (error) {
-    console.error('Error in get-deleted-users function:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
+    console.error("get-deleted-users error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
+    );
   }
-})
+});

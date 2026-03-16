@@ -10,6 +10,7 @@ export interface Attachment {
   type: 'image' | 'video' | 'file';
   name: string;
   url: string;
+  storagePath?: string;
   thumbnailUrl?: string;
   size: number;
   mimeType: string;
@@ -62,10 +63,11 @@ export const useFileUpload = (userId: string) => {
 
       if (error) throw error;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('chat-attachments')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 60 * 60);
+
+      if (signedUrlError) throw signedUrlError;
 
       // Determine file type
       let fileType: 'image' | 'video' | 'file' = 'file';
@@ -79,7 +81,8 @@ export const useFileUpload = (userId: string) => {
         id: data.path,
         type: fileType,
         name: file.name,
-        url: publicUrl,
+        url: signedUrlData.signedUrl,
+        storagePath: data.path,
         size: file.size,
         mimeType: file.type
       };

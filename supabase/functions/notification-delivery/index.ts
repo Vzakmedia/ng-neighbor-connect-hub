@@ -1,449 +1,304 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};
+import {
+  getRequestContext,
+  isPrivilegedUser,
+} from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-// Helpers
 const severityRank: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
 
-function timeToMinutes(t?: string | null): number | null {
-  if (!t) return null;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + (m || 0);
+function timeToMinutes(value?: string | null): number | null {
+  if (!value) return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + (minutes || 0);
 }
 
-function isWithinQuietHours(quietStart?: string | null, quietEnd?: string | null, tz?: string | null): boolean {
-  if (!quietStart || !quietEnd || !tz) return false;
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', { hour12: false, timeZone: tz, hour: '2-digit', minute: '2-digit' });
-  const parts = formatter.formatToParts(now);
-  const hh = Number(parts.find(p => p.type === 'hour')?.value || '0');
-  const mm = Number(parts.find(p => p.type === 'minute')?.value || '0');
-  const current = hh * 60 + mm;
-  const start = timeToMinutes(quietStart)!;
-  const end = timeToMinutes(quietEnd)!;
+function isWithinQuietHours(
+  quietStart?: string | null,
+  quietEnd?: string | null,
+  timezone?: string | null,
+): boolean {
+  if (!quietStart || !quietEnd || !timezone) return false;
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    hour12: false,
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || "0");
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || "0");
+  const current = hour * 60 + minute;
+  const start = timeToMinutes(quietStart);
+  const end = timeToMinutes(quietEnd);
+
+  if (start === null || end === null) return false;
   if (start <= end) return current >= start && current <= end;
-  // overnight window
   return current >= start || current <= end;
 }
 
-function renderTemplate(str: string | null | undefined, vars: Record<string, unknown>): string | undefined {
-  if (!str) return undefined;
-  return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key) => String((vars as any)[key] ?? ''));
+function renderTemplate(value: string | null | undefined, variables: Record<string, unknown>): string | undefined {
+  if (!value) return undefined;
+  return value.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key) => String(variables[key] ?? ""));
 }
 
-async function retry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 800): Promise<T> {
-  let lastErr: any;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      if (i < attempts - 1) {
-        const delay = baseDelayMs * Math.pow(2, i);
-        await new Promise((r) => setTimeout(r, delay));
-      }
-    }
-  }
-  throw lastErr;
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing required")) return 400;
+  if (message === "Alert not found" || message === "User not found") return 404;
+  return 500;
 }
-
 
 interface DeliveryRequest {
   alertId: string;
   userId: string;
-  channels: string[]; // ['websocket', 'push', 'sms', 'email']
+  channels: string[];
   priority?: number;
   templateKey?: string;
   variables?: Record<string, unknown>;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const context = await getRequestContext(req, { allowInternal: true, requireUser: false });
+    const {
+      alertId,
+      userId,
+      channels,
+      priority = 3,
+      templateKey,
+      variables = {},
+    } = await req.json() as DeliveryRequest;
 
-    const { alertId, userId, channels, priority = 3, templateKey, variables = {} } = await req.json() as DeliveryRequest;
-
-    console.log(`Delivering alert ${alertId} to user ${userId} via channels: ${channels.join(', ')}`);
-
-    // Get alert and user details
-    const [alertResponse, userResponse] = await Promise.all([
-      supabase.from('safety_alerts').select('*').eq('id', alertId).single(),
-      supabase.from('profiles').select('*').eq('user_id', userId).single()
-    ]);
-
-    if (alertResponse.error || !alertResponse.data) {
-      throw new Error(`Alert not found: ${alertResponse.error?.message}`);
+    if (!alertId || !userId || !Array.isArray(channels) || channels.length === 0) {
+      throw new Error("Missing required fields");
     }
 
-    if (userResponse.error || !userResponse.data) {
-      throw new Error(`User not found: ${userResponse.error?.message}`);
-    }
-
-    const alert = alertResponse.data;
-    const user = userResponse.data;
-
-    // Load user notification preferences and optional templates
-    const [{ data: prefs }, templateSingle] = await Promise.all([
-      supabase.from('notification_preferences').select('*').eq('user_id', userId).maybeSingle(),
-      templateKey
-        ? supabase.from('notification_templates').select('*').eq('name', templateKey).eq('is_active', true).maybeSingle()
-        : Promise.resolve({ data: null, error: null })
-    ]);
-
-    const templateByChannel: Record<string, any> = {};
-    const templateRow: any = (templateSingle as any).data;
-    if (templateRow) {
-      templateByChannel['email'] = {
-        subject: templateRow.title_template,
-        body_html: templateRow.email_template || templateRow.body_template,
-      };
-      templateByChannel['sms'] = {
-        body_text: templateRow.sms_template || templateRow.body_template,
-      };
-      if (templateRow.push_template) {
-        templateByChannel['push'] = templateRow.push_template;
+    if (!context.isInternal) {
+      if (!context.user) {
+        throw new Error("Unauthorized");
       }
+
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "notification-delivery",
+        scope: `user:${context.user.id}`,
+        limit: isPrivilegedUser(context.roles) ? 50 : 20,
+        windowMinutes: 15,
+      });
     }
 
-    const baseVars = {
-      title: alert.title ?? 'Safety Alert',
-      description: alert.description ?? '',
-      severity: alert.severity ?? 'info',
-      address: alert.address ?? '',
-      user_name: user.full_name || user.email || '',
+    const [{ data: alert, error: alertError }, { data: profile, error: profileError }] = await Promise.all([
+      context.admin.from("safety_alerts").select("*").eq("id", alertId).single(),
+      context.admin.from("profiles").select("*").eq("user_id", userId).single(),
+    ]);
+
+    if (alertError || !alert) {
+      throw new Error("Alert not found");
+    }
+
+    if (profileError || !profile) {
+      throw new Error("User not found");
+    }
+
+    if (
+      !context.isInternal &&
+      !isPrivilegedUser(context.roles) &&
+      alert.user_id !== context.user?.id &&
+      context.user?.id !== userId
+    ) {
+      throw new Error("Forbidden");
+    }
+
+    const [{ data: prefs }, templateSingle] = await Promise.all([
+      context.admin
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      templateKey
+        ? context.admin
+          .from("notification_templates")
+          .select("*")
+          .eq("name", templateKey)
+          .eq("is_active", true)
+          .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    const templateByChannel: Record<string, { subject?: string; body?: string }> = {};
+    const templateRow = templateSingle.data as Record<string, string> | null;
+    if (templateRow) {
+      templateByChannel.email = {
+        subject: templateRow.title_template,
+        body: templateRow.email_template || templateRow.body_template,
+      };
+      templateByChannel.sms = {
+        body: templateRow.sms_template || templateRow.body_template,
+      };
+    }
+
+    const baseVariables = {
+      title: alert.title ?? "Safety Alert",
+      description: alert.description ?? "",
+      severity: alert.severity ?? "info",
+      address: alert.address ?? "",
+      user_name: profile.full_name || profile.email || "",
       timestamp: new Date().toISOString(),
       ...variables,
     };
 
-    // Determine allowed channels by preferences, quiet hours, and severity threshold
-    const prefEnabled = {
+    const preferenceEnabled = {
       email: prefs?.email_enabled ?? true,
       sms: prefs?.sms_enabled ?? false,
       push: prefs?.push_enabled ?? true,
       websocket: true,
     } as Record<string, boolean>;
 
+    let allowedChannels = channels.filter((channel) => preferenceEnabled[channel] !== false);
     const quietNow = isWithinQuietHours(prefs?.quiet_hours_start, prefs?.quiet_hours_end, prefs?.timezone);
-    const sevRank = severityRank[String(alert.severity || 'low').toLowerCase()] || 1;
-    const minRank = severityRank[String(prefs?.priority_filter || 'low').toLowerCase()] || 1;
+    const severity = String(alert.severity ?? "low").toLowerCase();
+    const minSeverity = String(prefs?.priority_filter ?? "low").toLowerCase();
 
-    let allowedChannels = channels.filter((c) => prefEnabled[c] !== false);
-
-    // Enforce minimum severity
-    if (sevRank < minRank) {
-      allowedChannels = allowedChannels.filter((c) => c === 'websocket');
+    if ((severityRank[severity] ?? 1) < (severityRank[minSeverity] ?? 1)) {
+      allowedChannels = allowedChannels.filter((channel) => channel === "websocket");
     }
 
-    // Respect quiet hours (allow websocket always; allow others if critical)
-    if (quietNow && (String(alert.severity || '').toLowerCase() !== 'critical')) {
-      allowedChannels = allowedChannels.filter((c) => c === 'websocket');
+    if (quietNow && severity !== "critical") {
+      allowedChannels = allowedChannels.filter((channel) => channel === "websocket");
     }
 
-    // Preferred order: fallback to requested order
-    const preferred = allowedChannels;
+    const results: Array<Record<string, unknown>> = [];
 
-    // Deduplicate and keep order
-    const orderedAllowed = preferred.filter((c) => allowedChannels.includes(c)).concat(
-      allowedChannels.filter((c) => !preferred.includes(c))
-    );
-
-    const deliveryResults: any[] = [];
-
-    // WebSocket delivery (via Supabase Realtime)
-    if (orderedAllowed.includes('websocket')) {
+    if (allowedChannels.includes("websocket")) {
       try {
-        const channel = supabase.channel(`user_${userId}`);
+        const channel = context.admin.channel(`user_${userId}`);
         await channel.send({
-          type: 'broadcast',
-          event: 'alert_notification',
+          type: "broadcast",
+          event: "alert_notification",
           payload: {
             alertId: alert.id,
-            title: alert.title || 'Safety Alert',
+            title: alert.title || "Safety Alert",
             description: alert.description,
             severity: alert.severity,
             location: alert.address,
             timestamp: new Date().toISOString(),
-            type: 'safety_alert'
-          }
-        });
-
-        deliveryResults.push({
-          channel: 'websocket',
-          status: 'sent',
-          timestamp: new Date().toISOString()
-        });
-
-        console.log(`WebSocket notification sent to user ${userId}`);
-      } catch (error) {
-        console.error('WebSocket delivery error:', error);
-        deliveryResults.push({
-          channel: 'websocket',
-          status: 'failed',
-          error: (error as any).message,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-
-    // Push notification delivery (requires FCM setup)
-    if (orderedAllowed.includes('push')) {
-      try {
-        const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notification', {
-          body: {
-            userId: userId,
-            title: alert.title || 'Safety Alert',
-            message: alert.description || 'New notification',
-            type: alert.severity === 'critical' ? 'emergency' : 'notification',
-            priority: alert.severity === 'critical' ? 'high' : 'normal',
-            data: { alertId: alert.id }
-          }
-        });
-
-        if (pushError) throw pushError;
-
-        deliveryResults.push({
-          channel: 'push',
-          status: pushData.success ? 'sent' : 'failed',
-          timestamp: new Date().toISOString(),
-          error: pushData.error || null
-        });
-
-        console.log(`Push notification handled for user ${userId}:`, pushData);
-      } catch (error) {
-        console.error('Push notification error:', error);
-        deliveryResults.push({
-          channel: 'push',
-          status: 'failed',
-          error: (error as any).message,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-
-    // SMS delivery via Twilio REST API
-    if (orderedAllowed.includes('sms') && user.phone) {
-      try {
-        const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-        const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
-
-        if (!accountSid || !authToken || !fromNumber) {
-          throw new Error('Missing Twilio configuration (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER/TWILIO_FROM_NUMBER)');
-        }
-
-        const smsTpl = templateByChannel['sms'];
-        const fallbackSms = `[{{severity}}] {{title}} - {{description}}`;
-        const smsBodyFull = renderTemplate(smsTpl?.body_text || fallbackSms, baseVars) || '';
-        const smsBody = smsBodyFull.slice(0, 140);
-
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-
-        const params = new URLSearchParams({
-          To: user.phone,
-          From: fromNumber,
-          Body: smsBody,
-        });
-
-        const resp = await retry(async () => await fetch(twilioUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
-            'Content-Type': 'application/x-www-form-urlencoded',
+            type: "safety_alert",
           },
-          body: params.toString(),
-        }));
-
-        if (!resp.ok) {
-          const errText = await resp.text();
-          throw new Error(`Twilio error ${resp.status}: ${errText}`);
-        }
-
-        const twilioResult = await resp.json();
-
-        deliveryResults.push({
-          channel: 'sms',
-          status: 'sent',
-          timestamp: new Date().toISOString(),
-          provider: 'twilio',
-          provider_message_sid: twilioResult.sid,
         });
 
-        console.log(`SMS sent to user ${userId} at ${user.phone}`);
+        results.push({ channel: "websocket", status: "sent" });
       } catch (error) {
-        console.error('SMS delivery error:', error);
-        deliveryResults.push({
-          channel: 'sms',
-          status: 'failed',
-          error: (error as any).message,
-          timestamp: new Date().toISOString()
-        });
+        console.error("Websocket delivery error:", error);
+        results.push({ channel: "websocket", status: "failed" });
       }
     }
 
-    // Email delivery via Resend
-    if (orderedAllowed.includes('email') && user.email) {
-      try {
-        const apiKey = Deno.env.get('RESEND_API_KEY');
-        if (!apiKey) {
-          throw new Error('Missing RESEND_API_KEY');
-        }
+    if (allowedChannels.includes("push")) {
+      const { data, error } = await context.admin.functions.invoke("send-push-notification", {
+        body: {
+          userId,
+          title: alert.title || "Safety Alert",
+          message: alert.description || "New notification",
+          type: severity === "critical" ? "emergency" : "notification",
+          priority: severity === "critical" ? "high" : "normal",
+          data: { alertId: alert.id, priority },
+        },
+      });
 
-        const resend = new Resend(apiKey);
-        const emailTpl = templateByChannel['email'];
-        const subject = renderTemplate(emailTpl?.subject || (alert.title || 'Safety Alert'), baseVars) as string;
-        const html = renderTemplate(
-          emailTpl?.body_html || `
-            <h2>{{title}}</h2>
-            <p><strong>Severity:</strong> {{severity}}</p>
-            {{#if description}}<p>{{description}}</p>{{/if}}
-            {{#if address}}<p><strong>Location:</strong> {{address}}</p>{{/if}}
-            <p style="color:#888">Sent at {{timestamp}}</p>
-          `,
-          baseVars
-        ) as string;
-
-        const from = Deno.env.get('RESEND_FROM') ?? 'Notifications <onboarding@resend.dev>';
-
-        const emailRes = await retry(async () => await resend.emails.send({
-          from,
-          to: [user.email],
-          subject,
-          html,
-        }));
-
-        deliveryResults.push({
-          channel: 'email',
-          status: 'sent',
-          timestamp: new Date().toISOString(),
-          provider: 'resend',
-          provider_id: (emailRes as any)?.data?.id ?? null,
-        });
-
-        console.log(`Email sent to user ${userId} at ${user.email}`);
-      } catch (error) {
-        console.error('Email delivery error:', error);
-        deliveryResults.push({
-          channel: 'email',
-          status: 'failed',
-          error: (error as any).message,
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
-
-    // Fallback: if email/push failed and SMS allowed, attempt SMS fallback once
-    try {
-      const hasSmsSent = deliveryResults.some((r) => r.channel === 'sms' && r.status === 'sent');
-      const emailFailed = deliveryResults.some((r) => r.channel === 'email' && r.status === 'failed');
-      const pushFailed = deliveryResults.some((r) => r.channel === 'push' && r.status === 'failed');
-      const canSms = prefEnabled.sms && !!user.phone;
-
-      if (!hasSmsSent && canSms && (emailFailed || pushFailed)) {
-        const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-        const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-        const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
-        if (!accountSid || !authToken || !fromNumber) throw new Error('Missing Twilio configuration');
-
-        const smsTpl = templateByChannel['sms'];
-        const fallbackSms = `[{{severity}}] {{title}} - {{description}}`;
-        const smsBodyFull = renderTemplate(smsTpl?.body_text || fallbackSms, baseVars) || '';
-        const smsBody = smsBodyFull.slice(0, 140);
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-        const params = new URLSearchParams({ To: user.phone, From: fromNumber, Body: smsBody });
-        const resp = await retry(async () => await fetch(twilioUrl, {
-          method: 'POST',
-          headers: { 'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`), 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params.toString(),
-        }));
-        if (!resp.ok) {
-          const errText = await resp.text();
-          throw new Error(`Twilio fallback error ${resp.status}: ${errText}`);
-        }
-        const twilioResult = await resp.json();
-        deliveryResults.push({ channel: 'sms', status: 'sent', timestamp: new Date().toISOString(), provider: 'twilio', provider_message_sid: twilioResult.sid, fallback: true });
-        await supabase.rpc('track_alert_metric', { _alert_id: alertId, _metric_type: 'fallback_used', _user_id: userId, _metadata: { from: emailFailed ? 'email' : 'push', to: 'sms' } });
-      }
-    } catch (e) {
-      console.error('Fallback SMS error:', e);
-      deliveryResults.push({ channel: 'sms', status: 'failed', error: (e as any).message, timestamp: new Date().toISOString(), fallback: true });
-    }
-
-    // Schedule escalation if unread
-    try {
-      const escalateMinutes = Number(prefs?.escalate_if_unread_minutes ?? 0);
-      const escalateMin = severityRank[String(prefs?.escalate_min_severity || 'high').toLowerCase()] || 3;
-      const allowSms = prefEnabled.sms && !!user.phone;
-      if (escalateMinutes > 0 && sevRank >= escalateMin && allowSms) {
-        const dueAt = new Date(Date.now() + escalateMinutes * 60_000).toISOString();
-        await supabase.from('notification_escalations').insert({ alert_id: alertId, user_id: userId, due_at: dueAt });
-        await supabase.rpc('track_alert_metric', { _alert_id: alertId, _metric_type: 'escalation_scheduled', _user_id: userId, _metadata: { minutes: escalateMinutes } });
-      }
-    } catch (e) {
-      console.error('Escalation schedule error:', e);
-    }
-
-    // Update delivery log
-    for (const result of deliveryResults) {
-      await supabase.from('notification_delivery_log').insert({
-        alert_id: alertId,
-        user_id: userId,
-        delivery_channel: result.channel,
-        delivery_status: result.status,
-        sent_at: result.status === 'sent' ? result.timestamp : null,
-        failure_reason: result.error || null
+      results.push({
+        channel: "push",
+        status: error || !data?.success ? "failed" : "sent",
       });
     }
 
-    // Track delivery analytics
-    await supabase.rpc('track_alert_metric', {
-      _alert_id: alertId,
-      _metric_type: 'delivery_attempt',
-      _user_id: userId,
-      _metadata: {
-        channels,
-        results: deliveryResults,
-        priority
-      }
+    if (allowedChannels.includes("sms") && profile.phone) {
+      const smsTemplate = templateByChannel.sms?.body || "[{{severity}}] {{title}} - {{description}}";
+      const smsBody = (renderTemplate(smsTemplate, baseVariables) || "").slice(0, 140);
+
+      const { data, error } = await context.admin.functions.invoke("send-sms-notification", {
+        body: {
+          to: profile.phone,
+          body: smsBody,
+          userId,
+        },
+      });
+
+      results.push({
+        channel: "sms",
+        status: error || !data?.success ? "failed" : "sent",
+      });
+    }
+
+    if (allowedChannels.includes("email") && profile.email) {
+      const subject = renderTemplate(templateByChannel.email?.subject || (alert.title || "Safety Alert"), baseVariables) ||
+        (alert.title || "Safety Alert");
+      const html = renderTemplate(
+        templateByChannel.email?.body ||
+          `
+          <h2>{{title}}</h2>
+          <p><strong>Severity:</strong> {{severity}}</p>
+          <p>{{description}}</p>
+          <p><strong>Location:</strong> {{address}}</p>
+          <p style="color:#888">Sent at {{timestamp}}</p>
+        `,
+        baseVariables,
+      ) || "";
+
+      const { data, error } = await context.admin.functions.invoke("send-email-notification", {
+        body: {
+          to: profile.email,
+          subject,
+          body: html,
+          type: severity === "critical" ? "emergency_alert" : "notification",
+          userId,
+        },
+      });
+
+      results.push({
+        channel: "email",
+        status: error || !data?.success ? "failed" : "sent",
+      });
+    }
+
+    if (results.length > 0) {
+      await context.admin.from("notification_delivery_log").insert(
+        results.map((result) => ({
+          alert_id: alertId,
+          user_id: userId,
+          delivery_channel: String(result.channel),
+          delivery_status: String(result.status),
+          sent_at: new Date().toISOString(),
+          failure_reason: result.status === "failed" ? "delivery_failed" : null,
+        })),
+      );
+    }
+
+    return jsonResponse(req, {
+      success: true,
+      alertId,
+      userId,
+      results,
     });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        alertId,
-        userId,
-        deliveryResults,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
-
   } catch (error) {
-    console.error('Notification delivery error:', error);
-    return new Response(
-      JSON.stringify({
-        error: error.message,
-        timestamp: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+    console.error("Notification delivery error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
 });

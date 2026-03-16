@@ -1,29 +1,75 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { getCorsHeaders, handleCors } from "../_shared/http.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
+const toHex = (buffer: ArrayBuffer) => {
+  return Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+const constantTimeEqual = (left: string, right: string) => {
+  if (left.length !== right.length) return false;
+
+  let result = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    result |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+
+  return result === 0;
+};
+
+const signPayload = async (payload: string, secret: string) => {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
+  return toHex(signature);
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
+  const corsHeaders = getCorsHeaders(req);
+
   try {
-    const { source, event, data, signature } = await req.json();
+    const rawBody = await req.text();
+    let payload: Record<string, unknown>;
 
-    console.log('Webhook received:', { source, event, dataKeys: Object.keys(data || {}) });
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid payload', status: 'error' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const source = String(payload.source || '');
+    const event = String(payload.event || '');
+    const data = payload.data;
 
-    // Check if webhooks are enabled
+    if (!source || !event) {
+      return new Response(
+        JSON.stringify({ error: 'Missing webhook metadata', status: 'error' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
     const { data: webhookConfig } = await supabase
       .from('app_configuration')
       .select('config_value')
@@ -31,50 +77,57 @@ serve(async (req) => {
       .single();
 
     if (!webhookConfig?.config_value) {
-      console.log('Webhooks are disabled');
       return new Response(
-        JSON.stringify({ 
-          error: 'Webhooks are disabled',
-          status: 'disabled'
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Webhooks are disabled', status: 'disabled' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Verify webhook signature if provided
-    if (signature) {
-      const { data: secretConfig } = await supabase
-        .from('app_configuration')
-        .select('config_value')
-        .eq('config_key', 'webhook_secret')
-        .single();
+    const { data: secretConfig } = await supabase
+      .from('app_configuration')
+      .select('config_value')
+      .eq('config_key', 'webhook_secret')
+      .single();
 
-      if (secretConfig?.config_value) {
-        // In a real implementation, verify the signature
-        console.log('Webhook signature verification would happen here');
-      }
+    const secret = Deno.env.get('WEBHOOK_SECRET') || String(secretConfig?.config_value || '');
+    if (!secret) {
+      return new Response(
+        JSON.stringify({ error: 'Webhook is not configured', status: 'error' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Log the webhook for audit purposes
-    const { error: logError } = await supabase
+    const providedSignature = String(req.headers.get('x-webhook-signature') || payload.signature || '');
+    const verificationPayload = payload.signature
+      ? JSON.stringify({ source, event, data })
+      : rawBody;
+    const expectedSignature = await signPayload(verificationPayload, secret);
+
+    if (!providedSignature || !constantTimeEqual(providedSignature, expectedSignature)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature', status: 'error' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const processedAt = new Date().toISOString();
+    const { data: webhookLog, error: logError } = await supabase
       .from('webhook_logs')
       .insert({
-        source: source,
+        source,
         event_type: event,
         payload: data,
-        signature: signature,
-        processed_at: new Date().toISOString(),
+        signature: providedSignature,
+        processed_at: processedAt,
         status: 'received'
-      });
+      })
+      .select('id')
+      .single();
 
     if (logError) {
       console.error('Error logging webhook:', logError);
     }
 
-    // Process different webhook types
     let processResult = null;
 
     switch (source) {
@@ -88,48 +141,43 @@ serve(async (req) => {
         processResult = await processExternalApiWebhook(event, data, supabase);
         break;
       default:
-        console.log('Unknown webhook source:', source);
         processResult = { success: true, message: 'Webhook received but not processed' };
     }
 
-    // Update webhook log with processing result
-    await supabase
-      .from('webhook_logs')
-      .update({
-        status: processResult.success ? 'processed' : 'failed',
-        processing_result: processResult,
-        updated_at: new Date().toISOString()
-      })
-      .eq('source', source)
-      .eq('event_type', event)
-      .eq('processed_at', new Date().toISOString());
-
-    console.log('Webhook processed successfully');
+    if (webhookLog?.id) {
+      await supabase
+        .from('webhook_logs')
+        .update({
+          status: processResult?.success ? 'processed' : 'failed',
+          processing_result: processResult,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', webhookLog.id);
+    }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         message: 'Webhook processed successfully',
-        source: source,
-        event: event,
-        processedAt: new Date().toISOString(),
+        source,
+        event,
+        processedAt,
         result: processResult
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
-
   } catch (error) {
     console.error('Error processing webhook:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
+      JSON.stringify({
+        error: 'Failed to process webhook',
         status: 'error'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

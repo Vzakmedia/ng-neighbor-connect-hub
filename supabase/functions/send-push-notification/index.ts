@@ -1,280 +1,177 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import {
+  assertSelfOrPrivileged,
+  getRequestContext,
+  isPrivilegedUser,
+} from "../_shared/auth.ts";
+import { sendFcmMessage } from "../_shared/fcm.ts";
+import { getClientIp, handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+interface PushRequest {
+  userId?: string;
+  user_id?: string;
+  title: string;
+  message: string;
+  type?: string;
+  priority?: "normal" | "high";
+  data?: Record<string, unknown>;
+}
+
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing required") || message.startsWith("Invalid")) return 400;
+  return 500;
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    let { userId, title, message, type = 'notification', priority = 'normal', data = {} } = await req.json();
+    const context = await getRequestContext(req, { allowInternal: true, requireUser: false });
+    const requestBody = await req.json() as PushRequest;
+    const userId = requestBody.userId ?? requestBody.user_id;
+    let priority = requestBody.priority ?? "normal";
+    const type = requestBody.type ?? "notification";
+    const data = requestBody.data ?? {};
 
-    console.log('Push notification request:', { userId, title, type, priority });
-
-    // Validate required fields
-    if (!userId || !title || !message) {
-      return new Response(
-        JSON.stringify({
-          error: 'Missing required fields: userId, title, message',
-          status: 'error'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    if (!userId || !requestBody.title || !requestBody.message) {
+      throw new Error("Missing required fields: userId, title, message");
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (requestBody.title.length > 200 || requestBody.message.length > 1000) {
+      throw new Error("Invalid push notification length");
+    }
 
-    // Check if push notifications are enabled
-    const { data: pushConfig } = await supabase
-      .from('app_configuration')
-      .select('config_value')
-      .eq('config_key', 'push_notifications_enabled')
+    if (!context.isInternal) {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-push-notification",
+        scope: `user:${context.user.id}`,
+        limit: isPrivilegedUser(context.roles) ? 40 : 15,
+        windowMinutes: 15,
+      });
+
+      assertSelfOrPrivileged(context.user.id, userId, context.roles);
+    } else {
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-push-notification-internal",
+        scope: `ip:${getClientIp(req)}`,
+        limit: 150,
+        windowMinutes: 5,
+      });
+    }
+
+    const { data: pushConfig } = await context.admin
+      .from("app_configuration")
+      .select("config_value")
+      .eq("config_key", "push_notifications_enabled")
       .single();
 
     if (!pushConfig?.config_value) {
-      console.log('Push notifications are disabled');
-      return new Response(
-        JSON.stringify({
-          error: 'Push notifications are disabled',
-          status: 'disabled'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return jsonResponse(req, { status: "disabled", error: "Push notifications are disabled" }, 400);
     }
 
-    // Get user's push subscription (if any)
-    const { data: user } = await supabase
-      .from('profiles')
-      .select('push_subscription')
-      .eq('user_id', userId)
-      .single();
+    const [{ data: profile }, { data: prefs }] = await Promise.all([
+      context.admin
+        .from("profiles")
+        .select("push_subscription, fcm_token, apns_token")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      context.admin
+        .from("notification_preferences")
+        .select("push_enabled")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
 
-    if (!user?.push_subscription) {
-      console.log('User has no push subscription');
-      return new Response(
-        JSON.stringify({
-          error: 'User has no push subscription',
-          status: 'no_subscription'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    if (prefs && prefs.push_enabled === false) {
+      return jsonResponse(req, { status: "skipped", reason: "user_disabled" });
     }
 
-    // Create notification record
-    const { error: notificationError } = await supabase
-      .from('alert_notifications')
+    if (type === "emergency") {
+      const { data: emergencyConfig } = await context.admin
+        .from("app_configuration")
+        .select("config_value")
+        .eq("config_key", "emergency_push_priority")
+        .single();
+
+      if (emergencyConfig?.config_value) {
+        priority = "high";
+      }
+    }
+
+    await context.admin
+      .from("alert_notifications")
       .insert({
         recipient_id: userId,
         notification_type: type,
-        content: message,
-        title: title,
-        priority: priority,
-        data: data,
-        delivery_method: 'push',
-        sent_at: new Date().toISOString()
+        content: requestBody.message,
+        title: requestBody.title,
+        priority,
+        data,
+        delivery_method: "push",
+        sent_at: new Date().toISOString(),
+      } as any);
+
+    const token = profile?.push_subscription || profile?.fcm_token || profile?.apns_token;
+    if (!token) {
+      return jsonResponse(req, {
+        success: false,
+        status: "no_subscription",
+        message: "No push subscription available",
       });
-
-    if (notificationError) {
-      console.error('Error creating notification record:', notificationError);
     }
 
-    // For emergency notifications, check priority setting
-    if (type === 'emergency') {
-      const { data: emergencyConfig } = await supabase
-        .from('app_configuration')
-        .select('config_value')
-        .eq('config_key', 'emergency_push_priority')
-        .single();
-
-      if (emergencyConfig?.config_value) {
-        priority = 'high';
-      }
-    }
-
-    // For emergency notifications, check priority setting
-    if (type === 'emergency') {
-      const { data: emergencyConfig } = await supabase
-        .from('app_configuration')
-        .select('config_value')
-        .eq('config_key', 'emergency_push_priority')
-        .single();
-
-      if (emergencyConfig?.config_value) {
-        priority = 'high';
-      }
-    }
-
-    // Prepare FCM v1 Payload
-    const fcmPayload = {
-      message: {
-        token: user.push_subscription, // Assuming this is the FCM token
-        notification: {
-          title: title,
-          body: message,
-        },
-        data: {
-          ...data,
-          notification_type: type,
-          type: type,
-        },
-        android: {
-          priority: priority === 'high' ? 'high' : 'normal',
-          notification: {
-            priority: priority === 'high' ? 'high' : 'default',
-            sound: 'default',
-            channel_id: type === 'emergency' ? 'emergency' : 'default',
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              alert: {
-                title: title,
-                body: message,
-              },
-              'content-available': 1,
-              sound: 'default',
-              category: type === 'emergency' ? 'EMERGENCY' : 'NOTIFICATION',
-            },
-          },
-        },
+    const fcmResponse = await sendFcmMessage(token, {
+      title: requestBody.title,
+      body: requestBody.message,
+      data: {
+        ...data,
+        notification_type: type,
+        type,
       },
-    };
+      priority,
+      channelId: type === "emergency" ? "emergency" : "default",
+      category: type === "emergency" ? "EMERGENCY" : "NOTIFICATION",
+    });
 
-    // Get FCM Access Token
-    const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
-    let fcmResponse: any;
-
-    if (serviceAccountJson) {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      const accessToken = await getFcmAccessToken(serviceAccount);
-      const projectId = serviceAccount.project_id;
-
-      fcmResponse = await fetch(
-        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(fcmPayload),
-        }
-      );
-
-      const fcmResult = await fcmResponse.json();
-      console.log('FCM v1 Response:', fcmResult);
-
-      if (!fcmResponse.ok) {
-        console.error('FCM Error details:', fcmResult);
-      }
-    } else {
-      console.warn('FCM_SERVICE_ACCOUNT secret not set. Skipping actual push.');
+    if (!fcmResponse.ok) {
+      console.error("FCM push delivery failed:", fcmResponse.result);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: !!(fcmResponse && fcmResponse.ok),
-        message: fcmResponse?.ok ? 'Push notification sent successfully' : 'FCM delivery failed or skipped',
-        recipient: userId,
-        sentAt: new Date().toISOString()
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
+    return jsonResponse(req, {
+      success: fcmResponse.ok,
+      message: fcmResponse.ok
+        ? "Push notification sent successfully"
+        : "Push delivery failed or was skipped",
+      recipient: userId,
+      sentAt: new Date().toISOString(),
+      provider: "fcm",
+    });
   } catch (error) {
-    console.error('Error sending push notification:', error);
-    return new Response(
-      JSON.stringify({
-        error: error.message,
-        status: 'error'
-      }),
+    console.error("Error sending push notification:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
       {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+        error: status >= 500 ? "Request failed" : message,
+        status: "error",
+      },
+      status,
     );
   }
 });
-
-// Helper to get FCM Access Token using Service Account
-async function getFcmAccessToken(serviceAccount: any) {
-  // Use a shorter scope/audience for standard FCM v1
-  const HEADER = { alg: "RS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const claim = {
-    iss: serviceAccount.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-  };
-
-  const encodedHeader = btoa(JSON.stringify(HEADER));
-  const encodedClaim = btoa(JSON.stringify(claim));
-  const signatureInput = `${encodedHeader}.${encodedClaim}`;
-
-  const privateKey = serviceAccount.private_key
-    .replace(/\\n/g, "\n")
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .trim();
-
-  // We need to import the decode function or use a built-in one if available in Deno
-  // Based on send-call-notification, we assume 'decode' is imported from std/encoding/base64.ts
-  const binaryKey = Uint8Array.from(atob(privateKey), c => c.charCodeAt(0));
-
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signatureInput)
-  );
-
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-
-  const jwt = `${signatureInput}.${encodedSignature}`;
-
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-
-  const data = await response.json();
-  return data.access_token;
-}

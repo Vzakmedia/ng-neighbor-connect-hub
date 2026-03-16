@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Download, FileText, ImageIcon, Video as VideoIcon, Eye, Save, Loader2 } from '@/lib/icons';
 import { type Attachment } from '@/hooks/useFileUpload';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import ProductCard from './ProductCard';
 import { useFileSave } from '@/hooks/mobile/useFileSave';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AttachmentDisplayProps {
   attachments: Attachment[];
   onPreview?: (attachment: Attachment) => void;
+  variant?: 'sent' | 'received';
 }
 
 const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
@@ -17,6 +18,48 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
   onPreview
 }) => {
   const { saveFile, isSaving, isNative } = useFileSave();
+  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const resolveAttachmentUrls = async () => {
+      const storageAttachments = attachments.filter((attachment) => {
+        const path = attachment.storagePath || attachment.id;
+
+        return Boolean(path) &&
+          path.includes('/') &&
+          !attachment.url.startsWith('data:') &&
+          !attachment.url.includes('res.cloudinary.com');
+      });
+
+      if (storageAttachments.length === 0) {
+        setResolvedUrls({});
+        return;
+      }
+
+      const results = await Promise.all(
+        storageAttachments.map(async (attachment) => {
+          const path = attachment.storagePath || attachment.id;
+          const { data, error } = await supabase.storage
+            .from('chat-attachments')
+            .createSignedUrl(path, 60 * 60);
+
+          return [attachment.id, error ? attachment.url : data.signedUrl] as const;
+        })
+      );
+
+      if (!isCancelled) {
+        setResolvedUrls(Object.fromEntries(results));
+      }
+    };
+
+    resolveAttachmentUrls();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [attachments]);
   
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -27,7 +70,8 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
   };
 
   const handleSave = async (attachment: Attachment) => {
-    await saveFile(attachment.url, attachment.name, attachment.mimeType);
+    const attachmentUrl = resolvedUrls[attachment.id] || attachment.url;
+    await saveFile(attachmentUrl, attachment.name, attachment.mimeType);
   };
 
   const isProductCard = (attachment: Attachment): boolean => {
@@ -73,9 +117,14 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
   return (
     <div className="space-y-2 mt-2">
       {attachments.map((attachment) => {
+        const attachmentUrl = resolvedUrls[attachment.id] || attachment.url;
+        const resolvedAttachment = attachmentUrl === attachment.url
+          ? attachment
+          : { ...attachment, url: attachmentUrl };
+
         // Check if this is a product card attachment
-        if (isProductCard(attachment)) {
-          const productData = parseProductData(attachment);
+        if (isProductCard(resolvedAttachment)) {
+          const productData = parseProductData(resolvedAttachment);
           if (productData) {
             return (
               <div key={attachment.id} className="my-2">
@@ -91,17 +140,17 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
               <div className="space-y-2">
                 <div className="relative group">
                   <img
-                    src={attachment.url}
+                    src={attachmentUrl}
                     alt={attachment.name}
                     className="max-w-full max-h-64 rounded-lg object-cover cursor-pointer"
-                    onClick={() => onPreview?.(attachment)}
+                    onClick={() => onPreview?.(resolvedAttachment)}
                   />
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {onPreview && (
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => onPreview(attachment)}
+                        onClick={() => onPreview(resolvedAttachment)}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-3 w-3" />
@@ -132,7 +181,7 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
             ) : attachment.type === 'video' ? (
               <div className="space-y-2">
                 <VideoPlayer
-                  src={attachment.url}
+                  src={attachmentUrl}
                   poster={attachment.thumbnailUrl}
                   className="max-w-full max-h-64 rounded-lg"
                   autoPlay={false}
@@ -177,7 +226,7 @@ const AttachmentDisplay: React.FC<AttachmentDisplayProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onPreview(attachment)}
+                      onClick={() => onPreview(resolvedAttachment)}
                       className="h-8 w-8 p-0"
                     >
                       <Eye className="h-3 w-3" />

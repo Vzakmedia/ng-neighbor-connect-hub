@@ -1,12 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 interface AlertRequest {
   panic_alert_id: string;
@@ -30,21 +27,50 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+function getStatusCode(message: string): number {
+  if (message === 'Unauthorized') return 401;
+  if (message === 'Forbidden') return 403;
+  if (message === 'Rate limit exceeded') return 429;
+  return 500;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    // Parse request body
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
+    const caller = context.user;
+
+    if (!caller) {
+      throw new Error('Unauthorized');
+    }
+
+    await enforceRateLimit({
+      admin: context.admin,
+      action: 'emergency-alert',
+      scope: `user:${caller.id}`,
+      limit: 10,
+      windowMinutes: 15,
+    });
+
     const { panic_alert_id, situation_type, location, user_name, user_id, preferences: passedPreferences }: AlertRequest = await req.json();
 
-    console.log(`Processing emergency alert for panic_alert_id: ${panic_alert_id}, user_id: ${user_id}`);
-    console.log('Received preferences:', passedPreferences);
+    if (!panic_alert_id || !user_id || caller.id !== user_id) {
+      throw new Error('Forbidden');
+    }
 
-    if (!user_id) {
-      throw new Error('User ID is required');
+    const { data: panicAlert, error: panicAlertError } = await supabase
+      .from('panic_alerts')
+      .select('id, user_id')
+      .eq('id', panic_alert_id)
+      .eq('user_id', caller.id)
+      .maybeSingle();
+
+    if (panicAlertError || !panicAlert) {
+      throw new Error('Forbidden');
     }
 
     // Use passed preferences or fetch from database
@@ -158,7 +184,7 @@ serve(async (req) => {
     // Note: Public alerts are now handled by PanicButton.tsx directly
     // The edge function no longer creates duplicate public alerts
 
-    return new Response(JSON.stringify({
+    return jsonResponse(req, {
       success: true,
       message: 'Emergency alerts sent successfully',
       contacts_notified: contactsNotified,
@@ -166,19 +192,18 @@ serve(async (req) => {
         auto_alert_contacts: shouldAlertContacts,
         share_location_with_contacts: shareLocationWithContacts
       }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in emergency-alert function:', error);
-    return new Response(JSON.stringify({
-      error: 'Failed to send emergency alerts',
-      details: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? 'Failed to send emergency alerts' : message },
+      status,
+    );
   }
 });
 

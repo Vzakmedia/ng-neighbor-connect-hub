@@ -34,7 +34,7 @@ export const Admin2FAGate = ({ children, requireVerification = true }: Admin2FAG
           .from('user_2fa')
           .select('is_enabled, created_at')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         setIs2FAEnabled(twoFAData?.is_enabled || false);
 
@@ -44,7 +44,9 @@ export const Admin2FAGate = ({ children, requireVerification = true }: Admin2FAG
           .select('created_at')
           .eq('user_id', user.id)
           .in('role', ['admin', 'super_admin'])
-          .single();
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
 
         if (roleData && !twoFAData?.is_enabled) {
           const roleCreatedAt = new Date(roleData.created_at);

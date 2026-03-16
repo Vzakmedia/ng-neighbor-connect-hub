@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createAdminClient } from "../_shared/auth.ts";
+import { escapeHtml, getClientIp, handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 interface ApiRequestData {
   name: string;
@@ -16,214 +13,119 @@ interface ApiRequestData {
   requestId: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    console.log("Received API request notification");
-    
-    const { name, email, company, requestType, message, requestId }: ApiRequestData = await req.json();
+    const body = await req.json() as ApiRequestData;
+    const admin = createAdminClient();
+    const clientIp = getClientIp(req);
 
-    // Validate required fields
-    if (!name || !email || !company || !requestType || !message) {
-      console.error("Missing required fields");
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    if (!body.name || !body.email || !body.company || !body.requestType || !body.message) {
+      return jsonResponse(req, { error: "Missing required fields" }, 400);
     }
 
-    // Initialize Resend
+    if (!isValidEmail(body.email)) {
+      return jsonResponse(req, { error: "Invalid email address" }, 400);
+    }
+
+    if (
+      body.name.length > 120 ||
+      body.company.length > 160 ||
+      body.requestType.length > 80 ||
+      body.message.length > 4000
+    ) {
+      return jsonResponse(req, { error: "Invalid request length" }, 400);
+    }
+
+    await enforceRateLimit({
+      admin,
+      action: "send-api-request-notification",
+      scope: `ip:${clientIp}`,
+      limit: 10,
+      windowMinutes: 60,
+    });
+
+    await enforceRateLimit({
+      admin,
+      action: "send-api-request-notification-email",
+      scope: `email:${body.email.trim().toLowerCase()}`,
+      limit: 5,
+      windowMinutes: 60,
+    });
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
-      console.error("RESEND_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "Email service not configured" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+      throw new Error("Email service not configured");
     }
 
     const resend = new Resend(resendApiKey);
-
-    // Map request type to display label
     const requestTypeLabels: Record<string, string> = {
       enterprise: "Enterprise API Access",
       technical: "Technical Support",
       partnership: "Partnership Inquiry",
-      other: "General Inquiry"
+      other: "General Inquiry",
     };
 
-    const requestTypeLabel = requestTypeLabels[requestType] || requestType;
+    const requestTypeLabel = requestTypeLabels[body.requestType] || body.requestType;
+    const safeName = escapeHtml(body.name);
+    const safeEmail = escapeHtml(body.email);
+    const safeCompany = escapeHtml(body.company);
+    const safeMessage = escapeHtml(body.message);
+    const safeRequestId = escapeHtml(body.requestId || "N/A");
 
-    // Create HTML email body
     const htmlBody = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 30px;
-              border-radius: 8px 8px 0 0;
-              text-align: center;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 24px;
-            }
-            .content {
-              background: #f9fafb;
-              border: 1px solid #e5e7eb;
-              border-top: none;
-              padding: 30px;
-              border-radius: 0 0 8px 8px;
-            }
-            .badge {
-              display: inline-block;
-              background: #667eea;
-              color: white;
-              padding: 6px 12px;
-              border-radius: 6px;
-              font-size: 14px;
-              font-weight: 600;
-              margin-bottom: 20px;
-            }
-            .field {
-              margin-bottom: 20px;
-            }
-            .label {
-              font-weight: 600;
-              color: #4b5563;
-              font-size: 14px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              margin-bottom: 8px;
-            }
-            .value {
-              color: #1f2937;
-              font-size: 16px;
-            }
-            .message-box {
-              background: white;
-              border: 1px solid #e5e7eb;
-              padding: 16px;
-              border-radius: 6px;
-              white-space: pre-wrap;
-              word-wrap: break-word;
-            }
-            .footer {
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #e5e7eb;
-              color: #6b7280;
-              font-size: 14px;
-            }
-            .button {
-              display: inline-block;
-              background: #667eea;
-              color: white;
-              padding: 12px 24px;
-              text-decoration: none;
-              border-radius: 6px;
-              font-weight: 600;
-              margin-top: 20px;
-            }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #0f766e 0%, #155e75 100%); color: white; padding: 24px; border-radius: 8px 8px 0 0; text-align: center; }
+            .content { background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 8px 8px; }
+            .field { margin-bottom: 18px; }
+            .label { font-weight: 700; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+            .value { color: #0f172a; }
+            .message-box { background: white; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>🔔 New API Access Request</h1>
+            <h1>New API Access Request</h1>
           </div>
           <div class="content">
-            <div class="badge">${requestTypeLabel}</div>
-            
-            <div class="field">
-              <div class="label">Company</div>
-              <div class="value">${company}</div>
-            </div>
-            
-            <div class="field">
-              <div class="label">Contact Name</div>
-              <div class="value">${name}</div>
-            </div>
-            
-            <div class="field">
-              <div class="label">Email Address</div>
-              <div class="value"><a href="mailto:${email}">${email}</a></div>
-            </div>
-            
-            <div class="field">
-              <div class="label">Message</div>
-              <div class="message-box">${message}</div>
-            </div>
-            
-            <div class="footer">
-              <p><strong>Request ID:</strong> ${requestId}</p>
-              <p><strong>Submitted:</strong> ${new Date().toLocaleString('en-US', { 
-                dateStyle: 'full', 
-                timeStyle: 'short' 
-              })}</p>
-              <p>Please respond to this request within 24-48 hours.</p>
-            </div>
+            <div class="field"><div class="label">Request Type</div><div class="value">${escapeHtml(requestTypeLabel)}</div></div>
+            <div class="field"><div class="label">Company</div><div class="value">${safeCompany}</div></div>
+            <div class="field"><div class="label">Contact Name</div><div class="value">${safeName}</div></div>
+            <div class="field"><div class="label">Email Address</div><div class="value"><a href="mailto:${safeEmail}">${safeEmail}</a></div></div>
+            <div class="field"><div class="label">Message</div><div class="message-box">${safeMessage}</div></div>
+            <div class="field"><div class="label">Request ID</div><div class="value">${safeRequestId}</div></div>
           </div>
         </body>
       </html>
     `;
 
-    // Send email notification
-    console.log("Sending email notification to API team");
     const emailResponse = await resend.emails.send({
       from: "NeighborLink API <onboarding@resend.dev>",
-      to: ["api-team@neighborlink.com"], // Change to your actual team email
-      subject: `New API Request - ${requestTypeLabel} from ${company}`,
+      to: ["api-team@neighborlink.com"],
+      subject: `New API Request - ${escapeHtml(requestTypeLabel)} from ${safeCompany}`,
       html: htmlBody,
-      replyTo: email,
+      replyTo: body.email,
     });
 
-    console.log("Email sent successfully:", emailResponse);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        emailId: emailResponse.data?.id 
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
-  } catch (error: any) {
+    return jsonResponse(req, {
+      success: true,
+      emailId: emailResponse.data?.id,
+    });
+  } catch (error) {
     console.error("Error in send-api-request-notification:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return jsonResponse(req, { error: "Request failed" }, 500);
   }
-};
-
-serve(handler);
+});

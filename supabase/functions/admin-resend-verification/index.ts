@@ -1,208 +1,142 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getRequestContext, hasAnyRole } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing") || message.startsWith("Invalid")) return 400;
+  if (message === "User not found") return 404;
+  return 500;
+}
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
 
-    // Verify admin user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
+    if (!context.user || !hasAnyRole(context.roles, ["admin", "super_admin"])) {
+      throw new Error("Forbidden");
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user: adminUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (authError || !adminUser) {
-      throw new Error('Unauthorized');
-    }
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "admin-resend-verification",
+      scope: `user:${context.user.id}`,
+      limit: 20,
+      windowMinutes: 15,
+    });
 
-    const { action, userId, email } = await req.json();
-
+    const { action, userId, email } = await req.json() as { action?: string; userId?: string; email?: string };
     if (!action || (!userId && !email)) {
-      throw new Error('Missing required parameters');
+      throw new Error("Missing required parameters");
     }
 
-    let targetUser;
-    let recipientEmail;
+    let targetUserId = userId ?? null;
+    let recipientEmail = email ?? null;
 
-    // Get user information
     if (userId) {
-      const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
-      if (userError || !user) {
-        throw new Error('User not found');
+      const { data, error } = await context.admin.auth.admin.getUserById(userId);
+      if (error || !data.user) {
+        throw new Error("User not found");
       }
-      targetUser = user;
-      recipientEmail = user.email;
-    } else {
-      recipientEmail = email;
+
+      targetUserId = data.user.id;
+      recipientEmail = data.user.email ?? null;
     }
 
-    if (action === 'resend') {
-      // Generate new verification email
-      const { error: resendError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'signup',
-        email: recipientEmail!,
+    if (!recipientEmail) {
+      throw new Error("Missing required parameters");
+    }
+
+    if (action === "resend") {
+      const { error: resendError } = await context.admin.auth.admin.generateLink({
+        type: "signup",
+        email: recipientEmail,
         options: {
-          redirectTo: `${req.headers.get('origin') || 'https://neighborlink.ng'}/auth/verify-email`
-        }
+          redirectTo: `${req.headers.get("origin") || "https://neighborlink.ng"}/auth/verify-email`,
+        },
       });
 
       if (resendError) {
-        console.error('Resend error:', resendError);
-        
-        // Log failed attempt
-        await supabaseAdmin.from('email_audit_logs').insert({
-          user_id: targetUser?.id,
-          recipient_email: recipientEmail,
-          email_type: 'admin_resend',
-          action_type: 'failed',
-          sent_by_admin_id: adminUser.id,
-          error_message: resendError.message,
-          metadata: { action: 'resend' }
-        });
-
-        throw resendError;
+        throw new Error("Failed to resend verification");
       }
 
-      // Log successful resend
-      await supabaseAdmin.from('email_audit_logs').insert({
-        user_id: targetUser?.id,
+      await context.admin.from("email_audit_logs").insert({
+        user_id: targetUserId,
         recipient_email: recipientEmail,
-        email_type: 'admin_resend',
-        action_type: 'sent',
-        sent_by_admin_id: adminUser.id,
-        metadata: { action: 'resend' }
+        email_type: "admin_resend",
+        action_type: "sent",
+        sent_by_admin_id: context.user.id,
+        metadata: { action: "resend" },
       });
 
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Verification email sent successfully'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else if (action === 'verify') {
-      if (!userId) {
-        throw new Error('User ID required for manual verification');
-      }
-
-      // Manually verify the user's email
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
-        { email_confirm: true }
-      );
-
-      if (updateError) {
-        console.error('Manual verification error:', updateError);
-        
-        // Log failed attempt
-        await supabaseAdmin.from('email_audit_logs').insert({
-          user_id: userId,
-          recipient_email: recipientEmail!,
-          email_type: 'admin_manual_verification',
-          action_type: 'failed',
-          sent_by_admin_id: adminUser.id,
-          error_message: updateError.message,
-          metadata: { action: 'manual_verify' }
-        });
-
-        throw updateError;
-      }
-
-      // Log successful manual verification
-      await supabaseAdmin.from('email_audit_logs').insert({
-        user_id: userId,
-        recipient_email: recipientEmail!,
-        email_type: 'admin_manual_verification',
-        action_type: 'manually_verified',
-        sent_by_admin_id: adminUser.id,
-        metadata: { action: 'manual_verify' }
-      });
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'User email verified successfully'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else if (action === 'delete') {
-      if (!userId) {
-        throw new Error('User ID required for deletion');
-      }
-
-      // Delete the user
-      const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-
-      if (deleteError) {
-        console.error('User deletion error:', deleteError);
-        
-        // Log failed attempt
-        await supabaseAdmin.from('email_audit_logs').insert({
-          user_id: userId,
-          recipient_email: recipientEmail!,
-          email_type: 'admin_user_deletion',
-          action_type: 'failed',
-          sent_by_admin_id: adminUser.id,
-          error_message: deleteError.message,
-          metadata: { action: 'delete' }
-        });
-
-        throw deleteError;
-      }
-
-      // Log successful deletion
-      await supabaseAdmin.from('email_audit_logs').insert({
-        user_id: userId,
-        recipient_email: recipientEmail!,
-        email_type: 'admin_user_deletion',
-        action_type: 'deleted',
-        sent_by_admin_id: adminUser.id,
-        metadata: { action: 'delete' }
-      });
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'User deleted successfully'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else {
-      throw new Error('Invalid action');
+      return jsonResponse(req, { success: true, message: "Verification email sent successfully" });
     }
 
-  } catch (error: any) {
-    console.error('Error in admin-resend-verification:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: error.message === 'Unauthorized' ? 401 : 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    if (action === "verify") {
+      if (!userId) {
+        throw new Error("Missing required parameters");
       }
+
+      const { error: updateError } = await context.admin.auth.admin.updateUserById(userId, {
+        email_confirm: true,
+      });
+
+      if (updateError) {
+        throw new Error("Failed to verify user");
+      }
+
+      await context.admin.from("email_audit_logs").insert({
+        user_id: userId,
+        recipient_email: recipientEmail,
+        email_type: "admin_manual_verification",
+        action_type: "manually_verified",
+        sent_by_admin_id: context.user.id,
+        metadata: { action: "manual_verify" },
+      });
+
+      return jsonResponse(req, { success: true, message: "User email verified successfully" });
+    }
+
+    if (action === "delete") {
+      if (!userId) {
+        throw new Error("Missing required parameters");
+      }
+
+      const { error: deleteError } = await context.admin.auth.admin.deleteUser(userId);
+      if (deleteError) {
+        throw new Error("Failed to delete user");
+      }
+
+      await context.admin.from("email_audit_logs").insert({
+        user_id: userId,
+        recipient_email: recipientEmail,
+        email_type: "admin_user_deletion",
+        action_type: "deleted",
+        sent_by_admin_id: context.user.id,
+        metadata: { action: "delete" },
+      });
+
+      return jsonResponse(req, { success: true, message: "User deleted successfully" });
+    }
+
+    throw new Error("Invalid action");
+  } catch (error) {
+    console.error("admin-resend-verification error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
 });

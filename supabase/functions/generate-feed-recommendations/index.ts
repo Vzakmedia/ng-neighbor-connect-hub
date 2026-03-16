@@ -1,48 +1,43 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, cache-control",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Max-Age": "86400",
-};
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Rate limits exceeded, please try again later.") return 429;
+  if (message === "Payment required, please add funds to your Lovable AI workspace.") return 402;
+  if (message === "Rate limit exceeded") return 429;
+  return 500;
+}
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    let body;
-    try {
-      body = await req.json();
-    } catch (e) {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON in request body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
+    if (!context.user) {
+      throw new Error("Unauthorized");
     }
 
-    const { userId } = body;
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "generate-feed-recommendations",
+      scope: `user:${context.user.id}`,
+      limit: 10,
+      windowMinutes: 30,
+    });
 
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "userId is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const userId = context.user.id;
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // Get user's engagement statistics
-    const { data: engagementData, error: engagementError } = await supabaseClient
-      .rpc('get_user_engagement_stats', { p_user_id: userId });
+    const { data: engagementData, error: engagementError } = await context.admin
+      .rpc("get_user_engagement_stats", { p_user_id: userId });
 
     if (engagementError) {
-      console.warn('Error fetching engagement stats (using defaults):', engagementError);
+      console.warn("generate-feed-recommendations stats fallback:", engagementError);
     }
 
     const stats = engagementData?.[0] || {
@@ -50,51 +45,49 @@ Deno.serve(async (req) => {
       saved_tags: [],
       viewed_tags: [],
       preferred_locations: [],
-      engagement_score: 0
+      engagement_score: 0,
     };
 
-    // Get user profile for location context
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('state, city, neighborhood')
-      .eq('id', userId)
+    const { data: profile } = await context.admin
+      .from("profiles")
+      .select("state, city, neighborhood")
+      .eq("id", userId)
       .single();
 
-    // Use Lovable AI to analyze user preferences and generate smart feed ordering
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableApiKey) {
+      throw new Error("Recommendation service unavailable");
     }
-
-    const systemPrompt = `You are a feed recommendation algorithm for a community social network. 
-    Analyze user engagement patterns and provide scoring weights for different post attributes.
-    Return a JSON object with scoring weights (0-1) for: tag_match, location_match, recency_boost, and engagement_quality.`;
-
-    const userContext = `
-User Profile:
-- Location: ${profile?.neighborhood || 'Unknown'}, ${profile?.city || 'Unknown'}, ${profile?.state || 'Unknown'}
-- Engagement Score: ${stats.engagement_score}
-- Frequently Liked Tags: ${stats.liked_tags.join(', ') || 'None yet'}
-- Frequently Saved Tags: ${stats.saved_tags.join(', ') || 'None yet'}
-- Frequently Viewed Tags: ${stats.viewed_tags.join(', ') || 'None yet'}
-- Preferred Locations: ${stats.preferred_locations.join(', ') || 'Local area'}
-
-Based on this user's behavior, provide scoring weights to personalize their feed.
-If the user has low engagement, prioritize location_match and recency_boost.
-If the user has high engagement, prioritize tag_match and engagement_quality.
-`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContext }
+          {
+            role: "system",
+            content: "You are a feed recommendation algorithm for a community social network. Return JSON scoring weights for tag_match, location_match, recency_boost, and engagement_quality.",
+          },
+          {
+            role: "user",
+            content: `
+User Profile:
+- Location: ${profile?.neighborhood || "Unknown"}, ${profile?.city || "Unknown"}, ${profile?.state || "Unknown"}
+- Engagement Score: ${stats.engagement_score}
+- Frequently Liked Tags: ${stats.liked_tags.join(", ") || "None yet"}
+- Frequently Saved Tags: ${stats.saved_tags.join(", ") || "None yet"}
+- Frequently Viewed Tags: ${stats.viewed_tags.join(", ") || "None yet"}
+- Preferred Locations: ${stats.preferred_locations.join(", ") || "Local area"}
+
+Based on this user's behavior, provide scoring weights to personalize their feed.
+If the user has low engagement, prioritize location_match and recency_boost.
+If the user has high engagement, prioritize tag_match and engagement_quality.
+`,
+          },
         ],
         tools: [{
           type: "function",
@@ -104,77 +97,57 @@ If the user has high engagement, prioritize tag_match and engagement_quality.
             parameters: {
               type: "object",
               properties: {
-                tag_match: {
-                  type: "number",
-                  description: "Weight for matching user's preferred tags (0-1)"
-                },
-                location_match: {
-                  type: "number",
-                  description: "Weight for matching user's location preferences (0-1)"
-                },
-                recency_boost: {
-                  type: "number",
-                  description: "Weight for recent posts (0-1)"
-                },
-                engagement_quality: {
-                  type: "number",
-                  description: "Weight for posts with high engagement (0-1)"
-                }
+                tag_match: { type: "number" },
+                location_match: { type: "number" },
+                recency_boost: { type: "number" },
+                engagement_quality: { type: "number" },
               },
               required: ["tag_match", "location_match", "recency_boost", "engagement_quality"],
-              additionalProperties: false
-            }
-          }
+              additionalProperties: false,
+            },
+          },
         }],
-        tool_choice: { type: "function", function: { name: "generate_feed_weights" } }
+        tool_choice: { type: "function", function: { name: "generate_feed_weights" } },
       }),
     });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        throw new Error("Rate limits exceeded, please try again later.");
       }
+
       if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        throw new Error("Payment required, please add funds to your Lovable AI workspace.");
       }
-      const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
-      throw new Error("AI gateway error");
+
+      throw new Error("Failed to generate feed recommendations");
     }
 
     const aiData = await aiResponse.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-
     if (!toolCall) {
-      throw new Error("No tool call in AI response");
+      throw new Error("Failed to generate feed recommendations");
     }
 
     const weights = JSON.parse(toolCall.function.arguments);
 
-    // Return personalized recommendation config
-    return new Response(
-      JSON.stringify({
-        weights,
-        userPreferences: {
-          preferredTags: [...new Set([...stats.liked_tags, ...stats.saved_tags, ...stats.viewed_tags])],
-          preferredLocations: stats.preferred_locations,
-          engagementScore: stats.engagement_score
-        }
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return jsonResponse(req, {
+      weights,
+      userPreferences: {
+        preferredTags: [...new Set([...stats.liked_tags, ...stats.saved_tags, ...stats.viewed_tags])],
+        preferredLocations: stats.preferred_locations,
+        engagementScore: stats.engagement_score,
+      },
+    });
   } catch (error) {
-    console.error("Error in generate-feed-recommendations:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    console.error("generate-feed-recommendations error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Failed to generate feed recommendations" : message },
+      status,
     );
   }
 });

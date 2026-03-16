@@ -1,98 +1,60 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext, hasAnyRole } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing")) return 400;
+  return 500;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    if (!context.user || !hasAnyRole(context.roles, ["super_admin", "admin"])) {
+      throw new Error("Forbidden");
     }
 
-    // Verify the user making the request
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
-    if (authError || !user) {
-      throw new Error('Unauthorized')
-    }
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "delete-user",
+      scope: `user:${context.user.id}`,
+      limit: 10,
+      windowMinutes: 15,
+    });
 
-    // Check if user has admin permissions
-    const { data: userRoles, error: roleError } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['super_admin', 'admin'])
-
-    if (roleError || !userRoles || userRoles.length === 0) {
-      throw new Error('Insufficient permissions')
-    }
-
-    const { userId } = await req.json()
-    
+    const { userId } = await req.json() as { userId?: string };
     if (!userId) {
-      throw new Error('User ID is required')
+      throw new Error("Missing userId");
     }
 
-    // First, delete the user's profile and related data
-    const { error: profileError } = await supabaseClient
-      .from('profiles')
-      .delete()
-      .eq('user_id', userId)
+    await context.admin.from("profiles").delete().eq("user_id", userId);
+    await context.admin.from("user_roles").delete().eq("user_id", userId);
 
-    if (profileError) {
-      console.error('Error deleting profile:', profileError)
-      // Continue with auth user deletion even if profile deletion fails
-    }
-
-    // Delete user roles
-    const { error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId)
-
-    if (rolesError) {
-      console.error('Error deleting user roles:', rolesError)
-    }
-
-    // Delete the user from auth.users using admin API
-    const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId)
-
+    const { error: deleteError } = await context.admin.auth.admin.deleteUser(userId);
     if (deleteError) {
-      throw new Error(`Failed to delete user: ${deleteError.message}`)
+      throw new Error("Failed to delete user");
     }
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'User deleted successfully' }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
+    return jsonResponse(req, { success: true, message: "User deleted successfully" });
   } catch (error) {
-    console.error('Error in delete-user function:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
+    console.error("delete-user error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
+    );
   }
-})
+});

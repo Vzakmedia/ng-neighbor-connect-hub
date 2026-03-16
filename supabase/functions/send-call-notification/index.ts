@@ -1,199 +1,158 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decode } from "https://deno.land/std@0.177.0/encoding/base64.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  assertSelfOrPrivileged,
+  getRequestContext,
+  isPrivilegedUser,
+} from "../_shared/auth.ts";
+import { sendFcmMessage } from "../_shared/fcm.ts";
+import { getClientIp, handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-};
-
-// Helper to get FCM Access Token using Service Account
-async function getFcmAccessToken(serviceAccount: any) {
-  const HEADER = { alg: "RS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  const claim = {
-    iss: serviceAccount.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
-  };
-
-  const encodedHeader = btoa(JSON.stringify(HEADER));
-  const encodedClaim = btoa(JSON.stringify(claim));
-  const signatureInput = `${encodedHeader}.${encodedClaim}`;
-
-  const privateKey = serviceAccount.private_key
-    .replace(/\\n/g, "\n")
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .trim();
-
-  const binaryKey = decode(privateKey);
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signatureInput)
-  );
-
-  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-
-  const jwt = `${signatureInput}.${encodedSignature}`;
-
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-
-  const data = await response.json();
-  return data.access_token;
+interface CallNotificationRequest {
+  recipientId: string;
+  callerId: string;
+  callerName?: string;
+  callType: "audio" | "video";
+  conversationId: string;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing required") || message.startsWith("Invalid")) return 400;
+  if (message === "Conversation not found" || message === "Recipient not found") return 404;
+  return 500;
+}
+
+serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const { recipientId, callerId, callerName, callType, conversationId } = await req.json();
+    const context = await getRequestContext(req, { allowInternal: true, requireUser: false });
+    const { recipientId, callerId, callerName, callType, conversationId } =
+      await req.json() as CallNotificationRequest;
 
-    if (!recipientId || !callerId || !callerName || !callType || !conversationId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!recipientId || !callerId || !callType || !conversationId) {
+      throw new Error("Missing required fields");
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (!["audio", "video"].includes(callType)) {
+      throw new Error("Invalid call type");
+    }
 
-    // Get recipient's push tokens
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('fcm_token, apns_token')
-      .eq('user_id', recipientId)
+    if (!context.isInternal) {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-call-notification",
+        scope: `user:${context.user.id}`,
+        limit: isPrivilegedUser(context.roles) ? 60 : 20,
+        windowMinutes: 10,
+      });
+
+      assertSelfOrPrivileged(context.user.id, callerId, context.roles);
+    } else {
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-call-notification-internal",
+        scope: `ip:${getClientIp(req)}`,
+        limit: 150,
+        windowMinutes: 5,
+      });
+    }
+
+    const { data: conversation, error: conversationError } = await context.admin
+      .from("direct_conversations")
+      .select("user1_id, user2_id")
+      .eq("id", conversationId)
       .single();
 
-    if (profileError || !profile) {
-      console.log('No profile found for recipient:', recipientId);
-      return new Response(
-        JSON.stringify({ error: 'Recipient not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (conversationError || !conversation) {
+      throw new Error("Conversation not found");
     }
 
-    const fcmToken = profile.fcm_token;
-    if (!fcmToken) {
-      console.log('No FCM token available for recipient:', recipientId);
-      return new Response(
-        JSON.stringify({ error: 'No FCM token available' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const participants = new Set([conversation.user1_id, conversation.user2_id]);
+    if (!participants.has(callerId) || !participants.has(recipientId) || callerId === recipientId) {
+      throw new Error("Forbidden");
     }
 
-    // Prepare FCM Payload
-    const fcmPayload = {
-      message: {
-        token: fcmToken,
-        // For Android, we omit the top-level 'notification' to make it a data-only message
-        // which allows the app to handle it in the background and show our own UI.
-        // For iOS, we still include standard notification for APNs compatibility.
+    const [{ data: recipientProfile }, { data: callerProfile }] = await Promise.all([
+      context.admin
+        .from("profiles")
+        .select("fcm_token, apns_token, push_subscription")
+        .eq("user_id", recipientId)
+        .maybeSingle(),
+      context.admin
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", callerId)
+        .maybeSingle(),
+    ]);
+
+    if (!recipientProfile) {
+      throw new Error("Recipient not found");
+    }
+
+    const resolvedCallerName = callerProfile?.full_name || callerName || "Someone";
+    const token = recipientProfile.push_subscription || recipientProfile.fcm_token || recipientProfile.apns_token;
+
+    let fcmSent = false;
+    if (token) {
+      const fcmResponse = await sendFcmMessage(token, {
+        title: `Incoming ${callType} call`,
+        body: `${resolvedCallerName} is calling you`,
         data: {
-          notification_type: 'call_incoming',
+          notification_type: "call_incoming",
           conversation_id: conversationId,
           caller_id: callerId,
-          caller_name: callerName,
+          caller_name: resolvedCallerName,
           call_type: callType,
-          is_background_call: 'true',
+          is_background_call: "true",
         },
-        android: {
-          priority: 'high',
-          // Note: No notification block here for Android to ensure it's handled as a data message
-        },
-        apns: {
-          payload: {
-            aps: {
-              alert: {
-                title: `Incoming ${callType} call`,
-                body: `${callerName} is calling you`,
-              },
-              'content-available': 1,
-              category: 'INCOMING_CALL',
-              priority: 10,
-            },
-          },
-        },
-      },
-    };
+        priority: "high",
+        channelId: "incoming_calls",
+        category: "INCOMING_CALL",
+      });
 
-    // Get FCM Access Token
-    const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
-    let fcmResponse: any;
-
-    if (serviceAccountJson) {
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      const accessToken = await getFcmAccessToken(serviceAccount);
-      const projectId = serviceAccount.project_id;
-
-      fcmResponse = await fetch(
-        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(fcmPayload),
-        }
-      );
-
-      const fcmResult = await fcmResponse.json();
-      console.log('FCM v1 Response:', fcmResult);
-    } else {
-      console.warn('FCM_SERVICE_ACCOUNT secret not set. Skipping actual push.');
+      fcmSent = fcmResponse.ok;
+      if (!fcmResponse.ok) {
+        console.error("Call notification FCM delivery failed:", fcmResponse.result);
+      }
     }
 
-    // Log to alert_notifications for history/tracking
-    await supabase.from('alert_notifications').insert({
+    await context.admin.from("alert_notifications").insert({
       recipient_id: recipientId,
-      notification_type: 'call_incoming',
-      content: `${callerName} is calling you`,
+      notification_type: "call_incoming",
+      content: `${resolvedCallerName} is calling you`,
       notification_metadata: {
         caller_id: callerId,
-        caller_name: callerName,
+        caller_name: resolvedCallerName,
         call_type: callType,
         conversation_id: conversationId,
       },
-    });
+    } as any);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Call notification processed',
-        fcmSent: !!(fcmResponse && fcmResponse.ok)
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse(req, {
+      success: true,
+      message: "Call notification processed",
+      fcmSent,
+    });
   } catch (error) {
-    console.error('Error sending call notification:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    console.error("Error sending call notification:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
 });

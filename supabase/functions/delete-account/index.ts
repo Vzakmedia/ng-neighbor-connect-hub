@@ -1,175 +1,85 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Invalid")) return 400;
+  return 500;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    if (!context.user) {
+      throw new Error("Unauthorized");
     }
 
-    // Verify the user
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
-    if (authError || !user) {
-      throw new Error('Unauthorized')
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "delete-account",
+      scope: `user:${context.user.id}`,
+      limit: 2,
+      windowMinutes: 60,
+    });
+
+    const { confirmation } = await req.json() as { confirmation?: string };
+    if (confirmation !== "DELETE_MY_ACCOUNT") {
+      throw new Error("Invalid confirmation");
     }
 
-    const { confirmation } = await req.json()
-    
-    if (confirmation !== 'DELETE_MY_ACCOUNT') {
-      throw new Error('Invalid confirmation. Please type DELETE_MY_ACCOUNT to confirm.')
-    }
+    await context.admin.from("activity_logs").insert({
+      user_id: context.user.id,
+      action_type: "account_deletion_initiated",
+      resource_type: "user",
+      resource_id: context.user.id,
+      details: {
+        email: context.user.email ?? null,
+        timestamp: new Date().toISOString(),
+      },
+    });
 
-    console.log(`Processing account deletion for user: ${user.id}`)
+    await context.admin.from("direct_messages").delete().or(`sender_id.eq.${context.user.id},recipient_id.eq.${context.user.id}`);
+    await context.admin.from("direct_conversations").delete().or(`participant_one.eq.${context.user.id},participant_two.eq.${context.user.id}`);
+    await context.admin.from("post_likes").delete().eq("user_id", context.user.id);
+    await context.admin.from("post_comments").delete().eq("user_id", context.user.id);
+    await context.admin.from("community_posts").delete().eq("user_id", context.user.id);
+    await context.admin.from("marketplace_items").delete().eq("user_id", context.user.id);
+    await context.admin.from("services").delete().eq("user_id", context.user.id);
+    await context.admin.from("emergency_contacts").delete().eq("user_id", context.user.id);
+    await context.admin.from("emergency_contact_requests").delete().or(`requester_id.eq.${context.user.id},target_user_id.eq.${context.user.id}`);
+    await context.admin.from("user_settings").delete().eq("user_id", context.user.id);
+    await context.admin.from("messaging_preferences").delete().eq("user_id", context.user.id);
+    await context.admin.from("notification_preferences").delete().eq("user_id", context.user.id);
+    await context.admin.from("user_roles").delete().eq("user_id", context.user.id);
+    await context.admin.from("profiles").delete().eq("user_id", context.user.id);
 
-    // Store email for logging before deletion
-    const userEmail = user.email
-
-    // Log the deletion action before proceeding
-    await supabaseClient
-      .from('activity_logs')
-      .insert({
-        user_id: user.id,
-        action_type: 'account_deletion_initiated',
-        resource_type: 'user',
-        resource_id: user.id,
-        details: {
-          email: userEmail,
-          timestamp: new Date().toISOString(),
-        }
-      })
-
-    // Delete user data in order (respecting foreign key constraints)
-    // Note: Some tables may have cascading deletes set up
-    
-    // Delete user's messages
-    await supabaseClient
-      .from('direct_messages')
-      .delete()
-      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-
-    // Delete conversations
-    await supabaseClient
-      .from('direct_conversations')
-      .delete()
-      .or(`participant_one.eq.${user.id},participant_two.eq.${user.id}`)
-
-    // Delete community posts and related
-    await supabaseClient
-      .from('post_likes')
-      .delete()
-      .eq('user_id', user.id)
-
-    await supabaseClient
-      .from('post_comments')
-      .delete()
-      .eq('user_id', user.id)
-
-    await supabaseClient
-      .from('community_posts')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete marketplace items
-    await supabaseClient
-      .from('marketplace_items')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete services
-    await supabaseClient
-      .from('services')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete emergency contacts
-    await supabaseClient
-      .from('emergency_contacts')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete emergency contact requests
-    await supabaseClient
-      .from('emergency_contact_requests')
-      .delete()
-      .or(`requester_id.eq.${user.id},target_user_id.eq.${user.id}`)
-
-    // Delete user settings
-    await supabaseClient
-      .from('user_settings')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete messaging preferences
-    await supabaseClient
-      .from('messaging_preferences')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete notification preferences
-    await supabaseClient
-      .from('notification_preferences')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete user roles
-    await supabaseClient
-      .from('user_roles')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Delete profile
-    await supabaseClient
-      .from('profiles')
-      .delete()
-      .eq('user_id', user.id)
-
-    // Finally, delete the auth user
-    const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(user.id)
-
+    const { error: deleteError } = await context.admin.auth.admin.deleteUser(context.user.id);
     if (deleteError) {
-      console.error('Error deleting auth user:', deleteError)
-      throw new Error(`Failed to delete account: ${deleteError.message}`)
+      throw new Error("Failed to delete account");
     }
 
-    console.log(`Account successfully deleted for user: ${user.id} (${userEmail})`)
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Your account has been permanently deleted.',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
+    return jsonResponse(req, {
+      success: true,
+      message: "Your account has been permanently deleted.",
+    });
   } catch (error) {
-    console.error('Error in delete-account function:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    )
+    console.error("delete-account error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
+    );
   }
-})
+});

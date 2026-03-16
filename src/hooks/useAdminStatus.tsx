@@ -49,17 +49,20 @@ export const useAdminStatus = (): AdminStatus => {
       });
 
       // Get actual role from user_roles table
-      const { data: roleData, error: roleError } = await supabase
+      const { data: roleRows, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      if (roleError && roleError.code !== 'PGRST116') {
+      if (roleError) {
         console.error('Error fetching role:', roleError);
       }
 
-      const userRole = roleData?.role as AdminRole || 'user';
+      const rolePriority: AdminRole[] = ['super_admin', 'admin', 'moderator', 'manager', 'support', 'staff', 'user'];
+      const matchedRole = rolePriority.find(priority =>
+        (roleRows || []).some(row => row.role === priority)
+      );
+      const userRole = matchedRole || 'user';
       
       setRole(userRole);
       setIsAdmin(hasAdminRole || hasSuperAdminRole || userRole === 'admin' || userRole === 'super_admin');
@@ -70,7 +73,7 @@ export const useAdminStatus = (): AdminStatus => {
         .from('user_2fa')
         .select('is_enabled')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       setHas2FAEnabled(twoFAData?.is_enabled || false);
 

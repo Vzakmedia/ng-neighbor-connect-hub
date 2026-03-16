@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Mail, MessageSquare, Clock, User, Plus, Send, Eye, Reply, Archive } from '@/lib/icons';
+import { sanitizeHtml } from '@/utils/security';
 
 interface SupportTicket {
   id: string;
@@ -497,7 +498,7 @@ export const EnhancedSupportTicketSystem = () => {
                                 <div 
                                   className="prose max-w-none"
                                   dangerouslySetInnerHTML={{ 
-                                    __html: email.body_html || email.body_text?.replace(/\n/g, '<br>') || '' 
+                                    __html: sanitizeHtml(email.body_html || email.body_text?.replace(/\n/g, '<br>') || '') 
                                   }}
                                 />
                               </div>

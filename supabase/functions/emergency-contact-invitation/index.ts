@@ -1,13 +1,6 @@
-// Follow users or service:
-// https://supabase.com/dashboard/project/cowiviqhrnmhttugozbz/functions
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.1"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-}
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
 
 interface RequestPayload {
   type: string;
@@ -27,108 +20,72 @@ interface RequestPayload {
 }
 
 serve(async (req) => {
-  console.log("Emergency contact invitation function triggered");
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const context = await getRequestContext(req, { allowInternal: true, requireUser: false });
+    if (!context.isInternal) {
+      return jsonResponse(req, { error: "Forbidden" }, 403);
+    }
 
-    // Get the request body
     const body: RequestPayload = await req.json();
-    console.log("Request payload:", JSON.stringify(body));
 
-    // Only process inserts to emergency_contact_requests
-    if (body.type !== 'INSERT' || body.table !== 'emergency_contact_requests') {
-      return new Response(JSON.stringify({ message: 'Not a relevant event' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+    if (body.type !== "INSERT" || body.table !== "emergency_contact_requests") {
+      return jsonResponse(req, { message: "Not a relevant event" });
     }
 
     const { record } = body;
 
-    // Skip if notification already sent
     if (record.notification_sent) {
-      return new Response(JSON.stringify({ message: 'Notification already sent' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+      return jsonResponse(req, { message: "Notification already sent" });
     }
 
-    // Check if we have a recipient_id
     if (!record.recipient_id) {
-      console.log('No recipient found for contact request:', record.id);
-      return new Response(JSON.stringify({ message: 'No recipient found' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+      return jsonResponse(req, { message: "No recipient found" });
     }
 
-    // Get sender info
-    const { data: sender, error: senderError } = await supabase
-      .from('profiles')
-      .select('full_name, phone')
-      .eq('user_id', record.sender_id)
+    const { data: sender, error: senderError } = await context.admin
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("user_id", record.sender_id)
       .single();
 
     if (senderError) {
-      console.error('Error fetching sender info:', senderError);
-      throw new Error('Failed to fetch sender information');
+      throw new Error("Failed to fetch sender information");
     }
 
-    // Create notification for recipient
-    const { data: notification, error: notifError } = await supabase
-      .from('alert_notifications')
+    const { data: notification, error: notifError } = await context.admin
+      .from("alert_notifications")
       .insert({
         recipient_id: record.recipient_id,
-        notification_type: 'contact_request',
+        notification_type: "contact_request",
         sender_name: sender.full_name,
         sender_phone: sender.phone,
         content: `${sender.full_name} wants to add you as an emergency contact`,
-        request_id: record.id
+        request_id: record.id,
       })
       .select()
       .single();
 
     if (notifError) {
-      console.error('Error creating notification:', notifError);
-      throw new Error('Failed to create notification');
+      throw new Error("Failed to create notification");
     }
 
-    // Mark the request as notified
-    await supabase
-      .from('emergency_contact_requests')
+    await context.admin
+      .from("emergency_contact_requests")
       .update({ notification_sent: true })
-      .eq('id', record.id);
+      .eq("id", record.id);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Emergency contact invitation notification created',
-        notification_id: notification.id
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
-
+    return jsonResponse(req, {
+      success: true,
+      message: "Emergency contact invitation notification created",
+      notification_id: notification.id,
+    });
   } catch (error) {
-    console.error('Error processing emergency contact invitation:', error);
-
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    console.error("Error processing emergency contact invitation:", error);
+    return jsonResponse(req, { error: "Request failed" }, 500);
   }
-})
+});

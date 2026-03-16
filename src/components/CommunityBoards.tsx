@@ -383,20 +383,38 @@ const CommunityBoards = () => {
     try {
       const { data, error } = await supabase
         .from('board_members')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            avatar_url,
-            city,
-            state
-          )
-        `)
+        .select('*')
         .eq('board_id', selectedBoard);
 
       if (error) throw error;
 
-      setBoardMembers(data as BoardMember[]);
+      const members = (data || []) as Omit<BoardMember, 'profiles'>[];
+      const userIds = [...new Set(members.map(member => member.user_id).filter(Boolean))];
+
+      const { data: profileRows, error: profilesError } = userIds.length === 0
+        ? { data: [], error: null }
+        : await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar_url, city, state')
+            .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(
+        (profileRows || []).map(profile => [profile.user_id, {
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          city: profile.city,
+          state: profile.state,
+        }])
+      );
+
+      setBoardMembers(
+        members.map(member => ({
+          ...member,
+          profiles: profileMap.get(member.user_id) || null,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching board members:', error);
       toast({

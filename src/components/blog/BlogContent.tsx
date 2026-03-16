@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { extractHeadings, generateSlug } from '@/services/blogService';
+import { generateSlug } from '@/services/blogService';
+import { sanitizeHtml } from '@/utils/security';
 
 interface BlogContentProps {
   content: string;
@@ -43,7 +44,7 @@ export const BlogContent = ({ content, onHeadingsExtracted }: BlogContentProps) 
         prose-img:rounded-lg prose-img:shadow-lg
         prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
         prose-pre:bg-muted prose-pre:border"
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
     />
   );
 };

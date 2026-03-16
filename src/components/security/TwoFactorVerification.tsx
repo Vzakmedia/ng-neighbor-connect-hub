@@ -72,7 +72,7 @@ export const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
           .select('secret')
           .eq('user_id', userId)
           .eq('is_enabled', true)
-          .single();
+          .maybeSingle();
 
         if (fetchError || !user2fa) {
           throw new Error('2FA not properly configured');

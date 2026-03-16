@@ -1,185 +1,156 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 interface SignalingMessage {
   id: string;
-  type: 'offer' | 'answer' | 'ice' | 'end' | 'restart' | 'busy' | 'renegotiate' | 'renegotiate-answer' | 'timeout';
+  type: "offer" | "answer" | "ice" | "end" | "restart" | "busy" | "renegotiate" | "renegotiate-answer" | "timeout";
   conversation_id: string;
   sender_id: string;
   receiver_id: string;
   session_id?: string;
-  sdp?: any;
-  candidate?: any;
+  sdp?: unknown;
+  candidate?: unknown;
   timestamp?: string;
-  metadata?: any;
+  metadata?: unknown;
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+const validTypes = new Set([
+  "offer",
+  "answer",
+  "ice",
+  "ice-candidate",
+  "reject",
+  "decline",
+  "end",
+  "restart",
+  "busy",
+  "renegotiate",
+  "renegotiate-answer",
+  "timeout",
+  "ringing",
+]);
+
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message === "Conversation not found") return 404;
+  if (message.startsWith("Missing") || message.startsWith("Invalid")) return 400;
+  return 500;
+}
+
+serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    // Verify user is authenticated
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
+    if (!context.user) {
+      throw new Error("Unauthorized");
     }
 
-    const body = await req.json();
-    const { message, conversation_id, receiver_id, session_id } = body;
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "insert-call-signal",
+      scope: `user:${context.user.id}`,
+      limit: 150,
+      windowMinutes: 5,
+    });
 
-    if (!message || !conversation_id || !receiver_id) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: message, conversation_id, receiver_id' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    const { message, conversation_id, receiver_id, session_id } = await req.json() as {
+      message?: Partial<SignalingMessage>;
+      conversation_id?: string;
+      receiver_id?: string;
+      session_id?: string;
+    };
+
+    if (!message || !conversation_id || !receiver_id || !message.id || !message.type) {
+      throw new Error("Missing required fields");
     }
 
-    const signalingMessage = message as SignalingMessage;
-
-    // Verify sender_id matches authenticated user
-    if (signalingMessage.sender_id !== user.id) {
-      return new Response(
-        JSON.stringify({ error: 'sender_id must match authenticated user' }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!validTypes.has(message.type)) {
+      throw new Error("Invalid signal type");
     }
 
-    console.log(`[insert-call-signal] Processing message ${signalingMessage.id} type=${signalingMessage.type}`);
+    const { data: conversation, error: conversationError } = await context.admin
+      .from("direct_conversations")
+      .select("participant_one, participant_two")
+      .eq("id", conversation_id)
+      .maybeSingle();
 
-    // Check if message already exists (idempotent insert)
-    const { data: existing, error: checkError } = await supabaseClient
-      .from('call_signaling')
-      .select('id')
-      .eq('message->>id', signalingMessage.id)
+    if (conversationError || !conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    const participants = [conversation.participant_one, conversation.participant_two];
+    if (!participants.includes(context.user.id) || !participants.includes(receiver_id) || receiver_id === context.user.id) {
+      throw new Error("Forbidden");
+    }
+
+    const { data: existing, error: checkError } = await context.admin
+      .from("call_signaling")
+      .select("id")
+      .eq("message->>id", message.id)
       .maybeSingle();
 
     if (checkError) {
-      console.error('[insert-call-signal] Error checking existing message:', checkError);
-      return new Response(
-        JSON.stringify({ error: 'Database query failed', details: checkError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      throw new Error("Failed to check existing signal");
     }
 
     if (existing) {
-      console.log(`[insert-call-signal] Message ${signalingMessage.id} already exists (duplicate), returning success`);
-      return new Response(
-        JSON.stringify({
-          status: 'duplicate',
-          message: 'Message already exists',
-          id: existing.id,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      return jsonResponse(req, {
+        status: "duplicate",
+        message: "Message already exists",
+        id: existing.id,
+      });
     }
 
-    // Extract signal type from message
-    const signalType = signalingMessage.type as string;
+    const payload: SignalingMessage = {
+      ...message,
+      conversation_id,
+      receiver_id,
+      sender_id: context.user.id,
+      session_id: session_id || message.session_id,
+    } as SignalingMessage;
 
-    // Validate signal type
-    const validTypes = ['offer', 'answer', 'ice', 'ice-candidate', 'reject', 'decline', 'end', 'restart', 'busy', 'renegotiate', 'renegotiate-answer', 'timeout', 'ringing'];
-    if (!validTypes.includes(signalType)) {
-      return new Response(
-        JSON.stringify({ error: `Invalid signal type: ${signalType}` }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Calculate expires_at (2 minutes from now)
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
 
-    // Insert new signaling message with type, expires_at, and session_id
-    const { data, error: insertError } = await supabaseClient
-      .from('call_signaling')
+    const { data, error: insertError } = await context.admin
+      .from("call_signaling")
       .insert({
         conversation_id,
-        sender_id: signalingMessage.sender_id,
+        sender_id: context.user.id,
         receiver_id,
-        type: signalType,
-        message: signalingMessage,
+        type: message.type,
+        message: payload,
         expires_at: expiresAt,
-        session_id: session_id || signalingMessage.session_id || null,
+        session_id: payload.session_id || null,
       })
-      .select('id')
+      .select("id")
       .single();
 
-    if (insertError) {
-      console.error('[insert-call-signal] Error inserting message:', insertError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to insert message', details: insertError.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (insertError || !data) {
+      throw new Error("Failed to insert message");
     }
 
-    console.log(`[insert-call-signal] Successfully inserted message ${signalingMessage.id} with id=${data.id}`);
-
-    return new Response(
-      JSON.stringify({
-        status: 'success',
-        message: 'Signaling message inserted',
-        id: data.id,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return jsonResponse(req, {
+      status: "success",
+      message: "Signaling message inserted",
+      id: data.id,
+    });
   } catch (error) {
-    console.error('[insert-call-signal] Unexpected error:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+    console.error("insert-call-signal error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
 });

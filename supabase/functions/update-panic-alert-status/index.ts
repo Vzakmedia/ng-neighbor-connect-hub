@@ -1,262 +1,210 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getRequestContext, hasAnyRole } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 interface UpdateStatusRequest {
   panic_alert_id: string;
-  new_status: 'active' | 'resolved' | 'investigating' | 'false_alarm';
+  new_status: "active" | "resolved" | "investigating" | "false_alarm";
   update_note?: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+const allowedStatuses = new Set(["active", "resolved", "investigating", "false_alarm"]);
+
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message === "Panic alert not found") return 404;
+  if (message.startsWith("Missing") || message.startsWith("Invalid")) return 400;
+  return 500;
+}
+
+serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get user from auth header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
+    if (!context.user) {
+      throw new Error("Unauthorized");
     }
 
-    // Get user from JWT
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "update-panic-alert-status",
+      scope: `user:${context.user.id}`,
+      limit: 30,
+      windowMinutes: 15,
+    });
 
     const { panic_alert_id, new_status, update_note }: UpdateStatusRequest = await req.json();
+    if (!panic_alert_id || !new_status) {
+      throw new Error("Missing required fields");
+    }
 
-    console.log(`Processing status update for panic alert ${panic_alert_id} by user ${user.id}`);
+    if (!allowedStatuses.has(new_status)) {
+      throw new Error("Invalid status");
+    }
 
-    // Get the panic alert details
-    const { data: panicAlert, error: panicAlertError } = await supabase
-      .from('panic_alerts')
-      .select('*')
-      .eq('id', panic_alert_id)
+    const { data: panicAlert, error: panicAlertError } = await context.admin
+      .from("panic_alerts")
+      .select("*")
+      .eq("id", panic_alert_id)
       .single();
 
     if (panicAlertError || !panicAlert) {
-      return new Response(
-        JSON.stringify({ error: 'Panic alert not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error("Panic alert not found");
     }
 
-    // Check if user is the creator or has elevated permissions
-    const isCreator = panicAlert.user_id === user.id;
+    const isCreator = panicAlert.user_id === context.user.id;
+    let isModerator = hasAnyRole(context.roles, ["moderator", "super_admin", "admin", "manager"]);
     let isEmergencyContact = false;
 
-    // Determine if user is a moderator/admin/manager
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
-    let isModerator = (roles || []).some((r: any) => ['moderator', 'super_admin', 'admin', 'manager'].includes(r.role));
+    if (!isModerator) {
+      const [contentModResult, emergencyMgmtResult] = await Promise.all([
+        context.admin.rpc("has_staff_permission", {
+          _user_id: context.user.id,
+          _permission: "content_moderation",
+          _access_type: "write",
+        }),
+        context.admin.rpc("has_staff_permission", {
+          _user_id: context.user.id,
+          _permission: "emergency_management",
+          _access_type: "write",
+        }),
+      ]);
 
-    // Fallback to explicit permission checks via RPC
-    if (!isModerator) {
-      const { data: hasContentMod } = await supabase.rpc('has_staff_permission', {
-        _user_id: user.id,
-        _permission: 'content_moderation',
-        _access_type: 'write'
-      });
-      if (hasContentMod === true) isModerator = true;
-    }
-    if (!isModerator) {
-      const { data: hasEmergencyMgmt } = await supabase.rpc('has_staff_permission', {
-        _user_id: user.id,
-        _permission: 'emergency_management',
-        _access_type: 'write'
-      });
-      if (hasEmergencyMgmt === true) isModerator = true;
+      isModerator = contentModResult.data === true || emergencyMgmtResult.data === true;
     }
 
-    // Check if user is an emergency contact
     if (!isCreator && !isModerator) {
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('phone, full_name')
-        .eq('user_id', user.id)
+      const { data: userProfile } = await context.admin
+        .from("profiles")
+        .select("phone, full_name")
+        .eq("user_id", context.user.id)
         .single();
 
       if (userProfile?.phone) {
-        const { data: emergencyContacts } = await supabase
-          .from('emergency_contacts')
-          .select('*')
-          .eq('user_id', panicAlert.user_id)
-          .eq('phone_number', userProfile.phone);
+        const { data: emergencyContacts } = await context.admin
+          .from("emergency_contacts")
+          .select("id")
+          .eq("user_id", panicAlert.user_id)
+          .eq("phone_number", userProfile.phone);
 
-        isEmergencyContact = !!(emergencyContacts && emergencyContacts.length > 0);
+        isEmergencyContact = (emergencyContacts?.length ?? 0) > 0;
       }
     }
 
-    // Authorization check
-    if (!isCreator && !isEmergencyContact && !isModerator) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Only the alert creator, emergency contacts, or moderators can update status' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!isCreator && !isModerator && !isEmergencyContact) {
+      throw new Error("Forbidden");
     }
 
-    console.log(`Authorization passed: isCreator=${isCreator}, isEmergencyContact=${isEmergencyContact}, isModerator=${isModerator}`);
-
-    // Build update object only with existing columns to avoid schema cache errors
-    const updateData: Record<string, any> = {};
-
-    // Check column presence by inspecting fetched row keys
-    const panicKeys = Object.keys(panicAlert || {});
-
-    if (new_status === 'resolved') {
-      updateData.is_resolved = true;
-      if (panicKeys.includes('resolved_at')) updateData.resolved_at = new Date().toISOString();
-      if (panicKeys.includes('resolved_by')) updateData.resolved_by = user.id;
-    } else {
-      updateData.is_resolved = false;
-      if (panicKeys.includes('resolved_at')) updateData.resolved_at = null;
-      if (panicKeys.includes('resolved_by')) updateData.resolved_by = null;
-    }
-
-    console.log('update-panic-alert-status: updating panic_alerts with keys:', Object.keys(updateData));
-
-    const { error: updateError } = await supabase
-      .from('panic_alerts')
-      .update(updateData)
-      .eq('id', panic_alert_id);
-
-    if (updateError) {
-      console.error('Error updating panic alert:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to update panic alert' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Update corresponding safety alert
-    const safetyAlertUpdate: any = {
-      status: new_status,
-      updated_at: new Date().toISOString()
+    const updateData: Record<string, unknown> = {
+      is_resolved: new_status === "resolved",
     };
 
-    if (new_status === 'resolved') {
-      safetyAlertUpdate.verified_at = new Date().toISOString();
-      safetyAlertUpdate.verified_by = user.id;
+    const panicKeys = Object.keys(panicAlert || {});
+    if (panicKeys.includes("resolved_at")) {
+      updateData.resolved_at = new_status === "resolved" ? new Date().toISOString() : null;
+    }
+    if (panicKeys.includes("resolved_by")) {
+      updateData.resolved_by = new_status === "resolved" ? context.user.id : null;
     }
 
-    const { error: safetyUpdateError } = await supabase
-      .from('safety_alerts')
+    const { error: updateError } = await context.admin
+      .from("panic_alerts")
+      .update(updateData)
+      .eq("id", panic_alert_id);
+
+    if (updateError) {
+      throw new Error("Failed to update panic alert");
+    }
+
+    const safetyAlertUpdate: Record<string, unknown> = {
+      status: new_status,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (new_status === "resolved") {
+      safetyAlertUpdate.verified_at = new Date().toISOString();
+      safetyAlertUpdate.verified_by = context.user.id;
+    }
+
+    const timeWindowStart = new Date(new Date(panicAlert.created_at).getTime() - 1000).toISOString();
+    const timeWindowEnd = new Date(new Date(panicAlert.created_at).getTime() + 1000).toISOString();
+
+    const { error: safetyUpdateError } = await context.admin
+      .from("safety_alerts")
       .update(safetyAlertUpdate)
-      .eq('user_id', panicAlert.user_id)
-      .eq('severity', 'critical')
-      .gte('created_at', new Date(new Date(panicAlert.created_at).getTime() - 1000).toISOString())
-      .lte('created_at', new Date(new Date(panicAlert.created_at).getTime() + 1000).toISOString());
+      .eq("user_id", panicAlert.user_id)
+      .eq("severity", "critical")
+      .gte("created_at", timeWindowStart)
+      .lte("created_at", timeWindowEnd);
 
     if (safetyUpdateError) {
-      console.error('Error updating safety alert:', safetyUpdateError);
-      // Don't fail the request if safety alert update fails
+      console.error("update-panic-alert-status safety alert update error:", safetyUpdateError);
     }
 
-    // Add status update note if provided
     if (update_note) {
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('user_id', user.id)
-        .single();
+      const [{ data: userProfile }, { data: safetyAlert }] = await Promise.all([
+        context.admin.from("profiles").select("full_name").eq("user_id", context.user.id).single(),
+        context.admin
+          .from("safety_alerts")
+          .select("id")
+          .eq("user_id", panicAlert.user_id)
+          .eq("severity", "critical")
+          .gte("created_at", timeWindowStart)
+          .lte("created_at", timeWindowEnd)
+          .single(),
+      ]);
 
-      // Find corresponding safety alert ID
-      const { data: safetyAlert } = await supabase
-        .from('safety_alerts')
-        .select('id')
-        .eq('user_id', panicAlert.user_id)
-        .eq('severity', 'critical')
-        .gte('created_at', new Date(new Date(panicAlert.created_at).getTime() - 1000).toISOString())
-        .lte('created_at', new Date(new Date(panicAlert.created_at).getTime() + 1000).toISOString())
-        .single();
-
-      if (safetyAlert) {
-        await supabase
-          .from('alert_responses')
-          .insert({
-            alert_id: safetyAlert.id,
-            user_id: user.id,
-            response_type: 'status_update',
-            comment: `Status updated to ${new_status.replace('_', ' ')} by ${userProfile?.full_name || 'User'}: ${update_note}`
-          });
+      if (safetyAlert?.id) {
+        await context.admin.from("alert_responses").insert({
+          alert_id: safetyAlert.id,
+          user_id: context.user.id,
+          response_type: "status_update",
+          comment: `Status updated to ${new_status.replace("_", " ")} by ${userProfile?.full_name || "User"}: ${update_note}`,
+        });
       }
     }
 
-    // Log staff activity for audit
-    try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: user.id,
-          action_type: 'update_panic_alert_status',
-          resource_type: 'panic_alert',
-          resource_id: panic_alert_id,
-          details: {
-            new_status,
-            update_note: update_note || null,
-            alert_user_id: panicAlert.user_id,
-            panic_created_at: panicAlert.created_at
-          },
-          user_agent: req.headers.get('user-agent') || null,
-        });
-    } catch (logErr) {
-      console.warn('Failed to log staff activity:', logErr);
-    }
+    await context.admin.from("activity_logs").insert({
+      user_id: context.user.id,
+      action_type: "update_panic_alert_status",
+      resource_type: "panic_alert",
+      resource_id: panic_alert_id,
+      details: {
+        new_status,
+        update_note: update_note || null,
+        alert_user_id: panicAlert.user_id,
+        panic_created_at: panicAlert.created_at,
+      },
+      user_agent: req.headers.get("user-agent") || null,
+    });
 
-    // Get updated panic alert data
-    const { data: updatedAlert } = await supabase
-      .from('panic_alerts')
-      .select('*')
-      .eq('id', panic_alert_id)
+    const { data: updatedAlert } = await context.admin
+      .from("panic_alerts")
+      .select("*")
+      .eq("id", panic_alert_id)
       .single();
 
-    console.log(`Successfully updated panic alert ${panic_alert_id} to status: ${new_status}`);
+    return jsonResponse(req, {
+      success: true,
+      panic_alert: updatedAlert,
+      message: `Panic alert status updated to ${new_status.replace("_", " ")}`,
+    });
+  } catch (error) {
+    console.error("update-panic-alert-status error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        panic_alert: updatedAlert,
-        message: `Panic alert status updated to ${new_status.replace('_', ' ')}` 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
-  } catch (error: any) {
-    console.error('Error in update-panic-alert-status function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
-};
-
-serve(handler);
+});

@@ -1,87 +1,136 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};
+import {
+  assertSelfOrPrivileged,
+  getRequestContext,
+  isPrivilegedUser,
+} from "../_shared/auth.ts";
+import { getClientIp, handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 interface SmsRequest {
-  to: string; // E.164 phone number
+  to: string;
   body: string;
   userId?: string;
 }
 
+function isValidPhone(value: string): boolean {
+  return /^\+[1-9]\d{7,14}$/.test(value);
+}
+
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Forbidden") return 403;
+  if (message === "Rate limit exceeded") return 429;
+  if (message.startsWith("Missing required") || message.startsWith("Invalid")) return 400;
+  return 500;
+}
+
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
+    const context = await getRequestContext(req, { allowInternal: true, requireUser: false });
     const { to, body, userId } = await req.json() as SmsRequest;
 
     if (!to || !body) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error("Missing required fields: to, body");
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    if (!isValidPhone(to)) {
+      throw new Error("Invalid phone number");
+    }
 
-    const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER') ?? Deno.env.get('TWILIO_FROM_NUMBER');
+    if (body.length > 1000) {
+      throw new Error("Invalid message length");
+    }
+
+    if (!context.isInternal) {
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-sms-notification",
+        scope: `user:${context.user.id}`,
+        limit: isPrivilegedUser(context.roles) ? 20 : 5,
+        windowMinutes: 15,
+      });
+
+      assertSelfOrPrivileged(context.user.id, userId ?? context.user.id, context.roles);
+
+      if (!isPrivilegedUser(context.roles)) {
+        const { data: profile } = await context.admin
+          .from("profiles")
+          .select("phone")
+          .eq("user_id", context.user.id)
+          .maybeSingle();
+
+        if (!profile?.phone || profile.phone !== to) {
+          throw new Error("Forbidden");
+        }
+      }
+    } else {
+      await enforceRateLimit({
+        admin: context.admin,
+        action: "send-sms-notification-internal",
+        scope: `ip:${getClientIp(req)}`,
+        limit: 100,
+        windowMinutes: 5,
+      });
+    }
+
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER") ?? Deno.env.get("TWILIO_FROM_NUMBER");
 
     if (!accountSid || !authToken || !fromNumber) {
-      return new Response(
-        JSON.stringify({ error: 'Twilio not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER (or TWILIO_FROM_NUMBER).' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error("SMS service not configured");
     }
 
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const params = new URLSearchParams({ To: to, From: fromNumber, Body: body });
 
     const resp = await fetch(twilioUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Basic ' + btoa(`${accountSid}:${authToken}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: "Basic " + btoa(`${accountSid}:${authToken}`),
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
     });
 
     if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`Twilio error ${resp.status}: ${errText}`);
+      const errorBody = await resp.text();
+      console.error("Twilio error:", { status: resp.status, errorBody });
+      throw new Error("SMS delivery failed");
     }
 
     const result = await resp.json();
 
-    // Log to notification_delivery_log if table exists (best-effort)
-    await supabase.from('notification_delivery_log').insert({
+    await context.admin.from("notification_delivery_log").insert({
       alert_id: null,
-      user_id: userId ?? null,
-      delivery_channel: 'sms',
-      delivery_status: 'sent',
+      user_id: userId ?? context.user?.id ?? null,
+      delivery_channel: "sms",
+      delivery_status: "sent",
       sent_at: new Date().toISOString(),
       failure_reason: null,
-      metadata: { provider: 'twilio', sid: result.sid },
+      metadata: { provider: "twilio", sid: result.sid },
     } as any);
 
-    return new Response(
-      JSON.stringify({ success: true, provider: 'twilio', sid: result.sid }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error: any) {
-    console.error('send-sms-notification error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return jsonResponse(req, { success: true, provider: "twilio", sid: result.sid });
+  } catch (error) {
+    console.error("send-sms-notification error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Request failed" : message },
+      status,
     );
   }
 });

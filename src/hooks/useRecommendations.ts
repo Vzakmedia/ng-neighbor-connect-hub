@@ -28,9 +28,7 @@ export function useRecommendations() {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase.functions.invoke('generate-feed-recommendations', {
-        body: { userId: user.id }
-      });
+      const { data, error } = await supabase.functions.invoke('generate-feed-recommendations');
 
       if (error) throw error;
       return data;

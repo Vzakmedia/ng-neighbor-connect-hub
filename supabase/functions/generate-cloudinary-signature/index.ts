@@ -1,96 +1,75 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { getRequestContext } from "../_shared/auth.ts";
+import { handleCors, jsonResponse } from "../_shared/http.ts";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-};
+function sanitizeFolderName(folder: string | undefined): string {
+  if (!folder) return "uploads";
+
+  const normalized = folder.trim().replace(/^\/+|\/+$/g, "");
+  if (!normalized || !/^[a-z0-9/_-]+$/i.test(normalized)) {
+    return "uploads";
+  }
+
+  return normalized;
+}
+
+function getStatusCode(message: string): number {
+  if (message === "Unauthorized") return 401;
+  if (message === "Rate limit exceeded") return 429;
+  return 400;
+}
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
-    console.log('Cloudinary signature generation started');
-
-    // Check environment variables
-    const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY');
-    const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
-
-    if (!CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-      console.error('Missing Cloudinary credentials');
-      throw new Error('Cloudinary credentials not configured');
+    const context = await getRequestContext(req, { allowInternal: false, requireUser: true });
+    if (!context.user) {
+      throw new Error("Unauthorized");
     }
 
-    // Get JWT from authorization header (already validated by Supabase since verify_jwt=true)
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    await enforceRateLimit({
+      admin: context.admin,
+      action: "generate-cloudinary-signature",
+      scope: `user:${context.user.id}`,
+      limit: 40,
+      windowMinutes: 15,
+    });
+
+    const cloudinaryApiKey = Deno.env.get("CLOUDINARY_API_KEY");
+    const cloudinaryApiSecret = Deno.env.get("CLOUDINARY_API_SECRET");
+    if (!cloudinaryApiKey || !cloudinaryApiSecret) {
+      throw new Error("Signature service unavailable");
     }
 
-    // Extract JWT token
-    const token = authHeader.replace('Bearer ', '');
+    const { folder } = await req.json() as { folder?: string };
+    const userFolder = `${sanitizeFolderName(folder)}/${context.user.id}`;
+    const timestamp = Math.round(Date.now() / 1000);
+    const signatureString = `folder=${userFolder}&timestamp=${timestamp}${cloudinaryApiSecret}`;
+    const hashBuffer = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(signatureString));
+    const signature = Array.from(new Uint8Array(hashBuffer))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
 
-    // Decode JWT to get user ID (JWT is already verified by Supabase when verify_jwt=true)
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      console.error('Invalid JWT format');
-      return new Response(
-        JSON.stringify({ error: 'Invalid token format' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const payload = JSON.parse(atob(parts[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      console.error('No user ID in JWT');
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('User authenticated:', userId);
-
-    const { folder = 'uploads', resource_type = 'auto' } = await req.json();
-
-    // Generate timestamp
-    const timestamp = Math.round(new Date().getTime() / 1000);
-
-    // Create signature string
-    const signatureString = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
-
-    // Generate SHA-1 hash
-    const encoder = new TextEncoder();
-    const data = encoder.encode(signatureString);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    console.log('Generated signature successfully for user:', userId, 'folder:', folder);
-
-    return new Response(
-      JSON.stringify({
-        signature,
-        timestamp,
-        api_key: CLOUDINARY_API_KEY,
-        folder
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse(req, {
+      signature,
+      timestamp,
+      api_key: cloudinaryApiKey,
+      folder: userFolder,
+    });
   } catch (error) {
-    console.error('Error generating signature:', error.message, error.stack);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Failed to generate signature' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    console.error("generate-cloudinary-signature error:", error);
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    const status = getStatusCode(message);
+
+    return jsonResponse(
+      req,
+      { error: status >= 500 ? "Failed to generate signature" : message },
+      status,
     );
   }
 });

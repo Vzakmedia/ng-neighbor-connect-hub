@@ -14,7 +14,7 @@ router.post('/stripe', async (req, res) => {
     const signature = req.headers['stripe-signature'];
     
     if (!signature) {
-      return res.status(400).json({ error: 'No Stripe signature found' });
+      return res.status(400).json({ error: 'Invalid webhook signature' });
     }
 
     // Verify webhook signature
@@ -83,7 +83,7 @@ router.post('/stripe', async (req, res) => {
     res.json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    res.status(400).json({ error: error.message || 'Webhook processing failed' });
+    res.status(400).json({ error: 'Webhook processing failed' });
   }
 });
 

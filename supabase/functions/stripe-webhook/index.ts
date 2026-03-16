@@ -1,19 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCors } from "../_shared/http.ts";
 
 serve(async (req) => {
-  console.log('Payment webhook called');
-  
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -24,7 +20,10 @@ serve(async (req) => {
     const signature = req.headers.get("stripe-signature");
     
     if (!signature) {
-      throw new Error("No Stripe signature found");
+      return new Response(JSON.stringify({ error: "Invalid webhook signature" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
     // Verify webhook signature
@@ -102,7 +101,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Webhook error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || "Webhook processing failed" 
+      error: "Webhook processing failed" 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

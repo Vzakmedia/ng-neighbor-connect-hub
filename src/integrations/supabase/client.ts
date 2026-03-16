@@ -40,9 +40,6 @@ const wrapFetchWithLogging = (baseFetch: typeof fetch): typeof fetch => {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Detect iOS device
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
 // Safe Capacitor detection with defensive fallback
 let cachedCapacitor: any = undefined; // undefined means not checked yet
 
@@ -71,10 +68,17 @@ const getCapacitor = () => {
   }
 };
 
-// Storage adapter - uses synchronous nativeSyncStorage for all platforms
-// nativeSyncStorage uses memory cache for immediate sync access,
-// with background syncing to Capacitor Preferences on native
+const isNativePlatform = () => {
+  return !!getCapacitor();
+};
+
+// Use synchronous native storage only on native platforms.
 const getStorageAdapter = () => {
+  if (!isNativePlatform()) {
+    console.log('[Supabase] Web platform detected, disabling persistent auth storage');
+    return undefined;
+  }
+
   console.log('[Supabase] Using nativeSyncStorage adapter');
   return nativeSyncStorage;
 };
@@ -85,12 +89,13 @@ const createSupabaseClient = () => {
 
   const storage = getStorageAdapter();
   const customFetch = getUnpatchedFetch();
+  const persistSession = isNativePlatform();
 
   const clientConfig: any = {
     auth: {
       storage,
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession,
+      autoRefreshToken: persistSession,
       detectSessionInUrl: true,
       storageKey: 'neighborlink-auth',
       flowType: 'pkce',
@@ -158,13 +163,14 @@ if (typeof document !== 'undefined') {
     }
   });
 
-  // Monitor localStorage for session changes (multi-tab support)
-  window.addEventListener('storage', (event) => {
-    if (event.key?.startsWith('sb-') && event.key?.includes('auth-token') || event.key === 'neighborlink-auth') {
-      console.log('Auth storage changed, revalidating session');
-      validateAndRefreshSession();
-    }
-  });
+  if (isNativePlatform()) {
+    window.addEventListener('storage', (event) => {
+      if (event.key?.startsWith('sb-') && event.key?.includes('auth-token') || event.key === 'neighborlink-auth') {
+        console.log('Auth storage changed, revalidating session');
+        validateAndRefreshSession();
+      }
+    });
+  }
 
   // CRITICAL: Defer initial session validation by 3 seconds
   // This prevents interference with login flow during app startup
