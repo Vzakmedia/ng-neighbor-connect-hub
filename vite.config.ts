@@ -28,6 +28,12 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     minify: 'esbuild',
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Capacitor modules are intentionally used as both static and dynamic imports
+        // (static for type/platform checks, dynamic for lazy native loading)
+        if (warning.message?.includes('dynamic import will not move module into another chunk')) return;
+        warn(warning);
+      },
       output: {
         // Better chunking for iOS compatibility
         manualChunks(id) {
@@ -57,11 +63,6 @@ export default defineConfig(({ mode }) => ({
   },
   esbuild: {
     target: 'es2017', // iOS Safari 12+ support
-    supported: {
-      'bigint': false, // Disable bigint for iOS compatibility
-      'top-level-await': false, // Disable top-level await
-    },
-    // Ensure proper transformation of modern syntax
     keepNames: true,
   },
 }));

@@ -37,12 +37,8 @@ export const useAudioPermissions = () => {
 
             // On native platforms, check if already granted
             if (Capacitor.isNativePlatform()) {
-                // For native, we'll rely on LiveKit's built-in permission handling
-                // But we can pre-check using Capacitor Permissions if available
+                // LiveKit handles native permission requests; we pre-check via getUserMedia
                 try {
-                    const { Permissions } = await import('@capacitor/core');
-                    // Note: There's no direct RECORD_AUDIO in Capacitor core permissions
-                    // LiveKit will handle this, but we can try to request via getUserMedia
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     stream.getTracks().forEach(track => track.stop());
                     setPermissionState({ granted: true, requesting: false, error: null });
