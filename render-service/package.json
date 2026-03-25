@@ -1,6 +1,7 @@
 {
   "name": "neighborhood-platform-api",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "Node.js microservice for neighborhood platform with payment processing",
   "main": "server.js",
   "scripts": {
@@ -9,13 +10,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
+    "@upstash/ratelimit": "^2.0.8",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
-    "stripe": "^14.25.0"
+    "stripe": "^14.25.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

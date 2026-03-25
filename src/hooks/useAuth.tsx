@@ -12,46 +12,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log("AuthProvider component rendering");
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Debug: Log state changes
+  // Debug logging — DEV only, never logs PII in production
   useEffect(() => {
-    console.log('AuthProvider state:', {
-      hasUser: !!user,
-      hasSession: !!session,
-      loading,
-      userId: user?.id,
-      email: user?.email,
-    });
-  }, [user, session, loading]);
+    if (import.meta.env.DEV) {
+      console.log('AuthProvider state:', { hasUser: !!user, loading });
+    }
+  }, [user, loading]);
 
-  // Safety timeout - ensure loading never stays true forever (prevents infinite spinner)
+  // Safety timeout — ensure loading never stays true forever
   useEffect(() => {
     if (!loading) return;
-
     const timeout = setTimeout(() => {
-      console.warn('[Auth] Safety timeout triggered after 10s - forcing loading=false');
+      if (import.meta.env.DEV) {
+        console.warn('[Auth] Safety timeout triggered after 10s - forcing loading=false');
+      }
       setLoading(false);
-    }, 10000); // 10 seconds max
-
+    }, 10000);
     return () => clearTimeout(timeout);
   }, [loading]);
 
   useEffect(() => {
-    console.log("AuthProvider useEffect starting");
     try {
       // Set up auth state listener FIRST
       // CRITICAL: Only synchronous state updates in this callback to prevent deadlocks
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
-          console.log("Auth state changed:", event, session?.user?.email_confirmed_at);
+          if (import.meta.env.DEV) {
+            console.log('Auth state changed:', event);
+          }
 
           // Handle sign out immediately
           if (event === 'SIGNED_OUT') {
-            console.log('User signed out');
             setSession(null);
             setUser(null);
             setLoading(false);
@@ -82,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const fiveMinutes = 5 * 60 * 1000;
 
             if (expiresAt - now < fiveMinutes && expiresAt > now) {
-              console.log('Token expiring soon, will refresh...');
               // CRITICAL: Use setTimeout(0) to defer Supabase call
               setTimeout(() => {
                 supabase.auth.refreshSession().catch(e => {
@@ -93,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       );
-      console.log("Auth listener set up successfully");
+
 
       // THEN check for existing session with validation + 15s timeout (increased for native)
       const fetchSessionWithRetry = async (retries = 2): Promise<{ data: { session: Session | null }, error: Error | null }> => {
@@ -103,9 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const sessionTimeout = new Promise<{ data: { session: null }, error: Error }>((resolve) => {
               setTimeout(() => {
-                console.warn(`[Auth] getSession() timed out (attempt ${attempt + 1})`);
+                if (import.meta.env.DEV) console.warn(`[Auth] getSession() timed out (attempt ${attempt + 1})`);
                 resolve({ data: { session: null }, error: new Error('Session fetch timeout') });
-              }, 15000); // Increased to 15s for native storage
+              }, 15000);
             });
 
             const result = await Promise.race([
@@ -120,7 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // If error and more retries, wait and retry
             if (attempt < retries) {
-              console.log(`[Auth] Retrying session fetch in 1s...`);
               await new Promise(r => setTimeout(r, 1000));
             }
           } catch (e) {
@@ -140,15 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        console.log("Got existing session:", session?.user?.email_confirmed_at);
-
         // Validate session token if present
         if (session?.expires_at) {
           const expiresAt = session.expires_at * 1000;
           const now = Date.now();
-
           if (expiresAt < now) {
-            console.warn('Stored session expired, refreshing...');
             supabase.auth.refreshSession();
             return;
           }
@@ -170,10 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
 
-      return () => {
-        console.log("Cleaning up auth subscription");
-        subscription.unsubscribe();
-      };
+      return () => { subscription.unsubscribe(); };
     } catch (error) {
       console.error("Error in AuthProvider useEffect:", error);
       setLoading(false);
@@ -182,13 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      console.log("Attempting to sign out...");
-
-      // Sign out from Supabase first (this clears the session from storage)
       const { error } = await supabase.auth.signOut();
-
       if (error) {
-        console.error("Sign out error:", error);
+        console.error('Sign out error:', error);
       } else {
         console.log("Sign out successful");
       }

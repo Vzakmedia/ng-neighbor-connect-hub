@@ -1,11 +1,29 @@
 const express = require('express');
 const Stripe = require('stripe');
+const { z } = require('zod');
 const { verifyAuth } = require('../middleware/auth');
 const { getSupabaseClient } = require('../utils/supabase');
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// ─── Validation schemas ────────────────────────────────────────────────────────
+const ALLOWED_CURRENCIES = ['ngn', 'usd', 'gbp', 'eur'];
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const adCampaignSchema = z.object({
+  campaignId: z.string().regex(uuidRegex, 'Invalid campaign ID format'),
+  currency: z.enum(ALLOWED_CURRENCIES).default('ngn'),
+});
+
+const businessPromotionSchema = z.object({
+  businessId: z.string().regex(uuidRegex, 'Invalid business ID format'),
+  promotionType: z.enum(['basic', 'premium', 'featured']),
+  duration: z.union([z.literal(7), z.literal(14), z.literal(30)]),
+  currency: z.enum(ALLOWED_CURRENCIES).default('ngn'),
+  description: z.string().max(200).optional(),
+});
 const BUSINESS_PROMOTION_PRICING = {
   basic: { 7: 5000, 14: 8000, 30: 14000 },
   premium: { 7: 10000, 14: 18000, 30: 32000 },
@@ -91,12 +109,12 @@ function getBusinessPromotionAmount(promotionType, duration) {
 
 router.post('/ad-campaign', verifyAuth, async (req, res) => {
   try {
-    const { campaignId, currency = 'ngn' } = req.body;
-    const user = req.user;
-
-    if (!campaignId) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const parsed = adCampaignSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parsed.error.flatten() });
     }
+    const { campaignId, currency } = parsed.data;
+    const user = req.user;
 
     const supabase = getSupabaseClient();
     const { campaign, durationDays, amount } = await getCampaignPricing(supabase, campaignId, user.id);
@@ -155,18 +173,12 @@ router.post('/ad-campaign', verifyAuth, async (req, res) => {
 
 router.post('/business-promotion', verifyAuth, async (req, res) => {
   try {
-    const {
-      businessId,
-      promotionType,
-      duration,
-      currency = 'ngn',
-      description
-    } = req.body;
-    const user = req.user;
-
-    if (!businessId || !promotionType || !duration) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const parsed = businessPromotionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parsed.error.flatten() });
     }
+    const { businessId, promotionType, duration, currency, description } = parsed.data;
+    const user = req.user;
 
     const supabase = getSupabaseClient();
     const { data: business, error: businessError } = await supabase

@@ -30,11 +30,19 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Better chunking for iOS compatibility
-        manualChunks: {
-          'ios-compat': ['@/utils/iosCompatibility', '@/utils/safetStorage'],
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'ui-components': ['@radix-ui/react-dialog', '@radix-ui/react-popover', '@radix-ui/react-dropdown-menu'],
+        manualChunks(id) {
+          if (id.includes('iosCompatibility') || id.includes('safetStorage')) {
+            return 'ios-compat';
+          }
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react-vendor';
+          }
+          if (id.includes('react-router')) {
+            return 'router';
+          }
+          if (id.includes('@radix-ui')) {
+            return 'ui-components';
+          }
         },
         // Ensure proper module format for iOS
         format: 'es',

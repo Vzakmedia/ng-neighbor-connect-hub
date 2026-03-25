@@ -111,7 +111,6 @@ export const useEmailNotifications = () => {
         userId: user.id
       };
 
-      console.log('Attempting to send test email via supabase.functions.invoke...');
 
       try {
         const { data, error } = await supabase.functions.invoke('send-email-notification', {
@@ -125,13 +124,16 @@ export const useEmailNotifications = () => {
 
         console.log('Test email sent successfully via invoke:', data);
         return data;
-      } catch (invokeError: any) {
+      } catch (invokeError: Error | unknown) {
         console.error('Invoke failed, trying direct fetch fallback:', invokeError);
 
-        // Fallback to direct fetch
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cowiviqhrnmhttugozbz.supabase.co';
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4';
+        // Fallback to direct fetch using env vars (no hardcoded credentials)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
+        if (!supabaseUrl || !supabaseAnonKey) {
+          throw new Error('Supabase configuration missing');
+        }
         const response = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
           method: 'POST',
           headers: {
@@ -156,7 +158,7 @@ export const useEmailNotifications = () => {
     onSuccess: () => {
       toast.success('Test email sent! Check your inbox.');
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       console.error('Error sending test email:', error);
       handleApiError(error, { route: '/profile/notifications' });
     }

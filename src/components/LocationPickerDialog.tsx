@@ -43,16 +43,21 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   
   const MAX_RETRIES = 3;
   const fetchApiKeyWithRetry = async (attempt = 0): Promise<string> => {
-    console.log(`🔑 [LocationPicker] Fetching API key (attempt ${attempt + 1}/${MAX_RETRIES})...`);
-    
     try {
+      // Use session token when available; fall back to anon key from env vars only
+      const { data: { session } } = await supabase.auth.getSession();
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const authToken = session?.access_token ?? anonKey;
+
       const response = await fetch(
-        'https://cowiviqhrnmhttugozbz.supabase.co/functions/v1/get-google-maps-token',
+        `${supabaseUrl}/functions/v1/get-google-maps-token`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvd2l2aXFocm5taHR0dWdvemJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTQ0NDQsImV4cCI6MjA2ODYzMDQ0NH0.BJ6OstIOar6CqEv__WzF9qZYaW12uQ-FfXYaVdxgJM4`,
+            'Authorization': `Bearer ${authToken}`,
+            'apikey': anonKey,
           },
         }
       );

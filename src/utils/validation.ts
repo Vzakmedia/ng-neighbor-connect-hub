@@ -1,4 +1,5 @@
 // Validation utilities extracted from security.ts for better organization
+import DOMPurify from 'dompurify';
 
 export const validation = {
   // Basic validation functions
@@ -124,7 +125,7 @@ export const validation = {
 export const sanitization = {
   text: (text: string): string => {
     if (!text) return '';
-    
+
     // Remove script tags and dangerous content
     return text
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -135,32 +136,20 @@ export const sanitization = {
       .substring(0, 10000); // Limit length
   },
 
+  /**
+   * Sanitizes HTML using DOMPurify — the industry-standard XSS sanitizer.
+   * Replaces the previous hand-rolled DOM walker which was vulnerable to data: URL attacks.
+   */
   html: (html: string): string => {
-    const allowedTags = ['b', 'i', 'u', 'strong', 'em', 'p', 'br'];
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    
-    // Remove all script elements
-    const scripts = div.querySelectorAll('script');
-    scripts.forEach(script => script.remove());
-    
-    // Remove dangerous attributes
-    const allElements = div.querySelectorAll('*');
-    allElements.forEach(el => {
-      Array.from(el.attributes).forEach(attr => {
-        if (attr.name.startsWith('on') || attr.name === 'href' && attr.value.startsWith('javascript:')) {
-          el.removeAttribute(attr.name);
-        }
-      });
-      
-      if (!allowedTags.includes(el.tagName.toLowerCase())) {
-        el.replaceWith(...el.childNodes);
-      }
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'img'],
+      ALLOWED_ATTR: ['href', 'title', 'class', 'src', 'alt'],
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+\-.]+(?:[^a-z+\-.:]|$))/i,
+      FORCE_BODY: true,
     });
-    
-    return div.innerHTML;
   },
 };
+
 
 // Utility functions
 export const obfuscatePhoneNumber = (phone: string): string => {

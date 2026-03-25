@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 
 const paymentRoutes = require('./routes/payments');
 const webhookRoutes = require('./routes/webhooks');
@@ -42,11 +41,52 @@ app.use(cors({
   credentials: true,
 }));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-app.use(limiter);
+let rateLimiterMiddleware;
+
+async function initRateLimiter() {
+  const upstashRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const upstashRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (upstashRedisUrl && upstashRedisToken) {
+    const { Ratelimit } = require('@upstash/ratelimit');
+    const rateLimiter = new Ratelimit({
+      redis: {
+        url: upstashRedisUrl,
+        token: upstashRedisToken,
+      },
+      limiter: Ratelimit.slidingWindow(100, '15 m'),
+      analytics: true,
+    });
+
+    rateLimiterMiddleware = async (req, res, next) => {
+      const identifier = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+      const { success } = await rateLimiter.limit(identifier);
+
+      if (!success) {
+        res.set('Retry-After', '900');
+        return res.status(429).json({
+          error: 'Too many requests',
+          message: 'Rate limit exceeded. Please try again later.',
+        });
+      }
+      next();
+    };
+    console.log('[RateLimit] Using Upstash Redis backend');
+  } else {
+    const rateLimit = require('express-rate-limit');
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+    });
+    rateLimiterMiddleware = limiter;
+    console.warn('[RateLimit] Using in-memory backend (not recommended for production)');
+  }
+}
+
+(async () => {
+  await initRateLimiter();
+  app.use(rateLimiterMiddleware);
+})();
 
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
 app.use(express.json());

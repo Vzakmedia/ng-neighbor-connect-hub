@@ -12,6 +12,7 @@ import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLifecycleManager } from "@/components/AppLifecycleManager";
 import { useAppVersionCheck } from "@/hooks/useAppVersionCheck";
 import { PresenceProvider } from "@/contexts/PresenceContext";
@@ -300,59 +301,64 @@ const App = () => {
                       <DirectMessageToastWrapper />
                       <Suspense fallback={<LoadingSpinner fullScreen />}>
                         <Routes>
+                          {/* ─── Public routes ─── */}
                           <Route path="/" element={<PlatformRoot />} />
-                          <Route path="/feed" element={<Feed />} />
-                          <Route path="/home" element={<Home />} />
-                          <Route path="/dashboard" element={<Index />} />
                           <Route path="/landing" element={<Landing />} />
                           <Route path="/about" element={<About />} />
-                          <Route path="/community" element={<Community />} />
-                          <Route path="/community/post/:id" element={<PostDetail />} />
-                          <Route path="/messages" element={<Messages />} />
-                          <Route path="/search-users" element={<SearchUsers />} />
-                          <Route path="/chat/:conversationId" element={<Chat />} />
-                          <Route path="/marketplace" element={<MarketplacePage />} />
-                          <Route path="/safety" element={<Safety />} />
-                          <Route path="/profile" element={<Profile />} />
-                          <Route path="/profile/:id" element={<Profile />} />
-                          <Route path="/profile-menu" element={<ProfileMenu />} />
-                          <Route path="/notifications" element={<Notifications />} />
-                          <Route path="/privacy-security" element={<PrivacySecurity />} />
-                          <Route path="/settings" element={<Settings />} />
-                          <Route path="/services" element={<Services />} />
-                          <Route path="/users" element={<UserDirectory />} />
-                          <Route path="/my-services" element={<MyServices />} />
-                          <Route path="/my-goods" element={<MyGoods />} />
-                          <Route path="/my-bookings" element={<MyBookings />} />
-                          <Route path="/events" element={<Events />} />
-                          <Route path="/recommendations" element={<Recommendations />} />
-                          <Route path="/recommendations/create" element={<CreateRecommendation />} />
-                          <Route path="/recommendations/:id" element={<RecommendationDetail />} />
                           <Route path="/auth" element={<Auth />} />
                           <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                          <Route path="/auth/complete-profile" element={<CompleteProfile />} />
-                          <Route path="/admin" element={<Admin />} />
-                          <Route path="/moderator" element={<ModeratorDashboard />} />
-                          <Route path="/manager" element={<ManagerDashboard />} />
-                          <Route path="/support" element={<SupportDashboard />} />
-                          <Route path="/staff-portal" element={<StaffNavigation />} />
-                          <Route path="/staff" element={<StaffDashboard />} />
-                          <Route path="/staff-dashboard" element={<StaffDashboard />} />
-                          <Route path="/business" element={<Business />} />
-                          <Route path="/advertising" element={<Advertising />} />
-                          <Route path="/advertising/create" element={<CreateCampaign />} />
-                          <Route path="/staff-login" element={<StaffLogin />} />
                           <Route path="/privacy" element={<PrivacyPolicy />} />
                           <Route path="/terms" element={<TermsOfService />} />
                           <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                           <Route path="/press" element={<Press />} />
                           <Route path="/careers" element={<Careers />} />
                           <Route path="/api-docs" element={<ApiDocs />} />
-                          <Route path="/admin/api-requests" element={<ApiRequestsAdmin />} />
                           <Route path="/help" element={<HelpCenter />} />
                           <Route path="/contact" element={<Contact />} />
                           <Route path="/blog" element={<Blog />} />
                           <Route path="/blog/:slug" element={<BlogPost />} />
+                          <Route path="/staff-login" element={<StaffLogin />} />
+
+                          {/* ─── Authenticated routes (any signed-in user) ─── */}
+                          <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+                          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                          <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                          <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+                          <Route path="/community/post/:id" element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
+                          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                          <Route path="/search-users" element={<ProtectedRoute><SearchUsers /></ProtectedRoute>} />
+                          <Route path="/chat/:conversationId" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+                          <Route path="/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
+                          <Route path="/safety" element={<ProtectedRoute><Safety /></ProtectedRoute>} />
+                          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                          <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                          <Route path="/profile-menu" element={<ProtectedRoute><ProfileMenu /></ProtectedRoute>} />
+                          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                          <Route path="/privacy-security" element={<ProtectedRoute><PrivacySecurity /></ProtectedRoute>} />
+                          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                          <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+                          <Route path="/users" element={<ProtectedRoute><UserDirectory /></ProtectedRoute>} />
+                          <Route path="/my-services" element={<ProtectedRoute><MyServices /></ProtectedRoute>} />
+                          <Route path="/my-goods" element={<ProtectedRoute><MyGoods /></ProtectedRoute>} />
+                          <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+                          <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+                          <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+                          <Route path="/recommendations/create" element={<ProtectedRoute><CreateRecommendation /></ProtectedRoute>} />
+                          <Route path="/recommendations/:id" element={<ProtectedRoute><RecommendationDetail /></ProtectedRoute>} />
+                          <Route path="/auth/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
+                          <Route path="/business" element={<ProtectedRoute><Business /></ProtectedRoute>} />
+                          <Route path="/advertising" element={<ProtectedRoute><Advertising /></ProtectedRoute>} />
+                          <Route path="/advertising/create" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
+
+                          {/* ─── Privileged routes (role-gated) ─── */}
+                          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+                          <Route path="/admin/api-requests" element={<ProtectedRoute requiredRole="admin"><ApiRequestsAdmin /></ProtectedRoute>} />
+                          <Route path="/moderator" element={<ProtectedRoute requiredRole="moderator"><ModeratorDashboard /></ProtectedRoute>} />
+                          <Route path="/manager" element={<ProtectedRoute requiredRole="manager"><ManagerDashboard /></ProtectedRoute>} />
+                          <Route path="/support" element={<ProtectedRoute requiredRole="support"><SupportDashboard /></ProtectedRoute>} />
+                          <Route path="/staff-portal" element={<ProtectedRoute requiredRole="staff"><StaffNavigation /></ProtectedRoute>} />
+                          <Route path="/staff" element={<ProtectedRoute requiredRole="staff"><StaffDashboard /></ProtectedRoute>} />
+                          <Route path="/staff-dashboard" element={<ProtectedRoute requiredRole="staff"><StaffDashboard /></ProtectedRoute>} />
                         </Routes>
                       </Suspense>
                       <NeighborhoodEmergencyAlert position="top-center" />
