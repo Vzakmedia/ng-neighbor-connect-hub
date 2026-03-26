@@ -17,8 +17,8 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
         .select(`
           *,
           author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url),
-          is_saved:saved_recommendations!left(id),
-          is_liked:recommendation_likes!left(id)
+          is_saved:saved_recommendations!saved_recommendations_recommendation_id_fkey(id, user_id),
+          is_liked:recommendation_likes!recommendation_likes_recommendation_id_fkey(id, user_id)
         `, { count: 'exact' })
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
