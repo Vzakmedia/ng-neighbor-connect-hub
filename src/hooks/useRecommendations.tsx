@@ -16,9 +16,7 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
         .from('recommendations')
         .select(`
           *,
-          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url),
-          is_saved:saved_recommendations!saved_recommendations_recommendation_id_fkey(id, user_id),
-          is_liked:recommendation_likes!recommendation_likes_recommendation_id_fkey(id, user_id)
+          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url)
         `, { count: 'exact' })
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -60,11 +58,35 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
 
       if (error) throw error;
 
+      // Fetch user's saves and likes separately to avoid PostgREST embedding issues
+      let savedIds = new Set<string>();
+      let likedIds = new Set<string>();
+
+      if (user && data && data.length > 0) {
+        const ids = data.map((r: any) => r.id);
+
+        const [savedRes, likedRes] = await Promise.all([
+          supabase
+            .from('saved_recommendations')
+            .select('recommendation_id')
+            .eq('user_id', user.id)
+            .in('recommendation_id', ids),
+          supabase
+            .from('recommendation_likes')
+            .select('recommendation_id')
+            .eq('user_id', user.id)
+            .in('recommendation_id', ids),
+        ]);
+
+        savedIds = new Set((savedRes.data || []).map((s: any) => s.recommendation_id));
+        likedIds = new Set((likedRes.data || []).map((l: any) => l.recommendation_id));
+      }
+
       // Transform data
       const recommendations: Recommendation[] = (data || []).map(item => ({
         ...item,
-        is_saved: user ? (item.is_saved as any[]).some((s: any) => s.user_id === user.id) : false,
-        is_liked: user ? (item.is_liked as any[]).some((l: any) => l.user_id === user.id) : false,
+        is_saved: savedIds.has(item.id),
+        is_liked: likedIds.has(item.id),
       }));
 
       return {
