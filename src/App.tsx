@@ -12,6 +12,7 @@ import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 import { AuthProvider } from "@/hooks/useAuth";
+import { AdminStatusProvider } from "@/contexts/AdminStatusContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLifecycleManager } from "@/components/AppLifecycleManager";
 import { useAppVersionCheck } from "@/hooks/useAppVersionCheck";
@@ -275,6 +276,7 @@ const App = () => {
         disableTransitionOnChange
       >
         <AuthProvider>
+          <AdminStatusProvider>
           <TooltipProvider>
             <div style={{ minHeight: '100vh' }}>
               <Toaster />
@@ -373,6 +375,7 @@ const App = () => {
               </PlatformRouter>
             </div>
           </TooltipProvider>
+          </AdminStatusProvider>
         </AuthProvider>
       </ThemeProvider>
     </IOSErrorBoundary>
