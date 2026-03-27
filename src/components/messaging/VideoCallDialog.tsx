@@ -127,7 +127,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
     return (
       <Dialog open={open} onOpenChange={() => {}}>
         <DialogContent
-          className="sm:max-w-4xl h-[80vh] p-0 bg-black border-none text-white overflow-hidden"
+          className="w-[80vw] max-w-5xl h-[90vh] p-0 bg-black border-none text-white overflow-hidden"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >

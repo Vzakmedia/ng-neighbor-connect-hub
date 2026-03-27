@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, Component } from 'react';
+import React, { useState, useEffect, useRef, Component } from 'react';
 import {
     LiveKitRoom,
     VideoConference,
@@ -75,6 +75,8 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     const [connected, setConnected] = useState(false);
     const [reconnecting, setReconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Track intentional leaves so we don't show "Reconnecting" when the user clicks Leave
+    const leavingIntentionally = useRef(false);
     const { granted, requesting, requestPermission, error: permError } = useAudioPermissions();
     const { toast } = useToast();
 
@@ -129,15 +131,15 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
 
     const handleDisconnected = () => {
         setConnected(false);
-        setReconnecting(true);
-        // Give LiveKit a moment to auto-reconnect before treating as a true call end
-        setTimeout(() => {
-            setReconnecting(false);
-        }, 5000);
-        // Do NOT call onDisconnected here — only the explicit end-call button ends the call
+        // Only show "Reconnecting" for unexpected disconnects, not when the user clicked Leave
+        if (!leavingIntentionally.current) {
+            setReconnecting(true);
+            setTimeout(() => setReconnecting(false), 5000);
+        }
     };
 
     const handleLeave = () => {
+        leavingIntentionally.current = true;
         setConnected(false);
         onDisconnected?.();
     };

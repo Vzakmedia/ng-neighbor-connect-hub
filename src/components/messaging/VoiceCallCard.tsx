@@ -72,49 +72,50 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
     onToggleAudio();
   };
 
+  // Shared wrapper — centered, 50% width
+  const cardClass = "fixed inset-0 z-[90] flex items-center justify-center";
+  const innerClass = "bg-[#1a2e26] rounded-2xl shadow-2xl text-white overflow-hidden w-[50vw] min-w-[320px] max-w-lg";
+
   // LiveKit mode — render compact card with LiveKit interface inside
   if (liveKitToken) {
     return (
-      <div
-        className="fixed left-4 right-4 z-[90] bg-[#1a2e26] rounded-2xl shadow-2xl text-white overflow-hidden"
-        style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
-      >
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <Phone className="w-4 h-4" />
-            <span>Inbound</span>
+      <div className={cardClass}>
+        <div className={innerClass}>
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2">
+            <div className="flex items-center gap-2 text-white/70 text-sm">
+              <Phone className="w-4 h-4" />
+              <span>Inbound</span>
+            </div>
+            {isRinging && (
+              <span className="bg-amber-400/20 text-amber-300 text-xs px-2 py-0.5 rounded-full">
+                Ringing...
+              </span>
+            )}
+            {isConnected && (
+              <span className="text-white/80 text-sm font-mono">{formatDuration(callDuration)}</span>
+            )}
           </div>
-          {isRinging && (
-            <span className="bg-amber-400/20 text-amber-300 text-xs px-2 py-0.5 rounded-full">
-              Ringing...
-            </span>
-          )}
-          {isConnected && (
-            <span className="text-white/80 text-sm font-mono">{formatDuration(callDuration)}</span>
-          )}
-        </div>
 
-        {/* LiveKit audio interface */}
-        <div className="h-48">
-          <LiveKitCallInterface
-            token={liveKitToken}
-            serverUrl={serverUrl}
-            onDisconnected={onEndCall}
-            onParticipantConnected={() => setOtherParticipantJoined(true)}
-            audioOnly={true}
-          />
+          {/* LiveKit audio interface — tall enough to show ControlBar */}
+          <div className="h-64">
+            <LiveKitCallInterface
+              token={liveKitToken}
+              serverUrl={serverUrl}
+              onDisconnected={onEndCall}
+              onParticipantConnected={() => setOtherParticipantJoined(true)}
+              audioOnly={true}
+            />
+          </div>
         </div>
       </div>
     );
   }
 
-  // Native WebRTC mode — compact card
+  // Native WebRTC mode — compact centered card
   return (
-    <div
-      className="fixed left-4 right-4 z-[90] bg-[#1a2e26] rounded-2xl shadow-2xl text-white"
-      style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
-    >
+    <div className={cardClass}>
+    <div className={innerClass}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2 text-white/70 text-sm">
@@ -218,6 +219,7 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };
