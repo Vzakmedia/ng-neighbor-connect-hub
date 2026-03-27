@@ -34,6 +34,8 @@ export const useConversations = (userId: string | undefined) => {
   const failureCountRef = useRef(0);
   const MAX_FAILURES = 3;
   const isCircuitOpenRef = useRef(false);
+  // Prevent concurrent in-flight fetches (avoids duplicate console.time warnings)
+  const isFetchingRef = useRef(false);
 
   // Step 5: Stabilize fetchConversations - only depend on userId
   const fetchConversations = useCallback(async (): Promise<Conversation[]> => {
@@ -50,6 +52,11 @@ export const useConversations = (userId: string | undefined) => {
       return [];
     }
 
+    // Guard against concurrent in-flight fetches
+    if (isFetchingRef.current) {
+      return conversationsRef.current;
+    }
+
     // Debounce to prevent rapid successive calls
     const now = Date.now();
     if (now - lastFetchTimeRef.current < FETCH_COOLDOWN_MS) {
@@ -57,6 +64,7 @@ export const useConversations = (userId: string | undefined) => {
       return conversationsRef.current; // ✅ Return cached data instead of empty array
     }
     lastFetchTimeRef.current = now;
+    isFetchingRef.current = true;
 
     try {
       setLoading(true);
@@ -191,6 +199,7 @@ export const useConversations = (userId: string | undefined) => {
       }
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [userId]); // Fix 1: Only depend on userId - toast is now in ref
 

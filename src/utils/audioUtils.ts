@@ -36,11 +36,12 @@ export const preloadAudioFiles = async (): Promise<void> => {
   preloadingPromise = (async () => {
     try {
       const ctx = await getAudioContext();
+      // Only preload files that are known-good (≥ a few KB).
+      // notification-chime.mp3 and notification-ding.mp3 are stub files (336 bytes)
+      // that cannot be decoded — playback already falls back to generated audio.
       const filesToPreload = [
         '/notification.mp3',
         '/notification-bell.mp3',
-        '/notification-chime.mp3',
-        '/notification-ding.mp3'
       ];
       
       console.log('Preloading audio files...');
