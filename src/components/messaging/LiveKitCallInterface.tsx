@@ -9,10 +9,10 @@ import {
     ControlBar,
     useTracks,
     useRemoteParticipants,
-    TrackReferenceOrPlaceholder,
+    useRoomContext,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track, RoomOptions, VideoPresets, Room } from 'livekit-client';
+import { Track, RoomOptions, VideoPresets, RoomEvent, DisconnectReason } from 'livekit-client';
 import { Loader2, Mic, MicOff } from 'lucide-react';
 import { useAudioPermissions } from '@/hooks/useAudioPermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,6 @@ class LiveKitVideoErrorBoundary extends Component<
     }
     componentDidCatch(error: Error) {
         console.warn('[LiveKit] Recovered from track layout error:', error.message);
-        // Reset after a short delay so the component remounts cleanly
         setTimeout(() => this.setState({ hasError: false }), 500);
     }
     render() {
@@ -57,6 +56,42 @@ function RemoteParticipantWatcher({ onParticipantConnected }: { onParticipantCon
     return null;
 }
 
+/**
+ * Listens to the Room's Disconnected event INSIDE LiveKitRoom so we have access
+ * to DisconnectReason before any outer callbacks fire.
+ *
+ * - CLIENT_INITIATED  → user clicked Leave → call onLeave() to end the call
+ * - anything else     → unexpected drop    → call onUnexpectedDisconnect() to show reconnecting
+ */
+function DisconnectWatcher({
+    onLeave,
+    onUnexpectedDisconnect,
+}: {
+    onLeave: () => void;
+    onUnexpectedDisconnect: () => void;
+}) {
+    const room = useRoomContext();
+    // Keep stable refs so the effect never re-runs on re-render
+    const onLeaveRef = useRef(onLeave);
+    const onUnexpectedRef = useRef(onUnexpectedDisconnect);
+    useEffect(() => { onLeaveRef.current = onLeave; });
+    useEffect(() => { onUnexpectedRef.current = onUnexpectedDisconnect; });
+
+    useEffect(() => {
+        const handler = (reason?: DisconnectReason) => {
+            if (reason === DisconnectReason.CLIENT_INITIATED) {
+                onLeaveRef.current();
+            } else {
+                onUnexpectedRef.current();
+            }
+        };
+        room.on(RoomEvent.Disconnected, handler);
+        return () => { room.off(RoomEvent.Disconnected, handler); };
+    }, [room]);
+
+    return null;
+}
+
 interface LiveKitCallInterfaceProps {
     token: string;
     serverUrl: string;
@@ -75,12 +110,9 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     const [connected, setConnected] = useState(false);
     const [reconnecting, setReconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // Track intentional leaves so we don't show "Reconnecting" when the user clicks Leave
-    const leavingIntentionally = useRef(false);
     const { granted, requesting, requestPermission, error: permError } = useAudioPermissions();
     const { toast } = useToast();
 
-    // Request permissions before connecting
     useEffect(() => {
         const checkAndRequestPermission = async () => {
             if (!granted && !requesting) {
@@ -98,16 +130,13 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
         checkAndRequestPermission();
     }, [granted, requesting, requestPermission, toast]);
 
-    // LiveKit room options with optimized audio settings
     const roomOptions: RoomOptions = {
         adaptiveStream: true,
         dynacast: true,
         publishDefaults: {
-            audioPreset: {
-                maxBitrate: 20_000,
-            },
-            dtx: true, // Discontinuous transmission
-            red: true, // Redundant encoding
+            audioPreset: { maxBitrate: 20_000 },
+            dtx: true,
+            red: true,
         },
         audioCaptureDefaults: {
             autoGainControl: true,
@@ -119,32 +148,36 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
         },
     };
 
-    const handleError = (error: Error) => {
-        console.error('LiveKit error:', error);
-        setError(error.message);
+    const handleError = (err: Error) => {
+        console.error('LiveKit error:', err);
+        setError(err.message);
         toast({
             title: 'Call Error',
-            description: error.message || 'An error occurred during the call',
+            description: err.message || 'An error occurred during the call',
             variant: 'destructive',
         });
     };
 
-    const handleDisconnected = () => {
+    // Called by DisconnectWatcher when disconnect reason is CLIENT_INITIATED (user clicked Leave)
+    const handleIntentionalLeave = () => {
         setConnected(false);
-        // Only show "Reconnecting" for unexpected disconnects, not when the user clicked Leave
-        if (!leavingIntentionally.current) {
-            setReconnecting(true);
-            setTimeout(() => setReconnecting(false), 5000);
-        }
-    };
-
-    const handleLeave = () => {
-        leavingIntentionally.current = true;
-        setConnected(false);
+        setReconnecting(false);
         onDisconnected?.();
     };
 
-    // Show permission error
+    // Called by DisconnectWatcher for unexpected disconnects (network drop etc.)
+    const handleUnexpectedDisconnect = () => {
+        setConnected(false);
+        setReconnecting(true);
+        setTimeout(() => setReconnecting(false), 5000);
+    };
+
+    // onLeave on VideoConference / ControlBar — room already disconnected at this point,
+    // DisconnectWatcher already handled it. This is a no-op safety net.
+    const handleLeave = () => {
+        setConnected(false);
+    };
+
     if (permError || error) {
         return (
             <div className="h-full w-full bg-black flex items-center justify-center">
@@ -163,7 +196,6 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
         );
     }
 
-    // Show loading while requesting permissions
     if (requesting || !granted) {
         return (
             <div className="h-full w-full bg-black flex items-center justify-center">
@@ -185,22 +217,25 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                 audio={true}
                 options={roomOptions}
                 onConnected={() => setConnected(true)}
-                onDisconnected={handleDisconnected}
                 onError={handleError}
                 className="h-full w-full"
                 data-lk-theme="default"
             >
+                {/* Must be inside LiveKitRoom to access useRoomContext */}
+                <DisconnectWatcher
+                    onLeave={handleIntentionalLeave}
+                    onUnexpectedDisconnect={handleUnexpectedDisconnect}
+                />
                 <RemoteParticipantWatcher onParticipantConnected={onParticipantConnected} />
 
-                {/* Render standard Video Conference UI */}
                 {!audioOnly ? (
                     <LiveKitVideoErrorBoundary>
                         <VideoConference onLeave={handleLeave} />
                     </LiveKitVideoErrorBoundary>
                 ) : (
                     <div className="flex flex-col h-full">
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 w-full h-full max-h-[80vh]">
+                        <div className="flex-1 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full p-4">
                                 <LiveKitVideoErrorBoundary>
                                     <MyVideoConference />
                                 </LiveKitVideoErrorBoundary>
@@ -210,10 +245,9 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                     </div>
                 )}
 
-                {/* Ensure audio is rendered */}
                 <RoomAudioRenderer />
 
-                {/* Reconnecting overlay */}
+                {/* Reconnecting overlay — only for unexpected drops */}
                 {reconnecting && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
                         <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -233,7 +267,6 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     );
 };
 
-// Helper component to customize layout if needed, otherwise VideoConference handles it
 function MyVideoConference() {
     const tracks = useTracks(
         [
