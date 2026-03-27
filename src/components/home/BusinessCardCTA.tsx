@@ -17,7 +17,7 @@ export const BusinessCardCTA = () => {
         .from('businesses')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       return !!data;
     },
     enabled: !!user,

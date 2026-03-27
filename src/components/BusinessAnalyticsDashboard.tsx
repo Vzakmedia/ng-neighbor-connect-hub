@@ -34,7 +34,7 @@ const BusinessAnalyticsDashboard = () => {
           .from('businesses')
           .select('id')
           .eq('user_id', user.id as any)
-          .single();
+          .maybeSingle();
 
         if (businessError || !business) {
           throw new Error('No business found for this user');
