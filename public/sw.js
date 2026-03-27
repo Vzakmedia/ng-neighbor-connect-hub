@@ -397,7 +397,9 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(request))
+      .catch(() =>
+        caches.match(request).then(r => r || new Response('Network error', { status: 503, statusText: 'Service Unavailable' }))
+      )
   );
 });
 
