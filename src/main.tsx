@@ -22,6 +22,10 @@ import { performanceMonitor } from './utils/performanceMonitoring'
 import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS, createNativeQueryPersister } from '@/utils/nativeQueryPersister'
 import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
+import { initConsoleWarning } from '@/utils/consoleWarning'
+
+// ── Console security: Self-XSS warning + suppress debug logs in production ──
+initConsoleWarning();
 
 // ============= URL CLEANUP FOR CORRUPTED HASH URLS =============
 // Fix corrupted URLs caused by HashRouter/BrowserRouter conflicts
