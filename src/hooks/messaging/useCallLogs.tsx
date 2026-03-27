@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CallLog {
@@ -18,11 +18,13 @@ interface CallLog {
 export const useCallLogs = (conversationId: string) => {
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
+  // Stable ref so the realtime callback always calls the latest fetch
+  const fetchRef = useRef<() => Promise<void>>();
 
-  const fetchCallLogs = async () => {
+  const fetchCallLogs = useCallback(async () => {
+    if (!conversationId) return;
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('call_logs')
         .select('*')
@@ -30,22 +32,27 @@ export const useCallLogs = (conversationId: string) => {
         .order('started_at', { ascending: false });
 
       if (error) throw error;
-      
       setCallLogs((data as CallLog[]) || []);
     } catch (error) {
       console.error('Error fetching call logs:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (conversationId) {
-      fetchCallLogs();
-    }
   }, [conversationId]);
 
-  // Subscribe to real-time updates
+  // Keep the ref always pointing at the latest fetch function
+  useEffect(() => {
+    fetchRef.current = fetchCallLogs;
+  });
+
+  // Initial fetch
+  useEffect(() => {
+    fetchCallLogs();
+  }, [fetchCallLogs]);
+
+  // Realtime subscription — refetch on any change so we always have fresh data.
+  // Manual state patching from payload is unreliable for UPDATE events unless the
+  // table has REPLICA IDENTITY FULL set in Postgres.
   useEffect(() => {
     if (!conversationId) return;
 
@@ -57,24 +64,10 @@ export const useCallLogs = (conversationId: string) => {
           event: '*',
           schema: 'public',
           table: 'call_logs',
-          filter: `conversation_id=eq.${conversationId}`
+          filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
-          console.log('Call log change:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setCallLogs(prev => [payload.new as CallLog, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setCallLogs(prev => 
-              prev.map(log => 
-                log.id === payload.new.id ? payload.new as CallLog : log
-              )
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setCallLogs(prev => 
-              prev.filter(log => log.id !== payload.old.id)
-            );
-          }
+        () => {
+          fetchRef.current?.();
         }
       )
       .subscribe();
@@ -87,6 +80,6 @@ export const useCallLogs = (conversationId: string) => {
   return {
     callLogs,
     loading,
-    refetch: fetchCallLogs
+    refetch: fetchCallLogs,
   };
 };
