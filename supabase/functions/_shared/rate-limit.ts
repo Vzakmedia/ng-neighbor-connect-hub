@@ -35,7 +35,9 @@ export async function enforceRateLimit({
     .maybeSingle();
 
   if (selectError) {
-    throw new Error("Rate limit check failed");
+    // Table may not exist yet — fail open rather than blocking all requests
+    console.warn("Rate limit check failed (fail-open):", selectError.message);
+    return;
   }
 
   if (existing && existing.count >= limit) {
@@ -52,7 +54,7 @@ export async function enforceRateLimit({
       .eq("id", existing.id);
 
     if (updateError) {
-      throw new Error("Rate limit update failed");
+      console.warn("Rate limit update failed (fail-open):", updateError.message);
     }
 
     return;
@@ -68,6 +70,6 @@ export async function enforceRateLimit({
     });
 
   if (insertError) {
-    throw new Error("Rate limit insert failed");
+    console.warn("Rate limit insert failed (fail-open):", insertError.message);
   }
 }
