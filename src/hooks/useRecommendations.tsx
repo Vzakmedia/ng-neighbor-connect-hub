@@ -14,10 +14,7 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('recommendations')
-        .select(`
-          *,
-          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url)
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
         .range(pageParam * ITEMS_PER_PAGE, (pageParam + 1) * ITEMS_PER_PAGE - 1);
@@ -58,33 +55,48 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
 
       if (error) throw error;
 
-      // Fetch user's saves and likes separately to avoid PostgREST embedding issues
+      // Fetch profiles, saves, and likes separately to avoid PostgREST embedding issues
       let savedIds = new Set<string>();
       let likedIds = new Set<string>();
+      const profileMap = new Map<string, { user_id: string; full_name: string | null; avatar_url: string | null }>();
 
-      if (user && data && data.length > 0) {
+      if (data && data.length > 0) {
         const ids = data.map((r: any) => r.id);
+        const userIds = [...new Set(data.map((r: any) => r.user_id).filter(Boolean))];
 
-        const [savedRes, likedRes] = await Promise.all([
+        const requests: Promise<any>[] = [
           supabase
-            .from('saved_recommendations')
-            .select('recommendation_id')
-            .eq('user_id', user.id)
-            .in('recommendation_id', ids),
-          supabase
-            .from('recommendation_likes')
-            .select('recommendation_id')
-            .eq('user_id', user.id)
-            .in('recommendation_id', ids),
-        ]);
+            .from('profiles')
+            .select('user_id, full_name, avatar_url')
+            .in('user_id', userIds),
+        ];
 
-        savedIds = new Set((savedRes.data || []).map((s: any) => s.recommendation_id));
-        likedIds = new Set((likedRes.data || []).map((l: any) => l.recommendation_id));
+        if (user) {
+          requests.push(
+            supabase
+              .from('saved_recommendations')
+              .select('recommendation_id')
+              .eq('user_id', user.id)
+              .in('recommendation_id', ids),
+            supabase
+              .from('recommendation_likes')
+              .select('recommendation_id')
+              .eq('user_id', user.id)
+              .in('recommendation_id', ids),
+          );
+        }
+
+        const [profileRes, savedRes, likedRes] = await Promise.all(requests);
+
+        (profileRes?.data || []).forEach((p: any) => profileMap.set(p.user_id, p));
+        savedIds = new Set((savedRes?.data || []).map((s: any) => s.recommendation_id));
+        likedIds = new Set((likedRes?.data || []).map((l: any) => l.recommendation_id));
       }
 
       // Transform data
       const recommendations: Recommendation[] = (data || []).map(item => ({
         ...item,
+        author: profileMap.get(item.user_id) ?? null,
         is_saved: savedIds.has(item.id),
         is_liked: likedIds.has(item.id),
       }));
