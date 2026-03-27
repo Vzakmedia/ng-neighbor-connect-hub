@@ -29,7 +29,7 @@ const API_CACHE_TTL = {
 };
 
 const STATIC_ASSETS = [
-  // Removed '/' to prevent caching the main index.html statically, 
+  // Removed '/' to prevent caching the main index.html statically,
   // ensuring the browser always checks for the latest version.
   '/manifest.json',
   '/favicon.ico',
@@ -40,15 +40,10 @@ const STATIC_ASSETS = [
   '/notification-ding.mp3'
 ];
 
-console.log('Service Worker: Starting...');
-
 // Listen for push notifications
 self.addEventListener('push', function (event) {
-  console.log('Service Worker: Push event received');
-
   if (event.data) {
     const data = event.data.json();
-    console.log('Service Worker: Push data:', data);
 
     const options = {
       body: data.body || 'New notification',
@@ -80,8 +75,6 @@ self.addEventListener('push', function (event) {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', function (event) {
-  console.log('Service Worker: Notification clicked');
-
   event.notification.close();
 
   const notificationData = event.notification.data;
@@ -106,25 +99,18 @@ self.addEventListener('notificationclick', function (event) {
   }
 
   if (event.action === 'view') {
-    // Open the app to specific URL
     event.waitUntil(
       clients.openWindow(urlToOpen)
     );
-  } else if (event.action === 'dismiss') {
-    // Just close the notification
-    console.log('Service Worker: Notification dismissed');
-  } else {
+  } else if (event.action !== 'dismiss') {
     // Default action - open the app to specific URL
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-        // Check if there's already a window/tab open with the target URL
         for (const client of clientList) {
           if (client.url.includes(urlToOpen.split('?')[0]) && 'focus' in client) {
             return client.focus();
           }
         }
-
-        // If no existing window/tab, open a new one
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
@@ -135,8 +121,6 @@ self.addEventListener('notificationclick', function (event) {
 
 // Handle background sync
 self.addEventListener('sync', function (event) {
-  console.log('Service Worker: Background sync triggered');
-
   if (event.tag === 'background-notifications') {
     event.waitUntil(
       checkForNotifications()
@@ -147,9 +131,7 @@ self.addEventListener('sync', function (event) {
 // Function to check for notifications in background
 async function checkForNotifications() {
   try {
-    console.log('Service Worker: Checking for notifications...');
-    // This would typically make an API call to check for new notifications
-    // For now, we'll just log that the check happened
+    // Placeholder for background notification check
   } catch (error) {
     console.error('Service Worker: Error checking notifications:', error);
   }
@@ -157,8 +139,6 @@ async function checkForNotifications() {
 
 // Handle message events from the main thread
 self.addEventListener('message', function (event) {
-  console.log('Service Worker: Message received:', event.data);
-
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, body, type, tag } = event.data;
 
@@ -179,20 +159,15 @@ self.addEventListener('message', function (event) {
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(cache => {
-        console.log('Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
+      .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -202,7 +177,6 @@ self.addEventListener('activate', (event) => {
             cacheName !== IMAGE_CACHE &&
             cacheName !== AUDIO_CACHE &&
             cacheName !== API_CACHE) {
-            console.log('Service Worker: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -267,7 +241,6 @@ self.addEventListener('fetch', (event) => {
             // Silently fail background revalidation
           });
 
-          console.log('Service Worker: API from cache:', url.pathname);
           return cachedResponse;
         }
 
@@ -292,7 +265,6 @@ self.addEventListener('fetch', (event) => {
         } catch (error) {
           // Return stale cache if available when offline
           if (cachedResponse) {
-            console.log('Service Worker: Returning stale API cache (offline):', url.pathname);
             return cachedResponse;
           }
           throw error;
@@ -310,10 +282,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(AUDIO_CACHE).then(cache => {
         return cache.match(request).then(response => {
-          if (response) {
-            console.log('Service Worker: Audio from cache:', request.url);
-            return response;
-          }
+          if (response) return response;
           return fetch(request).then(fetchResponse => {
             cache.put(request, fetchResponse.clone());
             return fetchResponse;
@@ -333,13 +302,11 @@ self.addEventListener('fetch', (event) => {
           if (response) return response;
 
           return fetch(request).then(fetchResponse => {
-            // Only cache successful responses
             if (fetchResponse.ok) {
               cache.put(request, fetchResponse.clone());
             }
             return fetchResponse;
           }).catch(() => {
-            // Return fallback for failed image loads
             return new Response('<svg><!-- fallback --></svg>', {
               headers: { 'Content-Type': 'image/svg+xml' }
             });
@@ -402,5 +369,3 @@ self.addEventListener('fetch', (event) => {
       )
   );
 });
-
-console.log('Service Worker: Loaded successfully');
