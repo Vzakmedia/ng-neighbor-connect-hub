@@ -74,7 +74,7 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
 
   // Shared wrapper — centered, 50% width
   const cardClass = "fixed inset-0 z-[90] flex items-center justify-center";
-  const innerClass = "bg-[#1a2e26] rounded-2xl shadow-2xl text-white overflow-hidden w-[50vw] min-w-[320px] max-w-lg";
+  const innerClass = "bg-[#1a2e26] rounded-2xl shadow-2xl text-white overflow-hidden w-[70vw] min-w-[320px] max-w-2xl";
 
   // LiveKit mode — render compact card with LiveKit interface inside
   if (liveKitToken) {
