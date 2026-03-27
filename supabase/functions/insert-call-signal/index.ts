@@ -78,7 +78,7 @@ serve(async (req) => {
 
     const { data: conversation, error: conversationError } = await context.admin
       .from("direct_conversations")
-      .select("participant_one, participant_two")
+      .select("user1_id, user2_id")
       .eq("id", conversation_id)
       .maybeSingle();
 
@@ -86,7 +86,7 @@ serve(async (req) => {
       throw new Error("Conversation not found");
     }
 
-    const participants = [conversation.participant_one, conversation.participant_two];
+    const participants = [conversation.user1_id, conversation.user2_id];
     if (!participants.includes(context.user.id) || !participants.includes(receiver_id) || receiver_id === context.user.id) {
       throw new Error("Forbidden");
     }
