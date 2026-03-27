@@ -23,9 +23,11 @@ import AttachmentButton from './AttachmentButton';
 import EmojiPickerButton from './EmojiPickerButton';
 import AttachmentDisplay from './AttachmentDisplay';
 import { useTypingIndicator } from '@/hooks/messaging/useTypingIndicator';
+import { useCallLogs } from '@/hooks/messaging/useCallLogs';
 import { MessageReactions } from './MessageReactions';
 import MessageThreadHeader from './MessageThreadHeader';
 import MessageSearch from './MessageSearch';
+import { CallLogMessage } from './CallLogMessage';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -310,10 +312,29 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  const { callLogs } = useCallLogs(conversation.id);
+
+  type DisplayItem =
+    | { kind: 'message'; data: (typeof messages)[0] }
+    | { kind: 'call'; data: (typeof callLogs)[0] };
+
+  // Merge messages and call logs by timestamp, ascending
+  const mergedItems = useMemo<DisplayItem[]>(() => {
+    if (searchQuery.trim()) {
+      return filteredMessages.map(m => ({ kind: 'message' as const, data: m }));
+    }
+    const msgItems: DisplayItem[] = messages.map(m => ({ kind: 'message' as const, data: m }));
+    const callItems: DisplayItem[] = callLogs.map(c => ({ kind: 'call' as const, data: c }));
+    return [...msgItems, ...callItems].sort((a, b) => {
+      const aTime = a.kind === 'message' ? a.data.created_at : a.data.started_at;
+      const bTime = b.kind === 'message' ? b.data.created_at : b.data.started_at;
+      return new Date(aTime).getTime() - new Date(bTime).getTime();
+    });
+  }, [messages, callLogs, filteredMessages, searchQuery]);
+
   // Virtual scrolling setup - optimized for mobile
-  const displayMessages = searchQuery.trim() ? filteredMessages : messages;
   const virtualizer = useVirtualizer({
-    count: displayMessages.length,
+    count: mergedItems.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 150,
     overscan: isMobile ? 2 : 5, // Reduce overscan on mobile
@@ -404,15 +425,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 
   // Initial scroll when messages first load for a conversation
   useEffect(() => {
-    if (displayMessages.length > 0 && !initialScrollDoneRef.current) {
+    if (mergedItems.length > 0 && !initialScrollDoneRef.current) {
       initialScrollDoneRef.current = true;
 
       // Use virtualizer to jump to the last item once layout is ready
       requestAnimationFrame(() => {
-        virtualizer.scrollToIndex(displayMessages.length - 1, { align: 'end' });
+        virtualizer.scrollToIndex(mergedItems.length - 1, { align: 'end' });
       });
     }
-  }, [displayMessages.length, conversation.id, virtualizer]);
+  }, [mergedItems.length, conversation.id, virtualizer]);
 
   // Track user scroll position to detect manual scroll up
   useEffect(() => {
@@ -438,14 +459,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({
     // and user hasn't scrolled up manually
     if (currentCount > previousCount && !isUserScrolledUpRef.current) {
       requestAnimationFrame(() => {
-        if (displayMessages.length > 0) {
-          virtualizer.scrollToIndex(displayMessages.length - 1, { align: 'end' });
+        if (mergedItems.length > 0) {
+          virtualizer.scrollToIndex(mergedItems.length - 1, { align: 'end' });
         }
       });
     }
 
     previousMessageCountRef.current = currentCount;
-  }, [messages.length, displayMessages.length, virtualizer]);
+  }, [messages.length, mergedItems.length, virtualizer]);
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden w-full">
@@ -499,7 +520,35 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           )}
 
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const message = displayMessages[virtualRow.index];
+            const item = mergedItems[virtualRow.index];
+
+            // — Call log item —
+            if (item.kind === 'call') {
+              return (
+                <div
+                  key={`call-${item.data.id}`}
+                  data-index={virtualRow.index}
+                  ref={(el) => { if (el) virtualizer.measureElement(el); }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    minHeight: `${virtualRow.size}px`,
+                  }}
+                >
+                  <CallLogMessage
+                    callLog={item.data}
+                    currentUserId={currentUserId || ''}
+                    onCall={(isVideo) => isVideo ? onStartVideoCall?.() : onStartVoiceCall?.()}
+                  />
+                </div>
+              );
+            }
+
+            // — Message item —
+            const message = item.data;
             const isSearchResult = searchQuery.trim() && searchResultIndices.includes(messages.indexOf(message));
             const isCurrentSearchResult = isSearchResult && searchResultIndices[currentSearchIndex] === messages.indexOf(message);
             const isOwn = message.sender_id === currentUserId;
@@ -513,11 +562,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                 data-index={virtualRow.index}
                 ref={(el) => {
                   if (!el) return;
-
-                  // Let the virtualizer measure the real height
                   virtualizer.measureElement(el);
-
-                  // Hook into the shared IntersectionObserver for read receipts
                   if (sharedObserverRef.current) {
                     sharedObserverRef.current.observe(el);
                   }

@@ -1,3 +1,8 @@
+/** Base64url-encode a string (required for JWT segments). */
+function b64url(str: string): string {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
 export async function getFcmAccessToken(serviceAccount: Record<string, string>): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
@@ -9,8 +14,8 @@ export async function getFcmAccessToken(serviceAccount: Record<string, string>):
     iat: now,
   };
 
-  const encodedHeader = btoa(JSON.stringify(header));
-  const encodedClaim = btoa(JSON.stringify(claim));
+  const encodedHeader = b64url(JSON.stringify(header));
+  const encodedClaim = b64url(JSON.stringify(claim));
   const signatureInput = `${encodedHeader}.${encodedClaim}`;
 
   const privateKey = (serviceAccount.private_key ?? "")
@@ -104,10 +109,17 @@ export async function sendFcmMessage(
           data: stringifyData(payload.data ?? {}),
           android: {
             priority: payload.priority === "high" ? "high" : "normal",
+            // Short TTL for call notifications so stale alerts are not delivered
+            ...(payload.channelId === "incoming_calls" && { ttl: "30s" }),
             notification: {
               priority: payload.priority === "high" ? "high" : "default",
               sound: "default",
               channel_id: payload.channelId ?? "default",
+              // PUBLIC visibility so the caller name shows on the lock screen
+              ...(payload.channelId === "incoming_calls" && {
+                visibility: "PUBLIC",
+                default_vibrate_timings: true,
+              }),
             },
           },
           apns: {

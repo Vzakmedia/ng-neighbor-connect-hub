@@ -78,13 +78,12 @@ const isNativePlatform = () => {
   return !!getCapacitor();
 };
 
-// Use synchronous native storage only on native platforms.
+// Use synchronous native storage on native platforms; fall back to the
+// default localStorage adapter on web (undefined = Supabase default).
 const getStorageAdapter = () => {
   if (!isNativePlatform()) {
-    console.log('[Supabase] Web platform detected, disabling persistent auth storage');
-    return undefined;
+    return undefined; // Supabase uses localStorage by default
   }
-
   console.log('[Supabase] Using nativeSyncStorage adapter');
   return nativeSyncStorage;
 };
@@ -95,16 +94,17 @@ const createSupabaseClient = () => {
 
   const storage = getStorageAdapter();
   const customFetch = getUnpatchedFetch();
-  const persistSession = isNativePlatform();
 
-  const clientConfig: any = {
+  const clientConfig = {
     auth: {
       storage,
-      persistSession,
-      autoRefreshToken: persistSession,
+      // Always persist the session and auto-refresh the JWT so the user
+      // stays logged in across page reloads, tab switches, and idle periods.
+      persistSession: true,
+      autoRefreshToken: true,
       detectSessionInUrl: true,
       storageKey: 'neighborlink-auth',
-      flowType: 'pkce',
+      flowType: 'pkce' as const,
     },
     global: {
       headers: {
@@ -160,15 +160,9 @@ const validateAndRefreshSession = async () => {
   }
 };
 
-// Add visibility change listener to refresh session when app comes to foreground
+// Add storage listener on native platforms to catch auth token changes
+// (visibilitychange is intentionally omitted — autoRefreshToken handles that automatically)
 if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      console.log('App became visible, validating session');
-      validateAndRefreshSession();
-    }
-  });
-
   if (isNativePlatform()) {
     window.addEventListener('storage', (event) => {
       if (event.key?.startsWith('sb-') && event.key?.includes('auth-token') || event.key === 'neighborlink-auth') {

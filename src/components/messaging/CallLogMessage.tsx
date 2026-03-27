@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, X as PhoneOff, Video, VolumeX as VideoOff, Phone as PhoneMissed, Phone as PhoneIncoming, Phone as PhoneOutgoing } from '@/lib/icons';
+import { Phone, Video, Volume2, MoreHorizontal } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 
 interface CallLog {
@@ -23,100 +23,129 @@ interface CallLogMessageProps {
 
 const formatCallDuration = (seconds: number): string => {
   if (seconds === 0) return '';
-  
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
-const getCallIcon = (callType: string, callStatus: string, isOutgoing: boolean) => {
-  const iconClass = "h-4 w-4";
-  
-  if (callStatus === 'missed') {
-    return <PhoneMissed className={`${iconClass} text-destructive`} />;
-  }
-  
-  if (isOutgoing) {
-    if (callType === 'video') {
-      return <Video className={`${iconClass} text-primary`} />;
-    }
-    return <PhoneOutgoing className={`${iconClass} text-primary`} />;
-  } else {
-    if (callType === 'video') {
-      return <Video className={`${iconClass} text-green-600`} />;
-    }
-    return <PhoneIncoming className={`${iconClass} text-green-600`} />;
-  }
-};
-
-const getCallStatusText = (callStatus: string, isOutgoing: boolean, callType: string) => {
-  if (callStatus === 'missed') {
-    return isOutgoing ? 'Missed call' : 'Missed call';
-  }
-  if (callStatus === 'declined') {
-    return isOutgoing ? 'Call declined' : 'Declined call';
-  }
-  if (callStatus === 'failed') {
-    return 'Call failed';
-  }
-  if (callStatus === 'answered' || callStatus === 'ended') {
-    const callTypeText = callType === 'video' ? 'Video call' : 'Voice call';
-    return isOutgoing ? `Outgoing ${callTypeText.toLowerCase()}` : `Incoming ${callTypeText.toLowerCase()}`;
-  }
-  return 'Call';
-};
+// Static waveform bars seeded from call duration
+function WaveformBars({ duration }: { duration: number }) {
+  const bars = Array.from({ length: 24 }, (_, i) => {
+    const seed = (i * 7 + duration) % 17;
+    return Math.max(3, 4 + (seed % 16));
+  });
+  return (
+    <div className="flex items-end gap-[2px] h-5 my-2">
+      {bars.map((h, i) => (
+        <div
+          key={i}
+          className="w-1 rounded-full bg-primary/60 flex-shrink-0"
+          style={{ height: `${h}px` }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export const CallLogMessage: React.FC<CallLogMessageProps> = ({
   callLog,
   currentUserId,
   onCall,
-  className = ''
+  className = '',
 }) => {
   const isOutgoing = callLog.caller_id === currentUserId;
-  const callIcon = getCallIcon(callLog.call_type, callLog.call_status, isOutgoing);
-  const callStatusText = getCallStatusText(callLog.call_status, isOutgoing, callLog.call_type);
   const duration = formatCallDuration(callLog.duration_seconds);
   const timeAgo = formatDistanceToNow(new Date(callLog.started_at), { addSuffix: true });
+  const isEnded =
+    callLog.call_status === 'ended' ||
+    (callLog.call_status === 'answered' && callLog.duration_seconds > 0);
 
-  const handleCallBack = () => {
-    onCall(callLog.call_type === 'video');
+  // — Full call-ended card —
+  if (isEnded) {
+    return (
+      <div className={`flex justify-center my-2 ${className}`}>
+        <div className="w-full max-w-sm bg-muted/30 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Phone className="w-4 h-4 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium">Call ended</span>
+              <span className="text-xs text-muted-foreground ml-2">
+                {isOutgoing ? 'You called' : 'You answered'} · {duration}
+              </span>
+            </div>
+          </div>
+
+          <WaveformBars duration={callLog.duration_seconds} />
+
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-muted-foreground">{timeAgo}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-mono">{duration}</span>
+              <Volume2 className="w-4 h-4 text-muted-foreground" />
+              <button
+                onClick={() => onCall(callLog.call_type === 'video')}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // — Inline badge —
+  type BadgeStyle = {
+    wrapper: string;
+    icon: React.ReactNode;
+    label: string;
+    sub: string;
   };
+
+  const badgeStyles: Record<string, BadgeStyle> = {
+    missed: {
+      wrapper: 'bg-red-100/80 dark:bg-red-950/40',
+      icon: <Phone className="w-4 h-4 text-red-500 rotate-[135deg]" />,
+      label: 'Missed call',
+      sub: 'No one answered',
+    },
+    declined: {
+      wrapper: 'bg-orange-100/80 dark:bg-orange-950/40',
+      icon: <Phone className="w-4 h-4 text-orange-500 rotate-[135deg]" />,
+      label: isOutgoing ? 'Call declined' : 'Declined call',
+      sub: isOutgoing ? 'They declined' : 'You declined',
+    },
+    failed: {
+      wrapper: 'bg-gray-100 dark:bg-gray-800/40',
+      icon: <Phone className="w-4 h-4 text-gray-400" />,
+      label: 'Call failed',
+      sub: 'Something went wrong',
+    },
+    answered: {
+      wrapper: 'bg-green-100/80 dark:bg-green-950/40',
+      icon: <Phone className="w-4 h-4 text-green-500 animate-pulse" />,
+      label: 'Call in progress...',
+      sub: 'You answered',
+    },
+  };
+
+  const style = badgeStyles[callLog.call_status] ?? badgeStyles.failed;
+  const CallIcon = callLog.call_type === 'video' ? Video : Phone;
 
   return (
     <div className={`flex items-center justify-center my-2 ${className}`}>
-      <div className="bg-muted/30 rounded-lg p-3 max-w-xs mx-auto">
-        <div className="flex items-center gap-2 mb-1">
-          {callIcon}
-          <span className="text-sm font-medium text-muted-foreground">
-            {callStatusText}
-          </span>
+      <div className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full ${style.wrapper}`}>
+        <span className="flex-shrink-0">{style.icon}</span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm font-medium">{style.label}</span>
+          <span className="text-xs text-muted-foreground">{style.sub}</span>
         </div>
-        
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-xs text-muted-foreground">
-            <div>{timeAgo}</div>
-            {duration && (
-              <div className="font-medium text-foreground">{duration}</div>
-            )}
-          </div>
-          
-          <button
-            onClick={handleCallBack}
-            className="p-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-            title={`Call back (${callLog.call_type})`}
-          >
-            {callLog.call_type === 'video' ? (
-              <Video className="h-3.5 w-3.5 text-primary" />
-            ) : (
-              <Phone className="h-3.5 w-3.5 text-primary" />
-            )}
-          </button>
-        </div>
+        <span className="text-xs text-muted-foreground ml-1">{timeAgo}</span>
       </div>
     </div>
   );

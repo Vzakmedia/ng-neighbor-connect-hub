@@ -38,7 +38,13 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }:
   const { user, loading: authLoading } = useAuth();
   const { role, isLoading: roleLoading } = useAdminStatus();
 
-  if (authLoading || (!!user && roleLoading)) {
+  // Block only on the very first load:
+  // - authLoading: session hasn't been read from storage yet
+  // - role is still null AND roleLoading: we have a user but haven't fetched the role once yet
+  // Re-checks (token refresh, background resume) must NOT trigger this spinner — the
+  // existing role value continues to be used while the silent re-fetch runs.
+  const initialRoleLoad = !!user && role === null && roleLoading;
+  if (authLoading || initialRoleLoad) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

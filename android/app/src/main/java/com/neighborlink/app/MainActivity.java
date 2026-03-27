@@ -1,6 +1,12 @@
 package com.neighborlink.app;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PictureInPictureParams;
+import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Rational;
@@ -22,6 +28,7 @@ public class MainActivity extends BridgeActivity {
     EdgeToEdge.enable(this);
     super.onCreate(savedInstanceState);
     FirebaseApp.initializeApp(this);
+    createNotificationChannels();
 
     // Handle window insets so the WebView content respects system bars
     View rootView = findViewById(android.R.id.content);
@@ -40,6 +47,51 @@ public class MainActivity extends BridgeActivity {
       }
       setPictureInPictureParams(builder.build());
     }
+  }
+
+  /** Creates all notification channels required by the app (Android 8+). */
+  private void createNotificationChannels() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+
+    NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    if (nm == null) return;
+
+    // --- Incoming calls (maximum priority — shows full-screen on lock screen) ---
+    Uri callRingtone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+    AudioAttributes callAudioAttrs = new AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build();
+    NotificationChannel callChannel = new NotificationChannel(
+        "incoming_calls",
+        "Incoming Calls",
+        NotificationManager.IMPORTANCE_HIGH
+    );
+    callChannel.setDescription("Incoming voice and video call alerts");
+    callChannel.setSound(callRingtone, callAudioAttrs);
+    callChannel.enableVibration(true);
+    callChannel.setVibrationPattern(new long[]{0, 500, 250, 500});
+    callChannel.setShowBadge(false);
+    nm.createNotificationChannel(callChannel);
+
+    // --- Chat messages ---
+    NotificationChannel msgChannel = new NotificationChannel(
+        "messages",
+        "Messages",
+        NotificationManager.IMPORTANCE_HIGH
+    );
+    msgChannel.setDescription("New direct message notifications");
+    msgChannel.enableVibration(true);
+    nm.createNotificationChannel(msgChannel);
+
+    // --- General / default ---
+    NotificationChannel defaultChannel = new NotificationChannel(
+        "default",
+        "General",
+        NotificationManager.IMPORTANCE_DEFAULT
+    );
+    defaultChannel.setDescription("General app notifications");
+    nm.createNotificationChannel(defaultChannel);
   }
 
   @Override

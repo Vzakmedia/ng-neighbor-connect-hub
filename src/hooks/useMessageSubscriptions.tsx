@@ -33,21 +33,26 @@ export const useMessageSubscriptions = ({
       if (payload.eventType === 'INSERT' && payload.new) {
         const msg = payload.new;
         console.log('[MessageSubscriptions] Message event received:', msg.id, 'sender:', msg.sender_id, 'recipient:', msg.recipient_id);
-        
-        // Only process if this message is relevant to the active conversation
+
         if (recipientId) {
-          // For direct message dialogs
-          const isRelevant = (msg.sender_id === recipientId && msg.recipient_id === userId) || 
+          // For direct message dialogs — filter by the specific conversation
+          const isRelevant = (msg.sender_id === recipientId && msg.recipient_id === userId) ||
                             (msg.sender_id === userId && msg.recipient_id === recipientId);
           if (isRelevant) {
             console.log('[MessageSubscriptions] Calling onNewMessage for relevant message');
             onNewMessage(msg);
           }
         } else if (activeConversationId) {
-          // For main messaging interface - check if message belongs to active conversation
+          // For main messaging interface — filter by active conversation participants
           const isRelevant = (msg.sender_id === userId || msg.recipient_id === userId);
           if (isRelevant && msg.sender_id !== userId) {
             console.log('[MessageSubscriptions] Calling onNewMessage for active conversation');
+            onNewMessage(msg);
+          }
+        } else {
+          // Global notification mode (MessagingNotificationProvider) — any inbound message for this user
+          if (msg.recipient_id === userId && msg.sender_id !== userId) {
+            console.log('[MessageSubscriptions] Calling onNewMessage (global notification mode)');
             onNewMessage(msg);
           }
         }

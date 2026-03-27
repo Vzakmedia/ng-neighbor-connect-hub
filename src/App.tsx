@@ -202,11 +202,11 @@ const App = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     const handleGlobalError = (event: ErrorEvent) => {
-      // Handle dynamic import/chunk load errors
+      // ChunkLoadErrors are handled by lazyWithRetry (which sets a sessionStorage guard
+      // to prevent infinite reload loops). Reloading here would bypass that guard.
       if (event.message?.includes('Failed to fetch dynamically imported module') ||
         event.message?.includes('Loading chunk')) {
-        console.warn('Global ChunkLoadError detected - forcing refresh...');
-        window.location.reload();
+        console.warn('Global ChunkLoadError detected - lazyWithRetry will handle retry/reload');
         return;
       }
 
@@ -231,13 +231,12 @@ const App = () => {
       const reason = event.reason?.toString() || '';
       const reasonMessage = event.reason?.message || '';
 
-      // Handle dynamic import/chunk load errors in promises
+      // ChunkLoadErrors are handled by lazyWithRetry — don't reload here
       if (reason.includes('Failed to fetch dynamically imported module') ||
         reasonMessage.includes('Failed to fetch dynamically imported module') ||
         reason.includes('Loading chunk') ||
         reasonMessage.includes('Loading chunk')) {
-        console.warn('Global Promise ChunkLoadError detected - forcing refresh...');
-        window.location.reload();
+        console.warn('Global Promise ChunkLoadError detected - lazyWithRetry will handle retry/reload');
         return;
       }
 

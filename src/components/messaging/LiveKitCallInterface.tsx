@@ -73,6 +73,7 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     audioOnly = false,
 }) => {
     const [connected, setConnected] = useState(false);
+    const [reconnecting, setReconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { granted, requesting, requestPermission, error: permError } = useAudioPermissions();
     const { toast } = useToast();
@@ -93,7 +94,7 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
             }
         };
         checkAndRequestPermission();
-    }, []);
+    }, [granted, requesting, requestPermission, toast]);
 
     // LiveKit room options with optimized audio settings
     const roomOptions: RoomOptions = {
@@ -127,6 +128,16 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     };
 
     const handleDisconnected = () => {
+        setConnected(false);
+        setReconnecting(true);
+        // Give LiveKit a moment to auto-reconnect before treating as a true call end
+        setTimeout(() => {
+            setReconnecting(false);
+        }, 5000);
+        // Do NOT call onDisconnected here — only the explicit end-call button ends the call
+    };
+
+    const handleLeave = () => {
         setConnected(false);
         onDisconnected?.();
     };
@@ -182,7 +193,7 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                 {/* Render standard Video Conference UI */}
                 {!audioOnly ? (
                     <LiveKitVideoErrorBoundary>
-                        <VideoConference />
+                        <VideoConference onLeave={handleLeave} />
                     </LiveKitVideoErrorBoundary>
                 ) : (
                     <div className="flex flex-col h-full">
@@ -193,15 +204,23 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                                 </LiveKitVideoErrorBoundary>
                             </div>
                         </div>
-                        <ControlBar />
+                        <ControlBar onLeave={handleLeave} />
                     </div>
                 )}
 
                 {/* Ensure audio is rendered */}
                 <RoomAudioRenderer />
 
-                {/* Loading state */}
-                {!connected && (
+                {/* Reconnecting overlay */}
+                {reconnecting && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                        <span className="ml-2 text-white font-medium">Reconnecting...</span>
+                    </div>
+                )}
+
+                {/* Initial connecting state */}
+                {!connected && !reconnecting && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
                         <Loader2 className="w-8 h-8 text-white animate-spin" />
                         <span className="ml-2 text-white font-medium">Connecting...</span>

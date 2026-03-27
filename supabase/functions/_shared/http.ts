@@ -2,9 +2,13 @@ const DEFAULT_DEV_ORIGINS = new Set([
   "http://localhost:3000",
   "http://localhost:4173",
   "http://localhost:5173",
+  "http://localhost:8080",
+  "http://localhost:8081",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:4173",
   "http://127.0.0.1:5173",
+  "http://127.0.0.1:8080",
+  "http://127.0.0.1:8081",
 ]);
 
 function parseAllowedOrigins(): Set<string> {
@@ -14,12 +18,21 @@ function parseAllowedOrigins(): Set<string> {
     .map((value) => value.trim())
     .filter(Boolean);
 
+  const environment = Deno.env.get("DENO_ENV") ?? Deno.env.get("NODE_ENV") ?? "";
+  const isProduction = environment.toLowerCase() === "production";
+
   if (values.length > 0) {
+    // Always merge configured origins with dev origins so local development
+    // continues to work even after ALLOWED_ORIGINS is set for production.
+    // Localhost addresses cannot be reached from the public internet, so this
+    // carries no meaningful security risk.
+    if (!isProduction) {
+      return new Set([...values, ...DEFAULT_DEV_ORIGINS]);
+    }
     return new Set(values);
   }
 
-  const environment = Deno.env.get("DENO_ENV") ?? Deno.env.get("NODE_ENV") ?? "";
-  if (environment.toLowerCase() === "production") {
+  if (isProduction) {
     return new Set();
   }
 
