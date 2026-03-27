@@ -49,13 +49,19 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
   const [callDuration, setCallDuration] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [otherParticipantJoined, setOtherParticipantJoined] = useState(false);
 
-  // Determine when to play ringback tone
-  // Play during initiating, calling, and ringing states
-  // Stop when connected, ending, ended, or if remote stream is active (which implies connection)
+  // Reset joined state when the call closes
+  useEffect(() => {
+    if (!open) setOtherParticipantJoined(false);
+  }, [open]);
+
+  // Play ringback while waiting; stop when the other person joins the LiveKit room
+  // or when the call state transitions past the calling/ringing phase
   const shouldPlayRingback = open &&
     (callState === 'initiating' || callState === 'calling' || callState === 'ringing') &&
-    !remoteStream;
+    !remoteStream &&
+    !otherParticipantJoined;
 
   useRingbackTone(shouldPlayRingback);
 
@@ -169,6 +175,7 @@ export const VideoCallDialog: React.FC<VideoCallDialogProps> = ({
             token={liveKitToken}
             serverUrl={import.meta.env.VITE_LIVEKIT_URL || "wss://neighborlink-94uewje2.livekit.cloud"}
             onDisconnected={handleEndCall}
+            onParticipantConnected={() => setOtherParticipantJoined(true)}
             audioOnly={!isVideoCall}
           />
         </DialogContent>

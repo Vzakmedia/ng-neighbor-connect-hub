@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import {
     LiveKitRoom,
     VideoConference,
@@ -8,6 +8,7 @@ import {
     RoomAudioRenderer,
     ControlBar,
     useTracks,
+    useRemoteParticipants,
     TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
@@ -16,10 +17,51 @@ import { Loader2, Mic, MicOff } from 'lucide-react';
 import { useAudioPermissions } from '@/hooks/useAudioPermissions';
 import { useToast } from '@/hooks/use-toast';
 
+// Error boundary to prevent LiveKit track race conditions from crashing the call UI
+class LiveKitVideoErrorBoundary extends Component<
+    { children: React.ReactNode },
+    { hasError: boolean }
+> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error: Error) {
+        console.warn('[LiveKit] Recovered from track layout error:', error.message);
+        // Reset after a short delay so the component remounts cleanly
+        setTimeout(() => this.setState({ hasError: false }), 500);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="h-full w-full bg-black flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+// Watches for remote participants and fires callback when the first one joins
+function RemoteParticipantWatcher({ onParticipantConnected }: { onParticipantConnected?: () => void }) {
+    const remoteParticipants = useRemoteParticipants();
+    useEffect(() => {
+        if (remoteParticipants.length > 0) {
+            onParticipantConnected?.();
+        }
+    }, [remoteParticipants.length, onParticipantConnected]);
+    return null;
+}
+
 interface LiveKitCallInterfaceProps {
     token: string;
     serverUrl: string;
     onDisconnected?: () => void;
+    onParticipantConnected?: () => void;
     audioOnly?: boolean;
 }
 
@@ -27,6 +69,7 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     token,
     serverUrl,
     onDisconnected,
+    onParticipantConnected,
     audioOnly = false,
 }) => {
     const [connected, setConnected] = useState(false);
@@ -134,15 +177,20 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                 className="h-full w-full"
                 data-lk-theme="default"
             >
+                <RemoteParticipantWatcher onParticipantConnected={onParticipantConnected} />
+
                 {/* Render standard Video Conference UI */}
                 {!audioOnly ? (
-                    <VideoConference />
+                    <LiveKitVideoErrorBoundary>
+                        <VideoConference />
+                    </LiveKitVideoErrorBoundary>
                 ) : (
                     <div className="flex flex-col h-full">
                         <div className="flex-1 flex items-center justify-center">
-                            {/* Custom Audio Only View could go here */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 w-full h-full max-h-[80vh]">
-                                <MyVideoConference />
+                                <LiveKitVideoErrorBoundary>
+                                    <MyVideoConference />
+                                </LiveKitVideoErrorBoundary>
                             </div>
                         </div>
                         <ControlBar />
