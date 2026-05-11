@@ -23,7 +23,7 @@ import { shouldPersistQuery, limitQueryData, PERSISTABLE_QUERY_KEYS, createNativ
 import { initializeNativeSyncStorage } from '@/utils/nativeSyncStorage'
 import { CapacitorUpdater } from '@capgo/capacitor-updater'
 import { initConsoleWarning } from '@/utils/consoleWarning'
-
+import { PostHogProvider } from '@/components/common/PostHogProvider'
 // ── Console security: Self-XSS warning + suppress debug logs in production ──
 initConsoleWarning();
 
@@ -334,7 +334,9 @@ const renderApp = async () => {
           }}
         >
           <IOSErrorBoundary>
-            <App />
+            <PostHogProvider>
+              <App />
+            </PostHogProvider>
           </IOSErrorBoundary>
         </PersistQueryClientProvider>
       </StrictMode>
@@ -346,7 +348,9 @@ const renderApp = async () => {
       <StrictMode>
         <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
           <IOSErrorBoundary>
-            <App />
+            <PostHogProvider>
+              <App />
+            </PostHogProvider>
           </IOSErrorBoundary>
         </PersistQueryClientProvider>
       </StrictMode>

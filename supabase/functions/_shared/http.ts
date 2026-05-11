@@ -9,6 +9,8 @@ const DEFAULT_DEV_ORIGINS = new Set([
   "http://127.0.0.1:5173",
   "http://127.0.0.1:8080",
   "http://127.0.0.1:8081",
+  "https://www.neighborlink.ng",
+  "https://neighborlink.ng",
 ]);
 
 function parseAllowedOrigins(): Set<string> {
