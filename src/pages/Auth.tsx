@@ -27,7 +27,7 @@ const Auth = () => {
   useEffect(() => {
     if (!loading && user && !isMobileApp) {
       // Only redirect for web users (native app handled by NativeAppWrapper)
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate, isMobileApp]);
 

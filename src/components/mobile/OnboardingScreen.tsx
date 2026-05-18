@@ -58,7 +58,7 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="h-screen relative overflow-hidden bg-black">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -66,32 +66,42 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -300 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="min-h-screen flex flex-col"
+          className="absolute inset-0 flex flex-col"
         >
-          {/* Header with skip */}
-          <div className="flex justify-between items-center p-6 z-10">
+          {/* Full-screen image background */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color} opacity-90`} />
+          <img
+            src={slides[currentSlide].image}
+            alt={slides[currentSlide].title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Dark gradient overlay from top and bottom */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
+
+          {/* Floating header — dots + back/skip over the image */}
+          <div className="relative z-10 flex justify-between items-center px-6 pt-12 pb-4">
             <div className="w-16">
               {currentSlide > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={prevSlide}
-                  className="p-2"
+                  className="p-2 text-white hover:bg-white/20"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
               )}
             </div>
-            
+
             <div className="flex space-x-2">
               {slides.map((_, index) => (
                 <button
+                  type="button"
                   key={index}
+                  aria-label={`Go to slide ${index + 1}`}
                   onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentSlide 
-                      ? 'bg-primary w-6' 
-                      : 'bg-muted-foreground/30'
+                  className={`h-2 rounded-full transition-all duration-300 bg-white ${
+                    index === currentSlide ? 'w-6 opacity-100' : 'w-2 opacity-40'
                   }`}
                 />
               ))}
@@ -99,11 +109,11 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
 
             <div className="w-16 flex justify-end">
               {currentSlide < slides.length - 1 ? (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={onGetStarted}
-                  className="text-muted-foreground text-sm"
+                  className="text-white/80 text-sm hover:bg-white/20"
                 >
                   Skip
                 </Button>
@@ -111,78 +121,68 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
             </div>
           </div>
 
-          {/* Image Section */}
-          <div className="flex-1 relative">
-            <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color} opacity-90`} />
-            <img 
-              src={slides[currentSlide].image}
-              alt={slides[currentSlide].title}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Content Overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/20 to-transparent">
-              <div className="p-8 text-white">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                >
-                  <Badge className="mb-4 bg-white/20 text-white border-white/30">
-                    {(() => {
-                      const IconComponent = slides[currentSlide].icon;
-                      return <IconComponent className="w-4 h-4 mr-2" />;
-                    })()}
-                    Step {currentSlide + 1} of {slides.length}
-                  </Badge>
-                  
-                  <h1 className="text-3xl font-bold mb-4 leading-tight">
-                    {slides[currentSlide].title}
-                  </h1>
-                  
-                  <p className="text-lg text-white/90 mb-8 leading-relaxed">
-                    {slides[currentSlide].description}
-                  </p>
-                </motion.div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Actions */}
-          <div className="p-6 bg-background">
-            {currentSlide === slides.length - 1 ? (
+          {/* Content at the bottom of the screen */}
+          <div className="relative z-10 mt-auto">
+            <div className="p-8 text-white">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-3"
+                transition={{ delay: 0.2, duration: 0.6 }}
               >
-                <Button 
-                  onClick={onGetStarted} 
-                  size="lg" 
-                  className="w-full text-base font-medium"
-                >
-                  Get Started
-                </Button>
-                <Button 
-                  onClick={onGetStarted} 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full text-base"
-                >
-                  I Have an Account
-                </Button>
+                <Badge className="mb-4 bg-white/20 text-white border-white/30">
+                  {(() => {
+                    const IconComponent = slides[currentSlide].icon;
+                    return <IconComponent className="w-4 h-4 mr-2" />;
+                  })()}
+                  Step {currentSlide + 1} of {slides.length}
+                </Badge>
+
+                <h1 className="text-3xl font-bold mb-4 leading-tight">
+                  {slides[currentSlide].title}
+                </h1>
+
+                <p className="text-lg text-white/90 mb-6 leading-relaxed">
+                  {slides[currentSlide].description}
+                </p>
               </motion.div>
-            ) : (
-              <Button 
-                onClick={nextSlide} 
-                size="lg" 
-                className="w-full text-base font-medium"
-              >
-                Continue
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            )}
+            </div>
+
+            {/* Bottom actions */}
+            <div className="px-6 pb-10">
+              {currentSlide === slides.length - 1 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="space-y-3"
+                >
+                  <Button
+                    onClick={onGetStarted}
+                    size="lg"
+                    className="w-full text-base font-medium bg-white text-black hover:bg-white/90"
+                  >
+                    Get Started
+                  </Button>
+                  <Button
+                    onClick={onGetStarted}
+                    variant="outline"
+                    size="lg"
+                    className="w-full text-base border-white text-white hover:bg-white/20"
+                  >
+                    I Have an Account
+                  </Button>
+                </motion.div>
+              ) : (
+                <Button
+                  onClick={nextSlide}
+                  size="lg"
+                  className="w-full text-base font-medium bg-white text-black hover:bg-white/90"
+                >
+                  Continue
+                  <ChevronRight className="w-5 h-5 ml-2" />
+                </Button>
+              )}
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
