@@ -11,6 +11,8 @@ import AuthBackground from "./AuthBackground";
 import { GoogleAuthButton } from "./GoogleAuthButton";
 import { PrivateBrowsingWarning } from "@/components/mobile/PrivateBrowsingWarning";
 
+const isNative = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+
 export const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
   const navigate = useNavigate();

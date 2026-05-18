@@ -145,8 +145,10 @@ const NativeAppWrapper = () => {
     );
   }
 
-  // Show splash screen first
-  if (showSplash && !splashShownThisSession) {
+  // Show splash screen first — but skip it if the user is already authenticated
+  // (e.g. arrived here after OTP verification). Showing splash to a just-authed
+  // user causes a jarring flash before the dashboard redirect fires.
+  if (showSplash && !splashShownThisSession && !user) {
     console.log(`[NativeAppWrapper ${renderTimestamp}] Rendering: SplashScreen`);
     return <SplashScreen onComplete={handleSplashComplete} />;
   }

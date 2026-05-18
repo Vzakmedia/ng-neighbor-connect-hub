@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
 
   android: {
     allowMixedContent: false,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0a0a0a',
     buildOptions: {
       keystorePath: undefined,
       keystorePassword: undefined,
@@ -45,7 +45,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       launchAutoHide: true, // Safety: auto-hide splash after duration
       launchFadeOutDuration: 300,
-      backgroundColor: '#667eea',
+      backgroundColor: '#0b8d66',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       splashFullScreen: true,
@@ -66,7 +66,7 @@ const config: CapacitorConfig = {
 
     StatusBar: {
       style: 'dark',
-      backgroundColor: '#667eea',
+      backgroundColor: '#0b8d66',
       overlaysWebView: false
     },
 

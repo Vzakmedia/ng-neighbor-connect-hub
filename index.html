@@ -79,8 +79,27 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#8B5CF6" />
-    
+    <meta name="theme-color" content="#0b8d66" />
+
+    <!-- Apply theme before first paint to prevent white safe-area flash.
+         next-themes runs as a deferred module, so without this the html
+         element starts with no dark class and bg-background resolves to
+         the light-mode white, which shows in the status-bar inset zone. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var applyDark =
+            stored === 'dark' ||
+            (stored === 'system' && prefersDark) ||
+            (!stored && (isNative || prefersDark));
+          if (applyDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Preload main CSS for instant styling -->
     <link rel="preload" href="/src/index.css" as="style" onload="this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="/src/index.css"></noscript>

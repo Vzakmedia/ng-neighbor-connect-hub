@@ -72,7 +72,7 @@ export const initializeStatusBar = async (theme: 'light' | 'dark' = 'light') => 
     });
 
     if (getPlatform() === 'android') {
-      await StatusBar.setBackgroundColor({ color: '#667eea' });
+      await StatusBar.setBackgroundColor({ color: '#0b8d66' });
     }
   } catch (error) {
     console.error('Failed to initialize status bar:', error);

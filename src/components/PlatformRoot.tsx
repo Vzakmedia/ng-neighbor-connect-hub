@@ -42,6 +42,18 @@ const PlatformRoot = () => {
   useEffect(() => {
     if (!isNativeApp) return;
     if (!loading && user && nativeFlowStep !== 'splash') {
+      // useDeepLinkHandler sets this flag while it's processing an OAuth/email
+      // verification callback. The SIGNED_IN event fires before the deep-link
+      // handler can navigate, so without this guard we'd flash /dashboard for
+      // new Google users who actually need to land on /auth/complete-profile.
+      const inProgress = (() => {
+        try { return sessionStorage.getItem('deep_link_auth_in_progress'); }
+        catch { return null; }
+      })();
+      if (inProgress) {
+        console.log('[PlatformRoot] Deep-link auth in progress, skipping auto-navigate');
+        return;
+      }
       console.log('[PlatformRoot] User authenticated, navigating to dashboard');
       navigate('/dashboard', { replace: true });
     }

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { isNativePlatform } from "@/utils/platform";
 import {
     InputOTP,
     InputOTPGroup,
@@ -54,6 +55,15 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
             if (error) throw error;
 
             if (data.session) {
+                // Apply avatar uploaded during sign-up (stored in sessionStorage while
+                // no session existed). EnhancedProfileCompletion handles this for the
+                // email-link path, but manual OTP users never visit that page.
+                const pendingAvatar = (() => { try { return sessionStorage.getItem('pending_avatar_url'); } catch { return null; } })();
+                if (pendingAvatar && data.user) {
+                    await supabase.from('profiles').update({ avatar_url: pendingAvatar }).eq('user_id', data.user.id);
+                    try { sessionStorage.removeItem('pending_avatar_url'); } catch { /* non-fatal */ }
+                }
+
                 toast({
                     title: "Verified!",
                     description: "Your email has been successfully verified.",
@@ -81,9 +91,14 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
 
         setResending(true);
         try {
+            const emailRedirectTo = isNativePlatform()
+                ? 'neighborlink://auth/verify-email'
+                : `${window.location.origin}/auth/verify-email`;
+
             const { error } = await supabase.auth.resend({
                 type: 'signup',
                 email,
+                options: { emailRedirectTo },
             });
 
             if (error) throw error;

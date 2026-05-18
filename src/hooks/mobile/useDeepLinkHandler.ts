@@ -84,55 +84,113 @@ export const useDeepLinkHandler = () => {
               title: 'Email Verified!',
               description: "Your email has been verified. Let's set up your profile.",
             });
-            navigate('/auth/complete-profile');
+            try { sessionStorage.setItem('post_auth_redirect', '/auth/complete-profile'); } catch {}
+            navigate('/auth', { replace: true });
             return;
           }
 
-          // OAuth callback: access_token + refresh_token in the URL
-          const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+          // Close the in-app browser before doing async session work
+          const closeBrowser = async () => {
+            try {
+              const { Browser } = await import('@capacitor/browser');
+              await Browser.close();
+            } catch {}
+          };
 
-          if (accessToken && refreshToken) {
-            console.log('[DeepLink] OAuth tokens found, setting session');
-
-            const { data, error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-
-            if (sessionError) {
-              console.error('[DeepLink] Session error:', sessionError);
-              toast({
-                variant: 'destructive',
-                title: 'Authentication Failed',
-                description: 'Could not complete sign in.',
-              });
-              navigate('/auth');
-              return;
-            }
-
-            console.log('[DeepLink] Session set successfully');
-
-            if (data?.user) {
+          const handleSessionUser = async (user: any) => {
+            let destination = '/dashboard';
+            if (user) {
               const { data: profile } = await supabase
                 .from('profiles')
                 .select('full_name, city, state')
-                .eq('user_id', data.user.id)
+                .eq('user_id', user.id)
                 .single();
 
               if (!profile?.full_name || !profile?.city || !profile?.state) {
                 console.log('[DeepLink] Profile incomplete, redirecting to complete-profile');
-                navigate('/auth/complete-profile');
+                destination = '/auth/complete-profile';
               } else {
                 console.log('[DeepLink] Auth complete, going to dashboard');
-                toast({
-                  title: 'Welcome!',
-                  description: "You've been successfully signed in.",
-                });
-                navigate('/dashboard');
+                toast({ title: 'Welcome!', description: "You've been successfully signed in." });
               }
             }
-            return;
+            // Navigate to /auth (public) instead of the destination directly.
+            // At this point the SIGNED_IN event has fired in Supabase but React's
+            // useAuth state hasn't re-rendered yet — navigating straight to a
+            // ProtectedRoute causes it to redirect back to /auth, which mounts
+            // NativeAppWrapper and shows a blank green screen. Storing the
+            // destination and going through the public /auth route lets Auth.tsx
+            // redirect once React state is hydrated.
+            try { sessionStorage.setItem('post_auth_redirect', destination); } catch {}
+            navigate('/auth', { replace: true });
+          };
+
+          // ── PKCE flow: callback delivers ?code=XXX (flowType: 'pkce') ──────
+          const code = hashParams.get('code') || searchParams.get('code');
+
+          if (code) {
+            console.log('[DeepLink] PKCE code found, exchanging for session');
+            // Synchronously flag that deep-link auth is in progress so that
+            // PlatformRoot's "user authenticated → navigate to /dashboard"
+            // effect does NOT race against us between the SIGNED_IN event
+            // (which sets user state) and our explicit navigate below.
+            try { sessionStorage.setItem('deep_link_auth_in_progress', '1'); } catch {}
+            try {
+              await closeBrowser();
+
+              const { data, error: codeError } = await supabase.auth.exchangeCodeForSession(code);
+
+              if (codeError) {
+                console.error('[DeepLink] Code exchange error:', codeError);
+                toast({
+                  variant: 'destructive',
+                  title: 'Authentication Failed',
+                  description: codeError.message || 'Could not complete sign in.',
+                });
+                navigate('/auth');
+                return;
+              }
+
+              console.log('[DeepLink] PKCE session established');
+              await handleSessionUser(data?.user);
+              return;
+            } finally {
+              try { sessionStorage.removeItem('deep_link_auth_in_progress'); } catch {}
+            }
+          }
+
+          // ── Implicit / legacy flow: access_token + refresh_token in hash ──
+          const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            console.log('[DeepLink] Implicit tokens found, setting session');
+            try { sessionStorage.setItem('deep_link_auth_in_progress', '1'); } catch {}
+            try {
+              await closeBrowser();
+
+              const { data, error: sessionError } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+
+              if (sessionError) {
+                console.error('[DeepLink] Session error:', sessionError);
+                toast({
+                  variant: 'destructive',
+                  title: 'Authentication Failed',
+                  description: 'Could not complete sign in.',
+                });
+                navigate('/auth');
+                return;
+              }
+
+              console.log('[DeepLink] Session set successfully');
+              await handleSessionUser(data?.user);
+              return;
+            } finally {
+              try { sessionStorage.removeItem('deep_link_auth_in_progress'); } catch {}
+            }
           }
 
           // No tokens at all — check for an existing session

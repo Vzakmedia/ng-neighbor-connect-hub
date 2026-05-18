@@ -65,15 +65,16 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
           initial={{ opacity: 0, x: 300 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -300 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
           className="absolute inset-0 flex flex-col"
+          style={{ willChange: 'transform, opacity' }}
         >
           {/* Full-screen image background */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color} opacity-90`} />
+          <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color}`} />
           <img
             src={slides[currentSlide].image}
             alt={slides[currentSlide].title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
           />
           {/* Dark gradient overlay from top and bottom */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />

@@ -83,62 +83,69 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
 
             try {
               const url = new URL(event.url);
-              const params = new URLSearchParams(url.hash.substring(1) || url.search);
+              const hashParams = new URLSearchParams(url.hash.substring(1));
+              const searchParams = new URLSearchParams(url.search);
+              const get = (k: string) => hashParams.get(k) || searchParams.get(k);
 
-              const accessToken = params.get('access_token');
-              const refreshToken = params.get('refresh_token');
-              const errorParam = params.get('error');
-
+              const errorParam = get('error');
               if (errorParam) {
                 console.error('[NativeGoogleAuth] OAuth returned error:', errorParam);
                 toast({
                   title: "Authentication Failed",
-                  description: params.get('error_description') || errorParam,
+                  description: get('error_description') || errorParam,
                   variant: "destructive",
                 });
                 setIsLoading(false);
                 return;
               }
 
-              if (accessToken && refreshToken) {
-                if (import.meta.env.DEV) {
-                  console.log('[NativeGoogleAuth] Setting session from tokens');
+              const handleAuthedUser = async (user: any) => {
+                if (!user) { navigate('/dashboard'); return; }
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('full_name, city, state')
+                  .eq('user_id', user.id)
+                  .single();
+                if (!profile?.full_name || !profile?.city || !profile?.state) {
+                  navigate('/auth/complete-profile');
+                } else {
+                  toast({ title: "Welcome!", description: "You've been successfully signed in." });
+                  navigate('/dashboard');
                 }
-                const { error: sessionError } = await supabase.auth.setSession({
-                  access_token: accessToken,
-                  refresh_token: refreshToken,
-                });
+              };
 
-                if (sessionError) {
-                  console.error('[NativeGoogleAuth] Session error:', sessionError);
-                  toast({
-                    title: "Authentication Failed",
-                    description: "Could not complete sign in.",
-                    variant: "destructive",
-                  });
+              // PKCE flow: ?code=XXX
+              const code = get('code');
+              if (code) {
+                if (import.meta.env.DEV) console.log('[NativeGoogleAuth] PKCE code, exchanging');
+                const { data, error: codeError } = await supabase.auth.exchangeCodeForSession(code);
+                if (codeError) {
+                  console.error('[NativeGoogleAuth] Code exchange error:', codeError);
+                  toast({ title: "Authentication Failed", description: codeError.message, variant: "destructive" });
                   setIsLoading(false);
                   return;
                 }
+                await handleAuthedUser(data?.user);
+                setIsLoading(false);
+                return;
+              }
 
-                // Check profile completeness
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                  const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, city, state')
-                    .eq('user_id', session.user.id)
-                    .single();
-
-                  if (!profile?.full_name || !profile?.city || !profile?.state) {
-                    navigate('/auth/complete-profile');
-                  } else {
-                    toast({
-                      title: "Welcome!",
-                      description: "You've been successfully signed in.",
-                    });
-                    navigate('/dashboard');
-                  }
+              // Implicit flow: access_token + refresh_token
+              const accessToken = get('access_token');
+              const refreshToken = get('refresh_token');
+              if (accessToken && refreshToken) {
+                if (import.meta.env.DEV) console.log('[NativeGoogleAuth] Setting session from tokens');
+                const { data, error: sessionError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+                if (sessionError) {
+                  console.error('[NativeGoogleAuth] Session error:', sessionError);
+                  toast({ title: "Authentication Failed", description: "Could not complete sign in.", variant: "destructive" });
+                  setIsLoading(false);
+                  return;
                 }
+                await handleAuthedUser(data?.user);
               }
             } catch (err) {
               console.error('[NativeGoogleAuth] Error processing callback:', err);
