@@ -21,7 +21,7 @@ interface SafetyMapProps {
 
 const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
   const isNative = isNativePlatform();
-  const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, getPlaceId } = useGoogleMapsCache();
+  const { apiKey: googleMapsApiKey, isLoading: isLoadingApiKey, error: apiKeyError, getPlaceId, isScriptLoaded } = useGoogleMapsCache();
   const { userLocation, refreshLocation } = useUserLocation();
   const {
     mapContainer,
@@ -57,12 +57,12 @@ const SafetyMap: React.FC<SafetyMapProps> = ({ alerts, onAlertClick }) => {
     );
   }
 
-  // Web map initialization
+  // Web map initialization — only fire once both the API key AND the script are ready.
   useEffect(() => {
-    if (googleMapsApiKey) {
+    if (googleMapsApiKey && isScriptLoaded) {
       initMap();
     }
-  }, [googleMapsApiKey, initMap]);
+  }, [googleMapsApiKey, isScriptLoaded, initMap]);
 
   // Handle markers update
   useEffect(() => {

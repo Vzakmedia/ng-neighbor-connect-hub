@@ -103,6 +103,7 @@ export const usePrivacySettings = () => {
     if (!user) return;
 
     setIsSaving(true);
+    const snapshot = privacySettings;
     const updatedSettings = { ...privacySettings, ...newSettings };
     setPrivacySettings(updatedSettings);
 
@@ -131,7 +132,7 @@ export const usePrivacySettings = () => {
         variant: "destructive",
       });
       // Revert on error
-      setPrivacySettings(privacySettings);
+      setPrivacySettings(snapshot);
     } finally {
       setIsSaving(false);
     }
@@ -142,6 +143,7 @@ export const usePrivacySettings = () => {
     if (!user) return;
 
     setIsSaving(true);
+    const snapshot = messagingPreferences;
     const updatedPrefs = { ...messagingPreferences, ...newPrefs };
     setMessagingPreferences(updatedPrefs);
 
@@ -159,7 +161,7 @@ export const usePrivacySettings = () => {
       if (error) throw error;
 
       // Also update in user_settings for consistency
-      await supabase
+      const { error: settingsError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: user.id,
@@ -171,6 +173,8 @@ export const usePrivacySettings = () => {
         }, {
           onConflict: 'user_id',
         });
+
+      if (settingsError) throw settingsError;
 
       toast({
         title: "Messaging preferences updated",
@@ -184,7 +188,7 @@ export const usePrivacySettings = () => {
         variant: "destructive",
       });
       // Revert on error
-      setMessagingPreferences(messagingPreferences);
+      setMessagingPreferences(snapshot);
     } finally {
       setIsSaving(false);
     }

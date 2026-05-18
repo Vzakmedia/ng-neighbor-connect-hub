@@ -18,6 +18,13 @@ interface BusinessPromotionDialogProps {
   onPromotionCreated?: () => void;
 }
 
+// WR-19: Store prices as numbers to avoid fragile string parsing
+const PLAN_PRICES: Record<string, Record<number, number>> = {
+  basic:    { 7: 5000,  14: 8000,  30: 14000 },
+  premium:  { 7: 10000, 14: 18000, 30: 32000 },
+  featured: { 7: 20000, 14: 35000, 30: 60000 },
+};
+
 const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: BusinessPromotionDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -86,10 +93,9 @@ const BusinessPromotionDialog = ({ business, children, onPromotionCreated }: Bus
 
     setLoading(true);
     try {
-      // Calculate price based on selected plan and duration
+      // WR-19: Use numeric price lookup instead of parsing the display string
       const selectedPlan = promotionPlans[promotionType];
-      const priceString = selectedPlan.prices[duration];
-      const amount = parseFloat(priceString.replace('₦', '').replace(',', ''));
+      const amount = PLAN_PRICES[promotionType]?.[parseInt(duration)] ?? 0;
 
       const { RenderApiService } = await import('@/services/renderApiService');
       const data = await RenderApiService.createCampaignPayment({

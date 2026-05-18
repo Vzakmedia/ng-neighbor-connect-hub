@@ -71,7 +71,7 @@ const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({ onAlertClick, cla
 
   useEffect(() => {
     fetchRecentActivity();
-    setupRealtimeSubscriptions();
+    return setupRealtimeSubscriptions();
   }, []);
 
   const fetchRecentActivity = async () => {

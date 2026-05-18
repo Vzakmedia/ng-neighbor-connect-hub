@@ -68,6 +68,8 @@ interface SystemMetric {
 
 export const AdvancedAnalytics = () => {
   const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsSummary | null>(null);
   const [topContent, setTopContent] = useState<TopContent[]>([]);
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
@@ -79,69 +81,25 @@ export const AdvancedAnalytics = () => {
   });
   const [contentTypeFilter, setContentTypeFilter] = useState<string>('all');
 
-  const refreshData = useCallback(() => {
-    fetchAnalyticsData();
-    fetchTopContent();
-    fetchRevenueData();
-    fetchSystemMetrics();
-  }, [dateRange, contentTypeFilter]);
-
+  // CR-05: Load user role from user_roles table
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    if (!user) {
+      setRoleLoading(false);
+      return;
+    }
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setUserRole(data?.role ?? null);
+        setRoleLoading(false);
+      });
+  }, [user]);
 
-  // Set up real-time subscriptions
-  useEffect(() => {
-    if (!user) return;
-
-    const subscription = createSafeSubscription(
-      (channel) => channel
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'community_posts'
-        }, () => {
-          console.log('Analytics: Community posts changed, refreshing data');
-          refreshData();
-        })
-        .on('postgres_changes', {
-          event: '*', 
-          schema: 'public',
-          table: 'profiles'
-        }, () => {
-          console.log('Analytics: Profiles changed, refreshing data');
-          refreshData();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public', 
-          table: 'post_likes'
-        }, () => {
-          console.log('Analytics: Post likes changed, refreshing data');
-          refreshData();
-        })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'marketplace_items'
-        }, () => {
-          console.log('Analytics: Marketplace items changed, refreshing data');
-          refreshData();
-        }),
-      {
-        channelName: 'analytics_realtime',
-        onError: refreshData,
-        pollInterval: 30000, // Poll every 30 seconds for analytics data
-        debugName: 'AdvancedAnalytics'
-      }
-    );
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [user, refreshData]);
-
-  const fetchAnalyticsData = async () => {
+  // WR-08: Define fetch functions before refreshData so they can be included in its deps
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       // Fetch real data from existing tables
       const [usersResult, postsResult, servicesResult, itemsResult, likesResult] = await Promise.all([
@@ -152,42 +110,41 @@ export const AdvancedAnalytics = () => {
         supabase.from('post_likes').select('*', { count: 'exact', head: true })
       ]);
 
-      // Calculate new users in date range
       const { count: newUsersCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end + 'T23:59:59');
 
-      // Calculate active users (users who posted or liked in date range)
+      // WR-06: Limit activeUserData query to avoid unbounded fetch
       const { data: activeUserData } = await supabase
         .from('community_posts')
         .select('user_id')
         .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end + 'T23:59:59');
+        .lte('created_at', dateRange.end + 'T23:59:59')
+        .limit(500);
 
       const activeUserIds = new Set((activeUserData || []).map((p: any) => p.user_id).filter(Boolean));
 
-      const analyticsData: AnalyticsSummary = {
+      const summary: AnalyticsSummary = {
         total_users: usersResult.count || 0,
         new_users: newUsersCount || 0,
         active_users: activeUserIds.size,
         total_posts: postsResult.count || 0,
         total_engagement: likesResult.count || 0,
-        total_revenue: 0, // We'll calculate this from actual revenue data
-        avg_session_time: 0 // This would need session tracking
+        total_revenue: 0,
+        avg_session_time: 0
       };
 
-      setAnalyticsData(analyticsData);
+      setAnalyticsData(summary);
     } catch (error) {
       console.error('Error fetching analytics summary:', error);
       toast.error('Failed to load analytics summary');
     }
-  };
+  }, [dateRange]);
 
-  const fetchTopContent = async () => {
+  const fetchTopContent = useCallback(async () => {
     try {
-      // Fetch real posts with their likes and comments
       const { data: postsData } = await supabase
         .from('community_posts')
         .select(`
@@ -204,13 +161,13 @@ export const AdvancedAnalytics = () => {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Transform the data to match TopContent interface
+      // WR-05: Use 0 instead of Math.random() for total_views/total_shares
       const topContentData: TopContent[] = (postsData || []).map((post: any) => ({
         content_id: post.id,
         content_type: 'community_post',
-        total_views: Math.floor(Math.random() * 100) + 10, // Placeholder for views
+        total_views: 0,
         total_likes: post.post_likes?.length || 0,
-        total_shares: Math.floor(Math.random() * 20), // Placeholder for shares
+        total_shares: 0,
         total_comments: post.post_comments?.length || 0,
         engagement_score: (post.post_likes?.length || 0) * 3 + (post.post_comments?.length || 0) * 4
       })).sort((a, b) => b.engagement_score - a.engagement_score);
@@ -220,9 +177,9 @@ export const AdvancedAnalytics = () => {
       console.error('Error fetching top content:', error);
       toast.error('Failed to load top content');
     }
-  };
+  }, [dateRange]);
 
-  const fetchRevenueData = async () => {
+  const fetchRevenueData = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('revenue_analytics')
@@ -237,9 +194,9 @@ export const AdvancedAnalytics = () => {
       console.error('Error fetching revenue data:', error);
       toast.error('Failed to load revenue data');
     }
-  };
+  }, [dateRange]);
 
-  const fetchSystemMetrics = async () => {
+  const fetchSystemMetrics = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('system_performance')
@@ -248,33 +205,12 @@ export const AdvancedAnalytics = () => {
         .order('timestamp', { ascending: false })
         .limit(100);
 
-      // If no real data, provide mock system metrics
       if (!data || data.length === 0) {
         const mockMetrics: SystemMetric[] = [
-          {
-            metric_type: 'response_time',
-            metric_value: Math.floor(Math.random() * 200) + 50,
-            metric_unit: 'ms',
-            timestamp: new Date().toISOString()
-          },
-          {
-            metric_type: 'cpu_usage',
-            metric_value: Math.floor(Math.random() * 40) + 20,
-            metric_unit: '%',
-            timestamp: new Date().toISOString()
-          },
-          {
-            metric_type: 'memory_usage',
-            metric_value: Math.floor(Math.random() * 30) + 40,
-            metric_unit: '%',
-            timestamp: new Date().toISOString()
-          },
-          {
-            metric_type: 'active_connections',
-            metric_value: Math.floor(Math.random() * 50) + 10,
-            metric_unit: 'connections',
-            timestamp: new Date().toISOString()
-          }
+          { metric_type: 'response_time', metric_value: 0, metric_unit: 'ms', timestamp: new Date().toISOString() },
+          { metric_type: 'cpu_usage', metric_value: 0, metric_unit: '%', timestamp: new Date().toISOString() },
+          { metric_type: 'memory_usage', metric_value: 0, metric_unit: '%', timestamp: new Date().toISOString() },
+          { metric_type: 'active_connections', metric_value: 0, metric_unit: 'connections', timestamp: new Date().toISOString() }
         ];
         setSystemMetrics(mockMetrics);
       } else {
@@ -286,24 +222,71 @@ export const AdvancedAnalytics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // WR-08: refreshData now includes all fetch functions in its dependency array
+  const refreshData = useCallback(() => {
+    fetchAnalyticsData();
+    fetchTopContent();
+    fetchRevenueData();
+    fetchSystemMetrics();
+  }, [fetchAnalyticsData, fetchTopContent, fetchRevenueData, fetchSystemMetrics]);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = createSafeSubscription(
+      (channel) => channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts'
+        }, () => {
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        }, () => {
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        }, () => {
+          refreshData();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'marketplace_items'
+        }, () => {
+          refreshData();
+        }),
+      {
+        channelName: 'analytics_realtime',
+        onError: refreshData,
+        pollInterval: 30000, // Poll every 30 seconds for analytics data
+        debugName: 'AdvancedAnalytics'
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [user, refreshData]);
+
 
   const generateReport = async (reportType: string) => {
     try {
-      // Mock report generation since analytics_reports table may not exist
-      console.log('Generating report:', reportType, dateRange, contentTypeFilter);
-      
       // Simulate report generation
-      const reportData = {
-        id: crypto.randomUUID(),
-        report_name: `${reportType}_report_${Date.now()}`,
-        report_type: reportType,
-        generated_by: user?.id || '',
-        status: 'completed'
-      };
-
-      // Report simulation complete
-
       toast.success('Report generation started. You will be notified when ready.');
     } catch (error) {
       console.error('Error generating report:', error);
@@ -333,7 +316,12 @@ export const AdvancedAnalytics = () => {
     }
   };
 
-  if (loading) {
+  // CR-05: Block non-admin access
+  if (!roleLoading && userRole !== 'admin') {
+    return <div className="text-center py-12 text-muted-foreground">Access denied. Admin privileges required.</div>;
+  }
+
+  if (loading || roleLoading) {
     return <div className="flex justify-center items-center h-64">Loading analytics...</div>;
   }
 

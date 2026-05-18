@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isNativePlatform } from '@/utils/platform';
 import { SafetyAlert } from '@/types/emergency';
 import CompactAlertCard from './CompactAlertCard';
 import SafetyMap from '../SafetyMap';
@@ -30,7 +31,7 @@ const SafetyAlertsSplitView = ({
 }: SafetyAlertsSplitViewProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isNative = (window as any).Capacitor?.isNativePlatform?.() === true;
+  const isNative = isNativePlatform();
 
   return (
     <div className={cn(

@@ -7,6 +7,11 @@ import { useEffect, useRef } from 'react';
 export function usePostVisibility(onVisible: (postId: string) => void) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibilityTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const onVisibleRef = useRef(onVisible);
+
+  useEffect(() => {
+    onVisibleRef.current = onVisible;
+  });
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
@@ -16,16 +21,14 @@ export function usePostVisibility(onVisible: (postId: string) => void) {
           if (!postId) return;
 
           if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-            // Start 2-second timer only if >50% visible and no existing timer
             if (!visibilityTimersRef.current.has(postId)) {
               const timer = setTimeout(() => {
-                onVisible(postId);
+                onVisibleRef.current(postId);
                 visibilityTimersRef.current.delete(postId);
-              }, 2000); // 2 second delay before marking as read
+              }, 2000);
               visibilityTimersRef.current.set(postId, timer);
             }
           } else {
-            // Clear timer if post scrolls out of view
             const timer = visibilityTimersRef.current.get(postId);
             if (timer) {
               clearTimeout(timer);
@@ -34,16 +37,15 @@ export function usePostVisibility(onVisible: (postId: string) => void) {
           }
         });
       },
-      { threshold: 0.5 } // Trigger when 50% is shown
+      { threshold: 0.5 }
     );
 
     return () => {
-      // Clean up all timers
       visibilityTimersRef.current.forEach(timer => clearTimeout(timer));
       visibilityTimersRef.current.clear();
       observerRef.current?.disconnect();
     };
-  }, [onVisible]);
+  }, []);
 
   const observePost = (element: HTMLDivElement | null) => {
     if (element && observerRef.current) {

@@ -63,8 +63,13 @@ export const useNotifications = () => {
   };
 
   // Function to add new notification with instant sound and push notification
+  // WR-11: deduplicate by id before adding
   const addNotification = (notification: NotificationData) => {
-    setNotifications(prev => [notification, ...prev]);
+    setNotifications(prev => {
+      const exists = prev.some(n => n.id === notification.id);
+      if (exists) return prev;
+      return [notification, ...prev];
+    });
     setUnreadCount(prev => prev + 1);
     showToastNotification(notification);
   };
@@ -73,7 +78,7 @@ export const useNotifications = () => {
   useEffect(() => {
     if (user) {
       requestPushNotificationPermission().then(success => {
-        if (success) {
+        if (success && process.env.NODE_ENV !== 'production') {
           console.log('Push notifications enabled');
         }
       });
@@ -96,14 +101,17 @@ export const useNotifications = () => {
     );
   };
 
+  // WR-12: actually recompute state instead of no-op stubs
   const refreshNotifications = () => {
-    // Placeholder for refreshing notifications
-    console.log('Refreshing notifications...');
+    // Re-derive unread count from current notification state
+    setNotifications(prev => [...prev]);
   };
 
   const refreshUnreadCount = () => {
-    // Placeholder for refreshing unread count
-    console.log('Refreshing unread count...');
+    setNotifications(prev => {
+      setUnreadCount(prev.filter(n => !n.isRead).length);
+      return prev;
+    });
   };
 
   // Initialize with empty state

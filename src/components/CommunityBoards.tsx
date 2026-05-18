@@ -482,7 +482,7 @@ const CommunityBoards = () => {
         .from('group_invites')
         .insert({
           board_id: selectedBoard,
-          token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+          token: crypto.randomUUID().replace(/-/g, ''),
           created_by: user.id,
           expires_at: newInviteExpiry ? new Date(newInviteExpiry).toISOString() : null,
           max_uses: newInviteMaxUses ? parseInt(newInviteMaxUses) : null
@@ -735,7 +735,7 @@ const CommunityBoards = () => {
 
       // Check board membership for joined_at timestamp
       const { data: membership } = await supabase
-        .from('board_memberships')
+        .from('board_members')
         .select('joined_at')
         .eq('board_id', selectedBoard)
         .eq('user_id', user?.id || '')
@@ -769,41 +769,34 @@ const CommunityBoards = () => {
 
       if (error) throw error;
 
-      const postsWithLikes = await Promise.all(
-        (data || []).map(async (post: any) => {
-          const { count } = await supabase
-            .from('board_post_likes')
-            .select('*', { count: 'exact' })
-            .eq('post_id', post.id);
+      const postIds = (data || []).map((p: any) => p.id);
 
-          const { data: userLike } = await supabase
-            .from('board_post_likes')
-            .select('id')
-            .eq('post_id', post.id)
-            .eq('user_id', user?.id as any)
-            .maybeSingle();
+      // Batch all supplemental queries instead of N+1 per post
+      const [allLikesResult, userLikesResult, allReactionsResult] = await Promise.all([
+        supabase.from('board_post_likes').select('post_id').in('post_id', postIds),
+        supabase.from('board_post_likes').select('post_id').in('post_id', postIds).eq('user_id', user?.id as any),
+        supabase.from('board_post_reactions').select('*').in('post_id', postIds),
+      ]);
 
-          // Fetch reactions for this post
-          const { data: reactions } = await supabase
-            .from('board_post_reactions')
-            .select('*')
-            .eq('post_id', post.id);
+      const likeCountMap = new Map<string, number>();
+      for (const like of allLikesResult.data || []) {
+        likeCountMap.set(like.post_id, (likeCountMap.get(like.post_id) || 0) + 1);
+      }
+      const userLikedSet = new Set((userLikesResult.data || []).map((l: any) => l.post_id));
 
-          return {
-            ...post,
-            profiles: post.profiles || {
-              full_name: null,
-              avatar_url: null,
-              neighborhood: null,
-              city: null,
-              state: null
-            },
-            likes_count: count || 0,
-            is_liked_by_user: !!userLike,
-            reactions: reactions || []
-          };
-        })
-      );
+      const postsWithLikes = (data || []).map((post: any) => ({
+        ...post,
+        profiles: post.profiles || {
+          full_name: null,
+          avatar_url: null,
+          neighborhood: null,
+          city: null,
+          state: null
+        },
+        likes_count: likeCountMap.get(post.id) || 0,
+        is_liked_by_user: userLikedSet.has(post.id),
+        reactions: (allReactionsResult.data || []).filter((r: any) => r.post_id === post.id),
+      }));
 
       setPosts(postsWithLikes as BoardPost[]);
     } catch (error) {
@@ -966,9 +959,7 @@ const CommunityBoards = () => {
     if (!user) return;
 
     setLoading(true);
-    fetchBoards();
-    fetchPublicBoards();
-    setLoading(false);
+    Promise.all([fetchBoards(), fetchPublicBoards()]).finally(() => setLoading(false));
   }, [user]);
 
   useEffect(() => {

@@ -91,8 +91,10 @@ export class AdvertisingService {
       }
 
       if (filters?.search) {
+        // WR-10: Sanitize search to prevent injection via .or() interpolation
+        const safeSearch = (filters.search || '').replace(/[(),%.]/g, '');
         query = query.or(
-          `campaign_name.ilike.%${filters.search}%,ad_title.ilike.%${filters.search}%`
+          `campaign_name.ilike.%${safeSearch}%,ad_title.ilike.%${safeSearch}%`
         );
       }
 
@@ -106,12 +108,14 @@ export class AdvertisingService {
     }
   }
 
-  static async getCampaignById(campaignId: string): Promise<Campaign | null> {
+  // CR-06: userId parameter added to prevent IDOR — callers must supply the authenticated user's id
+  static async getCampaignById(campaignId: string, userId: string): Promise<Campaign | null> {
     try {
       const { data, error } = await supabase
         .from('advertisement_campaigns')
         .select('*')
         .eq('id', campaignId)
+        .eq('user_id', userId)
         .single();
 
       if (error) throw error;
@@ -127,13 +131,17 @@ export class AdvertisingService {
     updates: Partial<Campaign>
   ): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
       const { error } = await supabase
         .from('advertisement_campaigns')
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', campaignId);
+        .eq('id', campaignId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
       return true;
@@ -198,19 +206,21 @@ export class AdvertisingService {
 
       if (error) throw error;
 
-      // Update campaign totals
+      // WR-09: Update campaign totals with proper error handling
       if (interactionType === 'impression') {
-        await supabase.rpc('increment', {
+        const { error: rpcError } = await supabase.rpc('increment', {
           table_name: 'advertisement_campaigns',
           row_id: campaignId,
           column_name: 'total_impressions',
         });
+        if (rpcError) console.error('Error incrementing impressions:', rpcError);
       } else if (interactionType === 'click') {
-        await supabase.rpc('increment', {
+        const { error: rpcError } = await supabase.rpc('increment', {
           table_name: 'advertisement_campaigns',
           row_id: campaignId,
           column_name: 'total_clicks',
         });
+        if (rpcError) console.error('Error incrementing clicks:', rpcError);
       }
     } catch (error) {
       console.error('Error logging interaction:', error);
@@ -226,8 +236,10 @@ export class AdvertisingService {
     dateRange?: { start: string; end: string }
   ): Promise<CampaignAnalytics | null> {
     try {
-      // Get campaign data
-      const campaign = await this.getCampaignById(campaignId);
+      // CR-06: Resolve current user before fetching campaign to enforce ownership check
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const campaign = await this.getCampaignById(campaignId, user.id);
       if (!campaign) return null;
 
       // Get interactions
@@ -331,15 +343,25 @@ export class AdvertisingService {
   // ============================================
 
   static async approveCampaign(
-    campaignId: string,
-    adminUserId: string
+    campaignId: string
   ): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.role !== 'admin') throw new Error('Unauthorized: Admin access required');
+
       const { error } = await supabase
         .from('advertisement_campaigns')
         .update({
           approval_status: 'approved',
-          approved_by: adminUserId,
+          approved_by: user.id,
           approved_at: new Date().toISOString(),
           status: 'active',
         })
@@ -355,16 +377,26 @@ export class AdvertisingService {
 
   static async rejectCampaign(
     campaignId: string,
-    reason: string,
-    adminUserId: string
+    reason: string
   ): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.role !== 'admin') throw new Error('Unauthorized: Admin access required');
+
       const { error } = await supabase
         .from('advertisement_campaigns')
         .update({
           approval_status: 'rejected',
           rejection_reason: reason,
-          approved_by: adminUserId,
+          approved_by: user.id,
           approved_at: new Date().toISOString(),
         })
         .eq('id', campaignId);
@@ -379,10 +411,12 @@ export class AdvertisingService {
 
   static async getAllCampaigns(filters?: CampaignFilters): Promise<Campaign[]> {
     try {
+      // CR-07: Limit results to prevent unbounded admin queries
       let query = supabase
         .from('advertisement_campaigns')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (filters?.status) {
         query = query.eq('status', filters.status);

@@ -88,10 +88,12 @@ export const useNativePermissions = () => {
       const { Camera } = await import('@capacitor/camera');
       const permission = await Camera.checkPermissions();
       
-      if (permission.camera === 'granted' && permission.photos === 'granted') {
+      // WR-15: Accept 'granted' or 'limited' for photos
+      if (permission.camera === 'granted' && (permission.photos === 'granted' || permission.photos === 'limited')) {
         return true;
       }
-      
+
+      // WR-15: Allow 'limited' photo permission to proceed; only block on 'denied'
       if (permission.camera === 'denied' || permission.photos === 'denied') {
         toast({
           title: "Camera permission denied",
@@ -104,10 +106,11 @@ export const useNativePermissions = () => {
       // Request permission
       const result = await Camera.requestPermissions();
       
-      if (result.camera === 'granted' && result.photos === 'granted') {
+      // WR-15: Accept 'granted' or 'limited' for photos
+      if (result.camera === 'granted' && (result.photos === 'granted' || result.photos === 'limited')) {
         return true;
       }
-      
+
       toast({
         title: "Camera permission required",
         description: "NeighborLink needs camera access to upload photos",
@@ -207,10 +210,19 @@ export const useNativePermissions = () => {
 
   const openAppSettings = useCallback(() => {
     if (!isNative) return;
-    
-    // Open device settings
+
+    // WR-14: Wrap window.open in try/catch
     if (getCapacitorPlatform() === 'ios') {
-      window.open('app-settings:');
+      try {
+        window.open('app-settings:');
+      } catch (error) {
+        console.error('Failed to open app settings:', error);
+        toast({
+          title: "Settings",
+          description: "Please open Settings > NeighborLink > Permissions",
+          variant: "destructive",
+        });
+      }
     } else if (getCapacitorPlatform() === 'android') {
       // Android will need a plugin or direct intent
       toast({

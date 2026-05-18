@@ -37,13 +37,13 @@ export const useDashboardStats = () => {
 
       // Run all queries in parallel for efficiency
       const [activeNeighborsData, postsTodayResult, upcomingEventsResult, itemsForSaleResult] = await Promise.all([
-        // Get active neighbors (users who posted in the last 30 days) - limit to reduce data transfer
+        // WR-21: Cap active-neighbours sample at 200 rows to limit data transfer; count is an approximation
         supabase
           .from('community_posts')
           .select('user_id')
           .gte('created_at', thirtyDaysAgo.toISOString())
           .neq('user_id', user.id)
-          .limit(1000),
+          .limit(200),
 
         // Get posts today count using head:true (much faster - no data returned)
         supabase

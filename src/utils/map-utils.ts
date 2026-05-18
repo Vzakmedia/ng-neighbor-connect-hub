@@ -23,7 +23,7 @@ export interface MapLocation {
     lng: number;
 }
 
-export const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+export { isNativePlatform } from '@/utils/platform';
 
 export interface SafetyAlert {
     id: string;

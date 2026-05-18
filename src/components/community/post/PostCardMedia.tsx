@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LazyImage } from './LazyImage';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import {
@@ -40,6 +40,15 @@ export const PostCardMedia = ({
   const { impact } = useNativeHaptics();
   const [showHeart, setShowHeart] = useState(false);
   const [lastTap, setLastTap] = useState(0);
+  const heartTimerRef = useRef<NodeJS.Timeout>();
+  const tapTimerRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(heartTimerRef.current);
+      clearTimeout(tapTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -111,18 +120,20 @@ export const PostCardMedia = ({
       
       // Show heart animation
       setShowHeart(true);
-      setTimeout(() => setShowHeart(false), 1000);
-      
+      clearTimeout(heartTimerRef.current);
+      heartTimerRef.current = setTimeout(() => setShowHeart(false), 1000);
+
       // Trigger like action
       onDoubleTapLike?.();
-      
+
       setLastTap(0); // Reset to prevent triple-tap
     } else {
       // First tap - set timestamp
       setLastTap(now);
-      
+
       // Delay single-tap action to allow for double-tap detection
-      setTimeout(() => {
+      clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = setTimeout(() => {
         if (Date.now() - now >= DOUBLE_TAP_DELAY) {
           // Single tap confirmed - trigger image click
           onImageClick(index);

@@ -15,19 +15,39 @@ export function useRecommendationDetails(recommendationId: string | undefined) {
         .from('recommendations')
         .select(`
           *,
-          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url),
-          is_saved:saved_recommendations!left(id),
-          is_liked:recommendation_likes!left(id)
+          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url)
         `)
         .eq('id', recommendationId)
         .single();
 
       if (error) throw error;
 
+      let is_saved = false;
+      let is_liked = false;
+
+      if (user) {
+        const [savedRow, likedRow] = await Promise.all([
+          supabase
+            .from('saved_recommendations')
+            .select('id')
+            .eq('recommendation_id', recommendationId)
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('recommendation_likes')
+            .select('id')
+            .eq('recommendation_id', recommendationId)
+            .eq('user_id', user.id)
+            .maybeSingle(),
+        ]);
+        is_saved = !!savedRow.data;
+        is_liked = !!likedRow.data;
+      }
+
       const recommendation: Recommendation = {
         ...data,
-        is_saved: user ? (data.is_saved as any[]).some((s: any) => s.user_id === user.id) : false,
-        is_liked: user ? (data.is_liked as any[]).some((l: any) => l.user_id === user.id) : false,
+        is_saved,
+        is_liked,
       };
 
       return recommendation;

@@ -80,9 +80,12 @@ const config: CapacitorConfig = {
       enabled: false
     },
 
+    // Bug 8 fix: capacitor.config.ts runs in Node.js (not in the browser/Vite bundle),
+    // so VITE_-prefixed variables are undefined here. Use the plain env var name.
+    // Add GOOGLE_MAPS_API_KEY (without VITE_ prefix) to your CI/build environment.
     GoogleMaps: {
-      apiKey: process.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY',
-      iOSApiKey: process.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY'
+      apiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+      iOSApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
     },
 
     Haptics: {

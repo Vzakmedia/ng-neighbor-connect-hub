@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SafetyAlert, EmergencyFilters } from '@/types/emergency';
 import { useRealtimeContext } from '@/contexts/RealtimeContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UseEmergencySubscriptionsProps {
   onNewAlert: (alert: SafetyAlert) => void;
@@ -19,26 +20,46 @@ export const useEmergencySubscriptions = ({
 }: UseEmergencySubscriptionsProps) => {
   const { toast } = useToast();
   const { onSafetyAlert } = useRealtimeContext();
+  const { user } = useAuth();
+  const userNeighborhoodRef = useRef<string | null>(null);
 
   useEffect(() => {
-    console.log('[EmergencySubscriptions] Using unified real-time subscriptions');
-    
+    if (!user) return;
+    // Fetch and cache the user's neighborhood for filtering
+    supabase
+      .from('profiles')
+      .select('neighborhood')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        userNeighborhoodRef.current = data?.neighborhood ?? null;
+      });
+  }, [user]);
+
+  useEffect(() => {
     // Subscribe to safety alert events
     const unsubscribe = onSafetyAlert(async (payload) => {
       if (payload.eventType === 'INSERT') {
-        console.log('New safety alert received:', payload.new.id);
         try {
           // Fetch the complete alert with profile data
           const { data } = await supabase
             .from('safety_alerts')
             .select(`
               *,
-              profiles (full_name, avatar_url, city, state)
+              profiles (full_name, avatar_url, city, state, neighborhood)
             `)
             .eq('id', payload.new.id)
             .single();
-          
+
           if (data) {
+            // Client-side neighborhood guard: only forward if neighborhoods match
+            // or if neighborhood data is unavailable on the alert
+            const alertNeighborhood = (data as any).profiles?.neighborhood;
+            const userNeighborhood = userNeighborhoodRef.current;
+            if (userNeighborhood && alertNeighborhood && alertNeighborhood !== userNeighborhood) {
+              return;
+            }
+
             onNewAlert(data as SafetyAlert);
             toast({
               title: "New Safety Alert",
@@ -49,13 +70,11 @@ export const useEmergencySubscriptions = ({
           console.error('Error fetching new alert details:', error);
         }
       } else if (payload.eventType === 'UPDATE') {
-        console.log('Alert updated:', payload.new.id);
         onAlertUpdate(payload.new.id, payload.new as Partial<SafetyAlert>);
       }
     });
 
     return () => {
-      console.log('[EmergencySubscriptions] Cleaning up subscription');
       unsubscribe();
     };
   }, [onSafetyAlert, onNewAlert, onAlertUpdate, toast]);

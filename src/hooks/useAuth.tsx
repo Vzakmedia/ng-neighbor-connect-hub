@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isNativePlatform } from '@/utils/platform';
 
 interface AuthContextType {
   user: User | null;
@@ -16,7 +17,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Debug logging — DEV only, never logs PII in production
   useEffect(() => {
     if (import.meta.env.DEV) {
       console.log('AuthProvider state:', { hasUser: !!user, loading });
@@ -37,15 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Set up auth state listener FIRST
-      // CRITICAL: Only synchronous state updates in this callback to prevent deadlocks
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           if (import.meta.env.DEV) {
             console.log('Auth state changed:', event);
           }
 
-          // Handle sign out immediately
           if (event === 'SIGNED_OUT') {
             setSession(null);
             setUser(null);
@@ -53,31 +50,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
 
-          // ONLY synchronous state updates - NO Supabase calls in callback
           setSession(session);
 
-          // Allow OAuth users through immediately, only require email confirmation for email/password signups
           const isOAuthUser = session?.user?.app_metadata?.provider !== 'email';
-
           if (session?.user && (session.user.email_confirmed_at || isOAuthUser)) {
             setUser(session.user);
           } else {
             setUser(null);
           }
 
-          // Set loading false for relevant events
           if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             setLoading(false);
           }
 
-          // DEFER token refresh check using setTimeout(0) to prevent deadlock
+          // Defer token refresh to prevent deadlock
           if (session?.expires_at) {
             const expiresAt = session.expires_at * 1000;
             const now = Date.now();
             const fiveMinutes = 5 * 60 * 1000;
-
             if (expiresAt - now < fiveMinutes && expiresAt > now) {
-              // CRITICAL: Use setTimeout(0) to defer Supabase call
               setTimeout(() => {
                 supabase.auth.refreshSession().catch(e => {
                   console.error('Failed to refresh session:', e);
@@ -88,8 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       );
 
-
-      // THEN check for existing session with validation + 15s timeout (increased for native)
       const fetchSessionWithRetry = async (retries = 2): Promise<{ data: { session: Session | null }, error: Error | null }> => {
         for (let attempt = 0; attempt <= retries; attempt++) {
           try {
@@ -104,15 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const result = await Promise.race([
               supabase.auth.getSession(),
-              sessionTimeout
+              sessionTimeout,
             ]);
 
-            // If we got a session or no error, return
             if (result.data.session || !result.error) {
               return result;
             }
 
-            // If error and more retries, wait and retry
             if (attempt < retries) {
               await new Promise(r => setTimeout(r, 1000));
             }
@@ -133,21 +120,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Validate session token if present
+        // Bug 6 fix: when the session is expired, kick off a refresh but do NOT
+        // return early — fall through so loading is always set to false here.
+        // The TOKEN_REFRESHED event from onAuthStateChange will update the user state.
         if (session?.expires_at) {
           const expiresAt = session.expires_at * 1000;
-          const now = Date.now();
-          if (expiresAt < now) {
-            supabase.auth.refreshSession();
-            return;
+          if (expiresAt < Date.now()) {
+            console.log('[Auth] Session expired, requesting refresh');
+            supabase.auth.refreshSession().catch(e =>
+              console.error('[Auth] Refresh failed:', e)
+            );
+            // Fall through — setLoading(false) is called below.
           }
         }
 
         setSession(session);
 
-        // Apply same email confirmation logic for initial session
         const isOAuthUser = session?.user?.app_metadata?.provider !== 'email';
-
         if (session?.user && (session.user.email_confirmed_at || isOAuthUser)) {
           setUser(session.user);
         } else {
@@ -166,39 +155,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Bug 5 fix: useNativeStorage is not a real React hook (it has no internal hook
+  // calls), but calling any `use*` function inside an async callback violates the
+  // Rules of Hooks pattern and is confusing. Replace with a direct Capacitor
+  // Preferences call so the intent is explicit and there is no hook-call ambiguity.
   const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
-      } else {
-        console.log("Sign out successful");
       }
 
-      // Clear local state
       setUser(null);
       setSession(null);
 
-      // Clear all possible auth storage keys using native storage
-      const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
-      const { removeItem } = useNativeStorage();
-      await removeItem('neighborlink-auth');
-      await removeItem('supabase.auth.token');
-      await removeItem('sb-cowiviqhrnmhttugozbz-auth-token');
+      const authKeys = [
+        'neighborlink-auth',
+        'supabase.auth.token',
+        'sb-cowiviqhrnmhttugozbz-auth-token',
+      ];
 
-      // Clear session storage (used for splash screen tracking)
+      if (isNativePlatform()) {
+        const { Preferences } = await import('@capacitor/preferences');
+        for (const key of authKeys) {
+          await Preferences.remove({ key });
+        }
+      } else {
+        authKeys.forEach(key => localStorage.removeItem(key));
+      }
+
       sessionStorage.clear();
-
-      // Redirect to auth page after sign out (not landing page)
-      // Use window.location for hard redirect to ensure clean state
       window.location.href = '/auth';
-
     } catch (error) {
       console.error("Sign out catch error:", error);
-      // Clear local state and storage anyway
       setUser(null);
       setSession(null);
-      localStorage.clear(); // Clear all localStorage as fallback
+      localStorage.clear();
       sessionStorage.clear();
       window.location.href = '/auth';
     }

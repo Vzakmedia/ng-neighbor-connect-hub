@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
@@ -14,32 +14,38 @@ export const useBookingConnection = (): UseBookingConnectionReturn => {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const statusRef = useRef(status);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     let testChannel: any = null;
     let reconnectTimeout: NodeJS.Timeout;
 
     const setupConnectionMonitor = () => {
+      // Tear down any existing channel before creating a new one
+      if (testChannel) {
+        supabase.removeChannel(testChannel);
+      }
       // Create a test channel to monitor connection health
       testChannel = supabase
-        .channel('booking-connection-test')
-        .subscribe((status) => {
-          console.log('Booking connection status:', status);
-          
-          if (status === 'SUBSCRIBED') {
+        .channel(`booking-connection-test-${reconnectAttempts}`)
+        .subscribe((channelStatus) => {
+          if (channelStatus === 'SUBSCRIBED') {
             setStatus('connected');
             setLastUpdate(new Date());
             setReconnectAttempts(0);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          } else if (channelStatus === 'CHANNEL_ERROR' || channelStatus === 'TIMED_OUT') {
             setStatus('error');
-            
+
             // Exponential backoff for reconnection
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
             reconnectTimeout = setTimeout(() => {
               setReconnectAttempts(prev => prev + 1);
-              reconnect();
             }, delay);
-          } else if (status === 'CLOSED') {
+          } else if (channelStatus === 'CLOSED') {
             setStatus('disconnected');
           } else {
             setStatus('connecting');
@@ -49,9 +55,9 @@ export const useBookingConnection = (): UseBookingConnectionReturn => {
 
     setupConnectionMonitor();
 
-    // Periodic health check
+    // Periodic health check — use ref to avoid stale closure
     const healthCheckInterval = setInterval(() => {
-      if (status === 'connected') {
+      if (statusRef.current === 'connected') {
         setLastUpdate(new Date());
       }
     }, 10000); // Check every 10 seconds
@@ -68,12 +74,9 @@ export const useBookingConnection = (): UseBookingConnectionReturn => {
   }, [reconnectAttempts]);
 
   const reconnect = () => {
-    console.log('Manually reconnecting booking connection...');
     setStatus('connecting');
-    setReconnectAttempts(0);
-    
-    // Force refresh by creating new subscription
-    window.location.reload();
+    // Incrementing reconnectAttempts triggers the useEffect to tear down and recreate the channel
+    setReconnectAttempts(prev => prev + 1);
   };
 
   return {

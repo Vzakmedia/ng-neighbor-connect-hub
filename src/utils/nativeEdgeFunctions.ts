@@ -23,7 +23,9 @@ const checkIsNativePlatform = (): boolean => {
     // This is safer than require() which may cause bundler issues
     const windowCapacitor = (window as any).Capacitor;
     isNativePlatformCached = windowCapacitor?.isNativePlatform?.() === true;
-    console.log(`[NativeEdgeFunctions] Platform: ${isNativePlatformCached ? 'NATIVE' : 'WEB'}`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeEdgeFunctions] Platform: ${isNativePlatformCached ? 'NATIVE' : 'WEB'}`);
+    }
     return isNativePlatformCached;
   } catch {
     isNativePlatformCached = false;
@@ -51,21 +53,27 @@ export const invokeEdgeFunction = async <T = any>(
 ): Promise<InvokeResult<T>> => {
   const timestamp = Date.now();
   const isNative = checkIsNativePlatform();
-  
-  console.log(`[NativeEdgeFunctions] Invoking ${functionName}, timestamp: ${timestamp}, isNative: ${isNative}`);
-  
+
+  if (import.meta.env.DEV) {
+    console.log(`[NativeEdgeFunctions] Invoking ${functionName}, timestamp: ${timestamp}, isNative: ${isNative}`);
+  }
+
   try {
     // Get access token
     const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
-    
-    console.log(`[NativeEdgeFunctions] Session check: hasToken=${!!accessToken}, expires=${session?.expires_at}`);
-    
+    let accessToken = session?.access_token;
+
+    if (import.meta.env.DEV) {
+      console.log(`[NativeEdgeFunctions] Session check: hasToken=${!!accessToken}, expires=${session?.expires_at}`);
+    }
+
     if (!accessToken) {
       // Try refresh
-      console.log('[NativeEdgeFunctions] No token, attempting refresh...');
+      if (import.meta.env.DEV) {
+        console.log('[NativeEdgeFunctions] No token, attempting refresh...');
+      }
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
+
       if (refreshError || !refreshData.session?.access_token) {
         console.error('[NativeEdgeFunctions] Auth refresh failed:', refreshError);
         return {
@@ -73,19 +81,27 @@ export const invokeEdgeFunction = async <T = any>(
           error: new Error('Authentication required. Please sign in.')
         };
       }
-      
-      console.log('[NativeEdgeFunctions] Session refreshed successfully');
+
+      // WR-07: Use the refreshed token, not the stale session token
+      accessToken = refreshData.session.access_token;
+      if (import.meta.env.DEV) {
+        console.log('[NativeEdgeFunctions] Session refreshed successfully');
+      }
     }
-    
-    const token = session?.access_token || (await supabase.auth.getSession()).data.session?.access_token;
-    
+
+    const token = accessToken;
+
     if (isNative) {
       // Native: Use direct fetch to bypass CapacitorHttp issues
-      console.log(`[NativeEdgeFunctions] Using direct fetch for native platform`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeEdgeFunctions] Using direct fetch for native platform`);
+      }
       return await invokeWithDirectFetch<T>(functionName, token, options);
     } else {
       // Web: Use standard supabase.functions.invoke
-      console.log(`[NativeEdgeFunctions] Using supabase.functions.invoke for web`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeEdgeFunctions] Using supabase.functions.invoke for web`);
+      }
       return await invokeWithSupabase<T>(functionName, options);
     }
   } catch (error: any) {
@@ -106,8 +122,10 @@ const invokeWithDirectFetch = async <T>(
   options: InvokeOptions
 ): Promise<InvokeResult<T>> => {
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
-  
-  console.log(`[NativeEdgeFunctions] Direct fetch to: ${url}`);
+
+  if (import.meta.env.DEV) {
+    console.log(`[NativeEdgeFunctions] Direct fetch to: ${url}`);
+  }
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -126,7 +144,9 @@ const invokeWithDirectFetch = async <T>(
       body: options.body ? JSON.stringify(options.body) : undefined
     });
     
-    console.log(`[NativeEdgeFunctions] Direct fetch response status: ${response.status}`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeEdgeFunctions] Direct fetch response status: ${response.status}`);
+    }
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -138,7 +158,9 @@ const invokeWithDirectFetch = async <T>(
     }
     
     const data = await response.json();
-    console.log(`[NativeEdgeFunctions] Direct fetch success`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeEdgeFunctions] Direct fetch success`);
+    }
     
     return { data, error: null };
   } catch (error: any) {
@@ -168,7 +190,9 @@ const invokeWithSupabase = async <T>(
       return { data: null, error };
     }
     
-    console.log(`[NativeEdgeFunctions] Supabase invoke success`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeEdgeFunctions] Supabase invoke success`);
+    }
     return { data, error: null };
   } catch (error: any) {
     console.error(`[NativeEdgeFunctions] Supabase invoke exception:`, error);
@@ -192,7 +216,9 @@ export const checkNetworkStatus = async (): Promise<{ connected: boolean; connec
   try {
     const { Network } = await import('@capacitor/network');
     const status = await Network.getStatus();
-    console.log('[NativeEdgeFunctions] Network status:', status);
+    if (import.meta.env.DEV) {
+      console.log('[NativeEdgeFunctions] Network status:', status);
+    }
     return {
       connected: status.connected,
       connectionType: status.connectionType

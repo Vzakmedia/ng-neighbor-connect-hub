@@ -45,7 +45,6 @@ export class FeedErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
     });
-    window.location.reload();
   };
 
   render() {

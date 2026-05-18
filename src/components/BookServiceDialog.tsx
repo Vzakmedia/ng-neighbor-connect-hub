@@ -99,10 +99,9 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       }
 
       const dates = Array.from(availableDatesSet).map(dateStr => new Date(dateStr as string));
-      console.log('Available dates generated:', dates.length, dates);
       setAvailableDates(dates);
     } catch (error) {
-      console.error('Error fetching weekly availability:', error);
+      // silently handle availability fetch errors
     }
   };
 
@@ -226,20 +225,6 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       return;
     }
 
-    // Show optimistic success
-    toast({
-      title: "Sending booking request...",
-      description: "Your request is being processed",
-    });
-
-    // Reset form and close immediately
-    const formState = { message, bookingDate, selectedSlot };
-    setMessage('');
-    setBookingDate(undefined);
-    setSelectedSlot('');
-    setOpen(false);
-    onBookingCreated();
-
     setLoading(true);
     try {
       // Verify service still exists and is active
@@ -257,6 +242,17 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         throw new Error('This service is currently unavailable');
       }
 
+      // Slot re-check: verify the slot is still available before inserting
+      const { count } = await supabase
+        .from('service_bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('service_id', service.id)
+        .eq('booking_date', bookingDateTime)
+        .neq('status', 'cancelled');
+      if ((count ?? 0) >= (slot.max_bookings ?? 1)) {
+        throw new Error('This slot was just booked. Please choose another time.');
+      }
+
       // Create the booking with retry logic for network resilience
       await withRetry(async () => {
         const bookingData: Database['public']['Tables']['service_bookings']['Insert'] = {
@@ -264,7 +260,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
           provider_id: service.user_id,
           service_id: service.id,
           booking_date: bookingDateTime,
-          message: formState.message || null,
+          message: message || null,
           status: 'pending'
         };
 
@@ -276,13 +272,18 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         if (bookingError) throw bookingError;
       }, 2, 1000);
 
+      // Reset form and close only after successful insert
+      setMessage('');
+      setBookingDate(undefined);
+      setSelectedSlot('');
+      setOpen(false);
+      onBookingCreated();
+
       toast({
         title: "Booking request sent",
         description: "Your booking request has been sent to the service provider",
       });
     } catch (error: any) {
-      console.error('Error creating booking:', error);
-      
       // Use centralized error handler for consistent error reporting
       const errorInfo = errorHandler.classifyError(error, {
         route: '/booking',
@@ -291,7 +292,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
 
       // Show specific error message based on error type
       let errorMessage = error.message || 'Failed to create booking request';
-      
+
       if (error.message?.includes('duplicate')) {
         errorMessage = 'You already have a booking request for this time slot';
       } else if (error.message?.includes('foreign key')) {
@@ -305,12 +306,6 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         description: errorMessage,
         variant: "destructive",
       });
-
-      // Restore form on error
-      setMessage(formState.message);
-      setBookingDate(formState.bookingDate);
-      setSelectedSlot(formState.selectedSlot);
-      setOpen(true);
     } finally {
       setLoading(false);
     }

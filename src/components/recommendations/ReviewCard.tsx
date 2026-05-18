@@ -16,10 +16,11 @@ export function ReviewCard({ review }: Props) {
   const toggleHelpful = useToggleReviewHelpful();
   const [showFullText, setShowFullText] = useState(false);
 
-  const isLongReview = review.review_text.length > 300;
-  const displayText = showFullText || !isLongReview 
-    ? review.review_text 
-    : review.review_text.substring(0, 300) + '...';
+  const reviewText = review.review_text ?? '';
+  const isLongReview = reviewText.length > 300;
+  const displayText = showFullText || !isLongReview
+    ? reviewText
+    : reviewText.substring(0, 300) + '...';
 
   const handleHelpful = () => {
     toggleHelpful.mutate({ 
@@ -77,9 +78,9 @@ export function ReviewCard({ review }: Props) {
             </Button>
           )}
 
-          {review.image_urls.length > 0 && (
+          {(review.image_urls ?? []).length > 0 && (
             <div className="flex gap-2 mb-3 overflow-x-auto">
-              {review.image_urls.map((url, index) => (
+              {(review.image_urls ?? []).map((url, index) => (
                 <img
                   key={index}
                   src={url}
@@ -90,20 +91,20 @@ export function ReviewCard({ review }: Props) {
             </div>
           )}
 
-          {(review.pros.length > 0 || review.cons.length > 0) && (
+          {((review.pros ?? []).length > 0 || (review.cons ?? []).length > 0) && (
             <div className="space-y-2 mb-3">
-              {review.pros.length > 0 && (
+              {(review.pros ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {review.pros.map((pro, index) => (
+                  {(review.pros ?? []).map((pro, index) => (
                     <Badge key={index} variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400">
                       👍 {pro}
                     </Badge>
                   ))}
                 </div>
               )}
-              {review.cons.length > 0 && (
+              {(review.cons ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {review.cons.map((con, index) => (
+                  {(review.cons ?? []).map((con, index) => (
                     <Badge key={index} variant="default" className="bg-red-500/10 text-red-700 dark:text-red-400">
                       👎 {con}
                     </Badge>

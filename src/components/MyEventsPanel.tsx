@@ -45,6 +45,12 @@ interface RSVP {
   };
 }
 
+// CSV injection protection
+const csvEscape = (value: string): string => {
+  const escaped = (value ?? '').replace(/"/g, '""');
+  return /^[=+\-@]/.test(escaped) ? `"'${escaped}"` : `"${escaped}"`;
+};
+
 const MyEventsPanel = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -78,26 +84,42 @@ const MyEventsPanel = () => {
 
       if (error) throw error;
 
-      // Fetch RSVP counts for each event
-      const eventsWithCounts = await Promise.all(
-        (data || []).map(async (event) => {
-          const { data: rsvpData } = await supabase
-            .from('event_rsvps')
-            .select('status')
-            .eq('event_id', event.id);
+      const eventList = data || [];
 
-          const goingCount = rsvpData?.filter(r => r.status === 'going').length || 0;
-          const interestedCount = rsvpData?.filter(r => r.status === 'interested').length || 0;
-          const notGoingCount = rsvpData?.filter(r => r.status === 'not_going').length || 0;
+      // WR-02: Batch RSVP counts — single query instead of N+1
+      if (eventList.length === 0) {
+        setEvents([]);
+        return;
+      }
 
-          return {
-            ...event,
-            rsvp_count: goingCount,
-            interested_count: interestedCount,
-            not_going_count: notGoingCount
-          };
-        })
-      );
+      const eventIds = eventList.map(e => e.id);
+      const { data: allRsvps } = await supabase
+        .from('event_rsvps')
+        .select('event_id, status')
+        .in('event_id', eventIds);
+
+      const rsvpMap = new Map<string, { going: number; interested: number; not_going: number }>();
+      for (const id of eventIds) {
+        rsvpMap.set(id, { going: 0, interested: 0, not_going: 0 });
+      }
+      for (const rsvp of allRsvps || []) {
+        const counts = rsvpMap.get(rsvp.event_id);
+        if (counts) {
+          if (rsvp.status === 'going') counts.going++;
+          else if (rsvp.status === 'interested') counts.interested++;
+          else if (rsvp.status === 'not_going') counts.not_going++;
+        }
+      }
+
+      const eventsWithCounts = eventList.map(event => {
+        const counts = rsvpMap.get(event.id) || { going: 0, interested: 0, not_going: 0 };
+        return {
+          ...event,
+          rsvp_count: counts.going,
+          interested_count: counts.interested,
+          not_going_count: counts.not_going
+        };
+      });
 
       setEvents(eventsWithCounts);
     } catch (error) {
@@ -114,7 +136,6 @@ const MyEventsPanel = () => {
 
   const fetchEventRsvps = async (eventId: string) => {
     try {
-      // First get RSVPs with all the new fields
       const { data: rsvpData, error: rsvpError } = await supabase
         .from('event_rsvps')
         .select('id, user_id, status, message, created_at, full_name, phone_number, email_address')
@@ -123,21 +144,29 @@ const MyEventsPanel = () => {
 
       if (rsvpError) throw rsvpError;
 
-      // Then get profile data for each user
-      const rsvpsWithProfiles = await Promise.all(
-        (rsvpData || []).map(async (rsvp) => {
-          const { data: profileData } = await supabase
-            .from('public_profiles')
-            .select('display_name, avatar_url')
-            .eq('user_id', rsvp.user_id)
-            .single();
+      // WR-02: Batch profile fetches — single query instead of N+1
+      const userIds = [...new Set((rsvpData || []).map(r => r.user_id))];
+      let profileMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('public_profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
+        for (const p of profiles || []) {
+          profileMap.set(p.user_id, p);
+        }
+      }
 
-          return {
-            ...rsvp,
-            profiles: { full_name: profileData?.display_name || 'Anonymous', avatar_url: profileData?.avatar_url || '' }
-          } as RSVP;
-        })
-      );
+      const rsvpsWithProfiles = (rsvpData || []).map(rsvp => {
+        const profileData = profileMap.get(rsvp.user_id);
+        return {
+          ...rsvp,
+          profiles: {
+            full_name: profileData?.display_name || 'Anonymous',
+            avatar_url: profileData?.avatar_url || ''
+          }
+        } as RSVP;
+      });
 
       setSelectedEventRsvps(rsvpsWithProfiles);
     } catch (error) {
@@ -154,41 +183,55 @@ const MyEventsPanel = () => {
     if (!user) return;
 
     try {
-      const eventsWithRsvps: EventWithRSVPs[] = await Promise.all(
-        events.map(async (event) => {
-          // First get RSVPs with all the new fields
-          const { data: rsvpData, error: rsvpError } = await supabase
-            .from('event_rsvps')
-            .select('id, user_id, status, message, created_at, full_name, phone_number, email_address')
-            .eq('event_id', event.id)
-            .order('created_at', { ascending: false });
+      // WR-02: Batch all RSVPs for all events in one query
+      const eventIds = events.map(e => e.id);
+      if (eventIds.length === 0) {
+        setEventsWithRsvps([]);
+        return;
+      }
 
-          if (rsvpError) throw rsvpError;
+      const { data: allRsvpData, error: rsvpError } = await supabase
+        .from('event_rsvps')
+        .select('id, user_id, event_id, status, message, created_at, full_name, phone_number, email_address')
+        .in('event_id', eventIds)
+        .order('created_at', { ascending: false });
 
-          // Then get profile data for each user
-          const rsvpsWithProfiles = await Promise.all(
-            (rsvpData || []).map(async (rsvp) => {
-              const { data: profileData } = await supabase
-                .from('public_profiles')
-                .select('display_name, avatar_url')
-                .eq('user_id', rsvp.user_id)
-                .single();
+      if (rsvpError) throw rsvpError;
 
-              return {
-                ...rsvp,
-                profiles: { full_name: profileData?.display_name || 'Anonymous', avatar_url: profileData?.avatar_url || '' }
-              } as RSVP;
-            })
-          );
+      // WR-02: Batch all profiles in one query
+      const userIds = [...new Set((allRsvpData || []).map(r => r.user_id))];
+      let profileMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('public_profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
+        for (const p of profiles || []) {
+          profileMap.set(p.user_id, p);
+        }
+      }
 
-          return {
-            ...event,
-            rsvps: rsvpsWithProfiles
-          };
-        })
-      );
+      // Group RSVPs by event_id
+      const rsvpsByEvent = new Map<string, RSVP[]>();
+      for (const id of eventIds) rsvpsByEvent.set(id, []);
+      for (const rsvp of allRsvpData || []) {
+        const profileData = profileMap.get(rsvp.user_id);
+        const mapped: RSVP = {
+          ...rsvp,
+          profiles: {
+            full_name: profileData?.display_name || 'Anonymous',
+            avatar_url: profileData?.avatar_url || ''
+          }
+        };
+        rsvpsByEvent.get(rsvp.event_id)?.push(mapped);
+      }
 
-      setEventsWithRsvps(eventsWithRsvps);
+      const result: EventWithRSVPs[] = events.map(event => ({
+        ...event,
+        rsvps: rsvpsByEvent.get(event.id) || []
+      }));
+
+      setEventsWithRsvps(result);
     } catch (error) {
       console.error('Error fetching events with RSVPs:', error);
       toast({
@@ -201,17 +244,21 @@ const MyEventsPanel = () => {
 
   const handleViewRsvps = (eventId: string) => {
     setSelectedEventId(eventId);
-    setActiveTab('rsvps'); // Switch to RSVPs tab
-    fetchAllEventsWithRsvps(); // Load all events with RSVPs
-    fetchEventRsvps(eventId);
+    setActiveTab('rsvps');
+    fetchAllEventsWithRsvps().catch(console.error);
+    fetchEventRsvps(eventId).catch(console.error);
   };
 
   const toggleRsvpEnabled = async (eventId: string, currentState: boolean) => {
+    // CR-02: null guard
+    if (!user) return;
+
     try {
       const { error } = await supabase
         .from('community_posts')
         .update({ rsvp_enabled: !currentState })
-        .eq('id', eventId);
+        .eq('id', eventId)
+        .eq('user_id', user.id); // CR-02: IDOR fix
 
       if (error) throw error;
 
@@ -220,7 +267,7 @@ const MyEventsPanel = () => {
         description: `RSVP ${!currentState ? 'enabled' : 'disabled'} for event`,
       });
 
-      fetchMyEvents();
+      fetchMyEvents().catch(console.error); // WR-13
     } catch (error) {
       console.error('Error updating RSVP setting:', error);
       toast({
@@ -237,14 +284,16 @@ const MyEventsPanel = () => {
   };
 
   const handleEventUpdated = () => {
-    fetchMyEvents();
-    // If we're viewing RSVPs for the updated event, refresh them too
+    fetchMyEvents().catch(console.error); // WR-13
     if (selectedEventId === eventToEdit?.id) {
-      fetchEventRsvps(selectedEventId);
+      fetchEventRsvps(selectedEventId).catch(console.error); // WR-13
     }
   };
 
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    // CR-02: null guard
+    if (!user) return;
+
     if (!confirm(`Are you sure you want to delete "${eventTitle}"? This action cannot be undone.`)) {
       return;
     }
@@ -253,7 +302,8 @@ const MyEventsPanel = () => {
       const { error } = await supabase
         .from('community_posts')
         .delete()
-        .eq('id', eventId);
+        .eq('id', eventId)
+        .eq('user_id', user.id); // CR-02: IDOR fix
 
       if (error) throw error;
 
@@ -262,7 +312,7 @@ const MyEventsPanel = () => {
         description: "The event has been successfully deleted",
       });
 
-      fetchMyEvents();
+      fetchMyEvents().catch(console.error); // WR-13
     } catch (error) {
       console.error('Error deleting event:', error);
       toast({
@@ -274,7 +324,19 @@ const MyEventsPanel = () => {
   };
 
   const exportRSVPs = async (eventId: string, eventTitle: string) => {
+    // WR-05: Ownership check before fetching RSVPs
+    if (!user) return;
+
     try {
+      const { data: owned } = await supabase
+        .from('community_posts')
+        .select('id')
+        .eq('id', eventId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!owned) throw new Error('Unauthorized');
+
       const { data: rsvpData, error } = await supabase
         .from('event_rsvps')
         .select('status, message, created_at, full_name, phone_number, email_address')
@@ -292,21 +354,20 @@ const MyEventsPanel = () => {
         return;
       }
 
-      // Convert to CSV format
+      // CR-03: CSV injection protection applied to all user-supplied fields
       const headers = ['Full Name', 'Email Address', 'Phone Number', 'Status', 'Message', 'RSVP Date'];
       const csvContent = [
         headers.join(','),
         ...rsvpData.map(rsvp => [
-          `"${rsvp.full_name || 'N/A'}"`,
-          `"${rsvp.email_address || 'N/A'}"`,
-          `"${rsvp.phone_number || 'N/A'}"`,
-          `"${rsvp.status}"`,
-          `"${rsvp.message || 'N/A'}"`,
+          csvEscape(rsvp.full_name || 'N/A'),
+          csvEscape(rsvp.email_address || 'N/A'),
+          csvEscape(rsvp.phone_number || 'N/A'),
+          csvEscape(rsvp.status),
+          csvEscape(rsvp.message || 'N/A'),
           `"${new Date(rsvp.created_at).toLocaleDateString()}"`
         ].join(','))
       ].join('\n');
 
-      // Create and download the file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -399,7 +460,7 @@ const MyEventsPanel = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Mobile action buttons */}
                   <div className="lg:hidden flex flex-col gap-2 w-full">
                     <div className="flex gap-2">
@@ -422,7 +483,7 @@ const MyEventsPanel = () => {
                         RSVPs
                       </Button>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <PromotePostButton
                         postId={event.id}
@@ -432,7 +493,7 @@ const MyEventsPanel = () => {
                         className="flex-1 min-h-[44px] touch-manipulation text-xs"
                       />
                     </div>
-                    
+
                     <div className="flex gap-2">
                       {event.rsvp_enabled && (
                         <Button
@@ -463,7 +524,7 @@ const MyEventsPanel = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   {/* Desktop action buttons */}
                   <div className="hidden lg:flex gap-2 flex-shrink-0">
                     <Button
@@ -524,7 +585,7 @@ const MyEventsPanel = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm md:text-base text-muted-foreground mb-4 line-clamp-3">{event.content}</p>
-                
+
                 {event.rsvp_enabled && (
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-1">
@@ -568,7 +629,7 @@ const MyEventsPanel = () => {
                 All Event RSVPs
               </h3>
             </div>
-            
+
             {eventsWithRsvps.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-8">
@@ -646,13 +707,13 @@ const MyEventsPanel = () => {
                                     </div>
                                   </TableCell>
                                   <TableCell>
-                                    <Badge 
+                                    <Badge
                                       variant={
-                                        rsvp.status === 'going' ? 'default' : 
+                                        rsvp.status === 'going' ? 'default' :
                                         rsvp.status === 'interested' ? 'secondary' : 'outline'
                                       }
                                     >
-                                      {rsvp.status === 'going' ? 'Going' : 
+                                      {rsvp.status === 'going' ? 'Going' :
                                        rsvp.status === 'interested' ? 'Interested' : 'Not Going'}
                                     </Badge>
                                   </TableCell>

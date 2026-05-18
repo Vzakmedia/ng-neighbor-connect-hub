@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { calculateReadingTime } from '@/services/blogService';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface BlogPost {
   id: string;
@@ -40,10 +41,15 @@ export const usePublishedBlogPosts = (filters?: {
   category?: string;
   tag?: string;
   search?: string;
+  page?: number;
+  pageSize?: number;
 }) => {
   return useQuery({
     queryKey: ['blog-posts', 'published', filters],
     queryFn: async () => {
+      const page = filters?.page ?? 0;
+      const pageSize = filters?.pageSize ?? 20;
+
       let query = supabase
         .from('blog_posts')
         .select(`
@@ -63,8 +69,13 @@ export const usePublishedBlogPosts = (filters?: {
       }
 
       if (filters?.search) {
-        query = query.or(`title.ilike.%${filters.search}%,excerpt.ilike.%${filters.search}%`);
+        // CR-01: sanitize search input to prevent filter injection
+        const safe = (filters.search || '').replace(/[%,()]/g, '');
+        query = query.or(`title.ilike.%${safe}%,excerpt.ilike.%${safe}%`);
       }
+
+      // WR-01: pagination
+      query = query.range(page * pageSize, (page + 1) * pageSize - 1);
 
       const { data, error } = await query;
 
@@ -116,19 +127,23 @@ export const useAllBlogPosts = () => {
 
 export const useCreateBlogPost = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (post: Partial<BlogPost>) => {
-      const reading_time = calculateReadingTime(post.content || '');
-      
-      const { data, error } = await supabase
+    mutationFn: async (data: Partial<BlogPost>) => {
+      if (!user) throw new Error('Not authenticated');
+      // WR-02: discard any incoming author_id and set it explicitly from session
+      const { author_id: _discardAuthorId, ...rest } = data as any;
+      const reading_time = calculateReadingTime(rest.content || '');
+
+      const { data: result, error } = await supabase
         .from('blog_posts')
-        .insert([{ ...post, reading_time_minutes: reading_time }])
+        .insert([{ ...rest, author_id: user.id, reading_time_minutes: reading_time }])
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
@@ -143,15 +158,19 @@ export const useCreateBlogPost = () => {
 
 export const useUpdateBlogPost = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<BlogPost> & { id: string }) => {
+      // CR-02: IDOR guard — only allow owner to update their own post
+      if (!user) throw new Error('Not authenticated');
       const reading_time = updates.content ? calculateReadingTime(updates.content) : undefined;
-      
+
       const { data, error } = await supabase
         .from('blog_posts')
         .update({ ...updates, reading_time_minutes: reading_time })
         .eq('id', id)
+        .eq('author_id', user.id)
         .select()
         .single();
 
@@ -171,13 +190,17 @@ export const useUpdateBlogPost = () => {
 
 export const useDeleteBlogPost = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // CR-03: IDOR guard — only allow owner to delete their own post
+      if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('blog_posts')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('author_id', user.id);
 
       if (error) throw error;
     },
@@ -195,27 +218,12 @@ export const useDeleteBlogPost = () => {
 export const useIncrementViews = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
-      const { error } = await supabase.rpc('increment', {
+      // WR-03: keep only the RPC call; silently ignore if RPC doesn't exist
+      await supabase.rpc('increment', {
         row_id: postId,
         table_name: 'blog_posts',
         column_name: 'view_count'
       });
-
-      if (error) {
-        // Fallback if RPC doesn't exist
-        const { data: post } = await supabase
-          .from('blog_posts')
-          .select('view_count')
-          .eq('id', postId)
-          .single();
-
-        if (post) {
-          await supabase
-            .from('blog_posts')
-            .update({ view_count: (post.view_count || 0) + 1 })
-            .eq('id', postId);
-        }
-      }
     }
   });
 };

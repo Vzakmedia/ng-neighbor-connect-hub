@@ -2,9 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+import { isNativePlatform } from "@/utils/platform";
 
 interface GoogleAuthButtonProps {
   mode: 'signin' | 'signup';
@@ -19,30 +17,29 @@ interface GoogleAuthButtonProps {
 export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     const isNative = isNativePlatform();
-    
-    console.log('[GoogleAuth] ==========================================');
-    console.log('[GoogleAuth] Starting OAuth flow');
-    console.log('[GoogleAuth] Mode:', mode);
-    console.log('[GoogleAuth] Is Native Platform:', isNative);
-    console.log('[GoogleAuth] Current URL:', window.location.href);
-    console.log('[GoogleAuth] Origin:', window.location.origin);
-    
+
+    console.log('[GoogleAuth] Starting OAuth flow, mode:', mode, 'native:', isNative);
+
     try {
       if (isNative) {
-        // Native: Use in-app browser for OAuth
-        console.log('[GoogleAuth] Using native in-app browser flow');
+        // Bug 3 fix: Do NOT register an appUrlOpen listener here.
+        // useDeepLinkHandler (mounted globally in App.tsx) is the single handler
+        // for all deep links, including OAuth callbacks. Registering a second
+        // listener here caused duplicate session-set calls and double navigation.
+        //
+        // Bug 9 fix: Listen for the browser closing so we can reset the loading
+        // state if the user dismisses the OAuth flow without completing it.
         const { Browser } = await import('@capacitor/browser');
-        const { App } = await import('@capacitor/app');
 
+        // Bug 4 / native: redirect back to the app's custom scheme so the deep
+        // link handler picks up the OAuth tokens.
         const redirectUrl = 'neighborlink://auth/callback';
         console.log('[GoogleAuth] Native redirect URL:', redirectUrl);
-        
-        console.log('[GoogleAuth] Calling supabase.auth.signInWithOAuth...');
+
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -55,14 +52,8 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
           },
         });
 
-        console.log('[GoogleAuth] OAuth response - data:', data);
-        console.log('[GoogleAuth] OAuth response - error:', error);
-
         if (error) {
           console.error('[GoogleAuth] OAuth init error:', error);
-          console.error('[GoogleAuth] Error code:', error.code);
-          console.error('[GoogleAuth] Error status:', error.status);
-          console.error('[GoogleAuth] Error message:', error.message);
           toast({
             title: "Authentication Error",
             description: `${error.message} (Code: ${error.code || 'unknown'})`,
@@ -73,93 +64,45 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
         }
 
         if (data?.url) {
-          console.log('[GoogleAuth] Opening OAuth URL');
-          
-          // Listen for callback
-          const urlListener = await App.addListener('appUrlOpen', async (event) => {
-            console.log('[GoogleAuth] Callback received:', event.url);
-            await Browser.close();
-            urlListener.remove();
-            
-            try {
-              const url = new URL(event.url);
-              const hashParams = new URLSearchParams(url.hash.substring(1));
-              const searchParams = new URLSearchParams(url.search);
-              
-              const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-              const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
-              const errorParam = hashParams.get('error') || searchParams.get('error');
-
-              if (errorParam) {
-                const errorDesc = hashParams.get('error_description') || searchParams.get('error_description');
-                console.error('[GoogleAuth] OAuth error:', errorParam);
-                toast({
-                  title: "Authentication Failed",
-                  description: errorDesc || errorParam,
-                  variant: "destructive",
-                });
-                setIsLoading(false);
-                return;
-              }
-
-              if (accessToken && refreshToken) {
-                console.log('[GoogleAuth] Setting session');
-                const { error: sessionError } = await supabase.auth.setSession({
-                  access_token: accessToken,
-                  refresh_token: refreshToken,
-                });
-
-                if (sessionError) {
-                  console.error('[GoogleAuth] Session error:', sessionError);
-                  toast({
-                    title: "Authentication Failed",
-                    description: "Could not complete sign in.",
-                    variant: "destructive",
-                  });
-                  setIsLoading(false);
-                  return;
-                }
-
-                // Verify and redirect
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                  const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, city, state')
-                    .eq('user_id', session.user.id)
-                    .single();
-
-                  if (!profile?.full_name || !profile?.city || !profile?.state) {
-                    navigate('/auth/complete-profile');
-                  } else {
-                    toast({ title: "Welcome!", description: "Signed in successfully." });
-                    navigate('/dashboard');
-                  }
-                }
-              }
-            } catch (err) {
-              console.error('[GoogleAuth] Callback error:', err);
-              toast({
-                title: "Authentication Error",
-                description: "Could not process response.",
-                variant: "destructive",
-              });
-            }
+          // Reset loading when the browser closes (user dismissed or flow complete).
+          // Navigation on success is handled by useDeepLinkHandler.
+          const browserFinishedListener = await Browser.addListener('browserFinished', () => {
             setIsLoading(false);
+            browserFinishedListener.remove();
           });
 
           await Browser.open({ url: data.url, presentationStyle: 'popover' });
+        } else {
+          setIsLoading(false);
         }
       } else {
-        // Web: Standard OAuth redirect
-        const redirectUrl = `${window.location.origin}/auth/complete-profile`;
-        
-        console.log('[GoogleAuth] Using web OAuth redirect flow');
-        console.log('[GoogleAuth] Web redirect URL:', redirectUrl);
-        console.log('[GoogleAuth] Supabase project:', 'cowiviqhrnmhttugozbz');
-        
-        console.log('[GoogleAuth] Calling supabase.auth.signInWithOAuth for web...');
-        const { data, error } = await supabase.auth.signInWithOAuth({
+        // Bug 4 fix: redirect to /auth (a public route) instead of /auth/complete-profile
+        // (a ProtectedRoute). When Supabase redirects back, detectSessionInUrl processes
+        // the PKCE tokens and onAuthStateChange fires SIGNED_IN before ProtectedRoute
+        // ever renders. Using a public route removes any timing risk.
+        //
+        // IMPORTANT: Make sure this URL is listed in Supabase Dashboard →
+        // Authentication → URL Configuration → Redirect URLs.
+        const redirectUrl = `${window.location.origin}/auth`;
+
+        console.log('[GoogleAuth] Web OAuth redirect URL:', redirectUrl);
+
+        // Bug 11 fix: signInWithOAuth does not accept a `data` option for user metadata.
+        // Location data for Google sign-ups must be collected during profile completion.
+        // If location was provided, persist it temporarily so profile completion can
+        // pre-populate the fields.
+        if (mode === 'signup' && locationData) {
+          try {
+            sessionStorage.setItem(
+              'pending_location_data',
+              JSON.stringify(locationData)
+            );
+          } catch {
+            // sessionStorage may be unavailable in some environments — non-fatal
+          }
+        }
+
+        const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: redirectUrl,
@@ -167,39 +110,22 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
               access_type: 'offline',
               prompt: 'consent',
             },
-            ...(mode === 'signup' && locationData && {
-              data: locationData,
-            }),
           },
         });
 
-        console.log('[GoogleAuth] Web OAuth response - data:', data);
-        console.log('[GoogleAuth] Web OAuth response - URL:', data?.url);
-        
         if (error) {
           console.error('[GoogleAuth] Web OAuth error:', error);
-          console.error('[GoogleAuth] Error code:', error.code);
-          console.error('[GoogleAuth] Error status:', error.status);
-          console.error('[GoogleAuth] Error message:', error.message);
           toast({
             title: "Google Sign-In Failed",
             description: `${error.message}. Please check Google OAuth configuration.`,
             variant: "destructive",
           });
           setIsLoading(false);
-        } else {
-          console.log('[GoogleAuth] OAuth initiated successfully, browser should redirect...');
-          toast({
-            title: "Redirecting to Google",
-            description: "Opening Google sign-in page...",
-          });
         }
+        // On success the browser redirects away — no need to reset isLoading.
       }
     } catch (error: any) {
       console.error('[GoogleAuth] Unexpected error:', error);
-      console.error('[GoogleAuth] Error name:', error?.name);
-      console.error('[GoogleAuth] Error message:', error?.message);
-      console.error('[GoogleAuth] Error stack:', error?.stack);
       toast({
         title: "Authentication Failed",
         description: `Unexpected error: ${error?.message || 'Unknown error'}`,
@@ -210,9 +136,9 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
   };
 
   return (
-    <Button 
+    <Button
       type="button"
-      variant="outline" 
+      variant="outline"
       className="w-full border border-border hover:bg-muted/50 transition-colors"
       onClick={handleGoogleAuth}
       disabled={isLoading}
@@ -225,10 +151,10 @@ export const GoogleAuthButton = ({ mode, locationData }: GoogleAuthButtonProps) 
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
         <span>
-          {isLoading 
-            ? 'Connecting...' 
-            : mode === 'signin' 
-              ? 'Continue with Google' 
+          {isLoading
+            ? 'Connecting...'
+            : mode === 'signin'
+              ? 'Continue with Google'
               : 'Sign up with Google'
           }
         </span>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAllBlogPosts, useCreateBlogPost, useUpdateBlogPost, useDeleteBlogPost, BlogPost } from '@/hooks/useBlogPosts';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import { format } from 'date-fns';
 
 export const BlogManagementPanel = () => {
   const { user } = useAuth();
+  const { isAdmin, isLoading: roleLoading } = useAdminStatus();
   const { data: posts, isLoading } = useAllBlogPosts();
   const { data: categories } = useBlogCategories();
   const createPost = useCreateBlogPost();
@@ -39,6 +41,11 @@ export const BlogManagementPanel = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // WR-07: role guard — only admins may access the blog management panel
+  if (!roleLoading && !isAdmin) {
+    return <div className="text-center py-8 text-muted-foreground">Access denied</div>;
+  }
   
   const [formData, setFormData] = useState({
     title: '',
@@ -105,7 +112,12 @@ export const BlogManagementPanel = () => {
 
       handleClose();
     } catch (error) {
-      console.error('Error saving post:', error);
+      // WR-09: gate console output to dev only
+      if (import.meta.env.DEV) {
+        console.error('Error saving post:', error);
+      }
+      // WR-08: show error toast on failure
+      toast.error('Failed to save post');
     }
   };
 

@@ -9,11 +9,17 @@ export const openUrl = async (
   target: '_blank' | '_self' = '_blank',
   options?: string
 ): Promise<void> => {
+  // WR-06: Validate URL scheme before processing
+  const allowedSchemes = ['https://', 'http://', 'tel:', 'mailto:', 'sms:'];
+  if (!allowedSchemes.some(s => url.startsWith(s))) {
+    return;
+  }
+
   const isNative = isNativePlatform();
-  
+
   // Special URL schemes should always use window.open
-  const isSpecialScheme = url.startsWith('tel:') || 
-                         url.startsWith('mailto:') || 
+  const isSpecialScheme = url.startsWith('tel:') ||
+                         url.startsWith('mailto:') ||
                          url.startsWith('sms:');
   
   if (isSpecialScheme) {

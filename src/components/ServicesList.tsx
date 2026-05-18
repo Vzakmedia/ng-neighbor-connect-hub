@@ -79,7 +79,6 @@ interface ServicesListProps {
 }
 
 const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = false, showOnlyBookings = false }: ServicesListProps) => {
-  console.log('ServicesList component rendering...');
   const { user } = useAuth();
   const { toast } = useToast();
   const [myServices, setMyServices] = useState<Service[]>([]);
@@ -87,8 +86,6 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my-services');
-
-  console.log('ServicesList state:', { myServices: myServices.length, myItems: myItems.length, myBookings: myBookings.length, loading, activeTab });
 
 
   const fetchMyServices = async () => {
@@ -103,21 +100,21 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
 
       if (error) throw error;
 
-      // Fetch profiles separately
-      const servicesWithProfiles = await Promise.all(
-        (data || []).map(async (service) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', service.user_id)
-            .single();
+      // Fetch all profiles in a single batch query (CR-05: fix N+1)
+      const userIds = [...new Set((data || []).map((s) => s.user_id).filter(Boolean))];
+      let profileMap = new Map<string, { full_name: string; avatar_url: string }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', userIds);
+        (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
+      }
 
-          return {
-            ...service,
-            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
-          };
-        })
-      );
+      const servicesWithProfiles = (data || []).map((service) => ({
+        ...service,
+        profiles: profileMap.get(service.user_id) || { full_name: 'Anonymous', avatar_url: '' }
+      }));
 
       setMyServices(servicesWithProfiles as any || []);
     } catch (error) {
@@ -142,21 +139,21 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
 
       if (error) throw error;
 
-      // Fetch profiles separately
-      const itemsWithProfiles = await Promise.all(
-        (data || []).map(async (item) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('user_id', item.user_id)
-            .single();
+      // Fetch all profiles in a single batch query (CR-05: fix N+1)
+      const userIds = [...new Set((data || []).map((i) => i.user_id).filter(Boolean))];
+      let profileMap = new Map<string, { full_name: string; avatar_url: string }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', userIds);
+        (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
+      }
 
-          return {
-            ...item,
-            profiles: profile || { full_name: 'Anonymous', avatar_url: '' }
-          };
-        })
-      );
+      const itemsWithProfiles = (data || []).map((item) => ({
+        ...item,
+        profiles: profileMap.get(item.user_id) || { full_name: 'Anonymous', avatar_url: '' }
+      }));
 
       setMyItems(itemsWithProfiles as any || []);
     } catch (error) {
@@ -181,29 +178,30 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
 
       if (error) throw error;
 
-      // Fetch services and profiles separately
-      const bookingsWithRelations = await Promise.all(
-        (data || []).map(async (booking) => {
-          const [serviceData, profileData] = await Promise.all([
-            supabase
-              .from('services')
-              .select('title, description')
-              .eq('id', booking.service_id)
-              .single(),
-            supabase
-              .from('profiles')
-              .select('full_name, avatar_url')
-              .eq('user_id', booking.provider_id)
-              .single()
-          ]);
+      // Fetch all services and profiles in batch queries (CR-05: fix N+1)
+      const serviceIds = [...new Set((data || []).map((b) => b.service_id).filter(Boolean))];
+      const providerIds = [...new Set((data || []).map((b) => b.provider_id).filter(Boolean))];
 
-          return {
-            ...booking,
-            services: serviceData.data || { title: 'Unknown Service', description: '' },
-            profiles: profileData.data || { full_name: 'Anonymous', avatar_url: '' }
-          };
-        })
-      );
+      const [servicesRes, profilesRes] = await Promise.all([
+        serviceIds.length > 0
+          ? supabase.from('services').select('id, title, description').in('id', serviceIds)
+          : Promise.resolve({ data: [] }),
+        providerIds.length > 0
+          ? supabase.from('profiles').select('user_id, full_name, avatar_url').in('user_id', providerIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const serviceMap = new Map<string, { title: string; description: string }>();
+      (servicesRes.data || []).forEach((s: any) => serviceMap.set(s.id, s));
+
+      const profileMap = new Map<string, { full_name: string; avatar_url: string }>();
+      (profilesRes.data || []).forEach((p: any) => profileMap.set(p.user_id, p));
+
+      const bookingsWithRelations = (data || []).map((booking) => ({
+        ...booking,
+        services: serviceMap.get(booking.service_id) || { title: 'Unknown Service', description: '' },
+        profiles: profileMap.get(booking.provider_id) || { full_name: 'Anonymous', avatar_url: '' }
+      }));
 
       setMyBookings(bookingsWithRelations as any || []);
     } catch (error) {
@@ -217,13 +215,15 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   };
 
   const handleDeleteService = async (serviceId: string, serviceTitle: string) => {
+    if (!user) return;
     if (!confirm(`Are you sure you want to delete "${serviceTitle}"?`)) return;
 
     try {
       const { error } = await supabase
         .from('services')
         .delete()
-        .eq('id', serviceId);
+        .eq('id', serviceId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -244,11 +244,13 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   };
 
   const toggleServiceStatus = async (serviceId: string, currentStatus: boolean) => {
+    if (!user) return;
     try {
       const { error } = await supabase
         .from('services')
         .update({ is_active: !currentStatus })
-        .eq('id', serviceId);
+        .eq('id', serviceId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -269,13 +271,15 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   };
 
   const handleDeleteItem = async (itemId: string, itemTitle: string) => {
+    if (!user) return;
     if (!confirm(`Are you sure you want to delete "${itemTitle}"?`)) return;
 
     try {
       const { error } = await supabase
         .from('marketplace_items')
         .delete()
-        .eq('id', itemId);
+        .eq('id', itemId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -296,13 +300,15 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   };
 
   const toggleItemStatus = async (itemId: string, currentStatus: string) => {
+    if (!user) return;
     const newStatus = currentStatus === 'active' ? 'sold' : 'active';
-    
+
     try {
       const { error } = await supabase
         .from('marketplace_items')
         .update({ status: newStatus })
-        .eq('id', itemId);
+        .eq('id', itemId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 

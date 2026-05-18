@@ -75,20 +75,23 @@ const DEFAULT_PREFERENCES: Partial<NotificationPreferences> = {
 };
 
 // Cache for preference checks (to avoid repeated DB calls in notification store)
-let cachedPreferences: NotificationPreferences | null = null;
-let cacheTimestamp = 0;
+const preferencesCache: Record<string, NotificationPreferences> = {};
+const cacheTimestamps: Record<string, number> = {};
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export const getNotificationPreferencesCache = (): NotificationPreferences | null => {
-  if (cachedPreferences && Date.now() - cacheTimestamp < CACHE_TTL) {
-    return cachedPreferences;
+export const getNotificationPreferencesCache = (userId?: string): NotificationPreferences | null => {
+  if (!userId) return null;
+  if (preferencesCache[userId] && Date.now() - (cacheTimestamps[userId] || 0) < CACHE_TTL) {
+    return preferencesCache[userId];
   }
   return null;
 };
 
-export const invalidatePreferencesCache = () => {
-  cachedPreferences = null;
-  cacheTimestamp = 0;
+export const invalidatePreferencesCache = (userId?: string) => {
+  if (userId) {
+    delete preferencesCache[userId];
+    delete cacheTimestamps[userId];
+  }
 };
 
 export const useNotificationPreferences = () => {
@@ -127,8 +130,8 @@ export const useNotificationPreferences = () => {
         } as NotificationPreferences;
         
         setPreferences(merged);
-        cachedPreferences = merged;
-        cacheTimestamp = Date.now();
+        preferencesCache[user.id] = merged;
+        cacheTimestamps[user.id] = Date.now();
       } else {
         // Create default preferences for new user
         await createDefaultPreferences();
@@ -176,8 +179,8 @@ export const useNotificationPreferences = () => {
         } as NotificationPreferences;
         
         setPreferences(merged);
-        cachedPreferences = merged;
-        cacheTimestamp = Date.now();
+        preferencesCache[user.id] = merged;
+        cacheTimestamps[user.id] = Date.now();
       }
     } catch (error) {
       console.error('[useNotificationPreferences] Create error:', error);
@@ -192,8 +195,8 @@ export const useNotificationPreferences = () => {
       // Optimistic update
       const optimisticUpdate = { ...preferences, ...updates };
       setPreferences(optimisticUpdate);
-      cachedPreferences = optimisticUpdate;
-      cacheTimestamp = Date.now();
+      preferencesCache[user.id] = optimisticUpdate;
+      cacheTimestamps[user.id] = Date.now();
 
       const { error } = await supabase
         .from('notification_preferences')
@@ -211,7 +214,8 @@ export const useNotificationPreferences = () => {
       });
     } catch (error) {
       console.error('[useNotificationPreferences] Update error:', error);
-      // Revert optimistic update
+      // Revert optimistic update — invalidate cache first
+      invalidatePreferencesCache(user.id);
       await fetchPreferences();
       toast({
         title: "Error",
@@ -260,7 +264,9 @@ export const useNotificationPreferences = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('[useNotificationPreferences] Real-time update:', payload);
+          if (import.meta.env.DEV) {
+            console.log('[useNotificationPreferences] Real-time update:', payload);
+          }
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const data = payload.new as any;
             const merged = {
@@ -271,10 +277,10 @@ export const useNotificationPreferences = () => {
                 ...(typeof data.categories === 'object' ? data.categories : {})
               }
             } as NotificationPreferences;
-            
+
             setPreferences(merged);
-            cachedPreferences = merged;
-            cacheTimestamp = Date.now();
+            preferencesCache[user.id] = merged;
+            cacheTimestamps[user.id] = Date.now();
           }
         }
       )
@@ -305,9 +311,21 @@ export const shouldShowNotification = async (
   playSound: boolean;
   showBrowserNotification: boolean;
 }> => {
-  // Try cache first
-  let prefs = getNotificationPreferencesCache();
-  
+  // Try cache first — need userId to key the cache
+  let prefs: NotificationPreferences | null = null;
+  let currentUserId: string | undefined;
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUserId = user?.id;
+  } catch {
+    // ignore
+  }
+
+  if (currentUserId) {
+    prefs = getNotificationPreferencesCache(currentUserId);
+  }
+
   // If no cache, fetch from DB
   if (!prefs) {
     try {
@@ -331,9 +349,9 @@ export const shouldShowNotification = async (
             ...(typeof data.categories === 'object' ? data.categories : {})
           }
         } as NotificationPreferences;
-        
-        cachedPreferences = prefs;
-        cacheTimestamp = Date.now();
+
+        preferencesCache[user.id] = prefs;
+        cacheTimestamps[user.id] = Date.now();
       }
     } catch (error) {
       console.error('[shouldShowNotification] Error fetching preferences:', error);

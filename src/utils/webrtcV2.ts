@@ -75,7 +75,8 @@ export class WebRTCManagerV2 {
       if (event.candidate) {
         this.sendSignal({
           type: "ice",
-          candidate: event.candidate
+          candidate: event.candidate,
+          session_id: this.callSessionId
         });
       }
     };

@@ -110,9 +110,8 @@ export default function PostDetail() {
     navigate(`/profile?user=${userId}`);
   };
 
-  const handleImageClick = (imageIndex: number) => {
+  const handleImageClick = (_imageIndex: number) => {
     // Image viewer could be added here
-    console.log('Image clicked:', imageIndex);
   };
 
   if (isLoading) {
@@ -162,8 +161,11 @@ export default function PostDetail() {
                 url: window.location.href,
               });
             } else {
-              toast.success('Link copied to clipboard!');
-              navigator.clipboard.writeText(window.location.href);
+              navigator.clipboard.writeText(window.location.href).then(() => {
+                toast.success('Link copied to clipboard!');
+              }).catch(() => {
+                toast.error('Failed to copy link');
+              });
             }
           }}
           onRSVP={handleRSVP}

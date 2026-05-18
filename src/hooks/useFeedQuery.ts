@@ -208,8 +208,7 @@ export function useFeedQuery(filters: FeedFilters) {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
 
-    // Add automatic background refetch
-    refetchInterval: 60000, // Poll every 60 seconds for new posts
+    // WR-17: removed refetchInterval — realtime subscription below handles live updates
 
     // Use online mode to ensure fetch happens
     networkMode: 'online',
@@ -271,17 +270,18 @@ export function useLikePost() {
 
   return useMutation({
     mutationFn: async ({ postId, isLiked }: { postId: string; isLiked: boolean }) => {
+      if (!user) throw new Error('User not authenticated');
       if (isLiked) {
         const { error } = await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', postId)
-          .eq('user_id', user!.id);
+          .eq('user_id', user.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('post_likes')
-          .insert({ post_id: postId, user_id: user!.id });
+          .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
       }
     },
@@ -333,17 +333,18 @@ export function useSavePost() {
 
   return useMutation({
     mutationFn: async ({ postId, isSaved }: { postId: string; isSaved: boolean }) => {
+      if (!user) throw new Error('User not authenticated');
       if (isSaved) {
         const { error } = await supabase
           .from('saved_posts')
           .delete()
           .eq('post_id', postId)
-          .eq('user_id', user!.id);
+          .eq('user_id', user.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('saved_posts')
-          .insert({ post_id: postId, user_id: user!.id });
+          .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
       }
     },
@@ -529,6 +530,19 @@ export function useDeletePost() {
 
   return useMutation({
     mutationFn: async (postId: string) => {
+      // Cascade-delete poll data first (not covered by DB cascade)
+      const { data: pollRows } = await supabase
+        .from('polls')
+        .select('id')
+        .eq('post_id', postId);
+
+      if (pollRows && pollRows.length > 0) {
+        const pollId = pollRows[0].id;
+        await supabase.from('poll_votes').delete().eq('poll_id', pollId);
+        await supabase.from('poll_options').delete().eq('poll_id', pollId);
+        await supabase.from('polls').delete().eq('id', pollId);
+      }
+
       const { error } = await supabase
         .from('community_posts')
         .delete()

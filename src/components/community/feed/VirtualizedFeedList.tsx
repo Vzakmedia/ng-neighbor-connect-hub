@@ -165,10 +165,13 @@ const VirtualizedFeedListComponent = ({
   };
 
   const confirmDelete = async () => {
-    if (postToDelete) {
+    if (!postToDelete) return;
+    try {
       await deletePost.mutateAsync(postToDelete.id);
       setDeleteDialogOpen(false);
       setPostToDelete(null);
+    } catch (error) {
+      console.error('Error deleting post:', error);
     }
   };
 

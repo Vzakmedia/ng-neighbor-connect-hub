@@ -22,7 +22,8 @@ export const useAdvertisingCampaigns = (filters?: CampaignFilters) => {
       const data = await AdvertisingService.getCampaigns(user.id, filters);
       setCampaigns(data);
     } catch (err) {
-      console.error('Error fetching campaigns:', err);
+      // WR-14: Gate console.error to development only
+      if (import.meta.env.DEV) console.error('Error fetching campaigns:', err);
       setError('Failed to load campaigns');
     } finally {
       setLoading(false);
@@ -31,7 +32,8 @@ export const useAdvertisingCampaigns = (filters?: CampaignFilters) => {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [user?.id, filters?.status, filters?.approval_status, filters?.campaign_type]);
+    // WR-13: Include filters?.search so search filter changes trigger a refetch
+  }, [user?.id, filters?.status, filters?.approval_status, filters?.campaign_type, filters?.search]);
 
   const createCampaign = async (data: CreateCampaignData): Promise<Campaign | null> => {
     try {
@@ -45,7 +47,7 @@ export const useAdvertisingCampaigns = (filters?: CampaignFilters) => {
         return null;
       }
     } catch (err) {
-      console.error('Error creating campaign:', err);
+      if (import.meta.env.DEV) console.error('Error creating campaign:', err);
       toast.error('Failed to create campaign');
       return null;
     }
@@ -66,7 +68,7 @@ export const useAdvertisingCampaigns = (filters?: CampaignFilters) => {
         return false;
       }
     } catch (err) {
-      console.error('Error updating campaign status:', err);
+      if (import.meta.env.DEV) console.error('Error updating campaign status:', err);
       toast.error('Failed to update campaign status');
       return false;
     }
@@ -79,7 +81,7 @@ export const useAdvertisingCampaigns = (filters?: CampaignFilters) => {
     try {
       return await AdvertisingService.getCampaignAnalytics(campaignId, dateRange);
     } catch (err) {
-      console.error('Error fetching campaign analytics:', err);
+      if (import.meta.env.DEV) console.error('Error fetching campaign analytics:', err);
       toast.error('Failed to load analytics');
       return null;
     }

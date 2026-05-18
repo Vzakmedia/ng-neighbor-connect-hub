@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -62,32 +62,27 @@ const BusinessVerificationAdmin = () => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
+      // CR-01: Verify caller is admin before querying
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .single();
+      if (profile?.role !== 'admin') return;
+
+      // CR-02: Use a join instead of N+1 per-business profile queries
       const { data, error } = await supabase
         .from('businesses')
-        .select('*')
+        .select('*, profiles!user_id(full_name, avatar_url, phone, email)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch profiles separately to avoid join issues
-      const applicationsWithProfiles = await Promise.all(
-        (data || []).map(async (application: any) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url, phone, email')
-            .eq('user_id', application.user_id)
-            .maybeSingle();
-
-          return {
-            ...application,
-            profiles: profile || { full_name: 'Unknown User', avatar_url: '', phone: '', email: '' }
-          };
-        })
-      );
-
-      setApplications(applicationsWithProfiles as BusinessApplication[]);
+      setApplications((data || []) as unknown as BusinessApplication[]);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast({
@@ -98,11 +93,23 @@ const BusinessVerificationAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const handleApproval = async (applicationId: string, action: 'approve' | 'reject') => {
     setProcessing(true);
     try {
+      // CR-03: Verify caller is admin before performing approval
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) return;
+      const { data: adminProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .single();
+      if (adminProfile?.role !== 'admin') {
+        toast({ title: "Unauthorized", description: "Admin access required", variant: "destructive" });
+        return;
+      }
       const updates: any = {
         verification_status: action === 'approve' ? 'verified' : 'rejected',
         is_verified: action === 'approve',
@@ -188,7 +195,7 @@ const BusinessVerificationAdmin = () => {
 
   useEffect(() => {
     fetchApplications();
-  }, []);
+  }, [fetchApplications]);
 
   if (loading) {
     return (

@@ -30,19 +30,20 @@ export const useEmergencyAlerts = () => {
   const lastFetchTimeRef = useRef<number>(0);
   const profileCacheRef = useRef<{ neighborhood: string; phone: string } | null>(null);
 
-  // Debounce mechanism
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  // Separate debounce refs for each fetch function
+  const alertsDebounceRef = useRef<NodeJS.Timeout>();
+  const panicDebounceRef = useRef<NodeJS.Timeout>();
 
   const fetchAlerts = useCallback(async (filters: EmergencyFilters, forceRefresh = false) => {
     if (!user) return;
 
     // Debounce rapid calls
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    if (alertsDebounceRef.current) {
+      clearTimeout(alertsDebounceRef.current);
     }
 
     return new Promise<void>((resolve) => {
-      debounceTimeoutRef.current = setTimeout(async () => {
+      alertsDebounceRef.current = setTimeout(async () => {
         // Rate limiting: don't fetch more than once every 5 seconds unless forced
         const now = Date.now();
         if (!forceRefresh && now - lastFetchTimeRef.current < 5000) {
@@ -132,38 +133,22 @@ export const useEmergencyAlerts = () => {
           // Filter alerts by user's neighborhood if profile is available
           let filteredAlerts: any[] = [];
           if (currentUserProfile?.neighborhood) {
-            console.log('Filtering alerts by neighborhood:', currentUserProfile.neighborhood);
-            console.log('Raw alerts data:', data?.length, 'alerts');
             filteredAlerts = (data || []).filter((alert: any) => {
               // Strict filtering: Alert MUST have a profile and that profile MUST match the user's neighborhood
               if (!alert.profiles || !alert.profiles.neighborhood) {
-                console.log('Skipping alert without valid neighborhood data:', alert.id);
                 return false;
               }
-
-              const alertNeighborhood = alert.profiles.neighborhood;
-              const matches = alertNeighborhood === currentUserProfile.neighborhood;
-
-              if (!matches) {
-                console.log(`Skipping alert ${alert.id} from different neighborhood: ${alertNeighborhood}`);
-              }
-
-              return matches;
+              return alert.profiles.neighborhood === currentUserProfile.neighborhood;
             });
-            console.log('Filtered alerts:', filteredAlerts.length, 'alerts');
           } else {
-            console.log('No user neighborhood found - showing NO alerts for safety');
             filteredAlerts = []; // STRICT: No neighborhood = No alerts
           }
 
           // Compare with previous data using hash
           const newHash = createDataHash(filteredAlerts);
           if (newHash !== alertsHashRef.current) {
-            console.log('Safety alerts updated:', filteredAlerts.length, 'alerts');
             alertsHashRef.current = newHash;
             setAlerts(filteredAlerts as SafetyAlert[]);
-          } else {
-            console.log('Safety alerts unchanged, skipping UI update');
           }
 
         } catch (error: any) {
@@ -194,13 +179,13 @@ export const useEmergencyAlerts = () => {
   const fetchPanicAlerts = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
-    // Use same debouncing mechanism
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    // Use separate debounce ref for panic alerts
+    if (panicDebounceRef.current) {
+      clearTimeout(panicDebounceRef.current);
     }
 
     return new Promise<void>((resolve) => {
-      debounceTimeoutRef.current = setTimeout(async () => {
+      panicDebounceRef.current = setTimeout(async () => {
         try {
           // Get user's creation date for clean slate filtering
           const { data: userData } = await supabase.auth.getUser();
@@ -322,11 +307,8 @@ export const useEmergencyAlerts = () => {
           // Compare with previous data using hash
           const newHash = createDataHash(uniqueAlerts);
           if (newHash !== panicAlertsHashRef.current) {
-            console.log('Panic alerts updated:', uniqueAlerts.length, 'alerts');
             panicAlertsHashRef.current = newHash;
             setPanicAlerts(uniqueAlerts as PanicAlert[]);
-          } else {
-            console.log('Panic alerts unchanged, skipping UI update');
           }
 
         } catch (error: any) {

@@ -86,6 +86,11 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
   const handleStatusUpdate = async () => {
     if (!user || selectedStatus === currentStatus) return;
 
+    if (panicAlert.user_id !== user.id) {
+      toast({ title: "Unauthorized", description: "You can only update your own panic alerts.", variant: "destructive" });
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const { data, error } = await supabase.functions.invoke('update-panic-alert-status', {

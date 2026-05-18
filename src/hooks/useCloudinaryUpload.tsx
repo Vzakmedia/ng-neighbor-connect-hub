@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { uploadToCloudinary, getVideoThumbnailUrl } from '@/services/cloudinaryService';
 import { validateMedia, getMediaType } from '@/utils/mediaValidation';
 import { checkIsNativePlatform, checkNetworkStatus } from '@/utils/nativeEdgeFunctions';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CloudinaryAttachment {
   id: string;
@@ -36,12 +37,22 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
     console.log(`[useCloudinaryUpload] Platform: ${isNative ? 'native' : 'web'}, userId: ${userId}, folder: ${folder}`);
     
     try {
-      // Check if user is authenticated
+      // Verify userId is provided and matches the authenticated user
       if (!userId) {
         console.error('[useCloudinaryUpload] No userId provided');
         toast({
           title: "Authentication required",
           description: "Please sign in to upload files",
+          variant: "destructive",
+        });
+        return null;
+      }
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser || authUser.id !== userId) {
+        console.error('[useCloudinaryUpload] userId does not match authenticated user');
+        toast({
+          title: "Authentication error",
+          description: "Upload not authorized.",
           variant: "destructive",
         });
         return null;

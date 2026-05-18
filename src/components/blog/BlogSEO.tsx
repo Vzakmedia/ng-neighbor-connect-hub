@@ -9,7 +9,8 @@ export const BlogSEO = ({ post }: BlogSEOProps) => {
   const metaTitle = post.meta_title || post.title;
   const metaDescription = post.meta_description || post.excerpt || '';
   const keywords = post.meta_keywords?.join(', ') || '';
-  const url = `${window.location.origin}/blog/${post.slug}`;
+  // WR-25: safe window access for SSR/pre-render environments
+  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/blog/${post.slug}`;
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -46,7 +47,8 @@ export const BlogSEO = ({ post }: BlogSEOProps) => {
       
       {/* Structured Data */}
       <script type="application/ld+json">
-        {JSON.stringify(structuredData)}
+        {/* WR-26: escape closing script tags to prevent XSS via JSON injection */}
+        {JSON.stringify(structuredData).replace(/<\/script>/gi, '<\\/script>')}
       </script>
     </Helmet>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -37,6 +37,8 @@ const PanicButton = () => {
   const [countdown, setCountdown] = useState(3);
   const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'violence' | 'other'>('other');
   const [preferences, setPreferences] = useState<any>(null);
+  const isCancelledRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const situationTypes = [
     { value: 'medical_emergency', label: 'Medical Emergency', icon: '🏥' },
@@ -55,6 +57,8 @@ const PanicButton = () => {
   useEffect(() => {
     loadPreferences();
   }, [user]);
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
 
   const loadPreferences = async () => {
     if (!user) return;
@@ -99,27 +103,26 @@ const PanicButton = () => {
 
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
-      console.log('🗺️ [PanicButton] Reverse geocoding:', { lat, lng });
-      
       // Use our Nigeria-specific reverse geocoding edge function
       const { data, error } = await supabase.functions.invoke('nigeria-reverse-geocode', {
         body: { latitude: lat, longitude: lng }
       });
-      
+
       if (error) {
-        console.error('❌ [PanicButton] Edge function error:', error);
+        console.error('Error in reverse geocoding edge function:', error);
         throw error;
       }
-      
-      console.log('✅ [PanicButton] Geocoding success:', data);
+
       return data?.address || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     } catch (error) {
-      console.error('❌ [PanicButton] Nigeria reverse geocoding failed:', error);
+      console.error('Nigeria reverse geocoding failed:', error);
       return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     }
   };
 
-  const triggerPanicAlert = async () => {
+  const triggerPanicAlert = async (situationType?: typeof selectedSituation) => {
+    const activeSituation = situationType ?? selectedSituation;
+
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -128,8 +131,6 @@ const PanicButton = () => {
       });
       return;
     }
-
-    console.log('Panic button triggered by user:', user.id);
 
     // Check rate limiting
     try {
@@ -144,25 +145,25 @@ const PanicButton = () => {
       }
     } catch (rateLimitError) {
       console.error('Rate limit check failed:', rateLimitError);
-      // Continue anyway for emergency situations
+      return;
     }
 
     setLoading(true);
-    
+
     try {
+      // Update rate limiting BEFORE insert to prevent bypass
+      await updatePanicButtonRateLimit(user.id);
+
       // Get current location
       const location = await getCurrentLocation();
-      
+
       // Validate location data
       validateEmergencyLocation({
         lat: location.latitude,
         lng: location.longitude
       });
-      
+
       const address = await reverseGeocode(location.latitude, location.longitude);
-      
-      // Update rate limiting
-      await updatePanicButtonRateLimit(user.id);
 
       // Log panic button press for security audit
       logPanicButton({ lat: location.latitude, lng: location.longitude });
@@ -177,7 +178,7 @@ const PanicButton = () => {
        const userName = profile?.full_name || 'Someone';
 
        // Sanitize inputs
-       const sanitizedMessage = sanitizeText(`Emergency assistance requested - ${selectedSituation}`);
+       const sanitizedMessage = sanitizeText(`Emergency assistance requested - ${activeSituation}`);
        const sanitizedAddress = sanitizeText(address);
 
        // Create panic alert in database
@@ -189,7 +190,7 @@ const PanicButton = () => {
            longitude: location.longitude,
            address: sanitizedAddress,
            message: sanitizedMessage,
-           situation_type: selectedSituation
+           situation_type: activeSituation
          })
          .select()
          .single();
@@ -241,11 +242,11 @@ const PanicButton = () => {
       if (shouldAlertContacts) {
         try {
           const shareLocationWithContacts = preferences?.share_location_with_contacts !== false;
-          
+
           const { error: alertFunctionError } = await supabase.functions.invoke('emergency-alert', {
             body: {
               panic_alert_id: panicData.id,
-              situation_type: selectedSituation,
+              situation_type: activeSituation,
               location: shareLocationWithContacts ? {
                 latitude: location.latitude,
                 longitude: location.longitude,
@@ -269,8 +270,6 @@ const PanicButton = () => {
               description: "Emergency alert created but some notifications may have failed",
               variant: "default"
             });
-          } else {
-            console.log('Emergency alert function called successfully');
           }
         } catch (edgeFunctionError) {
           console.error('Emergency alert function failed:', edgeFunctionError);
@@ -282,17 +281,17 @@ const PanicButton = () => {
       
       if (shouldAlertPublic) {
         const shareLocationWithPublic = preferences?.share_location_with_public !== false;
-        
+
         const { error: alertError } = await supabase
           .from('safety_alerts')
           .insert({
             user_id: user.id,
             title: 'Emergency Alert',
-            description: `Emergency situation reported: ${situationTypes.find(s => s.value === selectedSituation)?.label}`,
+            description: `Emergency situation reported: ${situationTypes.find(s => s.value === activeSituation)?.label}`,
             alert_type: 'other',
             severity: 'critical',
-            latitude: shareLocationWithPublic ? location.latitude : null,
-            longitude: shareLocationWithPublic ? location.longitude : null,
+            latitude: shareLocationWithPublic ? location.latitude : parseFloat(location.latitude.toFixed(2)),
+            longitude: shareLocationWithPublic ? location.longitude : parseFloat(location.longitude.toFixed(2)),
             address: shareLocationWithPublic ? address : 'Location hidden'
           });
 
@@ -321,12 +320,6 @@ const PanicButton = () => {
 
     } catch (error: any) {
       console.error('Error sending panic alert:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
       
       let errorMessage = 'Failed to send emergency alert. Please try again.';
       let errorTitle = 'Alert Failed';
@@ -361,7 +354,8 @@ const PanicButton = () => {
     // Heavy haptic feedback when panic button is pressed
     vibrate(500);
     impact('heavy');
-    
+
+    isCancelledRef.current = false;
     setIsPressed(true);
     setIsConfirming(true);
     const duration = preferences?.countdown_duration || 3;
@@ -374,11 +368,11 @@ const PanicButton = () => {
     }
 
     // Countdown timer
-    const timer = setInterval(() => {
+    timerRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          clearInterval(timer);
-          if (isPressed) {
+          clearInterval(timerRef.current);
+          if (!isCancelledRef.current) {
             triggerPanicAlert();
           }
           return 0;
@@ -391,7 +385,9 @@ const PanicButton = () => {
   const cancelPanic = () => {
     // Light haptic feedback when canceling
     impact('light');
-    
+
+    isCancelledRef.current = true;
+    clearInterval(timerRef.current);
     setIsPressed(false);
     setIsConfirming(false);
     setCountdown(preferences?.countdown_duration || 3);
@@ -459,8 +455,8 @@ const PanicButton = () => {
                       }`}
                       onClick={() => {
                         setSelectedSituation(type.value as any);
-                        // Auto-trigger alert when card is clicked
-                        triggerPanicAlert();
+                        // Auto-trigger alert when card is clicked, passing value directly to avoid stale closure
+                        triggerPanicAlert(type.value as any);
                       }}
                     >
                       <CardContent className="p-3 text-center">

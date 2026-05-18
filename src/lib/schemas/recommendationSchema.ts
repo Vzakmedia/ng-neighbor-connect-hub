@@ -11,8 +11,8 @@ export const basicInfoSchema = z.object({
 export const locationSchema = z.object({
   location_type: z.enum(['physical', 'online', 'both']),
   address: z.string().optional(),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
+  city: z.string().optional(),
+  state: z.string().optional(),
   neighborhood: z.string().optional(),
   coordinates: z.object({
     lat: z.number().min(-90).max(90),

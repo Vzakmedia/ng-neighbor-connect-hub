@@ -9,28 +9,45 @@ export function useFeedRecommendations() {
   return useQuery({
     queryKey: ['feed-recommendations-items', user?.id],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('recommendations')
         .select(`
           *,
-          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url),
-          is_saved:saved_recommendations!left(id),
-          is_liked:recommendation_likes!left(id)
+          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url)
         `)
         .eq('status', 'approved')
         .order('average_rating', { ascending: false })
         .order('total_likes', { ascending: false })
         .limit(8);
 
-      const { data, error } = await query;
-
       if (error) throw error;
+
+      let savedIds = new Set<string>();
+      let likedIds = new Set<string>();
+
+      if (user && data && data.length > 0) {
+        const ids = data.map((r: any) => r.id);
+        const [savedRes, likedRes] = await Promise.all([
+          supabase
+            .from('saved_recommendations')
+            .select('recommendation_id')
+            .eq('user_id', user.id)
+            .in('recommendation_id', ids),
+          supabase
+            .from('recommendation_likes')
+            .select('recommendation_id')
+            .eq('user_id', user.id)
+            .in('recommendation_id', ids),
+        ]);
+        savedIds = new Set((savedRes.data || []).map((s: any) => s.recommendation_id));
+        likedIds = new Set((likedRes.data || []).map((l: any) => l.recommendation_id));
+      }
 
       // Transform data
       const recommendations: Recommendation[] = (data || []).map(item => ({
         ...item,
-        is_saved: user ? (item.is_saved as any[]).some((s: any) => s.user_id === user.id) : false,
-        is_liked: user ? (item.is_liked as any[]).some((l: any) => l.user_id === user.id) : false,
+        is_saved: savedIds.has(item.id),
+        is_liked: likedIds.has(item.id),
       }));
 
       return recommendations;

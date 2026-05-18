@@ -81,7 +81,17 @@ export default function CreateCampaign() {
         });
 
         if (paymentResponse?.url) {
-          window.location.href = paymentResponse.url;
+          try {
+            const paymentUrl = new URL(paymentResponse.url);
+            if (paymentUrl.protocol !== 'https:') throw new Error('Payment URL must use HTTPS');
+            const trusted = ['paystack.com', 'flutterwave.com', 'render.com', 'onrender.com'];
+            const isTrusted = trusted.some(host => paymentUrl.hostname === host || paymentUrl.hostname.endsWith('.' + host));
+            if (!isTrusted) throw new Error('Untrusted payment redirect host: ' + paymentUrl.hostname);
+            window.location.href = paymentResponse.url;
+          } catch (urlError: any) {
+            console.error('Payment redirect blocked:', urlError.message);
+            toast.error('Payment redirect failed. Please contact support.');
+          }
         } else {
           toast.success('Campaign created successfully!');
           navigate('/advertising');

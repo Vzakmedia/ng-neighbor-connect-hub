@@ -6,6 +6,32 @@ import { nativeAudioManager } from '@/utils/nativeAudioManager';
 
 const platformToLabel = (p: string) => (p === 'ios' || p === 'android' ? p : 'web');
 
+const UUID_REGEX = /^[0-9a-f-]{36}$/i;
+const VALID_CALL_TYPES = ['voice', 'video'];
+
+/**
+ * Validates and sanitizes push notification call data.
+ * Returns the sanitized record, or null if validation fails.
+ */
+function validateCallData(raw: Record<string, string>): Record<string, string> | null {
+  const conversationId = raw.conversation_id || raw.conversationId;
+  if (!conversationId || !UUID_REGEX.test(conversationId)) {
+    console.warn('[PushRegistration] Invalid or missing conversation_id');
+    return null;
+  }
+
+  const callType = raw.call_type || raw.callType;
+  if (!callType || !VALID_CALL_TYPES.includes(callType)) {
+    console.warn('[PushRegistration] Invalid or missing call_type');
+    return null;
+  }
+
+  const rawCallerName = raw.caller_name || raw.callerName || '';
+  const callerName = rawCallerName.replace(/<[^>]*>/g, '').substring(0, 100);
+
+  return { ...raw, caller_name: callerName, callerName, call_type: callType, callType, conversation_id: conversationId, conversationId };
+}
+
 /** Dispatches the internal incoming-call event consumed by CallService / CallContext. */
 function dispatchIncomingCall(callData: Record<string, string>) {
   window.dispatchEvent(new CustomEvent('incoming-call', {
@@ -47,6 +73,9 @@ export const useNativePushRegistration = () => {
     let cleanupFn: (() => void) | undefined;
 
     const init = async () => {
+      // WR-01: cancelled flag to guard against race on cleanup
+      let cancelled = false;
+
       try {
         const { PushNotifications } = await import('@capacitor/push-notifications');
         const { LocalNotifications } = await import('@capacitor/local-notifications');
@@ -94,10 +123,12 @@ export const useNativePushRegistration = () => {
         }
 
         if (perm.receive !== 'granted') {
-          console.log('Push notification permission not granted:', perm.receive);
+          if (import.meta.env.DEV) {
+            console.log('Push notification permission not granted:', perm.receive);
+          }
           try {
             const localPerm = await LocalNotifications.requestPermissions();
-            if (localPerm.display === 'granted') {
+            if (import.meta.env.DEV && localPerm.display === 'granted') {
               console.log('Local notifications enabled as fallback');
             }
           } catch (localError) {
@@ -126,24 +157,31 @@ export const useNativePushRegistration = () => {
 
         // ── Listeners ──
         const regListener = await PushNotifications.addListener('registration', async (token) => {
-          console.log('[PushRegistration] Token received, platform:', platform);
+          // WR-02: gate token log with DEV
+          if (import.meta.env.DEV) {
+            console.log('[PushRegistration] Token received, platform:', platform);
+          }
           try {
             await supabase.rpc('register_user_device' as never, {
               platform: platformToLabel(platform),
               fcm_token: platform === 'android' ? token.value : null,
               apns_token: platform === 'ios' ? token.value : null,
-              device_model: navigator.userAgent,
+              device_model: platform, // WR-03: use platform string, not userAgent
             } as never);
-            console.log('[PushRegistration] Device token saved');
             toast({ title: 'Notifications Enabled', description: 'You will receive important updates and alerts.' });
           } catch (err) {
             console.error('[PushRegistration] Failed to save device token:', err);
           }
         });
 
+        // WR-01: check cancelled after each addListener
+        if (cancelled) { regListener.remove(); return; }
+
         // ── Foreground push received ──
         const recvListener = await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
-          console.log('[PushRegistration] Push received (foreground):', notification);
+          if (import.meta.env.DEV) {
+            console.log('[PushRegistration] Push received (foreground):', notification);
+          }
           await nativeAudioManager.play('notification', 0.7);
 
           const notificationData = (notification.data || {}) as Record<string, string>;
@@ -152,11 +190,28 @@ export const useNativePushRegistration = () => {
             notificationData?.type === 'call_incoming';
 
           if (isCallNotification) {
-            const callData = (notificationData.notification_metadata
-              ? JSON.parse(notificationData.notification_metadata as string)
-              : notificationData) as Record<string, string>;
+            // CR-01: validate push notification payload before dispatch
+            let rawCallData: Record<string, string>;
+            if (notificationData.notification_metadata) {
+              try {
+                rawCallData = JSON.parse(notificationData.notification_metadata as string) as Record<string, string>;
+              } catch (e) {
+                console.warn('[PushRegistration] Failed to parse notification_metadata', e);
+                return;
+              }
+            } else {
+              rawCallData = notificationData;
+            }
 
-            console.log('[PushRegistration] Triggering incoming call UI', callData);
+            const callData = validateCallData(rawCallData);
+            if (!callData) {
+              console.warn('[PushRegistration] Call data failed validation, ignoring notification');
+              return;
+            }
+
+            if (import.meta.env.DEV) {
+              console.log('[PushRegistration] Triggering incoming call UI', callData);
+            }
 
             // Show native system call UI (CallKit on iOS, ConnectionService on Android)
             if (window.Capacitor?.isNativePlatform()) {
@@ -201,12 +256,17 @@ export const useNativePushRegistration = () => {
           }
         });
 
+        // WR-01: check cancelled
+        if (cancelled) { regListener.remove(); recvListener.remove(); return; }
+
         // ── User tapped a notification action (Accept / Decline buttons) ──
         const actionListener = await LocalNotifications.addListener(
           'localNotificationActionPerformed',
           (action) => {
             const callData = (action.notification.extra || {}) as Record<string, string>;
-            console.log('[PushRegistration] Notification action performed:', action.actionId, callData);
+            if (import.meta.env.DEV) {
+              console.log('[PushRegistration] Notification action performed:', action.actionId, callData);
+            }
 
             if (action.actionId === 'ACCEPT_CALL') {
               dispatchAcceptCall(callData);
@@ -219,6 +279,9 @@ export const useNativePushRegistration = () => {
           }
         );
 
+        // WR-01: check cancelled
+        if (cancelled) { regListener.remove(); recvListener.remove(); actionListener.remove(); return; }
+
         // ── User tapped the push notification itself (app was backgrounded) ──
         const tapListener = await PushNotifications.addListener(
           'pushNotificationActionPerformed',
@@ -229,14 +292,35 @@ export const useNativePushRegistration = () => {
               notificationData?.type === 'call_incoming';
 
             if (isCallNotification) {
-              const callData = (notificationData.notification_metadata
-                ? JSON.parse(notificationData.notification_metadata as string)
-                : notificationData) as Record<string, string>;
-              console.log('[PushRegistration] Push tapped for call:', callData);
+              // CR-02: validate in tapListener as well
+              let rawCallData: Record<string, string>;
+              if (notificationData.notification_metadata) {
+                try {
+                  rawCallData = JSON.parse(notificationData.notification_metadata as string) as Record<string, string>;
+                } catch (e) {
+                  console.warn('[PushRegistration] tapListener: Failed to parse notification_metadata', e);
+                  return;
+                }
+              } else {
+                rawCallData = notificationData;
+              }
+
+              const callData = validateCallData(rawCallData);
+              if (!callData) {
+                console.warn('[PushRegistration] tapListener: Call data failed validation, ignoring');
+                return;
+              }
+
+              if (import.meta.env.DEV) {
+                console.log('[PushRegistration] Push tapped for call:', callData);
+              }
               dispatchIncomingCall(callData);
             }
           }
         );
+
+        // WR-01: check cancelled
+        if (cancelled) { regListener.remove(); recvListener.remove(); actionListener.remove(); tapListener.remove(); return; }
 
         // ── Registration error ──
         const errListener = await PushNotifications.addListener('registrationError', (error) => {
@@ -252,7 +336,11 @@ export const useNativePushRegistration = () => {
           toast({ title: 'Push Notification Error', description: errorMessage, variant: 'destructive' });
         });
 
+        // WR-01: check cancelled
+        if (cancelled) { regListener.remove(); recvListener.remove(); actionListener.remove(); tapListener.remove(); errListener.remove(); return; }
+
         cleanupFn = () => {
+          cancelled = true;
           regListener.remove();
           recvListener.remove();
           actionListener.remove();

@@ -81,6 +81,13 @@ const RSVPDialog = ({
       return;
     }
 
+    // WR-08: Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailAddress.trim())) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+      return;
+    }
+
     // Store previous state for potential rollback
     const previousFormState = {
       status,

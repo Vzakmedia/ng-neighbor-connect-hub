@@ -40,9 +40,13 @@ export const NotificationPanel = ({
 
   const [filter, setFilter] = useState<'all' | NotificationData['type']>('all');
 
+  // WR-07: 'all' tab shows every notification regardless of read status; other tabs show unread only
   const filteredNotifications = notifications.filter(n =>
-    !n.isRead && (filter === 'all' || n.type === filter)
+    filter === 'all' ? true : (!n.isRead && n.type === filter)
   );
+
+  // WR-08: UUID validation helper for navigation safety
+  const isUUID = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
 
   const handleAcceptContactRequest = async (requestId: string, notificationId: string) => {
     try {
@@ -70,9 +74,9 @@ export const NotificationPanel = ({
   };
 
   const handleCall = (phoneNumber: string) => {
-    if (phoneNumber) {
-      window.location.href = `tel:${phoneNumber}`;
-    }
+    // WR-06: validate phone number format before opening tel: URL
+    if (!/^\+?[\d\s\-(). ]{7,20}$/.test(phoneNumber)) return;
+    window.location.href = `tel:${phoneNumber}`;
   };
 
   const handleNotificationClick = (notification: NotificationData) => {
@@ -81,14 +85,14 @@ export const NotificationPanel = ({
     // Navigate based on notification type
     switch (notification.type) {
       case 'message':
-        if (notification.data?.conversationId) {
+        if (notification.data?.conversationId && isUUID(notification.data.conversationId)) {
           navigate(`/messages?conversation=${notification.data.conversationId}`);
         } else {
           navigate('/messages');
         }
         break;
       case 'post':
-        if (notification.data?.postId) {
+        if (notification.data?.postId && isUUID(notification.data.postId)) {
           navigate(`/community?post=${notification.data.postId}`);
         } else {
           navigate('/community');

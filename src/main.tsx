@@ -64,11 +64,10 @@ const cleanCorruptedUrl = () => {
   return false;
 };
 
-// Run URL cleanup immediately - if corrupted, stop execution
-if (cleanCorruptedUrl()) {
-  // Stop execution, page will reload with clean URL
-  throw new Error('URL cleanup redirect in progress');
-}
+// Bug 13 fix: replace throw-for-control-flow with a guard variable.
+// window.location.replace() already triggers navigation; we just need to
+// skip renderApp() below. Using throw here caused unhandled module errors.
+const isRedirecting = cleanCorruptedUrl();
 
 // ============= NATIVE APP STARTUP LOGGING =============
 console.log('[main.tsx] Script loaded, timestamp:', Date.now());
@@ -306,24 +305,12 @@ const renderApp = async () => {
             maxAge: 1000 * 60 * 60 * 24, // 24 hours
             dehydrateOptions: {
               shouldDehydrateQuery: (query) => {
-                // Only persist successful queries for allowed query keys
                 const queryKey = query.queryKey as string[];
-
-                // Check if this query should be persisted
-                if (!shouldPersistQuery(queryKey)) {
-                  return false;
-                }
-
-                // Only persist successful queries
-                if (query.state.status !== 'success') {
-                  return false;
-                }
-
-                // Apply size limits to prevent quota exhaustion
+                if (!shouldPersistQuery(queryKey)) return false;
+                if (query.state.status !== 'success') return false;
                 if (query.state.data) {
                   query.state.data = limitQueryData(queryKey, query.state.data);
                 }
-
                 return true;
               },
             },
@@ -341,6 +328,17 @@ const renderApp = async () => {
         </PersistQueryClientProvider>
       </StrictMode>
     );
+
+    // Bug 12 fix: notify Capgo AFTER root.render() so a crash during init
+    // is not mistakenly reported as a successful app start.
+    if (typeof window !== 'undefined' && 'Capacitor' in window) {
+      try {
+        CapacitorUpdater.notifyAppReady();
+        console.log('[main.tsx] Notified Capgo: App Ready');
+      } catch (e) {
+        console.error('[main.tsx] Failed to notify Capgo:', e);
+      }
+    }
   } catch (error) {
     console.error('[main.tsx] App initialization error:', error);
     // Render anyway as fallback
@@ -358,48 +356,34 @@ const renderApp = async () => {
   }
 };
 
-renderApp();
+// Bug 13 fix: only render when we are NOT in the middle of a URL-cleanup redirect.
+if (!isRedirecting) {
+  renderApp();
 
-// Notify Capgo that the app is ready (prevents rollback)
-// This should be called after successful render/init
-if (typeof window !== 'undefined' && 'Capacitor' in window) {
-  try {
-    CapacitorUpdater.notifyAppReady();
-    console.log('[main.tsx] Notified Capgo: App Ready');
-  } catch (e) {
-    console.error('[main.tsx] Failed to notify Capgo:', e);
-  }
-}
+  // Remove the temporary loader after React has painted
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const loader = document.getElementById('app-loader');
+      if (loader) {
+        loader.style.transition = 'opacity 300ms ease-out';
+        loader.style.opacity = '0';
+        setTimeout(() => { loader.remove(); }, 300);
+      }
+    }, 100);
+  });
 
-// Remove the temporary loader after React has painted
-requestAnimationFrame(() => {
+  // EMERGENCY TIMEOUT: Force remove loader if React doesn't mount properly
   setTimeout(() => {
-    const loader = document.getElementById('app-loader');
-    if (loader) {
-      // Fade out smoothly
-      loader.style.transition = 'opacity 300ms ease-out';
-      loader.style.opacity = '0';
+    const emergencyLoader = document.getElementById('app-loader');
+    if (emergencyLoader && emergencyLoader.style.opacity !== '0') {
+      console.error('[main.tsx] EMERGENCY TIMEOUT: React did not mount in 10s, forcing loader removal');
+      emergencyLoader.style.display = 'none';
+      emergencyLoader.remove();
 
-      // Remove from DOM after transition completes
-      setTimeout(() => {
-        loader.remove();
-      }, 300);
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = 'padding:40px;text-align:center;font-family:system-ui;color:#333;';
+      errorDiv.innerHTML = '<h2>App Loading Issue</h2><p>Please close and reopen the app.</p><button onclick="location.reload()" style="padding:12px 24px;font-size:16px;margin-top:16px;cursor:pointer;">Retry</button>';
+      document.body.appendChild(errorDiv);
     }
-  }, 100); // Small delay to ensure React has rendered
-});
-
-// EMERGENCY TIMEOUT: Force remove loader if React doesn't mount properly
-setTimeout(() => {
-  const emergencyLoader = document.getElementById('app-loader');
-  if (emergencyLoader && emergencyLoader.style.opacity !== '0') {
-    console.error('[main.tsx] EMERGENCY TIMEOUT: React did not mount in 10s, forcing loader removal');
-    emergencyLoader.style.display = 'none';
-    emergencyLoader.remove();
-
-    // Show error message to user
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'padding:40px;text-align:center;font-family:system-ui;color:#333;';
-    errorDiv.innerHTML = '<h2>App Loading Issue</h2><p>Please close and reopen the app.</p><button onclick="location.reload()" style="padding:12px 24px;font-size:16px;margin-top:16px;cursor:pointer;">Retry</button>';
-    document.body.appendChild(errorDiv);
-  }
-}, 10000);
+  }, 10000);
+}

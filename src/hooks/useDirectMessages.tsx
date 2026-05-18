@@ -26,6 +26,8 @@ export interface Message {
   }>;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const useDirectMessages = (userId: string | undefined) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,7 +55,8 @@ export const useDirectMessages = (userId: string | undefined) => {
       const retryableMessages = getRetryableMessages();
       retryableMessages.forEach((msg) => retryQueuedMessage(msg.tempId, msg.content, msg.recipientId));
     }
-  }, [connectionStatus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionStatus, queue.length, retryQueuedMessage, getRetryableMessages]);
 
   // -------------------------------
   // Fetch messages (with cache)
@@ -61,6 +64,10 @@ export const useDirectMessages = (userId: string | undefined) => {
   const fetchMessages = useCallback(
     async (otherUserId: string, useCache: boolean = true) => {
       if (!userId) return;
+      if (!UUID_REGEX.test(otherUserId)) {
+        console.error('[useDirectMessages] Invalid otherUserId format');
+        return;
+      }
 
       const cacheKey = [userId, otherUserId].sort().join("-");
       if (useCache && messageCache.current.has(cacheKey)) {
@@ -122,6 +129,10 @@ export const useDirectMessages = (userId: string | undefined) => {
   const fetchOlderMessages = useCallback(
     async (otherUserId: string) => {
       if (!userId || messages.length === 0 || loadingOlder || !hasMoreMessages) return;
+      if (!UUID_REGEX.test(otherUserId)) {
+        console.error('[useDirectMessages] Invalid otherUserId format');
+        return;
+      }
 
       try {
         setLoadingOlder(true);

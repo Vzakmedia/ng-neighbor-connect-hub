@@ -67,11 +67,14 @@ export const useEmailNotifications = () => {
     mutationFn: async (updates: Partial<EmailPreferences>) => {
       if (!user) throw new Error('Not authenticated');
 
+      // WR-21: Strip incoming user_id to prevent caller from overriding it
+      const { user_id: _discard, ...safeUpdates } = updates as any;
+
       const { data, error } = await supabase
         .from('user_email_preferences')
         .upsert({
           user_id: user.id,
-          ...updates,
+          ...safeUpdates,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
         .select()
@@ -127,18 +130,20 @@ export const useEmailNotifications = () => {
       } catch (invokeError: Error | unknown) {
         console.error('Invoke failed, trying direct fetch fallback:', invokeError);
 
-        // Fallback to direct fetch using env vars (no hardcoded credentials)
+        // Fallback to direct fetch using session token
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
         if (!supabaseUrl || !supabaseAnonKey) {
           throw new Error('Supabase configuration missing');
         }
+
+        const { data: { session } } = await supabase.auth.getSession();
         const response = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'Authorization': `Bearer ${session?.access_token ?? supabaseAnonKey}`,
             'apikey': supabaseAnonKey
           },
           body: JSON.stringify(emailBody)

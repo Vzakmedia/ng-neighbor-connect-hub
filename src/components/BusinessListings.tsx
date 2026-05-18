@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +57,8 @@ const BusinessListings = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('all');
   const [searchLocation, setSearchLocation] = useState('');
   const [locationOpen, setLocationOpen] = useState(false);
+  // WR-18: Debounce ref for searchTerm changes
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const fetchBusinesses = async () => {
     try {
@@ -140,7 +142,6 @@ const BusinessListings = () => {
     try {
       if (selectedState === 'all' || !STATE_CITIES) return [];
       const cities = STATE_CITIES[selectedState] || [];
-      console.log('Available cities for', selectedState, ':', cities);
       return cities;
     } catch (error) {
       console.error('Error getting cities:', error);
@@ -153,7 +154,6 @@ const BusinessListings = () => {
     try {
       if (selectedCity === 'all' || !CITY_NEIGHBORHOODS) return [];
       const neighborhoods = CITY_NEIGHBORHOODS[selectedCity] || [];
-      console.log('Available neighborhoods for', selectedCity, ':', neighborhoods);
       return neighborhoods;
     } catch (error) {
       console.error('Error getting neighborhoods:', error);
@@ -178,7 +178,6 @@ const BusinessListings = () => {
         locations.push(...neighborhoods);
       });
       
-      console.log('Generated locations:', locations.length);
     } catch (error) {
       console.error('Error building locations list:', error);
       return [];
@@ -218,7 +217,10 @@ const BusinessListings = () => {
   };
 
   useEffect(() => {
-    fetchBusinesses();
+    // WR-18: Debounce searchTerm changes by 300ms; other filters fire immediately
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => fetchBusinesses(), 300);
+    return () => clearTimeout(searchTimerRef.current);
   }, [searchTerm, selectedCategory, selectedState, selectedCity, selectedNeighborhood]);
 
   if (loading) {

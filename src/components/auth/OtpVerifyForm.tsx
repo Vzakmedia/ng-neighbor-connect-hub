@@ -58,7 +58,12 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
                     title: "Verified!",
                     description: "Your email has been successfully verified.",
                 });
-                navigate("/dashboard");
+                // Bug 10 fix: navigate to /auth (a public route) instead of /dashboard
+                // (a ProtectedRoute) directly. At this exact moment React's auth state
+                // is still null — the SIGNED_IN event hasn't propagated yet. /auth will
+                // detect the newly authenticated user via onAuthStateChange and redirect
+                // to the dashboard once the state is hydrated.
+                navigate("/auth");
             }
         } catch (error: any) {
             toast({

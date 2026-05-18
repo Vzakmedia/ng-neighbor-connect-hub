@@ -83,6 +83,7 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
   const isOrganizer = !!(user && event && user.id === event.user_id);
 
   const fetchRsvps = async () => {
+    if (!user) return; // WR-11: null guard
     if (!event || !event.rsvp_enabled) return;
 
     try {
@@ -204,11 +205,16 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
         return;
       }
 
-      // Dynamically load Google Maps API with marker library
+      // WR-12: Avoid injecting duplicate Google Maps script on dialog reopen
       if (!window.google) {
+        if (document.querySelector('script[data-google-maps-events]')) {
+          // Script already injected but google not yet available — wait for onload via existing script
+          return;
+        }
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&region=NG&language=en`;
         script.async = true;
+        script.setAttribute('data-google-maps-events', 'true'); // WR-12: mark for dedup check
         document.head.appendChild(script);
 
         script.onload = () => {
@@ -299,10 +305,9 @@ const ViewEventDialog = ({ open, onOpenChange, event }: ViewEventDialogProps) =>
   useEffect(() => {
     if (open && event) {
       fetchRsvps();
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        initializeMap();
-      }, 100);
+      // WR-04: Store timer ID so it can be cleared on unmount/close
+      const timerId = setTimeout(() => initializeMap(), 100);
+      return () => clearTimeout(timerId);
     }
   }, [open, event]);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
   const [newComment, setNewComment] = useState('');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const commentIdsRef = useRef<Set<string>>(new Set());
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -87,6 +88,7 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
 
       // Get comment IDs for like counting
       const commentIds = commentsData?.map((comment: any) => comment?.id).filter(Boolean) || [];
+      commentIdsRef.current = new Set(commentIds);
       
       // Fetch like counts and user-like flags via secure RPC
       const { data: likesSummary, error: likesError }: { data: any[]; error: any } = await (supabase as any)
@@ -244,8 +246,11 @@ const CommentDropdown = ({ postId, commentCount }: CommentDropdownProps) => {
           event: '*',
           schema: 'public',
           table: 'comment_likes'
-        }, () => {
-          fetchComments();
+        }, (payload) => {
+          const commentId = (payload.new as any)?.comment_id || (payload.old as any)?.comment_id;
+          if (commentId && commentIdsRef.current.has(commentId)) {
+            fetchComments();
+          }
         }),
       {
         channelName: `post_comments_${postId}`,

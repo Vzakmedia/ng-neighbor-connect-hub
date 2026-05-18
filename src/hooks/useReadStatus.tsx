@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeContext } from '@/contexts/RealtimeContext';
@@ -47,13 +47,13 @@ export const useReadStatus = () => {
     };
   }, [user, onCommunityPost, onMessage, onConversation, onAlert]);
 
-  const loadUnreadCounts = async () => {
+  const loadUnreadCounts = useCallback(async () => {
     await Promise.all([
       loadCommunityUnreadCount(),
       loadMessagesUnreadCount(),
       loadNotificationsUnreadCount(),
     ]);
-  };
+  }, []);
 
   const loadCommunityUnreadCount = async () => {
     try {

@@ -106,9 +106,12 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
 
     const declineCallFn = useCallback(() => CallService.getInstance().declineCall(), []);
 
-    // Keep refs in sync with latest callbacks so the OS-notification handlers use them
-    answerCallRef.current = answerCallFn;
-    declineCallRef.current = declineCallFn;
+    // Keep refs in sync with latest callbacks so the OS-notification handlers use them.
+    // Done in useEffect (not in render body) to avoid updating refs mid-render.
+    useEffect(() => {
+      answerCallRef.current = answerCallFn;
+      declineCallRef.current = declineCallFn;
+    }, [answerCallFn, declineCallFn]);
 
     const value: CallContextType = {
         ...callServiceState,

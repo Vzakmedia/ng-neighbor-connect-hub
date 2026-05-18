@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,27 +24,13 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
   const [alerts, setAlerts] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     if (user) {
       getUserLocation();
-      subscribeToSafetyAlerts();
+      return subscribeToSafetyAlerts();
     }
-
-    return () => {
-      try {
-        const subscription = supabase.channel('safety-alerts-public');
-        supabase.removeChannel(subscription);
-
-        // Clear polling fallback if it exists
-        if ((window as any).publicAlertsPoll) {
-          clearInterval((window as any).publicAlertsPoll);
-          delete (window as any).publicAlertsPoll;
-        }
-      } catch (error) {
-        console.error('Error cleaning up safety alerts subscriptions:', error);
-      }
-    };
   }, [user]);
 
   useEffect(() => {
@@ -140,7 +126,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     }
   };
 
-  const subscribeToSafetyAlerts = () => {
+  const subscribeToSafetyAlerts = (): (() => void) => {
     try {
       const subscription = supabase.channel('safety-alerts-public')
         .on(
@@ -160,7 +146,6 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                   payload.new.longitude
                 );
                 if (distance <= 10) {
-                  // Use toast for initial non-disruptive notification
                   toast({
                     title: 'New Emergency Alert',
                     description: `${(payload.new.alert_type || 'alert').replace('_', ' ').toUpperCase()} nearby`,
@@ -184,12 +169,19 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           }
         )
         .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
     } catch (error) {
       console.error('Error subscribing to safety alerts:', error);
-      const pollInterval = setInterval(() => {
+      pollIntervalRef.current = setInterval(() => {
         loadNearbyAlerts();
       }, 60000);
-      (window as any).publicAlertsPoll = pollInterval;
+
+      return () => {
+        clearInterval(pollIntervalRef.current);
+      };
     }
   };
 

@@ -51,6 +51,10 @@ export const BlogEditor = ({ content, onChange, placeholder }: BlogEditorProps) 
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
+      // WR-06: reject oversized files and SVGs (XSS vector)
+      if (file.size > 10 * 1024 * 1024) return;
+      if (file.type === 'image/svg+xml') return;
+
       try {
         const urls = await uploadImages([file]);
         if (urls[0]) {
@@ -65,6 +69,10 @@ export const BlogEditor = ({ content, onChange, placeholder }: BlogEditorProps) 
 
   const handleAddLink = () => {
     const url = window.prompt('Enter URL:', linkUrl);
+    // WR-05: only allow http/https URLs
+    if (url && !/^https?:\/\//i.test(url.trim())) {
+      return;
+    }
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
       setLinkUrl('');

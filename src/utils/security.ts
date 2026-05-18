@@ -15,7 +15,7 @@ export const checkPanicButtonRateLimit = async (userId: string): Promise<boolean
     
   if (error && error.code !== 'PGRST116') {
     console.error('Error checking rate limit:', error);
-    return false;
+    return true; // fail open for emergency situations
   }
   
   return !data || data.panic_count < 3;

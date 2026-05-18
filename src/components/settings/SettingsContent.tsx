@@ -49,18 +49,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { usePrivacySettings } from '@/hooks/usePrivacySettings';
+import { useNativeStorage } from '@/hooks/mobile/useNativeStorage';
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 
 const SettingsContent = () => {
   const { signOut, user } = useAuth();
@@ -83,6 +73,7 @@ const SettingsContent = () => {
     updateMessagingPreferences: updateDbMessagingPreferences,
   } = usePrivacySettings();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const { setItem: setStorageItem } = useNativeStorage();
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -139,12 +130,10 @@ const SettingsContent = () => {
   // Save audio settings to both native storage and database
   const saveAudioSettings = async (newSettings: typeof audioSettings) => {
     setAudioSettings(newSettings);
-    
+
     // Save to native storage for quick access
-    const { useNativeStorage } = await import('@/hooks/mobile/useNativeStorage');
-    const { setItem } = useNativeStorage();
-    await setItem('audioSettings', JSON.stringify(newSettings));
-    
+    await setStorageItem('audioSettings', JSON.stringify(newSettings));
+
     // Save to database for cross-device sync
     updateAudioPrefs({
       soundEnabled: newSettings.soundEnabled,
@@ -210,18 +199,16 @@ const SettingsContent = () => {
   };
 
   const handleDeleteAccount = () => {
-    // This would require additional backend logic
     toast({
-      title: "Account deletion requested",
-      description: "Please contact support to complete account deletion.",
-      variant: "destructive",
+      title: 'Contact Support',
+      description: 'To delete your account, please contact our support team.',
     });
   };
 
   const handleExportData = () => {
     toast({
-      title: "Data export initiated",
-      description: "You will receive an email with your data shortly.",
+      title: 'Coming Soon',
+      description: 'Data export is not yet available. Please contact support.',
     });
   };
 
@@ -234,11 +221,10 @@ const SettingsContent = () => {
   };
 
   const testSound = async (type: 'normal' | 'emergency') => {
-    console.log('Test sound button clicked:', type);
-    const volume = type === 'emergency' 
-      ? audioSettings.emergencyVolume[0] 
+    const volume = type === 'emergency'
+      ? audioSettings.emergencyVolume[0]
       : audioSettings.notificationVolume[0];
-    
+
     if (!audioSettings.soundEnabled) {
       toast({
         title: "Sound Disabled",
@@ -250,10 +236,8 @@ const SettingsContent = () => {
 
     try {
       if (type === 'emergency') {
-        console.log('Playing emergency notification test');
         await playNotification('emergency', volume);
       } else {
-        console.log('Testing selected notification sound:', audioSettings.notificationSound);
         // Test the user's selected notification sound
         await testNotificationSound(audioSettings.notificationSound, volume);
       }
@@ -978,21 +962,19 @@ const SettingsContent = () => {
                   Take the app tour again to learn about features and navigation.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
-                      console.log('Start Tutorial button clicked - navigating to home');
                       toast({
                         title: "Starting Tutorial",
                         description: "Navigating to home page to begin the tour...",
                       });
-                      
+
                       // Navigate to home page first
                       navigate('/dashboard');
-                      
+
                       // Start tutorial after a short delay to ensure page is loaded
                       setTimeout(() => {
-                        console.log('Starting tutorial now');
                         startTutorial();
                       }, 1000);
                     }}
@@ -1002,10 +984,9 @@ const SettingsContent = () => {
                     Start Tutorial
                   </Button>
                   {hasCompletedTutorial && (
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       onClick={() => {
-                        console.log('Reset Tutorial button clicked');
                         resetTutorial();
                       }}
                       className="w-full sm:w-auto text-muted-foreground"
@@ -1025,27 +1006,10 @@ const SettingsContent = () => {
                   Permanently delete your account and all your data. This action cannot be undone.
                 </p>
 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full sm:w-auto">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Account
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your account
-                        and remove your data from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                      <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteAccount} className="w-full sm:w-auto">Delete Account</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button variant="destructive" onClick={handleDeleteAccount} className="w-full sm:w-auto">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
               </div>
             </CardContent>
           </Card>

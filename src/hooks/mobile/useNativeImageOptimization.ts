@@ -54,9 +54,10 @@ export const useNativeImageOptimization = () => {
       // Draw and compress
       ctx.drawImage(img, 0, 0, width, height);
       const mimeType = format === 'webp' ? 'image/webp' : 'image/jpeg';
-      const blob = await new Promise<Blob>((resolve) => {
+      // WR-17: Handle canvas.toBlob returning null
+      const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
-          (b) => resolve(b!),
+          (b) => { if (b) resolve(b); else reject(new Error('Canvas toBlob returned null')); },
           mimeType,
           quality / 100
         );
@@ -120,11 +121,14 @@ export const useNativeImageOptimization = () => {
   ): Promise<string | null> => {
     if (!isNative) return null;
 
+    // WR-19: Sanitize cacheKey to prevent path traversal / unsafe characters
+    const safeCacheKey = cacheKey.replace(/[^a-zA-Z0-9_\-.]/g, '_').substring(0, 128);
+
     try {
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const base64Data = await fileToBase64(file);
       const result = await Filesystem.writeFile({
-        path: `image_cache/${cacheKey}`,
+        path: `image_cache/${safeCacheKey}`,
         data: base64Data,
         directory: Directory.Cache
       });
@@ -144,15 +148,18 @@ export const useNativeImageOptimization = () => {
   ): Promise<File | null> => {
     if (!isNative) return null;
 
+    // WR-19: Sanitize cacheKey to prevent path traversal / unsafe characters
+    const safeCacheKey = cacheKey.replace(/[^a-zA-Z0-9_\-.]/g, '_').substring(0, 128);
+
     try {
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const result = await Filesystem.readFile({
-        path: `image_cache/${cacheKey}`,
+        path: `image_cache/${safeCacheKey}`,
         directory: Directory.Cache
       });
 
       const blob = base64ToBlob(result.data as string);
-      return new File([blob], cacheKey, { type: 'image/jpeg' });
+      return new File([blob], safeCacheKey, { type: 'image/jpeg' });
     } catch (error) {
       return null;
     }

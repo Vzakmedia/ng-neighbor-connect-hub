@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -38,6 +39,9 @@ const defaultTier: PricingTier = {
 
 export default function AdsSettingsPanel() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
   const [tiers, setTiers] = useState<PricingTier[]>([]);
   const [loadingTiers, setLoadingTiers] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -50,6 +54,20 @@ export default function AdsSettingsPanel() {
   const [maxActivePerUser, setMaxActivePerUser] = useState<number>(5);
   const [enableGeoTargeting, setEnableGeoTargeting] = useState<boolean>(true);
   const [defaultGeographicScope, setDefaultGeographicScope] = useState<string>("city");
+
+  // CR-08: Load role and block non-admin access
+  useEffect(() => {
+    if (!user) { setRoleLoading(false); return; }
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setUserRole(data?.role ?? null);
+        setRoleLoading(false);
+      });
+  }, [user]);
 
   const loadTiers = async () => {
     try {
@@ -98,13 +116,14 @@ export default function AdsSettingsPanel() {
     loadConfig();
   }, []);
 
-  const upsertConfig = async (key: string, value: any, description?: string) => {
+  // WR-20: upsertConfig now receives userId instead of fetching per-call
+  const upsertConfig = async (key: string, value: any, userId: string, description?: string) => {
     const payload = {
       config_key: key,
       config_value: value,
       config_type: "ads_settings",
       description: description || `Configuration for ${key}`,
-      updated_by: (await supabase.auth.getUser()).data.user?.id,
+      updated_by: userId,
       is_public: false,
     } as any;
     const { error } = await supabase.from("app_configuration").upsert(payload, { onConflict: "config_key" });
@@ -114,12 +133,15 @@ export default function AdsSettingsPanel() {
   const saveGlobalSettings = async () => {
     try {
       setSaving(true);
+      // WR-20: Fetch user once and reuse across all upsert calls
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id ?? '';
       await Promise.all([
-        upsertConfig("ads.require_manual_approval", requireManualApproval, "Require manual approval for paid ads"),
-        upsertConfig("ads.min_daily_budget", minDailyBudget, "Minimum daily budget for ad campaigns"),
-        upsertConfig("ads.max_active_per_user", maxActivePerUser, "Max active ad campaigns per user"),
-        upsertConfig("ads.enable_geo_targeting", enableGeoTargeting, "Enable geographic targeting for ads"),
-        upsertConfig("ads.default_geographic_scope", defaultGeographicScope, "Default geographic scope for new campaigns"),
+        upsertConfig("ads.require_manual_approval", requireManualApproval, userId, "Require manual approval for paid ads"),
+        upsertConfig("ads.min_daily_budget", minDailyBudget, userId, "Minimum daily budget for ad campaigns"),
+        upsertConfig("ads.max_active_per_user", maxActivePerUser, userId, "Max active ad campaigns per user"),
+        upsertConfig("ads.enable_geo_targeting", enableGeoTargeting, userId, "Enable geographic targeting for ads"),
+        upsertConfig("ads.default_geographic_scope", defaultGeographicScope, userId, "Default geographic scope for new campaigns"),
       ]);
       toast({ title: "Ad settings saved" });
     } catch (err) {
@@ -185,6 +207,11 @@ export default function AdsSettingsPanel() {
       toast({ title: "Failed to delete tier", variant: "destructive" });
     }
   };
+
+  // CR-08: Deny non-admin access
+  if (!roleLoading && userRole !== 'admin') {
+    return <div>Access denied</div>;
+  }
 
   return (
     <div className="space-y-6">

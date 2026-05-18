@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import OnlineAvatar from '@/components/OnlineAvatar';
-import { 
+import {
   HeartIcon,
   ChatBubbleLeftIcon,
   ShareIcon,
@@ -87,7 +87,7 @@ const EventFeed = () => {
   const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false);
   const [viewEventDialogOpen, setViewEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [openComments, setOpenComments] = useState<Set<string>>(new Set());
+  // WR-14: Removed dead openComments state — only inlineComments drives comment visibility
   const [inlineComments, setInlineComments] = useState<Set<string>>(new Set());
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState('');
@@ -100,25 +100,27 @@ const EventFeed = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  const fetchEvents = async () => {
+  // WR-03: Wrap fetchEvents in useCallback with [user, profile] deps
+  const fetchEvents = useCallback(async () => {
     if (!user || !profile) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
       const userCreatedAt = userData.user?.created_at;
 
+      // CR-01 / WR-01: Query community_posts with post_type filter, not the separate events table
       let query = supabase
-        .from('events')
+        .from('community_posts')
         .select(`
           id,
           user_id,
@@ -131,7 +133,7 @@ const EventFeed = () => {
           event_date,
           rsvp_enabled,
           file_urls,
-          profiles!events_user_id_fkey(
+          profiles!community_posts_user_id_fkey(
             full_name,
             avatar_url,
             neighborhood,
@@ -139,6 +141,7 @@ const EventFeed = () => {
             state
           )
         `)
+        .eq('post_type', 'event')
         .order('event_date', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
 
@@ -161,15 +164,16 @@ const EventFeed = () => {
 
       if (!postsData) return;
 
-      // Filter events by user's city and state
+      // WR-06: If user has no city/state set, show all events; otherwise filter by location
       const filteredPosts = postsData.filter((post: any) => {
-        if (!post.profiles || !profile.city || !profile.state) return false;
+        if (!profile?.city || !profile?.state) return true;
+        if (!post.profiles) return false;
         return post.profiles.city === profile.city && post.profiles.state === profile.state;
       });
 
       // Get likes and comments counts
       const eventIds = filteredPosts.map(post => post.id);
-      
+
       const [likesResult, commentsResult, userLikesResult, userSavesResult] = await Promise.all([
         supabase
           .from('post_likes')
@@ -250,28 +254,24 @@ const EventFeed = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, profile]); // WR-03: proper deps
 
   useEffect(() => {
     fetchEvents();
-  }, [user, profile]);
+  }, [fetchEvents]); // WR-03: include fetchEvents in dep array
 
-  // Real-time subscription for events
+  // WR-01 / WR-03: Real-time subscription on community_posts with fetchEvents in dep array
   useEffect(() => {
     if (!user) return;
-
-    console.log('EventFeed: Setting up real-time subscriptions for events');
 
     const subscription = supabase
       .channel('events_realtime')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'community_posts',
+        table: 'community_posts', // WR-01: correct table
         filter: 'post_type=eq.event'
       }, (payload) => {
-        console.log('EventFeed: Event change detected:', payload);
-        
         if (payload.eventType === 'INSERT') {
           fetchEvents();
           toast({
@@ -333,10 +333,9 @@ const EventFeed = () => {
       .subscribe();
 
     return () => {
-      console.log('EventFeed: Cleaning up real-time subscriptions');
       supabase.removeChannel(subscription);
     };
-  }, [user, profile]);
+  }, [user, fetchEvents]); // WR-03: include fetchEvents
 
   const handleLike = async (eventId: string) => {
     if (!user) return;
@@ -348,10 +347,10 @@ const EventFeed = () => {
     const previousEvents = [...events];
 
     // Update UI IMMEDIATELY (optimistic)
-    setEvents(prev => prev.map(e => 
-      e.id === eventId 
-        ? { 
-            ...e, 
+    setEvents(prev => prev.map(e =>
+      e.id === eventId
+        ? {
+            ...e,
             isLiked: !e.isLiked,
             likes: e.isLiked ? e.likes - 1 : e.likes + 1
           }
@@ -406,8 +405,8 @@ const EventFeed = () => {
           .insert({ post_id: eventId, user_id: user.id });
       }
 
-      setEvents(prev => prev.map(e => 
-        e.id === eventId 
+      setEvents(prev => prev.map(e =>
+        e.id === eventId
           ? { ...e, isSaved: !e.isSaved }
           : e
       ));
@@ -426,17 +425,7 @@ const EventFeed = () => {
     }
   };
 
-  const toggleComments = (eventId: string) => {
-    setOpenComments(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(eventId)) {
-        newSet.delete(eventId);
-      } else {
-        newSet.add(eventId);
-      }
-      return newSet;
-    });
-  };
+  // WR-14: toggleComments removed — was dead code; only inlineComments is used in render
 
   const toggleInlineComments = (eventId: string) => {
     setInlineComments(prev => {
@@ -468,7 +457,7 @@ const EventFeed = () => {
 
   const filteredEvents = events.filter(event => {
     if (!searchQuery) return true;
-    
+
     return event.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
            event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
            event.author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -524,7 +513,7 @@ const EventFeed = () => {
             <CardHeader className="pb-2 p-3 md:p-6">
               <div className="flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex items-start space-x-2 md:space-x-3 min-w-0 flex-1">
-                   <div 
+                   <div
                      className="avatar-clickable cursor-pointer"
                      onClick={() => handleAvatarClick(event.author.name, event.author.avatar)}
                    >
@@ -561,18 +550,18 @@ const EventFeed = () => {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="pt-0 p-3 md:p-6">
               {event.title && (
                 <h3 className="text-base md:text-lg font-semibold mb-2 line-clamp-2 leading-tight">{event.title}</h3>
               )}
-              
+
               <p className="text-foreground mb-3 whitespace-pre-wrap text-sm md:text-base line-clamp-4 leading-relaxed">{event.content}</p>
-              
+
               {event.images && event.images.length > 0 && (
                 <div className={`grid gap-1.5 md:gap-2 mb-3 ${
-                  event.images.length === 1 ? 'grid-cols-1' : 
-                  event.images.length === 2 ? 'grid-cols-2' : 
+                  event.images.length === 1 ? 'grid-cols-1' :
+                  event.images.length === 2 ? 'grid-cols-2' :
                   event.images.length === 3 ? 'grid-cols-3' :
                   'grid-cols-2'
                 }`}>
@@ -621,7 +610,7 @@ const EventFeed = () => {
                       <HeartIcon className={`h-4 w-4 mr-1 ${event.isLiked ? 'fill-current' : ''}`} />
                       <span className="text-xs">{event.likes}</span>
                     </Button>
-                    
+
                      <Button
                        variant="ghost"
                        size="sm"
@@ -631,7 +620,7 @@ const EventFeed = () => {
                        <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
                        <span className="text-xs">{event.comments}</span>
                      </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"
@@ -641,7 +630,7 @@ const EventFeed = () => {
                       <ShareIcon className="h-4 w-4" />
                       <span className="hidden sm:inline ml-1 text-xs">Share</span>
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"
@@ -653,7 +642,7 @@ const EventFeed = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Action buttons - full width on mobile */}
                 <div className="flex gap-2">
                   <Button
@@ -668,7 +657,7 @@ const EventFeed = () => {
                     <EyeIcon className="h-4 w-4 mr-2" />
                     View Event
                   </Button>
-                  
+
                   {event.rsvp_enabled && (
                     <Button
                       variant="default"
@@ -685,8 +674,8 @@ const EventFeed = () => {
 
               {inlineComments.has(event.id) && (
                 <div className="mt-4 pt-4 border-t comment-section">
-                  <CommentSection 
-                    postId={event.id} 
+                  <CommentSection
+                    postId={event.id}
                     commentCount={event.comments}
                     onAvatarClick={handleAvatarClick}
                     isInline={true}
@@ -708,7 +697,7 @@ const EventFeed = () => {
             postContent={selectedEvent.content}
             postAuthor={selectedEvent.author.name}
           />
-          
+
           <RSVPDialog
             open={rsvpDialogOpen}
             onOpenChange={setRsvpDialogOpen}
@@ -716,7 +705,7 @@ const EventFeed = () => {
             eventTitle={selectedEvent.title || 'Community Event'}
             onRSVPSubmitted={() => fetchEvents()}
           />
-          
+
           <ViewEventDialog
             open={viewEventDialogOpen}
             onOpenChange={setViewEventDialogOpen}

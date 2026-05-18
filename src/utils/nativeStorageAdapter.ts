@@ -33,10 +33,14 @@ const checkIsNative = (): boolean => {
     const windowCapacitor = (window as any).Capacitor;
     isNativePlatform = windowCapacitor?.isNativePlatform?.() === true;
     isNativeChecked = true;
-    console.log(`[NativeStorage] Platform: ${isNativePlatform ? 'NATIVE' : 'WEB'}`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage] Platform: ${isNativePlatform ? 'NATIVE' : 'WEB'}`);
+    }
     return isNativePlatform;
   } catch (error) {
-    console.log(`[NativeStorage] Capacitor not available, defaulting to WEB storage`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage] Capacitor not available, defaulting to WEB storage`);
+    }
     isNativeChecked = true;
     isNativePlatform = false;
     return false;
@@ -48,16 +52,22 @@ const checkIsNative = (): boolean => {
  */
 const getPreferences = async (): Promise<any> => {
   const timestamp = getTimestamp();
-  
+
   if (PreferencesModule) {
-    console.log(`[NativeStorage ${timestamp}] Using cached Preferences module`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] Using cached Preferences module`);
+    }
     return PreferencesModule.Preferences;
   }
 
   try {
-    console.log(`[NativeStorage ${timestamp}] Loading Preferences module...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] Loading Preferences module...`);
+    }
     PreferencesModule = await import('@capacitor/preferences');
-    console.log(`[NativeStorage ${timestamp}] Preferences module loaded successfully`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] Preferences module loaded successfully`);
+    }
     return PreferencesModule.Preferences;
   } catch (error) {
     console.warn(`[NativeStorage ${timestamp}] Failed to load Preferences module:`, error);
@@ -68,28 +78,40 @@ const getPreferences = async (): Promise<any> => {
 export class NativeStorageAdapter {
   async getItem(key: string): Promise<string | null> {
     const timestamp = getTimestamp();
-    console.log(`[NativeStorage ${timestamp}] getItem('${key}') called`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] getItem('${key}') called`);
+    }
+
     try {
       if (checkIsNative()) {
-        console.log(`[NativeStorage ${timestamp}] Using native Preferences for getItem`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Using native Preferences for getItem`);
+        }
         const Preferences = await getPreferences();
         if (Preferences) {
           const { value } = await Preferences.get({ key });
-          console.log(`[NativeStorage ${timestamp}] getItem('${key}') result: ${value !== null ? 'found' : 'null'}`);
+          if (import.meta.env.DEV) {
+            console.log(`[NativeStorage ${timestamp}] getItem('${key}') result: ${value !== null ? 'found' : 'null'}`);
+          }
           return value;
         }
-        console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        }
       }
       // Fallback to localStorage
       const value = localStorage.getItem(key);
-      console.log(`[NativeStorage ${timestamp}] localStorage.getItem('${key}') result: ${value !== null ? 'found' : 'null'}`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeStorage ${timestamp}] localStorage.getItem('${key}') result: ${value !== null ? 'found' : 'null'}`);
+      }
       return value;
     } catch (error) {
       console.warn(`[NativeStorage ${timestamp}] getItem('${key}') failed, trying localStorage fallback:`, error);
       try {
         const value = localStorage.getItem(key);
-        console.log(`[NativeStorage ${timestamp}] Fallback localStorage.getItem('${key}'): ${value !== null ? 'found' : 'null'}`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Fallback localStorage.getItem('${key}'): ${value !== null ? 'found' : 'null'}`);
+        }
         return value;
       } catch (e) {
         console.error(`[NativeStorage ${timestamp}] All storage methods failed for getItem('${key}')`);
@@ -100,27 +122,40 @@ export class NativeStorageAdapter {
 
   async setItem(key: string, value: string): Promise<void> {
     const timestamp = getTimestamp();
-    console.log(`[NativeStorage ${timestamp}] setItem('${key}', '${value.substring(0, 20)}...') called`);
-    
+    // WR-09: Only log key name, not value contents
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] setItem('${key}') called`);
+    }
+
     try {
       if (checkIsNative()) {
-        console.log(`[NativeStorage ${timestamp}] Using native Preferences for setItem`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Using native Preferences for setItem`);
+        }
         const Preferences = await getPreferences();
         if (Preferences) {
           await Preferences.set({ key, value });
-          console.log(`[NativeStorage ${timestamp}] setItem('${key}') successful via Preferences`);
+          if (import.meta.env.DEV) {
+            console.log(`[NativeStorage ${timestamp}] setItem('${key}') successful via Preferences`);
+          }
           return;
         }
-        console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        }
       }
       // Fallback to localStorage
       localStorage.setItem(key, value);
-      console.log(`[NativeStorage ${timestamp}] setItem('${key}') successful via localStorage`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeStorage ${timestamp}] setItem('${key}') successful via localStorage`);
+      }
     } catch (error) {
       console.warn(`[NativeStorage ${timestamp}] setItem('${key}') failed, trying localStorage fallback:`, error);
       try {
         localStorage.setItem(key, value);
-        console.log(`[NativeStorage ${timestamp}] Fallback localStorage.setItem('${key}') successful`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Fallback localStorage.setItem('${key}') successful`);
+        }
       } catch (e) {
         console.error(`[NativeStorage ${timestamp}] All storage methods failed for setItem('${key}')`);
         throw error;
@@ -130,27 +165,39 @@ export class NativeStorageAdapter {
 
   async removeItem(key: string): Promise<void> {
     const timestamp = getTimestamp();
-    console.log(`[NativeStorage ${timestamp}] removeItem('${key}') called`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStorage ${timestamp}] removeItem('${key}') called`);
+    }
+
     try {
       if (checkIsNative()) {
-        console.log(`[NativeStorage ${timestamp}] Using native Preferences for removeItem`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Using native Preferences for removeItem`);
+        }
         const Preferences = await getPreferences();
         if (Preferences) {
           await Preferences.remove({ key });
-          console.log(`[NativeStorage ${timestamp}] removeItem('${key}') successful via Preferences`);
+          if (import.meta.env.DEV) {
+            console.log(`[NativeStorage ${timestamp}] removeItem('${key}') successful via Preferences`);
+          }
           return;
         }
-        console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Preferences unavailable, falling back to localStorage`);
+        }
       }
       // Fallback to localStorage
       localStorage.removeItem(key);
-      console.log(`[NativeStorage ${timestamp}] removeItem('${key}') successful via localStorage`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeStorage ${timestamp}] removeItem('${key}') successful via localStorage`);
+      }
     } catch (error) {
       console.warn(`[NativeStorage ${timestamp}] removeItem('${key}') failed, trying localStorage fallback:`, error);
       try {
         localStorage.removeItem(key);
-        console.log(`[NativeStorage ${timestamp}] Fallback localStorage.removeItem('${key}') successful`);
+        if (import.meta.env.DEV) {
+          console.log(`[NativeStorage ${timestamp}] Fallback localStorage.removeItem('${key}') successful`);
+        }
       } catch (e) {
         console.error(`[NativeStorage ${timestamp}] All storage methods failed for removeItem('${key}')`);
         throw error;
@@ -160,5 +207,8 @@ export class NativeStorageAdapter {
 }
 
 // Create singleton instance (safe - no Capacitor import at module level)
-console.log(`[NativeStorage ${new Date().toISOString()}] Creating NativeStorageAdapter singleton`);
+// WR-10: Gate module-level console.log
+if (import.meta.env.DEV) {
+  console.log(`[NativeStorage ${new Date().toISOString()}] Creating NativeStorageAdapter singleton`);
+}
 export const nativeStorageAdapter = new NativeStorageAdapter();

@@ -25,14 +25,16 @@ export const useWebSafetyMap = ({ apiKey, onAlertClick }: UseWebSafetyMapProps) 
     const initMap = useCallback(async () => {
         if (!mapContainer.current || !apiKey) return;
 
-        const loader = new Loader({
-            apiKey,
-            version: 'weekly',
-            libraries: ['marker', 'places']
-        });
-
         try {
-            await loader.load();
+            // Skip loading the script if useGoogleMapsCache already loaded it.
+            if (!(window as any).google?.maps) {
+                const loader = new Loader({
+                    apiKey,
+                    version: 'weekly',
+                    libraries: ['marker', 'places']
+                });
+                await loader.load();
+            }
             if (!mapContainer.current) return;
 
             map.current = new (window as any).google.maps.Map(mapContainer.current, {

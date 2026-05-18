@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
@@ -6,10 +6,11 @@ export const useNativeNetwork = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [connectionType, setConnectionType] = useState<string>('unknown');
   const isNative = isNativePlatform();
+  // WR-16: Use a ref to reliably track and clean up the native listener
+  const listenerRef = useRef<{ remove: () => Promise<void> } | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    let networkListener: any = null;
 
     const checkStatus = async () => {
       if (isNative) {
@@ -34,7 +35,7 @@ export const useNativeNetwork = () => {
       if (isNative) {
         try {
           const { Network } = await import('@capacitor/network');
-          networkListener = await Network.addListener('networkStatusChange', (status) => {
+          listenerRef.current = await Network.addListener('networkStatusChange', (status) => {
             if (mounted) {
               setIsOnline(status.connected);
               setConnectionType(status.connectionType);
@@ -47,7 +48,7 @@ export const useNativeNetwork = () => {
     };
 
     checkStatus();
-    
+
     if (isNative) {
       setupNativeListener();
     } else {
@@ -67,7 +68,8 @@ export const useNativeNetwork = () => {
 
     return () => {
       mounted = false;
-      networkListener?.remove?.();
+      listenerRef.current?.remove?.();
+      listenerRef.current = null;
     };
   }, [isNative]);
 

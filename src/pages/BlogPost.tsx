@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useBlogPost, useIncrementViews, usePublishedBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogContent } from '@/components/blog/BlogContent';
 import { BlogSEO } from '@/components/blog/BlogSEO';
@@ -17,16 +17,21 @@ import { formatDate } from '@/services/blogService';
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: post, isLoading, error } = useBlogPost(slug!);
+
+  // WR-10: guard against missing slug before any hook calls
+  if (!slug) return <Navigate to="/blog" replace />;
+
+  const { data: post, isLoading, error } = useBlogPost(slug);
   const { data: allPosts } = usePublishedBlogPosts();
-  const incrementViews = useIncrementViews();
+  // WR-11: destructure mutate so it can be a stable dep in useEffect
+  const { mutate: doIncrementViews } = useIncrementViews();
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);
 
   useEffect(() => {
     if (post?.id) {
-      incrementViews.mutate(post.id);
+      doIncrementViews(post.id);
     }
-  }, [post?.id]);
+  }, [post?.id, doIncrementViews]);
 
   if (isLoading) {
     return (

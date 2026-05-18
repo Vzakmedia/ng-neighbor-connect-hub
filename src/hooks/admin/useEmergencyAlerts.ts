@@ -54,7 +54,8 @@ export const useEmergencyAlerts = () => {
             }
 
             if (filters?.search) {
-                query = query.or(`description.ilike.%${filters.search}%,location.ilike.%${filters.search}%`);
+                const safeSearch = filters.search.replace(/[^a-zA-Z0-9\s\-'.,]/g, '');
+                query = query.or(`description.ilike.%${safeSearch}%,location.ilike.%${safeSearch}%`);
             }
 
             const { data, error } = await query;

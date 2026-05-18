@@ -32,21 +32,31 @@ const SupportDashboard = () => {
 
   // Check if user has support role
   const [userRole, setUserRole] = useState(null);
+  // WR-14: loading state for role check
+  const [roleLoading, setRoleLoading] = useState(true);
 
   useEffect(() => {
     const checkUserRole = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['support', 'super_admin'])
-        .single();
-      
-      setUserRole(data?.role);
+      if (!user) {
+        setRoleLoading(false);
+        return;
+      }
+
+      try {
+        // WR-12: use maybeSingle() to avoid error when no row is found
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .in('role', ['support', 'super_admin'])
+          .maybeSingle();
+
+        setUserRole(data?.role);
+      } finally {
+        setRoleLoading(false);
+      }
     };
-    
+
     checkUserRole();
   }, [user]);
 
@@ -108,10 +118,9 @@ const SupportDashboard = () => {
     // Set up real-time subscriptions
     const supportChannel = supabase.channel('support-updates');
 
-    supportChannel.on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'panic_alerts' }, 
+    supportChannel.on('postgres_changes',
+      { event: '*', schema: 'public', table: 'panic_alerts' },
       (payload) => {
-        console.log('Emergency alerts change:', payload);
         if (payload.eventType === 'INSERT') {
           setEmergencyAlerts(prev => [payload.new, ...prev.slice(0, 19)]);
           setStats(prev => ({ ...prev, activeEmergencies: prev.activeEmergencies + 1 }));
@@ -126,10 +135,9 @@ const SupportDashboard = () => {
       }
     );
 
-    supportChannel.on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'content_reports' }, 
+    supportChannel.on('postgres_changes',
+      { event: '*', schema: 'public', table: 'content_reports' },
       (payload) => {
-        console.log('Content reports change:', payload);
         if (payload.eventType === 'INSERT') {
           setUserQueries(prev => [payload.new, ...prev.slice(0, 19)]);
         } else if (payload.eventType === 'UPDATE') {
@@ -172,6 +180,15 @@ const SupportDashboard = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // WR-14: show spinner while role is being checked
+  if (roleLoading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   if (!userRole || !['support', 'super_admin'].includes(userRole)) {

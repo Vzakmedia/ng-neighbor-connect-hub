@@ -89,9 +89,8 @@ const CommunityServices = () => {
     if (!user || !profile) return;
 
     try {
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      // Use created_at from the profile/auth hook instead of a redundant getUser() call
+      const userCreatedAt = profile.created_at;
 
       let query = supabase
         .from('services')
@@ -107,15 +106,6 @@ const CommunityServices = () => {
         query = query.gte('created_at', userCreatedAt as any);
       }
 
-      // Apply location filter based on user's profile
-      if (locationFilter === 'neighborhood' && profile.neighborhood) {
-        query = query.eq('profiles.neighborhood', profile.neighborhood as any);
-      } else if (locationFilter === 'city' && profile.city) {
-        query = query.eq('profiles.city', profile.city as any);
-      } else if (locationFilter === 'state' && profile.state) {
-        query = query.eq('profiles.state', profile.state as any);
-      }
-
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory as any);
       }
@@ -124,9 +114,18 @@ const CommunityServices = () => {
 
       if (error) throw error;
 
-      setServices((data as any) || []);
+      // Apply location filter client-side (PostgREST does not filter on embedded relation columns)
+      let results: any[] = data || [];
+      if (locationFilter === 'neighborhood' && profile.neighborhood) {
+        results = results.filter((s: any) => s.profiles?.neighborhood === profile.neighborhood);
+      } else if (locationFilter === 'city' && profile.city) {
+        results = results.filter((s: any) => s.profiles?.city === profile.city);
+      } else if (locationFilter === 'state' && profile.state) {
+        results = results.filter((s: any) => s.profiles?.state === profile.state);
+      }
+
+      setServices(results as any);
     } catch (error) {
-      console.error('Error fetching community services:', error);
       toast({
         title: "Error",
         description: "Failed to load community services",
@@ -139,9 +138,8 @@ const CommunityServices = () => {
     if (!user || !profile) return;
 
     try {
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      // Use created_at from the profile/auth hook instead of a redundant getUser() call
+      const userCreatedAt = profile.created_at;
 
       let query = supabase
         .from('marketplace_items')
@@ -157,15 +155,6 @@ const CommunityServices = () => {
         query = query.gte('created_at', userCreatedAt as any);
       }
 
-      // Apply location filter based on user's profile
-      if (locationFilter === 'neighborhood' && profile.neighborhood) {
-        query = query.eq('profiles.neighborhood', profile.neighborhood as any);
-      } else if (locationFilter === 'city' && profile.city) {
-        query = query.eq('profiles.city', profile.city as any);
-      } else if (locationFilter === 'state' && profile.state) {
-        query = query.eq('profiles.state', profile.state as any);
-      }
-
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory as any);
       }
@@ -174,9 +163,18 @@ const CommunityServices = () => {
 
       if (error) throw error;
 
-      setItems((data as any) || []);
+      // Apply location filter client-side (PostgREST does not filter on embedded relation columns)
+      let results: any[] = data || [];
+      if (locationFilter === 'neighborhood' && profile.neighborhood) {
+        results = results.filter((i: any) => i.profiles?.neighborhood === profile.neighborhood);
+      } else if (locationFilter === 'city' && profile.city) {
+        results = results.filter((i: any) => i.profiles?.city === profile.city);
+      } else if (locationFilter === 'state' && profile.state) {
+        results = results.filter((i: any) => i.profiles?.state === profile.state);
+      }
+
+      setItems(results as any);
     } catch (error) {
-      console.error('Error fetching community items:', error);
       toast({
         title: "Error",
         description: "Failed to load community items",

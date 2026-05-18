@@ -100,16 +100,16 @@ export const EditPostDialog = ({ post, open, onOpenChange }: EditPostDialogProps
   const handleMediaSelect = useCallback((files: File[]) => {
     const hasVideo = uploadedMedia.some(f => f.type === 'video');
     const newHasVideo = files.some(f => f.type.startsWith('video/'));
-    
+
     if (hasVideo || newHasVideo) {
       uploadMultipleFiles(files.slice(0, 1)).then(attachments => {
         setUploadedMedia(attachments);
-      });
+      }).catch(console.error);
     } else {
       const maxToAdd = 4 - uploadedMedia.length;
       uploadMultipleFiles(files.slice(0, maxToAdd)).then(attachments => {
         setUploadedMedia(prev => [...prev, ...attachments]);
-      });
+      }).catch(console.error);
     }
   }, [uploadedMedia, uploadMultipleFiles]);
 

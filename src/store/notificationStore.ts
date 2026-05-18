@@ -33,7 +33,7 @@ interface NotificationState {
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
   syncWithServer: (userId: string) => Promise<void>;
-  persistReadStatus: (id: string) => Promise<void>;
+  persistReadStatus: (id: string, prevNotifications?: NotificationData[], prevUnread?: number) => Promise<void>;
   persistAllReadStatus: () => Promise<void>;
   cleanup: () => void;
 }
@@ -50,11 +50,11 @@ export const useNotificationStore = create<NotificationState>()(
 
       addNotification: async (notification) => {
         const { notifications } = get();
-        
+
         // Deduplication: check if notification already exists
         const exists = notifications.some(n => n.id === notification.id);
         if (exists) {
-          console.log('[NotificationStore] Duplicate notification prevented:', notification.id);
+          if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Duplicate notification prevented:', notification.id);
           return;
         }
 
@@ -115,32 +115,33 @@ export const useNotificationStore = create<NotificationState>()(
           }
         }
 
-        console.log('[NotificationStore] Notification added:', notification.id, 'Unread:', unreadCount);
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Notification added:', notification.id, 'Unread:', unreadCount);
       },
 
       setNotifications: (notifications) => {
         const unreadCount = notifications.filter(n => !n.isRead).length;
-        set({ 
-          notifications, 
+        set({
+          notifications,
           unreadCount,
           lastSyncTime: Date.now()
         });
-        console.log('[NotificationStore] Bulk set:', notifications.length, 'notifications');
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Bulk set:', notifications.length, 'notifications');
       },
 
       markAsRead: (id) => {
-        const { notifications } = get();
-        const updated = notifications.map(n =>
+        const prevNotifications = get().notifications;
+        const prevUnread = get().unreadCount;
+        const updated = prevNotifications.map(n =>
           n.id === id ? { ...n, isRead: true } : n
         );
         const unreadCount = updated.filter(n => !n.isRead).length;
-        
+
         set({ notifications: updated, unreadCount });
-        
-        // Persist to server asynchronously
-        get().persistReadStatus(id);
-        
-        console.log('[NotificationStore] Marked as read:', id, 'Remaining unread:', unreadCount);
+
+        // Persist to server asynchronously (with rollback captured)
+        get().persistReadStatus(id, prevNotifications, prevUnread);
+
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Marked as read:', id, 'Remaining unread:', unreadCount);
       },
 
       markAllAsRead: () => {
@@ -148,31 +149,35 @@ export const useNotificationStore = create<NotificationState>()(
         const updated = notifications.map(n => ({ ...n, isRead: true }));
         
         set({ notifications: updated, unreadCount: 0 });
-        
+
         // Persist to server asynchronously
         get().persistAllReadStatus();
-        
-        console.log('[NotificationStore] All marked as read');
+
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] All marked as read');
       },
 
       deleteNotification: async (id) => {
         const { notifications } = get();
         const updated = notifications.filter(n => n.id !== id);
         const unreadCount = updated.filter(n => !n.isRead).length;
-        
+
         set({ notifications: updated, unreadCount });
 
-        // Delete from server
+        // Delete from server (CR-02: scope to current user to prevent IDOR)
         try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
           const { error } = await supabase
             .from('alert_notifications')
             .delete()
-            .eq('id', id);
+            .eq('id', id)
+            .eq('recipient_id', user.id);
 
           if (error) {
             console.error('[NotificationStore] Failed to delete from server:', error);
           } else {
-            console.log('[NotificationStore] Deleted from server:', id);
+            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Deleted from server:', id);
           }
         } catch (err) {
           console.error('[NotificationStore] Delete error:', err);
@@ -180,8 +185,8 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       syncWithServer: async (userId: string) => {
-        console.log('[NotificationStore] Syncing with server for user:', userId);
-        
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Syncing with server for user:', userId);
+
         try {
           // Get user's creation date for clean slate filtering
           const { data: { user } } = await supabase.auth.getUser();
@@ -189,7 +194,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           let query = supabase
             .from('alert_notifications')
-            .select('*')
+            .select('id, notification_type, sender_name, content, alert_id, panic_alert_id, request_id, sender_phone, sent_at, is_read, recipient_id')
             .eq('recipient_id', userId)
             .order('sent_at', { ascending: false })
             .limit(MAX_NOTIFICATIONS);
@@ -230,30 +235,43 @@ export const useNotificationStore = create<NotificationState>()(
             }));
 
             get().setNotifications(notifications);
-            console.log('[NotificationStore] Synced', notifications.length, 'notifications');
+            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Synced', notifications.length, 'notifications');
           }
         } catch (err) {
           console.error('[NotificationStore] Sync exception:', err);
         }
       },
 
-      persistReadStatus: async (id: string) => {
+      persistReadStatus: async (id: string, prevNotifications?: NotificationData[], prevUnread?: number) => {
+        // CR-01: get authenticated user to prevent IDOR
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         try {
           const { error } = await supabase
             .from('alert_notifications')
-            .update({ 
-              is_read: true, 
-              read_at: new Date().toISOString() 
+            .update({
+              is_read: true,
+              read_at: new Date().toISOString()
             })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('recipient_id', user.id); // CR-01: scope to owner
 
           if (error) {
             console.error('[NotificationStore] Failed to persist read status:', error);
+            // WR-01: rollback optimistic update on server error
+            if (prevNotifications !== undefined && prevUnread !== undefined) {
+              set({ notifications: prevNotifications, unreadCount: prevUnread });
+            }
           } else {
-            console.log('[NotificationStore] Read status persisted:', id);
+            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Read status persisted:', id);
           }
         } catch (err) {
           console.error('[NotificationStore] Persist error:', err);
+          // WR-01: rollback on exception too
+          if (prevNotifications !== undefined && prevUnread !== undefined) {
+            set({ notifications: prevNotifications, unreadCount: prevUnread });
+          }
         }
       },
 
@@ -267,7 +285,7 @@ export const useNotificationStore = create<NotificationState>()(
           if (error) {
             console.error('[NotificationStore] Failed to mark all as read:', error);
           } else {
-            console.log('[NotificationStore] All notifications marked as read on server');
+            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] All notifications marked as read on server');
           }
         } catch (err) {
           console.error('[NotificationStore] Mark all read error:', err);
@@ -288,7 +306,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (cleaned.length < notifications.length) {
           const unreadCount = cleaned.filter(n => !n.isRead).length;
           set({ notifications: cleaned, unreadCount });
-          console.log('[NotificationStore] Cleaned up old notifications:', notifications.length - cleaned.length);
+          if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Cleaned up old notifications:', notifications.length - cleaned.length);
         }
       }
     }),
@@ -302,7 +320,7 @@ export const useNotificationStore = create<NotificationState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          console.log('[NotificationStore] Rehydrated from storage:', state.notifications.length, 'notifications');
+          if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Rehydrated from storage:', state.notifications.length, 'notifications');
           // Cleanup old notifications on load
           state.cleanup();
         }
@@ -363,7 +381,7 @@ async function triggerEmailNotification(notification: NotificationData) {
       }
     });
     
-    console.log('[NotificationStore] Email notification triggered for:', notification.id);
+    if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Email notification triggered for:', notification.id);
   } catch (error) {
     console.error('[NotificationStore] Email trigger error:', error);
   }
@@ -388,6 +406,10 @@ function generateEmailSubject(notification: NotificationData): string {
 }
 
 function generateEmailBody(notification: NotificationData, emailType: string): string {
+  // CR-03: escape user-supplied strings to prevent XSS in email HTML
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   const baseStyle = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.6;
@@ -396,13 +418,13 @@ function generateEmailBody(notification: NotificationData, emailType: string): s
     margin: 0 auto;
     padding: 20px;
   `;
-  
+
   return `
     <div style="${baseStyle}">
-      <h2>${notification.title}</h2>
-      <p>${notification.body}</p>
-      <a href="${window.location.origin}" 
-         style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px; 
+      <h2>${esc(notification.title)}</h2>
+      <p>${esc(notification.body || '')}</p>
+      <a href="${window.location.origin}"
+         style="display: inline-block; background: #3b82f6; color: white; padding: 12px 24px;
                 text-decoration: none; border-radius: 6px; margin-top: 16px;">
         Open App
       </a>

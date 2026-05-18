@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SafetyAlert } from '@/types/emergency';
 import { formatDistance, formatTimeAgo, calculateDistance } from '@/utils/distanceCalculator';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CompactAlertCardProps {
   alert: SafetyAlert;
@@ -13,6 +15,7 @@ interface CompactAlertCardProps {
 }
 
 const CompactAlertCard = ({ alert, userLocation, onClick }: CompactAlertCardProps) => {
+  const { user } = useAuth();
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [comment, setComment] = useState('');
 
@@ -56,10 +59,22 @@ const CompactAlertCard = ({ alert, userLocation, onClick }: CompactAlertCardProp
     }
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle comment submission here
-    console.log('Comment:', comment);
+    if (!user || !comment.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('alert_responses')
+        .insert({
+          alert_id: alert.id,
+          user_id: user.id,
+          response_type: 'comment',
+          comment: comment.trim(),
+        });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    }
     setComment('');
     setShowCommentInput(false);
   };
@@ -84,6 +99,7 @@ const CompactAlertCard = ({ alert, userLocation, onClick }: CompactAlertCardProp
               {getAlertTypeLabel(alert.alert_type)}
             </h3>
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               className="h-7 w-7 flex-shrink-0"

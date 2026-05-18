@@ -5,6 +5,7 @@ import { EmergencyFilters, SafetyAlert, PanicAlert } from '@/types/emergency';
 import { useEmergencyAlerts } from '@/hooks/emergency/useEmergencyAlerts';
 import { useEmergencySubscriptions } from '@/hooks/emergency/useEmergencySubscriptions';
 import { useAlertSystem } from '@/hooks/useAlertSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 // Component imports
 import EmergencyHeader from './EmergencyHeader';
@@ -21,6 +22,7 @@ const EmergencyCenter = () => {
   const [selectedAlert, setSelectedAlert] = useState<SafetyAlert | null>(null);
   const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
+  const [canModerate, setCanModerate] = useState(false);
   const [filters, setFilters] = useState<EmergencyFilters>({
     severity: 'all',
     type: 'all',
@@ -85,6 +87,21 @@ const EmergencyCenter = () => {
       fetchPanicAlerts(true);
     }
   }, [user, clearCache]); // Only depend on user, not filters
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserRole = async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!error && data?.role) {
+        setCanModerate(['admin', 'moderator', 'staff'].includes(data.role));
+      }
+    };
+    fetchUserRole();
+  }, [user]);
 
   const getTimeSince = (dateString: string) => {
     const date = new Date(dateString);
@@ -172,7 +189,7 @@ const EmergencyCenter = () => {
           alert={selectedAlert}
           onStatusUpdate={handleStatusUpdate}
           isOwner={selectedAlert.user_id === user?.id}
-          canModerate={true} // You can implement proper permission check here
+          canModerate={canModerate}
         />
       )}
 

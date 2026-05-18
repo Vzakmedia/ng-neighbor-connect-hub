@@ -61,44 +61,33 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
     e.preventDefault();
     if (!user) return;
 
-    // Show optimistic success
-    toast({
-      title: "Creating listing...",
-      description: "Your item is being listed",
-    });
-
-    // Save form state and reset immediately
-    const savedFormData = { ...formData };
-    const savedFiles = [...galleryFiles];
-    setFormData({
-      title: '',
-      description: '',
-      category: '',
-      price: '',
-      location: '',
-      condition: '',
-      is_negotiable: false
-    });
-    setGalleryFiles([]);
-    setOpen(false);
-    onItemCreated();
+    // Validate price before submitting
+    const price = parseInt(formData.price);
+    if (isNaN(price) || price < 0 || price > 999999999) {
+      toast({
+        title: "Invalid Price",
+        description: "Price must be between ₦0 and ₦999,999,999.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      const imageUrls = savedFiles.filter(f => f.type === 'image').map(f => f.url);
-      const videoUrls = savedFiles.filter(f => f.type === 'video').map(f => f.url);
+      const imageUrls = galleryFiles.filter(f => f.type === 'image').map(f => f.url);
+      const videoUrls = galleryFiles.filter(f => f.type === 'video').map(f => f.url);
 
       const { error } = await supabase
         .from('marketplace_items')
         .insert({
           user_id: user.id,
-          title: savedFormData.title,
-          description: savedFormData.description,
-          category: savedFormData.category as any,
-          price: parseInt(savedFormData.price),
-          location: savedFormData.location,
-          condition: savedFormData.condition,
-          is_negotiable: savedFormData.is_negotiable,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category as any,
+          price,
+          location: formData.location,
+          condition: formData.condition,
+          is_negotiable: formData.is_negotiable,
           images: imageUrls,
           video_urls: videoUrls,
           status: 'active'
@@ -110,6 +99,20 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
         title: "Item listed",
         description: "Your item has been successfully listed",
       });
+
+      // Reset only after the DB insert succeeds
+      setFormData({
+        title: '',
+        description: '',
+        category: '',
+        price: '',
+        location: '',
+        condition: '',
+        is_negotiable: false
+      });
+      setGalleryFiles([]);
+      setOpen(false);
+      onItemCreated();
     } catch (error) {
       console.error('Error creating item:', error);
       toast({
@@ -117,10 +120,6 @@ const CreateMarketplaceItemDialog = ({ onItemCreated, trigger }: CreateMarketpla
         description: "Failed to create listing",
         variant: "destructive",
       });
-      // Restore form on error
-      setFormData(savedFormData);
-      setGalleryFiles(savedFiles);
-      setOpen(true);
     } finally {
       setLoading(false);
     }

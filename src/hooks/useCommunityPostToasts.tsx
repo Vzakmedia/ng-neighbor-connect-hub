@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 
 interface PostDetails {
   content: string;
-  author_name: string;
+  user_id: string;
+  profiles: { full_name: string | null } | null;
 }
 
 export const useCommunityPostToasts = () => {
@@ -48,7 +49,7 @@ export const useCommunityPostToasts = () => {
         // Fetch post details with author information
         const { data: postData, error } = await supabase
           .from('community_posts')
-          .select('content, author_name')
+          .select('content, user_id, profiles(full_name)')
           .eq('id', postId)
           .single();
 
@@ -57,7 +58,8 @@ export const useCommunityPostToasts = () => {
           return;
         }
 
-        const { content, author_name } = postData as PostDetails;
+        const { content, profiles } = postData as PostDetails;
+        const author_name = profiles?.full_name ?? 'A neighbour';
         
         // Create content preview (first 60 characters)
         const contentPreview = content.length > 60 

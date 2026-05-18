@@ -84,9 +84,10 @@ export const useGoogleMapsCache = () => {
           console.log('✅ [Maps Cache] Using cached API key');
         }
 
-        setApiKey(currentApiKey!);
-
-        // 3. Load Script
+        // 3. Load Script — do this BEFORE setting apiKey in state.
+        // SafetyMap watches apiKey to trigger initMap; if apiKey is set before the
+        // script is ready, useWebSafetyMap will race against this load and inject a
+        // second <script> tag, triggering the "Google Maps loaded multiple times" error.
         if (!scriptLoadingPromise) {
           scriptLoadingPromise = new Promise((resolve, reject) => {
             if (window.google?.maps) {
@@ -94,11 +95,8 @@ export const useGoogleMapsCache = () => {
               return;
             }
 
-            // Check if script tag already exists
+            // If a script tag already exists, poll until the library is ready.
             if (document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')) {
-              // Wait for it to load? For now assuming if it exists it will handle itself or we can attach listener?
-              // Safer to just create our own if we can't find the window object, but that might duplicate.
-              // Let's attach a listener to the existing script if possible, or poll.
               const checkInterval = setInterval(() => {
                 if (window.google?.maps) {
                   clearInterval(checkInterval);
@@ -119,6 +117,10 @@ export const useGoogleMapsCache = () => {
         }
 
         await scriptLoadingPromise;
+
+        // Set apiKey AFTER the script is confirmed loaded so any downstream effect
+        // that watches apiKey can safely call window.google.maps APIs immediately.
+        setApiKey(currentApiKey!);
         setIsScriptLoaded(true);
         setIsLoading(false);
 

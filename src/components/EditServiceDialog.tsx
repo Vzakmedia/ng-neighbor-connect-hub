@@ -115,15 +115,16 @@ const EditServiceDialog = ({ service, onServiceUpdated, children }: EditServiceD
       setGalleryFiles(existingMedia);
       fetchWeeklyAvailability();
     }
-  }, [open, service]);
+  }, [open, service.id]);
 
   const fetchWeeklyAvailability = async () => {
+    if (!user) return;
     try {
       const { data, error } = await supabase
         .from('service_weekly_availability')
         .select('*')
         .eq('service_id', service.id)
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .order('day_of_week');
 
       if (error) throw error;

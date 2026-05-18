@@ -1,4 +1,4 @@
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+import { isNativePlatform } from '@/utils/platform';
 
 /**
  * Native secure storage hook using Capacitor Preferences

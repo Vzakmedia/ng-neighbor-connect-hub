@@ -82,8 +82,10 @@ export const usePoll = (postId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      if (!pollData?.poll?.id) throw new Error('Poll not loaded');
+
       const votes = optionIds.map((optionId) => ({
-        poll_id: pollData?.poll.id,
+        poll_id: pollData.poll.id,
         option_id: optionId,
         user_id: user.id,
       }));

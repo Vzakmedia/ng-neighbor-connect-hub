@@ -146,13 +146,14 @@ const ProviderBookingRequests = () => {
 
 
   const handleStatusUpdate = async (bookingId: string, newStatus: 'confirmed' | 'cancelled' | 'completed') => {
+    if (!user) return;
     setUpdating(bookingId);
     try {
       const { error } = await supabase
         .from('service_bookings')
         .update({ status: newStatus })
         .eq('id', bookingId)
-        .eq('provider_id', user!.id);
+        .eq('provider_id', user.id);
 
       if (error) throw error;
 

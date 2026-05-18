@@ -27,7 +27,9 @@ const isNativePlatform = (): boolean => {
   try {
     const windowCapacitor = (window as any).Capacitor;
     cachedIsNative = windowCapacitor?.isNativePlatform?.() === true;
-    console.log('[SyncStorage] Platform detected:', cachedIsNative ? 'NATIVE' : 'WEB');
+    if (import.meta.env.DEV) {
+      console.log('[SyncStorage] Platform detected:', cachedIsNative ? 'NATIVE' : 'WEB');
+    }
     return cachedIsNative;
   } catch {
     cachedIsNative = false;
@@ -41,62 +43,78 @@ const isNativePlatform = (): boolean => {
  */
 export const initializeNativeSyncStorage = async (): Promise<void> => {
   if (isInitialized) {
-    console.log('[SyncStorage] Already initialized');
+    if (import.meta.env.DEV) {
+      console.log('[SyncStorage] Already initialized');
+    }
     return;
   }
-  
+
   if (initPromise) {
-    console.log('[SyncStorage] Initialization in progress, waiting...');
+    if (import.meta.env.DEV) {
+      console.log('[SyncStorage] Initialization in progress, waiting...');
+    }
     return initPromise;
   }
 
   initPromise = (async () => {
     const startTime = Date.now();
-    console.log('[SyncStorage] Starting initialization...');
-    
+    if (import.meta.env.DEV) {
+      console.log('[SyncStorage] Starting initialization...');
+    }
+
     try {
       if (isNativePlatform()) {
-        console.log('[SyncStorage] Loading from Capacitor Preferences...');
+        if (import.meta.env.DEV) {
+          console.log('[SyncStorage] Loading from Capacitor Preferences...');
+        }
         const { Preferences } = await import('@capacitor/preferences');
-        
+
         // Pre-load auth token specifically
         const authKeys = [
           'neighborlink-auth',
           'sb-cowiviqhrnmhttugozbz-auth-token',
           'supabase.auth.token'
         ];
-        
+
         for (const key of authKeys) {
           try {
             const { value } = await Preferences.get({ key });
             if (value) {
               memoryCache.set(key, value);
-              console.log(`[SyncStorage] Pre-loaded key: ${key} (${value.length} chars)`);
+              if (import.meta.env.DEV) {
+                console.log(`[SyncStorage] Pre-loaded key: ${key} (${value.length} chars)`);
+              }
             }
           } catch (e) {
             console.warn(`[SyncStorage] Failed to pre-load key: ${key}`, e);
           }
         }
       } else {
-        console.log('[SyncStorage] Web platform - using localStorage');
+        if (import.meta.env.DEV) {
+          console.log('[SyncStorage] Web platform - using localStorage');
+        }
         // Pre-load from localStorage for consistency
         const authKeys = [
           'neighborlink-auth',
           'sb-cowiviqhrnmhttugozbz-auth-token',
           'supabase.auth.token'
         ];
-        
+
         for (const key of authKeys) {
           const value = localStorage.getItem(key);
           if (value) {
             memoryCache.set(key, value);
-            console.log(`[SyncStorage] Pre-loaded from localStorage: ${key}`);
+            if (import.meta.env.DEV) {
+              console.log(`[SyncStorage] Pre-loaded from localStorage: ${key}`);
+            }
           }
         }
       }
-      
+
       isInitialized = true;
-      console.log(`[SyncStorage] Initialization complete in ${Date.now() - startTime}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`[SyncStorage] Initialization complete in ${Date.now() - startTime}ms`);
+      }
     } catch (error) {
       console.error('[SyncStorage] Initialization failed:', error);
       isInitialized = true; // Mark as initialized anyway to prevent blocking
@@ -112,15 +130,19 @@ export const initializeNativeSyncStorage = async (): Promise<void> => {
  */
 const syncToNativeStorage = async (key: string, value: string | null): Promise<void> => {
   if (!isNativePlatform()) return;
-  
+
   try {
     const { Preferences } = await import('@capacitor/preferences');
     if (value === null) {
       await Preferences.remove({ key });
-      console.log(`[SyncStorage] Removed from native: ${key}`);
+      if (import.meta.env.DEV) {
+        console.log(`[SyncStorage] Removed from native: ${key}`);
+      }
     } else {
       await Preferences.set({ key, value });
-      console.log(`[SyncStorage] Synced to native: ${key}`);
+      if (import.meta.env.DEV) {
+        console.log(`[SyncStorage] Synced to native: ${key}`);
+      }
     }
   } catch (error) {
     console.warn(`[SyncStorage] Failed to sync to native: ${key}`, error);
@@ -139,18 +161,24 @@ export const nativeSyncStorage = {
     // First check memory cache (always synchronous)
     if (memoryCache.has(key)) {
       const value = memoryCache.get(key) || null;
-      console.log(`[SyncStorage] getItem('${key}'): from cache, ${value ? 'found' : 'null'}`);
+      if (import.meta.env.DEV) {
+        console.log(`[SyncStorage] getItem('${key}'): from cache, ${value ? 'found' : 'null'}`);
+      }
       return value;
     }
-    
+
     // Fallback to localStorage (also synchronous)
     try {
       const value = localStorage.getItem(key);
       if (value) {
         memoryCache.set(key, value); // Cache for next time
-        console.log(`[SyncStorage] getItem('${key}'): from localStorage, found`);
+        if (import.meta.env.DEV) {
+          console.log(`[SyncStorage] getItem('${key}'): from localStorage, found`);
+        }
       } else {
-        console.log(`[SyncStorage] getItem('${key}'): not found`);
+        if (import.meta.env.DEV) {
+          console.log(`[SyncStorage] getItem('${key}'): not found`);
+        }
       }
       return value;
     } catch (e) {
@@ -164,18 +192,22 @@ export const nativeSyncStorage = {
    * Syncs to native storage in background (non-blocking)
    */
   setItem: (key: string, value: string): void => {
-    console.log(`[SyncStorage] setItem('${key}'): ${value.length} chars`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[SyncStorage] setItem('${key}'): ${value.length} chars`);
+    }
+
     // Update memory cache immediately (synchronous)
     memoryCache.set(key, value);
-    
-    // Update localStorage as immediate backup (synchronous)
-    try {
-      localStorage.setItem(key, value);
-    } catch (e) {
-      console.warn(`[SyncStorage] setItem localStorage failed:`, e);
+
+    // CR-04: Only write to localStorage on web (not native — native uses Preferences)
+    if (!isNativePlatform()) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn(`[SyncStorage] setItem localStorage failed:`, e);
+      }
     }
-    
+
     // Sync to native storage in background (non-blocking)
     syncToNativeStorage(key, value).catch(() => {});
   },
@@ -185,18 +217,20 @@ export const nativeSyncStorage = {
    * Syncs removal to native storage in background
    */
   removeItem: (key: string): void => {
-    console.log(`[SyncStorage] removeItem('${key}')`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[SyncStorage] removeItem('${key}')`);
+    }
+
     // Remove from memory cache immediately (synchronous)
     memoryCache.delete(key);
-    
+
     // Remove from localStorage (synchronous)
     try {
       localStorage.removeItem(key);
     } catch (e) {
       console.warn(`[SyncStorage] removeItem localStorage failed:`, e);
     }
-    
+
     // Sync removal to native storage in background (non-blocking)
     syncToNativeStorage(key, null).catch(() => {});
   },

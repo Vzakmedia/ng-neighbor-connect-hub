@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
@@ -23,16 +23,12 @@ const DashboardSkeleton = () => (
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
   const { shouldUseFilledIcons } = useMobileIcons();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
+  // WR-18: synchronous redirect avoids flash — useEffect navigate fires after render
+  // The useEffect below is kept for legacy compat but the guard below handles it first.
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -69,8 +65,9 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to auth
+  // WR-18: synchronous guard prevents auth flash
+  if (!loading && !user) {
+    return <Navigate to="/auth" replace />;
   }
 
   return (

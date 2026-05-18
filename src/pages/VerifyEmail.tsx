@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -19,6 +21,9 @@ const VerifyEmail = () => {
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  // Used by the resend form when no session is available
+  const [resendEmail, setResendEmail] = useState("");
+  const [showResendInput, setShowResendInput] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -26,29 +31,28 @@ const VerifyEmail = () => {
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       try {
-        // Check URL parameters for token_hash
         const token_hash = searchParams.get('token_hash');
         const type = searchParams.get('type');
-        
-        console.log('Verification attempt:', { 
-          token_hash: token_hash?.substring(0, 10) + '...', 
+
+        console.log('Verification attempt:', {
+          token_hash: token_hash?.substring(0, 10) + '...',
           type,
-          fullURL: window.location.href 
+          fullURL: window.location.href
         });
-        
+
         if (token_hash && type) {
-          // Accept both 'email' and 'signup' types
-          const verifyType = (type === 'email' || type === 'signup') ? 'signup' : type as 'signup';
-          
+          // Bug 1 fix: preserve the type from the URL — do NOT coerce 'email' → 'signup'.
+          // Token-hash link verification requires type: 'email'; OTP signup uses type: 'signup'.
+          const verifyType = type as 'email' | 'signup';
+
           const { error } = await supabase.auth.verifyOtp({
-            token_hash: token_hash,
-            type: verifyType
+            token_hash,
+            type: verifyType,
           });
 
           if (error) {
             console.error('Verification error:', error);
-            // Check if the error is due to expired link
-            if (error.message.toLowerCase().includes('expired') || 
+            if (error.message.toLowerCase().includes('expired') ||
                 error.message.toLowerCase().includes('invalid')) {
               setError('This verification link has expired. Click below to get a new one.');
             } else {
@@ -59,23 +63,22 @@ const VerifyEmail = () => {
             setShowWelcomeDialog(true);
           }
         } else {
-          // Also check hash parameters as fallback
+          // Fallback: check hash fragment
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const hash_token = hashParams.get('token_hash');
           const hash_type = hashParams.get('type');
-          
+
           if (hash_token && hash_type) {
-            const verifyType = (hash_type === 'email' || hash_type === 'signup') ? 'signup' : hash_type as 'signup';
-            
+            const verifyType = hash_type as 'email' | 'signup';
+
             const { error } = await supabase.auth.verifyOtp({
               token_hash: hash_token,
-              type: verifyType
+              type: verifyType,
             });
-            
+
             if (error) {
               console.error('Hash verification error:', error);
-              // Check if the error is due to expired link
-              if (error.message.toLowerCase().includes('expired') || 
+              if (error.message.toLowerCase().includes('expired') ||
                   error.message.toLowerCase().includes('invalid')) {
                 setError('This verification link has expired. Click below to get a new one.');
               } else {
@@ -86,11 +89,10 @@ const VerifyEmail = () => {
               setShowWelcomeDialog(true);
             }
           } else {
-            // Check if user is already logged in and verified
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user?.email_confirmed_at) {
               navigate("/auth/complete-profile");
-            } else if (!token_hash && !hash_token) {
+            } else {
               console.error('Missing token_hash parameter in URL');
               setError('Invalid confirmation link. Please check your email for a new verification link.');
             }
@@ -104,31 +106,40 @@ const VerifyEmail = () => {
     };
 
     handleEmailConfirmation();
-  }, [searchParams, navigate, toast]);
+  }, [searchParams, navigate]);
 
+  // Bug 7 fix: resend works with or without an active session.
+  // If there is no session, the user must provide their email address.
   const resendVerification = async () => {
     try {
       setLoading(true);
+
+      // Try to get the email from an existing session first.
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user?.email) {
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: session.user.email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/verify-email`
-          }
-        });
+      const emailToUse = session?.user?.email ?? resendEmail.trim();
 
-        if (error) {
-          throw error;
-        }
-
-        toast({
-          title: "Verification Email Sent",
-          description: "Please check your email for the new verification link.",
-        });
+      if (!emailToUse) {
+        // No session and no email entered — show the input field.
+        setShowResendInput(true);
+        setLoading(false);
+        return;
       }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: emailToUse,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/verify-email`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email for the new verification link.",
+      });
+      setShowResendInput(false);
     } catch (err: any) {
       toast({
         title: "Error",
@@ -161,15 +172,15 @@ const VerifyEmail = () => {
             </CardTitle>
           </div>
           <CardDescription>
-            {verified 
+            {verified
               ? "Your email has been successfully verified. Redirecting to profile setup..."
-              : error 
+              : error
                 ? "There was an issue verifying your email. Please try again."
                 : "We've sent you an email with a verification link. Please click the link to continue."
             }
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {error && (
             <>
@@ -189,34 +200,62 @@ const VerifyEmail = () => {
                   <strong>Tip:</strong> Add our emails to your contacts to prevent future emails from going to spam.
                 </p>
               </div>
-              <Button 
+
+              {showResendInput && (
+                <div className="space-y-2">
+                  <Label htmlFor="resend-email">Your email address</Label>
+                  <Input
+                    id="resend-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Button
                 onClick={resendVerification}
                 className="w-full"
                 size="lg"
-                disabled={loading}
+                disabled={loading || (showResendInput && !resendEmail.trim())}
               >
                 {loading ? "Sending New Link..." : "Get New Verification Link"}
               </Button>
             </>
           )}
-          
+
           {!verified && !error && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 Didn't receive the email? Check your spam folder or click below to resend.
               </p>
-              <Button 
+
+              {showResendInput && (
+                <div className="space-y-2">
+                  <Label htmlFor="resend-email-info">Your email address</Label>
+                  <Input
+                    id="resend-email-info"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Button
                 onClick={resendVerification}
                 variant="outline"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || (showResendInput && !resendEmail.trim())}
               >
                 {loading ? "Sending..." : "Resend Verification Email"}
               </Button>
             </div>
           )}
 
-          <Button 
+          <Button
             onClick={() => navigate("/auth")}
             variant="ghost"
             className="w-full"
@@ -251,14 +290,14 @@ const VerifyEmail = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
-            <Button 
+            <Button
               onClick={() => navigate("/auth/complete-profile")}
               className="w-full"
               size="lg"
             >
               Complete My Profile
             </Button>
-            <Button 
+            <Button
               onClick={() => navigate("/")}
               variant="outline"
               className="w-full"

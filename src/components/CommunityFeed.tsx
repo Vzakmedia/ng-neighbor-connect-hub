@@ -196,7 +196,7 @@ export const CommunityFeed = ({
     let count = 0;
     if (filters.tags && filters.tags.length > 0) count += filters.tags.length;
     if (filters.postTypes && filters.postTypes !== 'all') count += 1;
-    if (filters.dateRange) count += 1;
+    if (filters.dateRange && filters.dateRange !== 'all') count += 1;
     return count;
   }, [filters]);
 
@@ -218,9 +218,7 @@ export const CommunityFeed = ({
 
   // Handle refresh for pull-to-refresh
   const handlePullRefresh = async () => {
-    // Invalidate cache to force fresh fetch
     await queryClient.invalidateQueries({ queryKey: ['feed'] });
-    await refetch();
   };
 
   // Set up real-time subscriptions
@@ -235,17 +233,19 @@ export const CommunityFeed = ({
     onUpdatePostComments: () => {},
   });
 
+  const isFetchingRef = useRef(isFetching);
+  useEffect(() => { isFetchingRef.current = isFetching; });
+
   // Fallback polling to ensure fresh data even if real-time fails
   useEffect(() => {
     const interval = setInterval(() => {
-      // Only refetch if tab is visible and not already fetching
-      if (document.visibilityState === 'visible' && !isFetching) {
+      if (document.visibilityState === 'visible' && !isFetchingRef.current) {
         refetch();
       }
     }, pollingInterval);
 
     return () => clearInterval(interval);
-  }, [refetch, isFetching, pollingInterval]);
+  }, [refetch, pollingInterval]);
 
   const feedContent = (
     <div className="max-w-2xl mx-auto">

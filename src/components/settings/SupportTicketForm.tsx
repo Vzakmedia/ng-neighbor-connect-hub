@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, Send, Flag as Ticket } from '@/lib/icons';
 import { useRealtimeSupportTickets } from '@/hooks/useRealtimeSupportTickets';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface SupportTicketFormProps {
   onSuccess?: () => void;
@@ -14,6 +16,8 @@ interface SupportTicketFormProps {
 
 const SupportTicketForm = ({ onSuccess }: SupportTicketFormProps = {}) => {
   const { createTicket } = useRealtimeSupportTickets();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     subject: '',
@@ -24,6 +28,12 @@ const SupportTicketForm = ({ onSuccess }: SupportTicketFormProps = {}) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // WR-20: auth guard
+    if (!user) {
+      toast({ title: 'Sign in required', description: 'Please sign in to submit a ticket', variant: 'destructive' });
+      return;
+    }
 
     if (!formData.subject.trim() || !formData.category || !formData.description.trim()) {
       return;
@@ -52,7 +62,8 @@ const SupportTicketForm = ({ onSuccess }: SupportTicketFormProps = {}) => {
       }
 
     } catch (error) {
-      console.error('Error creating support ticket:', error);
+      // WR-21: error toast in catch
+      toast({ title: 'Error', description: 'Failed to submit ticket. Please try again.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }

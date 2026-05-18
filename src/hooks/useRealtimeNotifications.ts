@@ -12,18 +12,18 @@ export const useRealtimeNotifications = () => {
 
   useEffect(() => {
     if (!user?.id) {
-      console.log('[RealtimeNotifications] No user, skipping subscriptions');
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] No user, skipping subscriptions');
       return;
     }
 
-    console.log('[RealtimeNotifications] Using unified subscriptions for user:', user.id);
+    if (import.meta.env.DEV) console.log('[RealtimeNotifications] Using unified subscriptions for user:', user.id);
 
     // Initial sync with server
     syncWithServer(user.id);
 
     // Subscribe to alert notification events
     const unsubscribeAlerts = onAlert((payload) => {
-      console.log('[RealtimeNotifications] Alert notification received:', payload);
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] Alert notification received:', payload);
       
       const record = payload.new;
       
@@ -56,19 +56,20 @@ export const useRealtimeNotifications = () => {
 
     // Subscribe to direct message events
     const unsubscribeMessages = onMessage(async (payload) => {
-      console.log('[RealtimeNotifications] Direct message received:', payload);
-      
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] Direct message received:', payload);
+
       const message = payload.new;
-      
+
       // Only process messages for this user
       if (message.recipient_id !== user.id) return;
-      
+
       // Fetch sender profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, avatar_url')
         .eq('user_id', message.sender_id)
         .single();
+      if (profileError) return; // WR-05: abort if profile fetch fails
 
       const notification: NotificationData = {
         id: `msg-${message.id}`,
@@ -93,16 +94,17 @@ export const useRealtimeNotifications = () => {
 
     // Subscribe to safety alert events
     const unsubscribeSafetyAlerts = onSafetyAlert(async (payload) => {
-      console.log('[RealtimeNotifications] Safety alert received:', payload);
-      
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] Safety alert received:', payload);
+
       const alert = payload.new;
-      
+
       // Fetch user profile
-      const { data: profile } = await supabase
+      const { data: profile, error: safetyProfileError } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('user_id', alert.user_id)
         .single();
+      if (safetyProfileError) return; // WR-05: abort if profile fetch fails
 
       const notification: NotificationData = {
         id: `alert-${alert.id}`,
@@ -110,11 +112,10 @@ export const useRealtimeNotifications = () => {
         title: `Safety Alert: ${alert.alert_type}`,
         body: alert.description || 'New safety alert in your area',
         data: {
+          // CR-04: do NOT persist GPS coordinates in notification data
           alertId: alert.id,
           alertType: alert.alert_type,
           severity: alert.severity,
-          latitude: alert.latitude,
-          longitude: alert.longitude,
           address: alert.address
         },
         timestamp: alert.created_at,
@@ -130,16 +131,17 @@ export const useRealtimeNotifications = () => {
 
     // Subscribe to panic alert events
     const unsubscribePanicAlerts = onPanicAlert(async (payload) => {
-      console.log('[RealtimeNotifications] Panic alert received:', payload);
-      
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] Panic alert received:', payload);
+
       const alert = payload.new;
-      
+
       // Fetch user profile
-      const { data: profile } = await supabase
+      const { data: profile, error: panicProfileError } = await supabase
         .from('profiles')
         .select('full_name, phone')
         .eq('user_id', alert.user_id)
         .single();
+      if (panicProfileError) return; // WR-05: abort if profile fetch fails
 
       const notification: NotificationData = {
         id: `panic-${alert.id}`,
@@ -147,12 +149,10 @@ export const useRealtimeNotifications = () => {
         title: '🚨 EMERGENCY: Panic Alert',
         body: `${profile?.full_name || 'Someone'} has triggered a panic alert`,
         data: {
+          // CR-04: omit GPS coordinates; CR-05: omit phone from persisted data
           panicAlertId: alert.id,
           userId: alert.user_id,
-          latitude: alert.latitude,
-          longitude: alert.longitude,
-          address: alert.address,
-          phone: profile?.phone
+          address: alert.address
         },
         timestamp: alert.created_at,
         isRead: false,
@@ -167,7 +167,7 @@ export const useRealtimeNotifications = () => {
 
     // Cleanup function
     return () => {
-      console.log('[RealtimeNotifications] Cleaning up unified subscriptions');
+      if (import.meta.env.DEV) console.log('[RealtimeNotifications] Cleaning up unified subscriptions');
       unsubscribeAlerts();
       unsubscribeMessages();
       unsubscribeSafetyAlerts();

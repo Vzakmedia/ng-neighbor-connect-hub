@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,16 +20,18 @@ const Advertising = () => {
   const { campaigns, loading, updateCampaignStatus, refetch } = useAdvertisingCampaigns();
   const isMobile = useIsMobile();
 
-  const analytics = {
-    totalCampaigns: campaigns.length,
-    totalSpent: campaigns.reduce((sum, c) => sum + (c.total_spent || 0), 0),
-    totalImpressions: campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0),
-    totalClicks: campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0),
-    averageCTR: campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0) > 0
-      ? (campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0) /
-        campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0)) * 100
-      : 0,
-  };
+  // WR-12: Memoize analytics aggregation to avoid recomputing on every render
+  const analytics = useMemo(() => {
+    const totalImpressions = campaigns.reduce((sum, c) => sum + (c.total_impressions || 0), 0);
+    const totalClicks = campaigns.reduce((sum, c) => sum + (c.total_clicks || 0), 0);
+    return {
+      totalCampaigns: campaigns.length,
+      totalSpent: campaigns.reduce((sum, c) => sum + (c.total_spent || 0), 0),
+      totalImpressions,
+      totalClicks,
+      averageCTR: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0,
+    };
+  }, [campaigns]);
 
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
@@ -135,9 +138,10 @@ const Advertising = () => {
       <div className="space-y-2">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Budget Progress</span>
-          <span>{((campaign.total_spent / campaign.total_budget) * 100).toFixed(1)}%</span>
+          {/* WR-11: Guard against division by zero */}
+          <span>{(campaign.total_budget > 0 ? ((campaign.total_spent / campaign.total_budget) * 100) : 0).toFixed(1)}%</span>
         </div>
-        <Progress value={(campaign.total_spent / campaign.total_budget) * 100} />
+        <Progress value={campaign.total_budget > 0 ? ((campaign.total_spent / campaign.total_budget) * 100) : 0} />
       </div>
 
       {campaign.rejection_reason && (

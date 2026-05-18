@@ -50,6 +50,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
   const [activeTextarea, setActiveTextarea] = useState<'main' | 'reply'>('main');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const commentIdsRef = useRef<Set<string>>(new Set());
   const { user } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
@@ -99,6 +100,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
       // Get comment IDs for like counting
       const commentIds = commentsData?.map((comment: any) => comment?.id).filter(Boolean) || [];
+      commentIdsRef.current = new Set(commentIds);
 
       // Fetch like counts and user-like flags via secure RPC
       const { data: likesSummary, error: likesError }: { data: any[]; error: any } = await (supabase as any)
@@ -337,16 +339,16 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
             });
           }
         })
-        // Listen to comment likes changes
+        // Listen to comment likes changes (filtered client-side to this post's comments)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'comment_likes'
         }, (payload) => {
-          console.log('CommentSection: Comment like change detected:', payload);
-
           const commentId = payload.new?.comment_id || payload.old?.comment_id;
           if (!commentId) return;
+          // Only process events for comments belonging to this post
+          if (!commentIdsRef.current.has(commentId)) return;
 
           // Update like count and status in real-time
           setComments(prev => {

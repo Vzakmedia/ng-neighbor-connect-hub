@@ -86,8 +86,6 @@ const RatingDialog = ({ itemId, itemType, itemTitle, children, onReviewSubmitted
       setReviewText('');
       onReviewSubmitted?.();
     } catch (error: any) {
-      console.error('Error submitting review:', error);
-      
       if (error.code === '23505') {
         toast({
           title: "Already Reviewed",

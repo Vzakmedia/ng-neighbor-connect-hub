@@ -4,20 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, User, Loader2, Mail } from '@/lib/icons';
+import { Eye, EyeOff, User, Mail } from '@/lib/icons';
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
 import { GoogleAuthButton } from "./GoogleAuthButton";
 import { validateEmail, validatePhoneNumber, sanitizeText } from "@/utils/security";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Upload } from '@/lib/icons';
+import { Camera } from '@/lib/icons';
 import { useRef, useState as useSignupState } from "react";
 import { AvatarCropper } from "./AvatarCropper";
-import { v4 as uuidv4 } from 'uuid';
 import { ConsentDialog, ConsentState } from "../legal/ConsentDialog";
 import { OtpVerifyForm } from "./OtpVerifyForm";
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+import { isNativePlatform } from "@/utils/platform";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +43,6 @@ export const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useSignupState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
   const [showConsentDialog, setShowConsentDialog] = useState(false);
@@ -52,6 +50,10 @@ export const SignUpForm = () => {
   const [showEmailSentDialog, setShowEmailSentDialog] = useState(false);
   const [signupEmail, setSignupEmail] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
+  // Bug 15 fix: hold the cropped blob in memory instead of uploading immediately.
+  // We upload after signUp() so the file is tied to a real user and the upload
+  // only happens when the user actually completes the form.
+  const [pendingAvatarBlob, setPendingAvatarBlob] = useSignupState<Blob | null>(null);
   const [locationComplete, setLocationComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -105,59 +107,34 @@ export const SignUpForm = () => {
     setCropperOpen(true);
   };
 
-  const handleCropComplete = async (croppedImageBlob: Blob) => {
+  // Bug 15 fix: don't upload to storage here — store the blob in state.
+  // The upload runs after signUp() in handleSignUp, using the new user's ID.
+  const handleCropComplete = (croppedImageBlob: Blob) => {
+    setPendingAvatarBlob(croppedImageBlob);
+    // Show a local preview so the user sees their chosen photo
+    const previewUrl = URL.createObjectURL(croppedImageBlob);
+    setFormData(prev => ({ ...prev, avatarUrl: previewUrl }));
+    toast({
+      title: "Photo Ready",
+      description: "Your profile picture will be uploaded when you create your account.",
+    });
+    // Clean up the crop source URL
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc('');
+    }
+  };
+
+  const uploadAvatar = async (userId: string, blob: Blob): Promise<string | null> => {
     try {
-      setUploadingAvatar(true);
-      console.log('Starting avatar upload...');
-
-      // Generate unique filename using UUID to prevent collisions
-      const fileName = `${uuidv4()}.jpeg`;
-      const filePath = `profile-pictures/${fileName}`;
-
-      console.log('Upload path:', filePath);
-      console.log('Cropped file size:', croppedImageBlob.size);
-      console.log('Cropped file type:', croppedImageBlob.type);
-
-      // Upload cropped image to avatars bucket
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, croppedImageBlob);
-
-      console.log('Upload response:', { data, error });
-
-      if (error) {
-        console.error('Upload error details:', error);
-        throw error;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      console.log('Public URL:', publicUrl);
-      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
-
-      toast({
-        title: "Avatar Uploaded",
-        description: "Your profile picture has been uploaded successfully.",
-      });
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      console.error('Error stack:', error.stack);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload avatar. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingAvatar(false);
-      // Clean up the object URL
-      if (selectedImageSrc) {
-        URL.revokeObjectURL(selectedImageSrc);
-        setSelectedImageSrc('');
-      }
+      const filePath = `profile-pictures/${userId}.jpeg`;
+      const { error } = await supabase.storage.from('avatars').upload(filePath, blob, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      return publicUrl;
+    } catch (err: any) {
+      console.error('Avatar upload failed:', err);
+      return null;
     }
   };
 
@@ -229,6 +206,11 @@ export const SignUpForm = () => {
         ? 'neighborlink://auth/verify-email'
         : `${window.location.origin}/auth/verify-email`;
 
+      // Upload avatar first (if one was chosen) using the user ID we get back
+      // from signUp. The upload is deferred to here so it only happens when the
+      // user actually submits the form (Bug 15 fix).
+      let resolvedAvatarUrl = '';
+
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -241,10 +223,21 @@ export const SignUpForm = () => {
             city: formData.city,
             neighborhood: formData.neighborhood,
             address: formData.address,
-            avatar_url: formData.avatarUrl,
+            avatar_url: '', // filled in below after upload
           },
         },
       });
+
+      if (!error && data.user && pendingAvatarBlob) {
+        const uploadedUrl = await uploadAvatar(data.user.id, pendingAvatarBlob);
+        if (uploadedUrl) {
+          resolvedAvatarUrl = uploadedUrl;
+          // Persist for profile-completion page (no active session yet to call updateUser)
+          try { sessionStorage.setItem('pending_avatar_url', uploadedUrl); } catch { /* non-fatal */ }
+        }
+        // Revoke the local preview URL now that we have a real URL
+        if (formData.avatarUrl.startsWith('blob:')) URL.revokeObjectURL(formData.avatarUrl);
+      }
 
       if (error) {
         if (error.message.includes("User already registered")) {
@@ -352,13 +345,8 @@ export const SignUpForm = () => {
               size="sm"
               className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
             >
-              {uploadingAvatar ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Camera className="h-4 w-4" />
-              )}
+              <Camera className="h-4 w-4" />
             </Button>
             <input
               ref={fileInputRef}

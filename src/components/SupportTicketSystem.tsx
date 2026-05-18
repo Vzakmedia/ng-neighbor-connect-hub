@@ -63,37 +63,9 @@ const SupportTicketSystem = () => {
 
     try {
       setLoading(true);
-      
-      // For now, we'll use a mock implementation since support_tickets table doesn't exist
-      // In a real implementation, you'd create this table
-      const mockTickets: SupportTicket[] = [
-        {
-          id: '1',
-          title: 'Login Issues',
-          description: 'Cannot log in to my account',
-          status: 'open',
-          priority: 'high',
-          category: 'Authentication',
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          profiles: { full_name: 'John Doe' }
-        },
-        {
-          id: '2',
-          title: 'Payment Processing Error',
-          description: 'Payment failed during checkout',
-          status: 'in_progress',
-          priority: 'urgent',
-          category: 'Billing',
-          user_id: user.id,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date().toISOString(),
-          profiles: { full_name: 'John Doe' }
-        }
-      ];
-
-      setTickets(mockTickets);
+      // WR-22: return empty array instead of mock data to prevent mock data showing in production
+      // TODO: connect to real support_tickets table
+      setTickets([]);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({

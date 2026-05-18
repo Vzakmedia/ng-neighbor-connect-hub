@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useState, useEffect } from "react";
 import { useEmailNotifications } from "@/hooks/useEmailNotifications";
@@ -40,7 +39,12 @@ export default function Notifications() {
   const testSound = async (type: 'notification' | 'emergency' | 'message') => {
     await hapticFeedback();
     try {
-      await playNotification('notification');
+      // WR-20: map type to correct sound function
+      if (type === 'emergency') {
+        await playNotification('emergency');
+      } else {
+        await playNotification('normal');
+      }
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} sound played`);
     } catch (error) {
       handleApiError(error, { route: '/profile/notifications' });
@@ -61,6 +65,8 @@ export default function Notifications() {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
+            type="button"
+            title="Go back"
             onClick={() => {
               hapticFeedback();
               navigate('/profile-menu');
@@ -246,56 +252,6 @@ export default function Notifications() {
               />
             </div>
 
-            {false && (
-              <>
-                <div className="space-y-2">
-                  <Label className="text-sm">Start Time</Label>
-                  <Select
-                    value={preferences?.quiet_hours_start || '22:00'}
-                    onValueChange={(value) => updatePreferences.mutate({ quiet_hours_start: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="20:00">8:00 PM</SelectItem>
-                      <SelectItem value="21:00">9:00 PM</SelectItem>
-                      <SelectItem value="22:00">10:00 PM</SelectItem>
-                      <SelectItem value="23:00">11:00 PM</SelectItem>
-                      <SelectItem value="00:00">12:00 AM</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">End Time</Label>
-                  <Select
-                    value={preferences?.quiet_hours_end || '07:00'}
-                    onValueChange={(value) => updatePreferences.mutate({ quiet_hours_end: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="06:00">6:00 AM</SelectItem>
-                      <SelectItem value="07:00">7:00 AM</SelectItem>
-                      <SelectItem value="08:00">8:00 AM</SelectItem>
-                      <SelectItem value="09:00">9:00 AM</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="emergency-override" className="text-sm">
-                    Allow Emergency Alerts
-                  </Label>
-                  <Switch
-                    id="emergency-override"
-                    defaultChecked
-                  />
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
       </div>

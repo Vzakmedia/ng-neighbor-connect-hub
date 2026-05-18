@@ -170,9 +170,7 @@ export const useConversations = (userId: string | undefined) => {
     } catch (error) {
       console.error('Error fetching conversations:', error);
       console.timeEnd('fetchConversations');
-      setConversations([]); // Set empty array on error to prevent infinite loading
-
-      return [];
+      setConversations([]);
 
       // Increment failure count and open circuit breaker if needed
       failureCountRef.current++;
@@ -183,7 +181,7 @@ export const useConversations = (userId: string | undefined) => {
           isCircuitOpenRef.current = false;
           failureCountRef.current = 0;
           console.log('Circuit breaker reset');
-        }, 30000); // Reset after 30 seconds
+        }, 30000);
       }
 
       // Only show toast for actual errors, not connection issues
@@ -197,6 +195,8 @@ export const useConversations = (userId: string | undefined) => {
           });
         }
       }
+
+      return [];
     } finally {
       setLoading(false);
       isFetchingRef.current = false;

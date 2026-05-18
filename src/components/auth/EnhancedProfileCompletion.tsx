@@ -43,16 +43,36 @@ export const EnhancedProfileCompletion = () => {
   // Pre-fill data from Google AND stored location if available
   useEffect(() => {
     if (user) {
+      // Recover the avatar URL uploaded during signup (stored in sessionStorage
+      // because there was no session at upload time — Bug 15 fix in SignUpForm).
+      const pendingAvatar = (() => {
+        try { return sessionStorage.getItem('pending_avatar_url') || ''; } catch { return ''; }
+      })();
+
+      // Recover location data saved before Google OAuth redirect (Bug 11 fix in GoogleAuthButton).
+      const pendingLocation = (() => {
+        try {
+          const raw = sessionStorage.getItem('pending_location_data');
+          return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+      })();
+
       setFormData(prev => ({
         ...prev,
         full_name: user.user_metadata?.full_name || user.user_metadata?.name || prev.full_name,
-        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || prev.avatar_url,
-        // Pre-fill location from OAuth metadata if available
-        state: user.user_metadata?.state || prev.state,
-        city: user.user_metadata?.city || prev.city,
-        neighborhood: user.user_metadata?.neighborhood || prev.neighborhood,
-        address: user.user_metadata?.address || prev.address,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || pendingAvatar || prev.avatar_url,
+        // Pre-fill location from OAuth metadata or pre-OAuth sessionStorage
+        state: user.user_metadata?.state || pendingLocation?.state || prev.state,
+        city: user.user_metadata?.city || pendingLocation?.city || prev.city,
+        neighborhood: user.user_metadata?.neighborhood || pendingLocation?.neighborhood || prev.neighborhood,
+        address: user.user_metadata?.address || pendingLocation?.address || prev.address,
       }));
+
+      // Clear sessionStorage entries once consumed
+      try {
+        sessionStorage.removeItem('pending_avatar_url');
+        sessionStorage.removeItem('pending_location_data');
+      } catch { /* non-fatal */ }
     }
   }, [user]);
 

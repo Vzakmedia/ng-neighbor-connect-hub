@@ -10,6 +10,12 @@ interface BlogContentProps {
 export const BlogContent = ({ content, onHeadingsExtracted }: BlogContentProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // WR-04: stable ref so the headings effect doesn't re-run when the callback identity changes
+  const onHeadingsRef = useRef(onHeadingsExtracted);
+  useEffect(() => {
+    onHeadingsRef.current = onHeadingsExtracted;
+  });
+
   useEffect(() => {
     if (contentRef.current) {
       // Add IDs to headings for TOC navigation
@@ -20,14 +26,15 @@ export const BlogContent = ({ content, onHeadingsExtracted }: BlogContentProps) 
         const text = heading.textContent || '';
         const id = generateSlug(text);
         const level = parseInt(heading.tagName.substring(1));
-        
+
         heading.id = id;
         extractedHeadings.push({ id, text, level });
       });
 
-      onHeadingsExtracted?.(extractedHeadings);
+      onHeadingsRef.current?.(extractedHeadings);
     }
-  }, [content, onHeadingsExtracted]);
+  // dep array contains only content — callback identity changes are handled via ref
+  }, [content]);
 
   return (
     <div

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,14 +44,10 @@ interface EmergencyContact {
 }
 
 interface UserProfile {
-  id: string;
   user_id: string;
   full_name: string;
-  phone: string;
-  email?: string;
   neighborhood?: string;
   city?: string;
-  state?: string;
   avatar_url?: string;
 }
 
@@ -61,6 +57,7 @@ const EmergencyContacts = () => {
   
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(false);
+  const contactsSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -78,6 +75,9 @@ const EmergencyContacts = () => {
     preferred_methods: ['in_app'] as ContactMethod[]
   });
 
+  const safeAvatar = (url: string | null | undefined) =>
+    url && /^https?:\/\//.test(url) ? url : undefined;
+
   const contactMethods: { value: ContactMethod; label: string; icon: JSX.Element }[] = [
     { value: 'in_app', label: 'In-App Notification', icon: <Smartphone className="h-4 w-4" /> },
     { value: 'sms', label: 'SMS', icon: <MessageSquare className="h-4 w-4" /> },
@@ -89,13 +89,13 @@ const EmergencyContacts = () => {
       const timeoutId = setTimeout(() => {
         loadProfile();
         loadContacts();
-        subscribeToContacts();
+        contactsSubscriptionRef.current = subscribeToContacts();
       }, 100);
 
       return () => {
         clearTimeout(timeoutId);
-        const subscription = supabase.channel('emergency-contacts');
-        supabase.removeChannel(subscription);
+        contactsSubscriptionRef.current?.unsubscribe();
+        contactsSubscriptionRef.current = null;
       };
     }
   }, [user]);
@@ -107,12 +107,12 @@ const EmergencyContacts = () => {
     }
 
     setIsSearching(true);
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, phone, email, neighborhood, city, state, avatar_url')
-        .or(`phone.ilike.%${query}%,email.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .select('user_id, full_name, avatar_url, neighborhood, city')
+        .or(`full_name.ilike.%${query}%`)
         .limit(5);
       
       if (error) throw error;
@@ -145,29 +145,25 @@ const EmergencyContacts = () => {
     setFormData(prev => ({
       ...prev,
       contact_name: profile.full_name || '',
-      phone_number: profile.phone || '',
     }));
     setSearchResults([]);
   };
 
   const loadProfile = async () => {
     if (!user?.id) return;
-    
+
     try {
-      console.log('EmergencyContacts: Loading profile for user:', user.id);
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
-        
+
       if (error) {
         console.error('EmergencyContacts: Profile load error:', error);
         throw error;
       }
-      
-      console.log('EmergencyContacts: Profile loaded successfully');
+
       setProfile(data);
     } catch (error) {
       console.error('EmergencyContacts: Error loading profile:', error);
@@ -180,7 +176,8 @@ const EmergencyContacts = () => {
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
-          table: 'emergency_contacts'
+          table: 'emergency_contacts',
+          filter: `user_id=eq.${user!.id}`
         }, () => {
           loadContacts();
         }),
@@ -192,30 +189,26 @@ const EmergencyContacts = () => {
       }
     );
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return subscription;
   };
 
   const loadContacts = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
-      console.log('EmergencyContacts: Loading contacts for user:', user.id);
-      
+
       const { data, error } = await supabase
         .from('emergency_contacts')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-        
+
       if (error) {
         console.error('EmergencyContacts: Database error:', error);
         throw error;
       }
-      
-      console.log('EmergencyContacts: Loaded contacts:', data?.length || 0);
+
       setContacts(data || []);
     } catch (error: any) {
       console.error('EmergencyContacts: Error loading emergency contacts:', error);
@@ -255,12 +248,7 @@ const EmergencyContacts = () => {
     }
     
     setLoading(true);
-    console.log('EmergencyContacts: Adding contact with data:', {
-      contact_name: formData.contact_name,
-      phone_number: formData.phone_number,
-      relationship: formData.relationship
-    });
-    
+
     try {
       const { data, error } = await supabase
         .from('emergency_contacts')
@@ -281,13 +269,10 @@ const EmergencyContacts = () => {
         console.error('EmergencyContacts: Error inserting contact:', error);
         throw error;
       }
-      
-      console.log('EmergencyContacts: Contact added successfully:', data);
-      
+
       // Create a contact request - the database trigger will handle the notification
       try {
-        console.log('EmergencyContacts: Creating contact request for phone:', formData.phone_number);
-        const { data: request, error: requestError } = await supabase
+        const { error: requestError } = await supabase
           .from('emergency_contact_requests')
           .insert({
             sender_id: user.id,
@@ -296,22 +281,14 @@ const EmergencyContacts = () => {
           })
           .select()
           .single();
-        
+
         if (requestError) {
           console.error('EmergencyContacts: Error creating contact request:', requestError);
-          console.error('EmergencyContacts: Request error details:', {
-            code: requestError.code,
-            message: requestError.message,
-            details: requestError.details,
-            hint: requestError.hint
-          });
           toast({
             title: "Warning",
             description: requestError.message || "Contact added but notification may be delayed.",
             variant: "default"
           });
-        } else {
-          console.log('EmergencyContacts: Contact request created successfully:', request);
         }
       } catch (e: any) {
         console.error('EmergencyContacts: Exception in contact request creation:', e);
@@ -352,8 +329,9 @@ const EmergencyContacts = () => {
   };
 
   const handleEditContact = async () => {
-    if (!editingContact) return;
-    
+    if (!editingContact || !user) return;
+
+    const previous = [...contacts];
     setLoading(true);
     try {
       const { error } = await supabase
@@ -367,7 +345,8 @@ const EmergencyContacts = () => {
           can_receive_location: formData.can_receive_location,
           can_alert_public: formData.can_alert_public
         })
-        .eq('id', editingContact.id);
+        .eq('id', editingContact.id)
+        .eq('user_id', user.id);
         
       if (error) throw error;
       
@@ -381,6 +360,7 @@ const EmergencyContacts = () => {
       loadContacts();
     } catch (error) {
       console.error('Error updating emergency contact:', error);
+      setContacts(previous);
       toast({
         title: "Error",
         description: "Failed to update emergency contact.",
@@ -392,16 +372,18 @@ const EmergencyContacts = () => {
   };
 
   const handleDeleteContact = async (contactId: string, contactName: string) => {
+    if (!user) return;
     if (!confirm(`Are you sure you want to remove ${contactName} from your emergency contacts?`)) {
       return;
     }
-    
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('emergency_contacts')
         .delete()
-        .eq('id', contactId);
+        .eq('id', contactId)
+        .eq('user_id', user.id);
         
       if (error) throw error;
       
@@ -518,17 +500,17 @@ const EmergencyContacts = () => {
                           <div className="max-h-60 overflow-auto">
                             {searchResults.map((profile) => (
                               <button
-                                key={profile.id}
+                                key={profile.user_id}
                                 type="button"
                                 className="w-full text-left px-3 py-2 hover:bg-muted flex items-center gap-2"
                                 onClick={() => selectUserFromSearch(profile)}
                               >
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                  {profile.avatar_url ? (
-                                    <img 
-                                      src={profile.avatar_url} 
-                                      alt={profile.full_name} 
-                                      className="h-8 w-8 rounded-full object-cover" 
+                                  {safeAvatar(profile.avatar_url) ? (
+                                    <img
+                                      src={safeAvatar(profile.avatar_url)}
+                                      alt={profile.full_name}
+                                      className="h-8 w-8 rounded-full object-cover"
                                     />
                                   ) : (
                                     profile.full_name?.charAt(0) || '?'
@@ -537,8 +519,8 @@ const EmergencyContacts = () => {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate">{profile.full_name}</p>
                                   <p className="text-xs text-muted-foreground truncate">
-                                    {profile.phone || profile.email}
-                                    {profile.neighborhood && ` • ${profile.neighborhood}`}
+                                    {profile.neighborhood && `${profile.neighborhood}`}
+                                    {profile.city && ` • ${profile.city}`}
                                   </p>
                                 </div>
                                 <UserCheck className="h-4 w-4 text-green-500 shrink-0" />

@@ -30,6 +30,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
   const [loading, setLoading] = useState(false);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [rsvpEnabled, setRsvpEnabled] = useState(false);
+  const [eventDate, setEventDate] = useState<string>('');
   const [media, setMedia] = useState<File[]>([]);
   const [uploadedMedia, setUploadedMedia] = useState<CloudinaryAttachment[]>([]);
   const { user } = useAuth();
@@ -75,13 +76,14 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
     setTags([]);
     setCurrentTag('');
     setRsvpEnabled(false);
+    setEventDate('');
     setMedia([]);
     setUploadedMedia([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: "Error",
@@ -93,45 +95,34 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
     if (!title.trim() || !content.trim()) {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Please fill in the title and description",
         variant: "destructive",
       });
       return;
     }
 
-    // Show optimistic success
-    toast({
-      title: "Creating event...",
-      description: "Your event is being created",
-    });
-
-    // Save form state and reset immediately
-    const formState = { title, content, location, tags, media, rsvpEnabled };
-    resetForm();
-    onOpenChange(false);
-    onEventCreated?.();
-
     setLoading(true);
     try {
       // Upload media first if any
       let attachments: CloudinaryAttachment[] = [];
-      if (formState.media.length > 0) {
-        attachments = await uploadMultipleFiles(formState.media);
+      if (media.length > 0) {
+        attachments = await uploadMultipleFiles(media);
       }
-      
+
       // Separate images and videos
       const imageUrls = attachments.filter(a => a.type === 'image').map(a => a.url);
       const videoAttachment = attachments.find(a => a.type === 'video');
 
       const { error } = await supabase
-        .from('events')
+        .from('community_posts')
         .insert({
           user_id: user.id,
-          title: formState.title.trim(),
-          content: formState.content.trim(),
-          location: formState.location.trim() || null,
-          tags: formState.tags,
+          post_type: 'event',
+          title: title.trim(),
+          content: content.trim(),
+          location: location.trim() || null,
+          tags: tags,
           image_urls: imageUrls,
           video_url: videoAttachment?.url || null,
           video_thumbnail_url: videoAttachment?.thumbnailUrl || null,
@@ -141,9 +132,8 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             size: a.size,
             type: a.mimeType
           })),
-          rsvp_enabled: formState.rsvpEnabled,
-          event_date: new Date().toISOString(),
-          is_public: true
+          rsvp_enabled: rsvpEnabled,
+          event_date: eventDate ? new Date(eventDate).toISOString() : new Date().toISOString(),
         } as any);
 
       if (error) throw error;
@@ -152,6 +142,10 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
         title: "Success!",
         description: "Your event has been created successfully",
       });
+
+      resetForm();
+      onOpenChange(false);
+      onEventCreated?.();
     } catch (error) {
       console.error('Error creating event:', error);
       toast({
@@ -159,14 +153,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
         description: "Failed to create event. Please try again.",
         variant: "destructive",
       });
-      // Restore form on error
-      setTitle(formState.title);
-      setContent(formState.content);
-      setLocation(formState.location);
-      setTags(formState.tags);
-      setMedia(formState.media);
-      setRsvpEnabled(formState.rsvpEnabled);
-      onOpenChange(true);
+      // Keep dialog open on error — do not call onOpenChange(false)
     } finally {
       setLoading(false);
     }
@@ -181,7 +168,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
             Create New Event
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Event Title *</Label>
@@ -203,6 +190,16 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
               onChange={(e) => setContent(e.target.value)}
               className="min-h-[100px]"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="event-date">Event Date &amp; Time</Label>
+            <Input
+              id="event-date"
+              type="datetime-local"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
             />
           </div>
 
@@ -253,7 +250,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
                 <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
-            
+
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {tags.map((tag, index) => (
@@ -294,7 +291,7 @@ const CreateEventDialog = ({ open, onOpenChange, onEventCreated }: CreateEventDi
 
           {/* File Upload Section */}
           <div className="space-y-2">
-            <Label>Attach Media & Files</Label>
+            <Label>Attach Media &amp; Files</Label>
             <MediaUploader
               onFilesSelected={handleMediaSelect}
               accept="both"

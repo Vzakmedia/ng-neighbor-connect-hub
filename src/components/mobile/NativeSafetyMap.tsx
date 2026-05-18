@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,6 +33,7 @@ export const NativeSafetyMap = ({
   onMarkerClick,
 }: NativeSafetyMapProps) => {
   const mapRef = useRef<HTMLElement>(null);
+  const mapInstanceRef = useRef<any>(null);
   const [map, setMap] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<MapLocation | null>(null);
@@ -44,6 +45,7 @@ export const NativeSafetyMap = ({
     if (!isNative) return;
 
     const getUserLocation = async () => {
+      // WR-21: try/catch with user-facing error on failure
       try {
         const { Geolocation } = await import('@capacitor/geolocation');
         const position = await Geolocation.getCurrentPosition({
@@ -56,15 +58,20 @@ export const NativeSafetyMap = ({
           lng: position.coords.longitude,
         });
       } catch (error) {
-        console.log('Geolocation error:', error);
-        // Use default center if location access denied
+        console.warn('Geolocation error:', error);
+        toast({
+          title: 'Location Unavailable',
+          description: 'Could not get your location. The map will use the default area.',
+          variant: 'destructive',
+        });
+        // Fall through — map will use default center
       }
     };
 
     getUserLocation();
   }, [isNative]);
 
-  // Initialize map
+  // Initialize map — runs once (does not re-run when userLocation changes).
   useEffect(() => {
     if (!isNative || !mapRef.current) return;
 
@@ -75,7 +82,6 @@ export const NativeSafetyMap = ({
         let apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
         if (!apiKey) {
-          // Get Google Maps API key from edge function if not available locally
           const { data: configData, error: configError } = await supabase.functions.invoke(
             'get-google-maps-token'
           );
@@ -84,52 +90,35 @@ export const NativeSafetyMap = ({
             throw new Error('Failed to get Google Maps API key');
           }
 
+          // WR-20: Validate API key format before using it
+          if (!/^AIza[A-Za-z0-9_\-]{35}$/.test(configData.token)) {
+            throw new Error('Invalid API key');
+          }
+
           apiKey = configData.token;
         }
 
-        // Use user location if available, otherwise use default center
-        const mapCenter = userLocation || center;
-
-        // Dynamically import GoogleMap
         const { GoogleMap } = await import('@capacitor/google-maps');
 
-        // Create the map
         const newMap = await GoogleMap.create({
           id: 'safety-map',
           element: mapRef.current!,
           apiKey: apiKey,
           config: {
-            center: {
-              lat: mapCenter.lat,
-              lng: mapCenter.lng,
-            },
-            zoom: userLocation ? USER_LOCATION_ZOOM : zoom, // Zoom in more if we have user location
+            center: { lat: center.lat, lng: center.lng },
+            zoom,
           },
         });
 
-        // Set up marker click handler
         await newMap.setOnMarkerClickListener((marker) => {
           if (onMarkerClick) {
             onMarkerClick(marker.markerId);
           }
         });
 
-        // Add marker for user's location if available
-        if (userLocation) {
-          await newMap.addMarkers([{
-            coordinate: {
-              lat: userLocation.lat,
-              lng: userLocation.lng,
-            },
-            title: 'Your Location',
-            snippet: 'You are here',
-            iconUrl: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-          }]);
-        }
-
+        mapInstanceRef.current = newMap;
         setMap(newMap);
         setIsLoading(false);
-        // Add class to html to enable transparency in index.css
         document.documentElement.classList.add('native-map-active');
       } catch (error) {
         console.error('Error initializing native map:', error);
@@ -144,14 +133,28 @@ export const NativeSafetyMap = ({
 
     initMap();
 
-    // Cleanup
     return () => {
       document.documentElement.classList.remove('native-map-active');
-      if (map) {
-        map.destroy();
-      }
+      // Use ref to avoid stale closure capturing an old map state value.
+      mapInstanceRef.current?.destroy();
+      mapInstanceRef.current = null;
     };
-  }, [isNative, center.lat, center.lng, zoom, toast, onMarkerClick, userLocation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNative, center.lat, center.lng, zoom, toast, onMarkerClick]);
+
+  // Pan to user location once map is ready, without re-initializing the map.
+  useEffect(() => {
+    if (!map || !userLocation) return;
+
+    map.setCamera({ coordinate: { lat: userLocation.lat, lng: userLocation.lng }, zoom: USER_LOCATION_ZOOM });
+
+    map.addMarkers([{
+      coordinate: { lat: userLocation.lat, lng: userLocation.lng },
+      title: 'Your Location',
+      snippet: 'You are here',
+      iconUrl: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+    }]).catch((err: any) => console.warn('Could not add user marker:', err));
+  }, [map, userLocation]);
 
   // Update markers when they change
   useEffect(() => {
@@ -159,8 +162,7 @@ export const NativeSafetyMap = ({
 
     const updateMarkers = async () => {
       try {
-        // Clear existing markers (API doesn't have getMapMarkers, so we'll just remove all)
-        await map.removeMarkers([]);
+        await map.removeAllMapMarkers();
 
         // Add new markers
         const newMarkers = (markers || []).map(marker => ({

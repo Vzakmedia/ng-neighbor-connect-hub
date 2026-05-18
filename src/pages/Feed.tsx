@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,7 +22,6 @@ const Feed = () => {
   const { user, loading } = useAuth();
   const { profile } = useProfile();
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -33,8 +32,7 @@ const Feed = () => {
   }
 
   if (!user) {
-    navigate("/auth");
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   return (

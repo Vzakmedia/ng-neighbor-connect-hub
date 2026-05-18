@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,12 @@ export const useRealtimeSupportTickets = () => {
   const [responses, setResponses] = useState<{ [key: string]: TicketResponse[] }>({});
   const [loading, setLoading] = useState(true);
 
+  // Keep a ref to current tickets to avoid stale closure in subscription callbacks
+  const ticketsRef = useRef(tickets);
+  useEffect(() => {
+    ticketsRef.current = tickets;
+  }, [tickets]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -49,15 +55,13 @@ export const useRealtimeSupportTickets = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Support ticket updated:', payload);
-          
           if (payload.eventType === 'UPDATE') {
-            setTickets(prev => prev.map(ticket => 
+            setTickets(prev => prev.map(ticket =>
               ticket.id === payload.new.id ? payload.new as SupportTicket : ticket
             ));
-            
-            // Show toast if status changed
-            const oldTicket = tickets.find(t => t.id === payload.new.id);
+
+            // Show toast if status changed — use ref to avoid stale closure
+            const oldTicket = ticketsRef.current.find(t => t.id === payload.new.id);
             if (oldTicket && oldTicket.status !== payload.new.status) {
               toast({
                 title: "Ticket Status Updated",
@@ -72,18 +76,23 @@ export const useRealtimeSupportTickets = () => {
       .subscribe();
 
     // Set up realtime subscription for ticket responses
+    // Build filter from current ticket IDs when available
+    const currentTicketIds = ticketsRef.current.map(t => t.id);
+    const responsesChannelOptions: any = {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'support_ticket_responses',
+    };
+    if (currentTicketIds.length > 0) {
+      responsesChannelOptions.filter = `ticket_id=in.(${currentTicketIds.join(',')})`;
+    }
+
     const responsesChannel = supabase
       .channel('user_ticket_responses')
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_ticket_responses'
-        },
+        responsesChannelOptions,
         async (payload) => {
-          console.log('New ticket response:', payload);
-          
           // Check if this response is for user's ticket
           const { data: ticketData } = await supabase
             .from('support_tickets')
@@ -93,7 +102,7 @@ export const useRealtimeSupportTickets = () => {
 
           if (ticketData && ticketData.user_id === user.id) {
             const newResponse = payload.new as TicketResponse;
-            
+
             setResponses(prev => ({
               ...prev,
               [newResponse.ticket_id]: [
@@ -118,7 +127,7 @@ export const useRealtimeSupportTickets = () => {
       supabase.removeChannel(ticketsChannel);
       supabase.removeChannel(responsesChannel);
     };
-  }, [user, toast, tickets]);
+  }, [user, toast]);
 
   const fetchTickets = async () => {
     if (!user) return;
@@ -163,7 +172,9 @@ export const useRealtimeSupportTickets = () => {
         setResponses(groupedResponses);
       }
     } catch (error) {
-      console.error('Error fetching support tickets:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching support tickets:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load support tickets.",
@@ -202,7 +213,9 @@ export const useRealtimeSupportTickets = () => {
 
       return data;
     } catch (error) {
-      console.error('Error creating support ticket:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error creating support ticket:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to submit support ticket. Please try again.",
@@ -216,6 +229,17 @@ export const useRealtimeSupportTickets = () => {
     if (!user) return null;
 
     try {
+      // CR-05: IDOR check — verify the ticket belongs to the current user
+      const { data: ticket } = await supabase
+        .from('support_tickets')
+        .select('user_id')
+        .eq('id', ticketId)
+        .single();
+
+      if (!ticket || ticket.user_id !== user.id) {
+        throw new Error('Not authorized');
+      }
+
       const { data, error } = await supabase
         .from('support_ticket_responses')
         .insert({
@@ -235,7 +259,9 @@ export const useRealtimeSupportTickets = () => {
 
       return data;
     } catch (error) {
-      console.error('Error submitting response:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error submitting response:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to send response.",

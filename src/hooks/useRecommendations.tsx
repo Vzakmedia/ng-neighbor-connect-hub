@@ -45,7 +45,8 @@ export function useRecommendations(filters: RecommendationFilters = {}) {
         query = query.eq('neighborhood', filters.neighborhood);
       }
       if (filters.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+        const safeSearch = filters.search.replace(/[^a-zA-Z0-9\s\-'.,]/g, '');
+        query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
       }
       if (filters.tags && filters.tags.length > 0) {
         query = query.contains('tags', filters.tags);

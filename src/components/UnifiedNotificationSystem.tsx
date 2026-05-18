@@ -31,7 +31,7 @@ export const UnifiedNotificationSystem = ({
 
       if (error) throw error;
       
-      await markAsRead(notificationId);
+      markAsRead(notificationId); // WR-10: markAsRead is synchronous, no await needed
       
       toast({
         title: "Contact Request Accepted",
@@ -48,9 +48,9 @@ export const UnifiedNotificationSystem = ({
   };
 
   const handleCall = (phoneNumber: string) => {
-    if (phoneNumber) {
-      window.open(`tel:${phoneNumber}`, '_self');
-    }
+    // WR-09: validate phone number format before opening tel: URL
+    if (!/^\+?[\d\s\-(). ]{7,20}$/.test(phoneNumber)) return;
+    window.open(`tel:${phoneNumber}`, '_self');
   };
 
   const getNotificationIcon = (type: NotificationData['type']) => {

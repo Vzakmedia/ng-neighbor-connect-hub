@@ -13,6 +13,14 @@ export function useCreateReview() {
     mutationFn: async (input: CreateReviewInput) => {
       if (!user) throw new Error('Must be logged in');
 
+      const { data: existing } = await supabase
+        .from('recommendation_reviews')
+        .select('id')
+        .eq('recommendation_id', input.recommendation_id)
+        .eq('reviewer_id', user.id)
+        .maybeSingle();
+      if (existing) throw new Error('You have already reviewed this recommendation');
+
       const { data, error } = await supabase
         .from('recommendation_reviews')
         .insert({

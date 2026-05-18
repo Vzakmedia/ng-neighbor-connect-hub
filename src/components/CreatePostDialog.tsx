@@ -205,89 +205,55 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
       }
     }
 
-    // Show optimistic success immediately
-    toast({
-      title: "Creating post...",
-      description: "Your post is being shared with the community.",
-    });
-
-    // Save uploaded media before resetting
-    const savedUploadedMedia = [...uploadedMedia];
-
-    // Reset form and close dialog immediately
-    const formState = {
-      content, title, tags, currentTag, postType, rsvpEnabled, locationScope,
-      pollQuestion, pollOptions, pollDuration, allowMultipleChoices, maxChoices
-    };
-    setContent('');
-    setTitle('');
-    setMedia([]);
-    setUploadedMedia([]);
-    setTags([]);
-    setCurrentTag('');
-    setPostType('general');
-    setRsvpEnabled(false);
-    setLocationScope('all');
-    setPollQuestion('');
-    setPollOptions(['', '']);
-    setPollDuration('7');
-    setAllowMultipleChoices(false);
-    setMaxChoices(1);
-    onOpenChange(false);
-
     setIsSubmitting(true);
     try {
-      // Separate images and videos from already-uploaded media
-      const imageUrls = savedUploadedMedia.filter(a => a.type === 'image').map(a => a.url);
-      const videoAttachment = savedUploadedMedia.find(a => a.type === 'video');
+      const imageUrls = uploadedMedia.filter(a => a.type === 'image').map(a => a.url);
+      const videoAttachment = uploadedMedia.find(a => a.type === 'video');
 
-      // Use exact profile location as single source of truth
       const { data: postData, error } = await supabase
         .from('community_posts')
         .insert({
           user_id: user.id,
-          post_type: formState.postType,
-          title: formState.title || null,
-          content: formState.content,
+          post_type: postType,
+          title: title || null,
+          content,
           location: profile?.neighborhood && profile?.city && profile?.state
             ? `${profile.neighborhood}, ${profile.city}, ${profile.state}`
             : null,
           image_urls: imageUrls,
           video_url: videoAttachment?.url || null,
           video_thumbnail_url: videoAttachment?.thumbnailUrl || null,
-          tags: formState.tags,
-          rsvp_enabled: formState.postType === 'event' ? formState.rsvpEnabled : false,
-          location_scope: formState.locationScope,
-          target_neighborhood: formState.locationScope === 'neighborhood' ? profile?.neighborhood : null,
-          target_city: formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.city : null,
-          target_state: formState.locationScope === 'state' || formState.locationScope === 'city' || formState.locationScope === 'neighborhood' ? profile?.state : null
+          tags,
+          rsvp_enabled: postType === 'event' ? rsvpEnabled : false,
+          location_scope: locationScope,
+          target_neighborhood: locationScope === 'neighborhood' ? profile?.neighborhood : null,
+          target_city: locationScope === 'city' || locationScope === 'neighborhood' ? profile?.city : null,
+          target_state: locationScope === 'state' || locationScope === 'city' || locationScope === 'neighborhood' ? profile?.state : null
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // If poll, create poll data
-      if (formState.postType === 'poll' && postData) {
+      if (postType === 'poll' && postData) {
         const closesAt = new Date();
-        closesAt.setDate(closesAt.getDate() + parseInt(formState.pollDuration));
+        closesAt.setDate(closesAt.getDate() + parseInt(pollDuration));
 
         const { data: pollData, error: pollError } = await supabase
           .from('polls')
           .insert({
             post_id: postData.id,
-            question: formState.pollQuestion,
+            question: pollQuestion,
             closes_at: closesAt.toISOString(),
-            allow_multiple_choices: formState.allowMultipleChoices,
-            max_choices: formState.allowMultipleChoices ? formState.maxChoices : 1,
+            allow_multiple_choices: allowMultipleChoices,
+            max_choices: allowMultipleChoices ? maxChoices : 1,
           })
           .select()
           .single();
 
         if (pollError) throw pollError;
 
-        // Insert poll options
-        const validOptions = formState.pollOptions.filter(opt => opt.trim());
+        const validOptions = pollOptions.filter(opt => opt.trim());
         const optionsToInsert = validOptions.map((option, index) => ({
           poll_id: pollData.id,
           option_text: option.trim(),
@@ -301,6 +267,23 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         if (optionsError) throw optionsError;
       }
 
+      // Reset form and close only on success
+      setContent('');
+      setTitle('');
+      setMedia([]);
+      setUploadedMedia([]);
+      setTags([]);
+      setCurrentTag('');
+      setPostType('general');
+      setRsvpEnabled(false);
+      setLocationScope('all');
+      setPollQuestion('');
+      setPollOptions(['', '']);
+      setPollDuration('7');
+      setAllowMultipleChoices(false);
+      setMaxChoices(1);
+      onOpenChange(false);
+
       toast({
         title: "Post created successfully!",
         description: "Your post has been shared with the community.",
@@ -312,21 +295,6 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         description: "Please try again later.",
         variant: "destructive",
       });
-      // Restore form on error
-      setContent(formState.content);
-      setTitle(formState.title);
-      setUploadedMedia(savedUploadedMedia); // Restore uploaded media
-      setTags(formState.tags);
-      setCurrentTag(formState.currentTag);
-      setPostType(formState.postType);
-      setRsvpEnabled(formState.rsvpEnabled);
-      setLocationScope(formState.locationScope);
-      setPollQuestion(formState.pollQuestion);
-      setPollOptions(formState.pollOptions);
-      setPollDuration(formState.pollDuration);
-      setAllowMultipleChoices(formState.allowMultipleChoices);
-      setMaxChoices(formState.maxChoices);
-      onOpenChange(true);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +57,8 @@ const BusinessDashboard = () => {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchBusiness = async () => {
+  // WR-15: Wrapped in useCallback with [user, toast] deps; added !user guard
+  const fetchBusiness = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -71,9 +72,9 @@ const BusinessDashboard = () => {
         throw error;
       }
 
-      // @ts-ignore - Supabase typing issue
-      if (data && typeof data === 'object' && !('error' in data)) {
-        setBusiness(data as Business);
+      // WR-16: Removed @ts-ignore — use a safe type assertion instead
+      if (data && typeof data === 'object') {
+        setBusiness(data as unknown as Business);
       } else {
         setBusiness(null);
       }
@@ -87,7 +88,7 @@ const BusinessDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -131,7 +132,7 @@ const BusinessDashboard = () => {
 
   useEffect(() => {
     fetchBusiness();
-  }, [user]);
+  }, [fetchBusiness]);
 
   if (loading) {
     return (

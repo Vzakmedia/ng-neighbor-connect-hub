@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,10 +56,14 @@ interface EmailInbox {
   ticket_id?: string;
 }
 
+// WR-15: valid ticket statuses
+const VALID_STATUSES = ['open', 'in_progress', 'waiting_response', 'resolved', 'closed'] as const;
+type TicketStatus = typeof VALID_STATUSES[number];
+
 export const EnhancedSupportTicketSystem = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [responses, setResponses] = useState<Record<string, TicketResponse[]>>({});
   const [emails, setEmails] = useState<EmailInbox[]>([]);
@@ -70,8 +74,9 @@ export const EnhancedSupportTicketSystem = () => {
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // WR-17: stable fetch callbacks
   // Fetch tickets
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('support_tickets')
@@ -85,14 +90,17 @@ export const EnhancedSupportTicketSystem = () => {
       if (error) throw error;
       setTickets((data as any) || []);
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      // WR-18: gate console output to dev
+      if (import.meta.env.DEV) {
+        console.error('Error fetching tickets:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load support tickets",
         variant: "destructive"
       });
     }
-  };
+  }, [toast]);
 
   // Fetch ticket responses
   const fetchResponses = async (ticketId: string) => {
@@ -109,12 +117,14 @@ export const EnhancedSupportTicketSystem = () => {
       if (error) throw error;
       setResponses(prev => ({ ...prev, [ticketId]: (data as any) || [] }));
     } catch (error) {
-      console.error('Error fetching responses:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching responses:', error);
+      }
     }
   };
 
   // Fetch email inbox
-  const fetchEmails = async () => {
+  const fetchEmails = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('support_email_inbox')
@@ -124,21 +134,25 @@ export const EnhancedSupportTicketSystem = () => {
       if (error) throw error;
       setEmails(data || []);
     } catch (error) {
-      console.error('Error fetching emails:', error);
+      // WR-18: gate console output to dev
+      if (import.meta.env.DEV) {
+        console.error('Error fetching emails:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to load email inbox",
         variant: "destructive"
       });
     }
-  };
+  }, [toast]);
 
+  // WR-17: fetchTickets and fetchEmails are stable useCallback refs, safe to add to deps
   useEffect(() => {
     if (user) {
       fetchTickets();
       fetchEmails();
     }
-  }, [user]);
+  }, [user, fetchTickets, fetchEmails]);
 
   // Send email response
   const sendEmailResponse = async () => {
@@ -148,6 +162,12 @@ export const EnhancedSupportTicketSystem = () => {
         description: "Please fill in all required fields",
         variant: "destructive"
       });
+      return;
+    }
+
+    // WR-16: validate recipient email before sending
+    if (!selectedTicket?.profiles?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(selectedTicket.profiles.email)) {
+      toast({ title: 'Error', description: 'Invalid recipient email', variant: 'destructive' });
       return;
     }
 
@@ -177,7 +197,10 @@ export const EnhancedSupportTicketSystem = () => {
       fetchResponses(selectedTicket.id);
       setSelectedTicket(null);
     } catch (error) {
-      console.error('Error sending email:', error);
+      // WR-18: gate console output to dev
+      if (import.meta.env.DEV) {
+        console.error('Error sending email:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to send email response",
@@ -190,11 +213,14 @@ export const EnhancedSupportTicketSystem = () => {
 
   // Update ticket status
   const updateTicketStatus = async (ticketId: string, status: string) => {
+    // WR-15: validate status before sending to DB
+    if (!VALID_STATUSES.includes(status as TicketStatus)) return;
+
     try {
       const { error } = await supabase
         .from('support_tickets')
         .update({
-          status: status as any,
+          status: status as TicketStatus,
           assigned_to: user?.id,
           updated_at: new Date().toISOString()
         })
@@ -209,7 +235,10 @@ export const EnhancedSupportTicketSystem = () => {
 
       fetchTickets();
     } catch (error) {
-      console.error('Error updating ticket:', error);
+      // WR-18: gate console output to dev
+      if (import.meta.env.DEV) {
+        console.error('Error updating ticket:', error);
+      }
       toast({
         title: "Error",
         description: "Failed to update ticket status",
@@ -229,7 +258,9 @@ export const EnhancedSupportTicketSystem = () => {
       if (error) throw error;
       fetchEmails();
     } catch (error) {
-      console.error('Error marking email as read:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error marking email as read:', error);
+      }
     }
   };
 

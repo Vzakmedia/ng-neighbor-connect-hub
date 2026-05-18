@@ -7,11 +7,15 @@ let CameraModule: typeof import('@capacitor/camera') | null = null;
 
 const getCameraModule = async () => {
   if (CameraModule) return CameraModule;
-  
+
   try {
-    console.log('[useNativeCamera] Loading Camera module...');
+    if (import.meta.env.DEV) {
+      console.log('[useNativeCamera] Loading Camera module...');
+    }
     CameraModule = await import('@capacitor/camera');
-    console.log('[useNativeCamera] Camera module loaded successfully');
+    if (import.meta.env.DEV) {
+      console.log('[useNativeCamera] Camera module loaded successfully');
+    }
     return CameraModule;
   } catch (error) {
     console.error('[useNativeCamera] Failed to load Camera module:', error);
@@ -24,10 +28,14 @@ export const useNativeCamera = () => {
   const { toast } = useToast();
 
   const takePicture = useCallback(async (optimized = true): Promise<File | null> => {
-    console.log(`[useNativeCamera] takePicture called, isNative: ${isNative}, optimized: ${optimized}`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[useNativeCamera] takePicture called, isNative: ${isNative}, optimized: ${optimized}`);
+    }
+
     if (!isNative) {
-      console.log('[useNativeCamera] Not native platform, returning null');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Not native platform, returning null');
+      }
       return null;
     }
 
@@ -42,18 +50,23 @@ export const useNativeCamera = () => {
         });
         return null;
       }
-      
+
       const { Camera, CameraResultType, CameraSource } = cameraModule;
-      
-      console.log('[useNativeCamera] Requesting camera permission...');
+
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Requesting camera permission...');
+      }
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) {
-        console.log('[useNativeCamera] Camera permission denied');
+        if (import.meta.env.DEV) {
+          console.log('[useNativeCamera] Camera permission denied');
+        }
         return null;
       }
-      console.log('[useNativeCamera] Camera permission granted');
-
-      console.log('[useNativeCamera] Taking photo...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Camera permission granted');
+        console.log('[useNativeCamera] Taking photo...');
+      }
       const photo = await Camera.getPhoto({
         quality: optimized ? 80 : 90,
         allowEditing: false,
@@ -64,7 +77,9 @@ export const useNativeCamera = () => {
         correctOrientation: true,
       });
 
-      console.log('[useNativeCamera] Photo taken, converting to file...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Photo taken, converting to file...');
+      }
       return await photoToFile(photo);
     } catch (error) {
       console.error('[useNativeCamera] Error taking picture:', error);
@@ -78,10 +93,14 @@ export const useNativeCamera = () => {
   }, [isNative, requestCameraPermission, toast]);
 
   const recordVideo = useCallback(async (): Promise<File | null> => {
-    console.log(`[useNativeCamera] recordVideo called, isNative: ${isNative}`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[useNativeCamera] recordVideo called, isNative: ${isNative}`);
+    }
+
     if (!isNative) {
-      console.log('[useNativeCamera] Not native platform, returning null');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Not native platform, returning null');
+      }
       return null;
     }
 
@@ -96,17 +115,23 @@ export const useNativeCamera = () => {
         });
         return null;
       }
-      
+
       const { Camera, CameraResultType, CameraSource } = cameraModule;
-      
-      console.log('[useNativeCamera] Requesting camera permission for video...');
+
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Requesting camera permission for video...');
+      }
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) {
-        console.log('[useNativeCamera] Camera permission denied');
+        if (import.meta.env.DEV) {
+          console.log('[useNativeCamera] Camera permission denied');
+        }
         return null;
       }
 
-      console.log('[useNativeCamera] Recording video...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Recording video...');
+      }
       const result = await Camera.getPhoto({
         quality: 80,
         allowEditing: false,
@@ -115,22 +140,30 @@ export const useNativeCamera = () => {
       });
 
       if (!result.webPath) {
-        console.log('[useNativeCamera] No webPath in result');
+        if (import.meta.env.DEV) {
+          console.log('[useNativeCamera] No webPath in result');
+        }
         return null;
       }
 
-      console.log('[useNativeCamera] Fetching video blob...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Fetching video blob...');
+      }
       const response = await fetch(result.webPath);
       const blob = await response.blob();
-      
+
       // Check if it's actually a video
       if (blob.type.startsWith('video/')) {
         const fileName = `video_${Date.now()}.mp4`;
-        console.log(`[useNativeCamera] Video captured: ${fileName}, size: ${blob.size}`);
+        if (import.meta.env.DEV) {
+          console.log(`[useNativeCamera] Video captured: ${fileName}, size: ${blob.size}`);
+        }
         return new File([blob], fileName, { type: blob.type });
       }
-      
-      console.log('[useNativeCamera] Result is not a video, converting as photo');
+
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Result is not a video, converting as photo');
+      }
       return await photoToFile(result);
     } catch (error) {
       console.error('[useNativeCamera] Error with camera:', error);
@@ -144,11 +177,15 @@ export const useNativeCamera = () => {
   }, [isNative, requestCameraPermission, toast]);
 
   const pickImages = useCallback(async (multiple = true, optimized = true): Promise<File[]> => {
-    console.log(`[useNativeCamera] pickImages called, isNative: ${isNative}, multiple: ${multiple}`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[useNativeCamera] pickImages called, isNative: ${isNative}, multiple: ${multiple}`);
+    }
+
     if (!isNative) {
       // Web fallback - return empty array, let file input handle it
-      console.log('[useNativeCamera] Not native platform, returning empty array');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Not native platform, returning empty array');
+      }
       return [];
     }
 
@@ -163,17 +200,23 @@ export const useNativeCamera = () => {
         });
         return [];
       }
-      
+
       const { Camera, CameraResultType, CameraSource } = cameraModule;
-      
-      console.log('[useNativeCamera] Requesting photo library permission...');
+
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Requesting photo library permission...');
+      }
       const hasPermission = await requestCameraPermission();
       if (!hasPermission) {
-        console.log('[useNativeCamera] Photo library permission denied');
+        if (import.meta.env.DEV) {
+          console.log('[useNativeCamera] Photo library permission denied');
+        }
         return [];
       }
 
-      console.log('[useNativeCamera] Opening photo picker...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Opening photo picker...');
+      }
       const photo = await Camera.getPhoto({
         quality: optimized ? 80 : 90,
         allowEditing: false,
@@ -184,7 +227,9 @@ export const useNativeCamera = () => {
         correctOrientation: true,
       });
 
-      console.log('[useNativeCamera] Photo selected, converting to file...');
+      if (import.meta.env.DEV) {
+        console.log('[useNativeCamera] Photo selected, converting to file...');
+      }
       const file = await photoToFile(photo);
       return file ? [file] : [];
     } catch (error) {
@@ -201,16 +246,22 @@ export const useNativeCamera = () => {
   const photoToFile = async (photo: any): Promise<File | null> => {
     try {
       if (!photo.webPath) {
-        console.log('[useNativeCamera] photoToFile: No webPath');
+        if (import.meta.env.DEV) {
+          console.log('[useNativeCamera] photoToFile: No webPath');
+        }
         return null;
       }
 
-      console.log(`[useNativeCamera] photoToFile: Fetching ${photo.webPath}`);
+      if (import.meta.env.DEV) {
+        console.log(`[useNativeCamera] photoToFile: Fetching ${photo.webPath}`);
+      }
       const response = await fetch(photo.webPath);
       const blob = await response.blob();
       const fileName = `photo_${Date.now()}.${photo.format || 'jpg'}`;
       const file = new File([blob], fileName, { type: `image/${photo.format || 'jpeg'}` });
-      console.log(`[useNativeCamera] photoToFile: Created file ${fileName}, size: ${file.size}`);
+      if (import.meta.env.DEV) {
+        console.log(`[useNativeCamera] photoToFile: Created file ${fileName}, size: ${file.size}`);
+      }
       return file;
     } catch (error) {
       console.error('[useNativeCamera] Error converting photo to file:', error);

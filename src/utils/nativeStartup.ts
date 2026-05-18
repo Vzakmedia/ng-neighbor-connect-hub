@@ -25,20 +25,24 @@ export const isNativePlatform = (): boolean => {
   if (cachedIsNative !== null) {
     return cachedIsNative;
   }
-  
+
   try {
     // Use window.Capacitor which is injected by native runtime
     // This is safer than require() which may fail in some contexts
     const windowCapacitor = (window as any).Capacitor;
     const isNative = windowCapacitor?.isNativePlatform?.() === true;
-    console.log(`[NativeStartup] Platform check: ${isNative ? 'NATIVE' : 'WEB'}`);
-    if (isNative && windowCapacitor?.getPlatform) {
-      console.log(`[NativeStartup] Platform: ${windowCapacitor.getPlatform()}`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup] Platform check: ${isNative ? 'NATIVE' : 'WEB'}`);
+      if (isNative && windowCapacitor?.getPlatform) {
+        console.log(`[NativeStartup] Platform: ${windowCapacitor.getPlatform()}`);
+      }
     }
     cachedIsNative = isNative;
     return isNative;
   } catch (error) {
-    console.log(`[NativeStartup] Capacitor not available, defaulting to WEB`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup] Capacitor not available, defaulting to WEB`);
+    }
     cachedIsNative = false;
     return false;
   }
@@ -49,19 +53,29 @@ export const isNativePlatform = (): boolean => {
  */
 export const hideSplashScreen = async (): Promise<void> => {
   const timestamp = getTimestamp();
-  console.log(`[NativeStartup ${timestamp}] hideSplashScreen() called`);
-  
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${timestamp}] hideSplashScreen() called`);
+  }
+
   if (!isNativePlatform()) {
-    console.log(`[NativeStartup ${timestamp}] Not on native platform, skipping splash hide`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Not on native platform, skipping splash hide`);
+    }
     return;
   }
 
   try {
-    console.log(`[NativeStartup ${timestamp}] Importing SplashScreen plugin...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Importing SplashScreen plugin...`);
+    }
     const { SplashScreen } = await import('@capacitor/splash-screen');
-    console.log(`[NativeStartup ${timestamp}] SplashScreen plugin loaded, hiding with fadeOut...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] SplashScreen plugin loaded, hiding with fadeOut...`);
+    }
     await SplashScreen.hide({ fadeOutDuration: 300 });
-    console.log(`[NativeStartup ${timestamp}] Splash screen hidden successfully`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Splash screen hidden successfully`);
+    }
   } catch (error) {
     console.warn(`[NativeStartup ${timestamp}] Failed to hide splash screen:`, error);
     // Don't throw - splash screen will auto-hide due to launchAutoHide: true
@@ -73,19 +87,29 @@ export const hideSplashScreen = async (): Promise<void> => {
  */
 export const initializeStatusBar = async (style: 'light' | 'dark' = 'light'): Promise<void> => {
   const timestamp = getTimestamp();
-  console.log(`[NativeStartup ${timestamp}] initializeStatusBar() called with style: ${style}`);
-  
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${timestamp}] initializeStatusBar() called with style: ${style}`);
+  }
+
   if (!isNativePlatform()) {
-    console.log(`[NativeStartup ${timestamp}] Not on native platform, skipping status bar init`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Not on native platform, skipping status bar init`);
+    }
     return;
   }
 
   try {
-    console.log(`[NativeStartup ${timestamp}] Importing StatusBar plugin...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Importing StatusBar plugin...`);
+    }
     const { StatusBar, Style } = await import('@capacitor/status-bar');
-    console.log(`[NativeStartup ${timestamp}] StatusBar plugin loaded, setting style...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] StatusBar plugin loaded, setting style...`);
+    }
     await StatusBar.setStyle({ style: style === 'light' ? Style.Light : Style.Dark });
-    console.log(`[NativeStartup ${timestamp}] Status bar initialized successfully`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Status bar initialized successfully`);
+    }
   } catch (error) {
     console.warn(`[NativeStartup ${timestamp}] Failed to initialize status bar:`, error);
   }
@@ -97,54 +121,78 @@ export const initializeStatusBar = async (style: 'light' | 'dark' = 'light'): Pr
  */
 export const initializeNativeApp = async (): Promise<boolean> => {
   const timestamp = getTimestamp();
-  console.log(`[NativeStartup ${timestamp}] ========== NATIVE INITIALIZATION START ==========`);
-  console.log(`[NativeStartup ${timestamp}] isInitialized: ${isInitialized}`);
-  
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${timestamp}] ========== NATIVE INITIALIZATION START ==========`);
+    console.log(`[NativeStartup ${timestamp}] isInitialized: ${isInitialized}`);
+  }
+
   if (isInitialized) {
-    console.log(`[NativeStartup ${timestamp}] Already initialized, skipping`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Already initialized, skipping`);
+    }
     return true;
   }
 
-  console.log(`[NativeStartup ${timestamp}] Starting native initialization sequence...`);
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${timestamp}] Starting native initialization sequence...`);
+  }
 
   try {
     // Step 1: Initialize status bar
-    console.log(`[NativeStartup ${timestamp}] Step 1: Initializing status bar...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 1: Initializing status bar...`);
+    }
     await initializeStatusBar('light');
-    console.log(`[NativeStartup ${timestamp}] Step 1: Complete`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 1: Complete`);
+    }
+
     // Step 2: Small delay for smooth transition
-    console.log(`[NativeStartup ${timestamp}] Step 2: Waiting 200ms for smooth transition...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 2: Waiting 200ms for smooth transition...`);
+    }
     await new Promise(resolve => setTimeout(resolve, 200));
-    console.log(`[NativeStartup ${timestamp}] Step 2: Complete`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 2: Complete`);
+    }
+
     // Step 3: Hide splash screen
-    console.log(`[NativeStartup ${timestamp}] Step 3: Hiding splash screen...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 3: Hiding splash screen...`);
+    }
     await hideSplashScreen();
-    console.log(`[NativeStartup ${timestamp}] Step 3: Complete`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Step 3: Complete`);
+    }
+
     isInitialized = true;
-    console.log(`[NativeStartup ${timestamp}] ========== NATIVE INITIALIZATION COMPLETE ==========`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] ========== NATIVE INITIALIZATION COMPLETE ==========`);
+    }
     return true;
   } catch (error) {
     const errorTimestamp = getTimestamp();
     console.error(`[NativeStartup ${errorTimestamp}] ========== INITIALIZATION FAILED ==========`);
     console.error(`[NativeStartup ${errorTimestamp}] Error:`, error);
     initializationError = error as Error;
-    
+
     // Still mark as initialized to prevent retry loops
     isInitialized = true;
-    
+
     // Try to hide splash screen as fallback
-    console.log(`[NativeStartup ${errorTimestamp}] Attempting fallback splash hide...`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${errorTimestamp}] Attempting fallback splash hide...`);
+    }
     try {
       await hideSplashScreen();
-      console.log(`[NativeStartup ${errorTimestamp}] Fallback splash hide succeeded`);
+      if (import.meta.env.DEV) {
+        console.log(`[NativeStartup ${errorTimestamp}] Fallback splash hide succeeded`);
+      }
     } catch (fallbackError) {
       console.warn(`[NativeStartup ${errorTimestamp}] Fallback splash hide failed:`, fallbackError);
       // Splash will auto-hide due to config
     }
-    
+
     return false;
   }
 };
@@ -157,7 +205,9 @@ export const getInitializationStatus = () => {
     isInitialized,
     error: initializationError,
   };
-  console.log(`[NativeStartup ${getTimestamp()}] getInitializationStatus():`, status);
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${getTimestamp()}] getInitializationStatus():`, status);
+  }
   return status;
 };
 
@@ -166,12 +216,19 @@ export const getInitializationStatus = () => {
  * Call this if the app appears stuck on splash screen
  */
 export const forceHideSplash = async (): Promise<void> => {
+  // WR-22: Guard against running on web platform
+  if (!isNativePlatform()) return;
+
   const timestamp = getTimestamp();
-  console.log(`[NativeStartup ${timestamp}] ========== FORCE HIDE SPLASH ==========`);
+  if (import.meta.env.DEV) {
+    console.log(`[NativeStartup ${timestamp}] ========== FORCE HIDE SPLASH ==========`);
+  }
   try {
     const { SplashScreen } = await import('@capacitor/splash-screen');
     await SplashScreen.hide({ fadeOutDuration: 0 });
-    console.log(`[NativeStartup ${timestamp}] Force hide successful`);
+    if (import.meta.env.DEV) {
+      console.log(`[NativeStartup ${timestamp}] Force hide successful`);
+    }
   } catch (error) {
     console.warn(`[NativeStartup ${timestamp}] Force hide failed (ignoring):`, error);
     // Ignore errors - best effort

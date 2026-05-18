@@ -32,46 +32,67 @@ export function useProfile() {
       return;
     }
 
+    let cancelled = false;
+
     const fetchProfile = async () => {
-      console.log('useProfile: Starting fetch for user:', user.id);
+      if (import.meta.env.DEV) {
+        console.log('useProfile: Starting fetch for user:', user.id);
+      }
       setLoading(true);
       try {
         // First check if we have a valid session
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('useProfile: Current session:', session ? 'exists' : 'missing');
-        
+        if (import.meta.env.DEV) {
+          console.log('useProfile: Current session:', session ? 'exists' : 'missing');
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        console.log('useProfile: Query result:', { data, error, userId: user.id });
+        if (import.meta.env.DEV) {
+          console.log('useProfile: Query result:', { data, error, userId: user.id });
+        }
 
         if (error && error.code !== 'PGRST116') {
-          console.error('useProfile: Error fetching profile:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-          });
+          if (import.meta.env.DEV) {
+            console.error('useProfile: Error fetching profile:', {
+              message: error.message,
+              code: error.code,
+              details: error.details,
+              hint: error.hint
+            });
+          }
           return;
         }
 
-        console.log('useProfile: Setting profile data:', data);
+        if (cancelled) return;
+        if (import.meta.env.DEV) {
+          console.log('useProfile: Setting profile data:', data);
+        }
         setProfile(data || null);
       } catch (error) {
-        console.error('useProfile: Exception fetching profile:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          error: error
-        });
+        if (import.meta.env.DEV) {
+          console.error('useProfile: Exception fetching profile:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            error: error
+          });
+        }
       } finally {
-        console.log('useProfile: Fetch complete, loading set to false');
-        setLoading(false);
+        if (import.meta.env.DEV) {
+          console.log('useProfile: Fetch complete, loading set to false');
+        }
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const getDisplayName = () => {

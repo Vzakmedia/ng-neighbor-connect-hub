@@ -143,7 +143,8 @@ export const sanitization = {
   html: (html: string): string => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'img'],
-      ALLOWED_ATTR: ['href', 'title', 'class', 'src', 'alt'],
+      // WR-27: allow target and rel so sanitized links can open safely in new tabs
+      ALLOWED_ATTR: ['href', 'title', 'class', 'src', 'alt', 'target', 'rel'],
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+\-.]+(?:[^a-z+\-.:]|$))/i,
       FORCE_BODY: true,
     });

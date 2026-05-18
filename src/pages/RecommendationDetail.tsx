@@ -69,7 +69,7 @@ export default function RecommendationDetail() {
       {/* Hero Section */}
       <div className="relative h-96">
         <div className="absolute inset-0">
-          {recommendation.image_urls.length > 0 ? (
+          {(recommendation.image_urls ?? []).length > 0 ? (
             <img 
               src={recommendation.image_urls[0]}
               alt={recommendation.title}
@@ -178,7 +178,7 @@ export default function RecommendationDetail() {
 
               <p className="text-foreground whitespace-pre-wrap">{recommendation.description}</p>
 
-              {recommendation.tags.length > 0 && (
+              {(recommendation.tags ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4">
                   {recommendation.tags.map((tag) => (
                     <Badge key={tag} variant="secondary">

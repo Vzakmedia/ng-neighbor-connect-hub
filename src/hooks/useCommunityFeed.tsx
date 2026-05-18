@@ -28,7 +28,7 @@
  * See: docs/FEED_PERFORMANCE.md
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -195,12 +195,12 @@ export const useCommunityFeed = () => {
     return count;
   }, [filters]);
 
-  const fetchPosts = async () => {
+  // WR-13: wrap in useCallback so it can be a stable dependency
+  const fetchPosts = useCallback(async () => {
     if (!user || !profile) return;
 
     try {
       setLoading(true);
-      console.log('Fetching community posts with PostGIS...');
 
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
@@ -216,12 +216,10 @@ export const useCommunityFeed = () => {
       });
 
       if (error) {
-        console.error('Error fetching posts with PostGIS:', error);
         throw error;
       }
 
       if (posts) {
-        console.log('Fetched posts from PostGIS:', posts.length);
 
         // Transform PostGIS results to Event format
         const transformedPosts = posts.map((post: any) => ({
@@ -255,7 +253,6 @@ export const useCommunityFeed = () => {
         setEvents(transformedPosts);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
       toast({
         title: "Error",
         description: "Failed to load community posts. Please try again.",
@@ -264,27 +261,28 @@ export const useCommunityFeed = () => {
     } finally {
       setLoading(false);
     }
-  };
+  // WR-13: stable deps for useCallback
+  }, [user, profile, filters.locationScope, toast]);
 
   const fetchEngagementData = async (postId: string) => {
     try {
+      // WR-16: use count queries for totals, limit(1) for existence checks
       const [likesResult, commentsResult, savesResult, userLikeResult, userSaveResult] = await Promise.all([
-        supabase.from('post_likes').select('id').eq('post_id', postId),
-        supabase.from('post_comments').select('id').eq('post_id', postId),
-        supabase.from('saved_posts').select('id').eq('post_id', postId),
-        user ? supabase.from('post_likes').select('id').eq('post_id', postId).eq('user_id', user.id).single() : Promise.resolve({ data: null }),
-        user ? supabase.from('saved_posts').select('id').eq('post_id', postId).eq('user_id', user.id).single() : Promise.resolve({ data: null })
+        supabase.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId),
+        supabase.from('post_comments').select('*', { count: 'exact', head: true }).eq('post_id', postId),
+        supabase.from('saved_posts').select('*', { count: 'exact', head: true }).eq('post_id', postId),
+        user ? supabase.from('post_likes').select('id').eq('post_id', postId).eq('user_id', user.id).limit(1) : Promise.resolve({ data: null }),
+        user ? supabase.from('saved_posts').select('id').eq('post_id', postId).eq('user_id', user.id).limit(1) : Promise.resolve({ data: null })
       ]);
 
       return {
-        likes_count: likesResult.data?.length || 0,
-        comments_count: commentsResult.data?.length || 0,
-        saves_count: savesResult.data?.length || 0,
-        isLiked: !!userLikeResult.data,
-        isSaved: !!userSaveResult.data,
+        likes_count: likesResult.count ?? 0,
+        comments_count: commentsResult.count ?? 0,
+        saves_count: savesResult.count ?? 0,
+        isLiked: !!(userLikeResult.data && (userLikeResult.data as any[]).length > 0),
+        isSaved: !!(userSaveResult.data && (userSaveResult.data as any[]).length > 0),
       };
     } catch (error) {
-      console.error('Error fetching engagement data:', error);
       return {
         likes_count: 0,
         comments_count: 0,
@@ -325,7 +323,6 @@ export const useCommunityFeed = () => {
           : e
       ));
     } catch (error) {
-      console.error('Error toggling like:', error);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
@@ -377,7 +374,6 @@ export const useCommunityFeed = () => {
         if (error) throw error;
       }
     } catch (error) {
-      console.error('Error toggling save:', error);
 
       // Rollback on error
       setEvents(previousEvents);
@@ -408,7 +404,8 @@ export const useCommunityFeed = () => {
     ));
   };
 
-  const handleRefresh = async () => {
+  // WR-14: wrap in useCallback so it can be a stable dependency
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     setHasNewContent(false);
     setUnreadCounts(prev => ({ ...prev, community: 0 }));
@@ -421,7 +418,6 @@ export const useCommunityFeed = () => {
         description: "Community feed updated successfully",
       });
     } catch (error) {
-      console.error('Error refreshing:', error);
       toast({
         title: "Error",
         description: "Failed to refresh feed. Please try again.",
@@ -430,14 +426,14 @@ export const useCommunityFeed = () => {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [fetchPosts, toast]);
 
-  // Initial fetch and re-fetch when location filter changes
+  // WR-13: fetchPosts is now stable via useCallback, safe in dep array
   useEffect(() => {
     fetchPosts();
-  }, [user, profile, filters.locationScope]);
+  }, [fetchPosts]);
 
-  // Auto-refresh every minute
+  // WR-14: handleRefresh is now stable via useCallback, safe in dep array
   useEffect(() => {
     const interval = setInterval(() => {
       if (user && profile && !refreshing) {
@@ -446,7 +442,7 @@ export const useCommunityFeed = () => {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [user, profile, refreshing]);
+  }, [user, profile, refreshing, handleRefresh]);
 
   return {
     events: filteredAndSortedEvents,

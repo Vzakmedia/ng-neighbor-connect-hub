@@ -110,19 +110,11 @@ export const useNativeContacts = () => {
     }
   }, [isNative, checkPermission, requestPermission, toast]);
 
-  // Hash phone number for privacy (simple hash for demo)
-  const hashPhoneNumber = useCallback((phone: string): string => {
-    // Remove all non-digits
-    const cleaned = phone.replace(/\D/g, '');
-    
-    // Simple hash (in production, use a proper hashing algorithm on backend)
-    let hash = 0;
-    for (let i = 0; i < cleaned.length; i++) {
-      const char = cleaned.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(16);
+  // WR-12: Return last 4 digits as a lightweight obfuscator
+  // TODO: replace with server-side HMAC-SHA256
+  const hashPhoneNumber = useCallback((phoneNumber: string): string => {
+    const digits = phoneNumber.replace(/\D/g, '');
+    return digits.slice(-4);
   }, []);
 
   const findFriends = useCallback(async (): Promise<ContactMatch[]> => {
@@ -157,10 +149,13 @@ export const useNativeContacts = () => {
         )
         .filter(item => item.hash);
 
+      // WR-13: Strip original field before sending to RPC — never send raw numbers
+      const hashesOnly = phoneHashes.map(({ hash, name }) => ({ hash, name }));
+
       // Call backend to match contacts
       const { data, error } = await supabase.functions.invoke('match-contacts', {
-        body: { 
-          phoneHashes: phoneHashes.map(p => p.hash),
+        body: {
+          phoneHashes: hashesOnly.map(p => p.hash),
         },
       });
 

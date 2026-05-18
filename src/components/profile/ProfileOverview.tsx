@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -62,15 +62,11 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
     bio: ''
   });
   const [requestingVerification, setRequestingVerification] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (targetUserId) {
-      fetchProfile();
-    }
-  }, [targetUserId]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!targetUserId) return;
+    let cancelled = false;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -83,22 +79,30 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         return;
       }
 
+      if (cancelled) return;
       setProfile(data);
       setFormData({
-        full_name: data.full_name || '',
-        phone: data.phone || '',
-        address: data.address || '',
-        neighborhood: data.neighborhood || '',
-        state: data.state || '',
-        city: data.city || '',
-        bio: data.bio || ''
+        full_name: data?.full_name || '',
+        phone: data?.phone || '',
+        address: data?.address || '',
+        neighborhood: data?.neighborhood || '',
+        state: data?.state || '',
+        city: data?.city || '',
+        bio: data?.bio || ''
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
-  };
+    return () => { cancelled = true; };
+  }, [targetUserId]);
+
+  useEffect(() => {
+    if (targetUserId) {
+      fetchProfile();
+    }
+  }, [targetUserId, fetchProfile]);
 
   const determineOptimalLocationFilter = (
     oldState: string,
@@ -133,7 +137,9 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
 
+    setSaving(true);
     try {
       // Store old location data for comparison
       const oldLocationData = {
@@ -142,10 +148,18 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         neighborhood: profile?.neighborhood || ''
       };
 
+      const trimmedData = {
+        ...formData,
+        full_name: formData.full_name.trim(),
+        bio: formData.bio.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update(formData)
-        .eq('user_id', user?.id);
+        .update(trimmedData)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -154,9 +168,9 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         oldLocationData.state,
         oldLocationData.city,
         oldLocationData.neighborhood,
-        formData.state,
-        formData.city,
-        formData.neighborhood
+        trimmedData.state,
+        trimmedData.city,
+        trimmedData.neighborhood
       );
 
       if (optimalFilter) {
@@ -184,6 +198,8 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -314,6 +330,12 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         return;
       }
 
+      // Reject SVG files
+      if (file.type === 'image/svg+xml') {
+        toast({ title: 'Error', description: 'SVG files are not allowed', variant: 'destructive' });
+        return;
+      }
+
       // Create image URL for cropping
       const reader = new FileReader();
       reader.onload = () => {
@@ -367,11 +389,9 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
 
     setRequestingVerification(true);
     try {
-      // Here you would typically send a request to an admin system
-      // For now, we'll just show a success message
       toast({
-        title: "Verification Request Sent",
-        description: "Your verification request has been submitted. You'll be notified once reviewed.",
+        title: 'Contact Support',
+        description: 'Please contact our support team to request profile verification.',
       });
     } catch (error) {
       console.error('Error requesting verification:', error);
@@ -430,7 +450,7 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
                   <XMarkIcon className="h-4 w-4 mr-2" />
                   <span className="sm:inline">Cancel</span>
                 </Button>
-                <Button onClick={handleSubmit} className="w-full sm:w-auto">
+                <Button onClick={handleSubmit} disabled={saving} className="w-full sm:w-auto">
                   <CheckIcon className="h-4 w-4 mr-2" />
                   <span className="sm:inline">Save</span>
                 </Button>

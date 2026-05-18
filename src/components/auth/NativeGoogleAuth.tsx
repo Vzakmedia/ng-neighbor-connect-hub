@@ -3,8 +3,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+// WR-05: Import isNativePlatform from the shared utility
+import { isNativePlatform } from "@/utils/nativeStartup";
 
 interface NativeGoogleAuthProps {
   mode: 'signin' | 'signup';
@@ -23,8 +23,10 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
-    console.log(`[NativeGoogleAuth] Starting ${mode} flow, isNative: ${isNativePlatform()}`);
-    
+    if (import.meta.env.DEV) {
+      console.log(`[NativeGoogleAuth] Starting ${mode} flow, isNative: ${isNativePlatform()}`);
+    }
+
     try {
       if (isNativePlatform()) {
         // Use in-app browser for native OAuth
@@ -33,7 +35,7 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
 
         // Get OAuth URL from Supabase
         const redirectUrl = 'neighborlink://auth/callback';
-        
+
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -58,20 +60,31 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
         }
 
         if (data?.url) {
-          console.log('[NativeGoogleAuth] Opening OAuth URL in browser:', data.url);
-          
-          // Set up listener for the callback
-          const urlListener = await App.addListener('appUrlOpen', async (event) => {
-            console.log('[NativeGoogleAuth] Deep link received:', event.url);
-            
+          if (import.meta.env.DEV) {
+            console.log('[NativeGoogleAuth] Opening OAuth URL in browser');
+          }
+
+          // WR-04: Set up listener before opening browser; always clean it up
+          let urlListener: { remove: () => void } | null = null;
+          urlListener = await App.addListener('appUrlOpen', async (event) => {
+            // CR-03: Validate deep link scheme/path before processing
+            if (!event.url.startsWith('neighborlink://auth/callback')) return;
+
+            if (import.meta.env.DEV) {
+              console.log('[NativeGoogleAuth] Valid deep link received');
+            }
+
+            // Remove listener immediately — only process once
+            urlListener?.remove();
+            urlListener = null;
+
             // Close the browser
             await Browser.close();
-            urlListener.remove();
-            
+
             try {
               const url = new URL(event.url);
               const params = new URLSearchParams(url.hash.substring(1) || url.search);
-              
+
               const accessToken = params.get('access_token');
               const refreshToken = params.get('refresh_token');
               const errorParam = params.get('error');
@@ -88,7 +101,9 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
               }
 
               if (accessToken && refreshToken) {
-                console.log('[NativeGoogleAuth] Setting session from tokens');
+                if (import.meta.env.DEV) {
+                  console.log('[NativeGoogleAuth] Setting session from tokens');
+                }
                 const { error: sessionError } = await supabase.auth.setSession({
                   access_token: accessToken,
                   refresh_token: refreshToken,
@@ -136,11 +151,18 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
             setIsLoading(false);
           });
 
-          // Open the OAuth URL in an in-app browser
-          await Browser.open({ 
-            url: data.url,
-            presentationStyle: 'popover',
-          });
+          // WR-04: Open browser in try/catch so the listener is removed if opening fails
+          try {
+            await Browser.open({
+              url: data.url,
+              presentationStyle: 'popover',
+            });
+          } catch (browserErr) {
+            // Browser failed to open — the appUrlOpen callback will never fire, so clean up now
+            urlListener?.remove();
+            urlListener = null;
+            throw browserErr;
+          }
         }
       } else {
         // Web flow - use standard OAuth
