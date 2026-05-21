@@ -92,11 +92,9 @@ const UnifiedMessaging = () => {
   // Step 1: Fix infinite loop - only fetch once on mount
   useEffect(() => {
     if (user && !hasInitialFetchRef.current) {
-      console.time('InitialFetch');
       hasInitialFetchRef.current = true;
       fetchConversations();
       fetchRequestCount();
-      console.timeEnd('InitialFetch');
     }
   }, [user]); // Removed fetchConversations from dependencies
 

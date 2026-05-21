@@ -81,7 +81,7 @@ function wrapTemplate(content: string, appUrl: string): string {
 }
 
 export function generateEmailTemplate(type: string, data: EmailTemplateData): string {
-  const appUrl = data.appUrl || 'https://yourapp.com';
+  const appUrl = data.appUrl || 'https://neighborlink.ng';
 
   const templates: Record<string, string> = {
     post_comment: `
@@ -163,7 +163,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
       </div>
       <p style="margin-top: 20px; text-align: center; font-weight: bold;">Stay safe and follow local authorities' instructions.</p>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/safety" style="${buttonStyle}; background-color: #dc2626;">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/safety" style="${buttonStyle}; background-color: #dc2626;">
           View Alert Details
         </a>
       </div>
@@ -179,7 +179,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
         <p><strong>Time:</strong> ${data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString()}</p>
       </div>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/safety" style="${buttonStyle}; background-color: #dc2626;">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/safety" style="${buttonStyle}; background-color: #dc2626;">
           View Emergency Map
         </a>
       </div>
@@ -195,7 +195,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
         <p><strong>Description:</strong> ${data.description || 'No description provided'}</p>
       </div>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/safety" style="${buttonStyle}; background-color: #f59e0b;">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/safety" style="${buttonStyle}; background-color: #f59e0b;">
           View Alert
         </a>
       </div>
@@ -210,7 +210,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
         <p style="margin-bottom: 0;">${data.content ? (data.content.substring(0, 300) + (data.content.length > 300 ? '...' : '')) : 'Check out this new post in your community'}</p>
       </div>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/community" style="${buttonStyle}">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/community" style="${buttonStyle}">
           View Full Post
         </a>
       </div>
@@ -223,7 +223,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
         <p style="margin: 0;">This means they trust you to be notified in case of emergencies involving them.</p>
       </div>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/settings" style="${buttonStyle}">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/settings" style="${buttonStyle}">
           Respond to Request
         </a>
       </div>
@@ -235,7 +235,7 @@ export function generateEmailTemplate(type: string, data: EmailTemplateData): st
         <p style="margin: 0;">${data.description || 'There\'s an update regarding your marketplace activity'}</p>
       </div>
       <div style="text-align: center;">
-        <a href="${data.appUrl || window.location.origin}/marketplace" style="${buttonStyle}">
+        <a href="${data.appUrl || 'https://neighborlink.ng'}/marketplace" style="${buttonStyle}">
           View Marketplace
         </a>
       </div>
@@ -253,7 +253,7 @@ function generateGenericTemplate(data: EmailTemplateData): string {
       <p style="margin: 0;">${data.description || data.content || 'You have a new notification'}</p>
     </div>
     <div style="text-align: center;">
-      <a href="${data.appUrl || window.location.origin}" style="${buttonStyle}">
+      <a href="${data.appUrl || 'https://neighborlink.ng'}" style="${buttonStyle}">
         Open App
       </a>
     </div>

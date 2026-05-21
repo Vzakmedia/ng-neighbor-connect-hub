@@ -128,47 +128,60 @@ export const useNativePermissions = () => {
     }
   }, [isNative, toast]);
 
-  const getCurrentPosition = useCallback(async () => {
+  const getCurrentPosition = useCallback(async (options?: Partial<PositionOptions>) => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
       throw new Error('Location permission denied');
     }
 
-    if (!isNative) {
-      // Web fallback
-      return new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
+    const toGeolocationPosition = (position: any): GeolocationPosition => ({
+      coords: {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        altitude: position.coords.altitude ?? null,
+        altitudeAccuracy: position.coords.altitudeAccuracy ?? null,
+        heading: position.coords.heading ?? null,
+        speed: position.coords.speed ?? null,
+      },
+      timestamp: position.timestamp,
+    } as GeolocationPosition);
+
+    const tryGet = async (opts: PositionOptions): Promise<GeolocationPosition> => {
+      if (!isNative) {
+        return new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve(toGeolocationPosition(pos)),
+            reject,
+            opts
+          );
         });
-      });
-    }
-
-    try {
+      }
       const { Geolocation } = await import('@capacitor/geolocation');
-      const position = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
-      });
+      const position = await Geolocation.getCurrentPosition(opts);
+      return toGeolocationPosition(position);
+    };
 
-      // Convert to browser GeolocationPosition format for compatibility
-      return {
-        coords: {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude,
-          altitudeAccuracy: position.coords.altitudeAccuracy,
-          heading: position.coords.heading,
-          speed: position.coords.speed
-        },
-        timestamp: position.timestamp
-      } as GeolocationPosition;
-    } catch (error) {
-      console.error('Error getting position:', error);
-      throw error;
+    // Stage 1: network/wifi location — fast, good enough for most use cases.
+    // Uses a 5-minute cache so repeated calls don't re-acquire a GPS fix.
+    try {
+      return await tryGet({
+        enableHighAccuracy: false,
+        timeout: options?.timeout ?? 8000,
+        maximumAge: options?.maximumAge ?? 300000,
+      });
+    } catch {
+      // Stage 2: GPS fallback — slower but more accurate.
+      try {
+        return await tryGet({
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0,
+        });
+      } catch (error) {
+        console.error('Error getting position:', error);
+        throw error;
+      }
     }
   }, [isNative, requestLocationPermission]);
 

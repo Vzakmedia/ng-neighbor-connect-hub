@@ -68,8 +68,6 @@ export const useConversations = (userId: string | undefined) => {
 
     try {
       setLoading(true);
-      console.time('fetchConversations');
-      console.log('Fetching conversations for user:', userId);
       const { data, error } = await supabase
         .from('direct_conversations')
         .select(`
@@ -161,15 +159,12 @@ export const useConversations = (userId: string | undefined) => {
 
         return formattedConversations;
       });
-      console.timeEnd('fetchConversations');
-
       // Reset failure count on success
       failureCountRef.current = 0;
 
       return formattedConversations;
     } catch (error) {
       console.error('Error fetching conversations:', error);
-      console.timeEnd('fetchConversations');
       setConversations([]);
 
       // Increment failure count and open circuit breaker if needed

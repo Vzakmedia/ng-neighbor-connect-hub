@@ -59,8 +59,8 @@ export const useGoogleMapsCache = () => {
   useEffect(() => {
     const initializeMaps = async () => {
       try {
-        // 1. Check if already loaded
-        if (window.google?.maps) {
+        // 1. Check if already loaded (Map constructor must be available, not just the namespace)
+        if ((window as any).google?.maps?.Map) {
           setIsScriptLoaded(true);
           setIsLoading(false);
           return;
@@ -90,19 +90,29 @@ export const useGoogleMapsCache = () => {
         // second <script> tag, triggering the "Google Maps loaded multiple times" error.
         if (!scriptLoadingPromise) {
           scriptLoadingPromise = new Promise((resolve, reject) => {
-            if (window.google?.maps) {
+            if ((window as any).google?.maps?.Map) {
               resolve();
               return;
             }
 
-            // If a script tag already exists, poll until the library is ready.
-            if (document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')) {
+            const pollUntilReady = (onTimeout?: () => void) => {
               const checkInterval = setInterval(() => {
-                if (window.google?.maps) {
+                if ((window as any).google?.maps?.Map) {
                   clearInterval(checkInterval);
                   resolve();
                 }
-              }, 100);
+              }, 50);
+              // Safety timeout: reject after 10 s if classes never appear
+              setTimeout(() => {
+                clearInterval(checkInterval);
+                if (onTimeout) onTimeout();
+                else reject(new Error('Google Maps failed to initialize within timeout'));
+              }, 10000);
+            };
+
+            // If a script tag already exists, poll until the Map constructor is ready.
+            if (document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]')) {
+              pollUntilReady();
               return;
             }
 
@@ -110,7 +120,9 @@ export const useGoogleMapsCache = () => {
             script.src = `https://maps.googleapis.com/maps/api/js?key=${currentApiKey}&libraries=places,marker&region=NG&language=en&loading=async`;
             script.async = true;
             script.defer = true;
-            script.onload = () => resolve();
+            // onload fires when the script bytes are parsed, but with loading=async the
+            // Maps API defers class initialization past that point. Poll until Map is ready.
+            script.onload = () => pollUntilReady();
             script.onerror = () => reject(new Error('Failed to load Google Maps script'));
             document.head.appendChild(script);
           });

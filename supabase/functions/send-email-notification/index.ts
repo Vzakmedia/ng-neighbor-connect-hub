@@ -123,7 +123,7 @@ serve(async (req) => {
     let htmlBody = typeof body === "string" ? body : JSON.stringify(body);
     if (templateData) {
       const { generateEmailTemplate } = await import("./templates.ts");
-      const appUrl = Deno.env.get("APP_URL") || "https://yourapp.com";
+      const appUrl = Deno.env.get("APP_URL") || "https://neighborlink.ng";
       htmlBody = generateEmailTemplate(type, { ...templateData, appUrl });
     }
 

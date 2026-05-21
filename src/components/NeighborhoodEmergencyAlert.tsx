@@ -34,6 +34,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
   }, [user]);
 
   useEffect(() => {
+    // Load alerts once location resolves; the timeout fallback calls loadNearbyAlerts directly.
     if (userLocation) {
       loadNearbyAlerts();
     }
@@ -41,24 +42,26 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
   const getUserLocation = async () => {
     try {
-      // Add timeout and high accuracy options
       const position = await getCurrentPosition({
-        timeout: 10000,
-        enableHighAccuracy: true,
-        maximumAge: 0
+        maximumAge: 300000, // accept a 5-minute cached fix — avoids redundant GPS cold-starts
       });
       console.log('📍 Emergency Alert Location:', position.coords);
       setUserLocation({
         latitude: position.coords.latitude,
-        longitude: position.coords.longitude
+        longitude: position.coords.longitude,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting location for alerts:', error);
+      // Timeout (code 3) or permission denied: still load alerts without distance filtering
+      // so the feature degrades gracefully instead of going completely dark.
+      if (error?.code === 3 || error?.message === 'Location permission denied') {
+        loadNearbyAlerts();
+      }
     }
   };
 
   const loadNearbyAlerts = async () => {
-    if (!user || !userLocation) return;
+    if (!user) return;
 
     try {
       // Get dismissed alerts for this user
@@ -94,11 +97,13 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
       if (error) throw error;
 
-      // Filter alerts by distance (within 10km), exclude dismissed alerts, and convert to expected format
+      // Filter alerts by distance (within 10km) when location is available.
+      // When location is unknown (timeout/denied), show all active alerts without filtering.
       const nearbyAlerts = (safetyAlerts || [])
         .filter(alert => {
+          if (dismissedAlertIds.has(alert.id)) return false;
+          if (!userLocation) return true; // no location — show everything
           if (!alert.latitude || !alert.longitude) return false;
-          if (dismissedAlertIds.has(alert.id)) return false; // Skip dismissed alerts
           const distance = calculateDistance(
             userLocation.latitude,
             userLocation.longitude,
