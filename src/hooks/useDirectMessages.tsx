@@ -49,15 +49,6 @@ export const useDirectMessages = (userId: string | undefined) => {
     messagesRef.current = messages;
   }, [messages]);
 
-  // Auto-retry queued messages when connection is restored
-  useEffect(() => {
-    if (connectionStatus === "connected" && queue.length > 0) {
-      const retryableMessages = getRetryableMessages();
-      retryableMessages.forEach((msg) => retryQueuedMessage(msg.tempId, msg.content, msg.recipientId));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionStatus, queue.length, retryQueuedMessage, getRetryableMessages]);
-
   // -------------------------------
   // Fetch messages (with cache)
   // -------------------------------
@@ -265,6 +256,17 @@ export const useDirectMessages = (userId: string | undefined) => {
     },
     [sendMessage],
   );
+
+  // Auto-retry queued messages when connection is restored.
+  // Placed here so retryQueuedMessage is declared before it appears in the
+  // dependency array — referencing a const before its declaration is a TDZ error.
+  useEffect(() => {
+    if (connectionStatus === "connected" && queue.length > 0) {
+      const retryableMessages = getRetryableMessages();
+      retryableMessages.forEach((msg) => retryQueuedMessage(msg.tempId, msg.content, msg.recipientId));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionStatus, queue.length, retryQueuedMessage, getRetryableMessages]);
 
   // -------------------------------
   // Auto delivery receipts
