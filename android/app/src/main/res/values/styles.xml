@@ -12,12 +12,28 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Force a dark window background so the safe-area zone above the WebView
+             doesn't show the default DayNight white when the Android system is in
+             light mode. -->
+        <item name="android:windowBackground">@color/windowBackgroundDark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <!-- AndroidX SplashScreen API: dark splash background instead of the
+             default Capacitor splash.png (white with a blue X). -->
+        <item name="windowSplashScreenBackground">@color/windowBackgroundDark</item>
+        <item name="android:windowBackground">@color/windowBackgroundDark</item>
+        <!-- Theme.SplashScreen does NOT inherit windowNoTitle from
+             AppTheme.NoActionBar. Without these the activity's title bar
+             ("Neighborlink") shows above the WebView. -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <!-- After the splash dismisses, transition to the regular no-action-bar
+             theme so the title bar stays hidden for the rest of the session. -->
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

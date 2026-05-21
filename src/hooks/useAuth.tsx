@@ -185,14 +185,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       sessionStorage.clear();
-      window.location.href = '/auth';
+      // Navigation is handled by ProtectedRoute via React Router once user becomes null.
+      // Never use window.location.href on mobile — it reloads the WebView and flashes
+      // the native background color before React can remount.
     } catch (error) {
       console.error("Sign out catch error:", error);
       setUser(null);
       setSession(null);
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/auth';
     }
   }, []);
 

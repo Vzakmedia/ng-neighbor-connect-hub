@@ -70,13 +70,12 @@ const OnboardingScreen = ({ onGetStarted }: OnboardingScreenProps) => {
           style={{ willChange: 'transform, opacity' }}
         >
           {/* Full-screen image background */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].color}`} />
           <img
             src={slides[currentSlide].image}
             alt={slides[currentSlide].title}
-            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Dark gradient overlay from top and bottom */}
+          {/* Dark gradient overlay from top and bottom for text readability */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
 
           {/* Floating header — dots + back/skip over the image */}

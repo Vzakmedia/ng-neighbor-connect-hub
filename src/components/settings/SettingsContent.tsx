@@ -50,6 +50,7 @@ import { useEmailNotifications } from '@/hooks/useEmailNotifications';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { usePrivacySettings } from '@/hooks/usePrivacySettings';
 import { useNativeStorage } from '@/hooks/mobile/useNativeStorage';
+import { SetPasswordForm } from './SetPasswordForm';
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
 const SettingsContent = () => {
@@ -940,6 +941,17 @@ const SettingsContent = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 overflow-x-hidden">
+              <div className="space-y-4">
+                <h3 className="font-medium">
+                  {user?.identities && !user.identities.some(id => id.provider === 'email')
+                    ? 'Set Password'
+                    : 'Change Password'}
+                </h3>
+                <SetPasswordForm />
+              </div>
+
+              <Separator />
+
               <div className="space-y-4">
                 <h3 className="font-medium">Sign Out</h3>
                 <p className="text-sm text-muted-foreground">

@@ -86,11 +86,14 @@ export function useFeedQuery(filters: FeedFilters) {
 
       // Use the RPC get_feed which handles hierarchical location filtering,
       // scope privacy, and the critical "author exception" (users seeing their own posts).
+      // min_created_at = user.created_at means new users start with a clean slate —
+      // they only see posts authored AFTER they joined, never older community history.
       const { data: postsData, error } = await supabase.rpc('get_feed', {
         target_user_id: user.id,
         filter_level: filters.locationScope,
         limit_count: POSTS_PER_PAGE,
-        cursor: cursor
+        cursor: cursor,
+        min_created_at: user.created_at ?? null,
       });
 
       if (error) {

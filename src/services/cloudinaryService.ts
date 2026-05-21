@@ -100,7 +100,7 @@ export const uploadToCloudinary = async (
     formData.append('signature', signatureData.signature);
     formData.append('timestamp', signatureData.timestamp.toString());
     formData.append('api_key', signatureData.api_key);
-    formData.append('folder', folder);
+    formData.append('folder', signatureData.folder);
 
     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
     console.log(`[CloudinaryService] Upload URL: ${uploadUrl}`);

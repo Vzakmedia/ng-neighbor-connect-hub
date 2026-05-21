@@ -2,4 +2,8 @@
 <resources>
     <color name="colorPrimary">#4CAF50</color>
     <color name="colorAccent">#81C784</color>
+    <!-- Activity window background. Shows in any pixels the WebView doesn't cover
+         (notably the safe-area zone above the WebView content on edge-to-edge
+         devices). Must be dark to match the app's dark UI. -->
+    <color name="windowBackgroundDark">#0a0a0a</color>
 </resources>
