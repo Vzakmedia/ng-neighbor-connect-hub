@@ -11,13 +11,13 @@ export const checkPanicButtonRateLimit = async (userId: string): Promise<boolean
     .select('panic_count')
     .eq('user_id', userId)
     .gte('last_panic_at', oneHourAgo.toISOString())
-    .single();
-    
-  if (error && error.code !== 'PGRST116') {
+    .maybeSingle();
+
+  if (error) {
     console.error('Error checking rate limit:', error);
     return true; // fail open for emergency situations
   }
-  
+
   return !data || data.panic_count < 3;
 };
 
@@ -31,9 +31,9 @@ export const updatePanicButtonRateLimit = async (userId: string): Promise<void> 
     .select('id, panic_count')
     .eq('user_id', userId)
     .gte('last_panic_at', oneHourAgo.toISOString())
-    .single();
-    
-  if (selectError && selectError.code !== 'PGRST116') {
+    .maybeSingle();
+
+  if (selectError) {
     console.error('Error fetching rate limit:', selectError);
     return;
   }

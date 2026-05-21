@@ -35,55 +35,28 @@ export function useProfile() {
     let cancelled = false;
 
     const fetchProfile = async () => {
-      if (import.meta.env.DEV) {
-        console.log('useProfile: Starting fetch for user:', user.id);
-      }
       setLoading(true);
       try {
-        // First check if we have a valid session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (import.meta.env.DEV) {
-          console.log('useProfile: Current session:', session ? 'exists' : 'missing');
-        }
-
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (import.meta.env.DEV) {
-          console.log('useProfile: Query result:', { data, error, userId: user.id });
-        }
+        if (cancelled) return;
 
         if (error && error.code !== 'PGRST116') {
-          if (import.meta.env.DEV) {
-            console.error('useProfile: Error fetching profile:', {
-              message: error.message,
-              code: error.code,
-              details: error.details,
-              hint: error.hint
-            });
-          }
+          console.error('useProfile: Error fetching profile:', error.message);
           return;
         }
 
-        if (cancelled) return;
-        if (import.meta.env.DEV) {
-          console.log('useProfile: Setting profile data:', data);
-        }
         setProfile(data || null);
       } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('useProfile: Exception fetching profile:', {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            error: error
-          });
-        }
+        if (cancelled) return;
+        // AbortError is benign — caused by effect cleanup racing with the query
+        if (error instanceof Error && error.name === 'AbortError') return;
+        console.error('useProfile: Exception fetching profile:', error);
       } finally {
-        if (import.meta.env.DEV) {
-          console.log('useProfile: Fetch complete, loading set to false');
-        }
         if (!cancelled) setLoading(false);
       }
     };
