@@ -63,6 +63,16 @@ const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const CompleteProfile = lazyWithRetry(() => import("./pages/CompleteProfile"));
 const VerifyEmail = lazyWithRetry(() => import("./pages/VerifyEmail"));
 const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const AdminLayout         = lazyWithRetry(() => import("./components/admin/layout/AdminLayout").then(m => ({ default: m.AdminLayout })));
+const AdminOverview       = lazyWithRetry(() => import("./pages/admin/Overview"));
+const AdminUsers          = lazyWithRetry(() => import("./pages/admin/Users"));
+const AdminEmergency      = lazyWithRetry(() => import("./pages/admin/Emergency"));
+const AdminContent        = lazyWithRetry(() => import("./pages/admin/Content"));
+const AdminAnalytics      = lazyWithRetry(() => import("./pages/admin/Analytics"));
+const AdminMarketplace    = lazyWithRetry(() => import("./pages/admin/Marketplace"));
+const AdminIntegrations   = lazyWithRetry(() => import("./pages/admin/Integrations"));
+const AdminSecurity       = lazyWithRetry(() => import("./pages/admin/Security"));
+const AdminApiRequests    = lazyWithRetry(() => import("./pages/admin/ApiRequests"));
 const Business = lazyWithRetry(() => import("./pages/Business"));
 const Advertising = lazyWithRetry(() => import("./pages/Advertising"));
 const ModeratorDashboard = lazyWithRetry(() => import("./pages/ModeratorDashboard"));
@@ -352,8 +362,20 @@ const App = () => {
                           <Route path="/advertising/create" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
 
                           {/* ─── Privileged routes (role-gated) ─── */}
-                          <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
-                          <Route path="/admin/api-requests" element={<ProtectedRoute requiredRole="admin"><ApiRequestsAdmin /></ProtectedRoute>} />
+                          <Route
+                            path="/admin"
+                            element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}
+                          >
+                            <Route index element={<AdminOverview />} />
+                            <Route path="users"        element={<AdminUsers />} />
+                            <Route path="emergency"    element={<AdminEmergency />} />
+                            <Route path="content"      element={<AdminContent />} />
+                            <Route path="analytics"    element={<AdminAnalytics />} />
+                            <Route path="marketplace"  element={<AdminMarketplace />} />
+                            <Route path="integrations" element={<AdminIntegrations />} />
+                            <Route path="security"     element={<AdminSecurity />} />
+                            <Route path="api-requests" element={<AdminApiRequests />} />
+                          </Route>
                           <Route path="/moderator" element={<ProtectedRoute requiredRole="moderator"><ModeratorDashboard /></ProtectedRoute>} />
                           <Route path="/manager" element={<ProtectedRoute requiredRole="manager"><ManagerDashboard /></ProtectedRoute>} />
                           <Route path="/support" element={<ProtectedRoute requiredRole="support"><SupportDashboard /></ProtectedRoute>} />
