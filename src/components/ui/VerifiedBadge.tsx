@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -28,14 +27,22 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <CheckCircle2
-            className={cn(
-              sizeClasses[size],
-              'text-[hsl(162_85%_30%)] fill-[hsl(162_85%_30%)] [&>path:first-child]:fill-white shrink-0',
-              className
-            )}
+          <svg
+            className={cn(sizeClasses[size], 'shrink-0', className)}
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
             aria-label="Verified member"
-          />
+          >
+            <circle cx="12" cy="12" r="10" fill="#10B981" />
+            <path
+              d="M8.5 12.5L10.5 14.5L15.5 9.5"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs px-2 py-1">
           Verified member
@@ -46,3 +53,4 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
 };
 
 export default VerifiedBadge;
+
