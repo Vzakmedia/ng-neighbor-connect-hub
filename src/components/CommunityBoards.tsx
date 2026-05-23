@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtimeUtils';
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,6 +125,7 @@ interface BoardMember {
     avatar_url: string | null;
     city: string | null;
     state: string | null;
+    is_verified?: boolean;
   } | null;
 }
 
@@ -165,6 +167,7 @@ interface BoardPost {
     neighborhood: string | null;
     city: string | null;
     state: string | null;
+    is_verified?: boolean;
   } | null;
   likes_count: number;
   is_liked_by_user: boolean;
@@ -395,7 +398,7 @@ const CommunityBoards = () => {
         ? { data: [], error: null }
         : await supabase
             .from('profiles')
-            .select('user_id, full_name, avatar_url, city, state')
+            .select('user_id, full_name, avatar_url, city, state, is_verified')
             .in('user_id', userIds);
 
       if (profilesError) throw profilesError;
@@ -406,6 +409,7 @@ const CommunityBoards = () => {
           avatar_url: profile.avatar_url,
           city: profile.city,
           state: profile.state,
+          is_verified: profile.is_verified
         }])
       );
 
@@ -657,7 +661,7 @@ const CommunityBoards = () => {
     try {
       const { data: publicBoardsData, error } = await supabase
         .from('discussion_boards')
-        .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url)`)
+        .select(`*, creator:profiles!discussion_boards_creator_id_fkey(full_name, avatar_url, is_verified)`)
         .eq('is_public', true as any)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -753,7 +757,8 @@ const CommunityBoards = () => {
             avatar_url,
             neighborhood,
             city,
-            state
+            state,
+            is_verified
           )
         `)
         .eq('board_id', selectedBoard as any)
@@ -1003,7 +1008,8 @@ const CommunityBoards = () => {
                           avatar_url,
                           neighborhood,
                           city,
-                          state
+                          state,
+                          is_verified
                         )
                       `)
                       .eq('id', payload.new.id)
@@ -1260,9 +1266,12 @@ const CommunityBoards = () => {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">
-                          {post.profiles?.full_name || 'Anonymous'}
-                        </span>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <span className="font-medium truncate">
+                            {post.profiles?.full_name || 'Anonymous'}
+                          </span>
+                          {post.profiles?.is_verified && <VerifiedBadge size="xs" />}
+                        </div>
                         <span className="text-xs text-muted-foreground">
                           {new Date(post.created_at).toLocaleTimeString()}
                         </span>
@@ -1549,7 +1558,10 @@ const CommunityBoards = () => {
                       <AvatarFallback>{member.profiles?.full_name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{member.profiles?.full_name || 'Unknown User'}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="font-medium">{member.profiles?.full_name || 'Unknown User'}</p>
+                        {member.profiles?.is_verified && <VerifiedBadge size="xs" />}
+                      </div>
                       <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
                     </div>
                   </div>
