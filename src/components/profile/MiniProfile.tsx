@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageCircle, User, MapPin, Calendar, Shield } from "@/lib/icons";
+import { MessageCircle, User, MapPin, Calendar } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useNavigate } from "react-router-dom"; // Assuming we have this
 import { DirectMessageDialog } from "@/components/DirectMessageDialog";
+import { getDiceBearUrl } from "@/lib/dicebear";
 
 interface PublicProfile {
     user_id: string;
@@ -99,14 +101,14 @@ export const MiniProfile = ({ userId, userName, userAvatar, isOpen, onClose }: M
             ) : profile ? (
                 <>
                     <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                        <AvatarImage src={profile?.avatar_url || userAvatar} />
+                        <AvatarImage src={profile?.avatar_url || userAvatar || getDiceBearUrl(profile?.user_id || userId || '')} />
                         <AvatarFallback className="text-2xl">{(profile?.display_name || userName || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
 
                     <div className="text-center space-y-1 w-full">
                         <div className="flex items-center justify-center gap-2">
                             <h3 className="text-xl font-bold">{profile?.display_name || userName || 'Anonymous'}</h3>
-                            {profile?.is_verified && <Shield className="w-4 h-4 text-blue-500" />}
+                            {profile?.is_verified && <VerifiedBadge size="md" />}
                         </div>
 
                         {(profile.neighborhood || profile.city) && (

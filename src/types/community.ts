@@ -6,6 +6,7 @@ export interface PostAuthor {
   avatar_url?: string;
   city?: string;
   state?: string;
+  is_verified?: boolean;
 }
 
 export interface PostEngagement {

@@ -349,13 +349,14 @@ export class AdvertisingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: roleRow } = await supabase
+        .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      if (profile?.role !== 'admin') throw new Error('Unauthorized: Admin access required');
+      const userRole = roleRow?.role;
+      if (userRole !== 'admin' && userRole !== 'super_admin') throw new Error('Unauthorized: Admin access required');
 
       const { error } = await supabase
         .from('advertisement_campaigns')
@@ -383,13 +384,14 @@ export class AdvertisingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: roleRow } = await supabase
+        .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      if (profile?.role !== 'admin') throw new Error('Unauthorized: Admin access required');
+      const userRole = roleRow?.role;
+      if (userRole !== 'admin' && userRole !== 'super_admin') throw new Error('Unauthorized: Admin access required');
 
       const { error } = await supabase
         .from('advertisement_campaigns')

@@ -34,6 +34,7 @@ interface FeedPost {
   updated_at: string;
   author_name: string;
   author_avatar: string | null;
+  author_is_verified: boolean;
   author_city: string | null;
   author_state: string | null;
   like_count: number;
@@ -117,6 +118,7 @@ export function useFeedQuery(filters: FeedFilters) {
         updated_at: post.updated_at,
         author_name: post.author_name || 'Anonymous User',
         author_avatar: post.author_avatar || null,
+        author_is_verified: (post as any).author_is_verified ?? false,
         author_city: post.author_city || post.target_city || null,
         author_state: post.author_state || post.target_state || null,
         like_count: Number(post.likes_count) || 0,
@@ -433,6 +435,7 @@ export function useCreatePost() {
         updated_at: new Date().toISOString(),
         author_name: profile?.full_name || 'You',
         author_avatar: profile?.avatar_url || null,
+        author_is_verified: profile?.is_verified ?? false,
         author_city: profile?.city || null,
         author_state: profile?.state || null,
         like_count: 0,

@@ -193,7 +193,7 @@ export const MobileDrawer = ({
           {hasStaffRole && (
             <div className="pt-6 mt-6 border-t">
               <button
-                onClick={() => handleNavigation('/staff')}
+                onClick={() => handleNavigation('/staff-portal')}
                 className="w-full flex items-center gap-4 p-4 rounded-lg hover:bg-muted/50 transition-all"
               >
                 <ShieldCheckIcon className="h-5 w-5 flex-shrink-0 text-orange-500" />

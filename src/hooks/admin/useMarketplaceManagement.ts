@@ -135,11 +135,12 @@ export const useMarketplaceManagement = () => {
             if (error) throw error;
 
             // Log the flag
-            await supabase.from('flagged_content').insert({
+            await supabase.from('content_reports').insert({
                 content_type: 'marketplace_item',
                 content_id: itemId,
                 reason,
-            });
+                status: 'pending',
+            } as any);
 
             toast({
                 title: 'Item Flagged',

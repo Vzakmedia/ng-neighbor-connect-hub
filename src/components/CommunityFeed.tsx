@@ -105,6 +105,7 @@ export const CommunityFeed = ({
         user_id: item.user_id,
         full_name: item.author_name,
         avatar_url: item.author_avatar,
+        is_verified: item.author_is_verified,
       },
       likes_count: item.like_count,
       comments_count: item.comment_count,

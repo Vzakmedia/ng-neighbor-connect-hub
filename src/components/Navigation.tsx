@@ -232,8 +232,8 @@ const Navigation = () => {
                   <div className="border-t border-muted" />
                 </div>
                 <button
-                  onClick={() => navigate('/staff')}
-                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${location.pathname === '/staff'
+                  onClick={() => navigate('/staff-portal')}
+                  className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-3 py-2 text-sm rounded-md transition-colors relative group ${location.pathname.startsWith('/staff-portal')
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-foreground hover:bg-muted'
                     }`}

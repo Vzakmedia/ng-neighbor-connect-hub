@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar, Users, Building, Home as HomeIcon, Globe, MoreVertical } from '@/lib/icons';
 import { CardHeader } from '@/components/ui/card';
 import { OnlineAvatar } from '@/components/OnlineAvatar';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { PostAuthor } from '@/types/community';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -86,6 +87,7 @@ export const PostCardHeader = ({
             <span className="font-medium truncate max-w-[120px] sm:max-w-none">
               {author.full_name || "Anonymous"}
             </span>
+            {author.is_verified && <VerifiedBadge size="sm" />}
             <span className="text-muted-foreground hidden sm:inline">·</span>
             <span className="text-muted-foreground truncate max-w-[100px] sm:max-w-none">{getLocation()}</span>
             <span className="text-muted-foreground hidden sm:inline">·</span>

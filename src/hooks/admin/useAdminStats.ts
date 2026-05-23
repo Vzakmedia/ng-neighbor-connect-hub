@@ -84,10 +84,10 @@ export const useAdminStats = () => {
                 supabase.from('events').select('id', { count: 'exact', head: true }).gte('event_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
                 supabase.from('safety_alerts').select('id', { count: 'exact', head: true }),
                 supabase.from('marketplace_items').select('id', { count: 'exact', head: true }),
-                supabase.from('promotions').select('id', { count: 'exact', head: true }),
-                supabase.from('flagged_content').select('id', { count: 'exact', head: true }),
+                supabase.from('promotion_campaigns').select('id', { count: 'exact', head: true }),
+                supabase.from('content_reports').select('id', { count: 'exact', head: true }),
                 supabase.from('advertisement_campaigns').select('id', { count: 'exact', head: true }),
-                supabase.from('automations').select('id', { count: 'exact', head: true }).eq('is_active', true),
+                Promise.resolve({ count: 0, error: null }), // automations table not present
                 supabase.from('app_configuration').select('id', { count: 'exact', head: true }),
             ]);
 

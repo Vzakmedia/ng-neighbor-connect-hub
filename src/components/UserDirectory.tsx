@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { MagnifyingGlassIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ShieldCheckIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
+import { getDiceBearUrl } from '@/lib/dicebear';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfileDialog } from './UserProfileDialog';
 import { DirectMessageDialog } from './DirectMessageDialog';
@@ -177,7 +179,7 @@ export const UserDirectory = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-4 flex-1">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile.avatar_url || undefined} />
+                    <AvatarImage src={profile.avatar_url || getDiceBearUrl(profile.user_id)} />
                     <AvatarFallback className="text-lg">
                       {profile.display_name?.split(' ').map(n => n[0]).join('') || 'U'}
                     </AvatarFallback>
@@ -186,11 +188,7 @@ export const UserDirectory = () => {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center space-x-2">
                       <h3 className="text-lg font-semibold">{profile.display_name || 'Anonymous User'}</h3>
-                      {profile.is_verified && (
-                        <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded-full">
-                          <ShieldCheckIcon className="h-3 w-3 text-white" />
-                        </div>
-                      )}
+                      {profile.is_verified && <VerifiedBadge size="sm" />}
                     </div>
                     
                     <div className="flex items-center space-x-2 text-muted-foreground">

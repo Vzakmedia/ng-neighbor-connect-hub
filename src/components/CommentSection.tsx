@@ -3,12 +3,14 @@ import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtim
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import OnlineAvatar from '@/components/OnlineAvatar';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PaperAirplaneIcon, HeartIcon, ChatBubbleLeftIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/integrations/supabase/client';
+import { getDiceBearUrl } from '@/lib/dicebear';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +25,7 @@ interface Comment {
     user_id: string;
     full_name: string | null;
     avatar_url: string | null;
+    is_verified?: boolean;
   } | null;
   likes_count: number;
   is_liked_by_user: boolean;
@@ -91,7 +94,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
 
       const { data: profilesDataRaw, error: profilesError } = await supabase
         .from('display_profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, avatar_url, is_verified')
         .in('user_id', userIds);
 
       if (profilesError) {
@@ -115,6 +118,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
         user_id: p.user_id,
         full_name: p.display_name ?? null,
         avatar_url: p.avatar_url ?? null,
+        is_verified: p.is_verified ?? false,
       }));
       const profilesMap = new Map(profilesData.map((profile: any) => [profile.user_id, profile]));
 
@@ -588,8 +592,9 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
         <div className="group relative">
           <div className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors rounded-lg px-4 py-3 border-l-4 border-primary shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-semibold comment-text-visible truncate cursor-pointer hover:underline" onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User')}>
+              <span className="flex items-center gap-1 text-sm font-semibold comment-text-visible truncate cursor-pointer hover:underline" onClick={() => onAvatarClick?.(comment.profiles?.full_name || 'Anonymous User')}>
                 {comment.profiles?.full_name || 'Anonymous User'}
+                {comment.profiles?.is_verified && <VerifiedBadge size="xs" />}
               </span>
               <span className="text-xs comment-timestamp-visible shrink-0">
                 {formatTimeAgo(comment.created_at)}
@@ -684,7 +689,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                                   className="flex items-center gap-2 cursor-pointer py-2 px-3"
                                 >
                                   <Avatar className="h-5 w-5">
-                                    <AvatarImage src={user.avatar_url || undefined} />
+                                    <AvatarImage src={user.avatar_url || getDiceBearUrl(user.user_id)} />
                                     <AvatarFallback className="text-[10px]">
                                       {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                                     </AvatarFallback>
@@ -792,7 +797,7 @@ const CommentSection = ({ postId, commentCount, onAvatarClick, isInline = false 
                             className="flex items-center gap-3 cursor-pointer py-2.5 px-3 hover:bg-muted/50 transition-colors"
                           >
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarImage src={user.avatar_url || getDiceBearUrl(user.user_id)} />
                               <AvatarFallback className="text-[10px]">
                                 {user.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                               </AvatarFallback>

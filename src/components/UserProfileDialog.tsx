@@ -10,6 +10,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import {
   MapPin,
   MessageCircle,
@@ -17,7 +18,6 @@ import {
   Calendar,
   Phone,
   Mail,
-  Shield
 } from '@/lib/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ImageGalleryDialog } from '@/components/ImageGalleryDialog';
 import { PostFullScreenDialog } from '@/components/PostFullScreenDialog';
 import { DirectMessageDialog } from '@/components/DirectMessageDialog';
+import { getDiceBearUrl } from '@/lib/dicebear';
 
 interface UserProfile {
   id: string;
@@ -239,7 +240,7 @@ export const UserProfileDialog = ({
                 className="h-20 w-20 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleAvatarClick}
               >
-                <AvatarImage src={profile.avatar_url || userAvatar} />
+                <AvatarImage src={profile.avatar_url || userAvatar || getDiceBearUrl(profile.user_id)} />
                 <AvatarFallback className="text-lg">
                   {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                 </AvatarFallback>
@@ -248,12 +249,7 @@ export const UserProfileDialog = ({
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
                   <h2 className="text-2xl font-bold">{profile.full_name || 'Anonymous User'}</h2>
-                  {profile.is_verified && (
-                    <Badge variant="default" className="bg-blue-500">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
+                  {profile.is_verified && <VerifiedBadge size="md" />}
                 </div>
 
                 <div className="flex items-center space-x-2 text-muted-foreground mb-3">

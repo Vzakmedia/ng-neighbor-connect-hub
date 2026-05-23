@@ -570,3 +570,215 @@ All colors MUST be HSL.
   font-weight: 600;
   color: hsl(var(--primary));
 }
+
+/* ============================================================
+   Admin & Staff Portal - Premium Dark Theme
+   ============================================================ */
+
+/* Portal background: deep slate with subtle radial gradient */
+.staff-portal-bg,
+.admin-portal-bg {
+  background: linear-gradient(135deg, #0a0f1e 0%, #0d1626 40%, #0a1220 100%);
+  background-attachment: fixed;
+  position: relative;
+}
+
+.staff-portal-bg::before,
+.admin-portal-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glassmorphism card */
+.staff-portal-card,
+.admin-portal-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 1;
+}
+
+.staff-portal-card:hover,
+.admin-portal-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Header bar */
+.staff-portal-header,
+.admin-portal-header {
+  background: rgba(10, 15, 30, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Admin tab styles */
+.admin-tab-active {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: rgb(52, 211, 153) !important;
+  border-bottom: 2px solid rgb(16, 185, 129) !important;
+}
+
+/* Table inside portals */
+.portal-table th {
+  color: rgb(148, 163, 184);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.portal-table td {
+  color: rgb(226, 232, 240);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.portal-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Stat value text */
+.portal-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+/* Status indicator dots */
+.portal-dot-green { background: rgb(52, 211, 153); box-shadow: 0 0 8px rgb(52 211 153 / 0.6); }
+.portal-dot-red { background: rgb(248, 113, 113); box-shadow: 0 0 8px rgb(248 113 113 / 0.6); }
+.portal-dot-amber { background: rgb(251, 191, 36); box-shadow: 0 0 8px rgb(251 191 36 / 0.6); }
+
+/* Input inside portals */
+.portal-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.portal-input::placeholder {
+  color: rgb(100, 116, 139) !important;
+}
+
+.portal-input:focus {
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+  outline: none !important;
+}
+
+/* Badge variants for portals */
+.portal-badge-green {
+  background: rgba(16, 185, 129, 0.1);
+  color: rgb(52, 211, 153);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.portal-badge-red {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(248, 113, 113);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.portal-badge-amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: rgb(251, 191, 36);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.portal-badge-blue {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(147, 197, 253);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+.portal-badge-purple {
+  background: rgba(139, 92, 246, 0.1);
+  color: rgb(196, 181, 253);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Divider */
+.portal-divider {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Admin panel wrapper — forces child shadcn cards to look right on dark bg */
+.admin-panel-wrapper .card,
+.admin-panel-wrapper [class*="rounded-lg border"],
+.admin-panel-wrapper [class*="rounded-xl border"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+}
+
+.admin-panel-wrapper [class*="text-foreground"],
+.admin-panel-wrapper [class*="text-card-foreground"] {
+  color: rgb(226, 232, 240) !important;
+}
+
+.admin-panel-wrapper [class*="text-muted-foreground"] {
+  color: rgb(100, 116, 139) !important;
+}
+
+.admin-panel-wrapper input,
+.admin-panel-wrapper textarea,
+.admin-panel-wrapper select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.admin-panel-wrapper input::placeholder,
+.admin-panel-wrapper textarea::placeholder {
+  color: rgb(100, 116, 139) !important;
+}
+
+.admin-panel-wrapper th {
+  color: rgb(148, 163, 184) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-panel-wrapper td {
+  color: rgb(203, 213, 225) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.admin-panel-wrapper tr:hover td {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Progress bar on dark bg */
+.admin-panel-wrapper [role="progressbar"] > div {
+  background: linear-gradient(90deg, rgb(16, 185, 129), rgb(52, 211, 153)) !important;
+}
+
+/* Skeleton on dark bg */
+.admin-panel-wrapper [class*="animate-pulse"] {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Button variants in dark portal */
+.admin-panel-wrapper button[class*="variant-outline"],
+.admin-panel-wrapper .btn-outline {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: rgb(203, 213, 225) !important;
+  background: transparent !important;
+}
+
+.admin-panel-wrapper button[class*="variant-outline"]:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+}
+

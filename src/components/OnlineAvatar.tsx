@@ -2,6 +2,7 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePresence } from '@/contexts/PresenceContext';
 import { cn } from '@/lib/utils';
+import { getDiceBearUrl } from '@/lib/dicebear';
 
 interface OnlineAvatarProps {
   userId?: string;
@@ -40,11 +41,14 @@ export const OnlineAvatar: React.FC<OnlineAvatarProps> = ({
   return (
     <div className="relative inline-block">
       <Avatar className={cn(sizeClasses[size], className)}>
-        <AvatarImage src={src} alt="User avatar" />
+        <AvatarImage
+          src={src || getDiceBearUrl(userId || fallback)}
+          alt="User avatar"
+        />
         <AvatarFallback className={cn(
           'text-xs',
           size === 'sm' && 'text-xs',
-          size === 'md' && 'text-xs', 
+          size === 'md' && 'text-xs',
           size === 'lg' && 'text-sm',
           size === 'xl' && 'text-base'
         )}>
