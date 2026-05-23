@@ -40,6 +40,7 @@ export interface CommunityPost {
   updated_at: string;
   author_name: string;
   author_avatar: string | null;
+  author_is_verified?: boolean;
   author_city: string | null;
   author_state: string | null;
   rsvp_enabled: boolean;

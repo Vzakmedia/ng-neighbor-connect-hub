@@ -20,6 +20,7 @@ export function transformToCardData(post: CommunityPost & {
       avatar_url: post.author_avatar ?? undefined,
       city: post.author_city ?? undefined,
       state: post.author_state ?? undefined,
+      is_verified: post.author_is_verified ?? false,
     },
     likes_count: post.like_count,
     comments_count: post.comment_count,
