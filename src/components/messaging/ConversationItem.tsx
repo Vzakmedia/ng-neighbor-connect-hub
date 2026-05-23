@@ -3,6 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { Badge } from '@/components/ui/badge';
 import { type Conversation } from '@/hooks/useConversations';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -46,11 +47,14 @@ const ConversationItem = React.memo<ConversationItemProps>(({
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <p className={`font-medium truncate ${
-              hasUnread ? 'text-foreground' : 'text-muted-foreground'
-            }`}>
-              {conversation.other_user_name}
-            </p>
+            <div className="flex items-center gap-1 min-w-0">
+              <p className={`font-medium truncate ${
+                hasUnread ? 'text-foreground' : 'text-muted-foreground'
+              }`}>
+                {conversation.other_user_name}
+              </p>
+              {conversation.other_user_is_verified && <VerifiedBadge size="xs" />}
+            </div>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
             </span>

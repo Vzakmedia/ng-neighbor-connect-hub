@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useConversations } from '@/hooks/useConversations';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { usePresence } from '@/contexts/PresenceContext';
 import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { useMessageActions } from '@/hooks/useMessageActions';
@@ -169,7 +170,7 @@ const Chat = () => {
         const otherUserId = convData.user1_id === user.id ? convData.user2_id : convData.user1_id;
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('user_id, full_name, avatar_url, phone')
+          .select('user_id, full_name, avatar_url, phone, is_verified')
           .eq('user_id', otherUserId)
           .maybeSingle();
 
@@ -179,6 +180,7 @@ const Chat = () => {
           other_user_name: profileData?.full_name || 'Unknown User',
           other_user_avatar: profileData?.avatar_url || null,
           other_user_phone: profileData?.phone || null,
+          other_user_is_verified: profileData?.is_verified || false,
         };
 
         console.log('Conversation found:', formattedConversation);
@@ -341,8 +343,9 @@ const Chat = () => {
               />
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <h1 className="font-semibold truncate text-sm md:text-base">{conversation.other_user_name}</h1>
+                  {conversation.other_user_is_verified && <VerifiedBadge size="sm" />}
                   {isUserOnline(conversation.other_user_id) && (
                     <span className="text-xs text-green-500 font-medium">Online</span>
                   )}

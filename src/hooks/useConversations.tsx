@@ -13,6 +13,7 @@ export interface Conversation {
   other_user_name: string;
   other_user_avatar: string | null;
   other_user_phone: string | null;
+  other_user_is_verified?: boolean;
   request_status?: 'pending' | 'accepted' | 'declined';
 }
 
@@ -117,7 +118,8 @@ export const useConversations = (userId: string | undefined) => {
               user_id: profile.user_id,
               full_name: profile.full_name,
               avatar_url: profile.avatar_url,
-              phone: null // phone is not included in public profile info for security
+              phone: null, // phone is not included in public profile info for security
+              is_verified: profile.is_verified
             }];
           })
       );
@@ -133,6 +135,7 @@ export const useConversations = (userId: string | undefined) => {
           other_user_name: otherUser?.full_name || 'Unknown User',
           other_user_avatar: otherUser?.avatar_url || null,
           other_user_phone: otherUser?.phone || null,
+          other_user_is_verified: otherUser?.is_verified || false,
         };
       });
 

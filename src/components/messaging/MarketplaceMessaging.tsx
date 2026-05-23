@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Package } from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface MarketplaceConversation {
   id: string;
@@ -21,6 +22,7 @@ interface MarketplaceConversation {
   item_title?: string;
   service_title?: string;
   conversation_type: string;
+  other_user_is_verified?: boolean;
 }
 
 export const MarketplaceMessaging: React.FC = () => {
@@ -126,7 +128,8 @@ export const MarketplaceMessaging: React.FC = () => {
             marketplace_service_id: conv.marketplace_service_id,
             item_title: itemTitle,
             service_title: serviceTitle,
-            conversation_type: conv.conversation_type
+            conversation_type: conv.conversation_type,
+            other_user_is_verified: otherUserProfile?.is_verified || false
           };
         })
       );
@@ -263,11 +266,14 @@ export const MarketplaceMessaging: React.FC = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className={`font-medium text-sm truncate ${
-                        conversation.has_unread ? 'font-semibold' : ''
-                      }`}>
-                        {conversation.other_user_name}
-                      </h3>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <h3 className={`font-medium text-sm truncate ${
+                          conversation.has_unread ? 'font-semibold' : ''
+                        }`}>
+                          {conversation.other_user_name}
+                        </h3>
+                        {conversation.other_user_is_verified && <VerifiedBadge size="xs" />}
+                      </div>
                       <span className="text-xs text-muted-foreground">
                         {new Date(conversation.last_message_at).toLocaleDateString()}
                       </span>
@@ -307,6 +313,7 @@ export const MarketplaceMessaging: React.FC = () => {
             otherUserName={selectedConv.other_user_name}
             otherUserAvatar={selectedConv.other_user_avatar}
             otherUserId={selectedConv.other_user_id}
+            otherUserIsVerified={selectedConv.other_user_is_verified}
             conversationType="marketplace"
             onBack={handleBackToConversations}
           />

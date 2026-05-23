@@ -4,12 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface UserSearchProps {
   onUserSelect: (user: {
     id: string;
     user_id: string;
     full_name: string | null;
+    is_verified?: boolean | null;
   }) => void;
 }
 
@@ -18,6 +20,7 @@ interface SearchResult {
   user_id: string;
   full_name: string | null;
   avatar_url: string | null;
+  is_verified: boolean | null;
 }
 
 const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
@@ -37,7 +40,7 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
     try {
       const { data, error } = await supabase
         .from('display_profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, avatar_url, is_verified')
         .or(`display_name.ilike.%${term}%`)
         .neq('user_id', user.id)
         .limit(10);
@@ -47,7 +50,13 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
         return;
       }
 
-      setSearchResults((data || []).map((d: any) => ({ id: d.user_id, user_id: d.user_id, full_name: d.display_name ?? null, avatar_url: d.avatar_url ?? null })));
+      setSearchResults((data || []).map((d: any) => ({
+        id: d.user_id,
+        user_id: d.user_id,
+        full_name: d.display_name ?? null,
+        avatar_url: d.avatar_url ?? null,
+        is_verified: d.is_verified ?? false
+      })));
     } catch (error) {
       console.error('Search error:', error);
     } finally {
@@ -114,10 +123,11 @@ const UserSearch: React.FC<UserSearchProps> = ({ onUserSelect }) => {
                   </AvatarFallback>
                 </Avatar>
                 
-                <div className="flex-1">
+                <div className="flex-1 flex items-center gap-1.5 min-w-0">
                   <p className="text-sm font-medium">
                     {result.full_name || 'Unknown User'}
                   </p>
+                  {result.is_verified && <VerifiedBadge size="xs" />}
                 </div>
               </div>
             ))}

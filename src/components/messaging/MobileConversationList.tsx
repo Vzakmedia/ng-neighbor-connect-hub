@@ -7,6 +7,7 @@ import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import type { Conversation } from '@/hooks/useConversations';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface MobileConversationListProps {
   conversations: Conversation[];
@@ -109,9 +110,12 @@ const MobileConversationList = ({ conversations, loading, userId }: MobileConver
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className={`font-medium truncate ${hasUnread ? 'text-foreground' : 'text-foreground/90'}`}>
-                        {conversation.other_user_name || 'Unknown User'}
-                      </h3>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <h3 className={`font-medium truncate ${hasUnread ? 'text-foreground' : 'text-foreground/90'}`}>
+                          {conversation.other_user_name || 'Unknown User'}
+                        </h3>
+                        {conversation.other_user_is_verified && <VerifiedBadge size="xs" />}
+                      </div>
                       {lastMessageTime && (
                         <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
                           {formatDistanceToNow(new Date(lastMessageTime), { addSuffix: true })}

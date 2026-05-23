@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, ArrowLeft, Package, ShoppingBag } from '@/lib/icons';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,6 +27,7 @@ interface MarketplaceMessageThreadProps {
   otherUserAvatar: string | null;
   otherUserId: string;
   conversationType: string;
+  otherUserIsVerified?: boolean;
   onBack?: () => void;
 }
 
@@ -35,6 +37,7 @@ const MarketplaceMessageThread: React.FC<MarketplaceMessageThreadProps> = ({
   otherUserAvatar,
   otherUserId,
   conversationType,
+  otherUserIsVerified,
   onBack
 }) => {
   const { user } = useAuth();
@@ -197,7 +200,10 @@ const MarketplaceMessageThread: React.FC<MarketplaceMessageThreadProps> = ({
         </Avatar>
         
         <div className="flex-1">
-          <h3 className="font-semibold">{otherUserName}</h3>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="font-semibold truncate">{otherUserName}</h3>
+            {otherUserIsVerified && <VerifiedBadge size="sm" />}
+          </div>
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             {conversationType === 'marketplace' && (
               <>

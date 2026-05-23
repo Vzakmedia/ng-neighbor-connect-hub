@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, X, MessageCircle } from '@/lib/icons';
 import { useToast } from '@/hooks/use-toast';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface MessageRequest {
   id: string;
@@ -18,6 +19,7 @@ interface MessageRequest {
   sender_avatar: string | null;
   latest_message: string | null;
   message_count: number;
+  sender_is_verified?: boolean;
 }
 
 interface MessageRequestsListProps {
@@ -91,7 +93,8 @@ export const MessageRequestsList: React.FC<MessageRequestsListProps> = ({
             sender_name: senderProfile?.full_name || 'Unknown User',
             sender_avatar: senderProfile?.avatar_url || null,
             latest_message: messageData?.content || null,
-            message_count: count || 0
+            message_count: count || 0,
+            sender_is_verified: senderProfile?.is_verified || false
           };
         })
       );
@@ -203,9 +206,12 @@ export const MessageRequestsList: React.FC<MessageRequestsListProps> = ({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-medium text-sm truncate">
-                    {request.sender_name}
-                  </h3>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h3 className="font-medium text-sm truncate">
+                      {request.sender_name}
+                    </h3>
+                    {request.sender_is_verified && <VerifiedBadge size="xs" />}
+                  </div>
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(request.requested_at), { addSuffix: true })}
                   </span>

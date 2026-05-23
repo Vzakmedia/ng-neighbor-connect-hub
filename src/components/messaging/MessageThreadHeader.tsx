@@ -3,6 +3,7 @@ import { ArrowLeft, Search, X, Phone, Video } from '@/lib/icons';
 import { Button } from '@/components/ui/button';
 import OnlineAvatar from '@/components/OnlineAvatar';
 import { type Conversation } from '@/hooks/useConversations';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 interface MessageThreadHeaderProps {
   conversation: Conversation;
@@ -45,8 +46,9 @@ const MessageThreadHeader: React.FC<MessageThreadHeaderProps> = ({
           fallback={getInitials(conversation.other_user_name)}
           size="md"
         />
-        <div className="flex-1">
-          <h3 className="font-semibold text-base">{conversation.other_user_name || 'Unknown User'}</h3>
+        <div className="flex-1 flex items-center gap-1.5 min-w-0">
+          <h3 className="font-semibold text-base truncate">{conversation.other_user_name || 'Unknown User'}</h3>
+          {conversation.other_user_is_verified && <VerifiedBadge size="sm" />}
         </div>
 
         <Button

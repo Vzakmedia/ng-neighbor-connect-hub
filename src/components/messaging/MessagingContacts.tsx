@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { 
   Search, 
   Users, 
@@ -55,6 +56,7 @@ interface EmergencyContact {
     user_id: string;
     full_name: string;
     avatar_url?: string;
+    is_verified?: boolean;
   };
 }
 
@@ -68,6 +70,7 @@ interface ContactRequest {
     full_name: string;
     phone: string;
     avatar_url?: string;
+    is_verified?: boolean;
   };
 }
 
@@ -78,6 +81,7 @@ interface UserContact {
   phone?: string;
   avatar_url?: string;
   last_seen?: string;
+  is_verified?: boolean;
 }
 
 interface MessagingContactsProps {
@@ -117,7 +121,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       (data || []).map(async (contact) => {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('user_id, full_name, avatar_url')
+          .select('user_id, full_name, avatar_url, is_verified')
           .eq('phone', contact.phone_number)
           .single();
 
@@ -151,7 +155,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
       (data || []).map(async (request) => {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone, avatar_url')
+          .select('full_name, phone, avatar_url, is_verified')
           .eq('user_id', request.sender_id)
           .single();
 
@@ -268,7 +272,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
     try {
       const { data, error } = await supabase
         .from('display_profiles')
-        .select('user_id, display_name, avatar_url')
+        .select('user_id, display_name, avatar_url, is_verified')
         .neq('user_id', user?.id)
         .or(`display_name.ilike.%${query}%`)
         .limit(10);
@@ -283,7 +287,8 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
         id: user.user_id,
         user_id: user.user_id,
         full_name: user.display_name || '',
-        avatar_url: user.avatar_url
+        avatar_url: user.avatar_url,
+        is_verified: user.is_verified || false
       })));
     } catch (error) {
       console.error('Error searching users:', error);
@@ -510,7 +515,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-sm">{user.full_name}</p>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <p className="font-medium text-sm">{user.full_name}</p>
+                              {user.is_verified && <VerifiedBadge size="xs" />}
+                            </div>
                             {user.phone && (
                               <p className="text-xs text-muted-foreground">{user.phone}</p>
                             )}
@@ -577,7 +585,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{request.sender_profile?.full_name}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="font-medium">{request.sender_profile?.full_name}</p>
+                      {request.sender_profile?.is_verified && <VerifiedBadge size="xs" />}
+                    </div>
                     <p className="text-sm text-muted-foreground">{request.sender_profile?.phone}</p>
                   </div>
                 </div>
@@ -620,7 +631,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{contact.full_name}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="font-medium">{contact.full_name}</p>
+                      {contact.is_verified && <VerifiedBadge size="xs" />}
+                    </div>
                     {contact.phone && (
                       <p className="text-sm text-muted-foreground">{contact.phone}</p>
                     )}
@@ -662,7 +676,10 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{contact.contact_name}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="font-medium">{contact.contact_name}</p>
+                        {contact.user_profile?.is_verified && <VerifiedBadge size="xs" />}
+                      </div>
                       {contact.is_primary && (
                         <Badge variant="outline" className="text-xs">Primary</Badge>
                       )}
