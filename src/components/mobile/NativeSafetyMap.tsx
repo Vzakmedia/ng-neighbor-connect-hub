@@ -40,6 +40,22 @@ export const NativeSafetyMap = ({
   const { toast } = useToast();
   const isNative = isNativePlatform();
 
+  // Create refs to prevent re-running the initialization effect when props change
+  const mapId = useRef('safety-map-' + Math.random().toString(36).substring(2, 9));
+  const onMarkerClickRef = useRef(onMarkerClick);
+  const toastRef = useRef(toast);
+  const initialCenterRef = useRef(center);
+  const initialZoomRef = useRef(zoom);
+
+  // Keep callback and toast refs updated
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick;
+  }, [onMarkerClick]);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+
   // Get user's current location
   useEffect(() => {
     if (!isNative) return;
@@ -59,7 +75,7 @@ export const NativeSafetyMap = ({
         });
       } catch (error) {
         console.warn('Geolocation error:', error);
-        toast({
+        toastRef.current({
           title: 'Location Unavailable',
           description: 'Could not get your location. The map will use the default area.',
           variant: 'destructive',
@@ -71,7 +87,7 @@ export const NativeSafetyMap = ({
     getUserLocation();
   }, [isNative]);
 
-  // Initialize map — runs once (does not re-run when userLocation changes).
+  // Initialize map — runs exactly once on mount.
   useEffect(() => {
     if (!isNative || !mapRef.current) return;
 
@@ -101,18 +117,18 @@ export const NativeSafetyMap = ({
         const { GoogleMap } = await import('@capacitor/google-maps');
 
         const newMap = await GoogleMap.create({
-          id: 'safety-map',
+          id: mapId.current,
           element: mapRef.current!,
           apiKey: apiKey,
           config: {
-            center: { lat: center.lat, lng: center.lng },
-            zoom,
+            center: { lat: initialCenterRef.current.lat, lng: initialCenterRef.current.lng },
+            zoom: initialZoomRef.current,
           },
         });
 
         await newMap.setOnMarkerClickListener((marker) => {
-          if (onMarkerClick) {
-            onMarkerClick(marker.markerId);
+          if (onMarkerClickRef.current) {
+            onMarkerClickRef.current(marker.markerId);
           }
         });
 
@@ -122,7 +138,7 @@ export const NativeSafetyMap = ({
         document.documentElement.classList.add('native-map-active');
       } catch (error) {
         console.error('Error initializing native map:', error);
-        toast({
+        toastRef.current({
           title: 'Map Error',
           description: 'Failed to load map. Please try again.',
           variant: 'destructive',
@@ -139,8 +155,13 @@ export const NativeSafetyMap = ({
       mapInstanceRef.current?.destroy();
       mapInstanceRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNative, center.lat, center.lng, zoom, toast, onMarkerClick]);
+  }, [isNative]);
+
+  // Pan map when center or zoom props change from parent
+  useEffect(() => {
+    if (!map) return;
+    map.setCamera({ coordinate: { lat: center.lat, lng: center.lng }, zoom });
+  }, [map, center.lat, center.lng, zoom]);
 
   // Pan to user location once map is ready, without re-initializing the map.
   useEffect(() => {
