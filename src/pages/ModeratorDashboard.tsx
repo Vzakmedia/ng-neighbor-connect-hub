@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Shield, Users, MessageSquare, Flag, AlertTriangle, Eye, CheckCircle, XCircle, Clock, Search, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect } from "react";
@@ -17,9 +18,10 @@ import type { PanicAlert } from "@/types/emergency";
 
 const ModeratorDashboard = () => {
   const { user } = useAuth();
+  const { role } = useAdminStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [stats, setStats] = useState({
     pendingReports: 0,
     activeAlerts: 0,
@@ -34,28 +36,8 @@ const ModeratorDashboard = () => {
   const [selectedPanicAlert, setSelectedPanicAlert] = useState<PanicAlert | null>(null);
   const [isPanicDialogOpen, setIsPanicDialogOpen] = useState(false);
 
-  // Check if user has moderator role
-  const [userRole, setUserRole] = useState(null);
-
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['moderator', 'super_admin'])
-        .single();
-      
-      setUserRole(data?.role);
-    };
-    
-    checkUserRole();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !userRole) return;
+    if (!user || !role) return;
 
     const fetchModeratorData = async () => {
       try {
@@ -161,7 +143,7 @@ const ModeratorDashboard = () => {
     return () => {
       supabase.removeChannel(moderatorChannel);
     };
-  }, [user, userRole, toast]);
+  }, [user, role, toast]);
 
   const getTimeSince = (dateString: string) => {
     const date = new Date(dateString);
@@ -249,23 +231,7 @@ const ModeratorDashboard = () => {
       });
     }
   };
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!userRole || !['moderator', 'super_admin'].includes(userRole)) {
-    return (
-      <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
-        <Card className="bg-card border-border">
-          <CardContent className="p-8 text-center">
-            <Shield className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-            <p className="text-muted-foreground">You don't have permission to access the moderator dashboard.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">

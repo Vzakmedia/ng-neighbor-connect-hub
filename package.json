@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,7 @@
     "@capacitor-community/contacts": "^7.0.0",
     "@capacitor/android": "^7.4.2",
     "@capacitor/app": "^7.1.0",
+    "@capacitor/background-runner": "^3.0.0",
     "@capacitor/browser": "^7.0.2",
     "@capacitor/camera": "^7.0.2",
     "@capacitor/clipboard": "^7.0.2",

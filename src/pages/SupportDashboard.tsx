@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect } from "react";
@@ -15,9 +16,10 @@ import { EnhancedSupportTicketSystem } from '@/components/support/EnhancedSuppor
 
 const SupportDashboard = () => {
   const { user } = useAuth();
+  const { role } = useAdminStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [stats, setStats] = useState({
     openTickets: 0,
     activeEmergencies: 0,
@@ -30,38 +32,8 @@ const SupportDashboard = () => {
   const [userQueries, setUserQueries] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Check if user has support role
-  const [userRole, setUserRole] = useState(null);
-  // WR-14: loading state for role check
-  const [roleLoading, setRoleLoading] = useState(true);
-
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) {
-        setRoleLoading(false);
-        return;
-      }
-
-      try {
-        // WR-12: use maybeSingle() to avoid error when no row is found
-        const { data } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .in('role', ['support', 'super_admin'])
-          .maybeSingle();
-
-        setUserRole(data?.role);
-      } finally {
-        setRoleLoading(false);
-      }
-    };
-
-    checkUserRole();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !userRole) return;
+    if (!user || !role) return;
 
     const fetchSupportData = async () => {
       try {
@@ -153,7 +125,7 @@ const SupportDashboard = () => {
     return () => {
       supabase.removeChannel(supportChannel);
     };
-  }, [user, userRole, toast]);
+  }, [user, role, toast]);
 
   const handleEmergencyResponse = async (alertId, response) => {
     try {
@@ -178,32 +150,7 @@ const SupportDashboard = () => {
     }
   };
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // WR-14: show spinner while role is being checked
-  if (roleLoading) {
-    return (
-      <div className="flex justify-center p-8">
-        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!userRole || !['support', 'super_admin'].includes(userRole)) {
-    return (
-      <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
-        <Card className="bg-card border-border">
-          <CardContent className="p-8 text-center">
-            <HeadphonesIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-            <p className="text-muted-foreground">You don't have permission to access the support dashboard.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">

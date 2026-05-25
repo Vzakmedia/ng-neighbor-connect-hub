@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -53,8 +54,27 @@ export default function Notifications() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-10 bg-background border-b border-border">
+          <div className="flex items-center justify-between px-4 h-14">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-5 w-32" />
+            <div className="w-10" />
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border p-4 space-y-3">
+              <Skeleton className="h-5 w-40" />
+              {[1, 2, 3].map((j) => (
+                <div key={j} className="flex items-center justify-between py-1.5">
+                  <Skeleton className="h-4 w-52" />
+                  <Skeleton className="h-6 w-10 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

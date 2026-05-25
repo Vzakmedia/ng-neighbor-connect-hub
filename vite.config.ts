@@ -28,6 +28,10 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: true,
     minify: 'esbuild',
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        background: path.resolve(__dirname, 'src/runners/backgroundSync.ts'),
+      },
       onwarn(warning, warn) {
         // Capacitor modules are intentionally used as both static and dynamic imports
         // (static for type/platform checks, dynamic for lazy native loading)
@@ -37,22 +41,31 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Better chunking for iOS compatibility
         manualChunks(id) {
-          if (id.includes('iosCompatibility') || id.includes('safetStorage')) {
-            return 'ios-compat';
-          }
-          if (id.includes('react') || id.includes('react-dom')) {
-            return 'react-vendor';
-          }
-          if (id.includes('react-router')) {
-            return 'router';
-          }
-          if (id.includes('@radix-ui')) {
-            return 'ui-components';
-          }
+          // Don't split the background runner entry
+          if (id.includes('backgroundSync')) return undefined;
+
+          if (id.includes('iosCompatibility') || id.includes('safetStorage')) return 'ios-compat';
+
+          // Exact node_modules paths — avoid greedy substring matches
+          if (id.includes('/node_modules/react-dom/'))     return 'react-vendor';
+          if (id.includes('/node_modules/react/'))         return 'react-vendor';
+
+          if (id.includes('/node_modules/react-router'))   return 'router';
+
+          if (id.includes('/node_modules/@radix-ui/'))     return 'ui-components';
+          if (id.includes('/node_modules/lucide-react/'))  return 'ui-components';
+
+          if (id.includes('/node_modules/@supabase/'))     return 'supabase';
+          if (id.includes('/node_modules/@tanstack/'))     return 'query';
+          if (id.includes('/node_modules/date-fns/'))      return 'datetime';
+
+          if (id.includes('/node_modules/@capacitor/'))    return 'capacitor';
         },
         // Ensure proper module format for iOS
         format: 'es',
-        entryFileNames: `assets/[name].[hash].js`,
+        // background runner must land at dist/background.js (Capacitor copies from webDir)
+        entryFileNames: (chunkInfo) =>
+          chunkInfo.name === 'background' ? 'background.js' : 'assets/[name].[hash].js',
         chunkFileNames: `assets/[name].[hash].js`,
         assetFileNames: `assets/[name].[hash].[ext]`
       },

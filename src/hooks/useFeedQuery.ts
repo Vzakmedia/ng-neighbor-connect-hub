@@ -102,8 +102,7 @@ export function useFeedQuery(filters: FeedFilters) {
         throw error;
       }
 
-      // Transform RPC results to FeedPost format
-      // Note: likes_count and comments_count are bigint in SQL, converted to numbers here
+      // RPC now returns is_liked / is_saved directly — no extra round trips needed.
       const posts: FeedPost[] = (postsData || []).map((post: any) => ({
         id: post.id,
         user_id: post.user_id,
@@ -118,46 +117,18 @@ export function useFeedQuery(filters: FeedFilters) {
         updated_at: post.updated_at,
         author_name: post.author_name || 'Anonymous User',
         author_avatar: post.author_avatar || null,
-        author_is_verified: (post as any).author_is_verified ?? false,
+        author_is_verified: post.author_is_verified ?? false,
         author_city: post.author_city || post.target_city || null,
         author_state: post.author_state || post.target_state || null,
         like_count: Number(post.likes_count) || 0,
         comment_count: Number(post.comments_count) || 0,
         save_count: Number(post.saves_count) || 0,
-        is_liked: false,
-        is_saved: false,
+        is_liked: post.is_liked ?? false,
+        is_saved: post.is_saved ?? false,
         rsvp_enabled: post.rsvp_enabled || false,
         video_url: post.video_url || null,
         video_thumbnail_url: post.video_thumbnail_url || null,
       }));
-
-      // Batch fetch user's likes and saves for all posts
-      const postIds = posts.map(p => p.id);
-      const [userLikesData, userSavesData] = await Promise.all([
-        user && postIds.length > 0
-          ? supabase
-            .from('post_likes')
-            .select('post_id')
-            .eq('user_id', user.id)
-            .in('post_id', postIds)
-          : Promise.resolve({ data: [] }),
-        user && postIds.length > 0
-          ? supabase
-            .from('saved_posts')
-            .select('post_id')
-            .eq('user_id', user.id)
-            .in('post_id', postIds)
-          : Promise.resolve({ data: [] }),
-      ]);
-
-      const userLikedPosts = new Set((userLikesData?.data || []).map((l: any) => l.post_id));
-      const userSavedPosts = new Set((userSavesData?.data || []).map((s: any) => s.post_id));
-
-      // Final post update for interaction status
-      posts.forEach(post => {
-        post.is_liked = userLikedPosts.has(post.id);
-        post.is_saved = userSavedPosts.has(post.id);
-      });
 
       // Apply client-side filters (for search and tags which are not currently in the RPC)
       let filteredPosts = posts;
@@ -201,16 +172,16 @@ export function useFeedQuery(filters: FeedFilters) {
     initialPageParam: null,
     enabled: !!user && !!profile,
 
-    // IMPROVED CACHING CONFIGURATION
-    staleTime: 30 * 1000, // 30s - data considered fresh for this duration
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10min
+    staleTime: 5 * 60 * 1000, // 5 min — realtime sub handles live updates; no need to poll
+    gcTime: 30 * 60 * 1000,  // Keep pages in memory for 30 min
 
-    // Show cached data immediately while fetching fresh data
+    // Show cached pages immediately while background-refreshing
     placeholderData: (previousData) => previousData,
 
-    // Always check for updates to ensure fresh content
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    // Don't refetch just because the component re-mounted (tab switch).
+    // AppLifecycleManager handles selective invalidation after 30s background.
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
 
     // WR-17: removed refetchInterval — realtime subscription below handles live updates

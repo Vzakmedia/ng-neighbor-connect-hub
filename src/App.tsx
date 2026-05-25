@@ -14,6 +14,8 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminStatusProvider } from "@/contexts/AdminStatusContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { Admin2FAGate } from "@/components/security/Admin2FAGate";
+import { AdminSessionGuard } from "@/components/security/AdminSessionGuard";
 import { AppLifecycleManager } from "@/components/AppLifecycleManager";
 import { useAppVersionCheck } from "@/hooks/useAppVersionCheck";
 import { PresenceProvider } from "@/contexts/PresenceContext";
@@ -62,7 +64,6 @@ const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const CompleteProfile = lazyWithRetry(() => import("./pages/CompleteProfile"));
 const VerifyEmail = lazyWithRetry(() => import("./pages/VerifyEmail"));
-const Admin = lazyWithRetry(() => import("./pages/Admin"));
 const AdminLayout         = lazyWithRetry(() => import("./components/admin/layout/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const AdminOverview       = lazyWithRetry(() => import("./pages/admin/Overview"));
 const AdminUsers          = lazyWithRetry(() => import("./pages/admin/Users"));
@@ -79,6 +80,8 @@ const ModeratorDashboard = lazyWithRetry(() => import("./pages/ModeratorDashboar
 const ManagerDashboard = lazyWithRetry(() => import("./pages/ManagerDashboard"));
 const SupportDashboard = lazyWithRetry(() => import("./pages/SupportDashboard"));
 const StaffDashboard = lazyWithRetry(() => import("./pages/StaffDashboard"));
+const AdminAuditLog = lazyWithRetry(() => import("./pages/admin/AuditLog"));
+const AdminBroadcast = lazyWithRetry(() => import("./pages/admin/Broadcast"));
 const StaffNavigation = lazyWithRetry(() => import("./components/StaffNavigation"));
 const StaffLogin = lazyWithRetry(() => import("./pages/StaffLogin"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
@@ -375,10 +378,36 @@ const App = () => {
                             <Route path="integrations" element={<AdminIntegrations />} />
                             <Route path="security"     element={<AdminSecurity />} />
                             <Route path="api-requests" element={<AdminApiRequests />} />
+                            <Route path="audit-log"    element={<AdminAuditLog />} />
+                            <Route path="broadcast"    element={<AdminBroadcast />} />
                           </Route>
-                          <Route path="/moderator" element={<ProtectedRoute requiredRole="moderator"><ModeratorDashboard /></ProtectedRoute>} />
-                          <Route path="/manager" element={<ProtectedRoute requiredRole="manager"><ManagerDashboard /></ProtectedRoute>} />
-                          <Route path="/support" element={<ProtectedRoute requiredRole="support"><SupportDashboard /></ProtectedRoute>} />
+                          <Route path="/moderator" element={
+                            <ProtectedRoute requiredRole="moderator">
+                              <Admin2FAGate roleLabel="moderator">
+                                <AdminSessionGuard>
+                                  <ModeratorDashboard />
+                                </AdminSessionGuard>
+                              </Admin2FAGate>
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/manager" element={
+                            <ProtectedRoute requiredRole="manager">
+                              <Admin2FAGate roleLabel="manager">
+                                <AdminSessionGuard>
+                                  <ManagerDashboard />
+                                </AdminSessionGuard>
+                              </Admin2FAGate>
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/support" element={
+                            <ProtectedRoute requiredRole="support">
+                              <Admin2FAGate roleLabel="support agent">
+                                <AdminSessionGuard>
+                                  <SupportDashboard />
+                                </AdminSessionGuard>
+                              </Admin2FAGate>
+                            </ProtectedRoute>
+                          } />
                           <Route path="/staff-portal" element={<ProtectedRoute requiredRole="staff"><StaffNavigation /></ProtectedRoute>} />
                           <Route path="/staff" element={<ProtectedRoute requiredRole="staff"><StaffDashboard /></ProtectedRoute>} />
                           <Route path="/staff-dashboard" element={<ProtectedRoute requiredRole="staff"><StaffDashboard /></ProtectedRoute>} />

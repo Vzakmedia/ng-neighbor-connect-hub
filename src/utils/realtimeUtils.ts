@@ -38,6 +38,43 @@ let circuitBreakerOpenUntil = 0;
 const activeSubscriptions = new Map<string, any>();
 const subscriptionCleanupTimers = new Map<string, NodeJS.Timeout>();
 
+/** Pause all active Supabase Realtime channels (called on app background). */
+export const pauseAllSubscriptions = (): void => {
+  activeSubscriptions.forEach((sub, channelName) => {
+    if (sub.paused) return;
+    try {
+      if (sub.channel) {
+        supabase.removeChannel(sub.channel);
+        sub.channel = null;
+      }
+      sub.paused = true;
+    } catch (e) {
+      console.debug(`[realtimeUtils] pause error for ${channelName}:`, e);
+    }
+  });
+};
+
+/** Resume all paused Supabase Realtime channels (called on app foreground). */
+export const resumeAllSubscriptions = (): void => {
+  activeSubscriptions.forEach((sub, channelName) => {
+    if (!sub.paused) return;
+    try {
+      if (sub.channelBuilder && sub.options) {
+        const newChannel = supabase.channel(channelName);
+        sub.channelBuilder(newChannel).subscribe((status: string) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug(`[realtimeUtils] resume ${channelName}:`, status);
+          }
+        });
+        sub.channel = newChannel;
+      }
+      sub.paused = false;
+    } catch (e) {
+      console.debug(`[realtimeUtils] resume error for ${channelName}:`, e);
+    }
+  });
+};
+
 export const createSafeSubscription = (
   channelBuilder: (channel: any) => any,
   options: SafeSubscriptionOptions
@@ -229,7 +266,11 @@ export const createSafeSubscription = (
   const subscriptionObj = {
     channel,
     subscription,
-    unsubscribe
+    unsubscribe,
+    // Stored so pauseAllSubscriptions/resumeAllSubscriptions can rebuild the channel
+    channelBuilder,
+    options,
+    paused: false,
   };
   
   // Track this subscription

@@ -35,7 +35,11 @@ const SafetyAlertsSplitView = ({
 
   return (
     <div className={cn(
-      "relative h-[calc(100vh-140px)] md:rounded-lg overflow-hidden",
+      "relative h-[calc(100vh-140px)]",
+      // overflow-hidden breaks @capacitor/google-maps native view positioning —
+      // the plugin uses getBoundingClientRect() and places a native layer at those
+      // screen coords; clipping the WebView ancestor shifts those coords wrong.
+      !isNative && "md:rounded-lg overflow-hidden",
       isNative && "bg-transparent"
     )}>
       {/* Full Background Map */}

@@ -83,12 +83,13 @@ serve(async (req) => {
       return jsonResponse(req, { status: "disabled", error: "Push notifications are disabled" }, 400);
     }
 
-    const [{ data: profile }, { data: prefs }] = await Promise.all([
+    const [{ data: devices }, { data: prefs }] = await Promise.all([
+      // user_devices is the canonical store for FCM/APNs tokens (saved by register_user_device RPC)
       context.admin
-        .from("profiles")
-        .select("push_subscription, fcm_token, apns_token")
+        .from("user_devices")
+        .select("fcm_token, apns_token, platform, last_active_at")
         .eq("user_id", userId)
-        .maybeSingle(),
+        .order("last_active_at", { ascending: false }),
       context.admin
         .from("notification_preferences")
         .select("push_enabled")
@@ -125,12 +126,15 @@ serve(async (req) => {
         sent_at: new Date().toISOString(),
       } as any);
 
-    const token = profile?.push_subscription || profile?.fcm_token || profile?.apns_token;
+    // Pick the most recently active token; prefer FCM for Android, APNs for iOS
+    const activeDevice = devices?.find(d => d.fcm_token) ?? devices?.find(d => d.apns_token);
+    const token = activeDevice?.fcm_token ?? activeDevice?.apns_token;
+
     if (!token) {
       return jsonResponse(req, {
         success: false,
         status: "no_subscription",
-        message: "No push subscription available",
+        message: "No push subscription available for this user",
       });
     }
 

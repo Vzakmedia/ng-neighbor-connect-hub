@@ -287,9 +287,8 @@ export const useNativePushRegistration = () => {
           'pushNotificationActionPerformed',
           (action) => {
             const notificationData = (action.notification.data || {}) as Record<string, string>;
-            const isCallNotification =
-              notificationData?.notification_type === 'call_incoming' ||
-              notificationData?.type === 'call_incoming';
+            const notifType = notificationData?.type || notificationData?.notification_type || '';
+            const isCallNotification = notifType === 'call_incoming';
 
             if (isCallNotification) {
               // CR-02: validate in tapListener as well
@@ -315,6 +314,34 @@ export const useNativePushRegistration = () => {
                 console.log('[PushRegistration] Push tapped for call:', callData);
               }
               dispatchIncomingCall(callData);
+              return;
+            }
+
+            // ── Deep-link routing for non-call notifications ──
+            // Dispatch a custom event so any mounted router component can navigate.
+            // This covers likes, comments, DMs, and community posts.
+            let route: string | null = null;
+
+            if (notifType === 'direct_message' || notifType === 'message') {
+              const conversationId = notificationData.conversation_id || notificationData.conversationId;
+              if (conversationId && /^[0-9a-f-]{36}$/i.test(conversationId)) {
+                route = `/chat/${conversationId}`;
+              } else {
+                route = '/messages';
+              }
+            } else if (notifType === 'like' || notifType === 'comment' || notifType === 'new_community_post' || notifType === 'post_like' || notifType === 'post_comment') {
+              const postId = notificationData.post_id;
+              if (postId && /^[0-9a-f-]{36}$/i.test(postId)) {
+                route = `/post/${postId}`;
+              } else {
+                route = '/';
+              }
+            } else if (notifType === 'community_post') {
+              route = '/';
+            }
+
+            if (route) {
+              window.dispatchEvent(new CustomEvent('push-notification-tap', { detail: { route } }));
             }
           }
         );

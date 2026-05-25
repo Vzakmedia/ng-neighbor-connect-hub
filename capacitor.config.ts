@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
 
   android: {
     allowMixedContent: false,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#0c9f7a',
     buildOptions: {
       keystorePath: undefined,
       keystorePassword: undefined,
@@ -42,10 +42,10 @@ const config: CapacitorConfig = {
 
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
-      launchAutoHide: true, // Safety: auto-hide splash after duration
-      launchFadeOutDuration: 300,
-      backgroundColor: '#0b8d66',
+      launchShowDuration: 0,
+      launchAutoHide: false,
+      launchFadeOutDuration: 500,
+      backgroundColor: '#0c9f7a',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       splashFullScreen: true,
@@ -90,6 +90,15 @@ const config: CapacitorConfig = {
 
     Haptics: {
       // iOS-specific haptic configuration
+    },
+
+    BackgroundRunner: {
+      label: 'com.neighborlink.background',
+      src: 'background.js',
+      event: 'syncOfflineQueue',
+      repeat: true,
+      interval: 15,  // minutes — iOS minimum is 15
+      autoSchedule: true,
     },
 
     CapacitorUpdater: {

@@ -14,6 +14,7 @@ def capacitor_pods
   pod 'AparajitaCapacitorBiometricAuth', :path => '../../node_modules/@aparajita/capacitor-biometric-auth'
   pod 'CapacitorCommunityContacts', :path => '../../node_modules/@capacitor-community/contacts'
   pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
+  pod 'CapacitorBackgroundRunner', :path => '../../node_modules/@capacitor/background-runner'
   pod 'CapacitorBrowser', :path => '../../node_modules/@capacitor/browser'
   pod 'CapacitorCamera', :path => '../../node_modules/@capacitor/camera'
   pod 'CapacitorClipboard', :path => '../../node_modules/@capacitor/clipboard'

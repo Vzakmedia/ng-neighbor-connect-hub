@@ -78,7 +78,7 @@ export const hideSplashScreen = async (): Promise<void> => {
     }
   } catch (error) {
     console.warn(`[NativeStartup ${timestamp}] Failed to hide splash screen:`, error);
-    // Don't throw - splash screen will auto-hide due to launchAutoHide: true
+    // Non-fatal: splash will time out on its own via the safety timeout in App.tsx
   }
 };
 

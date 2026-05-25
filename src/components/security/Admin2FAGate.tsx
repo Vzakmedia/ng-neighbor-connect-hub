@@ -11,9 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 interface Admin2FAGateProps {
   children: React.ReactNode;
   requireVerification?: boolean;
+  /** Label shown in the 2FA prompt — defaults to "administrator" */
+  roleLabel?: string;
 }
 
-export const Admin2FAGate = ({ children, requireVerification = true }: Admin2FAGateProps) => {
+export const Admin2FAGate = ({ children, requireVerification = true, roleLabel = 'staff' }: Admin2FAGateProps) => {
   const { user } = useAuth();
   const [is2FAEnabled, setIs2FAEnabled] = useState<boolean | null>(null);
   const [isVerified, setIsVerified] = useState(false);
@@ -38,12 +40,11 @@ export const Admin2FAGate = ({ children, requireVerification = true }: Admin2FAG
 
         setIs2FAEnabled(twoFAData?.is_enabled || false);
 
-        // Check admin role creation date for grace period
+        // Check any staff role creation date for grace period (applies to all privileged roles)
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('created_at')
           .eq('user_id', user.id)
-          .in('role', ['admin', 'super_admin'])
           .order('created_at', { ascending: true })
           .limit(1)
           .maybeSingle();
@@ -103,7 +104,7 @@ export const Admin2FAGate = ({ children, requireVerification = true }: Admin2FAG
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Two-Factor Authentication Required</AlertTitle>
             <AlertDescription>
-              As an administrator, you must enable 2FA within {gracePeriodDays} day{gracePeriodDays > 1 ? 's' : ''}.
+              As a {roleLabel}, you must enable 2FA within {gracePeriodDays} day{gracePeriodDays > 1 ? 's' : ''}.
               After this period, access to admin features will be restricted.
             </AlertDescription>
           </Alert>

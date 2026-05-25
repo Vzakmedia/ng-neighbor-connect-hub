@@ -266,7 +266,7 @@ const Navigation = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => handleMobileNavigation(item.path)}
+                onPointerDown={() => handleMobileNavigation(item.path)}
                 className={`p-2 ${isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}
               >
@@ -277,7 +277,7 @@ const Navigation = () => {
 
           {/* More Button - Centered with Primary Background and Shadow */}
           <button
-            onClick={async () => {
+            onPointerDown={async () => {
               await triggerHaptic();
               setMoreDrawerOpen(true);
             }}
@@ -288,7 +288,7 @@ const Navigation = () => {
 
           {/* Messages */}
           <button
-            onClick={() => handleMobileNavigation('/messages')}
+            onPointerDown={() => handleMobileNavigation('/messages')}
             className={`relative p-2 ${location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
               }`}
           >

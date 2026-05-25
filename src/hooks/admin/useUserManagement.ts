@@ -11,6 +11,7 @@ interface User {
     city?: string;
     state?: string;
     is_verified: boolean;
+    is_suspended?: boolean;
     user_roles?: Array<{ role: string }>;
     created_at: string;
 }
@@ -48,6 +49,7 @@ export const useUserManagement = (isSuperAdmin: boolean) => {
           city,
           state,
           is_verified,
+          is_suspended,
           created_at,
           user_roles (role)
         `)
@@ -220,6 +222,40 @@ export const useUserManagement = (isSuperAdmin: boolean) => {
         }
     }, [toast]);
 
+    const toggleSuspension = useCallback(async (userId: string, currentStatus: boolean) => {
+        try {
+            const newStatus = !currentStatus;
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({ is_suspended: newStatus })
+                .eq('user_id', userId);
+
+            if (error) throw error;
+
+            await logUserAction('admin_user_suspend', userId, { suspended: newStatus });
+
+            toast({
+                title: newStatus ? 'User Suspended' : 'User Reinstated',
+                description: `User has been ${newStatus ? 'suspended' : 'reinstated'}`,
+            });
+
+            setUsers(prev => prev.map(u =>
+                u.user_id === userId ? { ...u, is_suspended: newStatus } : u
+            ));
+
+            return true;
+        } catch (error) {
+            console.error('Error toggling suspension:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to update suspension status',
+                variant: 'destructive',
+            });
+            return false;
+        }
+    }, [toast, logUserAction]);
+
     const bulkUpdateRoles = useCallback(async (userIds: string[], newRole: string) => {
         try {
             const { error } = await supabase
@@ -260,6 +296,7 @@ export const useUserManagement = (isSuperAdmin: boolean) => {
         fetchDeletedUsers,
         updateUserRole,
         toggleVerification,
+        toggleSuspension,
         exportUserData,
         bulkUpdateRoles,
     };

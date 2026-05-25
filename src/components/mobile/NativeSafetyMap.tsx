@@ -95,6 +95,21 @@ export const NativeSafetyMap = ({
       try {
         setIsLoading(true);
 
+        // Wait for the element to have non-zero pixel dimensions before handing
+        // it to GoogleMap.create(). The plugin uses getBoundingClientRect() to
+        // position the native MapView; a 0×0 element produces an invisible map.
+        const el = mapRef.current!;
+        await new Promise<void>((resolve) => {
+          const check = () => {
+            if (el.offsetWidth > 0 && el.offsetHeight > 0) {
+              resolve();
+            } else {
+              requestAnimationFrame(check);
+            }
+          };
+          requestAnimationFrame(check);
+        });
+
         let apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
         if (!apiKey) {
@@ -226,6 +241,7 @@ export const NativeSafetyMap = ({
         </div>
       )}
       <div
+        id={mapId.current}
         ref={mapRef as any}
         style={{
           display: 'block',

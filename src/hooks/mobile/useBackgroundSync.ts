@@ -7,6 +7,21 @@ import { supabase } from '@/integrations/supabase/client';
 
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
+/** Dispatch the background-runner sync event so the OS can run it while suspended. */
+const dispatchBackgroundSyncEvent = async (): Promise<void> => {
+  if (!isNativePlatform()) return;
+  try {
+    const { BackgroundRunner } = await import('@capacitor/background-runner');
+    await BackgroundRunner.dispatchEvent({
+      label: 'com.neighborlink.background',
+      event: 'syncOfflineQueue',
+      details: {},
+    });
+  } catch (e) {
+    console.debug('[useBackgroundSync] background dispatch unavailable:', e);
+  }
+};
+
 // Exported type for queue operation types
 export type QueuedOperationType = 'post' | 'message' | 'upload' | 'update';
 
@@ -53,6 +68,26 @@ export const useBackgroundSync = () => {
       processQueue();
     }
   }, [isOnline, queue.length]);
+
+  // When app goes to background with pending items, hand off to BackgroundRunner
+  // so the OS can drain the queue while the app is suspended.
+  useEffect(() => {
+    if (!isNative) return;
+
+    let listenerHandle: { remove: () => Promise<void> } | null = null;
+
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive && queue.length > 0) {
+          dispatchBackgroundSyncEvent();
+        }
+      }).then(handle => { listenerHandle = handle; });
+    });
+
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, [isNative, queue.length]);
 
   const loadQueue = async () => {
     const stored = await getItem(QUEUE_KEY);

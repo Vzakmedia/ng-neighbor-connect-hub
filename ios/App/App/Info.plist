@@ -77,6 +77,14 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+
+	<!-- Background Runner: BGAppRefresh + BGProcessingTask identifiers -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.neighborlink.background</string>
 	</array>
 
 	<!-- Network Security -->

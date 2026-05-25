@@ -1,17 +1,15 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, Flag, ShoppingCart, Eye, FileText, CheckCircle, ArrowLeft, RefreshCw, AlertTriangle, TrendingUp, Activity, Zap, Grid } from '@/lib/icons';
+import { Users, Flag, ShoppingCart, Eye, FileText, RefreshCw, TrendingUp, Activity, Zap, Grid } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
 
 const StaffDashboard = () => {
   const { user } = useAuth();
+  const { role } = useAdminStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,24 +30,9 @@ const StaffDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['staff', 'super_admin'])
-        .single();
-      setUserRole(data?.role);
-    };
-    checkUserRole();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !userRole) return;
+    if (!user || !role) return;
 
     const fetchStaffData = async () => {
       try {
@@ -61,8 +44,8 @@ const StaffDashboard = () => {
           { count: activeMarketplaceCount },
           { count: postsCount }
         ] = await Promise.all([
-          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.length || 0 })),
-          supabase.rpc('get_profiles_analytics').then(result => ({ count: result.data?.filter(p => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
+          supabase.rpc('get_profiles_analytics').then((result: { data: any[] | null }) => ({ count: result.data?.length || 0 })),
+          supabase.rpc('get_profiles_analytics').then((result: { data: any[] | null }) => ({ count: result.data?.filter((p: any) => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
           supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
           supabase.from('marketplace_items').select('*', { count: 'exact', head: true }).eq('status', 'active'),
@@ -139,9 +122,9 @@ const StaffDashboard = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(staffChannel); };
-  }, [user, userRole, toast]);
+  }, [user, role, toast]);
 
-  const handleFlagContent = async (contentId, contentType) => {
+  const handleFlagContent = async (contentId: string, contentType: string) => {
     try {
       const { error } = await supabase.from('content_reports').insert({
         content_id: contentId,
@@ -158,18 +141,6 @@ const StaffDashboard = () => {
   };
 
   if (!user) return <Navigate to="/auth" replace />;
-
-  if (!userRole || !['staff', 'super_admin'].includes(userRole)) {
-    return (
-      <div className="min-h-screen staff-portal-bg flex items-center justify-center p-4">
-        <div className="staff-portal-card rounded-2xl p-8 text-center max-w-sm w-full">
-          <Users className="mx-auto h-12 w-12 text-slate-600 mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
-          <p className="text-slate-400 text-sm">You don't have permission to access the staff dashboard.</p>
-        </div>
-      </div>
-    );
-  }
 
   const statCards = [
     { label: 'Platform Users', value: stats.totalUsers, sub: `+${stats.newUsersToday} today`, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },

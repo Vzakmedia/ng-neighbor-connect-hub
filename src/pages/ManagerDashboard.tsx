@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
 import { BarChart3, Building, TrendingUp, DollarSign, ShoppingCart, Users, Calendar, Settings, ArrowLeft } from '@/lib/icons';
 import { useState, useEffect, lazy, Suspense } from "react";
@@ -16,9 +17,10 @@ const BusinessVerificationAdmin = lazy(() => import("@/components/BusinessVerifi
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
+  const { role } = useAdminStatus();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [stats, setStats] = useState({
     totalBusinesses: 0,
     pendingVerifications: 0,
@@ -36,28 +38,8 @@ const ManagerDashboard = () => {
   const [selectedPromotion, setSelectedPromotion] = useState<any | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
 
-  // Check if user has manager role
-  const [userRole, setUserRole] = useState(null);
-
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .in('role', ['manager', 'super_admin'])
-        .single();
-      
-      setUserRole(data?.role);
-    };
-    
-    checkUserRole();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !userRole) return;
+    if (!user || !role) return;
 
     const fetchManagerData = async () => {
       try {
@@ -211,7 +193,7 @@ const ManagerDashboard = () => {
     return () => {
       supabase.removeChannel(managerChannel);
     };
-  }, [user, userRole, toast]);
+  }, [user, role, toast]);
 
   const handleApproveCampaign = async (campaignId: string) => {
     try {
@@ -251,23 +233,7 @@ const ManagerDashboard = () => {
     }
   };
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!userRole || !['manager', 'super_admin'].includes(userRole)) {
-    return (
-      <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
-        <Card className="bg-card border-border">
-          <CardContent className="p-8 text-center">
-            <Building className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-            <p className="text-muted-foreground">You don't have permission to access the manager dashboard.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">

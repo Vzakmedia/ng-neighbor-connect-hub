@@ -16,7 +16,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Menu,
+  Megaphone,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Integrations',   path: '/admin/integrations', icon: Plug },
   { label: 'Security',       path: '/admin/security',     icon: Shield },
   { label: 'API Requests',   path: '/admin/api-requests', icon: FileKey },
+  { label: 'Broadcast',      path: '/admin/broadcast',    icon: Megaphone },
+  { label: 'Audit Log',      path: '/admin/audit-log',    icon: ClipboardList },
 ];
 
 export function AdminSidebar() {

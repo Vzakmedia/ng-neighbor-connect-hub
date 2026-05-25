@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import PullToRefresh from "react-simple-pull-to-refresh";
+import { NativePullToRefresh } from "./NativePullToRefresh";
 import { CommunityFeedHeader } from "./CommunityFeedHeader";
 import { CommunityFeedContent } from "./CommunityFeedContent";
 import { NewPostsBanner } from "./NewPostsBanner";
@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
+import { isAppActive } from "@/utils/appState";
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -237,16 +238,19 @@ export const CommunityFeed = ({
   const isFetchingRef = useRef(isFetching);
   useEffect(() => { isFetchingRef.current = isFetching; });
 
-  // Fallback polling to ensure fresh data even if real-time fails
+  // Fallback polling to ensure fresh data even if real-time fails.
+  // Uses isAppActive() instead of document.visibilityState — the latter
+  // does not change reliably on native mobile when the app is backgrounded.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible' && !isFetchingRef.current) {
+      const active = isNative ? isAppActive() : document.visibilityState === 'visible';
+      if (active && !isFetchingRef.current) {
         refetch();
       }
     }, pollingInterval);
 
     return () => clearInterval(interval);
-  }, [refetch, pollingInterval]);
+  }, [refetch, pollingInterval, isNative]);
 
   const feedContent = (
     <div className="max-w-2xl mx-auto">
@@ -283,25 +287,12 @@ export const CommunityFeed = ({
     </div>
   );
 
-  // Wrap with pull-to-refresh on mobile
+  // Wrap with native pull-to-refresh on mobile
   if (isMobile) {
     return (
-      <PullToRefresh
-        onRefresh={handlePullRefresh}
-        pullingContent={
-          <div className="text-center py-4 text-muted-foreground text-sm">
-            Pull down to refresh...
-          </div>
-        }
-        refreshingContent={
-          <div className="text-center py-4 text-primary text-sm animate-pulse">
-            Refreshing...
-          </div>
-        }
-        className="min-h-screen"
-      >
+      <NativePullToRefresh onRefresh={handlePullRefresh} className="min-h-screen">
         {feedContent}
-      </PullToRefresh>
+      </NativePullToRefresh>
     );
   }
 

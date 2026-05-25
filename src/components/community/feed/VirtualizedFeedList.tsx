@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, memo, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, memo, useState } from 'react';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { PostCard } from '../post/PostCard';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { FeedDialogs } from './FeedDialogs';
 import { PostCardData } from '@/types/community';
 import { usePostVisibility } from '@/hooks/community/usePostVisibility';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { usePostViews } from '@/hooks/usePostViews';
 import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 import { EditPostDialog } from '../EditPostDialog';
@@ -46,12 +46,9 @@ const VirtualizedFeedListComponent = ({
   showAds = false,
   adInterval = 5,
 }: VirtualizedFeedListProps) => {
-  const isMobile = useIsMobile();
   const { trackPostView } = usePostViews();
   const { toast } = useToast();
   const deletePost = useDeletePost();
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
   // Dialog state
   const [selectedEvent, setSelectedEvent] = useState<PostCardData | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -77,24 +74,7 @@ const VirtualizedFeedListComponent = ({
     }
   });
 
-  // IntersectionObserver for infinite scroll
-  useEffect(() => {
-    if (!sentinelRef.current || !hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage?.();
-        }
-      },
-      { rootMargin: '200px' }
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // Mix ads into events array
+  // Mix ads into events array — must be declared before the virtualizer that reads it
   const mixedContent = React.useMemo(() => {
     if (!showAds) return events.map(event => ({ type: 'post' as const, data: event }));
 
@@ -107,6 +87,41 @@ const VirtualizedFeedListComponent = ({
     });
     return mixed;
   }, [events, showAds, adInterval]);
+
+  // Virtual list setup
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  useLayoutEffect(() => {
+    if (listRef.current) {
+      setScrollMargin(listRef.current.getBoundingClientRect().top + window.scrollY);
+    }
+  }, []);
+
+  // +1 for the footer row (loading indicator / end message)
+  const totalCount = mixedContent.length + 1;
+
+  const rowVirtualizer = useWindowVirtualizer({
+    count: totalCount,
+    estimateSize: (index) => {
+      if (index >= mixedContent.length) return 80;
+      const item = mixedContent[index];
+      if (item.type === 'ad') return 220;
+      return (item.data?.image_urls?.length ?? 0) > 0 ? 540 : 320;
+    },
+    overscan: 4,
+    scrollMargin,
+  });
+
+  // Trigger next page when virtual items approach the end
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  useEffect(() => {
+    const last = virtualItems[virtualItems.length - 1];
+    if (!last) return;
+    if (last.index >= mixedContent.length - 2 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage?.();
+    }
+  }, [virtualItems, mixedContent.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Event handlers
   const handleShare = (event: PostCardData) => {
@@ -192,11 +207,55 @@ const VirtualizedFeedListComponent = ({
 
   return (
     <>
-      <div className="w-full space-y-3 sm:space-y-4 md:space-y-6">
-        {mixedContent.map((item, index) => {
+      <div
+        ref={listRef}
+        style={{ height: rowVirtualizer.getTotalSize(), position: 'relative', width: '100%' }}
+      >
+        {virtualItems.map((virtualItem) => {
+          const isFooter = virtualItem.index >= mixedContent.length;
+
+          if (isFooter) {
+            return (
+              <div
+                key="footer"
+                data-index={virtualItem.index}
+                ref={rowVirtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start - rowVirtualizer.options.scrollMargin}px)`,
+                }}
+                className="py-4"
+              >
+                {isFetchingNextPage && <LoadingSkeleton />}
+                {!hasNextPage && events.length > 0 && (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    ✨ You've caught up with your community
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          const item = mixedContent[virtualItem.index];
+
           if (item.type === 'ad') {
             return (
-              <div key={`ad-${item.adIndex}`} className="animate-fade-in">
+              <div
+                key={`ad-${item.adIndex}`}
+                data-index={virtualItem.index}
+                ref={rowVirtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start - rowVirtualizer.options.scrollMargin}px)`,
+                  paddingBottom: '12px',
+                }}
+              >
                 <AdDisplay placement="feed" maxAds={1} />
               </div>
             );
@@ -206,37 +265,37 @@ const VirtualizedFeedListComponent = ({
           return (
             <div
               key={post.id}
-              ref={observePost}
-              data-post-id={post.id}
-              className="animate-fade-in"
+              data-index={virtualItem.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start - rowVirtualizer.options.scrollMargin}px)`,
+                paddingBottom: '12px',
+              }}
             >
-              <PostCard
-                post={post}
-                onLike={() => onLike(post.id)}
-                onSave={() => onSave(post.id)}
-                onShare={() => handleShare(post)}
-                onRSVP={() => handleRSVP(post)}
-                onAvatarClick={(userId) => handleAvatarClick(userId, post.author.full_name, post.author.avatar_url)}
-                onImageClick={(imageIndex) => handleImageClick(post, imageIndex)}
-                onPostClick={() => handlePostClick(post)}
-                showComments={visibleComments.has(post.id)}
-                onToggleComments={() => toggleComments(post.id)}
-                onEdit={() => handleEdit(post)}
-                onDelete={() => handleDelete(post)}
-              />
+              {/* Inner div carries data-post-id for the visibility observer */}
+              <div ref={observePost} data-post-id={post.id}>
+                <PostCard
+                  post={post}
+                  onLike={() => onLike(post.id)}
+                  onSave={() => onSave(post.id)}
+                  onShare={() => handleShare(post)}
+                  onRSVP={() => handleRSVP(post)}
+                  onAvatarClick={(userId) => handleAvatarClick(userId, post.author.full_name, post.author.avatar_url)}
+                  onImageClick={(imageIndex) => handleImageClick(post, imageIndex)}
+                  onPostClick={() => handlePostClick(post)}
+                  showComments={visibleComments.has(post.id)}
+                  onToggleComments={() => toggleComments(post.id)}
+                  onEdit={() => handleEdit(post)}
+                  onDelete={() => handleDelete(post)}
+                />
+              </div>
             </div>
           );
         })}
-
-        {/* Infinite scroll sentinel */}
-        <div ref={sentinelRef} className="py-4">
-          {isFetchingNextPage && <LoadingSkeleton />}
-          {!hasNextPage && events.length > 0 && (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              ✨ You've caught up with your community
-            </div>
-          )}
-        </div>
       </div>
 
       <FeedDialogs
