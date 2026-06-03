@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton, RecommendationGridSkeleton } from "@/components/skeletons";
+import { EmptyState } from "@/components/EmptyState";
+import { Star } from "@/lib/icons";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Sliders } from "@/lib/icons";
 import { CategoryPills } from "@/components/recommendations/CategoryPills";
@@ -37,11 +40,7 @@ export default function Recommendations() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageSkeleton><RecommendationGridSkeleton /></PageSkeleton>;
   }
 
   if (!user) {
@@ -92,28 +91,18 @@ export default function Recommendations() {
           {/* Recommendations Grid */}
           <div className="pt-2">
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                  <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
-                ))}
-              </div>
+              <RecommendationGridSkeleton />
             ) : (
               <InfiniteScroll
                 dataLength={data?.pages.flatMap(p => p.recommendations).length || 0}
                 next={fetchNextPage}
                 hasMore={hasNextPage || false}
-                loader={
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-6">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="h-80 bg-muted animate-pulse rounded-lg" />
-                    ))}
-                  </div>
-                }
+                loader={<RecommendationGridSkeleton count={4} />}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {data?.pages.flatMap(page => page.recommendations).map(recommendation => (
-                    <RecommendationCard 
-                      key={recommendation.id} 
+                    <RecommendationCard
+                      key={recommendation.id}
                       recommendation={recommendation}
                     />
                   ))}
@@ -122,16 +111,24 @@ export default function Recommendations() {
             )}
 
             {!isLoading && data?.pages[0]?.recommendations.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No recommendations found</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => setFilters({})}
-                >
-                  Clear filters
-                </Button>
-              </div>
+              <EmptyState
+                icon={<Star className="w-8 h-8" />}
+                title={Object.keys(filters).length > 0 ? "No matches found" : "No recommendations yet"}
+                description={
+                  Object.keys(filters).length > 0
+                    ? "Try adjusting your filters or browse all recommendations."
+                    : "Be the first to recommend a local business, service, or hidden gem in your community."
+                }
+                primaryAction={{
+                  label: "Add Recommendation",
+                  href: "/recommendations/create",
+                }}
+                secondaryAction={
+                  Object.keys(filters).length > 0
+                    ? { label: "Clear Filters", onClick: () => setFilters({}) }
+                    : undefined
+                }
+              />
             )}
           </div>
         </div>

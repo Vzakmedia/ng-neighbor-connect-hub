@@ -141,12 +141,14 @@ window.WebSocket = class extends originalWebSocket {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false, // Prevent unnecessary refetches
-      staleTime: 60 * 1000, // Increased from 30s to 60s for stale-while-revalidate
-      retry: 2, // Increased from 1 to 2
+      refetchOnWindowFocus: false,
+      // 5 min: profiles, listings, notifications don't change every minute.
+      // Feed overrides this to 5 min explicitly; other queries benefit from the same floor.
+      staleTime: 5 * 60 * 1000,
+      retry: 2,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      gcTime: 30 * 60 * 1000, // Increased from 5min to 30min (keep in memory longer)
-      networkMode: 'offlineFirst', // Prefer cache first
+      gcTime: 30 * 60 * 1000,
+      networkMode: 'offlineFirst',
     },
     mutations: {
       retry: 1,

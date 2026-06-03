@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { PageSkeleton, ProfileSkeleton } from "@/components/skeletons";
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,11 +26,7 @@ const Profile = () => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageSkeleton><ProfileSkeleton /></PageSkeleton>;
   }
 
   if (!user) {

@@ -10,6 +10,8 @@ import { AdDisplay } from '@/components/advertising/display/AdDisplay';
 import { EditPostDialog } from '../EditPostDialog';
 import { useDeletePost } from '@/hooks/useFeedQuery';
 import { useToast } from '@/hooks/use-toast';
+import { EmptyState } from '@/components/EmptyState';
+import { Users } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -196,12 +198,12 @@ const VirtualizedFeedListComponent = ({
 
   if (events.length === 0 && !showAds) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">No posts found in your area.</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Be the first to share something with your community!
-        </p>
-      </div>
+      <EmptyState
+        icon={<Users className="w-8 h-8" />}
+        title="Your community is waiting"
+        description="No posts in your area yet. Be the first to share something with your neighbors."
+        primaryAction={{ label: "Create Post", href: "/" }}
+      />
     );
   }
 

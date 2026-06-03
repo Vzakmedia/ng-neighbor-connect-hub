@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Background Runner requires minSdkVersion 24, but we support Android 6 (API 23).
+        The runner is guarded to iOS-only in code, so the JS engine never executes on Android.
+        This override suppresses the manifest merger conflict without raising our minimum.
+    -->
+    <uses-sdk
+        android:minSdkVersion="23"
+        tools:overrideLibrary="com.capacitorjs.android.backgroundrunner,com.capacitorjs.plugins.backgroundrunner" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

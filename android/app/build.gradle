@@ -16,8 +16,8 @@ android {
         applicationId "com.neighborlink.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 9
-        versionName "1.0.7"
+        versionCode 12
+        versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -41,7 +41,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Enable native debug symbols for better crash reporting
             ndk {
                 debugSymbolLevel 'FULL'

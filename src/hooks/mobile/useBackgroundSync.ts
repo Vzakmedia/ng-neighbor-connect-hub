@@ -6,10 +6,15 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+const isIOS = () => (window as any).Capacitor?.getPlatform?.() === 'ios';
 
-/** Dispatch the background-runner sync event so the OS can run it while suspended. */
+/**
+ * Dispatch the background-runner sync event (iOS only).
+ * Background Runner requires minSdkVersion 24 on Android; we keep Android on 23
+ * for wider device support, so the runner is intentionally skipped on Android.
+ */
 const dispatchBackgroundSyncEvent = async (): Promise<void> => {
-  if (!isNativePlatform()) return;
+  if (!isNativePlatform() || !isIOS()) return;
   try {
     const { BackgroundRunner } = await import('@capacitor/background-runner');
     await BackgroundRunner.dispatchEvent({

@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { PostDetailSkeleton } from "@/components/skeletons";
 import { PostCard } from '@/components/community/post/PostCard';
 import { transformToCardData } from '@/lib/community/postTransformers';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -116,8 +117,8 @@ export default function PostDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="min-h-screen bg-background">
+        <PostDetailSkeleton />
       </div>
     );
   }

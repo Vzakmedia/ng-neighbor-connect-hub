@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { PageSkeleton, MyItemsListSkeleton } from "@/components/skeletons";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import ServicesList from '@/components/ServicesList';
@@ -14,11 +15,7 @@ const MyGoods = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageSkeleton><MyItemsListSkeleton /></PageSkeleton>;
   }
 
   if (!user) {

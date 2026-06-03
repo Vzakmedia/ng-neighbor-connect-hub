@@ -73,25 +73,6 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
       }
 
       if (data.user && data.session) {
-        console.log(`[LoginForm] Login successful, verifying session...`);
-
-        // Verify session is properly set
-        const { data: sessionCheck } = await supabase.auth.getSession();
-        console.log(`[LoginForm] Session verification:`, {
-          hasSession: !!sessionCheck?.session,
-          userId: sessionCheck?.session?.user?.id
-        });
-
-        if (!sessionCheck?.session) {
-          console.error(`[LoginForm] Session not persisted after login`);
-          toast({
-            title: "Login Error",
-            description: "Session failed to persist. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-
         // Check if 2FA is enabled for this user
         const { data: user2fa } = await supabase
           .from('user_2fa')
@@ -103,33 +84,37 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           sessionStorage.setItem('pending2FA', data.user.id);
           await supabase.auth.signOut();
           navigate(`/auth/2fa-verify?userId=${data.user.id}`);
-        } else {
-          // Check if this is the user's first login
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_login_completed')
-            .eq('user_id', data.user.id)
-            .single();
-
-          const isFirstLogin = !profile?.first_login_completed;
-
-          if (isFirstLogin) {
-            await supabase
-              .from('profiles')
-              .update({ first_login_completed: true })
-              .eq('user_id', data.user.id);
-          }
-
-          toast({
-            title: isFirstLogin ? "Welcome to NeighborLink!" : "Welcome back!",
-            description: isFirstLogin
-              ? "You've successfully signed in for the first time."
-              : "You've been successfully logged in.",
-          });
-
-          console.log(`[LoginForm] Navigating to dashboard...`);
-          navigate('/dashboard');
+          return;
         }
+
+        // Check if this is the user's first login
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_login_completed')
+          .eq('user_id', data.user.id)
+          .single();
+
+        const isFirstLogin = !profile?.first_login_completed;
+
+        if (isFirstLogin) {
+          await supabase
+            .from('profiles')
+            .update({ first_login_completed: true })
+            .eq('user_id', data.user.id);
+        }
+
+        toast({
+          title: isFirstLogin ? "Welcome to NeighborLink!" : "Welcome back!",
+          description: isFirstLogin
+            ? "You've successfully signed in for the first time."
+            : "You've been successfully logged in.",
+        });
+
+        // Do NOT call navigate() here. Auth.tsx and MobileAuthFlow.tsx both
+        // watch `user` via useEffect and call navigate('/dashboard') once the
+        // onAuthStateChange SIGNED_IN event has fired and setUser() has been
+        // processed by React. Calling navigate here races that state update:
+        // ProtectedRoute still sees user=null and bounces back to /auth.
       }
     } catch (error) {
       console.error(`[LoginForm] Unexpected error:`, error);

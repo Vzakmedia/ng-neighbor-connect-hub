@@ -73,7 +73,7 @@ export const useDirectMessages = (userId: string | undefined) => {
 
         const { data, error } = await supabase
           .from("direct_messages")
-          .select("*")
+          .select("id,content,sender_id,recipient_id,created_at,status,delivered_at,read_at,attachments,conversation_id")
           .or(
             `and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`,
           )

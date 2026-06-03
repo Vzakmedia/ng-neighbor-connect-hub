@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ interface Props {
   showActions?: boolean;
 }
 
-export function RecommendationCard({ recommendation, variant = 'grid', showActions = true }: Props) {
+function RecommendationCardComponent({ recommendation, variant = 'grid', showActions = true }: Props) {
   const navigate = useNavigate();
   const toggleSave = useToggleSave();
   const toggleLike = useToggleLike();
@@ -42,9 +43,11 @@ export function RecommendationCard({ recommendation, variant = 'grid', showActio
         className="flex gap-4 p-4 cursor-pointer hover:shadow-md transition-all"
         onClick={() => navigate(`/recommendations/${recommendation.id}`)}
       >
-        <img 
+        <img
           src={mainImage}
           alt={recommendation.title}
+          loading="lazy"
+          decoding="async"
           className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
         />
         <div className="flex-1 min-w-0">
@@ -88,9 +91,11 @@ export function RecommendationCard({ recommendation, variant = 'grid', showActio
       onClick={() => navigate(`/recommendations/${recommendation.id}`)}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img 
+        <img
           src={mainImage}
           alt={recommendation.title}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {showActions && (
@@ -153,3 +158,5 @@ export function RecommendationCard({ recommendation, variant = 'grid', showActio
     </Card>
   );
 }
+
+export const RecommendationCard = memo(RecommendationCardComponent);

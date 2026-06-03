@@ -77,5 +77,12 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     target: 'es2017', // iOS Safari 12+ support
     keepNames: true,
+    // Strip debug/info/warn logs in production — keeps console.error for real errors.
+    // On Android, console calls are measurably slow; stripping ~30 calls in main.tsx
+    // alone saves CPU on every cold start.
+    pure: mode === 'production'
+      ? ['console.log', 'console.debug', 'console.info', 'console.warn']
+      : [],
+    drop: mode === 'production' ? ['debugger'] : [],
   },
 }));

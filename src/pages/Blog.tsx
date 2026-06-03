@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { usePublishedBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogSidebar } from '@/components/blog/BlogSidebar';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { BlogGridSkeleton } from "@/components/skeletons";
 import { Newspaper as BookOpen, ArrowLeft, X } from '@/lib/icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,10 +127,8 @@ const Blog = () => {
           {/* Blog Posts */}
           <div>
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <LoadingSpinner />
-              </div>
-            ) : !posts || posts.length === 0 ? (
+              <BlogGridSkeleton />
+            ) :!posts || posts.length === 0 ? (
               <Card className="max-w-md mx-auto">
                 <CardContent className="text-center py-12">
                   <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />

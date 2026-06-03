@@ -98,7 +98,12 @@ const config: CapacitorConfig = {
       event: 'syncOfflineQueue',
       repeat: true,
       interval: 15,  // minutes — iOS minimum is 15
-      autoSchedule: true,
+      // autoSchedule is false so Android never auto-queues the WorkManager job.
+      // The JS engine inside background-runner requires API 24; we support API 23.
+      // iOS scheduling is handled explicitly via dispatchBackgroundSyncEvent()
+      // (called in useBackgroundSync on app-background), which submits the
+      // BGAppRefreshTask and re-registers it for future runs.
+      autoSchedule: false,
     },
 
     CapacitorUpdater: {

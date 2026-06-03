@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { PageSkeleton, UserDirectorySkeleton } from "@/components/skeletons";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import { UserDirectory as UserDirectoryComponent } from '@/components/UserDirectory';
@@ -18,11 +19,7 @@ const UserDirectory = () => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageSkeleton><UserDirectorySkeleton /></PageSkeleton>;
   }
 
   if (!user) {

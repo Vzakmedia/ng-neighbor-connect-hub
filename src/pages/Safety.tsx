@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import SafetyCenter from '@/components/SafetyCenter';
 import { useAuth } from "@/hooks/useAuth";
+import { PageSkeleton, SafetyListSkeleton } from "@/components/skeletons";
 
 const Safety = () => {
   const { user, loading } = useAuth();
@@ -16,11 +17,7 @@ const Safety = () => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageSkeleton><SafetyListSkeleton /></PageSkeleton>;
   }
 
   if (!user) {
