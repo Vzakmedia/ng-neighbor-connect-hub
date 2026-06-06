@@ -8,24 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 const isIOS = () => (window as any).Capacitor?.getPlatform?.() === 'ios';
 
-/**
- * Dispatch the background-runner sync event (iOS only).
- * Background Runner requires minSdkVersion 24 on Android; we keep Android on 23
- * for wider device support, so the runner is intentionally skipped on Android.
- */
-const dispatchBackgroundSyncEvent = async (): Promise<void> => {
-  if (!isNativePlatform() || !isIOS()) return;
-  try {
-    const { BackgroundRunner } = await import('@capacitor/background-runner');
-    await BackgroundRunner.dispatchEvent({
-      label: 'com.neighborlink.background',
-      event: 'syncOfflineQueue',
-      details: {},
-    });
-  } catch (e) {
-    console.debug('[useBackgroundSync] background dispatch unavailable:', e);
-  }
-};
+
 
 // Exported type for queue operation types
 export type QueuedOperationType = 'post' | 'message' | 'upload' | 'update';

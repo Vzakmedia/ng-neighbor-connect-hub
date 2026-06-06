@@ -30,7 +30,6 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
-        background: path.resolve(__dirname, 'src/runners/backgroundSync.ts'),
       },
       onwarn(warning, warn) {
         // Capacitor modules are intentionally used as both static and dynamic imports
@@ -41,9 +40,6 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Better chunking for iOS compatibility
         manualChunks(id) {
-          // Don't split the background runner entry
-          if (id.includes('backgroundSync')) return undefined;
-
           if (id.includes('iosCompatibility') || id.includes('safetStorage')) return 'ios-compat';
 
           // Exact node_modules paths — avoid greedy substring matches
@@ -63,9 +59,7 @@ export default defineConfig(({ mode }) => ({
         },
         // Ensure proper module format for iOS
         format: 'es',
-        // background runner must land at dist/background.js (Capacitor copies from webDir)
-        entryFileNames: (chunkInfo) =>
-          chunkInfo.name === 'background' ? 'background.js' : 'assets/[name].[hash].js',
+        entryFileNames: `assets/[name].[hash].js`,
         chunkFileNames: `assets/[name].[hash].js`,
         assetFileNames: `assets/[name].[hash].[ext]`
       },

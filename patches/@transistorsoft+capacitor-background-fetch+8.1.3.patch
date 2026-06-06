@@ -1,0 +1,7 @@
+diff --git a/node_modules/@transistorsoft/capacitor-background-fetch/android/proguard-rules.pro b/node_modules/@transistorsoft/capacitor-background-fetch/android/proguard-rules.pro
+new file mode 100644
+index 0000000..0657701
+--- /dev/null
++++ b/node_modules/@transistorsoft/capacitor-background-fetch/android/proguard-rules.pro
+@@ -0,0 +1 @@
++# Dummy Proguard rules file for transistorsoft background-fetch to satisfy Gradle compiler

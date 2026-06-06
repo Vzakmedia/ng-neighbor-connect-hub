@@ -16,7 +16,7 @@ android {
         applicationId "com.neighborlink.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 15
+        versionCode 16
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -46,6 +46,11 @@ android {
             ndk {
                 debugSymbolLevel 'FULL'
             }
+        }
+    }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
