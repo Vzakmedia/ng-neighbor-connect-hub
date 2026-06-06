@@ -103,7 +103,7 @@ const CountUpAnimation = ({ value, className }: { value: string; className?: str
 const NewsletterForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const {
     register,
     handleSubmit,
@@ -115,7 +115,7 @@ const NewsletterForm = () => {
 
   const onSubmit = async (data: NewsletterFormData) => {
     setIsSubmitting(true);
-    
+
     try {
       const { error } = await supabase
         .from('newsletter_subscribers')
@@ -159,7 +159,7 @@ const NewsletterForm = () => {
           Subscribe to our newsletter for community updates, safety tips, and local news.
         </p>
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         <div className="flex-1">
           <Input
@@ -173,7 +173,7 @@ const NewsletterForm = () => {
             <p className="text-sm text-red-300 mt-1 text-left">{errors.email.message}</p>
           )}
         </div>
-        
+
         <Button
           type="submit"
           variant="secondary"
@@ -363,18 +363,18 @@ const InteractiveLandingPage = () => {
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = React.useState(0);
 
   const handlePrevTestimonial = () => {
-    setCurrentTestimonialIndex((prev) => 
+    setCurrentTestimonialIndex((prev) =>
       prev === 0 ? testimonials.length - 1 : prev - 1
     );
   };
 
   const handleNextTestimonial = () => {
-    setCurrentTestimonialIndex((prev) => 
+    setCurrentTestimonialIndex((prev) =>
       prev === testimonials.length - 1 ? 0 : prev + 1
     );
   };
   const FloatingElements = () => <div className="fixed inset-0 pointer-events-none overflow-hidden">
-      {Array.from({
+    {Array.from({
       length: 20
     }).map((_, i) => <motion.div key={i} className="absolute w-2 h-2 bg-primary/10 rounded-full" animate={{
       x: [0, Math.random() * 100 - 50],
@@ -388,12 +388,12 @@ const InteractiveLandingPage = () => {
       left: Math.random() * 100 + '%',
       top: Math.random() * 100 + '%'
     }} />)}
-    </div>;
+  </div>;
   return <div className="min-h-screen bg-muted/30">
-      <FloatingElements />
-      
-      {/* Animated cursor follower */}
-      <motion.div className="fixed w-6 h-6 border-2 border-primary/30 rounded-full pointer-events-none z-50 mix-blend-difference" animate={{
+    <FloatingElements />
+
+    {/* Animated cursor follower */}
+    <motion.div className="fixed w-6 h-6 border-2 border-primary/30 rounded-full pointer-events-none z-50 mix-blend-difference" animate={{
       x: mousePosition.x - 12,
       y: mousePosition.y - 12
     }} transition={{
@@ -402,10 +402,10 @@ const InteractiveLandingPage = () => {
       stiffness: 400
     }} />
 
-      {/* Main full-width container */}
-      <div className="w-full bg-background relative">
-        {/* Header */}
-        <motion.header initial={{
+    {/* Main full-width container */}
+    <div className="w-full bg-background relative">
+      {/* Header */}
+      <motion.header initial={{
         y: -100
       }} animate={{
         y: 0
@@ -421,19 +421,19 @@ const InteractiveLandingPage = () => {
               <span className="font-bold text-2xl md:text-3xl">NeighborLink</span>
             </Link>
           </motion.div>
-          
+
           <nav className="hidden md:flex items-center space-x-8">
             {['Features', 'About', 'Blog', 'Help', 'Contact'].map((item, index) => {
               const href = item === 'About' ? '/about' : item === 'Help' ? '/help' : item === 'Blog' ? '/blog' : item === 'Contact' ? '/contact' : `#${item.toLowerCase()}`;
               const LinkComponent = (item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? Link : 'a';
               return <motion.div key={item}>
-                  <LinkComponent href={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? undefined : href} to={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
-                    {item}
-                  </LinkComponent>
-                </motion.div>;
+                <LinkComponent href={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? undefined : href} to={(item === 'About' || item === 'Help' || item === 'Blog' || item === 'Contact') ? href : undefined} className="text-base md:text-lg font-medium hover:text-primary transition-colors">
+                  {item}
+                </LinkComponent>
+              </motion.div>;
             })}
           </nav>
-          
+
           <div className="hidden md:flex items-center space-x-3">
             <motion.div whileHover={{
               scale: 1.05
@@ -507,9 +507,9 @@ const InteractiveLandingPage = () => {
                 </motion.div>
               );
             })}
-            
+
             <Separator className="my-2" />
-            
+
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{
@@ -543,14 +543,14 @@ const InteractiveLandingPage = () => {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        
+
         {/* Mouse-following pulsating gradient circle */}
-        <motion.div 
+        <motion.div
           className="fixed w-[500px] h-[500px] md:w-[600px] md:h-[600px] lg:w-[700px] lg:h-[700px] rounded-full blur-[120px] pointer-events-none z-10"
           style={{
             background: 'radial-gradient(circle, hsl(162, 85%, 30%) 0%, hsl(162, 75%, 25%) 30%, transparent 70%)'
           }}
-          animate={{ 
+          animate={{
             x: mousePosition.x - 250,
             y: mousePosition.y - 250,
             opacity: [0.15, 0.25, 0.15],
@@ -563,7 +563,7 @@ const InteractiveLandingPage = () => {
             scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
         />
-        
+
         <div className="w-full relative min-h-[calc(100vh-4rem)] md:min-h-screen flex flex-col items-center justify-center">
           <div className="w-full max-w-6xl lg:max-w-7xl px-4 sm:px-6 md:px-8 py-1 sm:py-2 md:py-3 mx-auto my-[100px] mb-12 sm:mb-16 md:mb-20 lg:mb-24">
             <motion.div initial={{
@@ -576,19 +576,19 @@ const InteractiveLandingPage = () => {
               duration: 0.8
             }} className="space-y-6 sm:space-y-8 text-center">
               <div className="space-y-4 sm:space-y-6">
-                
-                <motion.h1 
+
+                <motion.h1
                   initial={{
                     opacity: 0,
                     y: 20
-                  }} 
+                  }}
                   animate={{
                     opacity: 1,
                     y: 0
-                  }} 
+                  }}
                   transition={{
                     delay: 0.3
-                  }} 
+                  }}
                   className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight px-2"
                 >
                   Connect with your <span className="inline-block text-white bg-[hsl(var(--community-green))] px-4 py-2 rounded-lg">
@@ -596,7 +596,7 @@ const InteractiveLandingPage = () => {
                   </span><br />
                   like never before
                 </motion.h1>
-                
+
                 <motion.p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-md sm:max-w-lg lg:max-w-3xl mx-auto leading-relaxed px-4" initial={{
                   opacity: 0,
                   y: 20
@@ -606,11 +606,11 @@ const InteractiveLandingPage = () => {
                 }} transition={{
                   delay: 0.4
                 }}>
-                  Join thousands of Nigerians building safer, more connected communities. 
+                  Join thousands of Nigerians building safer, more connected communities.
                   Share resources, stay safe, and create lasting bonds with your neighbors.
                 </motion.p>
               </div>
-              
+
               <motion.div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4" initial={{
                 opacity: 0,
                 y: 20
@@ -633,7 +633,7 @@ const InteractiveLandingPage = () => {
                     </Button>
                   </Link>
                 </motion.div>
-                
+
                 <motion.div whileHover={{
                   scale: 1.05
                 }} whileTap={{
@@ -647,7 +647,7 @@ const InteractiveLandingPage = () => {
               </motion.div>
             </motion.div>
           </div>
-          
+
           {/* Community Connection Visual - Outside constrained div */}
           <motion.div initial={{
             opacity: 0,
@@ -681,9 +681,9 @@ const InteractiveLandingPage = () => {
                          group-hover:brightness-105" />
           </motion.div>
         </div>
-        
+
         {/* Fade-out gradient overlay at bottom */}
-        <div 
+        <div
           className="absolute bottom-0 left-0 right-0 h-[200px] md:h-[300px] pointer-events-none z-20"
           style={{
             background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--background) / 0.3) 30%, hsl(var(--background) / 0.7) 60%, hsl(var(--background)) 100%)'
@@ -733,7 +733,7 @@ const InteractiveLandingPage = () => {
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                     className="text-center"
                   >
-                    <CountUpAnimation 
+                    <CountUpAnimation
                       value={stat.number}
                       className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2"
                     />
@@ -751,7 +751,7 @@ const InteractiveLandingPage = () => {
       {/* Features Section with Tabs */}
       <section id="features" className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
-        
+
         <div className="container mx-auto px-4 relative z-10">
           {/* FEATURES Label with Line */}
           <motion.div
@@ -787,7 +787,7 @@ const InteractiveLandingPage = () => {
 
           {/* Feature Tabs Carousel */}
           <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full mb-12">
-            <div 
+            <div
               className="relative"
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
@@ -835,8 +835,8 @@ const InteractiveLandingPage = () => {
                   className="w-full"
                 >
                   <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
-                    <img 
-                      src={feature.image} 
+                    <img
+                      src={feature.image}
                       alt={feature.title}
                       className="w-full h-full object-cover"
                     />
@@ -901,8 +901,8 @@ const InteractiveLandingPage = () => {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <img 
-                      src={testimonials[currentTestimonialIndex].image} 
+                    <img
+                      src={testimonials[currentTestimonialIndex].image}
                       alt={testimonials[currentTestimonialIndex].name}
                       className="w-16 h-16 rounded-full object-cover ring-2 ring-green-500/20"
                     />
@@ -957,7 +957,7 @@ const InteractiveLandingPage = () => {
             <div className="w-0.5 h-6 bg-primary"></div>
             <div className="text-primary text-sm font-medium tracking-wider">API INTEGRATION</div>
           </motion.div>
-          
+
           {/* Two Column Layout */}
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Left Column - All Content */}
@@ -1126,7 +1126,7 @@ const InteractiveLandingPage = () => {
             <div className="w-0.5 h-6 bg-primary"></div>
             <div className="text-primary text-sm font-medium tracking-wider">COMMUNITY GUIDELINES</div>
           </motion.div>
-          
+
           {/* Two Column Layout - Flipped */}
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Left Column - Visual/Mockup */}
@@ -1314,7 +1314,7 @@ const InteractiveLandingPage = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {[{
               icon: Mail,
@@ -1347,21 +1347,21 @@ const InteractiveLandingPage = () => {
                 y: -5,
                 scale: 1.02
               }}>
-                  <Card className="p-8 space-y-4 hover:shadow-xl transition-all h-full">
-                    <motion.div animate={{
+                <Card className="p-8 space-y-4 hover:shadow-xl transition-all h-full">
+                  <motion.div animate={{
                     scale: [1, 1.1, 1]
                   }} transition={{
                     duration: 2,
                     repeat: Infinity,
                     delay: index * 0.5
                   }}>
-                      <IconComponent className="w-12 h-12 text-primary" />
-                    </motion.div>
-                    <h3 className="text-xl font-semibold">{contact.title}</h3>
-                    <p className="text-lg font-medium text-primary">{contact.info}</p>
-                    <p className="text-sm text-muted-foreground">{contact.detail}</p>
-                  </Card>
-                </motion.div>;
+                    <IconComponent className="w-12 h-12 text-primary" />
+                  </motion.div>
+                  <h3 className="text-xl font-semibold">{contact.title}</h3>
+                  <p className="text-lg font-medium text-primary">{contact.info}</p>
+                  <p className="text-sm text-muted-foreground">{contact.detail}</p>
+                </Card>
+              </motion.div>;
             })}
           </div>
         </div>
@@ -1374,7 +1374,7 @@ const InteractiveLandingPage = () => {
       <footer className="bg-primary text-white">
         <div className="container mx-auto px-4 py-16">
           {/* CTA Card at top of footer */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -1384,7 +1384,7 @@ const InteractiveLandingPage = () => {
               backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
               backgroundSize: "50px 50px"
             }} />
-            
+
             <div className="relative grid md:grid-cols-2 gap-8 items-center">
               {/* Left side - Heading and Description */}
               <div className="space-y-3">
@@ -1395,7 +1395,7 @@ const InteractiveLandingPage = () => {
                   Join thousands of Nigerians already creating safer, more connected neighborhoods.
                 </p>
               </div>
-              
+
               {/* Right side - Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 md:justify-end">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -1406,11 +1406,13 @@ const InteractiveLandingPage = () => {
                     </Button>
                   </Link>
                 </motion.div>
-                
+
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                    Download App
-                  </Button>
+                  <a href="https://play.google.com/store/apps/details?id=com.neighborlink.app" target="_blank" rel="noopener noreferrer">
+                    <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                      Download App
+                    </Button>
+                  </a>
                 </motion.div>
               </div>
             </div>
@@ -1419,7 +1421,7 @@ const InteractiveLandingPage = () => {
           {/* Footer Navigation */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
             {/* Brand Column */}
-            <motion.div 
+            <motion.div
               className="col-span-2 md:col-span-3 lg:col-span-1 space-y-4"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -1433,7 +1435,7 @@ const InteractiveLandingPage = () => {
                 Lagos, Nigeria
               </p>
             </motion.div>
-            
+
             {/* Features Column */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Features</h4>
@@ -1444,7 +1446,7 @@ const InteractiveLandingPage = () => {
                 <Link to="/safety" className="block text-white/70 hover:text-white transition-colors">Neighborhood Watch</Link>
               </div>
             </div>
-            
+
             {/* Platform Column */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Platform</h4>
@@ -1456,7 +1458,7 @@ const InteractiveLandingPage = () => {
                 <Link to="/terms" className="block text-white/70 hover:text-white transition-colors">Terms of Service</Link>
               </div>
             </div>
-            
+
             {/* Resources Column */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Resources</h4>
@@ -1467,7 +1469,7 @@ const InteractiveLandingPage = () => {
                 <Link to="/security" className="block text-white/70 hover:text-white transition-colors">Security</Link>
               </div>
             </div>
-            
+
             {/* Community Column */}
             <div>
               <h4 className="font-semibold mb-4 text-white">Community</h4>
@@ -1477,7 +1479,7 @@ const InteractiveLandingPage = () => {
                 <a href="#" className="block text-white/70 hover:text-white transition-colors">Webinars</a>
               </div>
             </div>
-            
+
             {/* About Us Column */}
             <div>
               <h4 className="font-semibold mb-4 text-white">About Us</h4>
@@ -1489,7 +1491,7 @@ const InteractiveLandingPage = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Newsletter Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1499,10 +1501,10 @@ const InteractiveLandingPage = () => {
           >
             <NewsletterForm />
           </motion.div>
-          
+
           {/* Bottom Bar */}
           <div className="border-t border-white/20 pt-8">
-            <motion.div 
+            <motion.div
               className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -1510,8 +1512,8 @@ const InteractiveLandingPage = () => {
             >
               <p className="text-sm text-white/70">© 2025 NeighborLink. All rights reserved.</p>
               <div className="flex space-x-4">
-                <motion.a 
-                  href="#" 
+                <motion.a
+                  href="#"
                   className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
@@ -1519,8 +1521,8 @@ const InteractiveLandingPage = () => {
                   <FaFacebook className="w-5 h-5" />
                   <span className="sr-only">Facebook</span>
                 </motion.a>
-                <motion.a 
-                  href="#" 
+                <motion.a
+                  href="#"
                   className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
@@ -1528,8 +1530,8 @@ const InteractiveLandingPage = () => {
                   <FaInstagram className="w-5 h-5" />
                   <span className="sr-only">Instagram</span>
                 </motion.a>
-                <motion.a 
-                  href="#" 
+                <motion.a
+                  href="#"
                   className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
@@ -1537,8 +1539,8 @@ const InteractiveLandingPage = () => {
                   <FaTwitter className="w-5 h-5" />
                   <span className="sr-only">Twitter</span>
                 </motion.a>
-                <motion.a 
-                  href="#" 
+                <motion.a
+                  href="#"
                   className="text-white/70 hover:text-white transition-colors"
                   whileHover={{ scale: 1.2 }}
                   transition={{ duration: 0.3 }}
@@ -1551,9 +1553,9 @@ const InteractiveLandingPage = () => {
           </div>
         </div>
       </footer>
-      
+
       <BackToTop />
-      </div>
-    </div>;
+    </div>
+  </div>;
 };
 export default InteractiveLandingPage;
