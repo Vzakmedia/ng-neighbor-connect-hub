@@ -36,54 +36,7 @@ export const useBackgroundSync = () => {
   const { toast } = useToast();
   const isNative = isNativePlatform();
 
-  // Load queue from storage on mount
-  useEffect(() => {
-    loadQueue();
-  }, []);
 
-  // Save queue to storage whenever it changes
-  useEffect(() => {
-    if (queue.length > 0) {
-      setItem(QUEUE_KEY, JSON.stringify(queue));
-    } else {
-      setItem(QUEUE_KEY, '[]');
-    }
-  }, [queue, setItem]);
-
-  // Process queue when coming online
-  useEffect(() => {
-    if (isOnline && queue.length > 0 && !isProcessing) {
-      processQueue();
-    }
-  }, [isOnline, queue.length]);
-
-  // Listen for silent FCM background-sync push — drain queue immediately.
-  useEffect(() => {
-    const handler = () => {
-      if (isOnline) processQueue();
-    };
-    window.addEventListener('background-sync-requested', handler);
-    return () => window.removeEventListener('background-sync-requested', handler);
-  }, [isOnline, processQueue]);
-
-  // When the app goes to background with pending items, attempt a final sync.
-  useEffect(() => {
-    if (!isNative) return;
-
-    let listenerHandle: { remove: () => Promise<void> } | null = null;
-
-    import('@capacitor/app').then(({ App }) => {
-      App.addListener('appStateChange', ({ isActive }) => {
-        if (!isActive && queue.length > 0 && isOnline) {
-          processQueue();
-        }
-      }).then(handle => { listenerHandle = handle; });
-    });
-
-    return () => {
-      listenerHandle?.remove();
-    };
-  }, [isNative, queue.length, isOnline, processQueue]);
 
   const loadQueue = async () => {
     const stored = await getItem(QUEUE_KEY);
@@ -307,6 +260,54 @@ export const useBackgroundSync = () => {
       failed: queue.filter(op => op.retryCount >= op.maxRetries).length,
     };
   }, [queue]);
+  // Load queue from storage on mount
+  useEffect(() => {
+    loadQueue();
+  }, []);
+
+  // Save queue to storage whenever it changes
+  useEffect(() => {
+    if (queue.length > 0) {
+      setItem(QUEUE_KEY, JSON.stringify(queue));
+    } else {
+      setItem(QUEUE_KEY, '[]');
+    }
+  }, [queue, setItem]);
+
+  // Process queue when coming online
+  useEffect(() => {
+    if (isOnline && queue.length > 0 && !isProcessing) {
+      processQueue();
+    }
+  }, [isOnline, queue.length]);
+
+  // Listen for silent FCM background-sync push — drain queue immediately.
+  useEffect(() => {
+    const handler = () => {
+      if (isOnline) processQueue();
+    };
+    window.addEventListener('background-sync-requested', handler);
+    return () => window.removeEventListener('background-sync-requested', handler);
+  }, [isOnline, processQueue]);
+
+  // When the app goes to background with pending items, attempt a final sync.
+  useEffect(() => {
+    if (!isNative) return;
+
+    let listenerHandle: { remove: () => Promise<void> } | null = null;
+
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive && queue.length > 0 && isOnline) {
+          processQueue();
+        }
+      }).then(handle => { listenerHandle = handle; });
+    });
+
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, [isNative, queue.length, isOnline, processQueue]);
 
   return {
     queue,
