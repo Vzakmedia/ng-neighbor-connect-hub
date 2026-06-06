@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Calendar, Users } from '@/lib/icons';
 import { PageSkeleton, EventListSkeleton } from "@/components/skeletons";
 import EventFeed from '@/components/EventFeed';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorState } from '@/components/ErrorState';
 import CreateEventDialog from '@/components/CreateEventDialog';
 import MyEventsPanel from '@/components/MyEventsPanel';
 import { AdDisplay } from '@/components/advertising/display/AdDisplay';
@@ -73,7 +75,9 @@ const Events = () => {
             </div>
             
             <TabsContent value="all" className="space-y-6">
-              <EventFeed key={refreshKey} />
+              <ErrorBoundary fallback={<ErrorState title="Events unavailable" description="Something went wrong loading events." onRetry={() => window.location.reload()} />}>
+                <EventFeed key={refreshKey} />
+              </ErrorBoundary>
               <AdDisplay placement="inline" maxAds={2} />
             </TabsContent>
             

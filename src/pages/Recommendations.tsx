@@ -10,6 +10,8 @@ import { CategoryPills } from "@/components/recommendations/CategoryPills";
 import { RecommendationCard } from "@/components/recommendations/RecommendationCard";
 import { FilterModal } from "@/components/recommendations/FilterModal";
 import { useRecommendations } from "@/hooks/useRecommendations.tsx";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorState } from "@/components/ErrorState";
 import type { RecommendationFilters } from "@/types/recommendations";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Header from "@/components/Header";
@@ -22,7 +24,7 @@ export default function Recommendations() {
   const [filters, setFilters] = useState<RecommendationFilters>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data, fetchNextPage, hasNextPage, isLoading } = useRecommendations(filters);
+  const { data, fetchNextPage, hasNextPage, isLoading, isError, refetch } = useRecommendations(filters);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -90,7 +92,13 @@ export default function Recommendations() {
 
           {/* Recommendations Grid */}
           <div className="pt-2">
-            {isLoading ? (
+            {isError ? (
+              <ErrorState
+                title="Couldn't load recommendations"
+                description="We had trouble fetching recommendations. Please try again."
+                onRetry={() => refetch()}
+              />
+            ) : isLoading ? (
               <RecommendationGridSkeleton />
             ) : (
               <InfiniteScroll
@@ -110,7 +118,7 @@ export default function Recommendations() {
               </InfiniteScroll>
             )}
 
-            {!isLoading && data?.pages[0]?.recommendations.length === 0 && (
+            {!isLoading && !isError && data?.pages[0]?.recommendations.length === 0 && (
               <EmptyState
                 icon={<Star className="w-8 h-8" />}
                 title={Object.keys(filters).length > 0 ? "No matches found" : "No recommendations yet"}

@@ -182,9 +182,20 @@ export const useNativePushRegistration = () => {
           if (import.meta.env.DEV) {
             console.log('[PushRegistration] Push received (foreground):', notification);
           }
-          await nativeAudioManager.play('notification', 0.7);
 
           const notificationData = (notification.data || {}) as Record<string, string>;
+
+          // ── Silent background-sync trigger (no visible notification) ──
+          if (
+            notificationData?.notification_type === 'background_sync' ||
+            notificationData?.type === 'background_sync'
+          ) {
+            window.dispatchEvent(new CustomEvent('background-sync-requested'));
+            return;
+          }
+
+          await nativeAudioManager.play('notification', 0.7);
+
           const isCallNotification =
             notificationData?.notification_type === 'call_incoming' ||
             notificationData?.type === 'call_incoming';

@@ -1,12 +1,9 @@
-import { useEffect } from 'react';
 import { useNativePushRegistration } from '@/hooks/mobile/useNativePushRegistration';
+import { useBackgroundFetch } from '@/hooks/mobile/useBackgroundFetch';
 
-/**
- * Component that handles native push registration on iOS/Android
- * This is a separate component so the hook can be called properly
- */
 export const NativePushRegistration = () => {
   useNativePushRegistration();
+  useBackgroundFetch();
   return null;
 };
 

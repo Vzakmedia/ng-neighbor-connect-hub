@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { handleApiError } from "@/utils/errorHandling";
 
 interface PollData {
   id: string;
@@ -95,6 +96,9 @@ export const usePoll = (postId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["poll", postId] });
+    },
+    onError: (error) => {
+      handleApiError(error);
     },
   });
 

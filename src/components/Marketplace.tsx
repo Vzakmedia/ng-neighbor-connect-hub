@@ -45,6 +45,8 @@ import CreateMarketplaceItemDialog from './CreateMarketplaceItemDialog';
 import CreateServiceDialog from './CreateServiceDialog';
 import { MarketplaceFilterDialog } from './marketplace/MarketplaceFilterDialog';
 import { AdDisplay } from '@/components/advertising/display/AdDisplay';
+import { ErrorState } from '@/components/ErrorState';
+import { handleApiError } from '@/utils/errorHandling';
 
 
 interface Service {
@@ -110,6 +112,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filters, setFilters] = useState({
     category: ['all'],
     priceRange: [] as string[],
@@ -187,6 +190,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
 
   const fetchServices = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
@@ -273,7 +277,8 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
 
       setServices(filteredServices as any || []);
     } catch (error) {
-      console.error('Error fetching services:', error);
+      handleApiError(error);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -281,6 +286,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
 
   const fetchItems = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       // Get user's creation date for clean slate filtering
       const { data: userData } = await supabase.auth.getUser();
@@ -367,7 +373,8 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
 
       setItems(filteredItems as any || []);
     } catch (error) {
-      console.error('Error fetching items:', error);
+      handleApiError(error);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -582,7 +589,13 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
       </div>
 
       {/* Results Grid */}
-      {loading ? (
+      {fetchError ? (
+        <ErrorState
+          title="Couldn't load listings"
+          description="We had trouble fetching marketplace content. Please try again."
+          onRetry={() => activeSubTab === 'services' ? fetchServices() : fetchItems()}
+        />
+      ) : loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -835,7 +848,7 @@ const Marketplace = ({ activeSubTab = 'services', locationScope = 'neighborhood'
       )}
 
       {/* Empty State */}
-       {!loading && currentItems.length === 0 && (
+       {!loading && !fetchError && currentItems.length === 0 && (
         <div className="text-center py-12">
           <div className="h-24 w-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             {activeSubTab === 'services' ? (

@@ -13,16 +13,17 @@ interface LazyImageProps {
  * Lazy-loaded image component using Intersection Observer
  * Optimized for native Android GPU buffer management
  */
-export const LazyImage = ({ 
-  src, 
-  alt, 
-  className = '', 
+export const LazyImage = ({
+  src,
+  alt,
+  className = '',
   onClick,
-  onError 
+  onError
 }: LazyImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
   const isNative = isNativePlatform();
@@ -107,7 +108,7 @@ export const LazyImage = ({
       )}
       
       {/* Actual image - only render when in view and ready */}
-      {isInView && shouldRender && (
+      {isInView && shouldRender && !imgError && (
         <img
           ref={handleImageRef}
           src={src}
@@ -117,7 +118,20 @@ export const LazyImage = ({
           className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
           style={gpuOptimizedStyles}
           onLoad={handleLoad}
-          onError={onError}
+          onError={() => {
+            setImgError(true);
+            onError?.();
+          }}
+          onClick={onClick}
+        />
+      )}
+
+      {/* Fallback placeholder when image fails to load */}
+      {imgError && (
+        <img
+          src="/placeholder.svg"
+          alt={alt}
+          className={`${className} opacity-60`}
           onClick={onClick}
         />
       )}

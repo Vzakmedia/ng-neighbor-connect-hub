@@ -146,3 +146,60 @@ export async function sendFcmMessage(
     result,
   };
 }
+
+/**
+ * Sends a data-only (silent) FCM message — no visible notification.
+ * Android delivers this even when the app is backgrounded/killed via FCM high-priority.
+ * Use for background sync triggers, cache invalidation, etc.
+ */
+export async function sendSilentFcmMessage(
+  token: string,
+  data: Record<string, unknown>,
+  priority: 'normal' | 'high' = 'high',
+): Promise<{ ok: boolean; result: unknown }> {
+  const serviceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT');
+  if (!serviceAccountJson) {
+    return { ok: false, result: { skipped: true, reason: 'missing_service_account' } };
+  }
+
+  const serviceAccount = JSON.parse(serviceAccountJson) as Record<string, string>;
+  const accessToken = await getFcmAccessToken(serviceAccount);
+  const projectId = serviceAccount.project_id;
+
+  const response = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        message: {
+          token,
+          // No `notification` field — this makes it a silent data message
+          data: stringifyData(data),
+          android: {
+            priority,
+            // content_available wakes the app on Android
+            direct_boot_ok: true,
+          },
+          apns: {
+            headers: {
+              'apns-push-type': 'background',
+              'apns-priority': '5', // must be 5 for background pushes on iOS
+            },
+            payload: {
+              aps: {
+                'content-available': 1,
+              },
+            },
+          },
+        },
+      }),
+    },
+  );
+
+  const result = await response.json();
+  return { ok: response.ok, result };
+}

@@ -16,7 +16,7 @@ android {
         applicationId "com.neighborlink.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 12
+        versionCode 15
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -53,7 +53,6 @@ android {
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
-		dirs '../../node_modules/@capacitor/background-runner/android/src/main/libs', 'libs'
     }
 }
 

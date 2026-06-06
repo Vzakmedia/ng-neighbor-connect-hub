@@ -11,9 +11,6 @@ project(':capacitor-community-contacts').projectDir = new File('../node_modules/
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
 
-include ':capacitor-background-runner'
-project(':capacitor-background-runner').projectDir = new File('../node_modules/@capacitor/background-runner/android')
-
 include ':capacitor-browser'
 project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')
 
@@ -70,3 +67,6 @@ project(':capgo-capacitor-updater').projectDir = new File('../node_modules/@capg
 
 include ':capgo-native-audio'
 project(':capgo-native-audio').projectDir = new File('../node_modules/@capgo/native-audio/android')
+
+include ':transistorsoft-capacitor-background-fetch'
+project(':transistorsoft-capacitor-background-fetch').projectDir = new File('../node_modules/@transistorsoft/capacitor-background-fetch/android')

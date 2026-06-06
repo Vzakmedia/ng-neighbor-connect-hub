@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { handleApiError } from '@/utils/errorHandling';
+import { ErrorState } from '@/components/ErrorState';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,10 +65,12 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
   });
   const [requestingVerification, setRequestingVerification] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [profileError, setProfileError] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!targetUserId) return;
     let cancelled = false;
+    setProfileError(false);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -75,7 +79,8 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
+        handleApiError(error);
+        if (!cancelled) setProfileError(true);
         return;
       }
 
@@ -91,7 +96,8 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
         bio: data?.bio || ''
       });
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      handleApiError(error);
+      if (!cancelled) setProfileError(true);
     } finally {
       if (!cancelled) setLoading(false);
     }
@@ -426,6 +432,16 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <ErrorState
+        title="Couldn't load profile"
+        description="We had trouble fetching this profile. Please try again."
+        onRetry={fetchProfile}
+      />
     );
   }
 

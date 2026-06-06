@@ -74,8 +74,16 @@ export const useBackgroundSync = () => {
     }
   }, [isOnline, queue.length]);
 
-  // When app goes to background with pending items, hand off to BackgroundRunner
-  // so the OS can drain the queue while the app is suspended.
+  // Listen for silent FCM background-sync push — drain queue immediately.
+  useEffect(() => {
+    const handler = () => {
+      if (isOnline) processQueue();
+    };
+    window.addEventListener('background-sync-requested', handler);
+    return () => window.removeEventListener('background-sync-requested', handler);
+  }, [isOnline, processQueue]);
+
+  // When the app goes to background with pending items, attempt a final sync.
   useEffect(() => {
     if (!isNative) return;
 
@@ -83,8 +91,8 @@ export const useBackgroundSync = () => {
 
     import('@capacitor/app').then(({ App }) => {
       App.addListener('appStateChange', ({ isActive }) => {
-        if (!isActive && queue.length > 0) {
-          dispatchBackgroundSyncEvent();
+        if (!isActive && queue.length > 0 && isOnline) {
+          processQueue();
         }
       }).then(handle => { listenerHandle = handle; });
     });
@@ -92,7 +100,7 @@ export const useBackgroundSync = () => {
     return () => {
       listenerHandle?.remove();
     };
-  }, [isNative, queue.length]);
+  }, [isNative, queue.length, isOnline, processQueue]);
 
   const loadQueue = async () => {
     const stored = await getItem(QUEUE_KEY);

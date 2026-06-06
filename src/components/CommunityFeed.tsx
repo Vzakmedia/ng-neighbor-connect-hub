@@ -13,6 +13,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { useReadStatus } from "@/hooks/useReadStatus";
 import { useNativeNetwork } from "@/hooks/mobile/useNativeNetwork";
 import { isAppActive } from "@/utils/appState";
+import { ErrorState } from "@/components/ErrorState";
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -89,9 +90,11 @@ export const CommunityFeed = ({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
+    error,
     refetch,
     isFetching,
-    isPlaceholderData, // NEW: Track if showing stale cached data
+    isPlaceholderData,
   } = useFeedQuery(feedQueryFilters);
 
   // Mutations
@@ -251,6 +254,24 @@ export const CommunityFeed = ({
 
     return () => clearInterval(interval);
   }, [refetch, pollingInterval, isNative]);
+
+  if (isError) {
+    const errorContent = (
+      <ErrorState
+        title="Couldn't load feed"
+        description="We had trouble loading posts. Please try again."
+        onRetry={() => refetch()}
+      />
+    );
+    if (isMobile) {
+      return (
+        <NativePullToRefresh onRefresh={handlePullRefresh} className="min-h-screen">
+          {errorContent}
+        </NativePullToRefresh>
+      );
+    }
+    return errorContent;
+  }
 
   const feedContent = (
     <div className="max-w-2xl mx-auto">

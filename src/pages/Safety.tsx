@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import SafetyCenter from '@/components/SafetyCenter';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorState } from '@/components/ErrorState';
 import { useAuth } from "@/hooks/useAuth";
 import { PageSkeleton, SafetyListSkeleton } from "@/components/skeletons";
 
@@ -31,7 +33,9 @@ const Safety = () => {
       
       <main className="md:ml-16 lg:ml-64 pb-16 md:pb-0">
         <div className="h-[calc(100vh-64px)]">
-          <SafetyCenter />
+          <ErrorBoundary fallback={<ErrorState title="Safety center unavailable" description="Something went wrong loading the safety center." onRetry={() => window.location.reload()} />}>
+            <SafetyCenter />
+          </ErrorBoundary>
         </div>
       </main>
     </div>

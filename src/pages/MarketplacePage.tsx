@@ -9,6 +9,8 @@ import Header from '@/components/Header';
 import Navigation from '@/components/Navigation';
 import Marketplace from '@/components/Marketplace';
 import BusinessListings from '@/components/BusinessListings';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorState } from '@/components/ErrorState';
 import { useAuth } from "@/hooks/useAuth";
 
 const MarketplacePage = () => {
@@ -153,11 +155,15 @@ const MarketplacePage = () => {
             </div>
             
             <TabsContent value="marketplace" className="mt-6">
-              <Marketplace activeSubTab={marketSubTab} locationScope={viewScope} />
+              <ErrorBoundary fallback={<ErrorState title="Marketplace unavailable" description="Something went wrong loading the marketplace." onRetry={() => window.location.reload()} />}>
+                <Marketplace activeSubTab={marketSubTab} locationScope={viewScope} />
+              </ErrorBoundary>
             </TabsContent>
-            
+
             <TabsContent value="businesses" className="mt-6">
-              <BusinessListings />
+              <ErrorBoundary fallback={<ErrorState title="Businesses unavailable" description="Something went wrong loading business listings." onRetry={() => window.location.reload()} />}>
+                <BusinessListings />
+              </ErrorBoundary>
             </TabsContent>
           </Tabs>
         </div>
