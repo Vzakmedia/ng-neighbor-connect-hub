@@ -17,7 +17,7 @@ const Home = () => {
 
   // Redirect to landing page if not authenticated
   if (!user) {
-    return <Navigate to="/landing" replace />;
+    return <Navigate to="/company" replace />;
   }
 
   // Only show this page on mobile/native, redirect desktop users to feed

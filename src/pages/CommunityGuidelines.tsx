@@ -19,7 +19,7 @@ const CommunityGuidelines = () => {
               />
               <span className="font-bold text-xl">NeighborLink</span>
             </div>
-            <Link to="/landing">
+            <Link to="/company">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home

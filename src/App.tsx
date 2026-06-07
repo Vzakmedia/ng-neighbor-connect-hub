@@ -317,7 +317,7 @@ const App = () => {
                         <Routes>
                           {/* ─── Public routes ─── */}
                           <Route path="/" element={<PlatformRoot />} />
-                          <Route path="/landing" element={<Landing />} />
+                          <Route path="/company" element={<Landing />} />
                           <Route path="/about" element={<About />} />
                           <Route path="/auth" element={<Auth />} />
                           <Route path="/auth/verify-email" element={<VerifyEmail />} />

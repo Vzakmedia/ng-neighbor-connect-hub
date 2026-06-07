@@ -235,7 +235,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
   // Don't show emergency alerts on auth or onboarding pages
   const isAuthPage = location.pathname.startsWith('/auth') ||
-    location.pathname === '/landing' ||
+    location.pathname === '/company' ||
     location.pathname === '/complete-profile';
 
   if (!user || alerts.length === 0 || isAuthPage) return null;

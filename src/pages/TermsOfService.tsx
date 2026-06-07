@@ -80,7 +80,7 @@ const TermsOfServicePage = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
-          <Link to="/landing" className="flex items-center space-x-2">
+          <Link to="/company" className="flex items-center space-x-2">
             <img 
               src="/neighborlink-logo.png" 
               alt="NeighborLink Logo" 
@@ -99,7 +99,7 @@ const TermsOfServicePage = () => {
               <Printer className="w-4 h-4 mr-2" />
               Print
             </Button>
-            <Link to="/landing">
+            <Link to="/company">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
@@ -1025,12 +1025,12 @@ const TermsOfServicePage = () => {
               Community Guidelines
             </Link>
             <span className="text-muted-foreground">|</span>
-            <Link to="/landing" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/company" className="text-muted-foreground hover:text-primary transition-colors">
               Back to Home
             </Link>
           </div>
         </div>
-      </footer>
+      </footer >
     </div>
   );
 };

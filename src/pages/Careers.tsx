@@ -168,7 +168,7 @@ const Careers = () => {
       <header className="border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/landing" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <Link to="/company" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <img 
                 src="/neighborlink-logo.png" 
                 alt="NeighborLink Logo" 

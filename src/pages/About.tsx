@@ -18,7 +18,7 @@ const About = () => {
               <img src="/neighborlink-logo.png" alt="NeighborLink Logo" className="h-8 w-8 rounded-lg" />
               <span className="font-bold text-xl">NeighborLink</span>
             </div>
-            <Link to="/landing">
+            <Link to="/company">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home

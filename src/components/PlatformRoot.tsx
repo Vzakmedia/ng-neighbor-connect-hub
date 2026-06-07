@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { isNativePlatform } from '@/utils/nativeStartup';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
@@ -88,8 +88,12 @@ const PlatformRoot = () => {
     }
   }
 
-  // Web browser: show landing page
-  return <Landing />;
+  // Web browser: redirect to dashboard if logged in, otherwise show Auth page
+  if (!loading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <AuthPage />;
 };
 
 export default PlatformRoot;

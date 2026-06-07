@@ -9,11 +9,11 @@ const Security = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-6 md:px-12 lg:px-16 xl:px-24">
-          <Link to="/landing" className="flex items-center space-x-2">
+          <Link to="/company" className="flex items-center space-x-2">
             <Shield className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">NeighborLink</span>
           </Link>
-          <Link to="/landing">
+          <Link to="/company">
             <Button variant="outline">Back to Home</Button>
           </Link>
         </div>

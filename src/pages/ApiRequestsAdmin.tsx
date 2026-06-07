@@ -303,7 +303,7 @@ const ApiRequestsAdmin = () => {
   }
 
   if (!user || !isStaff) {
-    return <Navigate to="/landing" replace />;
+    return <Navigate to="/company" replace />;
   }
 
   return (
