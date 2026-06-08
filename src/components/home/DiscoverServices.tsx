@@ -16,7 +16,7 @@ export const DiscoverServices = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      let query = supabase
+      const { data } = await supabase
         .from('services')
         .select(`
           id,
@@ -24,7 +24,7 @@ export const DiscoverServices = () => {
           category,
           price_range,
           rating,
-          profiles!services_user_id_fkey (
+          profiles (
             full_name,
             avatar_url,
             city
@@ -32,14 +32,15 @@ export const DiscoverServices = () => {
         `)
         .eq('status', 'active')
         .order('rating', { ascending: false })
-        .limit(3);
+        .limit(profile?.city ? 10 : 3);
 
+      const results = data || [];
+      // Filter by city client-side — PostgREST can't filter on joined columns via query params
       if (profile?.city) {
-        query = query.eq('profiles.city', profile.city);
+        const local = results.filter((s: any) => s.profiles?.city === profile.city);
+        return local.length > 0 ? local.slice(0, 3) : results.slice(0, 3);
       }
-
-      const { data } = await query;
-      return data || [];
+      return results;
     },
     enabled: !!user,
   });

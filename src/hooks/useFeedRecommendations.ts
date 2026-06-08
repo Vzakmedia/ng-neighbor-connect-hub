@@ -13,7 +13,7 @@ export function useFeedRecommendations() {
         .from('recommendations')
         .select(`
           *,
-          author:profiles!recommendations_user_id_fkey(user_id, full_name, avatar_url)
+          author:profiles(user_id, full_name, avatar_url)
         `)
         .eq('status', 'approved')
         .order('average_rating', { ascending: false })
