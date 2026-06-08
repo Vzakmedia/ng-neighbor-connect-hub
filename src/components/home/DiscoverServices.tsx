@@ -22,7 +22,8 @@ export const DiscoverServices = () => {
           id,
           title,
           category,
-          price_range,
+          price_min,
+          price_max,
           rating,
           profiles (
             full_name,
@@ -30,7 +31,7 @@ export const DiscoverServices = () => {
             city
           )
         `)
-        .eq('status', 'active')
+        .eq('is_active', true)
         .order('rating', { ascending: false })
         .limit(profile?.city ? 10 : 3);
 
@@ -89,7 +90,15 @@ export const DiscoverServices = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{service.price_range}</p>
+                {(service.price_min != null || service.price_max != null) && (
+                  <p className="text-sm text-muted-foreground">
+                    {service.price_min != null && service.price_max != null
+                      ? `₦${service.price_min.toLocaleString()} – ₦${service.price_max.toLocaleString()}`
+                      : service.price_min != null
+                      ? `From ₦${service.price_min.toLocaleString()}`
+                      : `Up to ₦${service.price_max!.toLocaleString()}`}
+                  </p>
+                )}
               </div>
             </div>
           </div>

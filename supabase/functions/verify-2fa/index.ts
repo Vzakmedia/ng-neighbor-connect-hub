@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { TOTP } from "https://deno.land/x/otpauth@9.3.4/dist/otpauth.esm.js";
+import { TOTP } from "npm:otpauth@9.3.4";
 import { getRequestContext } from "../_shared/auth.ts";
 import { handleCors, jsonResponse } from "../_shared/http.ts";
 import { enforceRateLimit } from "../_shared/rate-limit.ts";

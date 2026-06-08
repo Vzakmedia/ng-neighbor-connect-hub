@@ -26,6 +26,12 @@ const Auth = () => {
 
   useEffect(() => {
     if (!loading && user) {
+      // If 2FA verification is still pending, send the user there before anything else.
+      const pending2FA = (() => { try { return sessionStorage.getItem('pending2FA'); } catch { return null; } })();
+      if (pending2FA) {
+        navigate(`/auth/2fa-verify?userId=${pending2FA}`, { replace: true });
+        return;
+      }
       // Read the stored destination set by useDeepLinkHandler (or OTP flow).
       // Navigating directly to a ProtectedRoute from those flows causes a blank
       // green screen because React's auth state hasn't hydrated yet at that point.
