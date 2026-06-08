@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { PostCard } from "@/components/community/post/PostCard";
 import { useFeedQuery } from "@/hooks/useFeedQuery";
 import { usePostEngagement } from "@/hooks/community/usePostEngagement";
@@ -12,15 +12,16 @@ import { CommunityHighlights } from "@/components/home/CommunityHighlights";
 import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
 import { RecommendationsCarousel } from "@/components/home/RecommendationsCarousel";
-import { TrendingPostsCarousel } from "@/components/home/TrendingPostsCarousel";
-import { HomeHero } from "@/components/home/HomeHero";
-import { QuickActions } from "@/components/home/QuickActions";
+import { TrendingPostsCarousel as TrendingPostsCarouselBase } from "@/components/home/TrendingPostsCarousel";
 import { Loader2, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { MiniProfile } from "@/components/profile/MiniProfile";
 import { cn } from "@/lib/utils";
 import type { PostCardData } from "@/types/community";
+
+// Memoised so UnifiedFeed re-renders never reach the carousel internals
+const TrendingPostsCarousel = memo(TrendingPostsCarouselBase);
 
 type FeedTab = 'for-you' | 'trending';
 
@@ -33,7 +34,7 @@ const TABS: { id: FeedTab; label: string }[] = [
  * UnifiedFeed — premium combined mobile feed.
  *
  * Scroll order:
- *   HomeHero → QuickActions → TrendingPostsCarousel
+ *   TrendingPostsCarousel (scrolls away)
  *   [sticky tab bar: For You | Trending]
  *   Posts interleaved with widgets + ad zones
  */
@@ -133,11 +134,7 @@ export const UnifiedFeed = () => {
 
   return (
     <div className="pb-20">
-      {/* ── Scrolling header (Hero + QuickActions + TrendingCarousel) ── */}
-      <HomeHero />
-      <div className="px-4 space-y-4 mb-4">
-        <QuickActions />
-      </div>
+      {/* ── Trending carousel (scrolls away) ── */}
       <TrendingPostsCarousel />
 
       {/* ── Sticky tab bar ── */}
