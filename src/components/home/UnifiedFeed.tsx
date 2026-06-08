@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { AdDisplay } from "@/components/advertising/display/AdDisplay";
 import { SafetyAlertsWidget } from "@/components/home/SafetyAlertsWidget";
-import { EventsNearYouCarousel } from "@/components/home/EventsNearYouCarousel";
 import { CommunityHighlights } from "@/components/home/CommunityHighlights";
 import { DiscoverServices } from "@/components/home/DiscoverServices";
 import { MarketplaceHighlights } from "@/components/home/MarketplaceHighlights";
@@ -91,7 +90,6 @@ export const UnifiedFeed = () => {
     const items: Array<{ type: 'widget' | 'post' | 'ad'; component: React.ReactNode; key: string }> = [];
 
     // First widget zone: events carousel
-    items.push({ type: 'widget', component: <EventsNearYouCarousel />, key: 'events-near-you' });
 
     allPosts.forEach((post, index) => {
       items.push({

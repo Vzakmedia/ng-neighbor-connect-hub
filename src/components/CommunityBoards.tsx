@@ -213,6 +213,7 @@ const CommunityBoards = () => {
   const [mentionQuery, setMentionQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const [taggedMembers, setTaggedMembers] = useState<string[]>([]);
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -640,10 +641,6 @@ const CommunityBoards = () => {
       );
 
       setBoards(boardsWithCounts as DiscussionBoard[]);
-
-      if (!selectedBoard && boardsWithCounts.length > 0) {
-        setSelectedBoard(boardsWithCounts[0].id);
-      }
     } catch (error) {
       console.error('Error fetching boards:', error);
       toast({
@@ -1130,84 +1127,120 @@ const CommunityBoards = () => {
     );
   }
 
+  const filteredBoards = boards.filter(b =>
+    b.name.toLowerCase().includes(groupSearchQuery.toLowerCase())
+  );
+
   return (
     <div className="flex h-full">
-      {/* Boards sidebar */}
-      <div className={`${isMobile && showMobileConversation ? 'hidden' : 'flex'} w-80 border-r flex-col`}>
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Groups</h2>
-            <div className="flex gap-2">
+      {/* Groups list — full-width on mobile, fixed sidebar on desktop */}
+      <div className={`
+        ${isMobile && showMobileConversation ? 'hidden' : 'flex'}
+        ${isMobile ? 'w-full flex-1' : 'w-80 border-r'}
+        flex-col
+      `}>
+        {/* Header */}
+        <div className="p-4 border-b bg-card">
+          <div className="flex items-center gap-2 mb-3">
+            <h1 className="text-xl font-semibold text-foreground">Groups</h1>
+            <div className="ml-auto flex gap-1">
               <Button
-                size="sm"
-                variant="outline"
+                size="icon"
+                variant="ghost"
                 onClick={() => setShowDiscoverBoards(true)}
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-5 w-5" />
               </Button>
               <Button
-                size="sm"
+                size="icon"
+                variant="ghost"
                 onClick={() => setShowCreateBoard(true)}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
               </Button>
             </div>
           </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search groups..."
+              value={groupSearchQuery}
+              onChange={(e) => setGroupSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2">
-            {boards.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                <p>No groups yet</p>
-                <p className="text-sm">Join or create a group to get started</p>
-              </div>
-            ) : (
-              boards.map((board) => (
-                <div
+        {/* Group list */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredBoards.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-4 py-12">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">
+                {groupSearchQuery ? 'No groups found' : 'No groups yet'}
+              </p>
+              {!groupSearchQuery && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowDiscoverBoards(true)}>
+                    Discover
+                  </Button>
+                  <Button size="sm" onClick={() => setShowCreateBoard(true)}>
+                    Create Group
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filteredBoards.map((board) => (
+                <button
                   key={board.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedBoard === board.id ? 'bg-muted' : 'hover:bg-muted/50'
-                    }`}
                   onClick={() => {
                     setSelectedBoard(board.id);
-                    if (isMobile) {
-                      setShowMobileConversation(true);
-                    }
+                    if (isMobile) setShowMobileConversation(true);
                   }}
+                  className={`w-full p-4 flex items-center gap-3 hover:bg-accent/50 transition-colors active:bg-accent text-left ${
+                    selectedBoard === board.id && !isMobile ? 'bg-accent' : ''
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={board.avatar_url} />
-                      <AvatarFallback>
-                        {board.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium truncate">{board.name}</h3>
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={board.avatar_url} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {board.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <h3 className="font-medium truncate text-foreground">{board.name}</h3>
                         {board.is_public ? (
-                          <Globe className="h-3 w-3 text-muted-foreground" />
+                          <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         ) : (
-                          <Shield className="h-3 w-3 text-muted-foreground" />
+                          <Shield className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-2 flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        <span>{board.member_count}</span>
-                        {board.user_role && (
-                          <Badge variant="secondary" className="text-xs">
-                            {board.user_role}
-                          </Badge>
-                        )}
-                      </div>
+                        {board.member_count}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm truncate flex-1 text-muted-foreground">
+                        {board.description || 'Tap to open group'}
+                      </p>
+                      {board.user_role === 'admin' && (
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">admin</Badge>
+                      )}
+                      {board.user_role === 'moderator' && (
+                        <Badge variant="outline" className="text-xs flex-shrink-0">mod</Badge>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Board content */}
