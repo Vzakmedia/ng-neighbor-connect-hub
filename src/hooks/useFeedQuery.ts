@@ -188,6 +188,16 @@ export function useFeedQuery(filters: FeedFilters) {
 
     // Use online mode to ensure fetch happens
     networkMode: 'online',
+
+    // Auth token refresh can steal the IndexedDB lock mid-request, producing
+    // a transient "AbortError: Lock broken" — retry once after a short delay.
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes('Lock broken') || error?.message?.includes('AbortError')) {
+        return failureCount < 1;
+      }
+      return false;
+    },
+    retryDelay: 800,
   });
 
   // Real-time Feed Updates
