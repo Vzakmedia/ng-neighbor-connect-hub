@@ -15,7 +15,7 @@ export function useRecommendationDetails(recommendationId: string | undefined) {
         .from('recommendations')
         .select(`
           *,
-          author:profiles(user_id, full_name, avatar_url)
+          author:profiles!recommendations_user_id_profiles_fkey(user_id, full_name, avatar_url)
         `)
         .eq('id', recommendationId)
         .single();

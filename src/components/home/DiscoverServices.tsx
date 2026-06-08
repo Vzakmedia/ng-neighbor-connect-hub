@@ -25,7 +25,7 @@ export const DiscoverServices = () => {
           price_min,
           price_max,
           rating,
-          profiles (
+          profiles!services_user_id_fkey (
             full_name,
             avatar_url,
             city
