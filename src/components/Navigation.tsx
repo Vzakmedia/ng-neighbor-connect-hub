@@ -145,11 +145,11 @@ const Navigation = () => {
   // Items to show in "More" drawer on mobile
   const mobileDrawerItems = [
     { id: 'community', icon: UsersIcon, iconSolid: UsersSolid, label: 'Groups', count: unreadCounts.community, path: '/community' },
+    { id: 'messages', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftSolid, label: 'Messages', count: unreadCounts.messages, path: '/messages' },
     { id: 'recommendations', icon: StarIcon, iconSolid: StarSolid, label: 'Recommendations', count: 0, path: '/recommendations' },
     { id: 'events', icon: CalendarIcon, iconSolid: CalendarSolid, label: 'Events', count: 0, path: '/events' },
     { id: 'marketplace', icon: ShoppingBagIcon, iconSolid: ShoppingBagSolid, label: 'Marketplace', count: 0, path: '/marketplace' },
     { id: 'services', icon: BriefcaseIcon, iconSolid: BriefcaseSolid, label: 'Services', count: 0, path: '/services' },
-    { id: 'safety', icon: ShieldCheckIcon, iconSolid: ShieldCheckSolid, label: 'Safety', count: 0, path: '/safety' },
     { id: 'users', icon: UsersIcon, iconSolid: UsersSolid, label: 'User Directory', count: 0, path: '/users' },
     { id: 'settings', icon: Cog6ToothIcon, iconSolid: Cog6ToothSolid, label: 'Settings', count: 0, path: '/settings' },
   ];
@@ -286,21 +286,16 @@ const Navigation = () => {
             <Squares2X2Icon className="h-8 w-8" />
           </button>
 
-          {/* Messages */}
+          {/* Safety */}
           <button
-            onPointerDown={() => handleMobileNavigation('/messages')}
-            className={`relative p-2 ${location.pathname === '/messages' ? 'text-primary' : 'text-muted-foreground'
+            onPointerDown={() => handleMobileNavigation('/safety')}
+            className={`relative p-2 ${location.pathname === '/safety' ? 'text-primary' : 'text-muted-foreground'
               }`}
           >
-            {(location.pathname === '/messages' && shouldUseFilledIcons) ? (
-              <ChatBubbleLeftSolid className="h-8 w-8" />
+            {(location.pathname === '/safety' && shouldUseFilledIcons) ? (
+              <ShieldCheckSolid className="h-8 w-8" />
             ) : (
-              <ChatBubbleLeftIcon className="h-8 w-8" />
-            )}
-            {unreadCounts.messages > 0 && (
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
-                {unreadCounts.messages}
-              </Badge>
+              <ShieldCheckIcon className="h-8 w-8" />
             )}
           </button>
 
