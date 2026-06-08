@@ -31,12 +31,26 @@ export const Admin2FAGate = ({ children, requireVerification = true, roleLabel =
       }
 
       try {
-        // Check if 2FA is enabled
-        const { data: twoFAData } = await supabase
-          .from('user_2fa')
-          .select('is_enabled, created_at')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Check 2FA enabled status AND server-side session record in parallel.
+        // user_2fa_sessions is the authoritative source — it cannot be spoofed from the client.
+        const [{ data: twoFAData }, { data: sessionRow }] = await Promise.all([
+          supabase
+            .from('user_2fa')
+            .select('is_enabled, created_at')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('user_2fa_sessions')
+            .select('expires_at')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+        ]);
+
+        const serverVerified =
+          !!sessionRow && new Date(sessionRow.expires_at) > new Date();
+        if (serverVerified) {
+          setIsVerified(true);
+        }
 
         setIs2FAEnabled(twoFAData?.is_enabled || false);
 

@@ -15,7 +15,6 @@ const TwoFactorVerify = () => {
     if (userIdParam && pendingUserId === userIdParam) {
       setUserId(userIdParam);
     } else {
-      // Redirect to login if no valid 2FA session
       navigate('/auth');
     }
   }, [searchParams, navigate]);
@@ -23,22 +22,16 @@ const TwoFactorVerify = () => {
   const handleSuccess = async () => {
     if (!userId) return;
 
-    // Clear pending 2FA session
+    // Write server-side verification record. This is the authoritative signal —
+    // Admin2FAGate and ProtectedRoute check this table, not sessionStorage.
+    await supabase.from('user_2fa_sessions').upsert(
+      { user_id: userId, verified_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+
     sessionStorage.removeItem('pending2FA');
-    
-    try {
-      // Re-authenticate the user after successful 2FA
-      const { error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Session refresh error:', error);
-      }
-      
-      // Redirect to dashboard
-      navigate('/');
-    } catch (error) {
-      console.error('Post-2FA authentication error:', error);
-      navigate('/auth');
-    }
+
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSkip = () => {

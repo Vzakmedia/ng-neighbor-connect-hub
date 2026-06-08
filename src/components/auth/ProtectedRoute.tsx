@@ -1,7 +1,8 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -37,14 +38,30 @@ const rolePriority: Record<string, number> = {
 export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { role, isLoading: roleLoading } = useAdminStatus();
+  const [twoFAStatus, setTwoFAStatus] = useState<'loading' | 'required' | 'verified' | 'not-required'>('loading');
 
-  // Block only on the very first load:
-  // - authLoading: session hasn't been read from storage yet
-  // - role is still null AND roleLoading: we have a user but haven't fetched the role once yet
-  // Re-checks (token refresh, background resume) must NOT trigger this spinner — the
-  // existing role value continues to be used while the silent re-fetch runs.
+  useEffect(() => {
+    if (!user) { setTwoFAStatus('not-required'); return; }
+
+    let cancelled = false;
+    const check = async () => {
+      const [{ data: twoFARow }, { data: sessionRow }] = await Promise.all([
+        supabase.from('user_2fa').select('is_enabled').eq('user_id', user.id).maybeSingle(),
+        supabase.from('user_2fa_sessions').select('expires_at').eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (cancelled) return;
+
+      if (!twoFARow?.is_enabled) { setTwoFAStatus('not-required'); return; }
+
+      const verified = !!sessionRow && new Date(sessionRow.expires_at) > new Date();
+      setTwoFAStatus(verified ? 'verified' : 'required');
+    };
+    check();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const initialRoleLoad = !!user && role === null && roleLoading;
-  if (authLoading || initialRoleLoad) {
+  if (authLoading || initialRoleLoad || (!!user && twoFAStatus === 'loading')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -59,11 +76,17 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }:
     return <Navigate to={redirectTo} replace />;
   }
 
+  // Server-side 2FA gate: redirect to verification page if 2FA is enabled but not verified.
+  if (twoFAStatus === 'required') {
+    const userId = user.id;
+    sessionStorage.setItem('pending2FA', userId);
+    return <Navigate to={`/auth/2fa-verify?userId=${userId}`} replace />;
+  }
+
   if (requiredRole) {
     const requiredPriority = rolePriority[requiredRole] ?? 999;
     const userPriority = rolePriority[role ?? 'user'] ?? 0;
     if (userPriority < requiredPriority) {
-      // Authenticated but insufficient privileges — go to dashboard, not login
       return <Navigate to="/dashboard" replace />;
     }
   }

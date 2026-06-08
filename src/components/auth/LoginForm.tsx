@@ -81,8 +81,9 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
           .maybeSingle();
 
         if (user2fa?.is_enabled) {
+          // Keep the session alive — signing out here destroys the session and
+          // leaves the user unauthenticated after 2FA verification completes.
           sessionStorage.setItem('pending2FA', data.user.id);
-          await supabase.auth.signOut();
           navigate(`/auth/2fa-verify?userId=${data.user.id}`);
           return;
         }
