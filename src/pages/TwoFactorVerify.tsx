@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { TwoFactorVerification } from '@/components/security/TwoFactorVerification';
-import { supabase } from '@/integrations/supabase/client';
 
 const TwoFactorVerify = () => {
   const [searchParams] = useSearchParams();
@@ -19,18 +18,11 @@ const TwoFactorVerify = () => {
     }
   }, [searchParams, navigate]);
 
-  const handleSuccess = async () => {
+  const handleSuccess = () => {
     if (!userId) return;
-
-    // Write server-side verification record. This is the authoritative signal —
-    // Admin2FAGate and ProtectedRoute check this table, not sessionStorage.
-    await supabase.from('user_2fa_sessions').upsert(
-      { user_id: userId, verified_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-
+    // The verify-2fa Edge Function already wrote the user_2fa_sessions row
+    // using service role. Nothing more to do on the client.
     sessionStorage.removeItem('pending2FA');
-
     navigate('/dashboard', { replace: true });
   };
 

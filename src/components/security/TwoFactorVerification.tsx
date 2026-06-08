@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, Smartphone, Key } from '@/lib/icons';
-import { TOTP } from 'otpauth';
 
 interface TwoFactorVerificationProps {
   userId: string;
@@ -30,93 +29,32 @@ export const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
 
     setIsLoading(true);
     try {
-      if (useBackupCode) {
-        // Verify backup code
-        const { data, error } = await supabase.rpc('verify_backup_code', {
-          _user_id: userId,
-          _backup_code: backupCode
+      // All verification (TOTP + backup) happens server-side in the verify-2fa Edge Function.
+      // The TOTP secret never leaves the server; the session row is written by service role only.
+      const payload = useBackupCode
+        ? { backup_code: backupCode }
+        : { code: verificationCode };
+
+      const { data, error } = await supabase.functions.invoke('verify-2fa', {
+        body: payload,
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: useBackupCode ? "Backup Code Verified" : "2FA Verified",
+          description: "Successfully verified two-factor authentication.",
         });
-
-        if (error) throw error;
-
-        if (data) {
-          // Log attempt
-          await supabase.rpc('log_2fa_attempt', {
-            _user_id: userId,
-            _attempt_type: 'backup_code',
-            _success: true
-          });
-
-          toast({
-            title: "Backup Code Verified",
-            description: "Successfully verified using backup code.",
-          });
-          onSuccess();
-        } else {
-          await supabase.rpc('log_2fa_attempt', {
-            _user_id: userId,
-            _attempt_type: 'backup_code',
-            _success: false
-          });
-
-          toast({
-            title: "Invalid Backup Code",
-            description: "The backup code is invalid or has already been used.",
-            variant: "destructive",
-          });
-        }
+        onSuccess();
       } else {
-        // Get user's 2FA secret
-        const { data: user2fa, error: fetchError } = await supabase
-          .from('user_2fa')
-          .select('secret')
-          .eq('user_id', userId)
-          .eq('is_enabled', true)
-          .maybeSingle();
-
-        if (fetchError || !user2fa) {
-          throw new Error('2FA not properly configured');
-        }
-
-        // Verify TOTP code
-        const totp = new TOTP({
-          secret: user2fa.secret,
+        toast({
+          title: useBackupCode ? "Invalid Backup Code" : "Invalid Code",
+          description: useBackupCode
+            ? "The backup code is invalid or has already been used."
+            : "Please check your authenticator app and try again.",
+          variant: "destructive",
         });
-
-        const isValid = totp.validate({ token: verificationCode, window: 1 });
-
-        if (isValid !== null) {
-          // Update last used
-          await supabase
-            .from('user_2fa')
-            .update({ last_used_at: new Date().toISOString() })
-            .eq('user_id', userId);
-
-          // Log attempt
-          await supabase.rpc('log_2fa_attempt', {
-            _user_id: userId,
-            _attempt_type: 'totp',
-            _success: true
-          });
-
-          toast({
-            title: "2FA Verified",
-            description: "Successfully verified two-factor authentication.",
-          });
-          onSuccess();
-        } else {
-          await supabase.rpc('log_2fa_attempt', {
-            _user_id: userId,
-            _attempt_type: 'totp',
-            _success: false
-          });
-
-          toast({
-            title: "Invalid Code",
-            description: "Please check your authenticator app and try again.",
-            variant: "destructive",
-          });
-        }
       }
     } catch (error) {
       console.error('2FA verification error:', error);
