@@ -178,14 +178,14 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             event: "INSERT",
             schema: "public",
             table: "alert_notifications",
-            filter: `recipient_id.eq.${user.id}`,
+            filter: `recipient_id=eq.${user.id}`,
           },
           (payload) => {
             alertCallbacks.current.forEach((cb) => cb(payload));
           },
         ),
       {
-        channelName: "unified-alerts",
+        channelName: `unified-alerts:${user.id}`,
         pollInterval: 30000,
         debugName: "RealtimeProvider-Alerts",
       },

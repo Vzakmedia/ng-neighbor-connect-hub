@@ -5,7 +5,7 @@ import { useLiveKitToken } from "@/hooks/useLiveKitToken";
 import { VideoCallDialog } from "@/components/messaging/VideoCallDialog";
 import { VoiceCallCard } from "@/components/messaging/VoiceCallCard";
 import { IncomingCallDialog } from "@/components/messaging/IncomingCallDialog";
-import type { CallState } from "@/hooks/messaging/useWebRTCCall";
+import type { CallState } from "@/utils/call/types";
 
 interface CallContextType extends CallServiceState {
     startVoiceCall: (conversationId: string, otherUserName: string, otherUserAvatar?: string, otherUserId?: string) => Promise<void>;
@@ -76,12 +76,13 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
             console.error("Cannot start call: recipient ID missing");
             return;
         }
-        await CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "voice");
-        // Check if we found a conversationId (roomName)
-        if (conversationId) {
-            const token = await fetchToken(conversationId, user?.user_metadata?.full_name);
-            console.log("LiveKit Voice Token fetched:", !!token);
-        }
+        const callerName = user?.user_metadata?.full_name;
+        // Fetch LiveKit token concurrently with signaling so the call UI renders
+        // with a valid token from the first frame — not after a second async round trip.
+        await Promise.all([
+            CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "voice", callerName),
+            fetchToken(conversationId, callerName),
+        ]);
     }, [fetchToken, user]);
 
     const startVideoCall = useCallback(async (conversationId: string, name: string, avatar?: string, userId?: string) => {
@@ -89,11 +90,11 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
             console.error("Cannot start call: recipient ID missing");
             return;
         }
-        await CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "video");
-        if (conversationId) {
-            const token = await fetchToken(conversationId, user?.user_metadata?.full_name);
-            console.log("LiveKit Video Token fetched:", !!token);
-        }
+        const callerName = user?.user_metadata?.full_name;
+        await Promise.all([
+            CallService.getInstance().startCall(conversationId, { id: userId, name, avatar }, "video", callerName),
+            fetchToken(conversationId, callerName),
+        ]);
     }, [fetchToken, user]);
 
     const answerCallFn = useCallback(async (video: boolean) => {

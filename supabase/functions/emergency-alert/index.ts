@@ -143,6 +143,8 @@ serve(async (req) => {
               notification_type: 'emergency_alert',
               panic_alert_id,
               recipient_id: contact.user_id,
+              sender_name: user_name,
+              content: `${user_name} needs help! Situation: ${situationLabel}${locationInfo}`,
               sent_at: new Date().toISOString()
             });
 
@@ -179,6 +181,73 @@ serve(async (req) => {
       contactsNotified = contacts?.length || 0;
     } else {
       console.log('Skipping contact alerts - auto_alert_contacts is disabled');
+    }
+
+    // ─── Zone-wide fan-out ──────────────────────────────────────────────────
+    // Notify all users in the same neighbourhood as the alert sender
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('neighborhood')
+      .eq('user_id', user_id)
+      .maybeSingle();
+
+    if (senderProfile?.neighborhood) {
+      const { data: zoneMembers } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('neighborhood', senderProfile.neighborhood)
+        .neq('user_id', user_id);
+
+      if (zoneMembers && zoneMembers.length > 0) {
+        const zoneNotifications = zoneMembers.map((m) => ({
+          recipient_id: m.user_id,
+          panic_alert_id,
+          notification_type: 'emergency_alert',
+          sender_name: user_name,
+          content: `${user_name} needs help nearby! Situation: ${situationLabel}${
+            location ? `. Location: ${location.address}` : ''
+          }`,
+          sent_at: new Date().toISOString()
+        }));
+
+        for (let i = 0; i < zoneNotifications.length; i += 100) {
+          await supabase
+            .from('alert_notifications')
+            .insert(zoneNotifications.slice(i, i + 100));
+        }
+        console.log(`Zone fan-out: ${zoneNotifications.length} members notified in neighbourhood "${senderProfile.neighborhood}"`);
+      }
+    } else {
+      console.log('Sender has no neighbourhood set — skipping zone fan-out');
+    }
+
+    // ─── Admin fan-out ──────────────────────────────────────────────────────
+    // Notify all admins and super_admins regardless of zone
+    const { data: adminUsers } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .in('role', ['admin', 'super_admin']);
+
+    if (adminUsers && adminUsers.length > 0) {
+      const adminNotifications = adminUsers
+        .filter((a) => a.user_id !== user_id)
+        .map((a) => ({
+          recipient_id: a.user_id,
+          panic_alert_id,
+          notification_type: 'emergency_alert',
+          sender_name: user_name,
+          content: `[ADMIN] ${user_name} triggered a panic alert. Situation: ${situationLabel}${
+            location ? `. Location: ${location.address}` : ''
+          }`,
+          sent_at: new Date().toISOString()
+        }));
+
+      if (adminNotifications.length > 0) {
+        await supabase
+          .from('alert_notifications')
+          .insert(adminNotifications);
+        console.log(`Admin fan-out: ${adminNotifications.length} admins notified`);
+      }
     }
 
     // Note: Public alerts are now handled by PanicButton.tsx directly

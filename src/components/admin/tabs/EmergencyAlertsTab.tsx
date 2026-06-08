@@ -17,6 +17,7 @@ export const EmergencyAlertsTab = () => {
         updateAlertStatus,
         getAlertTypeLabel,
         formatLocation,
+        subscribeToAlerts,
     } = useEmergencyAlerts();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,6 +27,11 @@ export const EmergencyAlertsTab = () => {
     useEffect(() => {
         fetchAlerts({ type: typeFilter, status: statusFilter, search: searchQuery });
     }, [fetchAlerts, typeFilter, statusFilter, searchQuery]);
+
+    // Real-time subscription: list refreshes automatically when new alerts arrive
+    useEffect(() => {
+        return subscribeToAlerts();
+    }, [subscribeToAlerts]);
 
     const getStatusBadge = (status: string) => {
         const variants: Record<string, { variant: any; className: string }> = {

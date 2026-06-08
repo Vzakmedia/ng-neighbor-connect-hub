@@ -224,10 +224,13 @@ const PanicButton = () => {
         
         // Create notifications for each contact with an app account
         if (contactProfiles && contactProfiles.length > 0) {
+          const situationLabel = situationTypes.find(s => s.value === activeSituation)?.label || 'Emergency';
           const notifications = contactProfiles.map(profile => ({
             recipient_id: profile.user_id,
             panic_alert_id: panicData.id,
-            notification_type: 'panic_alert'
+            notification_type: 'panic_alert',
+            sender_name: userName,
+            content: `${userName} needs help! Situation: ${situationLabel}${sanitizedAddress ? `. Location: ${sanitizedAddress}` : ''}`
           }));
           
           const { error: notificationError } = await supabase

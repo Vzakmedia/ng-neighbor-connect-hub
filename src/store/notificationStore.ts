@@ -184,7 +184,7 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
 
-      syncWithServer: async (userId: string) => {
+      syncWithServer: async (userId: string, _retryCount = 0) => {
         if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Syncing with server for user:', userId);
 
         try {
@@ -237,7 +237,14 @@ export const useNotificationStore = create<NotificationState>()(
             get().setNotifications(notifications);
             if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Synced', notifications.length, 'notifications');
           }
-        } catch (err) {
+        } catch (err: any) {
+          // Auth token refresh steals the IndexedDB lock mid-request, producing a
+          // transient AbortError. Retry once after the refresh completes (~800ms).
+          if (_retryCount === 0 &&
+              (err?.message?.includes('Lock broken') || err?.message?.includes('AbortError'))) {
+            await new Promise(r => setTimeout(r, 900));
+            return get().syncWithServer(userId, 1);
+          }
           console.error('[NotificationStore] Sync exception:', err);
         }
       },

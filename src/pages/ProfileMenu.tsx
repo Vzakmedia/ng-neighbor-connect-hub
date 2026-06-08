@@ -34,7 +34,7 @@ const triggerHaptic = async () => {
 
 export default function ProfileMenu() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -59,9 +59,9 @@ export default function ProfileMenu() {
   const handleSignOut = async () => {
     await triggerHaptic();
     try {
-      await supabase.auth.signOut();
+      await signOut();
       toast.success("Signed out successfully");
-      navigate("/auth");
+      // ProtectedRoute redirects to /auth automatically when user becomes null
     } catch (error) {
       console.error("Sign out error:", error);
       handleApiError(error, { route: '/profile-menu' });

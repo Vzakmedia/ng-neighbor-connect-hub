@@ -53,7 +53,7 @@ export class CallService {
 
     // --- External Actions ---
 
-    async startCall(conversationId: string, otherUser: CallParticipant, type: CallType) {
+    async startCall(conversationId: string, otherUser: CallParticipant, type: CallType, callerName?: string) {
         if (this.curState !== "idle") return;
 
         this.activeConversationId = conversationId;
@@ -74,7 +74,8 @@ export class CallService {
                 type: "offer",
                 sdp: offer,
                 callType: type,
-                session_id: this.currentSessionId
+                session_id: this.currentSessionId,
+                callerName: callerName || this.currentUserId || "Unknown",
             });
 
             this.setState("calling"); // Changed from ringing to calling
@@ -160,9 +161,7 @@ export class CallService {
             this.isVideo = signal.message.callType === "video";
             this.pendingOffer = signal;
 
-            // Fetch caller name if possible (or use sender_id)
-            this.otherUser = { id: signal.sender_id, name: "Someone" };
-            // In real app, might want to fetch profile here or pass it in signal metadata
+            this.otherUser = { id: signal.sender_id, name: signal.message.callerName || "Someone" };
 
             this.setState("ringing");
             NativeCallManager.receiveCall(this.otherUser.name, this.activeConversationId);

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface EmergencyAlert {
     id: string;
@@ -174,6 +175,28 @@ export const useEmergencyAlerts = () => {
         return 'Location not available';
     }, []);
 
+    const subscribeToAlerts = useCallback(() => {
+        let channel: RealtimeChannel | null = null;
+
+        channel = supabase
+            .channel('admin-safety-alerts')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'safety_alerts' },
+                () => { fetchAlerts(); }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'safety_alerts' },
+                () => { fetchAlerts(); }
+            )
+            .subscribe();
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
+    }, [fetchAlerts]);
+
     return {
         alerts,
         loading,
@@ -184,5 +207,6 @@ export const useEmergencyAlerts = () => {
         markAsFalseAlarm,
         getAlertTypeLabel,
         formatLocation,
+        subscribeToAlerts,
     };
 };

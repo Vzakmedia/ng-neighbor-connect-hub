@@ -46,7 +46,8 @@ export class CallSignalingService {
             .from("call_signaling")
             .select("*")
             .eq("receiver_id", this.receiverId)
-            .gte("created_at", new Date(Date.now() - 60000).toISOString())
+            .gte("created_at", new Date(Date.now() - 30000).toISOString())
+            .gte("expires_at", new Date().toISOString()) // discard expired signals
             .order("created_at", { ascending: true });
 
         if (conversationId) {
