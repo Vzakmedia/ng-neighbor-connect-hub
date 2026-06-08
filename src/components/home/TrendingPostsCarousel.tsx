@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { TrendingUp } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselApi } from "@/components/ui/carousel";
@@ -24,19 +24,26 @@ export const TrendingPostsCarousel = () => {
 
   const { preferences } = useLocationPreferences();
 
+  // Stable plugin ref — never recreated, so Embla doesn't reinitialise on re-renders
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true, stopOnMouseEnter: true })
+  );
+
   // Fetch trending posts (sorted by popularity)
   const { data, isLoading } = useFeedQuery({
     sortBy: 'popular',
     locationScope: preferences?.default_location_filter || 'all',
   });
 
-  const rawPosts = data?.pages[0]?.items.slice(0, 8) || [];
-
-  const allPosts = rawPosts.map(post => transformToCardData({
-    ...post,
-    post_type: 'general',
-    views_count: 0
-  } as any));
+  // Memoised so Embla doesn't re-measure the slide list on every render
+  const allPosts = useMemo(() => {
+    const rawPosts = data?.pages[0]?.items.slice(0, 8) || [];
+    return rawPosts.map(post => transformToCardData({
+      ...post,
+      post_type: 'general',
+      views_count: 0,
+    } as any));
+  }, [data?.pages]);
 
   const handlePostClick = (postId: string) => {
     navigate(`/community/post/${postId}`);
@@ -54,9 +61,9 @@ export const TrendingPostsCarousel = () => {
   useEffect(() => {
     if (!api) return;
     setCurrent(api.selectedScrollSnap());
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
-    });
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    api.on("select", onSelect);
+    return () => { api.off("select", onSelect); };
   }, [api]);
 
   if (isLoading) {
@@ -91,19 +98,14 @@ export const TrendingPostsCarousel = () => {
       </CardHeader>
       <CardContent>
         <Carousel
-          opts={{ align: "start", loop: true }}
-          plugins={[
-            Autoplay({
-              delay: 5000,
-              stopOnInteraction: false,
-            }) as any
-          ]}
+          opts={{ align: "start", loop: true, dragFree: false }}
+          plugins={[autoplayPlugin.current as any]}
           className="w-full"
           setApi={setApi}
         >
           <CarouselContent className="-ml-2 md:-ml-4">
             {allPosts.map((post) => (
-              <CarouselItem key={post.id} className="pl-2 md:pl-4 basis-auto">
+              <CarouselItem key={post.id} className="pl-2 md:pl-4 basis-[180px] shrink-0">
                 <TrendingPostSlideCard
                   post={post}
                   onPostClick={() => handlePostClick(post.id)}
