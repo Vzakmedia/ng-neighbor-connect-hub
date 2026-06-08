@@ -13,22 +13,27 @@ const getTimestamp = (): string => {
   return new Date().toISOString();
 };
 
+// Module-level flag — survives component unmount/remount within the same JS runtime
+// session (e.g. route changes, sign-out/sign-in). Avoids the async storage-check race
+// where the first render always fires showSplash=true before the Preferences read returns.
+let _splashShownInSession = false;
+
 /**
  * NativeAppWrapper - Master wrapper for native mobile app experience
- * 
+ *
  * Always shows splash screen first (even for authenticated users),
  * then navigates based on authentication status:
  * - Authenticated → Dashboard
  * - Not Authenticated → MobileAuthFlow (onboarding + auth)
- * 
+ *
  * Splash shows only once per app session (not on every navigation)
  */
 const NativeAppWrapper = () => {
   const mountTimestamp = getTimestamp();
   console.log(`[NativeAppWrapper ${mountTimestamp}] ========== COMPONENT MOUNTED ==========`);
-  
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashShownThisSession, setSplashShownThisSession] = useState(false);
+
+  const [showSplash, setShowSplash] = useState(!_splashShownInSession);
+  const [splashShownThisSession, setSplashShownThisSession] = useState(_splashShownInSession);
   const [isNative, setIsNative] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -69,6 +74,7 @@ const NativeAppWrapper = () => {
         
         if (value === 'true') {
           console.log(`[NativeAppWrapper ${timestamp}] Splash already shown this session, hiding splash`);
+          _splashShownInSession = true;
           setShowSplash(false);
           setSplashShownThisSession(true);
         } else {
@@ -84,6 +90,7 @@ const NativeAppWrapper = () => {
           
           if (shownThisSession) {
             console.log(`[NativeAppWrapper ${timestamp}] Splash shown (via sessionStorage), hiding splash`);
+            _splashShownInSession = true;
             setShowSplash(false);
             setSplashShownThisSession(true);
           }
@@ -100,7 +107,10 @@ const NativeAppWrapper = () => {
   const handleSplashComplete = async () => {
     const timestamp = getTimestamp();
     console.log(`[NativeAppWrapper ${timestamp}] ========== SPLASH COMPLETE CALLBACK ==========`);
-    
+
+    // Set module-level flag immediately so any subsequent remount skips the splash.
+    _splashShownInSession = true;
+
     try {
       console.log(`[NativeAppWrapper ${timestamp}] Saving splash status to storage...`);
       await nativeStorageAdapter.setItem('splash_shown_session', 'true');
