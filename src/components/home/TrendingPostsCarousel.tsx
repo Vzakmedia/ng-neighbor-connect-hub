@@ -94,9 +94,9 @@ export const TrendingPostsCarousel = () => {
           className="w-full"
           setApi={setApi}
         >
-          <CarouselContent className="-ml-4">
+          <CarouselContent className="-ml-8">
             {allPosts.map((post) => (
-              <CarouselItem key={post.id} className="pl-4 basis-[180px] shrink-0">
+              <CarouselItem key={post.id} className="pl-8 basis-[180px] shrink-0">
                 <TrendingPostSlideCard
                   post={post}
                   onPostClick={() => handlePostClick(post.id)}

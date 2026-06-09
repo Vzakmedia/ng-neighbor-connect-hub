@@ -303,23 +303,59 @@ const Navigation = () => {
         </div>
       </nav>
 
-      {/* Modern Bottom Drawer for More Options */}
-      <Drawer open={moreDrawerOpen} onOpenChange={setMoreDrawerOpen}>
-        <DrawerContent className="max-h-[70vh] bg-background border-none rounded-t-3xl">
-          {/* Header */}
-          <DrawerHeader className="pt-6 pb-4 px-6 border-b border-border/50">
-            <DrawerTitle className="text-center text-lg font-semibold text-foreground">More</DrawerTitle>
-            <DrawerDescription className="sr-only">Access additional menu options</DrawerDescription>
-          </DrawerHeader>
-
-          {/* Grid of Options */}
-          <div className="flex-1 overflow-y-auto px-8 py-8">
-            <div className="grid grid-cols-3 gap-8">
+      {/* Custom Floating Drawer/Popover Overlay */}
+      {moreDrawerOpen && (
+        <div 
+          className="fixed inset-0 z-50 md:hidden bg-background/60 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setMoreDrawerOpen(false)}
+        >
+          {/* Popover Card */}
+          <div 
+            className="fixed bottom-24 left-4 right-4 max-w-sm mx-auto bg-card border border-border/50 shadow-2xl rounded-[32px] p-6 pb-5 z-50 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200"
+            onClick={(e) => e.stopPropagation()} // Prevent close on clicking inside the card
+          >
+            {/* Grid of Options */}
+            <div className="grid grid-cols-3 gap-y-6 gap-x-4 justify-items-center">
               {mobileDrawerItems.filter(item => {
                 if (item.id === 'users' && !hasStaffRole) return false;
                 return true;
               }).map((item) => {
                 const Icon = item.icon;
+                
+                // Premium color mappings matching the design theme
+                const itemColors: Record<string, { bg: string, text: string }> = {
+                  community: {
+                    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+                    text: 'text-emerald-600 dark:text-emerald-400'
+                  },
+                  messages: {
+                    bg: 'bg-pink-50 dark:bg-pink-950/30',
+                    text: 'text-pink-600 dark:text-pink-400'
+                  },
+                  recommendations: {
+                    bg: 'bg-amber-50 dark:bg-amber-950/30',
+                    text: 'text-amber-600 dark:text-amber-400'
+                  },
+                  events: {
+                    bg: 'bg-sky-50 dark:bg-sky-950/30',
+                    text: 'text-sky-600 dark:text-sky-400'
+                  },
+                  services: {
+                    bg: 'bg-rose-50 dark:bg-rose-950/30',
+                    text: 'text-rose-600 dark:text-rose-400'
+                  },
+                  users: {
+                    bg: 'bg-teal-50 dark:bg-teal-950/30',
+                    text: 'text-teal-600 dark:text-teal-400'
+                  },
+                  settings: {
+                    bg: 'bg-slate-100 dark:bg-slate-800/30',
+                    text: 'text-slate-600 dark:text-slate-400'
+                  }
+                };
+
+                const color = itemColors[item.id] || { bg: 'bg-primary/10', text: 'text-primary' };
+
                 return (
                   <button
                     key={item.id}
@@ -328,21 +364,30 @@ const Navigation = () => {
                       handleNavigation(item.path);
                       setMoreDrawerOpen(false);
                     }}
-                    className="flex flex-col items-center gap-3 touch-manipulation active:scale-95 transition-transform"
+                    className="flex flex-col items-center gap-2.5 touch-manipulation active:scale-95 transition-transform group"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-7 w-7 text-primary" />
+                    <div className={`w-14 h-14 rounded-2xl ${color.bg} flex items-center justify-center shadow-inner transition-transform duration-200 group-hover:scale-105`}>
+                      <Icon className={`h-6.5 w-6.5 ${color.text}`} />
                     </div>
-                    <span className="text-xs font-medium text-foreground text-center leading-tight max-w-[70px]">
+                    <span className="text-[11px] font-semibold text-foreground/90 text-center leading-tight max-w-[80px]">
                       {item.label}
                     </span>
                   </button>
                 );
               })}
             </div>
+
+            {/* Bottom Caret / Pointer pointing down to More button */}
+            <div 
+              className="absolute bottom-[-8px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px]"
+              style={{ borderTopColor: 'hsl(var(--card))' }}
+            />
+            <div 
+              className="absolute bottom-[-9px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[9px] border-t-border/50 -z-10"
+            />
           </div>
-        </DrawerContent>
-      </Drawer>
+        </div>
+      )}
 
       {/* Create Post Dialog */}
       <CreatePostDialog
