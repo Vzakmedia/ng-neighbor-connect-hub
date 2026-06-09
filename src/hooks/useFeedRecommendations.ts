@@ -11,10 +11,7 @@ export function useFeedRecommendations() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('recommendations')
-        .select(`
-          *,
-          author:profiles!recommendations_user_id_profiles_fkey(user_id, full_name, avatar_url)
-        `)
+        .select('*')
         .eq('status', 'approved')
         .order('average_rating', { ascending: false })
         .order('total_likes', { ascending: false })
@@ -22,36 +19,47 @@ export function useFeedRecommendations() {
 
       if (error) throw error;
 
-      let savedIds = new Set<string>();
-      let likedIds = new Set<string>();
+      const rows = data || [];
+      if (rows.length === 0) return [];
 
-      if (user && data && data.length > 0) {
-        const ids = data.map((r: any) => r.id);
-        const [savedRes, likedRes] = await Promise.all([
-          supabase
-            .from('saved_recommendations')
-            .select('recommendation_id')
-            .eq('user_id', user.id)
-            .in('recommendation_id', ids),
-          supabase
-            .from('recommendation_likes')
-            .select('recommendation_id')
-            .eq('user_id', user.id)
-            .in('recommendation_id', ids),
-        ]);
-        savedIds = new Set((savedRes.data || []).map((s: any) => s.recommendation_id));
-        likedIds = new Set((likedRes.data || []).map((l: any) => l.recommendation_id));
-      }
+      const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))];
 
-      // Transform data
-      const recommendations: Recommendation[] = (data || []).map(item => ({
+      const [profilesRes, savedRes, likedRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', userIds),
+        user
+          ? supabase
+              .from('saved_recommendations')
+              .select('recommendation_id')
+              .eq('user_id', user.id)
+              .in('recommendation_id', rows.map((r: any) => r.id))
+          : Promise.resolve({ data: [] }),
+        user
+          ? supabase
+              .from('recommendation_likes')
+              .select('recommendation_id')
+              .eq('user_id', user.id)
+              .in('recommendation_id', rows.map((r: any) => r.id))
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const profileMap = new Map(
+        (profilesRes.data || []).map((p: any) => [p.user_id, p])
+      );
+      const savedIds = new Set((savedRes.data || []).map((s: any) => s.recommendation_id));
+      const likedIds = new Set((likedRes.data || []).map((l: any) => l.recommendation_id));
+
+      const recommendations: Recommendation[] = rows.map((item: any) => ({
         ...item,
+        author: profileMap.get(item.user_id) ?? null,
         is_saved: savedIds.has(item.id),
         is_liked: likedIds.has(item.id),
       }));
 
       return recommendations;
     },
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    staleTime: 1000 * 60 * 10,
   });
 }

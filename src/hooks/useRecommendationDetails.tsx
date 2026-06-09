@@ -13,14 +13,20 @@ export function useRecommendationDetails(recommendationId: string | undefined) {
 
       const { data, error } = await supabase
         .from('recommendations')
-        .select(`
-          *,
-          author:profiles!recommendations_user_id_profiles_fkey(user_id, full_name, avatar_url)
-        `)
+        .select('*')
         .eq('id', recommendationId)
         .single();
 
       if (error) throw error;
+
+      // Fetch author profile separately to avoid FK join dependency
+      const { data: authorProfile } = data?.user_id
+        ? await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar_url')
+            .eq('user_id', data.user_id)
+            .maybeSingle()
+        : { data: null };
 
       let is_saved = false;
       let is_liked = false;
@@ -46,6 +52,7 @@ export function useRecommendationDetails(recommendationId: string | undefined) {
 
       const recommendation: Recommendation = {
         ...data,
+        author: authorProfile ?? undefined,
         is_saved,
         is_liked,
       };
