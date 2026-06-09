@@ -276,9 +276,10 @@ const Navigation = () => {
 
           {/* More Button - Centered with Primary Background and Shadow */}
           <button
-            onPointerDown={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
               await triggerHaptic();
-              setMoreDrawerOpen(true);
+              setMoreDrawerOpen((prev) => !prev);
             }}
             className="bg-primary text-primary-foreground p-3 rounded-2xl shadow-lg shadow-primary/30"
           >
@@ -321,41 +322,6 @@ const Navigation = () => {
                 return true;
               }).map((item) => {
                 const Icon = item.icon;
-                
-                // Premium color mappings matching the design theme
-                const itemColors: Record<string, { bg: string, text: string }> = {
-                  community: {
-                    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-                    text: 'text-emerald-600 dark:text-emerald-400'
-                  },
-                  messages: {
-                    bg: 'bg-pink-50 dark:bg-pink-950/30',
-                    text: 'text-pink-600 dark:text-pink-400'
-                  },
-                  recommendations: {
-                    bg: 'bg-amber-50 dark:bg-amber-950/30',
-                    text: 'text-amber-600 dark:text-amber-400'
-                  },
-                  events: {
-                    bg: 'bg-sky-50 dark:bg-sky-950/30',
-                    text: 'text-sky-600 dark:text-sky-400'
-                  },
-                  services: {
-                    bg: 'bg-rose-50 dark:bg-rose-950/30',
-                    text: 'text-rose-600 dark:text-rose-400'
-                  },
-                  users: {
-                    bg: 'bg-teal-50 dark:bg-teal-950/30',
-                    text: 'text-teal-600 dark:text-teal-400'
-                  },
-                  settings: {
-                    bg: 'bg-slate-100 dark:bg-slate-800/30',
-                    text: 'text-slate-600 dark:text-slate-400'
-                  }
-                };
-
-                const color = itemColors[item.id] || { bg: 'bg-primary/10', text: 'text-primary' };
-
                 return (
                   <button
                     key={item.id}
@@ -366,8 +332,8 @@ const Navigation = () => {
                     }}
                     className="flex flex-col items-center gap-2.5 touch-manipulation active:scale-95 transition-transform group"
                   >
-                    <div className={`w-14 h-14 rounded-2xl ${color.bg} flex items-center justify-center shadow-inner transition-transform duration-200 group-hover:scale-105`}>
-                      <Icon className={`h-6.5 w-6.5 ${color.text}`} />
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center shadow-inner transition-transform duration-200 group-hover:scale-105">
+                      <Icon className="h-6.5 w-6.5 text-primary" />
                     </div>
                     <span className="text-[11px] font-semibold text-foreground/90 text-center leading-tight max-w-[80px]">
                       {item.label}
