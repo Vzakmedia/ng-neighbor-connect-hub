@@ -23,7 +23,7 @@ export const TrendingPostSlideCard = ({
   return (
     <div
       onClick={onPostClick}
-      className="relative w-[180px] h-[240px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0"
+      className="relative w-full h-[240px] rounded-lg overflow-hidden cursor-pointer group"
     >
       {/* Background Image or Gradient */}
       {backgroundImage ? (
