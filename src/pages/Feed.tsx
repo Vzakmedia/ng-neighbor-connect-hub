@@ -26,6 +26,7 @@ const Feed = () => {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background">
+        <Header />
         <Navigation />
         <FeedErrorBoundary>
           <UnifiedFeed />

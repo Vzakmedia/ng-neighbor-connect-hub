@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { TrendingUp } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselApi } from "@/components/ui/carousel";
@@ -17,7 +17,6 @@ import Autoplay from "embla-carousel-autoplay";
  */
 export const TrendingPostsCarousel = () => {
   const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { handleSave } = usePostEngagement();
@@ -58,14 +57,6 @@ export const TrendingPostsCarousel = () => {
     });
   };
 
-  useEffect(() => {
-    if (!api) return;
-    setCurrent(api.selectedScrollSnap());
-    const onSelect = () => setCurrent(api.selectedScrollSnap());
-    api.on("select", onSelect);
-    return () => { api.off("select", onSelect); };
-  }, [api]);
-
   if (isLoading) {
     return (
       <Card className="bg-card">
@@ -103,9 +94,9 @@ export const TrendingPostsCarousel = () => {
           className="w-full"
           setApi={setApi}
         >
-          <CarouselContent className="-ml-2 md:-ml-4">
+          <CarouselContent className="-ml-4">
             {allPosts.map((post) => (
-              <CarouselItem key={post.id} className="pl-2 md:pl-4 basis-[180px] shrink-0">
+              <CarouselItem key={post.id} className="pl-4 basis-[180px] shrink-0">
                 <TrendingPostSlideCard
                   post={post}
                   onPostClick={() => handlePostClick(post.id)}
@@ -115,28 +106,6 @@ export const TrendingPostsCarousel = () => {
             ))}
           </CarouselContent>
         </Carousel>
-
-        {/* Navigation Dots */}
-        <div className="flex justify-center gap-2 mt-4">
-          {allPosts.map((_, index) => (
-            <div
-              key={index}
-              role="button"
-              tabIndex={0}
-              onClick={() => api?.scrollTo(index)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  api?.scrollTo(index);
-                }
-              }}
-              className={`h-2 w-2 rounded-full flex-shrink-0 inline-block cursor-pointer transition-colors ${index === current
-                ? "bg-primary"
-                : "bg-muted-foreground/30"
-                }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
       </CardContent>
     </Card>
   );

@@ -29,7 +29,7 @@ export const CookieConsentBanner = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6"
+            className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6 hidden md:block"
           >
             <Card className="max-w-4xl mx-auto shadow-2xl border-border/50 bg-background/95 backdrop-blur-lg">
               <CardContent className="p-4 md:p-6">
