@@ -7,6 +7,7 @@ import { TwoFactorSetup } from './TwoFactorSetup';
 import { TwoFactorVerification } from './TwoFactorVerification';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { use2FAStatus } from '@/hooks/use2FAStatus';
 
 interface Admin2FAGateProps {
   children: React.ReactNode;
@@ -17,11 +18,21 @@ interface Admin2FAGateProps {
 
 export const Admin2FAGate = ({ children, requireVerification = true, roleLabel = 'staff' }: Admin2FAGateProps) => {
   const { user } = useAuth();
+  // Shares the React Query cache with ProtectedRoute — no duplicate DB calls.
+  const { data: twoFACache, isLoading: twoFACacheLoading } = use2FAStatus(user?.id);
+
   const [is2FAEnabled, setIs2FAEnabled] = useState<boolean | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showSetup, setShowSetup] = useState(false);
   const [gracePeriodDays, setGracePeriodDays] = useState<number | null>(null);
+
+  // Seed local state from the shared cache when it resolves
+  useEffect(() => {
+    if (twoFACacheLoading || !twoFACache) return;
+    setIs2FAEnabled(twoFACache.enabled);
+    if (twoFACache.verified) setIsVerified(true);
+  }, [twoFACache, twoFACacheLoading]);
 
   useEffect(() => {
     const check2FAStatus = async () => {
@@ -30,29 +41,10 @@ export const Admin2FAGate = ({ children, requireVerification = true, roleLabel =
         return;
       }
 
+      // The 2FA enabled/verified state is already seeded from the cache above.
+      // Only fetch the role-creation date here (not duplicated elsewhere).
       try {
-        // Check 2FA enabled status AND server-side session record in parallel.
-        // user_2fa_sessions is the authoritative source — it cannot be spoofed from the client.
-        const [{ data: twoFAData }, { data: sessionRow }] = await Promise.all([
-          supabase
-            .from('user_2fa')
-            .select('is_enabled, created_at')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('user_2fa_sessions')
-            .select('expires_at')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-        ]);
-
-        const serverVerified =
-          !!sessionRow && new Date(sessionRow.expires_at) > new Date();
-        if (serverVerified) {
-          setIsVerified(true);
-        }
-
-        setIs2FAEnabled(twoFAData?.is_enabled || false);
+        const twoFAEnabled = twoFACache?.enabled ?? false;
 
         // Check any staff role creation date for grace period (applies to all privileged roles)
         const { data: roleData } = await supabase
@@ -63,7 +55,7 @@ export const Admin2FAGate = ({ children, requireVerification = true, roleLabel =
           .limit(1)
           .maybeSingle();
 
-        if (roleData && !twoFAData?.is_enabled) {
+        if (roleData && !twoFAEnabled) {
           const roleCreatedAt = new Date(roleData.created_at);
           const now = new Date();
           const daysSinceRoleAssigned = Math.floor((now.getTime() - roleCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
@@ -74,10 +66,7 @@ export const Admin2FAGate = ({ children, requireVerification = true, roleLabel =
           }
         }
 
-        // If 2FA is not enabled, they can't be verified
-        if (!twoFAData?.is_enabled) {
-          setIsVerified(false);
-        }
+        if (!twoFAEnabled) setIsVerified(false);
 
       } catch (error) {
         console.error('Error checking 2FA status:', error);

@@ -1,8 +1,8 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
-import { supabase } from '@/integrations/supabase/client';
+import { use2FAStatus } from '@/hooks/use2FAStatus';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -38,30 +38,13 @@ const rolePriority: Record<string, number> = {
 export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { role, isLoading: roleLoading } = useAdminStatus();
-  const [twoFAStatus, setTwoFAStatus] = useState<'loading' | 'required' | 'verified' | 'not-required'>('loading');
-
-  useEffect(() => {
-    if (!user) { setTwoFAStatus('not-required'); return; }
-
-    let cancelled = false;
-    const check = async () => {
-      const [{ data: twoFARow }, { data: sessionRow }] = await Promise.all([
-        supabase.from('user_2fa').select('is_enabled').eq('user_id', user.id).maybeSingle(),
-        supabase.from('user_2fa_sessions').select('expires_at').eq('user_id', user.id).maybeSingle(),
-      ]);
-      if (cancelled) return;
-
-      if (!twoFARow?.is_enabled) { setTwoFAStatus('not-required'); return; }
-
-      const verified = !!sessionRow && new Date(sessionRow.expires_at) > new Date();
-      setTwoFAStatus(verified ? 'verified' : 'required');
-    };
-    check();
-    return () => { cancelled = true; };
-  }, [user]);
+  // Cached via React Query (staleTime 5 min) — does NOT re-fetch on every route render.
+  const { data: twoFA, isLoading: twoFALoading } = use2FAStatus(user?.id);
 
   const initialRoleLoad = !!user && role === null && roleLoading;
-  if (authLoading || initialRoleLoad || (!!user && twoFAStatus === 'loading')) {
+  const twoFAGateLoading = !!user && twoFALoading;
+
+  if (authLoading || initialRoleLoad || twoFAGateLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -76,11 +59,9 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }:
     return <Navigate to={redirectTo} replace />;
   }
 
-  // Server-side 2FA gate: redirect to verification page if 2FA is enabled but not verified.
-  if (twoFAStatus === 'required') {
-    const userId = user.id;
-    sessionStorage.setItem('pending2FA', userId);
-    return <Navigate to={`/auth/2fa-verify?userId=${userId}`} replace />;
+  if (twoFA?.enabled && !twoFA.verified) {
+    sessionStorage.setItem('pending2FA', user.id);
+    return <Navigate to={`/auth/2fa-verify?userId=${user.id}`} replace />;
   }
 
   if (requiredRole) {

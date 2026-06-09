@@ -53,9 +53,7 @@ export const useEmergencyAlerts = () => {
         lastFetchTimeRef.current = now;
         setLoading(true);
         try {
-          // Get user's creation date for clean slate filtering
-          const { data: userData } = await supabase.auth.getUser();
-          const userCreatedAt = userData.user?.created_at;
+          const userCreatedAt = user?.created_at;
 
           // Use cached profile if available
           let currentUserProfile = profileCacheRef.current;
@@ -187,9 +185,7 @@ export const useEmergencyAlerts = () => {
     return new Promise<void>((resolve) => {
       panicDebounceRef.current = setTimeout(async () => {
         try {
-          // Get user's creation date for clean slate filtering
-          const { data: userData } = await supabase.auth.getUser();
-          const userCreatedAt = userData.user?.created_at;
+          const userCreatedAt = user?.created_at;
 
           // Use cached profile
           let userProfile = profileCacheRef.current;

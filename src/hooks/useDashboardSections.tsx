@@ -52,9 +52,7 @@ export const useUpcomingEvents = (limit: number = 3) => {
     queryFn: async () => {
       if (!user || !profile) return [];
 
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      const userCreatedAt = user?.created_at;
 
       const now = new Date().toISOString();
 
@@ -174,9 +172,7 @@ export const useSafetyAlerts = (limit: number = 3) => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      const userCreatedAt = user?.created_at;
 
       let query = supabase
         .from('safety_alerts')
@@ -274,9 +270,7 @@ export const useMarketplaceHighlights = (limit: number = 3) => {
     queryFn: async () => {
       if (!user || !profile) return [];
 
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      const userCreatedAt = user?.created_at;
 
       let query = supabase
         .from('marketplace_items')
@@ -354,9 +348,7 @@ export const useTrendingTopics = (limit: number = 4) => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get user's creation date for clean slate filtering
-      const { data: userData } = await supabase.auth.getUser();
-      const userCreatedAt = userData.user?.created_at;
+      const userCreatedAt = user?.created_at;
 
       // Get all tags from recent posts (last 7 days)
       const sevenDaysAgo = new Date();
