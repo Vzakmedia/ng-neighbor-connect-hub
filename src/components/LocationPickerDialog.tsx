@@ -68,6 +68,11 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Map token service returned an unexpected response. Please try again.');
+      }
+
       const data = await response.json();
       
       console.log('🔑 [LocationPicker] Edge function response:', { 

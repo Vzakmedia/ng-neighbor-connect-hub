@@ -63,18 +63,24 @@ export const MarketplaceComments = ({ itemId }: MarketplaceCommentsProps) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('marketplace_item_comments')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('item_id', itemId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments(data || []);
+
+      const rows = data || [];
+      if (rows.length > 0) {
+        const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', userIds);
+        const profileMap = new Map((profilesData || []).map((p: any) => [p.user_id, p]));
+        setComments(rows.map((r: any) => ({ ...r, profiles: profileMap.get(r.user_id) ?? null })));
+      } else {
+        setComments([]);
+      }
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
