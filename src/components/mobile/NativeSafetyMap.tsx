@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMapApiKey } from '@/hooks/useMapApiKey';
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
@@ -38,6 +38,7 @@ export const NativeSafetyMap = ({
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<MapLocation | null>(null);
   const { toast } = useToast();
+  const { apiKey } = useMapApiKey();
   const isNative = isNativePlatform();
 
   // Create refs to prevent re-running the initialization effect when props change
@@ -87,9 +88,9 @@ export const NativeSafetyMap = ({
     getUserLocation();
   }, [isNative]);
 
-  // Initialize map — runs exactly once on mount.
+  // Initialize map — runs once apiKey is available.
   useEffect(() => {
-    if (!isNative || !mapRef.current) return;
+    if (!isNative || !mapRef.current || !apiKey) return;
 
     const initMap = async () => {
       try {
@@ -109,25 +110,6 @@ export const NativeSafetyMap = ({
           };
           requestAnimationFrame(check);
         });
-
-        let apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-        if (!apiKey) {
-          const { data: configData, error: configError } = await supabase.functions.invoke(
-            'get-google-maps-token'
-          );
-
-          if (configError || !configData?.token) {
-            throw new Error('Failed to get Google Maps API key');
-          }
-
-          // WR-20: Validate API key format before using it
-          if (!/^AIza[A-Za-z0-9_\-]{35}$/.test(configData.token)) {
-            throw new Error('Invalid API key');
-          }
-
-          apiKey = configData.token;
-        }
 
         const { GoogleMap } = await import('@capacitor/google-maps');
 
@@ -170,7 +152,7 @@ export const NativeSafetyMap = ({
       mapInstanceRef.current?.destroy();
       mapInstanceRef.current = null;
     };
-  }, [isNative]);
+  }, [isNative, apiKey]);
 
   // Pan map when center or zoom props change from parent
   useEffect(() => {

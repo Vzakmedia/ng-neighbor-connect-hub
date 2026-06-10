@@ -14,7 +14,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Navigation } from '@/lib/icons';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
-const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
+import { CapacitorAwareMap, MapCoords, MapMarker } from '@/components/maps/CapacitorAwareMap';
+import { isNativePlatform } from '@/utils/platform';
+import { useMapApiKey } from '@/hooks/useMapApiKey';
+
 const getCapacitorPlatform = () => (window as any).Capacitor?.getPlatform?.() || 'web';
 
 interface LocationPickerDialogProps {
@@ -24,6 +27,8 @@ interface LocationPickerDialogProps {
 }
 
 const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: LocationPickerDialogProps) => {
+  const isNative = isNativePlatform();
+
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState('');
   const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -33,122 +38,205 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
   const [manualEntryMode, setManualEntryMode] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('Getting your precise location...');
+
+  // Native map state
+  const [nativeCenter, setNativeCenter] = useState<MapCoords>({ lat: 9.082, lng: 8.6753 });
+  const [nativeMarkers, setNativeMarkers] = useState<MapMarker[]>([]);
+
+  // Web map refs (only used on web)
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const { toast } = useToast();
   const { getCurrentPosition } = useNativePermissions();
-  
+  const { apiKey } = useMapApiKey();
+
   const MAX_RETRIES = 3;
+
+  // ─── Shared: reverse geocode via REST ────────────────────────────────────────
+
+  const fallbackReverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('nigeria-reverse-geocode', {
+        body: { latitude: lat, longitude: lng }
+      });
+      if (error) throw error;
+      return data?.address || 'Current Location';
+    } catch {
+      return 'Current Location';
+    }
+  };
+
+  const reverseGeocodeRest = async (coords: { lat: number; lng: number }): Promise<string> => {
+    if (!apiKey) return fallbackReverseGeocode(coords.lat, coords.lng);
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status === 'OK' && data.results?.[0]) return data.results[0].formatted_address;
+      return fallbackReverseGeocode(coords.lat, coords.lng);
+    } catch {
+      return fallbackReverseGeocode(coords.lat, coords.lng);
+    }
+  };
+
+  // ─── Native map click → reverse geocode ──────────────────────────────────────
+
+  const handleNativeMapClick = async (coords: MapCoords) => {
+    setNativeCenter(coords);
+    setNativeMarkers([{ id: 'pick', lat: coords.lat, lng: coords.lng, title: 'Selected location' }]);
+    setIsLoading(true);
+    const address = await reverseGeocodeRest(coords);
+    setSelectedAddress(address);
+    setSelectedCoords(coords);
+    setIsLoading(false);
+    toast({ title: 'Location updated', description: address });
+  };
+
+  // ─── Native: GPS only (no web map init) ──────────────────────────────────────
+
+  const initializeNative = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    timeoutRef.current = setTimeout(() => {
+      setLoadingMessage('Taking longer than expected... Try manual entry below');
+      setManualEntryMode(true);
+    }, 5000);
+
+    try {
+      const position = await Promise.race([
+        getCurrentPosition(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Location request timed out')), 8000)
+        ),
+      ]);
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+      setNativeCenter(coords);
+      setNativeMarkers([{ id: 'pick', lat: coords.lat, lng: coords.lng, title: 'Your location' }]);
+
+      const address = await reverseGeocodeRest(coords);
+      setSelectedAddress(address);
+      setSelectedCoords(coords);
+      setIsLoading(false);
+    } catch (err) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('permission')) {
+        setPermissionDenied(true);
+        setError('Location permission denied. Please enter your location manually below.');
+      } else {
+        setError('Unable to get your location. Please enter it manually below.');
+      }
+      setManualEntryMode(true);
+      setIsLoading(false);
+    }
+  };
+
+  // ─── Web: full Google Maps JS API (unchanged from original) ──────────────────
+
   const fetchApiKeyWithRetry = async (attempt = 0): Promise<string> => {
     try {
-      // Use session token when available; fall back to anon key from env vars only
       const { data: { session } } = await supabase.auth.getSession();
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const authToken = session?.access_token ?? anonKey;
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/get-google-maps-token`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-            'apikey': anonKey,
-          },
-        }
-      );
-      
-      console.log('🔑 [LocationPicker] Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get('content-type') ?? '';
-      if (!contentType.includes('application/json')) {
-        throw new Error('Map token service returned an unexpected response. Please try again.');
-      }
-
-      const data = await response.json();
-      
-      console.log('🔑 [LocationPicker] Edge function response:', { 
-        hasData: !!data, 
-        hasToken: !!data?.token,
-        error: data?.error 
+      const response = await fetch(`${supabaseUrl}/functions/v1/get-google-maps-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'apikey': anonKey,
+        },
       });
 
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      if (!data?.token) {
-        throw new Error('No API key returned from server');
-      }
-
-      console.log('✅ [LocationPicker] API key retrieved successfully');
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      if (!data?.token) throw new Error('No API key returned from server');
       setError(null);
       return data.token;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error(`❌ [LocationPicker] Attempt ${attempt + 1} failed:`, errorMessage);
-
       if (attempt < MAX_RETRIES - 1) {
         const delay = Math.pow(2, attempt) * 1000;
-        console.log(`⏳ [LocationPicker] Retrying in ${delay}ms...`);
         setRetryCount(attempt + 1);
-        
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchApiKeyWithRetry(attempt + 1);
-      } else {
-        throw new Error(`Failed to load map after ${MAX_RETRIES} attempts: ${errorMessage}`);
       }
+      throw new Error(`Failed to load map after ${MAX_RETRIES} attempts: ${errorMessage}`);
     }
   };
 
-  const initializeMap = async () => {
-    if (!mapRef.current) {
-      console.log('Map container not available');
+  const reverseGeocode = async (coords: { lat: number; lng: number }) => {
+    if (!geocoderRef.current) {
+      const address = await fallbackReverseGeocode(coords.lat, coords.lng).catch(
+        () => `Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`
+      );
+      setSelectedAddress(address);
+      setSelectedCoords(coords);
+      setIsLoading(false);
       return;
     }
+
+    try {
+      const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+        geocoderRef.current!.geocode({ location: coords }, (results, status) => {
+          if (status === 'OK') resolve(results || []);
+          else reject(new Error(`Geocoding failed: ${status}`));
+        });
+      });
+
+      if (results?.length > 0) {
+        setSelectedAddress(results[0].formatted_address);
+        setSelectedCoords(coords);
+        toast({ title: 'Location updated', description: 'Location has been selected successfully' });
+      } else {
+        const fallback = await fallbackReverseGeocode(coords.lat, coords.lng);
+        setSelectedAddress(fallback);
+        setSelectedCoords(coords);
+      }
+    } catch {
+      const fallback = await fallbackReverseGeocode(coords.lat, coords.lng).catch(
+        () => `Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`
+      );
+      setSelectedAddress(fallback);
+      setSelectedCoords(coords);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeWebMap = async () => {
+    if (!mapRef.current) return;
 
     try {
       setIsLoading(true);
       setError(null);
       setRetryCount(0);
-      console.log('Starting map initialization...');
 
-      // Get Google Maps API key with retry logic
-      const apiKey = await fetchApiKeyWithRetry();
-      console.log('Got Google Maps token, loading script...');
+      const key = await fetchApiKeyWithRetry();
 
-      // Load Google Maps API if not already loaded
       if (!window.google?.maps) {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&region=NG&language=en&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places,marker&region=NG&language=en&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
-        
         await new Promise((resolve, reject) => {
-          script.onload = () => {
-            console.log('Google Maps script loaded successfully');
-            resolve(undefined);
-          };
-          script.onerror = (error) => {
-            console.error('Failed to load Google Maps script:', error);
-            reject(new Error('Failed to load Google Maps script'));
-          };
+          script.onload = () => resolve(undefined);
+          script.onerror = () => reject(new Error('Failed to load Google Maps script'));
         });
       }
 
-      console.log('Requesting location permission...');
       setLoadingMessage('Requesting location permission...');
-
-      // Set timeout to show manual entry option after 5 seconds
       timeoutRef.current = setTimeout(() => {
         setLoadingMessage('Taking longer than expected... Try manual entry below');
         setManualEntryMode(true);
@@ -156,198 +244,114 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       let position;
       try {
-        // Get user's current position with reduced timeout
         position = await Promise.race([
           getCurrentPosition(),
-          new Promise<never>((_, reject) => 
+          new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Location request timed out')), 8000)
-          )
+          ),
         ]);
       } catch (locationError) {
-        console.error('Location error:', locationError);
-        
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         const errorMsg = locationError instanceof Error ? locationError.message : 'Location error';
-        
         if (errorMsg.includes('permission')) {
           setPermissionDenied(true);
           setError('Location permission denied. Please enter your location manually below.');
         } else {
           setError('Unable to get your location. Please enter it manually below.');
         }
-        
         setManualEntryMode(true);
         setIsLoading(false);
         return;
       }
 
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       const { latitude, longitude } = position.coords;
       const initialLocation = { lat: latitude, lng: longitude };
-
-      const isNative = isNativePlatform();
-      const platform = getCapacitorPlatform();
-      const startTime = performance.now();
-
-      console.log('[MAP] Starting initialization...', {
-        platform,
-        isNative,
-        location: initialLocation
-      });
       setLoadingMessage('Loading map...');
 
-      // Wait for Google Maps to be fully loaded
       await new Promise((resolve) => {
-        if (window.google?.maps?.Map) {
-          resolve(undefined);
-        } else {
-          const checkInterval = setInterval(() => {
-            if (window.google?.maps?.Map) {
-              clearInterval(checkInterval);
-              resolve(undefined);
-            }
-          }, 100);
-        }
+        if (window.google?.maps?.Map) { resolve(undefined); return; }
+        const check = setInterval(() => {
+          if (window.google?.maps?.Map) { clearInterval(check); resolve(undefined); }
+        }, 100);
       });
 
-      // Initialize map with native optimizations
       const map = new google.maps.Map(mapRef.current, {
         center: initialLocation,
-        zoom: isNative ? 16 : 15,
-        mapTypeControl: !isNative,
-        streetViewControl: !isNative,
-        fullscreenControl: !isNative,
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
-        gestureHandling: isNative ? 'greedy' : 'cooperative',
+        gestureHandling: 'cooperative',
         zoomControl: true,
-        scaleControl: !isNative,
-        rotateControl: !isNative,
-        disableDefaultUI: isNative,
+        disableDefaultUI: false,
         mapId: 'LOCATION_PICKER_MAP',
         restriction: {
-          latLngBounds: {
-            north: 13.9,
-            south: 4.3,
-            east: 14.7,
-            west: 2.7
-          },
-          strictBounds: false
-        }
+          latLngBounds: { north: 13.9, south: 4.3, east: 14.7, west: 2.7 },
+          strictBounds: false,
+        },
       });
 
-      const loadTime = performance.now() - startTime;
-      console.log('[MAP] Initialization complete', {
-        platform,
-        loadTimeMs: Math.round(loadTime),
-        coordinates: initialLocation
-      });
+      setTimeout(() => { google.maps.event.trigger(map, 'resize'); map.setCenter(initialLocation); }, 100);
 
-      console.log('Map created successfully');
-      
-      // Force map to resize - important for dialogs
-      setTimeout(() => {
-        google.maps.event.trigger(map, 'resize');
-        map.setCenter(initialLocation);
-      }, 100);
-
-      // Initialize geocoder
       const geocoder = new google.maps.Geocoder();
       geocoderRef.current = geocoder;
 
-      // Create custom pin element
       const pinElement = new google.maps.marker.PinElement({
-        background: '#EA4335',
-        borderColor: '#ffffff',
-        glyphColor: '#ffffff',
-        scale: 1.5,
+        background: '#EA4335', borderColor: '#ffffff', glyphColor: '#ffffff', scale: 1.5,
       });
 
-      // Create AdvancedMarkerElement with draggable capability
       const marker = new google.maps.marker.AdvancedMarkerElement({
-        position: initialLocation,
-        map: map,
-        gmpDraggable: true,
-        content: pinElement.element,
-        title: 'Drag to select exact location',
+        position: initialLocation, map, gmpDraggable: true,
+        content: pinElement.element, title: 'Drag to select exact location',
       });
 
       mapInstanceRef.current = map;
       markerRef.current = marker;
 
-      console.log('Getting initial address...');
-      // Get initial address
       await reverseGeocode(initialLocation);
 
-      // Add click listener to map
       map.addListener('click', (event: google.maps.MapMouseEvent) => {
         if (event.latLng) {
-          const newPosition = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng()
-          };
+          const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
           marker.position = newPosition;
           reverseGeocode(newPosition);
         }
       });
 
-      // Add drag listener to marker using gmp-dragend event
       marker.addListener('dragend', () => {
         const position = marker.position as google.maps.LatLng | google.maps.LatLngLiteral | null;
         if (position) {
           const newPosition = {
             lat: typeof position.lat === 'function' ? position.lat() : position.lat,
-            lng: typeof position.lng === 'function' ? position.lng() : position.lng
+            lng: typeof position.lng === 'function' ? position.lng() : position.lng,
           };
           reverseGeocode(newPosition);
         }
       });
 
-      console.log('Map initialization completed successfully');
-      setIsLoading(false); // Show map immediately after initialization
-
-    } catch (error) {
-      console.error('❌ [LocationPicker] Error initializing map:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      const isNative = isNativePlatform();
-      
-      // Native-specific error handling
-      if (isNative) {
-        if (errorMessage.includes('net::ERR_NAME_NOT_RESOLVED') || errorMessage.includes('Failed to fetch')) {
-          setError('No internet connection. Please check your WiFi or mobile data.');
-        } else if (errorMessage.includes('API key') || errorMessage.includes('ApiNotActivatedMapError')) {
-          setError('Map service unavailable. Please use manual entry below.');
-        } else if (errorMessage.includes('permission')) {
-          setPermissionDenied(true);
-          setError('Location permission denied. Please use manual entry below.');
-        } else {
-          setError('Map loading issue. Try manual entry or select your neighborhood.');
-        }
+      setIsLoading(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      if (err instanceof Error && err.message.includes('permission')) {
+        setPermissionDenied(true);
+        setError('Location permission denied');
       } else {
-        // Check if it's a permission error
-        if (error instanceof Error && error.message.includes('permission')) {
-          setPermissionDenied(true);
-          setError('Location permission denied');
-        } else {
-          setError(errorMessage);
-        }
+        setError(errorMessage);
       }
-      
-      toast({
-        title: "Map Loading Error",
-        description: isNative ? 'Please use manual entry to set your location' : errorMessage,
-        variant: "destructive",
-      });
-      
+      toast({ title: 'Map Loading Error', description: errorMessage, variant: 'destructive' });
       setManualEntryMode(true);
       setIsLoading(false);
     }
+  };
+
+  // ─── Dispatch ─────────────────────────────────────────────────────────────────
+
+  const initializeMap = () => {
+    if (isNative) initializeNative();
+    else initializeWebMap();
   };
 
   const handleRetry = () => {
@@ -360,187 +364,80 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
   const handleManualAddressSearch = async () => {
     if (!manualAddress.trim()) {
-      toast({
-        title: "Address required",
-        description: "Please enter an address to search",
-        variant: "destructive",
-      });
+      toast({ title: 'Address required', description: 'Please enter an address to search', variant: 'destructive' });
       return;
     }
 
     try {
       setIsLoading(true);
-      
-      // Use Google Maps Geocoding API if available
-      if (geocoderRef.current) {
+
+      if (!isNative && geocoderRef.current) {
         const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
           geocoderRef.current!.geocode(
-            { 
-              address: manualAddress,
-              componentRestrictions: { country: 'NG' },
-              region: 'ng'
-            },
+            { address: manualAddress, componentRestrictions: { country: 'NG' }, region: 'ng' },
             (results, status) => {
-              if (status === 'OK' && results) {
-                resolve(results);
-              } else {
-                reject(new Error(`Geocoding failed: ${status}`));
-              }
+              if (status === 'OK' && results) resolve(results);
+              else reject(new Error(`Geocoding failed: ${status}`));
             }
           );
         });
 
-        if (results && results.length > 0) {
+        if (results?.length > 0) {
           const location = results[0].geometry.location;
           const coords = { lat: location.lat(), lng: location.lng() };
-          
           setSelectedAddress(results[0].formatted_address);
           setSelectedCoords(coords);
-          
-          // Update map if it exists
           if (mapInstanceRef.current && markerRef.current) {
             mapInstanceRef.current.setCenter(coords);
             markerRef.current.position = coords;
           }
-          
-          toast({
-            title: "Location found!",
-            description: results[0].formatted_address,
-          });
+          toast({ title: 'Location found!', description: results[0].formatted_address });
+        }
+      } else {
+        if (!apiKey) throw new Error('API key not available');
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(manualAddress)}&components=country:NG&key=${apiKey}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.status === 'OK' && data.results?.[0]) {
+          const { lat, lng } = data.results[0].geometry.location;
+          const coords = { lat, lng };
+          setSelectedAddress(data.results[0].formatted_address);
+          setSelectedCoords(coords);
+          setNativeCenter(coords);
+          setNativeMarkers([{ id: 'pick', lat: coords.lat, lng: coords.lng, title: 'Selected location' }]);
+          toast({ title: 'Location found!', description: data.results[0].formatted_address });
+        } else {
+          throw new Error('Location not found');
         }
       }
-    } catch (error) {
-      console.error('Manual geocoding error:', error);
-      toast({
-        title: "Location not found",
-        description: "Please try a different address or be more specific",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: 'Location not found', description: 'Please try a different address', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSkipLocation = () => {
-    // Use a default location (e.g., center of Nigeria)
-    const defaultCoords = { lat: 9.0820, lng: 8.6753 };
-    onLocationConfirm("Nigeria", defaultCoords);
+    onLocationConfirm('Nigeria', { lat: 9.082, lng: 8.6753 });
     onOpenChange(false);
-    toast({
-      title: "Location skipped",
-      description: "You can set your precise location later in settings",
-    });
-  };
-
-  const reverseGeocode = async (coords: { lat: number; lng: number }) => {
-    console.log('Starting reverse geocoding for:', coords);
-    
-    if (!geocoderRef.current) {
-      console.log('Geocoder not available, using fallback');
-      try {
-        const address = await fallbackReverseGeocode(coords.lat, coords.lng);
-        setSelectedAddress(address);
-        setSelectedCoords(coords);
-      } catch (error) {
-        setSelectedAddress(`Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-        setSelectedCoords(coords);
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-        geocoderRef.current!.geocode(
-          { location: coords },
-          (results, status) => {
-            console.log('Geocoding status:', status);
-            
-            if (status === 'OK') {
-              resolve(results || []);
-            } else {
-              reject(new Error(`Geocoding failed: ${status}`));
-            }
-          }
-        );
-      });
-
-      if (results && results.length > 0) {
-        const address = results[0].formatted_address;
-        console.log('Found address:', address);
-        setSelectedAddress(address);
-        setSelectedCoords(coords);
-        
-        toast({
-          title: "Location updated",
-          description: "Location has been selected successfully",
-        });
-      } else {
-        const fallbackAddress = await fallbackReverseGeocode(coords.lat, coords.lng);
-        setSelectedAddress(fallbackAddress);
-        setSelectedCoords(coords);
-      }
-    } catch (error) {
-      console.error('Error getting address:', error);
-      try {
-        const fallbackAddress = await fallbackReverseGeocode(coords.lat, coords.lng);
-        setSelectedAddress(fallbackAddress);
-        setSelectedCoords(coords);
-      } catch (fallbackError) {
-        setSelectedAddress(`Location: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
-        setSelectedCoords(coords);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fallbackReverseGeocode = async (lat: number, lng: number): Promise<string> => {
-    try {
-      console.log('🗺️ [LocationPicker] Using Nigeria-specific reverse geocoding:', { lat, lng });
-      
-      // Use our Nigeria-specific reverse geocoding edge function
-      const { data, error } = await supabase.functions.invoke('nigeria-reverse-geocode', {
-        body: { latitude: lat, longitude: lng }
-      });
-      
-      if (error) {
-        console.error('❌ [LocationPicker] Edge function error:', error);
-        throw error;
-      }
-      
-      console.log('✅ [LocationPicker] Geocoding success:', data);
-      return data?.address || "Current Location";
-    } catch (error) {
-      console.error('❌ [LocationPicker] Nigeria reverse geocoding failed:', error);
-      return "Current Location";
-    }
+    toast({ title: 'Location skipped', description: 'You can set your precise location later in settings' });
   };
 
   const handleConfirmLocation = () => {
     if (selectedAddress && selectedCoords) {
       onLocationConfirm(selectedAddress, selectedCoords);
       onOpenChange(false);
-      toast({
-        title: "Location confirmed!",
-        description: "Your selected location has been added.",
-      });
+      toast({ title: 'Location confirmed!', description: 'Your selected location has been added.' });
     }
   };
 
   useEffect(() => {
     if (open && !mapInstanceRef.current) {
-      // Slight delay to ensure dialog is fully rendered
-      setTimeout(() => {
-        initializeMap();
-      }, 300);
+      setTimeout(() => initializeMap(), 300);
     }
-    
-    // Cleanup when dialog closes
     if (!open) {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       mapInstanceRef.current = null;
       markerRef.current = null;
       geocoderRef.current = null;
@@ -549,8 +446,9 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
       setManualEntryMode(false);
       setManualAddress('');
       setLoadingMessage('Getting your precise location...');
+      setNativeMarkers([]);
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -563,12 +461,10 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
         </DialogHeader>
 
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
-          {/* Permission Denied Alert */}
           {permissionDenied && (
             <PermissionDeniedAlert permissionType="location" feature="location picker" />
           )}
-          
-          {/* Manual Entry Mode */}
+
           {manualEntryMode && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
               <div className="space-y-2">
@@ -588,28 +484,17 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRetry}
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" onClick={handleRetry} className="flex-1">
                   <Navigation className="h-3 w-3 mr-2" />
                   Try Auto-Detect Again
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSkipLocation}
-                  className="flex-1"
-                >
+                <Button variant="ghost" size="sm" onClick={handleSkipLocation} className="flex-1">
                   Skip for Now
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Map Container */}
           <div className="flex-1 relative border rounded-lg overflow-hidden min-h-[400px]">
             {isLoading && (
               <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
@@ -626,7 +511,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                 </div>
               </div>
             )}
-            
+
             {error && !isLoading && (
               <div className="absolute inset-0 bg-background flex items-center justify-center z-10 p-4">
                 <div className="text-center space-y-4 max-w-md">
@@ -635,28 +520,32 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
                     <h3 className="font-semibold text-lg">Map Loading Failed</h3>
                     <p className="text-sm mt-2">{error}</p>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Button onClick={handleRetry} variant="default" size="sm">
-                      <Navigation className="h-4 w-4 mr-2" />
-                      Try Again
-                    </Button>
-                  </div>
+                  <Button onClick={handleRetry} variant="default" size="sm">
+                    <Navigation className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
                 </div>
               </div>
             )}
-            
-            <div 
-              ref={mapRef} 
-              className="w-full h-full"
-              style={{ 
-                minHeight: '400px',
-                height: '100%',
-                width: '100%'
-              }}
-            />
+
+            {isNative ? (
+              <CapacitorAwareMap
+                center={nativeCenter}
+                zoom={15}
+                markers={nativeMarkers}
+                height="400px"
+                className="w-full"
+                onMapClick={handleNativeMapClick}
+              />
+            ) : (
+              <div
+                ref={mapRef}
+                className="w-full h-full"
+                style={{ minHeight: '400px', height: '100%', width: '100%' }}
+              />
+            )}
           </div>
 
-          {/* Selected Location Display */}
           {selectedAddress && (
             <div className="p-3 bg-muted rounded-lg flex-shrink-0">
               <div className="flex items-start gap-2">
@@ -670,17 +559,19 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
           )}
 
           <div className="text-xs text-muted-foreground space-y-1 flex-shrink-0">
-            <p>💡 Click anywhere on the map or drag the red marker to adjust your location</p>
-            <p>🎯 The marker shows your current position - move it to be more precise</p>
+            {isNative ? (
+              <p>💡 Tap anywhere on the map to select your location</p>
+            ) : (
+              <>
+                <p>💡 Click anywhere on the map or drag the red marker to adjust your location</p>
+                <p>🎯 The marker shows your current position — move it to be more precise</p>
+              </>
+            )}
           </div>
         </div>
 
         <DialogFooter className="flex-shrink-0 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button

@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { AdminRole } from '@/hooks/useAdminStatus';
 
+// Supabase wraps Web Locks AbortErrors (cross-tab auth race) as { code: '', message: 'AbortError...' }
+const isSupabaseAbortError = (error: { code?: string; message?: string; hint?: string } | null): boolean =>
+  !!error && !error.code && Boolean(
+    error.message?.includes('AbortError') || error.hint?.includes('Request was aborted')
+  );
+
 interface AdminStatusContextValue {
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -37,6 +43,7 @@ export function AdminStatusProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [has2FAEnabled, setHas2FAEnabled] = useState(false);
   const hasFetchedOnce = useRef(false);
+  const retryScheduled = useRef(false);
 
   const userId = user?.id;
 
@@ -65,6 +72,14 @@ export function AdminStatusProvider({ children }: { children: ReactNode }) {
         ]);
 
       if (roleError) {
+        if (isSupabaseAbortError(roleError) && !retryScheduled.current) {
+          retryScheduled.current = true;
+          setTimeout(() => {
+            retryScheduled.current = false;
+            checkAdminStatus();
+          }, 1500);
+          return;
+        }
         console.error('Error fetching role:', roleError);
       }
 

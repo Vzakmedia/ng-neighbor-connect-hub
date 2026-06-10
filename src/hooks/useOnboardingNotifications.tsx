@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+
+// Supabase wraps Web Locks AbortErrors (cross-tab auth race) as { code: '', message: 'AbortError...' }
+const isSupabaseAbortError = (error: { code?: string; message?: string; hint?: string } | null): boolean =>
+  !!error && !error.code && Boolean(
+    error.message?.includes('AbortError') || error.hint?.includes('Request was aborted')
+  );
 
 interface OnboardingPreferences {
   id: string;
@@ -32,6 +38,7 @@ export const useOnboardingNotifications = () => {
     preferences: null,
   });
   const [loading, setLoading] = useState(true);
+  const retryScheduled = useRef(false);
 
   const fetchOnboardingStatus = async () => {
     if (!user) return;
@@ -45,6 +52,14 @@ export const useOnboardingNotifications = () => {
         .single();
 
       if (prefsError && prefsError.code !== 'PGRST116') {
+        if (isSupabaseAbortError(prefsError) && !retryScheduled.current) {
+          retryScheduled.current = true;
+          setTimeout(() => {
+            retryScheduled.current = false;
+            fetchOnboardingStatus();
+          }, 1500);
+          return;
+        }
         console.error('Error fetching preferences:', prefsError);
         return;
       }
