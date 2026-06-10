@@ -16,7 +16,7 @@ android {
         applicationId "com.neighborlink.app"
         minSdkVersion 24
         targetSdkVersion 35
-        versionCode 16
+        versionCode 17
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
