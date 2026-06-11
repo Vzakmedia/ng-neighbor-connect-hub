@@ -7,16 +7,14 @@ import { VoiceCallCard } from "@/components/messaging/VoiceCallCard";
 import { IncomingCallDialog } from "@/components/messaging/IncomingCallDialog";
 import type { CallState } from "@/utils/call/types";
 
+const LIVEKIT_SERVER_URL = import.meta.env.VITE_LIVEKIT_URL || "wss://neighborlink-94uewje2.livekit.cloud";
+
 interface CallContextType extends CallServiceState {
     startVoiceCall: (conversationId: string, otherUserName: string, otherUserAvatar?: string, otherUserId?: string) => Promise<void>;
     startVideoCall: (conversationId: string, otherUserName: string, otherUserAvatar?: string, otherUserId?: string) => Promise<void>;
     answerCall: (video: boolean) => Promise<void>;
     declineCall: () => Promise<void>;
     endCall: () => Promise<void>;
-    toggleAudio: () => void;
-    toggleVideo: () => void;
-    toggleSpeaker: (enabled: boolean) => void;
-    switchCamera: () => void;
     isInCall: boolean;
 }
 
@@ -35,15 +33,19 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     const [callServiceState, setCallServiceState] = useState<CallServiceState>(
         CallService.getInstance().getState()
     );
-    const { fetchToken, token: liveKitToken } = useLiveKitToken();
+    const { fetchToken, token: liveKitToken, clearToken } = useLiveKitToken();
 
     // Stable refs so the OS-notification event handlers always call the latest callbacks
     const answerCallRef = useRef<(video: boolean) => Promise<void>>(async () => {});
     const declineCallRef = useRef<() => Promise<void>>(async () => {});
 
+    // Initialize signaling when signed in; fully tear down calls on sign-out
+    // so no call can outlive the session.
     useEffect(() => {
         if (user?.id) {
             CallService.getInstance().initialize(user.id);
+        } else {
+            CallService.getInstance().shutdown();
         }
     }, [user?.id]);
 
@@ -71,7 +73,18 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         return () => { unsubscribe(); };
     }, []);
 
+    // A stale token would join the previous call's room — clear it once the call ends.
+    useEffect(() => {
+        if (callServiceState.state === "idle") {
+            clearToken();
+        }
+    }, [callServiceState.state, clearToken]);
+
     const startVoiceCall = useCallback(async (conversationId: string, name: string, avatar?: string, userId?: string) => {
+        if (!user?.id) {
+            console.error("Cannot start call: not signed in");
+            return;
+        }
         if (!userId) {
             console.error("Cannot start call: recipient ID missing");
             return;
@@ -86,6 +99,10 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     }, [fetchToken, user]);
 
     const startVideoCall = useCallback(async (conversationId: string, name: string, avatar?: string, userId?: string) => {
+        if (!user?.id) {
+            console.error("Cannot start call: not signed in");
+            return;
+        }
         if (!userId) {
             console.error("Cannot start call: recipient ID missing");
             return;
@@ -98,6 +115,7 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
     }, [fetchToken, user]);
 
     const answerCallFn = useCallback(async (video: boolean) => {
+        if (!user?.id) return;
         await CallService.getInstance().answerCall(video);
         const freshState = CallService.getInstance().getState();
         if (freshState.conversationId) {
@@ -114,6 +132,13 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
       declineCallRef.current = declineCallFn;
     }, [answerCallFn, declineCallFn]);
 
+    // Bridge LiveKit room events into the call state machine
+    const handleRemoteJoined = useCallback(() => CallService.getInstance().onRemoteParticipantJoined(), []);
+    const handleRemoteLeft = useCallback(() => CallService.getInstance().onRemoteParticipantLeft(), []);
+    const handleConnectionLost = useCallback(() => CallService.getInstance().onRoomConnectionLost(), []);
+    const handleReconnecting = useCallback(() => CallService.getInstance().onRoomReconnecting(), []);
+    const handleReconnected = useCallback(() => CallService.getInstance().onRoomReconnected(), []);
+
     const value: CallContextType = {
         ...callServiceState,
         isInCall: callServiceState.state !== "idle" && callServiceState.state !== "ended",
@@ -122,55 +147,60 @@ export const CallProvider = ({ children }: { children: ReactNode }) => {
         answerCall: answerCallFn,
         declineCall: declineCallFn,
         endCall: () => CallService.getInstance().endCall(),
-        toggleAudio: () => CallService.getInstance().toggleAudio(),
-        toggleVideo: () => CallService.getInstance().toggleVideo(),
-        toggleSpeaker: (enabled) => CallService.getInstance().toggleSpeaker(enabled),
-        switchCamera: () => CallService.getInstance().switchCamera(),
     };
 
     return (
         <CallContext.Provider value={value}>
             {children}
 
-            {callServiceState.isVideo ? (
-                <VideoCallDialog
-                    open={value.isInCall && callServiceState.state !== "ringing"}
-                    onOpenChange={() => {}}
-                    localStream={callServiceState.localStream}
-                    remoteStream={callServiceState.remoteStream}
-                    onEndCall={value.endCall}
-                    onToggleAudio={value.toggleAudio}
-                    onToggleVideo={value.toggleVideo}
-                    onToggleSpeaker={value.toggleSpeaker}
-                    onSwitchCamera={value.switchCamera}
-                    isVideoCall={true}
-                    otherUserName={callServiceState.otherUser?.name || "Unknown User"}
-                    otherUserAvatar={callServiceState.otherUser?.avatar}
-                    callState={callServiceState.state as CallState}
-                    liveKitToken={liveKitToken}
-                />
-            ) : (
-                <VoiceCallCard
-                    open={value.isInCall && callServiceState.state !== "ringing"}
-                    callState={callServiceState.state as CallState}
-                    otherUserName={callServiceState.otherUser?.name || "Unknown User"}
-                    otherUserAvatar={callServiceState.otherUser?.avatar}
-                    localUserName={user?.user_metadata?.full_name || "You"}
-                    liveKitToken={liveKitToken}
-                    serverUrl={import.meta.env.VITE_LIVEKIT_URL || "wss://neighborlink-94uewje2.livekit.cloud"}
-                    onEndCall={value.endCall}
-                    onToggleAudio={value.toggleAudio}
-                />
-            )}
+            {/* Call UI is only available to authenticated users */}
+            {user && (
+                <>
+                    {callServiceState.isVideo ? (
+                        <VideoCallDialog
+                            open={value.isInCall && callServiceState.state !== "ringing"}
+                            onOpenChange={() => {}}
+                            onEndCall={value.endCall}
+                            otherUserName={callServiceState.otherUser?.name || "Unknown User"}
+                            otherUserAvatar={callServiceState.otherUser?.avatar}
+                            callState={callServiceState.state as CallState}
+                            liveKitToken={liveKitToken}
+                            serverUrl={LIVEKIT_SERVER_URL}
+                            onRemoteParticipantJoined={handleRemoteJoined}
+                            onRemoteParticipantLeft={handleRemoteLeft}
+                            onConnectionLost={handleConnectionLost}
+                            onReconnecting={handleReconnecting}
+                            onReconnected={handleReconnected}
+                        />
+                    ) : (
+                        <VoiceCallCard
+                            open={value.isInCall && callServiceState.state !== "ringing"}
+                            callState={callServiceState.state as CallState}
+                            otherUserName={callServiceState.otherUser?.name || "Unknown User"}
+                            otherUserAvatar={callServiceState.otherUser?.avatar}
+                            localUserName={user?.user_metadata?.full_name || "You"}
+                            liveKitToken={liveKitToken}
+                            serverUrl={LIVEKIT_SERVER_URL}
+                            onEndCall={value.endCall}
+                            onToggleAudio={() => {}}
+                            onRemoteParticipantJoined={handleRemoteJoined}
+                            onRemoteParticipantLeft={handleRemoteLeft}
+                            onConnectionLost={handleConnectionLost}
+                            onReconnecting={handleReconnecting}
+                            onReconnected={handleReconnected}
+                        />
+                    )}
 
-            <IncomingCallDialog
-                open={callServiceState.state === "ringing" && !!callServiceState.otherUser}
-                callerName={callServiceState.otherUser?.name || "Someone"}
-                callerAvatar={callServiceState.otherUser?.avatar}
-                isVideoCall={callServiceState.isVideo}
-                onAccept={(video) => value.answerCall(video)}
-                onDecline={value.declineCall}
-            />
+                    <IncomingCallDialog
+                        open={callServiceState.state === "ringing" && !!callServiceState.otherUser}
+                        callerName={callServiceState.otherUser?.name || "Someone"}
+                        callerAvatar={callServiceState.otherUser?.avatar}
+                        isVideoCall={callServiceState.isVideo}
+                        onAccept={(video) => value.answerCall(video)}
+                        onDecline={value.declineCall}
+                    />
+                </>
+            )}
         </CallContext.Provider>
     );
 };

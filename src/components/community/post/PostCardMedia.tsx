@@ -114,7 +114,9 @@ export const PostCardMedia = ({
       // Double-tap detected
       e.stopPropagation();
       e.preventDefault();
-      
+
+      clearTimeout(tapTimerRef.current);
+
       // Trigger haptic feedback
       impact('medium');
       

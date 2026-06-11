@@ -45,48 +45,79 @@ class LiveKitVideoErrorBoundary extends Component<
     }
 }
 
-// Watches for remote participants and fires callback when the first one joins
-function RemoteParticipantWatcher({ onParticipantConnected }: { onParticipantConnected?: () => void }) {
+// Watches remote participants: fires when the first one joins and when the last one leaves
+function RemoteParticipantWatcher({
+    onParticipantConnected,
+    onParticipantDisconnected,
+}: {
+    onParticipantConnected?: () => void;
+    onParticipantDisconnected?: () => void;
+}) {
     const remoteParticipants = useRemoteParticipants();
+    const hadParticipantsRef = useRef(false);
     useEffect(() => {
         if (remoteParticipants.length > 0) {
+            hadParticipantsRef.current = true;
             onParticipantConnected?.();
+        } else if (hadParticipantsRef.current) {
+            hadParticipantsRef.current = false;
+            onParticipantDisconnected?.();
         }
-    }, [remoteParticipants.length, onParticipantConnected]);
+    }, [remoteParticipants.length, onParticipantConnected, onParticipantDisconnected]);
     return null;
 }
 
 /**
- * Listens to the Room's Disconnected event INSIDE LiveKitRoom so we have access
+ * Listens to Room connection events INSIDE LiveKitRoom so we have access
  * to DisconnectReason before any outer callbacks fire.
  *
- * - CLIENT_INITIATED  → user clicked Leave → call onLeave() to end the call
- * - anything else     → unexpected drop    → call onUnexpectedDisconnect() to show reconnecting
+ * - Reconnecting       → network drop, LiveKit is retrying → onReconnecting()
+ * - Reconnected        → connection recovered              → onReconnected()
+ * - Disconnected:
+ *   - CLIENT_INITIATED → user clicked Leave                → onLeave()
+ *   - anything else    → LiveKit gave up reconnecting      → onConnectionLost()
  */
-function DisconnectWatcher({
+function ConnectionWatcher({
     onLeave,
-    onUnexpectedDisconnect,
+    onConnectionLost,
+    onReconnecting,
+    onReconnected,
 }: {
     onLeave: () => void;
-    onUnexpectedDisconnect: () => void;
+    onConnectionLost: () => void;
+    onReconnecting?: () => void;
+    onReconnected?: () => void;
 }) {
     const room = useRoomContext();
     // Keep stable refs so the effect never re-runs on re-render
     const onLeaveRef = useRef(onLeave);
-    const onUnexpectedRef = useRef(onUnexpectedDisconnect);
+    const onLostRef = useRef(onConnectionLost);
+    const onReconnectingRef = useRef(onReconnecting);
+    const onReconnectedRef = useRef(onReconnected);
     useEffect(() => { onLeaveRef.current = onLeave; });
-    useEffect(() => { onUnexpectedRef.current = onUnexpectedDisconnect; });
+    useEffect(() => { onLostRef.current = onConnectionLost; });
+    useEffect(() => { onReconnectingRef.current = onReconnecting; });
+    useEffect(() => { onReconnectedRef.current = onReconnected; });
 
     useEffect(() => {
-        const handler = (reason?: DisconnectReason) => {
+        const handleDisconnected = (reason?: DisconnectReason) => {
             if (reason === DisconnectReason.CLIENT_INITIATED) {
                 onLeaveRef.current();
             } else {
-                onUnexpectedRef.current();
+                onLostRef.current();
             }
         };
-        room.on(RoomEvent.Disconnected, handler);
-        return () => { room.off(RoomEvent.Disconnected, handler); };
+        const handleReconnecting = () => onReconnectingRef.current?.();
+        const handleReconnected = () => onReconnectedRef.current?.();
+
+        room.on(RoomEvent.Disconnected, handleDisconnected);
+        room.on(RoomEvent.Reconnecting, handleReconnecting);
+        room.on(RoomEvent.Reconnected, handleReconnected);
+        return () => {
+            room.off(RoomEvent.Disconnected, handleDisconnected);
+            room.off(RoomEvent.Reconnecting, handleReconnecting);
+            room.off(RoomEvent.Reconnected, handleReconnected);
+        };
     }, [room]);
 
     return null;
@@ -97,6 +128,10 @@ interface LiveKitCallInterfaceProps {
     serverUrl: string;
     onDisconnected?: () => void;
     onParticipantConnected?: () => void;
+    onParticipantDisconnected?: () => void;
+    onConnectionLost?: () => void;
+    onReconnecting?: () => void;
+    onReconnected?: () => void;
     audioOnly?: boolean;
 }
 
@@ -105,6 +140,10 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
     serverUrl,
     onDisconnected,
     onParticipantConnected,
+    onParticipantDisconnected,
+    onConnectionLost,
+    onReconnecting,
+    onReconnected,
     audioOnly = false,
 }) => {
     const [connected, setConnected] = useState(false);
@@ -158,18 +197,30 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
         });
     };
 
-    // Called by DisconnectWatcher when disconnect reason is CLIENT_INITIATED (user clicked Leave)
+    // Called by ConnectionWatcher when disconnect reason is CLIENT_INITIATED (user clicked Leave)
     const handleIntentionalLeave = () => {
         setConnected(false);
         setReconnecting(false);
         onDisconnected?.();
     };
 
-    // Called by DisconnectWatcher for unexpected disconnects (network drop etc.)
-    const handleUnexpectedDisconnect = () => {
+    // Called by ConnectionWatcher when LiveKit gave up reconnecting — call cannot continue
+    const handleConnectionLost = () => {
         setConnected(false);
+        setReconnecting(false);
+        onConnectionLost?.();
+    };
+
+    // Driven by real LiveKit Reconnecting/Reconnected events — no arbitrary timers
+    const handleReconnecting = () => {
         setReconnecting(true);
-        setTimeout(() => setReconnecting(false), 5000);
+        onReconnecting?.();
+    };
+
+    const handleReconnected = () => {
+        setReconnecting(false);
+        setConnected(true);
+        onReconnected?.();
     };
 
     // onLeave on VideoConference / ControlBar — room already disconnected at this point,
@@ -222,11 +273,16 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
                 data-lk-theme="default"
             >
                 {/* Must be inside LiveKitRoom to access useRoomContext */}
-                <DisconnectWatcher
+                <ConnectionWatcher
                     onLeave={handleIntentionalLeave}
-                    onUnexpectedDisconnect={handleUnexpectedDisconnect}
+                    onConnectionLost={handleConnectionLost}
+                    onReconnecting={handleReconnecting}
+                    onReconnected={handleReconnected}
                 />
-                <RemoteParticipantWatcher onParticipantConnected={onParticipantConnected} />
+                <RemoteParticipantWatcher
+                    onParticipantConnected={onParticipantConnected}
+                    onParticipantDisconnected={onParticipantDisconnected}
+                />
 
                 {!audioOnly ? (
                     <LiveKitVideoErrorBoundary>

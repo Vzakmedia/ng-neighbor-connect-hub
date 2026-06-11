@@ -61,22 +61,14 @@ const Chat = () => {
     markAsReadRef.current = markConversationAsRead;
   }, [fetchMessages, markConversationAsRead]);
 
-  // WebRTC call functionality
+  // Call functionality (media handled by LiveKit inside CallProvider)
   const {
     isInCall,
-    isVideoCall,
-    callState,
-    localStream,
-    remoteStream,
-    incomingCall,
     startVoiceCall,
     startVideoCall,
     answerCall,
     declineCall,
     endCall,
-    toggleAudio,
-    toggleVideo,
-    switchCamera,
   } = useCallContext();
 
   // Memoized callbacks to prevent infinite re-renders

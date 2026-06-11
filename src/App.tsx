@@ -9,7 +9,7 @@ import PlatformRouter from "@/components/PlatformRouter";
 import { ThemeProvider } from "next-themes";
 import { IOSErrorBoundary } from "@/components/common/IOSErrorBoundary";
 import { initializeNativeApp, forceHideSplash, isNativePlatform } from '@/utils/nativeStartup';
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { PageSkeleton } from "@/components/skeletons";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminStatusProvider } from "@/contexts/AdminStatusContext";
@@ -313,7 +313,7 @@ const App = () => {
                       <TutorialWrapper />
                       <CommunityPostToastWrapper />
                       <DirectMessageToastWrapper />
-                      <Suspense fallback={<LoadingSpinner fullScreen />}>
+                      <Suspense fallback={<PageSkeleton />}>
                         <Routes>
                           {/* ─── Public routes ─── */}
                           <Route path="/" element={<PlatformRoot />} />

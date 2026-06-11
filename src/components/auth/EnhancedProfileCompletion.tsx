@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ export const EnhancedProfileCompletion = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Check if user is from Google OAuth (needs to set password)
   const isGoogleUser = user?.app_metadata?.provider === 'google';
@@ -245,6 +247,8 @@ export const EnhancedProfileCompletion = () => {
       } catch (err) {
         console.error('Error clearing notification store:', err);
       }
+
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
 
       toast({
         title: "Profile Completed!",

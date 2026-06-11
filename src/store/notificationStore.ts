@@ -41,6 +41,13 @@ interface NotificationState {
 const MAX_NOTIFICATIONS = 100;
 const CLEANUP_DAYS = 30;
 
+// Notifications synthesized client-side (e.g. 'msg-<id>', 'alert-<id>', 'panic-<id>')
+// have no corresponding row in alert_notifications, so server persistence
+// must be skipped for them - otherwise Postgres rejects the non-UUID id and
+// the optimistic update gets rolled back.
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isPersistedNotificationId = (id: string) => UUID_REGEX.test(id);
+
 export const useNotificationStore = create<NotificationState>()(
   persist(
     (set, get) => ({
@@ -163,6 +170,10 @@ export const useNotificationStore = create<NotificationState>()(
 
         set({ notifications: updated, unreadCount });
 
+        // Client-only notifications (e.g. 'msg-<id>') have no alert_notifications
+        // row to delete - removing them from local state is sufficient.
+        if (!isPersistedNotificationId(id)) return;
+
         // Delete from server (CR-02: scope to current user to prevent IDOR)
         try {
           const { data: { user } } = await supabase.auth.getUser();
@@ -194,7 +205,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           let query = supabase
             .from('alert_notifications')
-            .select('id, notification_type, sender_name, content, alert_id, panic_alert_id, request_id, sender_phone, sent_at, is_read, recipient_id')
+            .select('id, notification_type, notification_category, notification_metadata, sender_name, content, alert_id, panic_alert_id, request_id, sender_phone, sent_at, is_read, recipient_id')
             .eq('recipient_id', userId)
             .order('sent_at', { ascending: false })
             .limit(MAX_NOTIFICATIONS);
@@ -216,13 +227,16 @@ export const useNotificationStore = create<NotificationState>()(
             const notifications: NotificationData[] = data.map(record => ({
               id: record.id,
               type: mapNotificationType(record.notification_type),
-              title: record.sender_name || 'Notification',
+              title: record.sender_name || getFallbackTitle(record.notification_type, record.notification_category),
               body: record.content || '',
               data: {
                 alertId: record.alert_id,
                 panicAlertId: record.panic_alert_id,
                 requestId: record.request_id,
-                senderPhone: record.sender_phone
+                senderPhone: record.sender_phone,
+                ...(typeof record.notification_metadata === 'object' && record.notification_metadata !== null
+                  ? (record.notification_metadata as Record<string, unknown>)
+                  : {}),
               },
               timestamp: record.sent_at,
               isRead: record.is_read ?? false,
@@ -250,6 +264,11 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       persistReadStatus: async (id: string, prevNotifications?: NotificationData[], prevUnread?: number) => {
+        // Client-only notifications (e.g. 'msg-<id>') have no alert_notifications
+        // row to update - a non-UUID id would be rejected by Postgres and
+        // incorrectly roll back the optimistic "read" update.
+        if (!isPersistedNotificationId(id)) return;
+
         // CR-01: get authenticated user to prevent IDOR
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -341,6 +360,7 @@ function mapNotificationType(dbType: string): NotificationData['type'] {
   const typeMap: Record<string, NotificationData['type']> = {
     'message': 'message',
     'direct_message': 'message',
+    'call_incoming': 'message',
     'emergency': 'emergency',
     'emergency_alert': 'emergency',
     'alert': 'alert',
@@ -354,6 +374,22 @@ function mapNotificationType(dbType: string): NotificationData['type'] {
   };
 
   return typeMap[dbType] || 'system';
+}
+
+function getFallbackTitle(notificationType: string, category?: string | null): string {
+  const labels: Record<string, string> = {
+    'call_incoming': 'Incoming Call',
+    'emergency_alert': 'Emergency Alert',
+    'emergency': 'Emergency Alert',
+    'panic_alert': 'Panic Alert',
+    'contact_request': 'Contact Request',
+    'emergency_contact_request': 'Contact Request',
+    'community_post': 'New Post',
+    'post': 'New Post',
+    'message': 'New Message',
+    'direct_message': 'New Message',
+  };
+  return labels[notificationType] || category || 'Notification';
 }
 
 function determinePriority(notificationType: string): NotificationData['priority'] {

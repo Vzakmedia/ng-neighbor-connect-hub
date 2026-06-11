@@ -84,13 +84,15 @@ export const NotificationPanel = ({
 
     // Navigate based on notification type
     switch (notification.type) {
-      case 'message':
-        if (notification.data?.conversationId && isUUID(notification.data.conversationId)) {
-          navigate(`/messages?conversation=${notification.data.conversationId}`);
+      case 'message': {
+        const convId = notification.data?.conversationId || notification.data?.conversation_id;
+        if (convId && typeof convId === 'string' && isUUID(convId)) {
+          navigate(`/messages?conversation=${convId}`);
         } else {
           navigate('/messages');
         }
         break;
+      }
       case 'post':
         if (notification.data?.postId && isUUID(notification.data.postId)) {
           navigate(`/community?post=${notification.data.postId}`);
@@ -103,6 +105,18 @@ export const NotificationPanel = ({
       case 'panic_alert':
         navigate('/safety');
         break;
+      case 'contact_request':
+        navigate('/safety');
+        break;
+      case 'system': {
+        const convId = notification.data?.conversationId || notification.data?.conversation_id;
+        if (convId && typeof convId === 'string' && isUUID(convId)) {
+          navigate(`/messages?conversation=${convId}`);
+        } else if (notification.data?.caller_id) {
+          navigate('/messages');
+        }
+        break;
+      }
     }
   };
 

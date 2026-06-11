@@ -49,22 +49,14 @@ const UnifiedMessaging = () => {
     return activeConversation.user1_id === user.id ? activeConversation.user2_id : activeConversation.user1_id;
   }, [user?.id, activeConversation?.id]);
 
-  // WebRTC call functionality
+  // Call functionality (media handled by LiveKit inside CallProvider)
   const {
     isInCall,
-    isVideoCall,
-    callState,
-    localStream,
-    remoteStream,
-    incomingCall,
     startVoiceCall: startVoiceCallCtx,
     startVideoCall: startVideoCallCtx,
     answerCall,
     declineCall,
     endCall,
-    toggleAudio,
-    toggleVideo,
-    switchCamera,
   } = useCallContext();
 
   const startVoiceCall = useCallback(() => {
@@ -133,10 +125,16 @@ const UnifiedMessaging = () => {
     await markAllMessagesAsRead(targetUserId);
   }, [navigate, user?.id, fetchMessages, markConversationAsRead, markAllMessagesAsRead, setActiveConversationId]);
 
-  // No-op: Message handling moved to useDirectMessages broadcast channel
   const onNewMessage = useCallback((message: Message) => {
-    // This is now a no-op - messages are handled by useDirectMessages
-  }, []);
+    if (activeConversation) {
+      const isForActiveConv =
+        (message.sender_id === activeConversation.user1_id && message.recipient_id === activeConversation.user2_id) ||
+        (message.sender_id === activeConversation.user2_id && message.recipient_id === activeConversation.user1_id);
+      if (isForActiveConv) addMessage(message);
+    }
+    // Use ref to avoid forward-reference TDZ — ref is kept current by the sync effect below
+    onConversationUpdateRef.current?.();
+  }, [activeConversation, addMessage]);
 
   const onMessageUpdate = useCallback((message: Message) => {
     updateMessage(message);
@@ -172,12 +170,11 @@ const UnifiedMessaging = () => {
     onReadReceiptRef.current = onReadReceipt;
   }, [onNewMessage, onMessageUpdate, onConversationUpdate, onReadReceipt]);
 
-  // Stable subscription callbacks using refs (messages handled by useDirectMessages broadcast)
   useMessageSubscriptions({
     userId: user?.id,
-    onNewMessage: useCallback(() => { }, []), // No-op: handled by useDirectMessages
-    onMessageUpdate: useCallback(() => { }, []), // No-op: handled by useDirectMessages
-    onConversationUpdate: onConversationUpdate, // Re-enabled with debouncing
+    onNewMessage,
+    onMessageUpdate,
+    onConversationUpdate,
     onReadReceipt: useCallback((id: string) => onReadReceiptRef.current?.(id), [])
   });
 

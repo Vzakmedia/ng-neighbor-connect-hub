@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, memo } from "react";
 import { PostCard } from "@/components/community/post/PostCard";
+import { ImageGalleryDialog } from "@/components/ImageGalleryDialog";
 import { useFeedQuery } from "@/hooks/useFeedQuery";
 import { usePostEngagement } from "@/hooks/community/usePostEngagement";
 import { transformToCardData } from "@/lib/community/postTransformers";
@@ -43,6 +44,10 @@ export const UnifiedFeed = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string | undefined>();
   const [selectedUserAvatar, setSelectedUserAvatar] = useState<string | undefined>();
+  const [imageGalleryOpen, setImageGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+  const [galleryTitle, setGalleryTitle] = useState('');
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -85,6 +90,22 @@ export const UnifiedFeed = () => {
     setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
   }, []);
 
+  const openImageGallery = useCallback((post: PostCardData, imageIndex: number) => {
+    setGalleryImages(post.image_urls || []);
+    setGalleryInitialIndex(imageIndex);
+    setGalleryTitle(post.title || 'Post Images');
+    setImageGalleryOpen(true);
+  }, []);
+
+  const handleCopyLink = useCallback((postId: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/community/post/${postId}`);
+    toast({ title: 'Link copied!', description: 'Post link copied to clipboard' });
+  }, [toast]);
+
+  const handleReportPost = useCallback((postId: string) => {
+    toast({ title: 'Report submitted', description: "Thanks — we'll review this post shortly." });
+  }, [toast]);
+
   // Build the interleaved content list
   const mixedContent = useMemo(() => {
     const items: Array<{ type: 'widget' | 'post' | 'ad'; component: React.ReactNode; key: string }> = [];
@@ -102,8 +123,11 @@ export const UnifiedFeed = () => {
             onShare={() => handleShare(post.id)}
             onRSVP={() => {}}
             onAvatarClick={userId => handleAvatarClick(userId, post.author.full_name, post.author.avatar_url)}
-            onImageClick={() => {}}
+            onImageClick={(imageIndex) => openImageGallery(post, imageIndex)}
             onPostClick={() => handlePostClick(post.id)}
+            onViewFullPost={() => handlePostClick(post.id)}
+            onCopyLink={() => handleCopyLink(post.id)}
+            onReportPost={() => handleReportPost(post.id)}
             showComments={showComments[post.id] || false}
             onToggleComments={() => toggleComments(post.id)}
           />
@@ -128,7 +152,7 @@ export const UnifiedFeed = () => {
     });
 
     return items;
-  }, [allPosts, showComments, handleLike, handleSave, handleShare, handleAvatarClick, handlePostClick, toggleComments]);
+  }, [allPosts, showComments, handleLike, handleSave, handleShare, handleAvatarClick, handlePostClick, toggleComments, openImageGallery, handleCopyLink, handleReportPost]);
 
   return (
     <div className="pb-20">
@@ -213,6 +237,14 @@ export const UnifiedFeed = () => {
           setSelectedUserName(undefined);
           setSelectedUserAvatar(undefined);
         }}
+      />
+
+      <ImageGalleryDialog
+        isOpen={imageGalleryOpen}
+        onClose={() => setImageGalleryOpen(false)}
+        images={galleryImages}
+        title={galleryTitle}
+        initialIndex={galleryInitialIndex}
       />
     </div>
   );

@@ -26,6 +26,9 @@ interface PostCardHeaderProps {
   postUserId: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onViewFullPost?: () => void;
+  onCopyLink?: () => void;
+  onReportPost?: () => void;
 }
 
 export const PostCardHeader = ({ 
@@ -40,7 +43,10 @@ export const PostCardHeader = ({
   currentUserId,
   postUserId,
   onEdit,
-  onDelete
+  onDelete,
+  onViewFullPost,
+  onCopyLink,
+  onReportPost
 }: PostCardHeaderProps) => {
   const isOwner = currentUserId && currentUserId === postUserId;
   const getVisibilityIcon = () => {
@@ -129,13 +135,13 @@ export const PostCardHeader = ({
                 Delete Post
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onViewFullPost?.(); }}>
               View Full Post
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopyLink?.(); }}>
               Copy Link
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onReportPost?.(); }}>
               Report Post
             </DropdownMenuItem>
           </DropdownMenuContent>

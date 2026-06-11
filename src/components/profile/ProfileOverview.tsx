@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { handleApiError } from '@/utils/errorHandling';
 import { ErrorState } from '@/components/ErrorState';
@@ -40,6 +41,7 @@ interface ProfileOverviewProps {
 
 const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const targetUserId = userId || user?.id;
   const isOwnProfile = user?.id === targetUserId;
   const { toast } = useToast();
@@ -197,6 +199,7 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
 
       setEditing(false);
       fetchProfile();
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
@@ -244,6 +247,7 @@ const ProfileOverview = ({ userId }: ProfileOverviewProps) => {
       });
 
       fetchProfile();
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
       setShowCropper(false);
       setImageToCrop(null);
     } catch (error) {

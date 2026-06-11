@@ -52,24 +52,18 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const postCommentCallbacks = useRef<Set<PostCommentCallback>>(new Set());
   const readReceiptCallbacks = useRef<Set<ReadReceiptCallback>>(new Set());
 
-  // Store all subscriptions
-  const subscriptionsRef = useRef<Array<{ unsubscribe: () => void }>>([]);
   const seenClientMessageIds = useRef<Set<string>>(new Set()); // dedupe
 
   const isCommunityRoute = location.pathname === "/community" || location.pathname === "/";
-  const isSafetyRoute = location.pathname.startsWith("/safety");
 
+  // Persistent subscriptions: messages, conversations, receipts, alerts.
+  // Deps: [user] only — never restart on route changes.
   useEffect(() => {
     if (!user) return;
 
-    console.log("[RealtimeProvider] Setting up subscriptions", { route: location.pathname });
-
     const subscriptions: Array<{ unsubscribe: () => void }> = [];
 
-    // ================================
-    // 1. Direct Messages Subscription (Global)
-    // ================================
-    // Subscribe to messages where user is the RECIPIENT (incoming)
+    // 1. Direct Messages (incoming)
     const incomingMessagesSub = createSafeSubscription(
       (channel) =>
         channel.on(
@@ -78,16 +72,12 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             event: "INSERT",
             schema: "public",
             table: "direct_messages",
-            filter: `recipient_id=eq.${user.id}`, // Only receive messages sent TO this user
+            filter: `recipient_id=eq.${user.id}`,
           },
           (payload) => {
             const msg = payload.new;
-
-            // Deduplication: ignore if client_message_id already exists locally
             if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
             if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
-
-            console.log('[RealtimeProvider] Incoming message received:', msg.id);
             messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
           },
         ),
@@ -99,7 +89,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     );
     subscriptions.push(incomingMessagesSub);
 
-    // Subscribe to messages where user is the SENDER (for optimistic UI confirmations)
+    // 2. Direct Messages (outgoing confirmations for optimistic UI)
     const outgoingMessagesSub = createSafeSubscription(
       (channel) =>
         channel.on(
@@ -108,16 +98,12 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             event: "INSERT",
             schema: "public",
             table: "direct_messages",
-            filter: `sender_id=eq.${user.id}`, // Only receive messages sent BY this user
+            filter: `sender_id=eq.${user.id}`,
           },
           (payload) => {
             const msg = payload.new;
-
-            // Deduplication
             if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
             if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
-
-            console.log('[RealtimeProvider] Outgoing message confirmed:', msg.id);
             messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
           },
         ),
@@ -129,10 +115,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     );
     subscriptions.push(outgoingMessagesSub);
 
-
-    // ================================
-    // 2. Read Receipts (Broadcast)
-    // ================================
+    // 3. Read Receipts (Broadcast)
     const readReceiptChannel = supabase
       .channel(`unified-read-receipts:${user.id}`)
       .on("broadcast", { event: "read_receipt" }, (payload: any) => {
@@ -142,34 +125,48 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       .subscribe();
     subscriptions.push({ unsubscribe: () => supabase.removeChannel(readReceiptChannel) });
 
-    // ================================
-    // 3. Community Posts Subscription
-    // ================================
-    const communityPostsSub = createSafeSubscription(
+    // 4. Direct Conversations (new conversation or status change)
+    const convUser1Sub = createSafeSubscription(
       (channel) =>
         channel.on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
-            table: "community_posts",
-            filter: `post_type=neq.private_message`,
+            table: "direct_conversations",
+            filter: `user1_id=eq.${user.id}`,
           },
-          (payload) => {
-            communityPostCallbacks.current.forEach((cb) => cb(payload));
-          },
+          (payload) => conversationCallbacks.current.forEach((cb) => cb(payload)),
         ),
       {
-        channelName: "unified-community-posts",
+        channelName: `realtime-conversations-user1:${user.id}`,
         pollInterval: 30000,
-        debugName: "RealtimeProvider-CommunityPosts",
+        debugName: "RealtimeProvider-ConversationsUser1",
       },
     );
-    subscriptions.push(communityPostsSub);
+    subscriptions.push(convUser1Sub);
 
-    // ================================
-    // 4. Alerts Subscription
-    // ================================
+    const convUser2Sub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "direct_conversations",
+            filter: `user2_id=eq.${user.id}`,
+          },
+          (payload) => conversationCallbacks.current.forEach((cb) => cb(payload)),
+        ),
+      {
+        channelName: `realtime-conversations-user2:${user.id}`,
+        pollInterval: 30000,
+        debugName: "RealtimeProvider-ConversationsUser2",
+      },
+    );
+    subscriptions.push(convUser2Sub);
+
+    // 5. Alerts
     const alertsSub = createSafeSubscription(
       (channel) =>
         channel.on(
@@ -180,9 +177,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             table: "alert_notifications",
             filter: `recipient_id=eq.${user.id}`,
           },
-          (payload) => {
-            alertCallbacks.current.forEach((cb) => cb(payload));
-          },
+          (payload) => alertCallbacks.current.forEach((cb) => cb(payload)),
         ),
       {
         channelName: `unified-alerts:${user.id}`,
@@ -192,50 +187,73 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     );
     subscriptions.push(alertsSub);
 
-    // ================================
-    // 5. Safety Alerts (Route-Specific, filtered by status)
-    // ================================
-    if (isSafetyRoute) {
-      // Only subscribe to active safety alerts
-      const safetyAlertsSub = createSafeSubscription(
-        (channel) =>
-          channel.on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "safety_alerts",
-              filter: "status=eq.active", // Only active alerts
-            },
-            (payload) => safetyAlertCallbacks.current.forEach((cb) => cb(payload)),
-          ),
-        { channelName: "unified-safety-alerts", pollInterval: 30000, debugName: "RealtimeProvider-SafetyAlerts" },
-      );
-      subscriptions.push(safetyAlertsSub);
+    // 6. Safety Alerts (always-on for notification bell)
+    const safetyAlertsSub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "safety_alerts",
+            filter: "status=eq.active",
+          },
+          (payload) => safetyAlertCallbacks.current.forEach((cb) => cb(payload)),
+        ),
+      { channelName: "unified-safety-alerts", pollInterval: 30000, debugName: "RealtimeProvider-SafetyAlerts" },
+    );
+    subscriptions.push(safetyAlertsSub);
 
-      // Panic alerts for this user
-      const panicAlertsSub = createSafeSubscription(
-        (channel) =>
-          channel.on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "panic_alerts",
-              filter: `user_id=eq.${user.id}`, // Only this user's panic alerts
-            },
-            (payload) => panicAlertCallbacks.current.forEach((cb) => cb(payload)),
-          ),
-        { channelName: `unified-panic-alerts:${user.id}`, pollInterval: 30000, debugName: "RealtimeProvider-PanicAlerts" },
-      );
-      subscriptions.push(panicAlertsSub);
-    }
+    // 7. Panic Alerts
+    const panicAlertsSub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "panic_alerts",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => panicAlertCallbacks.current.forEach((cb) => cb(payload)),
+        ),
+      { channelName: `unified-panic-alerts:${user.id}`, pollInterval: 30000, debugName: "RealtimeProvider-PanicAlerts" },
+    );
+    subscriptions.push(panicAlertsSub);
 
-    // ================================
-    // 6. Post Likes / Comments (filtered by user_id for own posts)
-    // ================================
+    return () => {
+      subscriptions.forEach((sub) => sub?.unsubscribe());
+      seenClientMessageIds.current.clear();
+    };
+  }, [user]);
+
+  // Community subscriptions: restart only when isCommunityRoute changes
+  useEffect(() => {
+    if (!user) return;
+
+    const subscriptions: Array<{ unsubscribe: () => void }> = [];
+
+    const communityPostsSub = createSafeSubscription(
+      (channel) =>
+        channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "community_posts",
+            filter: `post_type=neq.private_message`,
+          },
+          (payload) => communityPostCallbacks.current.forEach((cb) => cb(payload)),
+        ),
+      {
+        channelName: "unified-community-posts",
+        pollInterval: 30000,
+        debugName: "RealtimeProvider-CommunityPosts",
+      },
+    );
+    subscriptions.push(communityPostsSub);
+
     if (isCommunityRoute) {
-      // Subscribe to likes on posts by this user
       const postLikesSub = createSafeSubscription(
         (channel) =>
           channel.on(
@@ -244,7 +262,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "*",
               schema: "public",
               table: "post_likes",
-              filter: `user_id=eq.${user.id}`, // Likes by this user (for optimistic updates)
+              filter: `user_id=eq.${user.id}`,
             },
             (payload) => postLikeCallbacks.current.forEach((cb) => cb(payload)),
           ),
@@ -252,7 +270,6 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       );
       subscriptions.push(postLikesSub);
 
-      // Subscribe to comments by this user
       const postCommentsSub = createSafeSubscription(
         (channel) =>
           channel.on(
@@ -261,7 +278,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
               event: "*",
               schema: "public",
               table: "post_comments",
-              filter: `user_id=eq.${user.id}`, // Comments by this user
+              filter: `user_id=eq.${user.id}`,
             },
             (payload) => postCommentCallbacks.current.forEach((cb) => cb(payload)),
           ),
@@ -270,17 +287,10 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
       subscriptions.push(postCommentsSub);
     }
 
-    // Store subscriptions
-    subscriptionsRef.current = subscriptions;
-
-    // Cleanup on unmount or route change
     return () => {
-      console.log("[RealtimeProvider] Cleaning up subscriptions", { count: subscriptions.length });
-      subscriptionsRef.current.forEach((sub) => sub?.unsubscribe());
-      subscriptionsRef.current = [];
-      seenClientMessageIds.current.clear(); // reset dedupe cache
+      subscriptions.forEach((sub) => sub?.unsubscribe());
     };
-  }, [user, location.pathname, isCommunityRoute, isSafetyRoute]);
+  }, [user, isCommunityRoute]);
 
   // -----------------------------
   // Registration Methods

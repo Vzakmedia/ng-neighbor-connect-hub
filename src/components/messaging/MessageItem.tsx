@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { CheckIcon, CheckBadgeIcon, ClockIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, ClockIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckCheck } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -37,9 +38,9 @@ const getMessageStatusIcon = (status: MessageStatus, showReadReceipts: boolean, 
     case 'sent':
       return <CheckIcon className="h-3 w-3 text-muted-foreground" />;
     case 'delivered':
-      return <CheckBadgeIcon className="h-3 w-3 text-muted-foreground" />;
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
     case 'read':
-      return <CheckBadgeIcon className="h-3 w-3 text-primary" />;
+      return <CheckCheck className="h-3 w-3 text-primary" />;
     default:
       return null;
   }

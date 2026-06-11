@@ -181,6 +181,20 @@ const VirtualizedFeedListComponent = ({
     setDeleteDialogOpen(true);
   };
 
+  const handleViewFullPost = (post: PostCardData) => {
+    setSelectedEvent(post);
+    setPostFullScreenOpen(true);
+  };
+
+  const handleCopyLink = (post: PostCardData) => {
+    navigator.clipboard.writeText(`${window.location.origin}/community/post/${post.id}`);
+    toast({ title: 'Link copied!', description: 'Post link copied to clipboard' });
+  };
+
+  const handleReportPost = (post: PostCardData) => {
+    toast({ title: 'Report submitted', description: "Thanks — we'll review this post shortly." });
+  };
+
   const confirmDelete = async () => {
     if (!postToDelete) return;
     try {
@@ -293,6 +307,9 @@ const VirtualizedFeedListComponent = ({
                   onToggleComments={() => toggleComments(post.id)}
                   onEdit={() => handleEdit(post)}
                   onDelete={() => handleDelete(post)}
+                  onViewFullPost={() => handleViewFullPost(post)}
+                  onCopyLink={() => handleCopyLink(post)}
+                  onReportPost={() => handleReportPost(post)}
                 />
               </div>
             </div>

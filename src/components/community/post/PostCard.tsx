@@ -26,6 +26,9 @@ interface PostCardProps {
   onToggleComments: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onViewFullPost?: () => void;
+  onCopyLink?: () => void;
+  onReportPost?: () => void;
   isFullPost?: boolean;
 }
 
@@ -42,6 +45,9 @@ const PostCardComponent = ({
   onToggleComments,
   onEdit,
   onDelete,
+  onViewFullPost,
+  onCopyLink,
+  onReportPost,
   isFullPost = false
 }: PostCardProps) => {
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
@@ -117,6 +123,9 @@ const PostCardComponent = ({
         postUserId={post.user_id}
         onEdit={onEdit}
         onDelete={onDelete}
+        onViewFullPost={onViewFullPost}
+        onCopyLink={onCopyLink}
+        onReportPost={onReportPost}
       />
 
       <div className="px-3 sm:px-4 pb-3 space-y-3">
@@ -166,7 +175,7 @@ const PostCardComponent = ({
         />
       )}
 
-      <div className="px-3 sm:px-4 bg-primary text-white [&_*]:text-white [&_button]:text-white [&_svg]:text-white">
+      <div className="px-3 sm:px-4">
         <PostCardActions
           post={post}
           showComments={showComments}

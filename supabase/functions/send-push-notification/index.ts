@@ -118,13 +118,16 @@ serve(async (req) => {
       .insert({
         recipient_id: userId,
         notification_type: type,
-        content: requestBody.message,
-        title: requestBody.title,
-        priority,
-        data,
-        delivery_method: "push",
+        sender_name: requestBody.title ?? null,
+        content: requestBody.message ?? null,
+        notification_metadata: {
+          priority,
+          delivery_method: "push",
+          ...(typeof data === "object" && data !== null ? data : {}),
+        },
+        notification_category: type,
         sent_at: new Date().toISOString(),
-      } as any);
+      });
 
     // Pick the most recently active token; prefer FCM for Android, APNs for iOS
     const activeDevice = devices?.find(d => d.fcm_token) ?? devices?.find(d => d.apns_token);

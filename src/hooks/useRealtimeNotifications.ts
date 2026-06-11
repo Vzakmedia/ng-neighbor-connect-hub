@@ -33,7 +33,7 @@ export const useRealtimeNotifications = () => {
       const notification: NotificationData = {
         id: record.id,
         type: mapNotificationType(record.notification_type),
-        title: record.sender_name || 'New Notification',
+        title: record.sender_name || getFallbackTitle(record.notification_type),
         body: record.content || '',
         data: {
           alertId: record.alert_id,
@@ -181,6 +181,7 @@ function mapNotificationType(dbType: string): NotificationData['type'] {
   const typeMap: Record<string, NotificationData['type']> = {
     'message': 'message',
     'direct_message': 'message',
+    'call_incoming': 'message',
     'emergency': 'emergency',
     'emergency_alert': 'emergency',
     'alert': 'alert',
@@ -204,4 +205,20 @@ function determinePriority(notificationType: string): NotificationData['priority
     return 'high';
   }
   return 'normal';
+}
+
+function getFallbackTitle(notificationType: string, category?: string | null): string {
+  const labels: Record<string, string> = {
+    'call_incoming': 'Incoming Call',
+    'emergency_alert': 'Emergency Alert',
+    'emergency': 'Emergency Alert',
+    'panic_alert': 'Panic Alert',
+    'contact_request': 'Contact Request',
+    'emergency_contact_request': 'Contact Request',
+    'community_post': 'New Post',
+    'post': 'New Post',
+    'message': 'New Message',
+    'direct_message': 'New Message',
+  };
+  return labels[notificationType] || category || 'Notification';
 }

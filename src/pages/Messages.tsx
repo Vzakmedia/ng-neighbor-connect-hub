@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSkeleton } from "@/components/skeletons";
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import MobileConversationList from '@/components/messaging/MobileConversationLis
 import { MessageRequestsList } from '@/components/messaging/MessageRequestsList';
 import { MarketplaceMessaging } from '@/components/messaging/MarketplaceMessaging';
 import { useConversations } from '@/hooks/useConversations';
+import { useMessageSubscriptions } from '@/hooks/useMessageSubscriptions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +52,22 @@ const Messages = () => {
     fetchConversations();
     fetchRequestCount();
   };
+
+  const handleConversationUpdate = useCallback(() => {
+    fetchConversations();
+    fetchRequestCount();
+  }, [fetchConversations]);
+
+  const handleNewMessage = useCallback(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  useMessageSubscriptions({
+    userId: user?.id,
+    onNewMessage: handleNewMessage,
+    onMessageUpdate: useCallback(() => {}, []),
+    onConversationUpdate: handleConversationUpdate,
+  });
 
   useEffect(() => {
     if (user?.id) {

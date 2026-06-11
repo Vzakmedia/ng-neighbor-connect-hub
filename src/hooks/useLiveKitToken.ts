@@ -7,6 +7,7 @@ export interface UseLiveKitTokenResult {
     isLoading: boolean;
     error: Error | null;
     fetchToken: (roomName: string, participantName?: string) => Promise<string | null>;
+    clearToken: () => void;
 }
 
 export const useLiveKitToken = (): UseLiveKitTokenResult => {
@@ -48,5 +49,10 @@ export const useLiveKitToken = (): UseLiveKitTokenResult => {
         }
     }, []);
 
-    return { token, isLoading, error, fetchToken };
+    const clearToken = useCallback(() => {
+        setToken(null);
+        setError(null);
+    }, []);
+
+    return { token, isLoading, error, fetchToken, clearToken };
 };

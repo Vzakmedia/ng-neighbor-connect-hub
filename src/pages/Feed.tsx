@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -7,12 +7,15 @@ import Navigation from '@/components/Navigation';
 import { FeedErrorBoundary } from "@/components/FeedErrorBoundary";
 import { PageSkeleton, FeedSkeleton } from "@/components/skeletons";
 import { UnifiedFeed } from "@/components/home/UnifiedFeed";
+import { QuickPostInput } from "@/components/home/QuickPostInput";
+import CreatePostDialog from "@/components/CreatePostDialog";
 
 const HomeDashboard = lazy(() => import('@/components/HomeDashboard'));
 
 const Feed = () => {
   const { user, loading } = useAuth();
   const isMobile = useIsMobile();
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   if (loading) {
     return <PageSkeleton><FeedSkeleton /></PageSkeleton>;
@@ -28,9 +31,14 @@ const Feed = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <Navigation />
+        <QuickPostInput onCreatePost={() => setCreatePostOpen(true)} />
         <FeedErrorBoundary>
           <UnifiedFeed />
         </FeedErrorBoundary>
+        <CreatePostDialog
+          open={createPostOpen}
+          onOpenChange={setCreatePostOpen}
+        />
       </div>
     );
   }

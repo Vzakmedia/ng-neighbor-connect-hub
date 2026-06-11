@@ -4,7 +4,7 @@ import { Mic, MicOff } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LiveKitCallInterface } from './LiveKitCallInterface';
 import { useRingbackTone } from '@/hooks/messaging/useRingbackTone';
-import type { CallState } from '@/hooks/messaging/useWebRTCCall';
+import type { CallState } from '@/utils/call/types';
 
 interface VoiceCallCardProps {
   open: boolean;
@@ -16,6 +16,11 @@ interface VoiceCallCardProps {
   serverUrl: string;
   onEndCall: () => void;
   onToggleAudio: () => void;
+  onRemoteParticipantJoined?: () => void;
+  onRemoteParticipantLeft?: () => void;
+  onConnectionLost?: () => void;
+  onReconnecting?: () => void;
+  onReconnected?: () => void;
 }
 
 export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
@@ -28,6 +33,11 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
   serverUrl,
   onEndCall,
   onToggleAudio,
+  onRemoteParticipantJoined,
+  onRemoteParticipantLeft,
+  onConnectionLost,
+  onReconnecting,
+  onReconnected,
 }) => {
   const [callDuration, setCallDuration] = useState(0);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -92,6 +102,11 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
                 Ringing...
               </span>
             )}
+            {callState === 'connecting' && (
+              <span className="bg-blue-400/20 text-blue-300 text-xs px-2 py-0.5 rounded-full">
+                Connecting...
+              </span>
+            )}
             {isConnected && (
               <span className="text-white/80 text-sm font-mono">{formatDuration(callDuration)}</span>
             )}
@@ -103,7 +118,14 @@ export const VoiceCallCard: React.FC<VoiceCallCardProps> = ({
               token={liveKitToken}
               serverUrl={serverUrl}
               onDisconnected={onEndCall}
-              onParticipantConnected={() => setOtherParticipantJoined(true)}
+              onParticipantConnected={() => {
+                setOtherParticipantJoined(true);
+                onRemoteParticipantJoined?.();
+              }}
+              onParticipantDisconnected={onRemoteParticipantLeft}
+              onConnectionLost={onConnectionLost}
+              onReconnecting={onReconnecting}
+              onReconnected={onReconnected}
               audioOnly={true}
             />
           </div>

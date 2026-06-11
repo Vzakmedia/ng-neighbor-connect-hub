@@ -97,11 +97,14 @@ serve(async (req) => {
     let contactsNotified = 0;
 
     if (shouldAlertContacts) {
-      // Get the user's emergency contacts
+      // Get the user's confirmed emergency contacts. Unconfirmed contacts have
+      // not accepted the request yet and must not receive alerts (this is the
+      // contract shown in the app's Security & Privacy notice).
       const { data: contacts, error: contactsError } = await supabase
         .from('emergency_contacts')
         .select('*')
-        .eq('user_id', user_id);
+        .eq('user_id', user_id)
+        .eq('is_confirmed', true);
 
       if (contactsError) {
         console.error('Error fetching emergency contacts:', contactsError);
@@ -135,30 +138,43 @@ serve(async (req) => {
       const alertPromises = contacts?.map(async (contact) => {
         const methods = contact.preferred_methods || ['in_app'];
 
-        // Create in-app notification for all contacts
+        // In-app and push notifications must go to the CONTACT's account.
+        // contact.user_id is the alert sender (owner of the contact list), so
+        // resolve the contact's own account from their phone number.
         if (methods.includes('in_app')) {
-          await supabase
-            .from('alert_notifications')
-            .insert({
-              notification_type: 'emergency_alert',
-              panic_alert_id,
-              recipient_id: contact.user_id,
-              sender_name: user_name,
-              content: `${user_name} needs help! Situation: ${situationLabel}${locationInfo}`,
-              sent_at: new Date().toISOString()
-            });
+          const { data: contactUserId, error: lookupError } = await supabase
+            .rpc('find_user_id_by_phone', { _phone: contact.phone_number });
 
-          // Also trigger real push notification
-          await supabase.functions.invoke('send-push-notification', {
-            body: {
-              userId: contact.user_id,
-              title: '🚨 EMERGENCY ALERT',
-              message: `${user_name} needs help!`,
-              type: 'emergency',
-              priority: 'high',
-              data: { panic_alert_id }
-            }
-          });
+          if (lookupError) {
+            console.error('Contact phone lookup failed:', lookupError);
+          }
+
+          if (contactUserId && contactUserId !== user_id) {
+            await supabase
+              .from('alert_notifications')
+              .insert({
+                notification_type: 'emergency_alert',
+                panic_alert_id,
+                recipient_id: contactUserId,
+                sender_name: user_name,
+                content: `${user_name} needs help! Situation: ${situationLabel}${locationInfo}`,
+                sent_at: new Date().toISOString()
+              });
+
+            // Also trigger real push notification
+            await supabase.functions.invoke('send-push-notification', {
+              body: {
+                userId: contactUserId,
+                title: '🚨 EMERGENCY ALERT',
+                message: `${user_name} needs help!`,
+                type: 'emergency',
+                priority: 'high',
+                data: { panic_alert_id }
+              }
+            });
+          } else {
+            console.log(`Contact ${contact.contact_name} has no app account — skipping in-app alert`);
+          }
         }
 
         // Send SMS alerts

@@ -269,6 +269,30 @@ export const useDirectMessages = (userId: string | undefined) => {
   }, [connectionStatus, queue.length, retryQueuedMessage, getRetryableMessages]);
 
   // -------------------------------
+  // Receipt broadcasting
+  // -------------------------------
+  // Each user listens on `read-receipts:${their own id}`, so receipts must be
+  // addressed to the message SENDER's channel. Best-effort only: the reliable
+  // path is the postgres UPDATE event fired by the database write.
+  const sendReceiptToSender = useCallback(
+    async (senderId: string, event: "read_receipt" | "delivery_receipt", messageId: string) => {
+      if (!userId || senderId === userId) return;
+      try {
+        const channel = supabase.channel(`read-receipts:${senderId}`);
+        await channel.send({
+          type: "broadcast",
+          event,
+          payload: { messageId, by: userId },
+        });
+        supabase.removeChannel(channel);
+      } catch (err) {
+        console.error("Failed to broadcast receipt:", err);
+      }
+    },
+    [userId],
+  );
+
+  // -------------------------------
   // Auto delivery receipts
   // -------------------------------
   const markMessagesAsDelivered = useCallback(async () => {
@@ -281,14 +305,8 @@ export const useDirectMessages = (userId: string | undefined) => {
       prev.map((m) => (undelivered.some((u) => u.id === m.id) ? { ...m, status: "delivered" } : m)),
     );
 
-    if (broadcastChannelRef.current) {
-      for (const msg of undelivered) {
-        await broadcastChannelRef.current.send({
-          type: "broadcast",
-          event: "delivery_receipt",
-          payload: { messageId: msg.id, deliveredTo: userId },
-        });
-      }
+    for (const msg of undelivered) {
+      sendReceiptToSender(msg.sender_id, "delivery_receipt", msg.id);
     }
 
     try {
@@ -297,7 +315,7 @@ export const useDirectMessages = (userId: string | undefined) => {
     } catch (err) {
       console.error(err);
     }
-  }, [userId]);
+  }, [userId, sendReceiptToSender]);
 
   // -------------------------------
   // Send message with attachments
@@ -367,22 +385,28 @@ export const useDirectMessages = (userId: string | undefined) => {
       if (!userId) return;
 
       try {
-        const { error } = await supabase
-          .from("direct_messages")
-          .update({ status: "read", read_at: new Date().toISOString() })
-          .eq("id", messageId)
-          .eq("recipient_id", userId);
-
+        // RPC (SECURITY DEFINER) — direct table updates by the recipient are
+        // blocked by RLS, which is why receipts never persisted before.
+        const { error } = await supabase.rpc("mark_message_as_read", { message_id: messageId });
         if (error) throw error;
 
         setMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? { ...msg, status: "read" as MessageStatus } : msg))
+          prev.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, status: "read" as MessageStatus, read_at: new Date().toISOString() }
+              : msg
+          )
         );
+
+        const msg = messagesRef.current.find((m) => m.id === messageId);
+        if (msg) {
+          sendReceiptToSender(msg.sender_id, "read_receipt", messageId);
+        }
       } catch (error) {
         console.error("Error marking message as read:", error);
       }
     },
-    [userId],
+    [userId, sendReceiptToSender],
   );
 
   // -------------------------------
@@ -420,24 +444,15 @@ export const useDirectMessages = (userId: string | undefined) => {
           )
         );
 
-        // Broadcast read receipts to sender
-        if (broadcastChannelRef.current) {
-          for (const msg of unreadMessages) {
-            await broadcastChannelRef.current.send({
-              type: "broadcast",
-              event: "read_receipt",
-              payload: { messageId: msg.id, readBy: userId },
-            });
-          }
+        // Broadcast read receipts to the sender's channel (best effort)
+        for (const msg of unreadMessages) {
+          sendReceiptToSender(msg.sender_id, "read_receipt", msg.id);
         }
 
-        // Update database
-        const messageIds = unreadMessages.map((m) => m.id);
-        const { error } = await supabase
-          .from("direct_messages")
-          .update({ status: "read", read_at: new Date().toISOString() })
-          .in("id", messageIds)
-          .eq("recipient_id", userId);
+        // Persist via RPC — recipient-side direct updates are blocked by RLS
+        const { error } = await supabase.rpc("mark_conversation_read", {
+          other_user_id: otherUserId,
+        });
 
         if (error) {
           console.error("Error marking messages as read:", error);
@@ -446,7 +461,7 @@ export const useDirectMessages = (userId: string | undefined) => {
         console.error("Error in markAllMessagesAsRead:", error);
       }
     },
-    [userId]
+    [userId, sendReceiptToSender]
   );
 
   // -------------------------------
