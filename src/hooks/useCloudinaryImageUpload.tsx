@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { uploadToCloudinary, deleteFromCloudinary, extractPublicId } from '@/services/cloudinaryService';
 
 interface UploadProgress {
@@ -96,10 +97,9 @@ export const useCloudinaryImageUpload = (folder: string = 'promotions') => {
       return uploadedUrls;
     } catch (error) {
       console.error('Batch upload error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload images';
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getUserErrorMessage(error, 'Failed to upload images. Please try again.'),
         variant: "destructive",
       });
       return [];

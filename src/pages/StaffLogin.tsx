@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { Shield, Users, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff } from '@/lib/icons';
 
 interface InvitationInfo {
@@ -166,7 +167,7 @@ const StaffLogin = () => {
       console.error('Authentication error:', error);
       toast({
         title: "Authentication Failed",
-        description: error.message || "An error occurred during authentication",
+        description: getUserErrorMessage(error, "Couldn't sign you in. Please try again."),
         variant: "destructive"
       });
     } finally {

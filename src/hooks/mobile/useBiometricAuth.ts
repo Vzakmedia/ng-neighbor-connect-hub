@@ -12,6 +12,7 @@ const BiometryTypeValues = {
   irisAuthentication: 5,
 };
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { useNativeStorage } from './useNativeStorage';
 
 interface BiometricInfo {
@@ -103,7 +104,7 @@ export const useBiometricAuth = () => {
 
       // Provide helpful error messages
       let errorTitle = 'Authentication Failed';
-      let errorMessage = error.message || 'Failed to authenticate';
+      let errorMessage = getUserErrorMessage(error, 'Failed to authenticate. Please try again.');
 
       if (error.code === 'biometryNotAvailable') {
         errorTitle = 'Biometric Not Available';

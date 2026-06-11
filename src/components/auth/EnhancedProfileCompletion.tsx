@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, User, MapPin, Camera, Eye, EyeOff, Lock } from '@/lib/icons';
 import { PasswordStrengthIndicator } from "@/components/security/PasswordStrengthIndicator";
@@ -143,7 +144,7 @@ export const EnhancedProfileCompletion = () => {
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to upload avatar. Please try again.",
+        description: getUserErrorMessage(error, "Failed to upload avatar. Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -263,7 +264,7 @@ export const EnhancedProfileCompletion = () => {
       console.error('Error completing profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to complete profile. Please try again.",
+        description: getUserErrorMessage(error, "Failed to complete profile. Please try again."),
         variant: "destructive",
       });
     } finally {

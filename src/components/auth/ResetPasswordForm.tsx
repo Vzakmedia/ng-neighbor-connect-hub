@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { ArrowLeft } from '@/lib/icons';
 import { getAuthRedirectUrl } from "@/utils/authRedirect";
 
@@ -31,7 +32,7 @@ export const ResetPasswordForm = ({ onBack }: ResetPasswordFormProps) => {
       if (error) {
         toast({
           title: "Reset Failed",
-          description: error.message,
+          description: getUserErrorMessage(error, "Couldn't send the reset email. Please try again."),
           variant: "destructive",
         });
       } else {

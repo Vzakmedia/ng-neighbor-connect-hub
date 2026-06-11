@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { Mail, CheckCircle2, AlertCircle, Star as PartyPopper } from '@/lib/icons';
 import {
@@ -99,7 +100,7 @@ const VerifyEmail = () => {
           }
         }
       } catch (err: any) {
-        setError(err.message || "An error occurred during verification");
+        setError(getUserErrorMessage(err, "We couldn't verify your email. Please check your link and try again."));
       } finally {
         setLoading(false);
       }
@@ -143,7 +144,7 @@ const VerifyEmail = () => {
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Failed to resend verification email",
+        description: getUserErrorMessage(err, "Couldn't resend the verification email. Please try again."),
         variant: "destructive",
       });
     } finally {

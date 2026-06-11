@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import type { CreateReviewInput } from '@/types/recommendations';
 
 export function useCreateReview() {
@@ -44,7 +45,7 @@ export function useCreateReview() {
     onError: (error) => {
       toast({
         title: "Failed to post review",
-        description: error.message,
+        description: getUserErrorMessage(error, "Couldn't post your review. Please try again."),
         variant: "destructive",
       });
     },
@@ -117,7 +118,7 @@ export function useCreateTip() {
     onError: (error) => {
       toast({
         title: "Failed to add tip",
-        description: error.message,
+        description: getUserErrorMessage(error, "Couldn't add your tip. Please try again."),
         variant: "destructive",
       });
     },

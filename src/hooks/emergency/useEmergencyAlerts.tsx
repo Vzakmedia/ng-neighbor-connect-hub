@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { SafetyAlert, PanicAlert, EmergencyFilters } from '@/types/emergency';
 
 // Create a hash function for comparing data
@@ -118,7 +119,7 @@ export const useEmergencyAlerts = () => {
             } else {
               toast({
                 title: "Failed to load safety alerts",
-                description: error.message || "Unknown error occurred",
+                description: getUserErrorMessage(error, "Couldn't load safety alerts. Please try again."),
                 variant: "destructive",
               });
             }

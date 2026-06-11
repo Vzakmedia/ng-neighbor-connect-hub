@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { MapPin, Navigation } from '@/lib/icons';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import PermissionDeniedAlert from '@/components/mobile/PermissionDeniedAlert';
@@ -334,7 +335,7 @@ const LocationPickerDialog = ({ open, onOpenChange, onLocationConfirm }: Locatio
 
       setIsLoading(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = getUserErrorMessage(err, "Couldn't load the map. Please try again.");
       if (err instanceof Error && err.message.includes('permission')) {
         setPermissionDenied(true);
         setError('Location permission denied');

@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import type { Recommendation, RecommendationFilters, CreateRecommendationInput } from '@/types/recommendations';
 
 const ITEMS_PER_PAGE = 20;
@@ -144,7 +145,7 @@ export function useCreateRecommendation() {
     onError: (error) => {
       toast({
         title: "Failed to create recommendation",
-        description: error.message,
+        description: getUserErrorMessage(error, "Couldn't submit your recommendation. Please try again."),
         variant: "destructive",
       });
     },
@@ -196,7 +197,7 @@ export function useToggleSave() {
     onError: (error) => {
       toast({
         title: "Failed to save",
-        description: error.message,
+        description: getUserErrorMessage(error, "Couldn't update your saved items. Please try again."),
         variant: "destructive",
       });
     },

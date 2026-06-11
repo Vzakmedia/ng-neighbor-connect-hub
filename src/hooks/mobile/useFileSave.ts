@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 
 const isNativePlatform = () => (window as any).Capacitor?.isNativePlatform?.() === true;
 
@@ -61,7 +62,7 @@ export const useFileSave = () => {
       console.error('Failed to save file:', error);
       toast({
         title: "Save failed",
-        description: error instanceof Error ? error.message : "Failed to save file",
+        description: getUserErrorMessage(error, "Couldn't save the file. Please try again."),
         variant: "destructive",
       });
     } finally {

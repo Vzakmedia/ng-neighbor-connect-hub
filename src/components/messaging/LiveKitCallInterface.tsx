@@ -16,6 +16,7 @@ import { Track, RoomOptions, VideoPresets, RoomEvent, DisconnectReason } from 'l
 import { Loader2, Mic, MicOff } from 'lucide-react';
 import { useAudioPermissions } from '@/hooks/useAudioPermissions';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 
 // Error boundary to prevent LiveKit track race conditions from crashing the call UI
 class LiveKitVideoErrorBoundary extends Component<
@@ -192,7 +193,7 @@ export const LiveKitCallInterface: React.FC<LiveKitCallInterfaceProps> = ({
         setError(err.message);
         toast({
             title: 'Call Error',
-            description: err.message || 'An error occurred during the call',
+            description: getUserErrorMessage(err, 'An error occurred during the call. Please try again.'),
             variant: 'destructive',
         });
     };

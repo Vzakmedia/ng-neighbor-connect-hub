@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { useAuth } from "@/hooks/useAuth";
 import { Copy, Plus, Users, Clock, CheckCircle, XCircle } from "@/lib/icons";
 
@@ -114,7 +115,7 @@ const StaffInvitationManager = () => {
       console.error('Error creating invitation:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create staff invitation",
+        description: getUserErrorMessage(error, "Failed to create staff invitation. Please try again."),
         variant: "destructive"
       });
     }

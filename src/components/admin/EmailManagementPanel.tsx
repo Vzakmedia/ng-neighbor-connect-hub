@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { Mail, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, Trash2 } from '@/lib/icons';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -100,7 +101,7 @@ export default function EmailManagementPanel() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || 'Failed to resend verification email',
+        description: getUserErrorMessage(error, 'Failed to resend verification email. Please try again.'),
         variant: "destructive",
       });
     } finally {
@@ -134,7 +135,7 @@ export default function EmailManagementPanel() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || 'Failed to verify user',
+        description: getUserErrorMessage(error, 'Failed to verify user. Please try again.'),
         variant: "destructive",
       });
     } finally {
@@ -178,7 +179,7 @@ export default function EmailManagementPanel() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || 'Failed to delete user',
+        description: getUserErrorMessage(error, 'Failed to delete user. Please try again.'),
         variant: "destructive",
       });
     } finally {

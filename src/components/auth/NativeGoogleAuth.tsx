@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // WR-05: Import isNativePlatform from the shared utility
@@ -52,7 +53,7 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
           console.error('[NativeGoogleAuth] OAuth error:', error);
           toast({
             title: "Authentication Error",
-            description: error.message,
+            description: getUserErrorMessage(error, "Sign-in failed. Please try again."),
             variant: "destructive",
           });
           setIsLoading(false);
@@ -192,7 +193,7 @@ export const NativeGoogleAuth = ({ mode, locationData }: NativeGoogleAuthProps) 
         if (error) {
           toast({
             title: "Authentication Error",
-            description: error.message,
+            description: getUserErrorMessage(error, "Sign-in failed. Please try again."),
             variant: "destructive",
           });
           setIsLoading(false);

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, User, MapPin } from '@/lib/icons';
 
@@ -98,7 +99,7 @@ export const ProfileCompletion = () => {
       console.error('Error creating profile:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to complete profile. Please try again.",
+        description: getUserErrorMessage(error, "Failed to complete profile. Please try again."),
         variant: "destructive",
       });
     } finally {

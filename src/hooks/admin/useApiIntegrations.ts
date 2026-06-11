@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 
 interface ApiStatus {
     googleMaps: 'unknown' | 'active' | 'error';
@@ -205,7 +206,7 @@ export const useApiIntegrations = (userId?: string) => {
             setApiStatus(prev => ({ ...prev, [apiType]: 'error' }));
             toast({
                 title: `${apiType} API Test Failed ❌`,
-                description: error.message,
+                description: getUserErrorMessage(error, 'The API test failed. Please try again.'),
                 variant: 'destructive',
             });
         } finally {

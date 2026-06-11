@@ -304,7 +304,7 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
       });
 
       // Show specific error message based on error type
-      let errorMessage = error.message || 'Failed to create booking request';
+      let errorMessage = errorInfo.userMessage || 'Failed to create booking request. Please try again.';
 
       if (error.message?.includes('duplicate')) {
         errorMessage = 'You already have a booking request for this time slot';

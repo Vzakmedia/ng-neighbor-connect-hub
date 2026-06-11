@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   CheckCircleIcon, 
@@ -115,7 +116,7 @@ const PanicAlertStatusManager: React.FC<PanicAlertStatusManagerProps> = ({
       console.error('Error updating panic alert status:', error);
       toast({
         title: "Update Failed",
-        description: error.message || "Failed to update panic alert status. Please try again.",
+        description: getUserErrorMessage(error, "Failed to update panic alert status. Please try again."),
         variant: "destructive",
       });
     } finally {

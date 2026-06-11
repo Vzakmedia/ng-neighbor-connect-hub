@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { useNavigate } from "react-router-dom";
 import { isNativePlatform } from "@/utils/platform";
 import {
@@ -78,7 +79,7 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
         } catch (error: any) {
             toast({
                 title: "Verification Failed",
-                description: error.message || "Invalid code. Please try again.",
+                description: getUserErrorMessage(error, "Invalid code. Please try again."),
                 variant: "destructive",
             });
         } finally {
@@ -112,7 +113,7 @@ export const OtpVerifyForm = ({ email }: OtpVerifyFormProps) => {
         } catch (error: any) {
             toast({
                 title: "Resend Failed",
-                description: error.message,
+                description: getUserErrorMessage(error, "Couldn't resend the code. Please try again."),
                 variant: "destructive",
             });
         } finally {

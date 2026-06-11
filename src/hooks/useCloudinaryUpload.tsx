@@ -4,6 +4,7 @@ import { uploadToCloudinary, getVideoThumbnailUrl } from '@/services/cloudinaryS
 import { validateMedia, getMediaType } from '@/utils/mediaValidation';
 import { checkIsNativePlatform, checkNetworkStatus } from '@/utils/nativeEdgeFunctions';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 
 export interface CloudinaryAttachment {
   id: string;
@@ -167,7 +168,7 @@ export const useCloudinaryUpload = (userId: string, folder: string = 'chat-attac
       
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Could not upload file. Please try again.",
+        description: getUserErrorMessage(error, "Could not upload file. Please try again."),
         variant: "destructive",
       });
       return null;

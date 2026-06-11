@@ -331,6 +331,22 @@ export const logError = (error: any, context?: { route?: string; userId?: string
   return errorHandler.handleError(error, context);
 };
 
+// Convert any caught error into a friendly, user-facing message without
+// showing a toast or logging. Use this when building toast descriptions
+// (e.g. `description: getUserErrorMessage(error)`) so users never see raw
+// driver/HTTP/Postgres error text.
+export const getUserErrorMessage = (
+  error: unknown,
+  fallback = 'Something went wrong. Please try again.'
+): string => {
+  if (error === null || error === undefined) {
+    return fallback;
+  }
+
+  const info = errorHandler.classifyError(error);
+  return info.userMessage || fallback;
+};
+
 // Retry wrapper with exponential backoff
 export const withRetry = async <T>(
   fn: () => Promise<T>,

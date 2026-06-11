@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getUserErrorMessage } from "@/utils/errorHandling";
 import { Eye, EyeOff, User, Mail } from '@/lib/icons';
 import { SimpleLocationSelector } from "@/components/profile/SimpleLocationSelector";
 import { SecureInput } from "./SecureAuthForms";
@@ -249,7 +250,7 @@ export const SignUpForm = () => {
         } else {
           toast({
             title: "Sign Up Failed",
-            description: error.message,
+            description: getUserErrorMessage(error, "Couldn't create your account. Please try again."),
             variant: "destructive",
           });
         }

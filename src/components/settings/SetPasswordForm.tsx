@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { getUserErrorMessage } from '@/utils/errorHandling';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,7 +71,7 @@ export function SetPasswordForm() {
     } catch (error: any) {
       toast({
         title: 'Failed to update password',
-        description: error?.message ?? 'Please try again.',
+        description: getUserErrorMessage(error, "Couldn't update your password. Please try again."),
         variant: 'destructive',
       });
     } finally {
