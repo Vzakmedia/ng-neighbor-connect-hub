@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
-import { 
-  UserIcon, 
-  MapPinIcon, 
-  HomeIcon, 
-  PhoneIcon, 
+import {
+  UserIcon,
+  MapPinIcon,
+  HomeIcon,
+  PhoneIcon,
   PhotoIcon,
   DocumentTextIcon,
   EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import { isDiceBearUrl } from '@/lib/dicebear';
 
 interface ProfileSection {
   id: string;
@@ -121,8 +122,12 @@ export function useProfileCompletion(profile: any | null): ProfileCompletionStat
 
     PROFILE_SECTIONS.forEach(section => {
       const value = profile[section.field];
-      const isComplete = value !== null && value !== undefined && value !== '';
-      
+      // Auto-generated DiceBear avatars don't count as an uploaded photo —
+      // keep prompting the user to add a real one.
+      const isComplete = section.field === 'avatar_url'
+        ? value !== null && value !== undefined && value !== '' && !isDiceBearUrl(value)
+        : value !== null && value !== undefined && value !== '';
+
       if (isComplete) {
         completedSections.push(section);
         totalWeight += section.weight;

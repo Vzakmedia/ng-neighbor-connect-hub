@@ -219,7 +219,9 @@ export const EnhancedProfileCompletion = () => {
       // Get user email from auth
       const email = user?.email || '';
 
-      // Create/update profile
+      // Create/update profile. If no photo was uploaded, fall back to the
+      // user's DiceBear avatar instead of nulling out the existing default.
+      const { getDiceBearUrl } = await import('@/lib/dicebear');
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -231,7 +233,7 @@ export const EnhancedProfileCompletion = () => {
           neighborhood: formData.neighborhood,
           address: formData.address.trim() || null,
           email: email,
-          avatar_url: formData.avatar_url || null
+          avatar_url: formData.avatar_url || (user?.id ? getDiceBearUrl(user.id) : null)
         });
 
       if (error) {

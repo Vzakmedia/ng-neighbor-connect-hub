@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, MapPinIcon, ClockIcon, UserIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { useBookingSync } from '@/hooks/useBookingSync';
+import { useProfile } from '@/hooks/useProfile';
 
 interface Booking {
   id: string;
@@ -31,11 +32,13 @@ interface Booking {
 const MyBookingsPanel = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { profile } = useProfile();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const fetchBookings = async () => {
+    if (!profile?.id) return;
     try {
       const { data, error } = await supabase
         .from('service_bookings')
@@ -50,7 +53,7 @@ const MyBookingsPanel = () => {
           services!service_bookings_service_id_fkey(id, title, description, location),
           provider:profiles!service_bookings_provider_id_fkey(full_name, avatar_url, phone)
         `)
-        .eq('client_id', user!.id)
+        .eq('client_id', profile!.id)
         .order('booking_date', { ascending: true });
 
       if (error) {
@@ -94,7 +97,7 @@ const MyBookingsPanel = () => {
           const { data: basicData } = await supabase
             .from('service_bookings')
             .select('*')
-            .eq('client_id', user!.id)
+            .eq('client_id', profile!.id)
             .order('booking_date', { ascending: true });
           
           if (basicData && basicData.length > 0) {
@@ -134,16 +137,16 @@ const MyBookingsPanel = () => {
   };
 
   // Use real-time booking sync
-  useBookingSync({ 
-    onBookingUpdated: fetchBookings, 
-    userId: user?.id 
+  useBookingSync({
+    onBookingUpdated: fetchBookings,
+    profileId: profile?.id
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && profile?.id) {
       fetchBookings();
     }
-  }, [user]);
+  }, [user, profile?.id]);
 
 
   const handleCancelBooking = async (bookingId: string) => {
@@ -153,7 +156,7 @@ const MyBookingsPanel = () => {
         .from('service_bookings')
         .update({ status: 'cancelled' })
         .eq('id', bookingId)
-        .eq('client_id', user!.id);
+        .eq('client_id', profile!.id);
 
       if (error) throw error;
 

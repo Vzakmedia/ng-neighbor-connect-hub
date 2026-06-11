@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, User, MessageSquare, Star, Calendar } from '@/lib/icons';
 import { format } from 'date-fns';
 import { useBookingSync } from '@/hooks/useBookingSync';
+import { useProfile } from '@/hooks/useProfile';
 
 interface BookingRequest {
   id: string;
@@ -31,12 +32,13 @@ interface BookingRequest {
 const ProviderBookingRequests = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { profile } = useProfile();
   const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchBookingRequests = useCallback(async () => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
 
     try {
       setLoading(true);
@@ -53,7 +55,7 @@ const ProviderBookingRequests = () => {
           services!service_bookings_service_id_fkey(id, title, description),
           client:profiles!service_bookings_client_id_fkey(full_name, avatar_url, phone)
         `)
-        .eq('provider_id', user.id)
+        .eq('provider_id', profile!.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -136,24 +138,24 @@ const ProviderBookingRequests = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, profile?.id, toast]);
 
   // Use real-time booking sync
-  useBookingSync({ 
-    onBookingUpdated: fetchBookingRequests, 
-    userId: user?.id 
+  useBookingSync({
+    onBookingUpdated: fetchBookingRequests,
+    profileId: profile?.id
   });
 
 
   const handleStatusUpdate = async (bookingId: string, newStatus: 'confirmed' | 'cancelled' | 'completed') => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
     setUpdating(bookingId);
     try {
       const { error } = await supabase
         .from('service_bookings')
         .update({ status: newStatus })
         .eq('id', bookingId)
-        .eq('provider_id', user.id);
+        .eq('provider_id', profile.id);
 
       if (error) throw error;
 

@@ -253,11 +253,24 @@ const BookServiceDialog = ({ service, onBookingCreated, children }: BookServiceD
         throw new Error('This slot was just booked. Please choose another time.');
       }
 
+      // Resolve auth UUIDs to profiles.id — FKs on service_bookings now reference profiles(id)
+      const [clientProfileResult, providerProfileResult] = await Promise.all([
+        supabase.from('profiles').select('id').eq('user_id', user.id).maybeSingle(),
+        supabase.from('profiles').select('id').eq('user_id', service.user_id).maybeSingle(),
+      ]);
+
+      if (clientProfileResult.error || !clientProfileResult.data) {
+        throw new Error('Your profile was not found. Please complete your profile setup.');
+      }
+      if (providerProfileResult.error || !providerProfileResult.data) {
+        throw new Error('Service provider profile not found');
+      }
+
       // Create the booking with retry logic for network resilience
       await withRetry(async () => {
         const bookingData: Database['public']['Tables']['service_bookings']['Insert'] = {
-          client_id: user.id,
-          provider_id: service.user_id,
+          client_id: clientProfileResult.data!.id,
+          provider_id: providerProfileResult.data!.id,
           service_id: service.id,
           booking_date: bookingDateTime,
           message: message || null,

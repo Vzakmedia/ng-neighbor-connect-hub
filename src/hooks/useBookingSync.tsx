@@ -5,10 +5,10 @@ import { createSafeSubscription, cleanupSafeSubscription } from '@/utils/realtim
 
 interface UseBookingSyncProps {
   onBookingUpdated?: () => void;
-  userId?: string;
+  profileId?: string;
 }
 
-export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps) => {
+export const useBookingSync = ({ onBookingUpdated, profileId }: UseBookingSyncProps) => {
   const { toast } = useToast();
   const onBookingUpdatedRef = useRef(onBookingUpdated);
 
@@ -18,7 +18,7 @@ export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps
   });
 
   useEffect(() => {
-    if (!userId) return;
+    if (!profileId) return;
 
     // Consolidated channel for all booking updates
     const subscription = createSafeSubscription(
@@ -31,7 +31,7 @@ export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps
               event: '*',
               schema: 'public',
               table: 'service_bookings',
-              filter: `client_id=eq.${userId}`
+              filter: `client_id=eq.${profileId}`
             },
             (payload: any) => {
               // Show notification for booking status changes
@@ -80,7 +80,7 @@ export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps
               event: '*',
               schema: 'public',
               table: 'service_bookings',
-              filter: `provider_id=eq.${userId}`
+              filter: `provider_id=eq.${profileId}`
             },
             (payload: any) => {
               if (payload.eventType === 'INSERT') {
@@ -95,7 +95,7 @@ export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps
           );
       },
       {
-        channelName: `booking-sync-${userId}`,
+        channelName: `booking-sync-${profileId}`,
         debugName: 'BookingSync',
         pollInterval: 30000, // Poll every 30 seconds as fallback
         onError: () => {
@@ -108,5 +108,5 @@ export const useBookingSync = ({ onBookingUpdated, userId }: UseBookingSyncProps
     return () => {
       cleanupSafeSubscription(subscription);
     };
-  }, [userId, toast]);
+  }, [profileId, toast]);
 };

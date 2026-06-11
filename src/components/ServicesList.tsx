@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,6 +81,7 @@ interface ServicesListProps {
 
 const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = false, showOnlyBookings = false }: ServicesListProps) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [myServices, setMyServices] = useState<Service[]>([]);
   const [myItems, setMyItems] = useState<MarketplaceItem[]>([]);
@@ -167,13 +169,13 @@ const ServicesList = ({ onRefresh, showOnlyServices = false, showOnlyGoods = fal
   };
 
   const fetchMyBookings = async () => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
 
     try {
       const { data, error } = await supabase
         .from('service_bookings')
         .select('*')
-        .eq('client_id', user.id)
+        .eq('client_id', profile!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
