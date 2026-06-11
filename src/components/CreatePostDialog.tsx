@@ -66,6 +66,7 @@ import { useNativeCamera } from '@/hooks/mobile/useNativeCamera';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from '@/lib/icons';
 import { MediaUploader } from '@/components/MediaUploader';
+import { PostImageCropper } from '@/components/PostImageCropper';
 import { useCloudinaryUpload, CloudinaryAttachment } from '@/hooks/useCloudinaryUpload';
 
 interface CreatePostDialogProps {
@@ -98,7 +99,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { pickImages, isNative, takePicture } = useNativeCamera();
-  const { uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'posts');
+  const { uploadFile, uploadMultipleFiles, uploading, progress, currentFileName, currentFileSize, uploadedBytes, uploadSpeed, currentFileIndex, totalFilesCount } = useCloudinaryUpload(user?.id || '', 'posts');
+  const [editingMediaIndex, setEditingMediaIndex] = useState<number | null>(null);
 
   const handleCameraCapture = async () => {
     const file = await takePicture();
@@ -150,6 +152,29 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
   const handleMediaRemove = useCallback((index: number) => {
     setUploadedMedia(prev => prev.filter((_, i) => i !== index));
   }, []);
+
+  const handleMediaClearAll = useCallback(() => {
+    setUploadedMedia([]);
+    setMedia([]);
+  }, []);
+
+  const handleMediaEdit = useCallback((index: number) => {
+    if (uploadedMedia[index]?.type !== 'image') return;
+    setEditingMediaIndex(index);
+  }, [uploadedMedia]);
+
+  const handleCropComplete = useCallback(async (croppedBlob: Blob) => {
+    if (editingMediaIndex === null) return;
+
+    const original = uploadedMedia[editingMediaIndex];
+    const croppedFile = new File([croppedBlob], original.name, { type: croppedBlob.type });
+
+    const attachment = await uploadFile(croppedFile);
+    if (attachment) {
+      setUploadedMedia(prev => prev.map((item, i) => (i === editingMediaIndex ? attachment : item)));
+    }
+    setEditingMediaIndex(null);
+  }, [editingMediaIndex, uploadedMedia, uploadFile]);
 
   const addTag = () => {
     if (currentTag.trim() && !tags.includes(currentTag.trim()) && tags.length < 5) {
@@ -387,6 +412,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   maxFiles={4}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
+                  onEdit={handleMediaEdit}
+                  onClearAll={handleMediaClearAll}
                   uploading={uploading}
                   progress={progress}
                   currentFileName={currentFileName}
@@ -759,6 +786,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                   maxFiles={4}
                   uploadedFiles={uploadedMedia}
                   onRemove={handleMediaRemove}
+                  onEdit={handleMediaEdit}
+                  onClearAll={handleMediaClearAll}
                   uploading={uploading}
                   progress={progress}
                   onCameraCapture={isNative ? handleCameraCapture : undefined}
@@ -767,12 +796,22 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
             </div>
           </DrawerContent>
         </Drawer>
+
+        {editingMediaIndex !== null && uploadedMedia[editingMediaIndex] && (
+          <PostImageCropper
+            isOpen={editingMediaIndex !== null}
+            onClose={() => setEditingMediaIndex(null)}
+            imageSrc={uploadedMedia[editingMediaIndex].url}
+            onCropComplete={handleCropComplete}
+          />
+        )}
       </>
     );
   }
 
   // Desktop Dialog Version (unchanged)
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
@@ -857,6 +896,8 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
                 maxFiles={4}
                 uploadedFiles={uploadedMedia}
                 onRemove={handleMediaRemove}
+                onEdit={handleMediaEdit}
+                onClearAll={handleMediaClearAll}
                 uploading={uploading}
                 progress={progress}
               />
@@ -1121,6 +1162,16 @@ const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {editingMediaIndex !== null && uploadedMedia[editingMediaIndex] && (
+      <PostImageCropper
+        isOpen={editingMediaIndex !== null}
+        onClose={() => setEditingMediaIndex(null)}
+        imageSrc={uploadedMedia[editingMediaIndex].url}
+        onCropComplete={handleCropComplete}
+      />
+    )}
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ import { validateMedia, formatFileSize } from '@/utils/mediaValidation';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { VideoPlayer } from './VideoPlayer';
-import { CameraIcon, XMarkIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { CameraIcon, XMarkIcon, PhotoIcon, VideoCameraIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { UploadProgressIndicator } from './ui/upload-progress';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
@@ -22,6 +22,8 @@ interface MediaUploaderProps {
   uploadedFiles?: CloudinaryAttachment[];
   pendingFiles?: File[];
   onRemove?: (index: number) => void;
+  onEdit?: (index: number) => void;
+  onClearAll?: () => void;
   uploading?: boolean;
   progress?: number;
   disabled?: boolean;
@@ -41,6 +43,8 @@ export const MediaUploader = ({
   uploadedFiles = EMPTY_UPLOADED,
   pendingFiles = EMPTY_FILES,
   onRemove,
+  onEdit,
+  onClearAll,
   uploading = false,
   progress = 0,
   disabled = false,
@@ -184,7 +188,7 @@ export const MediaUploader = ({
 
       {/* Preview Grid */}
       {totalFiles > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 min-w-0">
           {/* Pending Files */}
           {pendingFiles.map((file, index) => {
             const isVideo = file.type.startsWith('video/');
@@ -206,17 +210,30 @@ export const MediaUploader = ({
                       />
                     )}
 
-                    {onRemove && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => onRemove(index)}
-                      >
-                        <XMarkIcon className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <div className="absolute top-1 right-1 flex gap-1">
+                      {onEdit && !isVideo && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 w-6 p-0 bg-black/60 hover:bg-black/80 text-white"
+                          onClick={() => onEdit(index)}
+                        >
+                          <PencilSquareIcon className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {onRemove && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => onRemove(index)}
+                        >
+                          <XMarkIcon className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
 
                     <Badge className="absolute top-1 left-1 text-xs">Pending</Badge>
 
@@ -251,17 +268,30 @@ export const MediaUploader = ({
                     />
                   )}
 
-                  {onRemove && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => onRemove(pendingFiles.length + index)}
-                    >
-                      <XMarkIcon className="h-3 w-3" />
-                    </Button>
-                  )}
+                  <div className="absolute top-1 right-1 flex gap-1">
+                    {onEdit && file.type === 'image' && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 w-6 p-0 bg-black/60 hover:bg-black/80 text-white"
+                        onClick={() => onEdit(pendingFiles.length + index)}
+                      >
+                        <PencilSquareIcon className="h-3 w-3" />
+                      </Button>
+                    )}
+                    {onRemove && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => onRemove(pendingFiles.length + index)}
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
 
                   <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
                     {formatFileSize(file.size)}
@@ -273,9 +303,23 @@ export const MediaUploader = ({
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        {totalFiles} / {maxFiles} files {pendingFiles.length > 0 ? 'selected' : 'uploaded'}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {totalFiles} / {maxFiles} files {pendingFiles.length > 0 ? 'selected' : 'uploaded'}
+        </p>
+        {onClearAll && totalFiles > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+            onClick={onClearAll}
+            disabled={uploading}
+          >
+            Clear all
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
