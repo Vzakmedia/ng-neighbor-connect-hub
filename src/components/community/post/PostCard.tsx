@@ -8,6 +8,7 @@ import { PostCardMedia } from './PostCardMedia';
 import { PostCardActions } from './PostCardActions';
 import CommentSection from '@/components/CommentSection';
 import { PollCard } from '../poll/PollCard';
+import { PollPreview } from '../poll/PollPreview';
 import { usePoll } from '@/hooks/usePoll';
 import { Users, Building, Home as HomeIcon, Globe } from '@/lib/icons';
 import { VideoPlayerDialog } from '@/components/VideoPlayerDialog';
@@ -138,17 +139,26 @@ const PostCardComponent = ({
           isFullPost={isFullPost}
         />
 
-        {/* Poll Card */}
+        {/* Poll */}
         {post.post_type === 'poll' && poll && !isLoading && (
-          <PollCard
-            pollId={poll.id}
-            question={poll.question}
-            closesAt={poll.closes_at}
-            allowMultipleChoices={poll.allow_multiple_choices}
-            maxChoices={poll.max_choices}
-            options={options}
-            userVotes={userVotes}
-          />
+          isFullPost ? (
+            <PollCard
+              pollId={poll.id}
+              question={poll.question}
+              closesAt={poll.closes_at}
+              allowMultipleChoices={poll.allow_multiple_choices}
+              maxChoices={poll.max_choices}
+              options={options}
+              userVotes={userVotes}
+            />
+          ) : (
+            <PollPreview
+              question={poll.question}
+              closesAt={poll.closes_at}
+              options={options}
+              userVotes={userVotes}
+            />
+          )
         )}
       </div>
 
