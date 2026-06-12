@@ -143,11 +143,11 @@ const StaffDashboard = () => {
   if (!user) return <Navigate to="/auth" replace />;
 
   const statCards = [
-    { label: 'Platform Users', value: stats.totalUsers, sub: `+${stats.newUsersToday} today`, icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-    { label: 'New Today', value: stats.newUsersToday, sub: 'Registered today', icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-    { label: 'Flagged Content', value: stats.flaggedContent, sub: 'Pending review', icon: Flag, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-    { label: 'Active Listings', value: stats.activeMarketplaceItems, sub: `of ${stats.marketplaceItems} total`, icon: ShoppingCart, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
-    { label: 'Community Posts', value: stats.totalPosts, sub: 'All posts', icon: FileText, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+    { label: 'Platform Users', value: stats.totalUsers, sub: `+${stats.newUsersToday} today`, icon: Users, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20 dark:border-emerald-500/30' },
+    { label: 'New Today', value: stats.newUsersToday, sub: 'Registered today', icon: TrendingUp, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20 dark:border-blue-500/30' },
+    { label: 'Flagged Content', value: stats.flaggedContent, sub: 'Pending review', icon: Flag, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/10 border-red-500/20 dark:border-red-500/30' },
+    { label: 'Active Listings', value: stats.activeMarketplaceItems, sub: `of ${stats.marketplaceItems} total`, icon: ShoppingCart, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20 dark:border-purple-500/30' },
+    { label: 'Community Posts', value: stats.totalPosts, sub: 'All posts', icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20 dark:border-amber-500/30' },
   ];
 
   const navTabs = [
@@ -158,30 +158,30 @@ const StaffDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen staff-portal-bg">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="staff-portal-header border-b border-white/5">
+      <div className="bg-card border-b border-border sticky top-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-purple-400" />
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">NeighboursNG</p>
-              <p className="text-sm font-bold text-white">Staff Dashboard</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighboursNG</p>
+              <p className="text-sm font-bold text-foreground">Staff Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              <span className="text-xs text-purple-300 font-medium">Monitoring</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-medium">Monitoring</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => { setRefreshing(true); window.location.reload(); }}
               disabled={refreshing}
-              className="text-slate-400 hover:text-white hover:bg-white/5 gap-1.5"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline text-xs">Refresh</span>
@@ -190,7 +190,7 @@ const StaffDashboard = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate('/staff-portal')}
-              className="text-slate-400 hover:text-white hover:bg-white/5 gap-1.5"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
             >
               <Grid className="h-3.5 w-3.5" />
               <span className="hidden sm:inline text-xs">Portal Home</span>
@@ -200,23 +200,23 @@ const StaffDashboard = () => {
 
         {/* Tabs */}
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex px-4 sm:px-6 lg:px-8 gap-1 min-w-max">
+          <div className="flex px-4 sm:px-6 lg:px-8 gap-1 min-w-max border-b border-border">
             {navTabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap -mb-[1px] ${
                     activeTab === tab.id
-                      ? 'text-purple-300 border-purple-500 bg-purple-500/5'
-                      : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/5'
+                      ? 'text-purple-600 dark:text-purple-400 border-purple-500 bg-purple-500/5'
+                      : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent/50'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
                   {tab.id === 'content' && stats.flaggedContent > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-400">
+                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-destructive/15 text-destructive">
                       {stats.flaggedContent}
                     </span>
                   )}
@@ -237,7 +237,7 @@ const StaffDashboard = () => {
               {statCards.map((stat, i) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={i} className="staff-portal-card rounded-xl p-4">
+                  <div key={i} className="bg-card border border-border rounded-xl p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div className={`p-1.5 rounded-lg border ${stat.bg}`}>
                         <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
@@ -246,27 +246,27 @@ const StaffDashboard = () => {
                     <p className={`text-2xl font-bold ${stat.color}`}>
                       {loading ? '—' : stat.value.toLocaleString()}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5 font-medium">{stat.label}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">{stat.sub}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-semibold">{stat.label}</p>
+                    <p className="text-xs text-muted-foreground/80 mt-0.5">{stat.sub}</p>
                   </div>
                 );
               })}
             </div>
 
             {/* Marketplace Health */}
-            <div className="staff-portal-card rounded-xl p-5">
+            <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">Marketplace Health</p>
-                  <p className="text-xs text-slate-500">Active vs total listings</p>
+                  <p className="text-sm font-semibold text-foreground">Marketplace Health</p>
+                  <p className="text-xs text-muted-foreground">Active vs total listings</p>
                 </div>
-                <span className="text-sm font-bold text-purple-400">
+                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
                   {stats.marketplaceItems > 0 ? Math.round((stats.activeMarketplaceItems / stats.marketplaceItems) * 100) : 0}%
                 </span>
               </div>
-              <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden">
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-400 transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-500 transition-all duration-700"
                   style={{ width: `${stats.marketplaceItems > 0 ? (stats.activeMarketplaceItems / stats.marketplaceItems) * 100 : 0}%` }}
                 />
               </div>
@@ -274,42 +274,42 @@ const StaffDashboard = () => {
 
             {/* Recent Activity Grid */}
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="staff-portal-card rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-white mb-4">Recent Users</h3>
+              <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Recent Users</h3>
                 <div className="space-y-3">
                   {recentUsers.slice(0, 5).map((u) => (
                     <div key={u.user_id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
+                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
                           {u.full_name?.[0] || '?'}
                         </div>
-                        <span className="text-sm text-slate-300">{u.full_name || 'Unknown'}</span>
+                        <span className="text-sm text-foreground/90 font-medium">{u.full_name || 'Unknown'}</span>
                       </div>
-                      <span className="text-xs text-slate-600">{new Date(u.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
                     </div>
                   ))}
                   {recentUsers.length === 0 && (
-                    <p className="text-sm text-slate-600">No recent users</p>
+                    <p className="text-sm text-muted-foreground">No recent users</p>
                   )}
                 </div>
               </div>
 
-              <div className="staff-portal-card rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-white mb-4">Content Flags</h3>
+              <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Content Flags</h3>
                 <div className="space-y-3">
                   {flaggedContent.slice(0, 5).map((content) => (
                     <div key={content.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
                           {content.reason}
                         </span>
-                        <span className="text-sm text-slate-400">{content.content_type}</span>
+                        <span className="text-sm text-muted-foreground">{content.content_type}</span>
                       </div>
-                      <span className="text-xs text-slate-600">{new Date(content.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(content.created_at).toLocaleDateString()}</span>
                     </div>
                   ))}
                   {flaggedContent.length === 0 && (
-                    <p className="text-sm text-slate-600">No flagged content</p>
+                    <p className="text-sm text-muted-foreground">No flagged content</p>
                   )}
                 </div>
               </div>
@@ -319,34 +319,34 @@ const StaffDashboard = () => {
 
         {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="staff-portal-card rounded-xl overflow-hidden">
-            <div className="p-5 border-b border-white/5">
-              <h2 className="text-sm font-semibold text-white">User Management</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Monitor user accounts and activity · {recentUsers.length} users shown</p>
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="p-5 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">User Management</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Monitor user accounts and activity · {recentUsers.length} users shown</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/5">
+                  <tr className="border-b border-border">
                     {['Name', 'Email', 'Location', 'Status', 'Joined', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {recentUsers.map((u) => (
-                    <tr key={u.user_id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 text-slate-200 font-medium">{u.full_name || 'Unknown'}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{u.email || 'Not provided'}</td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">{[u.city, u.state].filter(Boolean).join(', ') || '—'}</td>
+                    <tr key={u.user_id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-foreground font-medium">{u.full_name || 'Unknown'}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{u.email || 'Not provided'}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{[u.city, u.state].filter(Boolean).join(', ') || '—'}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${u.is_verified ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${u.is_verified ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-muted text-muted-foreground border-border'}`}>
                           {u.is_verified ? 'Verified' : 'Unverified'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
-                        <button className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                        <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </td>
@@ -361,73 +361,73 @@ const StaffDashboard = () => {
         {/* Content Tab */}
         {activeTab === 'content' && (
           <div className="space-y-4">
-            <div className="staff-portal-card rounded-xl overflow-hidden">
-              <div className="p-5 border-b border-white/5">
-                <h2 className="text-sm font-semibold text-white">Flagged Content</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{flaggedContent.length} pending reports</p>
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+              <div className="p-5 border-b border-border">
+                <h2 className="text-sm font-semibold text-foreground">Flagged Content</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{flaggedContent.length} pending reports</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/5">
+                    <tr className="border-b border-border">
                       {['Type', 'Reason', 'Reporter', 'Status', 'Date', 'Actions'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {flaggedContent.map((content) => (
-                      <tr key={content.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                      <tr key={content.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                         <td className="px-4 py-3">
-                          <span className="px-2 py-0.5 rounded-full text-xs border bg-blue-500/10 text-blue-400 border-blue-500/20">{content.content_type}</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{content.content_type}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-300">{content.reason}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{content.profiles?.full_name || 'Anonymous'}</td>
+                        <td className="px-4 py-3 text-foreground/90 font-medium">{content.reason}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{content.profiles?.full_name || 'Anonymous'}</td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs border ${content.status === 'pending' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>{content.status}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs border ${content.status === 'pending' ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-muted text-muted-foreground border-border'}`}>{content.status}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{new Date(content.created_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(content.created_at).toLocaleDateString()}</td>
                         <td className="px-4 py-3">
-                          <button className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                          <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                             <Eye className="h-3.5 w-3.5" />
                           </button>
                         </td>
                       </tr>
                     ))}
                     {flaggedContent.length === 0 && (
-                      <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-600 text-sm">No flagged content pending</td></tr>
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">No flagged content pending</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <div className="staff-portal-card rounded-xl overflow-hidden">
-              <div className="p-5 border-b border-white/5">
-                <h2 className="text-sm font-semibold text-white">Recent Community Posts</h2>
+            <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+              <div className="p-5 border-b border-border">
+                <h2 className="text-sm font-semibold text-foreground">Recent Community Posts</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/5">
+                    <tr className="border-b border-border">
                       {['Title', 'Author', 'Type', 'Date', 'Actions'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {communityPosts.slice(0, 10).map((post) => (
-                      <tr key={post.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                        <td className="px-4 py-3 text-slate-200 max-w-xs truncate">{post.title || post.content?.substring(0, 50) + '...' || 'Untitled'}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{post.profiles?.full_name || 'Unknown'}</td>
+                      <tr key={post.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                        <td className="px-4 py-3 text-foreground font-medium max-w-xs truncate">{post.title || post.content?.substring(0, 50) + '...' || 'Untitled'}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{post.profiles?.full_name || 'Unknown'}</td>
                         <td className="px-4 py-3">
-                          <span className="px-2 py-0.5 rounded-full text-xs border bg-purple-500/10 text-purple-400 border-purple-500/20">{post.post_type}</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">{post.post_type}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{new Date(post.created_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(post.created_at).toLocaleDateString()}</td>
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleFlagContent(post.id, 'community_post')}
-                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                             title="Flag for review"
                           >
                             <Flag className="h-3.5 w-3.5" />
@@ -444,43 +444,43 @@ const StaffDashboard = () => {
 
         {/* Marketplace Tab */}
         {activeTab === 'marketplace' && (
-          <div className="staff-portal-card rounded-xl overflow-hidden">
-            <div className="p-5 border-b border-white/5">
-              <h2 className="text-sm font-semibold text-white">Marketplace Monitoring</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{marketplaceItems.length} recent items</p>
+          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="p-5 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground">Marketplace Monitoring</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{marketplaceItems.length} recent items</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/5">
+                  <tr className="border-b border-border">
                     {['Title', 'Seller', 'Price', 'Category', 'Status', 'Date', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {marketplaceItems.map((item) => (
-                    <tr key={item.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 text-slate-200 max-w-[140px] truncate">{item.title}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{item.profiles?.full_name || 'Unknown'}</td>
-                      <td className="px-4 py-3 text-emerald-400 font-medium">₦{(item.price || 0).toLocaleString()}</td>
+                    <tr key={item.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-foreground font-medium max-w-[140px] truncate">{item.title}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{item.profiles?.full_name || 'Unknown'}</td>
+                      <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">₦{(item.price || 0).toLocaleString()}</td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded-full text-xs border bg-blue-500/10 text-blue-400 border-blue-500/20">{item.category || 'Uncategorized'}</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">{item.category || 'Uncategorized'}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs border ${item.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${item.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-muted text-muted-foreground border-border'}`}>
                           {item.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(item.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
-                          <button className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                          <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                             <Eye className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleFlagContent(item.id, 'marketplace_item')}
-                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                           >
                             <Flag className="h-3.5 w-3.5" />
                           </button>
@@ -489,7 +489,7 @@ const StaffDashboard = () => {
                     </tr>
                   ))}
                   {marketplaceItems.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-600 text-sm">No marketplace items</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">No marketplace items</td></tr>
                   )}
                 </tbody>
               </table>

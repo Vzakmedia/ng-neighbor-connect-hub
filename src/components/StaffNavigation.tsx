@@ -111,10 +111,10 @@ const StaffNavigation = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen staff-portal-bg flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-          <p className="text-slate-400 text-sm">Loading staff portal...</p>
+          <div className="w-12 h-12 rounded-full border-4 border-emerald-500/20 border-t-emerald-600 animate-spin" />
+          <p className="text-muted-foreground text-sm">Loading staff portal...</p>
         </div>
       </div>
     );
@@ -122,16 +122,16 @@ const StaffNavigation = () => {
 
   if (!user || !userRole) {
     return (
-      <div className="min-h-screen staff-portal-bg flex items-center justify-center p-4">
-        <div className="staff-portal-card rounded-2xl p-8 text-center max-w-sm w-full">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
-            <Lock className="h-8 w-8 text-red-400" />
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-sm w-full shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center mx-auto mb-4">
+            <Lock className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
-          <p className="text-slate-400 text-sm">You don't have staff access to this system.</p>
+          <h1 className="text-xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground text-sm">You don't have staff access to this system.</p>
           <Button
             onClick={() => navigate("/")}
-            className="mt-6 w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+            className="mt-6 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Return to App
           </Button>
@@ -148,10 +148,10 @@ const StaffNavigation = () => {
       icon: Settings,
       route: "/admin",
       gradient: "from-red-600 to-rose-700",
-      glow: "shadow-red-500/20",
+      glow: "shadow-red-500/10",
       iconBg: "bg-red-500/10 border-red-500/20",
-      iconColor: "text-red-400",
-      badgeColor: "bg-red-500/10 text-red-300 border-red-500/20",
+      iconColor: "text-red-600 dark:text-red-400",
+      badgeColor: "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20",
       roles: ["super_admin"],
       level: "High Security",
       levelIcon: Lock,
@@ -163,10 +163,10 @@ const StaffNavigation = () => {
       icon: Shield,
       route: "/moderator",
       gradient: "from-blue-600 to-indigo-700",
-      glow: "shadow-blue-500/20",
+      glow: "shadow-blue-500/10",
       iconBg: "bg-blue-500/10 border-blue-500/20",
-      iconColor: "text-blue-400",
-      badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
       roles: ["moderator", "super_admin"],
       level: "Security",
       levelIcon: Shield,
@@ -178,10 +178,10 @@ const StaffNavigation = () => {
       icon: Building,
       route: "/manager",
       gradient: "from-emerald-600 to-teal-700",
-      glow: "shadow-emerald-500/20",
+      glow: "shadow-emerald-500/10",
       iconBg: "bg-emerald-500/10 border-emerald-500/20",
-      iconColor: "text-emerald-400",
-      badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
       roles: ["manager", "super_admin"],
       level: "Operations",
       levelIcon: BarChart3,
@@ -193,10 +193,10 @@ const StaffNavigation = () => {
       icon: HeadphonesIcon,
       route: "/support",
       gradient: "from-amber-600 to-orange-700",
-      glow: "shadow-amber-500/20",
+      glow: "shadow-amber-500/10",
       iconBg: "bg-amber-500/10 border-amber-500/20",
-      iconColor: "text-amber-400",
-      badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      badgeColor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
       roles: ["support", "super_admin"],
       level: "Assistance",
       levelIcon: HeadphonesIcon,
@@ -208,10 +208,10 @@ const StaffNavigation = () => {
       icon: Users,
       route: "/staff-dashboard",
       gradient: "from-purple-600 to-violet-700",
-      glow: "shadow-purple-500/20",
+      glow: "shadow-purple-500/10",
       iconBg: "bg-purple-500/10 border-purple-500/20",
-      iconColor: "text-purple-400",
-      badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
       roles: ["staff", "super_admin"],
       level: "Monitoring",
       levelIcon: Activity,
@@ -223,67 +223,67 @@ const StaffNavigation = () => {
   );
 
   const roleDisplayMap: Record<string, { label: string; color: string }> = {
-    super_admin: { label: "Super Admin", color: "text-red-400" },
-    moderator: { label: "Moderator", color: "text-blue-400" },
-    manager: { label: "Manager", color: "text-emerald-400" },
-    support: { label: "Support Agent", color: "text-amber-400" },
-    staff: { label: "Staff Member", color: "text-purple-400" },
+    super_admin: { label: "Super Admin", color: "text-red-600 dark:text-red-400" },
+    moderator: { label: "Moderator", color: "text-blue-600 dark:text-blue-400" },
+    manager: { label: "Manager", color: "text-emerald-600 dark:text-emerald-400" },
+    support: { label: "Support Agent", color: "text-amber-600 dark:text-amber-400" },
+    staff: { label: "Staff Member", color: "text-purple-600 dark:text-purple-400" },
   };
-  const roleDisplay = roleDisplayMap[userRole] || { label: userRole, color: "text-slate-400" };
+  const roleDisplay = roleDisplayMap[userRole] || { label: userRole, color: "text-muted-foreground" };
 
   const statItems = [
     {
       label: "Platform Users",
       value: statsLoading ? "—" : stats.totalUsers.toLocaleString(),
       icon: Users,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-500/10 border-emerald-500/20",
       sub: `+${stats.newUsersToday} today`,
     },
     {
       label: "Flagged Content",
       value: statsLoading ? "—" : stats.flaggedContent.toLocaleString(),
       icon: Flag,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-red-600 dark:text-red-400",
+      bg: "bg-red-500/10 border-red-500/20",
       sub: "Pending review",
     },
     {
       label: "Active Listings",
       value: statsLoading ? "—" : stats.activeMarketplaceItems.toLocaleString(),
       icon: ShoppingCart,
-      color: "text-blue-400",
-      bg: "bg-blue-500/10",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-500/10 border-blue-500/20",
       sub: `of ${stats.marketplaceItems} total`,
     },
     {
       label: "Community Posts",
       value: statsLoading ? "—" : stats.totalPosts.toLocaleString(),
       icon: FileText,
-      color: "text-purple-400",
-      bg: "bg-purple-500/10",
+      color: "text-purple-600 dark:text-purple-400",
+      bg: "bg-purple-500/10 border-purple-500/20",
       sub: "All time",
     },
   ];
 
   return (
-    <div className="min-h-screen staff-portal-bg">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Top Header Bar */}
-      <div className="staff-portal-header border-b border-white/5">
+      <div className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">NeighboursNG</p>
-              <p className="text-sm font-semibold text-white">Staff Portal</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighboursNG</p>
+              <p className="text-sm font-bold text-foreground">Staff Portal</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-emerald-300 font-medium">Live</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Live</span>
             </div>
             <div className={`text-sm font-semibold ${roleDisplay.color}`}>
               {roleDisplay.label}
@@ -292,7 +292,7 @@ const StaffNavigation = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/")}
-              className="text-slate-400 hover:text-white hover:bg-white/5 gap-2"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Exit Portal</span>
@@ -304,10 +304,10 @@ const StaffNavigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
             Welcome back, {user.email?.split("@")[0]}
           </h1>
-          <p className="text-slate-400">
+          <p className="text-muted-foreground">
             You have access to{" "}
             <span className={`font-semibold ${roleDisplay.color}`}>
               {accessibleDashboards.length} portal{accessibleDashboards.length !== 1 ? "s" : ""}
@@ -321,17 +321,17 @@ const StaffNavigation = () => {
           {statItems.map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <div key={i} className="staff-portal-card rounded-xl p-4">
+              <div key={i} className="bg-card border border-border rounded-xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                     {stat.label}
                   </p>
-                  <div className={`p-1.5 rounded-lg ${stat.bg}`}>
+                  <div className={`p-1.5 rounded-lg border ${stat.bg}`}>
                     <Icon className={`h-3.5 w-3.5 ${stat.color}`} />
                   </div>
                 </div>
                 <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                <p className="text-xs text-slate-500 mt-1">{stat.sub}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
               </div>
             );
           })}
@@ -339,8 +339,8 @@ const StaffNavigation = () => {
 
         {/* Dashboard Cards */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Your Portals</h2>
-          <p className="text-sm text-slate-500">Select a portal to access your management tools</p>
+          <h2 className="text-lg font-semibold text-foreground mb-1">Your Portals</h2>
+          <p className="text-sm text-muted-foreground">Select a portal to access your management tools</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -351,30 +351,32 @@ const StaffNavigation = () => {
               <button
                 key={dashboard.id}
                 onClick={() => navigate(dashboard.route)}
-                className={`staff-portal-card rounded-2xl p-6 text-left group hover:scale-[1.02] transition-all duration-200 hover:shadow-xl ${dashboard.glow} cursor-pointer`}
+                className="bg-card border border-border rounded-2xl p-6 text-left group hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className={`p-3 rounded-xl border ${dashboard.iconBg}`}
-                  >
-                    <Icon className={`h-6 w-6 ${dashboard.iconColor}`} />
+                <div>
+                  <div className="flex items-start justify-between mb-4">
+                    <div
+                      className={`p-3 rounded-xl border ${dashboard.iconBg}`}
+                    >
+                      <Icon className={`h-6 w-6 ${dashboard.iconColor}`} />
+                    </div>
+                    <div
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${dashboard.badgeColor}`}
+                    >
+                      <LevelIcon className="h-3 w-3" />
+                      {dashboard.level}
+                    </div>
                   </div>
-                  <div
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${dashboard.badgeColor}`}
-                  >
-                    <LevelIcon className="h-3 w-3" />
-                    {dashboard.level}
-                  </div>
+
+                  <h3 className="text-lg font-bold text-foreground mb-1.5 group-hover:text-primary transition-colors">
+                    {dashboard.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    {dashboard.description}
+                  </p>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mb-1.5 group-hover:text-emerald-300 transition-colors">
-                  {dashboard.title}
-                </h3>
-                <p className="text-sm text-slate-400 leading-relaxed mb-4">
-                  {dashboard.description}
-                </p>
-
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-300 group-hover:text-white transition-colors">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground/85 group-hover:text-foreground transition-colors mt-auto">
                   <span>Open Portal</span>
                   <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -385,9 +387,9 @@ const StaffNavigation = () => {
 
         {/* Security Notice */}
         <div className="mt-8 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-          <AlertCircle className="h-4 w-4 text-amber-400 flex-shrink-0" />
-          <p className="text-sm text-slate-400">
-            <span className="text-amber-300 font-medium">Security Notice:</span> All staff actions
+          <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="text-amber-600 dark:text-amber-400 font-semibold">Security Notice:</span> All staff actions
             are logged and monitored for security compliance. Unauthorized access is prohibited.
           </p>
         </div>

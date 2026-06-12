@@ -576,14 +576,12 @@ All colors MUST be HSL.
    ============================================================ */
 
 /* Portal background: deep slate with subtle radial gradient */
-.staff-portal-bg,
 .admin-portal-bg {
   background: linear-gradient(135deg, #0a0f1e 0%, #0d1626 40%, #0a1220 100%);
   background-attachment: fixed;
   position: relative;
 }
 
-.staff-portal-bg::before,
 .admin-portal-bg::before {
   content: '';
   position: fixed;
@@ -596,7 +594,6 @@ All colors MUST be HSL.
 }
 
 /* Glassmorphism card */
-.staff-portal-card,
 .admin-portal-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -606,14 +603,12 @@ All colors MUST be HSL.
   z-index: 1;
 }
 
-.staff-portal-card:hover,
 .admin-portal-card:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Header bar */
-.staff-portal-header,
 .admin-portal-header {
   background: rgba(10, 15, 30, 0.8);
   backdrop-filter: blur(16px);
