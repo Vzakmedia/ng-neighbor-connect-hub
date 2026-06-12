@@ -4,6 +4,7 @@ import { createSafeSubscription } from "@/utils/realtimeUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { connectAblyChat } from "@/services/ablyChat";
 
 // Event callback types
 type CommunityPostCallback = (payload: any) => void;
@@ -52,7 +53,24 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
   const postCommentCallbacks = useRef<Set<PostCommentCallback>>(new Set());
   const readReceiptCallbacks = useRef<Set<ReadReceiptCallback>>(new Set());
 
-  const seenClientMessageIds = useRef<Set<string>>(new Set()); // dedupe
+  const seenClientMessageIds = useRef<Set<string>>(new Set()); // dedupe (optimistic sends)
+
+  // Cross-source dedupe: messages arrive via BOTH Ably (primary, fast) and
+  // Supabase postgres_changes (fallback). Whichever arrives second is dropped.
+  const seenEventKeys = useRef<Set<string>>(new Set());
+  const markEventSeen = (key: string): boolean => {
+    if (seenEventKeys.current.has(key)) return false;
+    seenEventKeys.current.add(key);
+    // Bound memory: drop the oldest half once the set grows large
+    if (seenEventKeys.current.size > 2000) {
+      let i = 0;
+      for (const k of seenEventKeys.current) {
+        seenEventKeys.current.delete(k);
+        if (++i >= 1000) break;
+      }
+    }
+    return true;
+  };
 
   const isCommunityRoute = location.pathname === "/community" || location.pathname === "/";
 
@@ -78,6 +96,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             const msg = payload.new;
             if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
             if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+            if (msg.id && !markEventSeen(`ins:${msg.id}`)) return; // already delivered via Ably
             messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
           },
         ),
@@ -104,6 +123,7 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
             const msg = payload.new;
             if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
             if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+            if (msg.id && !markEventSeen(`ins:${msg.id}`)) return; // already delivered via Ably
             messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
           },
         ),
@@ -224,6 +244,43 @@ export const RealtimeProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscriptions.forEach((sub) => sub?.unsubscribe());
       seenClientMessageIds.current.clear();
+      seenEventKeys.current.clear();
+    };
+  }, [user]);
+
+  // Ably: primary chat delivery layer. Supabase postgres_changes (above)
+  // stays active as the fallback; markEventSeen dedupes the dual delivery.
+  // If the Ably token endpoint or key isn't configured, this no-ops.
+  useEffect(() => {
+    if (!user) return;
+
+    let cleanup: (() => void) | null = null;
+    let cancelled = false;
+
+    connectAblyChat(user.id, (event) => {
+      const msg = event.data as any;
+      if (!msg?.id) return;
+
+      if (event.name === 'new_message') {
+        if (msg.client_message_id && seenClientMessageIds.current.has(msg.client_message_id)) return;
+        if (msg.client_message_id) seenClientMessageIds.current.add(msg.client_message_id);
+        if (!markEventSeen(`ins:${msg.id}`)) return; // already delivered via Supabase
+        messageCallbacks.current.forEach((cb) => cb({ eventType: 'INSERT', new: msg }));
+      } else if (event.name === 'message_updated') {
+        if (!markEventSeen(`upd:${msg.id}:${msg.status}:${msg.read_at ?? ''}`)) return;
+        messageCallbacks.current.forEach((cb) => cb({ eventType: 'UPDATE', new: msg }));
+        if (msg.status === 'read' && msg.sender_id === user.id) {
+          readReceiptCallbacks.current.forEach((cb) => cb(msg.id));
+        }
+      }
+    }).then((dispose) => {
+      if (cancelled) dispose();
+      else cleanup = dispose;
+    });
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
     };
   }, [user]);
 
