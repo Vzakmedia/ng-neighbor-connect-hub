@@ -64,7 +64,7 @@ const EmergencyAlertCard = ({ alert, onClick, getTimeSince }: EmergencyAlertCard
                 </Badge>
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   <AlertIcon className="h-3 w-3 mr-1" />
-                  {alert.alert_type.replace('_', ' ')}
+                  {alert.alert_type.replace(/_/g, ' ')}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">

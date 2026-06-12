@@ -13,7 +13,7 @@ import EmergencyStatsComponent from './EmergencyStats';
 import HorizontalFilters, { FilterCategory } from './HorizontalFilters';
 import SafetyAlertsSplitView from './SafetyAlertsSplitView';
 import PanicAlertManager from './PanicAlertManager';
-import AlertStatusManager from '../AlertStatusManager';
+import { AlertDetailDialog } from './AlertDetailDialog';
 
 const EmergencyCenter = () => {
   const { user } = useAuth();
@@ -184,14 +184,14 @@ const EmergencyCenter = () => {
       />
 
       {/* Alert Details Dialog */}
-      {selectedAlert && (
-        <AlertStatusManager
-          alert={selectedAlert}
-          onStatusUpdate={handleStatusUpdate}
-          isOwner={selectedAlert.user_id === user?.id}
-          canModerate={canModerate}
-        />
-      )}
+      <AlertDetailDialog
+        alert={selectedAlert}
+        isOpen={!!selectedAlert}
+        onClose={() => setSelectedAlert(null)}
+        onStatusUpdate={handleStatusUpdate}
+        isOwner={selectedAlert?.user_id === user?.id}
+        canModerate={canModerate}
+      />
 
       {/* Panic Alert Details Dialog */}
       <PanicAlertManager

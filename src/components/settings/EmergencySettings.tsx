@@ -1,25 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, Shield, Clock as Timer, Users, MapPin, MessageCircle, Phone, Smartphone } from '@/lib/icons';
+import { Shield, Users, MapPin } from '@/lib/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-type SituationType = 'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'other';
 
 interface EmergencyPreferences {
   auto_alert_contacts: boolean;
   auto_alert_public: boolean;
   share_location_with_contacts: boolean;
   share_location_with_public: boolean;
-  default_situation_type: SituationType;
-  countdown_duration: number;
 }
 
 const EmergencySettings = () => {
@@ -31,70 +23,29 @@ const EmergencySettings = () => {
     auto_alert_public: true,
     share_location_with_contacts: true,
     share_location_with_public: false,
-    default_situation_type: 'other' as SituationType,
-    countdown_duration: 3
   });
 
   const [loading, setLoading] = useState(false);
 
-  const situationTypes = [
-    { value: 'medical_emergency', label: 'Medical Emergency', icon: '🏥' },
-    { value: 'fire', label: 'Fire', icon: '🔥' },
-    { value: 'break_in', label: 'Break In', icon: '🔓' },
-    { value: 'assault', label: 'Assault', icon: '⚠️' },
-    { value: 'accident', label: 'Accident', icon: '🚗' },
-    { value: 'natural_disaster', label: 'Natural Disaster', icon: '🌪️' },
-    { value: 'suspicious_activity', label: 'Suspicious Activity', icon: '👁️' },
-    { value: 'domestic_violence', label: 'Domestic Violence', icon: '🏠' },
-    { value: 'other', label: 'Other', icon: '❓' }
-  ];
-
   const loadPreferences = useCallback(async () => {
     if (!user) return;
-
     try {
-      if (import.meta.env.DEV) {
-        console.log('Loading emergency preferences for user:', user.id);
-      }
       const { data, error } = await supabase
         .from('emergency_preferences')
-        .select('*')
+        .select('auto_alert_contacts, auto_alert_public, share_location_with_contacts, share_location_with_public')
         .eq('user_id', user.id)
         .maybeSingle();
-
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.error('Error loading preferences:', error);
-        }
-        throw error;
-      }
-
+      if (error) throw error;
       if (data) {
-        if (import.meta.env.DEV) {
-          console.log('Loaded preferences:', data);
-        }
         setPreferences({
           auto_alert_contacts: data.auto_alert_contacts,
           auto_alert_public: data.auto_alert_public,
           share_location_with_contacts: data.share_location_with_contacts,
           share_location_with_public: data.share_location_with_public,
-          default_situation_type: data.default_situation_type as SituationType,
-          countdown_duration: data.countdown_duration
         });
-      } else {
-        if (import.meta.env.DEV) {
-          console.log('No existing preferences found, using defaults');
-        }
       }
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Error loading emergency preferences:', error);
-      }
-      toast({
-        title: "Error",
-        description: "Failed to load emergency preferences.",
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: 'Failed to load emergency preferences.', variant: 'destructive' });
     }
   }, [user, toast]);
 
@@ -126,94 +77,18 @@ const EmergencySettings = () => {
         description: "Your emergency preferences have been updated.",
       });
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Error saving emergency preferences:', error);
-      }
-      toast({
-        title: "Error",
-        description: "Failed to save emergency preferences.",
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: 'Failed to save emergency preferences.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePreferenceChange = (key: keyof EmergencyPreferences, value: boolean | string | number) => {
-    savePreferences({ [key]: value as any });
+  const handlePreferenceChange = (key: keyof EmergencyPreferences, value: boolean) => {
+    savePreferences({ [key]: value });
   };
 
   return (
     <div className="space-y-6">
-      {/* Default Emergency Situation */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Default Emergency Situation
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="situation-type">What type of emergency will be pre-selected?</Label>
-            <Select
-              value={preferences.default_situation_type}
-              onValueChange={(value) => handlePreferenceChange('default_situation_type', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {situationTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    <div className="flex items-center gap-2">
-                      <span>{type.icon}</span>
-                      <span>{type.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            This situation type will be pre-selected when you press the panic button, but you can change it before sending the alert.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Timing Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Timer className="h-5 w-5" />
-            Timing Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="countdown-duration">Countdown Duration (seconds)</Label>
-            <Select
-              value={preferences.countdown_duration.toString()}
-              onValueChange={(value) => handlePreferenceChange('countdown_duration', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">3 seconds</SelectItem>
-                <SelectItem value="5">5 seconds</SelectItem>
-                <SelectItem value="10">10 seconds</SelectItem>
-                <SelectItem value="15">15 seconds</SelectItem>
-                <SelectItem value="0">No countdown (instant)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            How long to wait before automatically sending the emergency alert after pressing the panic button.
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Contact Alerting */}
       <Card>
         <CardHeader>

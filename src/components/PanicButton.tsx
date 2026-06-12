@@ -1,18 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { 
-  ExclamationTriangleIcon, 
-  PhoneIcon, 
-  MapPinIcon, 
-  ClockIcon, 
+import {
+  ExclamationTriangleIcon,
+  MapPinIcon,
   ShieldCheckIcon,
-  BoltIcon,
   CheckCircleIcon,
   XMarkIcon,
   UsersIcon
@@ -25,20 +19,31 @@ import { useSecurityAudit } from '@/hooks/useSecurityAudit';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
 import { useNativeHaptics } from '@/hooks/mobile/useNativeHaptics';
 
+type SituationType = 'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'violence' | 'other';
+
+const SITUATION_TO_ALERT_TYPE: Record<SituationType, string> = {
+  medical_emergency: 'other',
+  fire: 'fire',
+  break_in: 'break_in',
+  assault: 'harassment',
+  violence: 'harassment',
+  kidnapping: 'other',
+  accident: 'accident',
+  natural_disaster: 'other',
+  suspicious_activity: 'suspicious_activity',
+  domestic_violence: 'harassment',
+  other: 'other',
+};
+
 const PanicButton = () => {
   const { user } = useAuth();
   const { logPanicButton } = useSecurityAudit();
   const { getCurrentPosition } = useNativePermissions();
   const { impact, notification, vibrate } = useNativeHaptics();
-  const [isPressed, setIsPressed] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const [selectedSituation, setSelectedSituation] = useState<'medical_emergency' | 'fire' | 'break_in' | 'assault' | 'accident' | 'natural_disaster' | 'suspicious_activity' | 'domestic_violence' | 'kidnapping' | 'violence' | 'other'>('other');
   const [preferences, setPreferences] = useState<any>(null);
-  const isCancelledRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const situationTypes = [
     { value: 'medical_emergency', label: 'Medical Emergency', icon: '🏥' },
@@ -58,32 +63,15 @@ const PanicButton = () => {
     loadPreferences();
   }, [user]);
 
-  useEffect(() => () => clearInterval(timerRef.current), []);
-
   const loadPreferences = async () => {
     if (!user) return;
-    
     try {
       const { data, error } = await supabase
         .from('emergency_preferences')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-
-      if (error) {
-        console.error('Error loading emergency preferences:', error);
-        return;
-      }
-
-      if (data) {
-        setPreferences(data);
-        if (data.default_situation_type) {
-          setSelectedSituation(data.default_situation_type);
-        }
-        if (data.countdown_duration !== null) {
-          setCountdown(data.countdown_duration);
-        }
-      }
+      if (!error && data) setPreferences(data);
     } catch (error) {
       console.error('Error loading emergency preferences:', error);
     }
@@ -120,8 +108,8 @@ const PanicButton = () => {
     }
   };
 
-  const triggerPanicAlert = async (situationType?: typeof selectedSituation) => {
-    const activeSituation = situationType ?? selectedSituation;
+  const triggerPanicAlert = async (situationType: SituationType) => {
+    const activeSituation = situationType;
 
     if (!user) {
       toast({
@@ -285,13 +273,14 @@ const PanicButton = () => {
       if (shouldAlertPublic) {
         const shareLocationWithPublic = preferences?.share_location_with_public !== false;
 
+        const situationLabel = situationTypes.find(s => s.value === activeSituation)?.label ?? 'Emergency';
         const { error: alertError } = await supabase
           .from('safety_alerts')
           .insert({
             user_id: user.id,
-            title: 'Emergency Alert',
-            description: `Emergency situation reported: ${situationTypes.find(s => s.value === activeSituation)?.label}`,
-            alert_type: 'other',
+            title: `Emergency: ${situationLabel}`,
+            description: `${situationLabel} reported by ${userName}${sanitizedAddress && !shareLocationWithPublic ? '' : ` near ${sanitizedAddress}`}. Please stay alert and keep safe.`,
+            alert_type: SITUATION_TO_ALERT_TYPE[activeSituation],
             severity: 'critical',
             latitude: shareLocationWithPublic ? location.latitude : parseFloat(location.latitude.toFixed(2)),
             longitude: shareLocationWithPublic ? location.longitude : parseFloat(location.longitude.toFixed(2)),
@@ -354,46 +343,14 @@ const PanicButton = () => {
   };
 
   const handlePanicButtonPress = () => {
-    // Heavy haptic feedback when panic button is pressed
     vibrate(500);
     impact('heavy');
-
-    isCancelledRef.current = false;
-    setIsPressed(true);
     setIsConfirming(true);
-    const duration = preferences?.countdown_duration || 3;
-    setCountdown(duration);
-
-    if (duration === 0) {
-      // No countdown, trigger immediately
-      triggerPanicAlert();
-      return;
-    }
-
-    // Countdown timer
-    timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          if (!isCancelledRef.current) {
-            triggerPanicAlert();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const cancelPanic = () => {
-    // Light haptic feedback when canceling
     impact('light');
-
-    isCancelledRef.current = true;
-    clearInterval(timerRef.current);
-    setIsPressed(false);
     setIsConfirming(false);
-    setCountdown(preferences?.countdown_duration || 3);
   };
 
   if (isActivated) {
