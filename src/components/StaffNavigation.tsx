@@ -23,6 +23,8 @@ import {
 } from "@/lib/icons";
 import { useNavigate } from "react-router-dom";
 
+const LOGO_URL = "https://cowiviqhrnmhttugozbz.supabase.co/storage/v1/object/public/onboarding-assets/neighborlink-logo.jpeg";
+
 const StaffNavigation = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -154,7 +156,6 @@ const StaffNavigation = () => {
       badgeColor: "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20",
       roles: ["super_admin"],
       level: "High Security",
-      levelIcon: Lock,
     },
     {
       id: "moderator",
@@ -169,7 +170,6 @@ const StaffNavigation = () => {
       badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
       roles: ["moderator", "super_admin"],
       level: "Security",
-      levelIcon: Shield,
     },
     {
       id: "manager",
@@ -184,7 +184,6 @@ const StaffNavigation = () => {
       badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
       roles: ["manager", "super_admin"],
       level: "Operations",
-      levelIcon: BarChart3,
     },
     {
       id: "support",
@@ -199,7 +198,6 @@ const StaffNavigation = () => {
       badgeColor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
       roles: ["support", "super_admin"],
       level: "Assistance",
-      levelIcon: HeadphonesIcon,
     },
     {
       id: "staff",
@@ -214,7 +212,6 @@ const StaffNavigation = () => {
       badgeColor: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
       roles: ["staff", "super_admin"],
       level: "Monitoring",
-      levelIcon: Activity,
     },
   ];
 
@@ -272,11 +269,9 @@ const StaffNavigation = () => {
       <div className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
+            <img src={LOGO_URL} alt="NeighborLink Logo" className="h-8 w-8 rounded-full object-cover shrink-0" />
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighboursNG</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighborLink</p>
               <p className="text-sm font-bold text-foreground">Staff Portal</p>
             </div>
           </div>
@@ -346,12 +341,11 @@ const StaffNavigation = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {accessibleDashboards.map((dashboard) => {
             const Icon = dashboard.icon;
-            const LevelIcon = dashboard.levelIcon;
             return (
               <button
                 key={dashboard.id}
                 onClick={() => navigate(dashboard.route)}
-                className="bg-card border border-border rounded-2xl p-6 text-left group hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between"
+                className="bg-card border border-border rounded-2xl p-6 text-left group hover:shadow-md transition-all hover:-translate-y-0.5 duration-200 cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between mb-4">
@@ -361,9 +355,8 @@ const StaffNavigation = () => {
                       <Icon className={`h-6 w-6 ${dashboard.iconColor}`} />
                     </div>
                     <div
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${dashboard.badgeColor}`}
+                      className={`px-2.5 py-1 rounded-full border text-xs font-semibold ${dashboard.badgeColor}`}
                     >
-                      <LevelIcon className="h-3 w-3" />
                       {dashboard.level}
                     </div>
                   </div>

@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+const LOGO_URL = "https://cowiviqhrnmhttugozbz.supabase.co/storage/v1/object/public/onboarding-assets/neighborlink-logo.jpeg";
+
 const StaffDashboard = () => {
   const { user } = useAuth();
   const { role } = useAdminStatus();
@@ -163,11 +165,9 @@ const StaffDashboard = () => {
       <div className="bg-card border-b border-border sticky top-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </div>
+            <img src={LOGO_URL} alt="NeighborLink Logo" className="h-8 w-8 rounded-full object-cover shrink-0" />
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighboursNG</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighborLink</p>
               <p className="text-sm font-bold text-foreground">Staff Dashboard</p>
             </div>
           </div>
@@ -227,7 +227,7 @@ const StaffDashboard = () => {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (

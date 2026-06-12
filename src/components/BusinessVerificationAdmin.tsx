@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuditLog } from '@/hooks/useAdminAuditLog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,6 +57,7 @@ interface BusinessApplication {
 const BusinessVerificationAdmin = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logContentModeration } = useAdminAuditLog();
   const [applications, setApplications] = useState<BusinessApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<BusinessApplication | null>(null);
@@ -139,6 +141,14 @@ const BusinessVerificationAdmin = () => {
         .eq('id', applicationId as any);
 
       if (error) throw error;
+
+      // Audit trail for the verification decision
+      logContentModeration(
+        action === 'approve' ? 'admin_content_approve' : 'admin_content_remove',
+        applicationId,
+        'business',
+        reviewNotes || undefined
+      );
 
       // Send notification to business owner
       const application = applications.find(app => app.id === applicationId);

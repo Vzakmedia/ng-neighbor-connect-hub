@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft } from '@/lib/icons';
+import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft, Grid, RefreshCw } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDashboard } from "@/components/alert-system/AlertDashboard";
 import { Textarea } from "@/components/ui/textarea";
 import { EnhancedSupportTicketSystem } from '@/components/support/EnhancedSupportTicketSystem';
+
+const LOGO_URL = "https://cowiviqhrnmhttugozbz.supabase.co/storage/v1/object/public/onboarding-assets/neighborlink-logo.jpeg";
 
 const SupportDashboard = () => {
   const { user } = useAuth();
@@ -153,25 +155,51 @@ const SupportDashboard = () => {
   if (!user) return <Navigate to="/auth" replace />;
 
   return (
-    <div className="min-h-screen w-full px-4 py-8 bg-background text-foreground">
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Support Dashboard</h1>
-          <p className="text-muted-foreground">User assistance and emergency response center</p>
-          <div className="flex items-center mt-2">
-            <div className="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
-            <span className="text-sm text-muted-foreground">Live support active</span>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <div className="bg-card border-b border-border sticky top-0 z-50">
+        <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="NeighborLink Logo" className="h-8 w-8 rounded-full object-cover shrink-0" />
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">NeighborLink</p>
+              <p className="text-sm font-bold text-foreground">Support Dashboard</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">Live</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/staff-portal')}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
+            >
+              <Grid className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Portal Home</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/company')}
+              className="flex items-center gap-1.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Back to Landing</span>
+            </Button>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/company')}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Landing
-        </Button>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Support Dashboard</h1>
+            <p className="text-muted-foreground text-sm mt-1">User assistance and emergency response center</p>
+          </div>
+        </div>
 
       <Tabs defaultValue="overview" className="flex gap-6" orientation="vertical">
         <TabsList className="flex flex-col h-fit w-48 space-y-1">
@@ -407,6 +435,7 @@ const SupportDashboard = () => {
           </TabsContent>
         </div>
       </Tabs>
+      </div>
     </div>
   );
 };

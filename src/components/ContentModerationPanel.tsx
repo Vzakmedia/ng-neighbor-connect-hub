@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminAuditLog } from '@/hooks/useAdminAuditLog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ interface PendingMarketplaceItem {
 
 export default function ContentModerationPanel() {
   const { user } = useAuth();
+  const { logContentModeration } = useAdminAuditLog();
   const [pendingServices, setPendingServices] = useState<PendingService[]>([]);
   const [pendingItems, setPendingItems] = useState<PendingMarketplaceItem[]>([]);
   const [filteredServices, setFilteredServices] = useState<PendingService[]>([]);
@@ -155,6 +157,14 @@ export default function ContentModerationPanel() {
         });
         if (error) throw error;
       }
+
+      // Audit trail for the moderation decision
+      logContentModeration(
+        status === 'approved' ? 'admin_content_approve' : 'admin_content_remove',
+        itemId,
+        type === 'service' ? 'service' : 'marketplace_item',
+        status === 'rejected' ? rejectionReason : undefined
+      );
 
       toast({
         title: "Success",
