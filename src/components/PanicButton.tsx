@@ -45,6 +45,7 @@ const PanicButton = () => {
   const [isActivated, setIsActivated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState<any>(null);
+  const [selectedSituation, setSelectedSituation] = useState<SituationType | null>(null);
 
   const situationTypes = [
     { value: 'medical_emergency', label: 'Medical Emergency', icon: '🏥' },
@@ -415,9 +416,9 @@ const PanicButton = () => {
                           : 'border-muted hover:border-red-200'
                       }`}
                       onClick={() => {
-                        setSelectedSituation(type.value as any);
+                        setSelectedSituation(type.value as SituationType);
                         // Auto-trigger alert when card is clicked, passing value directly to avoid stale closure
-                        triggerPanicAlert(type.value as any);
+                        triggerPanicAlert(type.value as SituationType);
                       }}
                     >
                       <CardContent className="p-3 text-center">
