@@ -75,6 +75,11 @@ const AdminMarketplace    = lazyWithRetry(() => import("./pages/admin/Marketplac
 const AdminIntegrations   = lazyWithRetry(() => import("./pages/admin/Integrations"));
 const AdminSecurity       = lazyWithRetry(() => import("./pages/admin/Security"));
 const AdminApiRequests    = lazyWithRetry(() => import("./pages/admin/ApiRequests"));
+const AdminBusiness       = lazyWithRetry(() => import("./pages/admin/Business"));
+const AdminAdvertising    = lazyWithRetry(() => import("./pages/admin/Advertising"));
+const AdminEmail          = lazyWithRetry(() => import("./pages/admin/Email"));
+const AdminStaff          = lazyWithRetry(() => import("./pages/admin/Staff"));
+const AdminPerformance    = lazyWithRetry(() => import("./pages/admin/Performance"));
 const Business = lazyWithRetry(() => import("./pages/Business"));
 const Advertising = lazyWithRetry(() => import("./pages/Advertising"));
 const ModeratorDashboard = lazyWithRetry(() => import("./pages/ModeratorDashboard"));
@@ -377,6 +382,11 @@ const App = () => {
                             <Route path="content"      element={<AdminContent />} />
                             <Route path="analytics"    element={<AdminAnalytics />} />
                             <Route path="marketplace"  element={<AdminMarketplace />} />
+                            <Route path="business"     element={<AdminBusiness />} />
+                            <Route path="advertising"  element={<AdminAdvertising />} />
+                            <Route path="email"        element={<AdminEmail />} />
+                            <Route path="staff"        element={<AdminStaff />} />
+                            <Route path="performance"  element={<AdminPerformance />} />
                             <Route path="integrations" element={<AdminIntegrations />} />
                             <Route path="security"     element={<AdminSecurity />} />
                             <Route path="api-requests" element={<AdminApiRequests />} />

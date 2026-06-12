@@ -18,6 +18,13 @@ import {
   ChevronRight,
   Megaphone,
   ClipboardList,
+  Briefcase,
+  TrendingUp,
+  Mail,
+  UserCog,
+  Activity,
+  Home,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +42,15 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Overview',       path: '/admin',              icon: LayoutDashboard },
   { label: 'Users',          path: '/admin/users',        icon: Users },
+  { label: 'Staff',          path: '/admin/staff',        icon: UserCog },
   { label: 'Emergency',      path: '/admin/emergency',    icon: AlertTriangle },
   { label: 'Content',        path: '/admin/content',      icon: MessageSquare },
   { label: 'Marketplace',    path: '/admin/marketplace',  icon: ShoppingCart },
+  { label: 'Business',       path: '/admin/business',     icon: Briefcase },
+  { label: 'Advertising',    path: '/admin/advertising',  icon: TrendingUp },
+  { label: 'Email',          path: '/admin/email',        icon: Mail },
   { label: 'Analytics',      path: '/admin/analytics',    icon: BarChart3 },
+  { label: 'Performance',    path: '/admin/performance',  icon: Activity },
   { label: 'Integrations',   path: '/admin/integrations', icon: Plug },
   { label: 'Security',       path: '/admin/security',     icon: Shield },
   { label: 'API Requests',   path: '/admin/api-requests', icon: FileKey },
@@ -121,6 +133,32 @@ export function AdminSidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Quick links: staff portal + back to the app */}
+      <div className="border-t border-slate-700 px-2 py-2 space-y-1">
+        <NavLink
+          to="/staff-portal"
+          className={cn(
+            'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors',
+            collapsed && 'justify-center px-0',
+          )}
+          title={collapsed ? 'Staff Portal' : undefined}
+        >
+          <Building2 className="h-5 w-5 shrink-0" />
+          {!collapsed && <span className="truncate">Staff Portal</span>}
+        </NavLink>
+        <NavLink
+          to="/dashboard"
+          className={cn(
+            'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors',
+            collapsed && 'justify-center px-0',
+          )}
+          title={collapsed ? 'Back to App' : undefined}
+        >
+          <Home className="h-5 w-5 shrink-0" />
+          {!collapsed && <span className="truncate">Back to App</span>}
+        </NavLink>
+      </div>
 
       {/* User info + sign out */}
       <div className="border-t border-slate-700 px-2 py-3 space-y-2">
