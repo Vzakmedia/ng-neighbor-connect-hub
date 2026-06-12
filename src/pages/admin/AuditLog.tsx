@@ -46,6 +46,8 @@ export const AuditLog = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [actionFilter, setActionFilter] = useState('all');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
     const [page, setPage] = useState(0);
     const [total, setTotal] = useState(0);
 
@@ -62,6 +64,12 @@ export const AuditLog = () => {
 
             if (actionFilter !== 'all') {
                 query = query.eq('action_type', actionFilter);
+            }
+            if (fromDate) {
+                query = query.gte('created_at', fromDate);
+            }
+            if (toDate) {
+                query = query.lte('created_at', `${toDate}T23:59:59.999Z`);
             }
 
             const { data, error, count } = await query;
@@ -91,7 +99,7 @@ export const AuditLog = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, actionFilter, toast]);
+    }, [page, actionFilter, fromDate, toDate, toast]);
 
     useEffect(() => {
         fetchEntries();
@@ -182,6 +190,23 @@ export const AuditLog = () => {
                                 <SelectItem value="admin_2fa_bypass">2FA Bypass</SelectItem>
                             </SelectContent>
                         </Select>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => { setFromDate(e.target.value); setPage(0); }}
+                                className="w-[150px]"
+                                aria-label="From date"
+                            />
+                            <span className="text-muted-foreground text-sm">to</span>
+                            <Input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => { setToDate(e.target.value); setPage(0); }}
+                                className="w-[150px]"
+                                aria-label="To date"
+                            />
+                        </div>
                     </div>
 
                     {loading ? (

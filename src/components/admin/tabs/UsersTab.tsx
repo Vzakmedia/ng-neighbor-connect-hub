@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ const BULK_ROLE_OPTIONS = [
 ];
 
 export const UsersTab = ({ isSuperAdmin }: UsersTabProps) => {
+    const navigate = useNavigate();
     const {
         users,
         loading,
@@ -98,7 +100,7 @@ export const UsersTab = ({ isSuperAdmin }: UsersTabProps) => {
                                 <CardTitle>User Management</CardTitle>
                                 <CardDescription>Manage users, roles, and permissions</CardDescription>
                             </div>
-                            <Button variant="outline">
+                            <Button variant="outline" onClick={() => navigate('/admin/staff')}>
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Invite User
                             </Button>
