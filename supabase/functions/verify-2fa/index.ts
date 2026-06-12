@@ -11,13 +11,19 @@ serve(async (req) => {
   try {
     const ctx = await getRequestContext(req, { requireUser: true });
     if (!ctx.user) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      return jsonResponse(req, { error: "Unauthorized" }, 401);
     }
 
     const userId = ctx.user.id;
 
     // Rate-limit: 10 attempts per 15 minutes per user
-    await enforceRateLimit(ctx.admin, userId, "verify_2fa", 10, 900);
+    await enforceRateLimit({
+      admin: ctx.admin,
+      action: "verify-2fa",
+      scope: `user:${userId}`,
+      limit: 10,
+      windowMinutes: 15,
+    });
 
     const body = await req.json();
     const code: string | undefined = body?.code;
@@ -26,7 +32,7 @@ serve(async (req) => {
     // ── TOTP path ────────────────────────────────────────────────────────────
     if (code) {
       if (!/^\d{6}$/.test(code)) {
-        return jsonResponse({ success: false, error: "Invalid code format" }, 400);
+        return jsonResponse(req, { success: false, error: "Invalid code format" }, 400);
       }
 
       // Fetch secret with service-role key — never exposed to the client
@@ -38,7 +44,7 @@ serve(async (req) => {
         .maybeSingle();
 
       if (fetchErr || !row) {
-        return jsonResponse({ success: false, error: "2FA not configured" }, 400);
+        return jsonResponse(req, { success: false, error: "2FA not configured" }, 400);
       }
 
       const totp = new TOTP({ secret: row.secret });
@@ -50,7 +56,7 @@ serve(async (req) => {
           _attempt_type: "totp",
           _success: false,
         });
-        return jsonResponse({ success: false, error: "Invalid code" }, 401);
+        return jsonResponse(req, { success: false, error: "Invalid code" }, 401);
       }
 
       // Record verification server-side (service role bypasses RLS)
@@ -74,7 +80,7 @@ serve(async (req) => {
         }),
       ]);
 
-      return jsonResponse({ success: true });
+      return jsonResponse(req, { success: true });
     }
 
     // ── Backup-code path ─────────────────────────────────────────────────────
@@ -93,7 +99,7 @@ serve(async (req) => {
       });
 
       if (!isValid) {
-        return jsonResponse({ success: false, error: "Invalid backup code" }, 401);
+        return jsonResponse(req, { success: false, error: "Invalid backup code" }, 401);
       }
 
       await ctx.admin.from("user_2fa_sessions").upsert(
@@ -105,13 +111,13 @@ serve(async (req) => {
         { onConflict: "user_id" }
       );
 
-      return jsonResponse({ success: true });
+      return jsonResponse(req, { success: true });
     }
 
-    return jsonResponse({ error: "Missing code or backup_code" }, 400);
+    return jsonResponse(req, { error: "Missing code or backup_code" }, 400);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Internal error";
     const status = msg === "Unauthorized" ? 401 : msg === "Rate limit exceeded" ? 429 : 500;
-    return jsonResponse({ error: msg }, status);
+    return jsonResponse(req, { error: msg }, status);
   }
 });
