@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Users, Flag, ShoppingCart, Eye, FileText, RefreshCw, TrendingUp, Activity, Zap, Grid } from '@/lib/icons';
+import { Users, Flag, ShoppingCart, Eye, FileText, RefreshCw, TrendingUp, Activity, Zap, Grid, Home } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -193,7 +193,16 @@ const StaffDashboard = () => {
               className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
             >
               <Grid className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">Portal Home</span>
+              <span className="hidden sm:inline text-xs">Staff Portal</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
+            >
+              <Home className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Back to App</span>
             </Button>
           </div>
         </div>

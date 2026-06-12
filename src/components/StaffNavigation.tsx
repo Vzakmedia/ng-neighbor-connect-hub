@@ -286,11 +286,11 @@ const StaffNavigation = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/dashboard")}
               className="text-muted-foreground hover:text-foreground hover:bg-accent gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Exit Portal</span>
+              <span className="hidden sm:inline">Back to App</span>
             </Button>
           </div>
         </div>

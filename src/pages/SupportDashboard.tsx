@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft, Grid, RefreshCw } from '@/lib/icons';
+import { Volume2 as HeadphonesIcon, Users, AlertTriangle, MessageSquare, Phone, Mail, Clock, CheckCircle, ArrowLeft, Grid, RefreshCw, Home } from '@/lib/icons';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -178,16 +178,16 @@ const SupportDashboard = () => {
               className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1.5"
             >
               <Grid className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">Portal Home</span>
+              <span className="hidden sm:inline text-xs">Staff Portal</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => navigate('/company')}
+              onClick={() => navigate('/dashboard')}
               className="flex items-center gap-1.5"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">Back to Landing</span>
+              <Home className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Back to App</span>
             </Button>
           </div>
         </div>
