@@ -52,9 +52,11 @@ export const AuditLog = () => {
     const fetchEntries = useCallback(async () => {
         setLoading(true);
         try {
+            // admin_action_logs has no FK to profiles (admin_user_id references
+            // auth.users), so PostgREST cannot embed — fetch and merge instead.
             let query = supabase
                 .from('admin_action_logs')
-                .select('*, admin_profile:profiles!admin_action_logs_admin_user_id_fkey(full_name, email)', { count: 'exact' })
+                .select('*', { count: 'exact' })
                 .order('created_at', { ascending: false })
                 .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -65,7 +67,24 @@ export const AuditLog = () => {
             const { data, error, count } = await query;
             if (error) throw error;
 
-            setEntries((data as unknown as AuditEntry[]) || []);
+            const logs = data || [];
+            const adminIds = [...new Set(logs.map((l) => l.admin_user_id).filter(Boolean))];
+
+            let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
+            if (adminIds.length > 0) {
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('user_id, full_name, email')
+                    .in('user_id', adminIds);
+                profilesById = new Map((profiles || []).map((p) => [p.user_id, { full_name: p.full_name, email: p.email }]));
+            }
+
+            const merged = logs.map((l) => ({
+                ...l,
+                admin_profile: profilesById.get(l.admin_user_id) ?? null,
+            }));
+
+            setEntries(merged as unknown as AuditEntry[]);
             setTotal(count ?? 0);
         } catch (err) {
             toast({ title: 'Error', description: 'Failed to load audit log', variant: 'destructive' });

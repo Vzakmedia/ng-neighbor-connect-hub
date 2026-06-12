@@ -39,25 +39,33 @@ export const useUserManagement = (isSuperAdmin: boolean) => {
         try {
             setLoading(true);
 
-            const { data, error } = await supabase
-                .from('profiles')
-                .select(`
-          user_id,
-          full_name,
-          email,
-          phone_number,
-          city,
-          state,
-          is_verified,
-          is_suspended,
-          created_at,
-          user_roles (role)
-        `)
-                .order('created_at', { ascending: false });
+            // profiles and user_roles have no FK between them (both reference
+            // auth.users), so PostgREST cannot embed — fetch both and merge.
+            const [profilesRes, rolesRes] = await Promise.all([
+                supabase
+                    .from('profiles')
+                    .select('user_id, full_name, email, phone, city, state, is_verified, is_suspended, created_at')
+                    .order('created_at', { ascending: false }),
+                supabase
+                    .from('user_roles')
+                    .select('user_id, role'),
+            ]);
 
-            if (error) throw error;
+            if (profilesRes.error) throw profilesRes.error;
+            if (rolesRes.error) throw rolesRes.error;
 
-            const activeUsers = data?.filter(u => !u.deleted_at) || [];
+            const rolesByUser = new Map<string, Array<{ role: string }>>();
+            for (const row of rolesRes.data || []) {
+                const list = rolesByUser.get(row.user_id) || [];
+                list.push({ role: row.role });
+                rolesByUser.set(row.user_id, list);
+            }
+
+            const activeUsers: User[] = (profilesRes.data || []).map((p) => ({
+                ...p,
+                phone_number: p.phone ?? undefined,
+                user_roles: rolesByUser.get(p.user_id) || [],
+            }));
             setUsers(activeUsers);
 
             // Group users by state and city
