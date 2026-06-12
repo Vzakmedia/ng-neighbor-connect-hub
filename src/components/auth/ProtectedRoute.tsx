@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { use2FAStatus } from '@/hooks/use2FAStatus';
@@ -38,11 +38,15 @@ const rolePriority: Record<string, number> = {
 export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { role, isLoading: roleLoading } = useAdminStatus();
+  const location = useLocation();
+  // 2FA only gates role-protected (admin/staff) areas — the general app is
+  // always accessible to a signed-in user, with or without 2FA verification.
+  const enforce2FA = !!requiredRole;
   // Cached via React Query (staleTime 5 min) — does NOT re-fetch on every route render.
-  const { data: twoFA, isLoading: twoFALoading } = use2FAStatus(user?.id);
+  const { data: twoFA, isLoading: twoFALoading } = use2FAStatus(enforce2FA ? user?.id : undefined);
 
   const initialRoleLoad = !!user && role === null && roleLoading;
-  const twoFAGateLoading = !!user && twoFALoading;
+  const twoFAGateLoading = !!user && enforce2FA && twoFALoading;
 
   if (authLoading || initialRoleLoad || twoFAGateLoading) {
     return (
@@ -59,8 +63,10 @@ export function ProtectedRoute({ children, requiredRole, redirectTo = '/auth' }:
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (twoFA?.enabled && !twoFA.verified) {
+  if (enforce2FA && twoFA?.enabled && !twoFA.verified) {
     sessionStorage.setItem('pending2FA', user.id);
+    // Remember where they were headed so verification returns them there
+    sessionStorage.setItem('post2fa_redirect', location.pathname + location.search);
     return <Navigate to={`/auth/2fa-verify?userId=${user.id}`} replace />;
   }
 

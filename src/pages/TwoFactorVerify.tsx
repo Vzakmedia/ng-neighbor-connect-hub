@@ -28,7 +28,10 @@ const TwoFactorVerify = () => {
     // back to this page.
     sessionStorage.removeItem('pending2FA');
     await queryClient.refetchQueries({ queryKey: ['2fa-status', userId] });
-    navigate('/dashboard', { replace: true });
+    // Return to the admin page they were trying to reach
+    const redirect = sessionStorage.getItem('post2fa_redirect');
+    sessionStorage.removeItem('post2fa_redirect');
+    navigate(redirect || '/dashboard', { replace: true });
   };
 
   const handleSkip = () => {

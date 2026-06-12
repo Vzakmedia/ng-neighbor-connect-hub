@@ -62,6 +62,7 @@ const MyGoods = lazyWithRetry(() => import("./pages/MyGoods"));
 const MyBookings = lazyWithRetry(() => import("./pages/MyBookings"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const TwoFactorVerify = lazyWithRetry(() => import("./pages/TwoFactorVerify"));
 const CompleteProfile = lazyWithRetry(() => import("./pages/CompleteProfile"));
 const VerifyEmail = lazyWithRetry(() => import("./pages/VerifyEmail"));
 const AdminLayout         = lazyWithRetry(() => import("./components/admin/layout/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -320,6 +321,7 @@ const App = () => {
                           <Route path="/company" element={<Landing />} />
                           <Route path="/about" element={<About />} />
                           <Route path="/auth" element={<Auth />} />
+                          <Route path="/auth/2fa-verify" element={<TwoFactorVerify />} />
                           <Route path="/auth/verify-email" element={<VerifyEmail />} />
                           <Route path="/privacy" element={<PrivacyPolicy />} />
                           <Route path="/terms" element={<TermsOfService />} />

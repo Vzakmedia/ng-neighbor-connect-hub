@@ -73,20 +73,9 @@ export const LoginForm = ({ onSwitchToReset }: LoginFormProps) => {
       }
 
       if (data.user && data.session) {
-        // Check if 2FA is enabled for this user
-        const { data: user2fa } = await supabase
-          .from('user_2fa')
-          .select('is_enabled')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-
-        if (user2fa?.is_enabled) {
-          // Keep the session alive — signing out here destroys the session and
-          // leaves the user unauthenticated after 2FA verification completes.
-          sessionStorage.setItem('pending2FA', data.user.id);
-          navigate(`/auth/2fa-verify?userId=${data.user.id}`);
-          return;
-        }
+        // 2FA is NOT enforced at login — users (including admins) go straight
+        // into the app. ProtectedRoute enforces 2FA verification only when a
+        // role-protected area (admin/staff dashboard) is accessed.
 
         // Check if this is the user's first login
         const { data: profile } = await supabase
