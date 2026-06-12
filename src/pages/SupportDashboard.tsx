@@ -65,12 +65,27 @@ const SupportDashboard = () => {
           .order('created_at', { ascending: false })
           .limit(20);
 
-        // Fetch content reports for support review
-        const { data: reportsData } = await supabase
+        // Fetch content reports for support review. content_reports has no FK
+        // to profiles, so fetch reporter names separately and merge.
+        const { data: rawReports } = await supabase
           .from('content_reports')
-          .select('*, profiles(full_name)')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(20);
+
+        const reporterIds = [...new Set((rawReports || []).map((r) => r.reporter_id).filter(Boolean))];
+        let reportersById = new Map<string, { full_name: string | null }>();
+        if (reporterIds.length > 0) {
+          const { data: reporterProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name')
+            .in('user_id', reporterIds);
+          reportersById = new Map((reporterProfiles || []).map((p) => [p.user_id, { full_name: p.full_name }]));
+        }
+        const reportsData = (rawReports || []).map((r) => ({
+          ...r,
+          profiles: reportersById.get(r.reporter_id) ?? null,
+        }));
 
         setEmergencyAlerts(alertsData || []);
         setUserQueries(reportsData || []);

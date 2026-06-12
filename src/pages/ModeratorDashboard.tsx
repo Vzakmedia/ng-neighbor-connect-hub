@@ -68,13 +68,29 @@ const ModeratorDashboard = () => {
           flaggedContent: flaggedCount || 0
         });
 
-        // Fetch detailed reports data
-        const { data: reportsData } = await supabase
+        // Fetch detailed reports data. content_reports has no FK to profiles
+        // (reporter_id references auth.users), so fetch reporter names
+        // separately and merge — PostgREST cannot embed without a FK.
+        const { data: rawReports } = await supabase
           .from('content_reports')
-          .select('*, profiles(full_name)')
+          .select('*')
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(20);
+
+        const reporterIds = [...new Set((rawReports || []).map((r) => r.reporter_id).filter(Boolean))];
+        let reportersById = new Map<string, { full_name: string | null }>();
+        if (reporterIds.length > 0) {
+          const { data: reporterProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name')
+            .in('user_id', reporterIds);
+          reportersById = new Map((reporterProfiles || []).map((p) => [p.user_id, { full_name: p.full_name }]));
+        }
+        const reportsData = (rawReports || []).map((r) => ({
+          ...r,
+          profiles: reportersById.get(r.reporter_id) ?? null,
+        }));
 
         // Fetch emergency alerts
         const { data: alertsData } = await supabase
