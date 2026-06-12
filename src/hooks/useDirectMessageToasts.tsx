@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 interface MessageDetails {
   content: string;
   sender_id: string;
-  conversation_id: string;
   sender?: {
     full_name: string;
     avatar_url?: string;
@@ -59,31 +58,40 @@ export const useDirectMessageToasts = () => {
       lastToastTime.current = now;
 
       try {
-        // Fetch message details with sender information
-        const { data: messageData, error } = await supabase
-          .from('direct_messages')
-          .select(`
-            content,
-            sender_id,
-            conversation_id,
-            sender:profiles!fk_direct_messages_sender_profile(full_name, avatar_url)
-          `)
-          .eq('id', messageId)
-          .single();
+        // Fetch message details with sender information.
+        // direct_messages has NO conversation_id column — the conversation
+        // is resolved separately from direct_conversations by participants.
+        const [{ data: messageData, error }, { data: conversation }] = await Promise.all([
+          supabase
+            .from('direct_messages')
+            .select(`
+              content,
+              sender_id,
+              sender:profiles!fk_direct_messages_sender_profile(full_name, avatar_url)
+            `)
+            .eq('id', messageId)
+            .single(),
+          supabase
+            .from('direct_conversations')
+            .select('id')
+            .or(`and(user1_id.eq.${senderId},user2_id.eq.${user.id}),and(user1_id.eq.${user.id},user2_id.eq.${senderId})`)
+            .maybeSingle(),
+        ]);
 
         if (error || !messageData) {
           console.error('Failed to fetch message details for toast:', error);
           return;
         }
 
-        const { content, conversation_id, sender } = messageData as MessageDetails;
-        
+        const { content, sender } = messageData as unknown as MessageDetails;
+
         // Create content preview (first 50 characters)
-        const contentPreview = content.length > 50 
-          ? `${content.substring(0, 50)}...` 
+        const contentPreview = content.length > 50
+          ? `${content.substring(0, 50)}...`
           : content;
 
         const senderName = sender?.full_name || 'Someone';
+        const chatTarget = conversation?.id ? `/chat/${conversation.id}` : '/messages';
 
         // Show toast notification
         toast({
@@ -93,7 +101,7 @@ export const useDirectMessageToasts = () => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate(`/chat/${conversation_id}`)}
+              onClick={() => navigate(chatTarget)}
               className="shrink-0"
             >
               View
