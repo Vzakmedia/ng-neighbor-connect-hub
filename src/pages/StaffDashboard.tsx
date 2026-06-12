@@ -22,7 +22,7 @@ const StaffDashboard = () => {
     marketplaceItems: 0,
     activeMarketplaceItems: 0,
     totalPosts: 0,
-    tasksCompleted: 0
+    reportsResolved: 0
   });
 
   const [recentUsers, setRecentUsers] = useState([]);
@@ -44,14 +44,16 @@ const StaffDashboard = () => {
           { count: flaggedCount },
           { count: marketplaceCount },
           { count: activeMarketplaceCount },
-          { count: postsCount }
+          { count: postsCount },
+          { count: resolvedCount }
         ] = await Promise.all([
-          supabase.rpc('get_profiles_analytics').then((result: { data: any[] | null }) => ({ count: result.data?.length || 0 })),
-          supabase.rpc('get_profiles_analytics').then((result: { data: any[] | null }) => ({ count: result.data?.filter((p: any) => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
+          supabase.rpc('get_profiles_analytics').then((result: { data: Array<{ created_at: string }> | null }) => ({ count: result.data?.length || 0 })),
+          supabase.rpc('get_profiles_analytics').then((result: { data: Array<{ created_at: string }> | null }) => ({ count: result.data?.filter((p) => new Date(p.created_at).toISOString().split('T')[0] >= new Date().toISOString().split('T')[0]).length || 0 })),
           supabase.from('content_reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('marketplace_items').select('*', { count: 'exact', head: true }),
           supabase.from('marketplace_items').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-          supabase.from('community_posts').select('*', { count: 'exact', head: true })
+          supabase.from('community_posts').select('*', { count: 'exact', head: true }),
+          supabase.from('content_reports').select('*', { count: 'exact', head: true }).neq('status', 'pending')
         ]);
 
         setStats({
@@ -61,7 +63,7 @@ const StaffDashboard = () => {
           marketplaceItems: marketplaceCount || 0,
           activeMarketplaceItems: activeMarketplaceCount || 0,
           totalPosts: postsCount || 0,
-          tasksCompleted: 0
+          reportsResolved: resolvedCount || 0
         });
 
         const { data: usersData } = await supabase
@@ -150,6 +152,7 @@ const StaffDashboard = () => {
     { label: 'Flagged Content', value: stats.flaggedContent, sub: 'Pending review', icon: Flag, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/10 border-red-500/20 dark:border-red-500/30' },
     { label: 'Active Listings', value: stats.activeMarketplaceItems, sub: `of ${stats.marketplaceItems} total`, icon: ShoppingCart, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20 dark:border-purple-500/30' },
     { label: 'Community Posts', value: stats.totalPosts, sub: 'All posts', icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20 dark:border-amber-500/30' },
+    { label: 'Reports Resolved', value: stats.reportsResolved, sub: 'All time', icon: Activity, color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20 dark:border-teal-500/30' },
   ];
 
   const navTabs = [

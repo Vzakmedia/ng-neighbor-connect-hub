@@ -27,7 +27,6 @@ const ManagerDashboard = () => {
     totalBusinesses: 0,
     pendingVerifications: 0,
     activePromotions: 0,
-    monthlyRevenue: 0,
     totalUsers: 0,
     marketplaceItems: 0
   });
@@ -75,7 +74,6 @@ const ManagerDashboard = () => {
           totalBusinesses: businessesCount || 0,
           pendingVerifications: pendingCount || 0,
           activePromotions: promotionsCount || 0,
-          monthlyRevenue: 0, // Calculate from payments
           totalUsers: usersCount || 0,
           marketplaceItems: marketplaceCount || 0
         });
@@ -373,12 +371,12 @@ const ManagerDashboard = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Pending Ad Approvals</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₦{stats.monthlyRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">This month</p>
+                  <div className="text-2xl font-bold">{pendingAdCampaigns.length}</div>
+                  <p className="text-xs text-muted-foreground">Awaiting review</p>
                 </CardContent>
               </Card>
             </div>

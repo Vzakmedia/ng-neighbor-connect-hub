@@ -45,17 +45,58 @@ const SupportDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('is_resolved', false);
 
-        // Fetch content reports that need support attention
-        const { count: reportsCount } = await supabase
-          .from('content_reports')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+        // Real ticket stats from support_tickets / support_ticket_responses
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const [{ count: openTicketsCount }, { count: resolvedTodayCount }] = await Promise.all([
+          supabase
+            .from('support_tickets')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['open', 'in_progress', 'waiting_response']),
+          supabase
+            .from('support_tickets')
+            .select('*', { count: 'exact', head: true })
+            .gte('resolved_at', startOfToday.toISOString()),
+        ]);
+
+        // Average first staff response time over the last ~100 tickets
+        let avgResponseMinutes = 0;
+        const { data: recentTickets } = await supabase
+          .from('support_tickets')
+          .select('id, created_at')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        const ticketIds = (recentTickets || []).map((t) => t.id);
+        if (ticketIds.length > 0) {
+          const { data: responses } = await supabase
+            .from('support_ticket_responses')
+            .select('ticket_id, created_at')
+            .eq('is_staff_response', true)
+            .in('ticket_id', ticketIds)
+            .order('created_at', { ascending: true });
+
+          const firstResponseByTicket = new Map<string, string>();
+          for (const r of responses || []) {
+            if (!firstResponseByTicket.has(r.ticket_id)) firstResponseByTicket.set(r.ticket_id, r.created_at);
+          }
+
+          const latencies = (recentTickets || [])
+            .filter((t) => firstResponseByTicket.has(t.id))
+            .map((t) => (new Date(firstResponseByTicket.get(t.id)!).getTime() - new Date(t.created_at).getTime()) / 60000)
+            .filter((m) => m >= 0);
+
+          if (latencies.length > 0) {
+            avgResponseMinutes = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length);
+          }
+        }
 
         setStats({
-          openTickets: 0, // Implement ticket system
+          openTickets: openTicketsCount || 0,
           activeEmergencies: alertsCount || 0,
-          resolvedToday: 0, // Calculate today's resolved issues
-          averageResponseTime: 15 // Mock data
+          resolvedToday: resolvedTodayCount || 0,
+          averageResponseTime: avgResponseMinutes
         });
 
         // Fetch emergency alerts
@@ -283,7 +324,7 @@ const SupportDashboard = () => {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.averageResponseTime}m</div>
+                  <div className="text-2xl font-bold">{stats.averageResponseTime > 0 ? `${stats.averageResponseTime}m` : '—'}</div>
                   <p className="text-xs text-muted-foreground">Response time</p>
                 </CardContent>
               </Card>

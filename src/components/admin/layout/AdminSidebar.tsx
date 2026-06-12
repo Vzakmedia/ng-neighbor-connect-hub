@@ -25,6 +25,7 @@ import {
   Activity,
   Home,
   Building2,
+  CalendarDays,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Staff',          path: '/admin/staff',        icon: UserCog },
   { label: 'Emergency',      path: '/admin/emergency',    icon: AlertTriangle },
   { label: 'Content',        path: '/admin/content',      icon: MessageSquare },
+  { label: 'Community',      path: '/admin/community',    icon: CalendarDays },
   { label: 'Marketplace',    path: '/admin/marketplace',  icon: ShoppingCart },
   { label: 'Business',       path: '/admin/business',     icon: Briefcase },
   { label: 'Advertising',    path: '/admin/advertising',  icon: TrendingUp },

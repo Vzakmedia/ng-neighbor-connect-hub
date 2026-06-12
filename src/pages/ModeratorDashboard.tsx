@@ -14,6 +14,10 @@ import ContentModerationPanel from "@/components/ContentModerationPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import UserModerationPanel from "@/components/moderation/UserModerationPanel";
 import PanicAlertManager from "@/components/emergency/PanicAlertManager";
+import { EventsModerationPanel } from "@/components/admin/moderation/EventsModerationPanel";
+import { PollsModerationPanel } from "@/components/admin/moderation/PollsModerationPanel";
+import { BoardsModerationPanel } from "@/components/admin/moderation/BoardsModerationPanel";
+import { RecommendationsModerationPanel } from "@/components/admin/moderation/RecommendationsModerationPanel";
 import type { PanicAlert } from "@/types/emergency";
 
 const LOGO_URL = "https://cowiviqhrnmhttugozbz.supabase.co/storage/v1/object/public/onboarding-assets/neighborlink-logo.jpeg";
@@ -61,10 +65,19 @@ const ModeratorDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
 
+        // Reports moderated (moved out of pending) since midnight today
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const { count: moderatedTodayCount } = await supabase
+          .from('content_reports')
+          .select('*', { count: 'exact', head: true })
+          .neq('status', 'pending')
+          .gte('reviewed_at', startOfToday.toISOString());
+
         setStats({
           pendingReports: reportsCount || 0,
           activeAlerts: alertsCount || 0,
-          moderatedToday: 0, // Calculate based on today's resolved reports
+          moderatedToday: moderatedTodayCount || 0,
           flaggedContent: flaggedCount || 0
         });
 
@@ -320,6 +333,22 @@ const ModeratorDashboard = () => {
             <Users className="h-4 w-4 mr-2" />
             User Moderation
           </TabsTrigger>
+          <TabsTrigger value="events" className="w-full justify-start">
+            <Clock className="h-4 w-4 mr-2" />
+            Events
+          </TabsTrigger>
+          <TabsTrigger value="polls" className="w-full justify-start">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Polls
+          </TabsTrigger>
+          <TabsTrigger value="boards" className="w-full justify-start">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Boards
+          </TabsTrigger>
+          <TabsTrigger value="recommendations" className="w-full justify-start">
+            <Eye className="h-4 w-4 mr-2" />
+            Recommendations
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1">
@@ -558,6 +587,20 @@ const ModeratorDashboard = () => {
           {/* User Moderation Tab */}
           <TabsContent value="users">
             <UserModerationPanel />
+          </TabsContent>
+
+          {/* Community moderation — same panels as /admin/community */}
+          <TabsContent value="events">
+            <EventsModerationPanel />
+          </TabsContent>
+          <TabsContent value="polls">
+            <PollsModerationPanel />
+          </TabsContent>
+          <TabsContent value="boards">
+            <BoardsModerationPanel />
+          </TabsContent>
+          <TabsContent value="recommendations">
+            <RecommendationsModerationPanel />
           </TabsContent>
         </div>
       </Tabs>

@@ -181,6 +181,16 @@ export const EmergencyAlertsTab = () => {
                                                             Resolve
                                                         </Button>
                                                     )}
+                                                    {(alert.status === 'active' || alert.status === 'investigating') && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="text-muted-foreground"
+                                                            onClick={() => updateAlertStatus(alert.id, 'false_alarm')}
+                                                        >
+                                                            False Alarm
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

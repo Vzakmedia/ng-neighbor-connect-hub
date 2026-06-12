@@ -76,6 +76,7 @@ const AdminIntegrations   = lazyWithRetry(() => import("./pages/admin/Integratio
 const AdminSecurity       = lazyWithRetry(() => import("./pages/admin/Security"));
 const AdminApiRequests    = lazyWithRetry(() => import("./pages/admin/ApiRequests"));
 const AdminBusiness       = lazyWithRetry(() => import("./pages/admin/Business"));
+const AdminCommunity      = lazyWithRetry(() => import("./pages/admin/Community"));
 const AdminAdvertising    = lazyWithRetry(() => import("./pages/admin/Advertising"));
 const AdminEmail          = lazyWithRetry(() => import("./pages/admin/Email"));
 const AdminStaff          = lazyWithRetry(() => import("./pages/admin/Staff"));
@@ -380,6 +381,7 @@ const App = () => {
                             <Route path="users"        element={<AdminUsers />} />
                             <Route path="emergency"    element={<AdminEmergency />} />
                             <Route path="content"      element={<AdminContent />} />
+                            <Route path="community"    element={<AdminCommunity />} />
                             <Route path="analytics"    element={<AdminAnalytics />} />
                             <Route path="marketplace"  element={<AdminMarketplace />} />
                             <Route path="business"     element={<AdminBusiness />} />
