@@ -13,9 +13,9 @@ import { cn } from '@/lib/utils';
 type StatusType = 'unknown' | 'active' | 'error';
 
 const STATUS_BADGE: Record<StatusType, { label: string; className: string }> = {
-  unknown: { label: 'Unknown', className: 'bg-slate-100 text-slate-500' },
-  active:  { label: 'Active',  className: 'bg-emerald-100 text-emerald-700' },
-  error:   { label: 'Error',   className: 'bg-rose-100 text-rose-700' },
+  unknown: { label: 'Unknown', className: 'bg-muted text-muted-foreground border border-border' },
+  active:  { label: 'Active',  className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' },
+  error:   { label: 'Error',   className: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' },
 };
 
 function StatusDot({ status }: { status: StatusType }) {
@@ -24,7 +24,7 @@ function StatusDot({ status }: { status: StatusType }) {
       'inline-block w-2 h-2 rounded-full',
       status === 'active'  && 'bg-emerald-500',
       status === 'error'   && 'bg-rose-500',
-      status === 'unknown' && 'bg-slate-300',
+      status === 'unknown' && 'bg-muted-foreground',
     )} />
   );
 }
@@ -52,35 +52,35 @@ function IntegrationCard({
 }) {
   const badge = STATUS_BADGE[status];
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className={cn(
               'p-2 rounded-lg',
-              enabled ? 'bg-emerald-50' : 'bg-slate-100',
+              enabled ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-muted border border-border',
             )}>
-              <Icon className={cn('h-5 w-5', enabled ? 'text-emerald-600' : 'text-slate-400')} />
+              <Icon className={cn('h-5 w-5', enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')} />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold text-slate-800">{title}</CardTitle>
-              <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+              <CardTitle className="text-sm font-semibold text-foreground">{title}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <StatusDot status={status} />
-            <Badge className={`${badge.className} border-0 text-xs`}>{badge.label}</Badge>
+            <Badge className={`${badge.className} text-xs`}>{badge.label}</Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           {details.map((d, i) => (
-            <p key={i} className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-1 truncate">{d}</p>
+            <p key={i} className="text-xs text-muted-foreground bg-muted rounded px-2 py-1 truncate">{d}</p>
           ))}
         </div>
         {apiKey && (
-          <p className="text-xs text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded truncate">
+          <p className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded truncate">
             {apiKey}
           </p>
         )}
@@ -202,8 +202,8 @@ export default function AdminIntegrations() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Integrations</h1>
-          <p className="text-slate-500 text-sm mt-1">Monitor and test third-party service connections</p>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Integrations</h1>
+          <p className="text-muted-foreground text-sm mt-1">Monitor and test third-party service connections</p>
         </div>
         <div className="flex items-center gap-3">
           {monitoringActive && (

@@ -55,16 +55,22 @@ export default function AdsSettingsPanel() {
   const [enableGeoTargeting, setEnableGeoTargeting] = useState<boolean>(true);
   const [defaultGeographicScope, setDefaultGeographicScope] = useState<string>("city");
 
-  // CR-08: Load role and block non-admin access
+  // CR-08: Load role and block non-admin access.
+  // A user can hold multiple role rows — pick the highest privilege and
+  // treat super_admin as admin for this panel's gate.
   useEffect(() => {
     if (!user) { setRoleLoading(false); return; }
     supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .maybeSingle()
       .then(({ data }) => {
-        setUserRole(data?.role ?? null);
+        const roles = (data || []).map((r) => r.role as string);
+        setUserRole(
+          roles.includes('super_admin') || roles.includes('admin')
+            ? 'admin'
+            : roles[0] ?? null
+        );
         setRoleLoading(false);
       });
   }, [user]);

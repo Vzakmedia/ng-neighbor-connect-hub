@@ -20,10 +20,10 @@ import { Search, Download, MoreVertical, Flag, Trash2, CheckCircle, Clock, Shopp
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
-  active:  'bg-emerald-100 text-emerald-700',
-  sold:    'bg-slate-100 text-slate-600',
-  pending: 'bg-amber-100 text-amber-700',
-  flagged: 'bg-rose-100 text-rose-700',
+  active:  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20',
+  sold:    'bg-muted text-muted-foreground border border-border hover:bg-muted/80',
+  pending: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20',
+  flagged: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20',
 };
 
 const CATEGORIES = ['all', 'electronics', 'furniture', 'clothing', 'vehicles', 'food', 'services', 'other'];
@@ -68,8 +68,8 @@ export default function AdminMarketplace() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Marketplace</h1>
-          <p className="text-slate-500 text-sm mt-1">Review and manage all marketplace listings</p>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Marketplace</h1>
+          <p className="text-muted-foreground text-sm mt-1">Review and manage all marketplace listings</p>
         </div>
         <Button variant="outline" size="sm" onClick={exportData} className="gap-2">
           <Download className="h-4 w-4" />
@@ -80,7 +80,7 @@ export default function AdminMarketplace() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search title or description…"
             value={search}
@@ -111,18 +111,18 @@ export default function AdminMarketplace() {
       </div>
 
       {/* Stats strip */}
-      <div className="flex gap-4 text-sm text-slate-500">
-        <span><span className="font-semibold text-slate-800">{items.length}</span> listings</span>
-        <span><span className="font-semibold text-emerald-700">{items.filter(i => i.status === 'active').length}</span> active</span>
-        <span><span className="font-semibold text-rose-600">{items.filter(i => i.status === 'flagged').length}</span> flagged</span>
-        <span><span className="font-semibold text-amber-600">{items.filter(i => i.status === 'pending').length}</span> pending</span>
+      <div className="flex gap-4 text-sm text-muted-foreground">
+        <span><span className="font-semibold text-foreground">{items.length}</span> listings</span>
+        <span><span className="font-semibold text-emerald-600 dark:text-emerald-400">{items.filter(i => i.status === 'active').length}</span> active</span>
+        <span><span className="font-semibold text-rose-600 dark:text-rose-400">{items.filter(i => i.status === 'flagged').length}</span> flagged</span>
+        <span><span className="font-semibold text-amber-600 dark:text-amber-400">{items.filter(i => i.status === 'pending').length}</span> pending</span>
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-slate-200 overflow-hidden">
+      <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
+            <TableRow className="bg-muted/50">
               <TableHead>Item</TableHead>
               <TableHead>Seller</TableHead>
               <TableHead>Category</TableHead>
@@ -135,30 +135,30 @@ export default function AdminMarketplace() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   Loading listings…
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-40 text-center text-slate-400">
+                <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                   <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   No listings match your filters
                 </TableCell>
               </TableRow>
             ) : (
               items.map(item => (
-                <TableRow key={item.id} className="hover:bg-slate-50">
+                <TableRow key={item.id}>
                   <TableCell className="max-w-[200px]">
-                    <p className="font-medium text-slate-900 truncate">{item.title}</p>
-                    <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                    <p className="font-medium text-foreground truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-600">
+                  <TableCell className="text-sm text-muted-foreground">
                     {item.profiles?.full_name ?? '—'}
                   </TableCell>
-                  <TableCell className="text-sm capitalize text-slate-600">{item.category}</TableCell>
-                  <TableCell className="text-sm font-medium text-slate-800">
+                  <TableCell className="text-sm capitalize text-muted-foreground">{item.category}</TableCell>
+                  <TableCell className="text-sm font-medium text-foreground">
                     ₦{item.price.toLocaleString()}
                   </TableCell>
                   <TableCell>
@@ -166,7 +166,7 @@ export default function AdminMarketplace() {
                       {item.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-slate-400">
+                  <TableCell className="text-xs text-muted-foreground">
                     {format(new Date(item.created_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell>

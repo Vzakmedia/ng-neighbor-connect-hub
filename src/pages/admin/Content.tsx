@@ -20,12 +20,12 @@ export default function AdminContent() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Content</h1>
-        <p className="text-slate-500 text-sm mt-1">Moderate posts, manage blog articles, and newsletter subscribers</p>
+        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Content</h1>
+        <p className="text-muted-foreground text-sm mt-1">Moderate posts, manage blog articles, and newsletter subscribers</p>
       </div>
 
       {/* Sub-nav */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-border">
         {SECTIONS.map(s => (
           <button
             key={s.id}
@@ -33,8 +33,8 @@ export default function AdminContent() {
             className={cn(
               'flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
               active === s.id
-                ? 'border-emerald-600 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-slate-700',
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             <s.icon className="h-4 w-4" />

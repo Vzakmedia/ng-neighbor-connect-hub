@@ -45,12 +45,12 @@ async function fetchDailyCounts(
 }
 
 const STAT_CARDS = [
-  { key: 'totalUsers',      label: 'Total Users',        icon: Users,          color: 'text-blue-600',   bg: 'bg-blue-50' },
-  { key: 'activePosts',     label: 'Active Posts',       icon: FileText,       color: 'text-violet-600', bg: 'bg-violet-50' },
-  { key: 'emergencyAlerts', label: 'Active Alerts',      icon: AlertTriangle,  color: 'text-rose-600',   bg: 'bg-rose-50' },
-  { key: 'marketplaceItems',label: 'Marketplace Items',  icon: ShoppingCart,   color: 'text-amber-600',  bg: 'bg-amber-50' },
-  { key: 'dailyActiveUsers',label: 'Daily Active Users', icon: Activity,       color: 'text-emerald-600',bg: 'bg-emerald-50' },
-  { key: 'postsPerDay',     label: 'Posts / Day',        icon: TrendingUp,     color: 'text-cyan-600',   bg: 'bg-cyan-50' },
+  { key: 'totalUsers',      label: 'Total Users',        icon: Users,          color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-500/10 border border-blue-500/20' },
+  { key: 'activePosts',     label: 'Active Posts',       icon: FileText,       color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10 border border-violet-500/20' },
+  { key: 'emergencyAlerts', label: 'Active Alerts',      icon: AlertTriangle,  color: 'text-rose-600 dark:text-rose-400',   bg: 'bg-rose-500/10 border border-rose-500/20' },
+  { key: 'marketplaceItems',label: 'Marketplace Items',  icon: ShoppingCart,   color: 'text-amber-600 dark:text-amber-400',  bg: 'bg-amber-500/10 border border-amber-500/20' },
+  { key: 'dailyActiveUsers',label: 'Daily Active Users', icon: Activity,       color: 'text-emerald-600 dark:text-emerald-400',bg: 'bg-emerald-500/10 border border-emerald-500/20' },
+  { key: 'postsPerDay',     label: 'Posts / Day',        icon: TrendingUp,     color: 'text-cyan-600 dark:text-cyan-400',   bg: 'bg-cyan-500/10 border border-cyan-500/20' },
 ];
 
 export default function AdminAnalytics() {
@@ -93,21 +93,21 @@ export default function AdminAnalytics() {
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-        <p className="text-slate-500 text-sm mt-1">Platform growth and activity trends</p>
+        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Analytics</h1>
+        <p className="text-muted-foreground text-sm mt-1">Platform growth and activity trends</p>
       </div>
 
       {/* KPI summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {STAT_CARDS.map(({ key, label, icon: Icon, color, bg }) => (
-          <Card key={key} className="border-slate-200">
+          <Card key={key} className="border-border">
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`${bg} p-2 rounded-lg shrink-0`}>
                 <Icon className={`h-5 w-5 ${color}`} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-slate-500 truncate">{label}</p>
-                <p className="text-xl font-bold text-slate-900">
+                <p className="text-xs text-muted-foreground truncate">{label}</p>
+                <p className="text-xl font-bold text-foreground">
                   {isLoading ? '—' : ((stats as any)[key] ?? 0).toLocaleString()}
                 </p>
               </div>
@@ -118,17 +118,17 @@ export default function AdminAnalytics() {
 
       {/* 30-day signups + posts side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-700">New Signups — 30 days</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">New Signups — 30 days</CardTitle>
           </CardHeader>
           <CardContent>
             {chartsLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={signups} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={6} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
@@ -139,17 +139,17 @@ export default function AdminAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-700">Posts Published — 30 days</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">Posts Published — 30 days</CardTitle>
           </CardHeader>
           <CardContent>
             {chartsLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={posts} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={6} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
@@ -163,17 +163,17 @@ export default function AdminAnalytics() {
 
       {/* 14-day alerts + active users side by side */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-700">Emergency Alerts — 14 days</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">Emergency Alerts — 14 days</CardTitle>
           </CardHeader>
           <CardContent>
             {chartsLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={alerts} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={1} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip />
@@ -184,17 +184,17 @@ export default function AdminAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-slate-700">Profile Activity (DAU proxy) — 14 days</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">Profile Activity (DAU proxy) — 14 days</CardTitle>
           </CardHeader>
           <CardContent>
             {chartsLoading ? (
-              <div className="h-48 flex items-center justify-center text-slate-400 text-sm">Loading…</div>
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Loading…</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={dau} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={1} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />

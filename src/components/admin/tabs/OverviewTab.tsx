@@ -25,64 +25,64 @@ export const OverviewTab = () => {
             value: stats.totalUsers.toLocaleString(),
             icon: Users,
             description: `${stats.dailyActiveUsers} active today`,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
+            color: 'text-blue-600 dark:text-blue-400',
+            bgColor: 'bg-blue-500/10 border border-blue-500/20',
         },
         {
             title: 'Active Posts',
             value: stats.activePosts.toLocaleString(),
             icon: MessageSquare,
             description: `${stats.postsPerDay} posts/day`,
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bgColor: 'bg-emerald-500/10 border border-emerald-500/20',
         },
         {
             title: 'Emergency Alerts',
             value: stats.emergencyAlerts.toLocaleString(),
             icon: AlertTriangle,
             description: `${stats.resolvedToday} resolved today`,
-            color: 'text-red-600',
-            bgColor: 'bg-red-50',
+            color: 'text-rose-600 dark:text-rose-400',
+            bgColor: 'bg-rose-500/10 border border-rose-500/20',
         },
         {
             title: 'Marketplace Items',
             value: stats.marketplaceItems.toLocaleString(),
             icon: ShoppingCart,
             description: 'Active listings',
-            color: 'text-purple-600',
-            bgColor: 'bg-purple-50',
+            color: 'text-purple-600 dark:text-purple-400',
+            bgColor: 'bg-purple-500/10 border border-purple-500/20',
         },
         {
             title: 'Events This Month',
             value: stats.eventsThisMonth.toLocaleString(),
             icon: Calendar,
             description: 'Community events',
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-50',
+            color: 'text-orange-600 dark:text-orange-400',
+            bgColor: 'bg-orange-500/10 border border-orange-500/20',
         },
         {
             title: 'Flagged Content',
             value: stats.flaggedContent.toLocaleString(),
             icon: AlertTriangle,
             description: `${stats.autoFlagged} auto-flagged`,
-            color: 'text-yellow-600',
-            bgColor: 'bg-yellow-50',
+            color: 'text-yellow-600 dark:text-yellow-400',
+            bgColor: 'bg-yellow-500/10 border border-yellow-500/20',
         },
         {
             title: 'Active Automations',
             value: stats.activeAutomations.toLocaleString(),
             icon: Activity,
             description: 'Running workflows',
-            color: 'text-indigo-600',
-            bgColor: 'bg-indigo-50',
+            color: 'text-indigo-600 dark:text-indigo-400',
+            bgColor: 'bg-indigo-500/10 border border-indigo-500/20',
         },
         {
             title: 'User Satisfaction',
             value: `${stats.userSatisfaction}%`,
             icon: TrendingUp,
             description: 'Overall rating',
-            color: 'text-green-600',
-            bgColor: 'bg-green-50',
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bgColor: 'bg-emerald-500/10 border border-emerald-500/20',
         },
     ];
 
@@ -91,7 +91,7 @@ export const OverviewTab = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {statCards.map((stat, index) => (
-                    <Card key={index} className="hover:shadow-md transition-shadow">
+                    <Card key={index} className="border-border hover:shadow-md transition-all hover:-translate-y-0.5 duration-200">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                             <div className={`p-2 rounded-lg ${stat.bgColor}`}>
@@ -107,14 +107,14 @@ export const OverviewTab = () => {
             </div>
 
             {/* System Health */}
-            <Card>
+            <Card className="border-border">
                 <CardHeader>
                     <CardTitle>System Health</CardTitle>
                     <CardDescription>Real-time system status and performance</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                             <div>
                                 <p className="text-sm font-medium">Database</p>
                                 <p className="text-xs text-muted-foreground">PostgreSQL</p>
@@ -124,7 +124,7 @@ export const OverviewTab = () => {
                             </Badge>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                             <div>
                                 <p className="text-sm font-medium">Realtime</p>
                                 <p className="text-xs text-muted-foreground">Supabase Realtime</p>
@@ -134,7 +134,7 @@ export const OverviewTab = () => {
                             </Badge>
                         </div>
 
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                             <div>
                                 <p className="text-sm font-medium">Emergency System</p>
                                 <p className="text-xs text-muted-foreground">Alert Processing</p>
@@ -146,26 +146,26 @@ export const OverviewTab = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="p-4 border rounded-lg">
+                        <div className="p-4 border border-border rounded-lg bg-card">
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-sm font-medium">Storage Usage</p>
                                 <span className="text-sm font-bold">{systemHealth.storage}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
                                 <div
-                                    className="bg-blue-600 h-2 rounded-full transition-all"
+                                    className="bg-primary h-2 rounded-full transition-all"
                                     style={{ width: `${systemHealth.storage}%` }}
                                 />
                             </div>
                         </div>
 
-                        <div className="p-4 border rounded-lg">
+                        <div className="p-4 border border-border rounded-lg bg-card">
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-sm font-medium">API Response Time</p>
                                 <span className="text-sm font-bold">{systemHealth.apiResponse}ms</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                                 <span className="text-xs text-muted-foreground">Optimal performance</span>
                             </div>
                         </div>

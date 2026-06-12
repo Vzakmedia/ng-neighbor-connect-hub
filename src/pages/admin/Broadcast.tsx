@@ -28,10 +28,10 @@ interface Announcement {
 }
 
 const PRIORITY_COLORS: Record<Priority, string> = {
-    low:    'bg-slate-100 text-slate-700',
-    normal: 'bg-blue-100 text-blue-700',
-    high:   'bg-orange-100 text-orange-700',
-    urgent: 'bg-red-100 text-red-700',
+    low:    'bg-muted text-muted-foreground border border-border hover:bg-muted/80',
+    normal: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20',
+    high:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:bg-orange-500/20',
+    urgent: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 animate-pulse',
 };
 
 const ROLE_OPTIONS = ['user', 'staff', 'moderator', 'support', 'manager', 'admin', 'super_admin'];
@@ -118,9 +118,14 @@ export const Broadcast = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
+            <div>
+                <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Broadcasts</h1>
+                <p className="text-muted-foreground text-sm mt-1">Send and manage platform-wide announcements</p>
+            </div>
+
             {/* Compose */}
-            <Card>
+            <Card className="border-border">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Megaphone className="h-5 w-5" />
@@ -210,7 +215,7 @@ export const Broadcast = () => {
             </Card>
 
             {/* History */}
-            <Card>
+            <Card className="border-border">
                 <CardHeader>
                     <CardTitle>Announcement History</CardTitle>
                     <CardDescription>Past platform broadcasts</CardDescription>

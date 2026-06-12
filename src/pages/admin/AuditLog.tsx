@@ -24,18 +24,18 @@ interface AuditEntry {
 }
 
 const ACTION_BADGE_COLORS: Record<string, string> = {
-    admin_role_change:     'bg-purple-100 text-purple-700',
-    admin_user_delete:     'bg-red-100 text-red-700',
-    admin_user_suspend:    'bg-orange-100 text-orange-700',
-    admin_user_verify:     'bg-green-100 text-green-700',
-    admin_config_update:   'bg-blue-100 text-blue-700',
-    admin_content_remove:  'bg-red-100 text-red-700',
-    admin_content_approve: 'bg-green-100 text-green-700',
-    admin_login:           'bg-slate-100 text-slate-700',
-    admin_logout:          'bg-slate-100 text-slate-700',
-    admin_session_start:   'bg-slate-100 text-slate-700',
-    admin_2fa_bypass:      'bg-yellow-100 text-yellow-800',
-    admin_sensitive_action:'bg-orange-100 text-orange-700',
+    admin_role_change:     'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20',
+    admin_user_delete:     'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20',
+    admin_user_suspend:    'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:bg-orange-500/20',
+    admin_user_verify:     'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20',
+    admin_config_update:   'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20',
+    admin_content_remove:  'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20',
+    admin_content_approve: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20',
+    admin_login:           'bg-muted text-muted-foreground border border-border hover:bg-muted/80',
+    admin_logout:          'bg-muted text-muted-foreground border border-border hover:bg-muted/80',
+    admin_session_start:   'bg-muted text-muted-foreground border border-border hover:bg-muted/80',
+    admin_2fa_bypass:      'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20',
+    admin_sensitive_action:'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 hover:bg-orange-500/20',
 };
 
 const PAGE_SIZE = 50;
@@ -129,13 +129,18 @@ export const AuditLog = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <Card>
+        <div className="p-6 space-y-6">
+            <div>
+                <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent inline-block">Audit Log</h1>
+                <p className="text-muted-foreground text-sm mt-1">Complete record of all admin actions on the platform</p>
+            </div>
+
+            <Card className="border-border">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Audit Log</CardTitle>
-                            <CardDescription>Complete record of all admin actions on the platform</CardDescription>
+                            <CardTitle className="text-lg">Action Logs</CardTitle>
+                            <CardDescription>Filter and export activity history</CardDescription>
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => fetchEntries()}>
@@ -215,7 +220,7 @@ export const AuditLog = () => {
                                                         {entry.admin_profile?.full_name ?? entry.admin_user_id.slice(0, 8) + '…'}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge className={ACTION_BADGE_COLORS[entry.action_type] ?? 'bg-slate-100 text-slate-700'}>
+                                                        <Badge className={ACTION_BADGE_COLORS[entry.action_type] ?? 'bg-muted text-muted-foreground border border-border hover:bg-muted/80'}>
                                                             {entry.action_type.replace('admin_', '')}
                                                         </Badge>
                                                     </TableCell>

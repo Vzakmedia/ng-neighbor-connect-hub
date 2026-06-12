@@ -13,7 +13,7 @@ export function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />
       </div>
     );
@@ -24,9 +24,9 @@ export function AdminLayout() {
   return (
     <Admin2FAGate>
       <AdminSessionGuard>
-        <div className="flex h-screen overflow-hidden bg-slate-50">
+        <div className="flex h-screen overflow-hidden bg-background text-foreground">
           <AdminSidebar />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-muted/40">
             <Outlet />
           </main>
         </div>

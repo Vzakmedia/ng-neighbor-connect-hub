@@ -77,18 +77,18 @@ export function AdminSidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col h-screen bg-slate-900 text-slate-100 transition-all duration-300 shrink-0',
+        'flex flex-col h-screen bg-card text-card-foreground border-r border-border transition-all duration-300 shrink-0',
         collapsed ? 'w-16' : 'w-60',
       )}
     >
       {/* Logo + collapse toggle */}
-      <div className="flex items-center justify-between px-3 py-4 border-b border-slate-700">
+      <div className="flex items-center justify-between px-3 py-4 border-b border-border">
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
             <img src={LOGO_URL} alt="NeighborLink" className="h-8 w-8 rounded-full shrink-0 object-cover" />
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate leading-tight">NeighborLink</p>
-              <p className="text-[11px] text-slate-400 truncate">Admin Panel</p>
+              <p className="text-[11px] text-muted-foreground truncate">Admin Panel</p>
             </div>
           </div>
         )}
@@ -98,7 +98,7 @@ export function AdminSidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
           onClick={() => setCollapsed(c => !c)}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -114,10 +114,10 @@ export function AdminSidebar() {
             end={item.path === '/admin'}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                  ? 'bg-primary text-primary-foreground shadow-sm font-semibold'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 collapsed && 'justify-center px-0',
               )
             }
@@ -126,7 +126,7 @@ export function AdminSidebar() {
             <item.icon className="h-5 w-5 shrink-0" />
             {!collapsed && <span className="truncate">{item.label}</span>}
             {!collapsed && item.badge && (
-              <Badge className="ml-auto bg-rose-600 text-white text-[10px] px-1.5 py-0">
+              <Badge className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0">
                 {item.badge}
               </Badge>
             )}
@@ -135,11 +135,11 @@ export function AdminSidebar() {
       </nav>
 
       {/* Quick links: staff portal + back to the app */}
-      <div className="border-t border-slate-700 px-2 py-2 space-y-1">
+      <div className="border-t border-border px-2 py-2 space-y-1">
         <NavLink
           to="/staff-portal"
           className={cn(
-            'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors',
+            'flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
             collapsed && 'justify-center px-0',
           )}
           title={collapsed ? 'Staff Portal' : undefined}
@@ -150,7 +150,7 @@ export function AdminSidebar() {
         <NavLink
           to="/dashboard"
           className={cn(
-            'flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors',
+            'flex items-center gap-3 px-2.5 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
             collapsed && 'justify-center px-0',
           )}
           title={collapsed ? 'Back to App' : undefined}
@@ -161,19 +161,19 @@ export function AdminSidebar() {
       </div>
 
       {/* User info + sign out */}
-      <div className="border-t border-slate-700 px-2 py-3 space-y-2">
+      <div className="border-t border-border px-2 py-3 space-y-2">
         {!collapsed && (
           <div className="px-2 py-1">
-            <p className="text-xs font-medium truncate text-slate-200">
+            <p className="text-xs font-semibold truncate text-foreground">
               {user?.email?.split('@')[0] ?? 'Admin'}
             </p>
-            <p className="text-[11px] text-slate-400">{roleLabel}</p>
+            <p className="text-[11px] text-muted-foreground">{roleLabel}</p>
           </div>
         )}
         <Button
           variant="ghost"
           className={cn(
-            'w-full text-slate-300 hover:bg-slate-700 hover:text-white',
+            'w-full text-muted-foreground hover:bg-muted hover:text-foreground',
             collapsed ? 'justify-center px-0' : 'justify-start gap-2',
           )}
           onClick={handleSignOut}

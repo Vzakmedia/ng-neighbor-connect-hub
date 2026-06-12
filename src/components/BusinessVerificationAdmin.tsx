@@ -64,25 +64,42 @@ const BusinessVerificationAdmin = () => {
 
   const fetchApplications = useCallback(async () => {
     try {
-      // CR-01: Verify caller is admin before querying
+      // CR-01: Verify caller is admin/super_admin before querying.
+      // Roles live in user_roles — profiles has no role column.
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) return;
-      const { data: profile } = await supabase
-        .from('profiles')
+      const { data: roleRows } = await supabase
+        .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id)
-        .single();
-      if (profile?.role !== 'admin') return;
+        .in('role', ['admin', 'super_admin']);
+      if (!roleRows || roleRows.length === 0) return;
 
-      // CR-02: Use a join instead of N+1 per-business profile queries
+      // businesses has no FK to profiles, so PostgREST cannot embed —
+      // fetch owner profiles in one batched query and merge.
       const { data, error } = await supabase
         .from('businesses')
-        .select('*, profiles!user_id(full_name, avatar_url, phone, email)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setApplications((data || []) as unknown as BusinessApplication[]);
+      const ownerIds = [...new Set((data || []).map((b) => b.user_id).filter(Boolean))];
+      let profilesById = new Map<string, { full_name: string; avatar_url: string; phone: string; email: string }>();
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url, phone, email')
+          .in('user_id', ownerIds);
+        profilesById = new Map((profiles || []).map((p) => [p.user_id, p]));
+      }
+
+      const merged = (data || []).map((b) => ({
+        ...b,
+        profiles: profilesById.get(b.user_id) ?? null,
+      }));
+
+      setApplications(merged as unknown as BusinessApplication[]);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast({
@@ -98,15 +115,15 @@ const BusinessVerificationAdmin = () => {
   const handleApproval = async (applicationId: string, action: 'approve' | 'reject') => {
     setProcessing(true);
     try {
-      // CR-03: Verify caller is admin before performing approval
+      // CR-03: Verify caller is admin/super_admin before performing approval
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) return;
-      const { data: adminProfile } = await supabase
-        .from('profiles')
+      const { data: roleRows } = await supabase
+        .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id)
-        .single();
-      if (adminProfile?.role !== 'admin') {
+        .in('role', ['admin', 'super_admin']);
+      if (!roleRows || roleRows.length === 0) {
         toast({ title: "Unauthorized", description: "Admin access required", variant: "destructive" });
         return;
       }
