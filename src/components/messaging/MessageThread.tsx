@@ -575,7 +575,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
                   transform: `translateY(${virtualRow.start}px)`,
                   minHeight: `${virtualRow.size}px`,
                 }}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-6 mb-2`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group pb-1 mb-1`}
                 onDoubleClick={() => handleLongPress(message.id)}
               >
                 {isSelectionMode && (

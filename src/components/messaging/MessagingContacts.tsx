@@ -23,6 +23,13 @@ import {
   Trash2,
   Send
 } from '@/lib/icons';
+
+const maskPhone = (phone: string | null | undefined): string => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 4 ? `••• ••• ${digits.slice(-4)}` : '••••';
+};
+
 import {
   Dialog,
   DialogContent,
@@ -520,7 +527,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                               {user.is_verified && <VerifiedBadge size="xs" />}
                             </div>
                             {user.phone && (
-                              <p className="text-xs text-muted-foreground">{user.phone}</p>
+                              <p className="text-xs text-muted-foreground">{maskPhone(user.phone)}</p>
                             )}
                           </div>
                         </div>
@@ -589,7 +596,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                       <p className="font-medium">{request.sender_profile?.full_name}</p>
                       {request.sender_profile?.is_verified && <VerifiedBadge size="xs" />}
                     </div>
-                    <p className="text-sm text-muted-foreground">{request.sender_profile?.phone}</p>
+                    <p className="text-sm text-muted-foreground">{maskPhone(request.sender_profile?.phone)}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -636,7 +643,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                       {contact.is_verified && <VerifiedBadge size="xs" />}
                     </div>
                     {contact.phone && (
-                      <p className="text-sm text-muted-foreground">{contact.phone}</p>
+                      <p className="text-sm text-muted-foreground">{maskPhone(contact.phone)}</p>
                     )}
                   </div>
                 </div>
@@ -692,7 +699,7 @@ const MessagingContacts = ({ onStartConversation }: MessagingContactsProps) => {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Phone className="h-3 w-3" />
-                        {contact.phone_number}
+                        {maskPhone(contact.phone_number)}
                       </div>
                       {contact.email && (
                         <div className="flex items-center gap-1">
