@@ -66,7 +66,7 @@ export const useDirectMessageToasts = () => {
             content,
             sender_id,
             conversation_id,
-            sender:profiles!direct_messages_sender_id_fkey(full_name, avatar_url)
+            sender:profiles!fk_direct_messages_sender_profile(full_name, avatar_url)
           `)
           .eq('id', messageId)
           .single();

@@ -75,20 +75,39 @@ export const EnhancedSupportTicketSystem = () => {
   const [loading, setLoading] = useState(false);
 
   // WR-17: stable fetch callbacks
-  // Fetch tickets
+  // Fetch tickets. support_tickets has no FK to profiles (user_id/assigned_to
+  // reference auth.users), so PostgREST cannot embed — fetch profiles for
+  // both requesters and assignees in one batched query and merge.
   const fetchTickets = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('support_tickets')
-        .select(`
-          *,
-          profiles!user_id(full_name, email),
-          assigned_profile:profiles!assigned_to(full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets((data as any) || []);
+
+      const rows = data || [];
+      const profileIds = [...new Set(
+        rows.flatMap((t) => [t.user_id, t.assigned_to]).filter(Boolean)
+      )];
+
+      let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
+      if (profileIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email')
+          .in('user_id', profileIds);
+        profilesById = new Map((profiles || []).map((p) => [p.user_id, { full_name: p.full_name, email: p.email }]));
+      }
+
+      const merged = rows.map((t) => ({
+        ...t,
+        profiles: profilesById.get(t.user_id) ?? null,
+        assigned_profile: t.assigned_to ? (profilesById.get(t.assigned_to) ?? null) : null,
+      }));
+
+      setTickets((merged as any) || []);
     } catch (error) {
       // WR-18: gate console output to dev
       if (import.meta.env.DEV) {
@@ -102,20 +121,33 @@ export const EnhancedSupportTicketSystem = () => {
     }
   }, [toast]);
 
-  // Fetch ticket responses
+  // Fetch ticket responses (no FK to profiles — fetch and merge author names)
   const fetchResponses = async (ticketId: string) => {
     try {
       const { data, error } = await supabase
         .from('support_ticket_responses')
-        .select(`
-          *,
-          profiles(full_name)
-        `)
+        .select('*')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setResponses(prev => ({ ...prev, [ticketId]: (data as any) || [] }));
+
+      const rows = data || [];
+      const authorIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))];
+      let authorsById = new Map<string, { full_name: string | null }>();
+      if (authorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', authorIds);
+        authorsById = new Map((profiles || []).map((p) => [p.user_id, { full_name: p.full_name }]));
+      }
+      const merged = rows.map((r) => ({
+        ...r,
+        profiles: authorsById.get(r.user_id) ?? null,
+      }));
+
+      setResponses(prev => ({ ...prev, [ticketId]: (merged as any) || [] }));
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Error fetching responses:', error);

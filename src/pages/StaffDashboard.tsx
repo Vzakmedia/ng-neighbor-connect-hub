@@ -72,7 +72,7 @@ const StaffDashboard = () => {
 
         const { data: flaggedData } = await supabase
           .from('content_reports')
-          .select(`id, content_type, reason, description, created_at, status, reporter_id, profiles!content_reports_reporter_id_fkey(full_name)`)
+          .select(`id, content_type, reason, description, created_at, status, reporter_id, profiles!fk_content_reports_reporter_profile(full_name)`)
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(20);

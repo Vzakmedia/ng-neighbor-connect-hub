@@ -75,7 +75,7 @@ export function useRecommendationReviews(recommendationId: string | undefined, s
         .from('recommendation_reviews')
         .select(`
           *,
-          reviewer:profiles!recommendation_reviews_reviewer_id_fkey(user_id, full_name, avatar_url),
+          reviewer:profiles!fk_recommendation_reviews_reviewer_profile(user_id, full_name, avatar_url),
           user_reaction:review_reactions!left(reaction_type)
         `)
         .eq('recommendation_id', recommendationId)
@@ -117,7 +117,7 @@ export function useRecommendationTips(recommendationId: string | undefined) {
         .from('recommendation_tips')
         .select(`
           *,
-          author:profiles!recommendation_tips_user_id_fkey(user_id, full_name, avatar_url)
+          author:profiles!fk_recommendation_tips_user_profile(user_id, full_name, avatar_url)
         `)
         .eq('recommendation_id', recommendationId)
         .order('helpful_count', { ascending: false })
