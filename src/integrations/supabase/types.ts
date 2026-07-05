@@ -4818,6 +4818,7 @@ export type Database = {
           is_verified: boolean | null
           latitude: number | null
           longitude: number | null
+          neighborhood: string | null
           priority_level: number | null
           severity: Database["public"]["Enums"]["alert_severity"] | null
           status: Database["public"]["Enums"]["alert_status"] | null
@@ -4837,6 +4838,7 @@ export type Database = {
           is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           priority_level?: number | null
           severity?: Database["public"]["Enums"]["alert_severity"] | null
           status?: Database["public"]["Enums"]["alert_status"] | null
@@ -4856,6 +4858,7 @@ export type Database = {
           is_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
+          neighborhood?: string | null
           priority_level?: number | null
           severity?: Database["public"]["Enums"]["alert_severity"] | null
           status?: Database["public"]["Enums"]["alert_status"] | null

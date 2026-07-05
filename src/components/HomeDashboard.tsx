@@ -13,7 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useLocationPreferences } from '@/hooks/useLocationPreferences';
+import { useLocationPreferences, type LocationFilterScope } from '@/hooks/useLocationPreferences';
 
 const HomeDashboard = () => {
   const navigate = useNavigate();
@@ -92,7 +92,7 @@ const HomeDashboard = () => {
       }));
     } else {
       // Reset to default scope based on active tab when clearing
-      const defaultScopes: Record<typeof activeTab, string> = {
+      const defaultScopes: Record<typeof activeTab, LocationFilterScope> = {
         'for-you': defaultForYouScope,
         'recent': defaultForYouScope,
         'nearby': 'neighborhood',

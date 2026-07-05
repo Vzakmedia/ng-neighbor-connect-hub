@@ -395,24 +395,26 @@ const CommunityBoards = () => {
       const members = (data || []) as Omit<BoardMember, 'profiles'>[];
       const userIds = [...new Set(members.map(member => member.user_id).filter(Boolean))];
 
-      const { data: profileRows, error: profilesError } = userIds.length === 0
-        ? { data: [], error: null }
-        : await supabase
-            .from('profiles')
-            .select('user_id, full_name, avatar_url, city, state, is_verified')
-            .in('user_id', userIds);
+      const profileMap = new Map<string, BoardMember['profiles']>();
 
-      if (profilesError) throw profilesError;
+      if (userIds.length > 0) {
+        const { data: profileRows, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url, city, state, is_verified')
+          .in('user_id', userIds);
 
-      const profileMap = new Map(
-        (profileRows || []).map(profile => [profile.user_id, {
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          city: profile.city,
-          state: profile.state,
-          is_verified: profile.is_verified
-        }])
-      );
+        if (profilesError) throw profilesError;
+
+        for (const profile of profileRows || []) {
+          profileMap.set(profile.user_id, {
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url,
+            city: profile.city,
+            state: profile.state,
+            is_verified: profile.is_verified
+          });
+        }
+      }
 
       setBoardMembers(
         members.map(member => ({

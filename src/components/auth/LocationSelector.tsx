@@ -80,7 +80,7 @@ const CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
   'Victoria Island': ['VI Annex', 'Oniru', 'Maroko', 'Sandfill', 'Bar Beach', 'Adeola Odeku', 'Ahmadu Bello Way', 'Akin Adesola', 'Ozumba Mbadiwe', 'Water Corporation Drive'],
   'Ikoyi': ['Old Ikoyi', 'Parkview Estate', 'Banana Island', 'Dolphin Estate', 'Bourdillon', 'Osborne', 'Turnbull', 'Cameron', 'Cooper', 'Awolowo Road', 'MacPherson', 'Glover'],
   'Yaba': ['Sabo', 'Abule Ijesha', 'Akoka', 'Onike', 'Makoko', 'Oyingbo', 'Alagomeji', 'Herbert Macaulay', 'Queens College', 'Unilag', 'Bariga'],
-  'Surulere': ['Adeniran Ogunsanya', 'Aguda', 'Ijeshatedo', 'Itire', 'Lawanson', 'Shitta', 'Randle Avenue', 'Bode Thomas', 'Ogunlana Drive', 'Ojuelegba', 'Iponri', 'Yaba Tech', 'Costain'],
+  // NOTE: 'Surulere' exists in both Lagos and Oyo — see AMBIGUOUS_CITY_NEIGHBORHOODS below.
   'Gbagada': ['Phase 1', 'Phase 2', 'Ifako', 'Soluyi', 'New Garage', 'Oworonshoki', 'Pedro', 'Shomolu', 'Onipanu', 'Palmgrove'],
   'Maryland': ['Mende', 'Anthony', 'Ojota', 'Ikosi', 'Ketu', 'Mile 12', 'Alapere', 'Ogudu', 'Kosofe'],
   'Ajah': ['Sangotedo', 'Lakowe', 'Badore', 'Ilaje', 'Ado', 'Awoyaya', 'Bogije', 'Majek', 'Shapati'],
@@ -162,8 +162,8 @@ const CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
   'Oyo West': ['Isale Oyo','Oke Oyo','Agunpopo/Oja-Oba','Aremo/Oke-Afin','Awe Road/Bashorun','Sabo/Oja Igbo','Isale Afon','Oke Afon','New Layout/Ashipa','Oyo Rural/Koodo'],
   'Saki East': ['Sepeteri Central','Sepeteri Oke','Sepeteri Isale','Ago-Amodu Central','Ago-Amodu Extension','Ogoro Central','Ogoro Oke','Agbonle Central','Agbonle Oke','Oje-Owode Central','Owode Extension'],
   'Saki West': ['Saki Central/Ekokan','Isale Saki','Oke Saki','Saki Oja','Saki North','Saki South/Aba Seele','Saki East Road','Abatade/Abawaye','Aba Ilero/Aba Iseyin','Saki West Rural I','Saki West Rural II'],
-  'Surulere': ['Iresadu Central','Arolu','Oko Central','Oko Oke','Oko Isale','Iwofin Central','Iwofin Oke','Gambari Central','Baya/Ajase','Ikolo/Ilajue'],
-  
+  // NOTE: 'Surulere' exists in both Lagos and Oyo — see AMBIGUOUS_CITY_NEIGHBORHOODS below.
+
   // ===== OTHER MAJOR CITIES =====
   'Benin City': ['GRA', 'Ikpoba Hill', 'Ugbowo', 'Uselu', 'Sapele Road', 'Airport Road', 'Upper Sakponba', 'Lower Sakponba', 'Ekenwan', 'Evbuobanosa', 'Ugbor', 'Oregbeni', 'New Benin', 'Ramat Park'],
   'Enugu': ['Independence Layout', 'GRA', 'New Haven', 'Trans Ekulu', 'Achara Layout', 'Abakpa Nike', 'Emene', 'Uwani', 'Coal Camp', 'Ogui', 'Maryland', 'Asata', 'Obiagu', 'Ogbete'],
@@ -210,6 +210,14 @@ const CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
   'Makurdi': ['North Bank', 'Wadata', 'High Level', 'New GRA', 'Modern Market'],
   'Yenagoa': ['Amarata', 'Kpansia', 'Ovom', 'Swali'],
   'Auchi': ['Auchi Township', 'Iyerekhu', 'Iyakpi']
+};
+
+// City/LGA names that exist in more than one state, keyed by "city|state".
+// These must NOT appear in CITY_NEIGHBORHOODS — a duplicate key there silently
+// overwrites the earlier entry and serves the wrong state's wards.
+const AMBIGUOUS_CITY_NEIGHBORHOODS: { [key: string]: string[] } = {
+  'Surulere|Lagos': ['Adeniran Ogunsanya', 'Aguda', 'Ijeshatedo', 'Itire', 'Lawanson', 'Shitta', 'Randle Avenue', 'Bode Thomas', 'Ogunlana Drive', 'Ojuelegba', 'Iponri', 'Yaba Tech', 'Costain'],
+  'Surulere|Oyo': ['Iresadu Central','Arolu','Oko Central','Oko Oke','Oko Isale','Iwofin Central','Iwofin Oke','Gambari Central','Baya/Ajase','Ikolo/Ilajue'],
 };
 
 export const LocationSelector = ({ 
@@ -307,7 +315,10 @@ export const LocationSelector = ({
       // For neighborhoods, use comprehensive Ward data immediately
       if (type === 'neighborhoods' && payload.city) {
         console.log('📍 Using comprehensive Ward data for', payload.city);
-        const neighborhoods = CITY_NEIGHBORHOODS[payload.city] || [];
+        const neighborhoods =
+          AMBIGUOUS_CITY_NEIGHBORHOODS[`${payload.city}|${payload.state}`] ||
+          CITY_NEIGHBORHOODS[payload.city] ||
+          [];
         
         if (neighborhoods.length === 0) {
           console.warn(`⚠️ No wards found for ${payload.city}`);

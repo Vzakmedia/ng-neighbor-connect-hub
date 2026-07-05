@@ -10,6 +10,12 @@ import { ExclamationTriangleIcon, MapPinIcon, XMarkIcon, BellIcon, UsersIcon, Ma
 import { playNotification } from '@/utils/audioUtils';
 import { useNotifications } from '@/hooks/useSimpleNotifications';
 import { useNativePermissions } from '@/hooks/mobile/useNativePermissions';
+import {
+  getSafetyAlertWindowStart,
+  getUserNeighborhood,
+  isSafetyAlertVisible,
+  isWithinSafetyAlertWindow,
+} from '@/lib/alerts/alertVisibility';
 
 interface NeighborhoodEmergencyAlertProps {
   position?: 'top-center' | 'bottom-center';
@@ -25,38 +31,30 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  // Refs so the realtime handler always sees current values without resubscribing
+  const neighborhoodRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (user) {
       getUserLocation();
+      loadNearbyAlerts();
       return subscribeToSafetyAlerts();
     }
   }, [user]);
 
-  useEffect(() => {
-    // Load alerts once location resolves; the timeout fallback calls loadNearbyAlerts directly.
-    if (userLocation) {
-      loadNearbyAlerts();
-    }
-  }, [userLocation]);
-
+  // Location is only used for the distance badge and directions — visibility
+  // is decided by neighborhood, so alerts load regardless of GPS availability.
   const getUserLocation = async () => {
     try {
       const position = await getCurrentPosition({
         maximumAge: 300000, // accept a 5-minute cached fix — avoids redundant GPS cold-starts
       });
-      console.log('📍 Emergency Alert Location:', position.coords);
       setUserLocation({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error getting location for alerts:', error);
-      // Timeout (code 3) or permission denied: still load alerts without distance filtering
-      // so the feature degrades gracefully instead of going completely dark.
-      if (error?.code === 3 || error?.message === 'Location permission denied') {
-        loadNearbyAlerts();
-      }
     }
   };
 
@@ -64,6 +62,15 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
     if (!user) return;
 
     try {
+      // Visibility scope: alerts are neighborhood-only. No neighborhood on the
+      // viewer's profile means no community alerts (strict, no nationwide leak).
+      const viewerNeighborhood = await getUserNeighborhood(user.id);
+      neighborhoodRef.current = viewerNeighborhood;
+      if (!viewerNeighborhood) {
+        setAlerts([]);
+        return;
+      }
+
       // Get dismissed alerts for this user
       const { data: dismissedAlerts } = await supabase
         .from('dismissed_alerts')
@@ -72,7 +79,11 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
       const dismissedAlertIds = new Set(dismissedAlerts?.map(d => d.alert_id) || []);
 
-      // Query safety_alerts instead of public_emergency_alerts (which was removed)
+      // Only active alerts from the last 24h, never older than the user's signup
+      const windowStart = getSafetyAlertWindowStart(user.created_at);
+
+      // The neighborhood column is stamped server-side by trigger and enforced
+      // by RLS; the .eq() keeps the query on the scoped index.
       const { data: safetyAlerts, error } = await supabase
         .from('safety_alerts')
         .select(`
@@ -85,6 +96,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           created_at,
           status,
           user_id,
+          neighborhood,
           title,
           description,
           profiles:user_id (
@@ -92,25 +104,26 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           )
         `)
         .eq('status', 'active')
+        .eq('neighborhood', viewerNeighborhood)
         .neq('user_id', user.id) // Don't show user's own alerts
-        .order('created_at', { ascending: false });
+        .gte('created_at', windowStart)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 
-      // Filter alerts by distance (within 10km) when location is available.
-      // When location is unknown (timeout/denied), show all active alerts without filtering.
       const nearbyAlerts = (safetyAlerts || [])
         .filter(alert => {
           if (dismissedAlertIds.has(alert.id)) return false;
-          if (!userLocation) return true; // no location — show everything
-          if (!alert.latitude || !alert.longitude) return false;
-          const distance = calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            alert.latitude,
-            alert.longitude
-          );
-          return distance <= 10; // 10km radius
+          // Defense-in-depth: re-check the same rules the query encodes
+          return isSafetyAlertVisible({
+            alertUserId: alert.user_id,
+            alertCreatedAt: alert.created_at,
+            alertNeighborhood: alert.neighborhood,
+            viewerId: user.id,
+            viewerCreatedAt: user.created_at,
+            viewerNeighborhood,
+          });
         })
         .map(alert => ({
           id: alert.id,
@@ -118,7 +131,6 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
           latitude: alert.latitude,
           longitude: alert.longitude,
           address: alert.address,
-          radius_km: 10, // Default radius
           created_at: alert.created_at,
           is_active: true,
           user_id: alert.user_id,
@@ -141,25 +153,24 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
             schema: 'public',
             table: 'safety_alerts'
           },
-          (payload) => {
-            if (payload.new && payload.new.user_id !== user?.id) {
-              if (userLocation) {
-                const distance = calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
-                  payload.new.latitude,
-                  payload.new.longitude
-                );
-                if (distance <= 10) {
-                  toast({
-                    title: 'New Emergency Alert',
-                    description: `${(payload.new.alert_type || 'alert').replace('_', ' ').toUpperCase()} nearby`,
-                    variant: 'destructive',
-                  });
-                  loadNearbyAlerts();
-                }
-              }
-            }
+          async (payload) => {
+            const alert = payload.new;
+            if (!alert || !user || alert.user_id === user.id) return;
+            if (!isWithinSafetyAlertWindow(alert.created_at, user.created_at)) return;
+
+            // Neighborhood gate: the alert row carries its own neighborhood
+            // (stamped by DB trigger). RLS already scopes realtime delivery;
+            // this re-check is defense-in-depth.
+            const viewerNeighborhood = neighborhoodRef.current ?? await getUserNeighborhood(user.id);
+            if (!viewerNeighborhood) return;
+            if (!alert.neighborhood || alert.neighborhood !== viewerNeighborhood) return;
+
+            toast({
+              title: 'New Emergency Alert',
+              description: `${(alert.alert_type || 'alert').replace('_', ' ').toUpperCase()} in your neighborhood`,
+              variant: 'destructive',
+            });
+            loadNearbyAlerts();
           }
         )
         .on(
@@ -170,6 +181,7 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
             table: 'safety_alerts'
           },
           () => {
+            // Status changes (e.g. resolved) — re-run the scoped load
             loadNearbyAlerts();
           }
         )
@@ -272,12 +284,14 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
 
           <div className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-orange-200">
             {alerts.map((alert) => {
-              const distance = userLocation ? calculateDistance(
-                userLocation.latitude,
-                userLocation.longitude,
-                alert.latitude,
-                alert.longitude
-              ) : 0;
+              const distance = userLocation && alert.latitude && alert.longitude
+                ? calculateDistance(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    alert.latitude,
+                    alert.longitude
+                  )
+                : null;
 
               return (
                 <Card key={alert.id} className="mb-3 shadow-xl border-orange-200 bg-orange-50/95 backdrop-blur-sm">
@@ -289,9 +303,11 @@ const NeighborhoodEmergencyAlert = ({ position = 'top-center' }: NeighborhoodEme
                           <Badge className="bg-orange-600 text-white border-transparent">
                             {alert.situation_type?.replace('_', ' ').toUpperCase()}
                           </Badge>
-                          <Badge variant="outline" className="text-[10px] border-orange-200 text-orange-700 bg-orange-100/50">
-                            {distance.toFixed(1)}km
-                          </Badge>
+                          {distance !== null && (
+                            <Badge variant="outline" className="text-[10px] border-orange-200 text-orange-700 bg-orange-100/50">
+                              {distance.toFixed(1)}km
+                            </Badge>
+                          )}
                         </div>
 
                         <h4 className="font-bold text-orange-900 text-sm mb-1">

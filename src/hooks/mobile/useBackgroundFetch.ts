@@ -152,10 +152,11 @@ async function processOp(type: string, data: any): Promise<void> {
         const res = await fetch(fileData);
         fileData = await res.blob();
       }
-      await supabase.storage
+      // Storage requests don't support .throwOnError() — check the error manually
+      const { error: uploadError } = await supabase.storage
         .from(data.bucket)
-        .upload(data.path, fileData, { contentType: data.contentType })
-        .throwOnError();
+        .upload(data.path, fileData, { contentType: data.contentType });
+      if (uploadError) throw uploadError;
       break;
     }
 

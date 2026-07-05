@@ -93,15 +93,17 @@ export const useRealtimeSupportTickets = () => {
         'postgres_changes',
         responsesChannelOptions,
         async (payload) => {
+          // Channel options are untyped, so payload.new needs an explicit cast
+          const newResponse = payload.new as TicketResponse;
+
           // Check if this response is for user's ticket
           const { data: ticketData } = await supabase
             .from('support_tickets')
             .select('user_id')
-            .eq('id', payload.new.ticket_id)
+            .eq('id', newResponse.ticket_id)
             .single();
 
           if (ticketData && ticketData.user_id === user.id) {
-            const newResponse = payload.new as TicketResponse;
 
             setResponses(prev => ({
               ...prev,

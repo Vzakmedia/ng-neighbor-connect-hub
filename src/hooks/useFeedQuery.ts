@@ -50,7 +50,8 @@ interface FeedPost {
 
 interface FeedPage {
   items: FeedPost[];
-  nextCursor: number | null;
+  // Cursor is the created_at timestamp of the last post in the page (see queryFn)
+  nextCursor: string | null;
 }
 
 const POSTS_PER_PAGE = 20;

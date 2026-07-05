@@ -9,7 +9,7 @@ import { AdminSidebar } from './AdminSidebar';
 
 export function AdminLayout() {
   const { user } = useAuth();
-  const { isAdmin, isSuperAdmin, loading } = useAdminStatus();
+  const { isAdmin, isSuperAdmin, isLoading } = useAdminStatus();
   const { logAdminSession } = useAdminAuditLog();
 
   // Record the admin session in the audit log — once per browser session
@@ -25,7 +25,7 @@ export function AdminLayout() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />

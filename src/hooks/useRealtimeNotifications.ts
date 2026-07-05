@@ -3,6 +3,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationStore, NotificationData } from '@/store/notificationStore';
 import { useRealtimeContext } from '@/contexts/RealtimeContext';
+import {
+  getUserNeighborhood,
+  isWithinSafetyAlertWindow,
+} from '@/lib/alerts/alertVisibility';
 
 export const useRealtimeNotifications = () => {
   const { user } = useAuth();
@@ -96,9 +100,26 @@ export const useRealtimeNotifications = () => {
     const unsubscribeSafetyAlerts = onSafetyAlert(async (payload) => {
       if (import.meta.env.DEV) console.log('[RealtimeNotifications] Safety alert received:', payload);
 
-      const alert = payload.new;
+      // Only new alerts create notifications — UPDATE events (status changes,
+      // edits) previously re-fired notifications for old alerts.
+      if (payload.eventType && payload.eventType !== 'INSERT') return;
 
-      // Fetch user profile
+      const alert = payload.new;
+      if (!alert?.id) return;
+
+      // Never notify users about their own alert
+      if (alert.user_id === user.id) return;
+
+      // Freshness: within 24h and never from before the user signed up
+      if (!isWithinSafetyAlertWindow(alert.created_at, user.created_at)) return;
+
+      // Neighborhood gate: the alert row carries its own neighborhood (stamped
+      // by DB trigger; RLS scopes realtime delivery). Strict — missing = skip.
+      const viewerNeighborhood = await getUserNeighborhood(user.id);
+      if (!viewerNeighborhood) return;
+      if (!alert.neighborhood || alert.neighborhood !== viewerNeighborhood) return;
+
+      // Fetch author profile (display name only)
       const { data: profile, error: safetyProfileError } = await supabase
         .from('profiles')
         .select('full_name')
@@ -134,6 +155,12 @@ export const useRealtimeNotifications = () => {
       if (import.meta.env.DEV) console.log('[RealtimeNotifications] Panic alert received:', payload);
 
       const alert = payload.new;
+
+      // The panic_alerts subscription is scoped to the user's own alerts (for
+      // status tracking). Never turn your own panic into an incoming
+      // "Someone has triggered a panic alert" notification — neighbors are
+      // notified via the neighborhood fan-out in the emergency-alert function.
+      if (!alert?.id || alert.user_id === user.id) return;
 
       // Fetch user profile
       const { data: profile, error: panicProfileError } = await supabase

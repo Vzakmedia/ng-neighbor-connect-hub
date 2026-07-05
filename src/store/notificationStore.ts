@@ -32,7 +32,7 @@ interface NotificationState {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
-  syncWithServer: (userId: string) => Promise<void>;
+  syncWithServer: (userId: string, retryCount?: number) => Promise<void>;
   persistReadStatus: (id: string, prevNotifications?: NotificationData[], prevUnread?: number) => Promise<void>;
   persistAllReadStatus: () => Promise<void>;
   cleanup: () => void;
@@ -40,6 +40,21 @@ interface NotificationState {
 
 const MAX_NOTIFICATIONS = 100;
 const CLEANUP_DAYS = 30;
+
+// Safety-related notifications are only actionable briefly — a missed
+// emergency from days ago is noise (and alarming noise at that). They are
+// dropped from every surface after 24 hours; other types keep CLEANUP_DAYS.
+const SAFETY_NOTIFICATION_TYPES: ReadonlySet<NotificationData['type']> =
+  new Set(['alert', 'emergency', 'panic_alert']);
+const SAFETY_WINDOW_MS = 24 * 60 * 60 * 1000;
+const GENERAL_WINDOW_MS = CLEANUP_DAYS * 24 * 60 * 60 * 1000;
+
+const isNotificationExpired = (n: NotificationData, now = Date.now()): boolean => {
+  const ts = new Date(n.timestamp).getTime();
+  if (Number.isNaN(ts)) return false;
+  const windowMs = SAFETY_NOTIFICATION_TYPES.has(n.type) ? SAFETY_WINDOW_MS : GENERAL_WINDOW_MS;
+  return now - ts > windowMs;
+};
 
 // Notifications synthesized client-side (e.g. 'msg-<id>', 'alert-<id>', 'panic-<id>')
 // have no corresponding row in alert_notifications, so server persistence
@@ -57,6 +72,13 @@ export const useNotificationStore = create<NotificationState>()(
 
       addNotification: async (notification) => {
         const { notifications } = get();
+
+        // Never (re-)surface stale safety alerts — e.g. an UPDATE to an old
+        // alert or a delayed event must not ring the bell a day later.
+        if (isNotificationExpired(notification)) {
+          if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Expired notification skipped:', notification.id);
+          return;
+        }
 
         // Deduplication: check if notification already exists
         const exists = notifications.some(n => n.id === notification.id);
@@ -126,13 +148,15 @@ export const useNotificationStore = create<NotificationState>()(
       },
 
       setNotifications: (notifications) => {
-        const unreadCount = notifications.filter(n => !n.isRead).length;
+        const now = Date.now();
+        const fresh = notifications.filter(n => !isNotificationExpired(n, now));
+        const unreadCount = fresh.filter(n => !n.isRead).length;
         set({
-          notifications,
+          notifications: fresh,
           unreadCount,
-          lastSyncTime: Date.now()
+          lastSyncTime: now
         });
-        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Bulk set:', notifications.length, 'notifications');
+        if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Bulk set:', fresh.length, 'notifications');
       },
 
       markAsRead: (id) => {
@@ -248,8 +272,16 @@ export const useNotificationStore = create<NotificationState>()(
               requestId: record.request_id || undefined
             }));
 
-            get().setNotifications(notifications);
-            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Synced', notifications.length, 'notifications');
+            // Merge: server rows are the truth for persisted notifications,
+            // but client-synthesized ones (msg-/alert-/panic- ids) have no
+            // server row — replacing the whole list used to silently wipe them.
+            const clientOnly = get().notifications.filter(n => !isPersistedNotificationId(n.id));
+            const merged = [...notifications, ...clientOnly]
+              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+              .slice(0, MAX_NOTIFICATIONS);
+
+            get().setNotifications(merged);
+            if (process.env.NODE_ENV !== 'production') console.log('[NotificationStore] Synced', notifications.length, 'server +', clientOnly.length, 'client notifications');
           }
         } catch (err: any) {
           // Auth token refresh steals the IndexedDB lock mid-request, producing a
@@ -320,14 +352,11 @@ export const useNotificationStore = create<NotificationState>()(
 
       cleanup: () => {
         const { notifications } = get();
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - CLEANUP_DAYS);
-        const cutoffTime = cutoffDate.getTime();
+        const now = Date.now();
 
-        const cleaned = notifications.filter(n => {
-          const notificationTime = new Date(n.timestamp).getTime();
-          return notificationTime > cutoffTime;
-        });
+        // Per-type retention: safety alerts expire after 24h, everything
+        // else after CLEANUP_DAYS (see isNotificationExpired).
+        const cleaned = notifications.filter(n => !isNotificationExpired(n, now));
 
         if (cleaned.length < notifications.length) {
           const unreadCount = cleaned.filter(n => !n.isRead).length;

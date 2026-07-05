@@ -5,7 +5,9 @@ const options = {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
   defaults: '2026-01-30',
   opt_in_site_apps: true,
-  session_recording: { recordConsole: true },
+  // Console capture in session replay — 'recordConsole' is not a valid
+  // posthog-js option; the documented flag is enable_recording_console_log.
+  enable_recording_console_log: true,
 } as const;
 
 export function PostHogProvider({ children }: { children: ReactNode }) {
